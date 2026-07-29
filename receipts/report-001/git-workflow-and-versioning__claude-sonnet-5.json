@@ -1,0 +1,348 @@
+{
+  "schema_version": "0.2",
+  "skill": {
+    "name": "git-workflow-and-versioning",
+    "version": "0.0.0",
+    "content_hash": "c0e9cf58fddf629451e5d6d3a130ca252cea78871b0044e1787d8cc417ad04ef"
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "3c691f114db473023cc511d8e9f400742f5c0c38148296d3c502da30b8e2ced0",
+    "case_count": 7
+  },
+  "run": {
+    "model_id": "claude-sonnet-5",
+    "model_release_date": "2026-06-30",
+    "surface": "claude-cli",
+    "runner_version": "0.2.0",
+    "date_utc": "2026-07-28T08:33:17.013Z",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "commit-message-conventional-type",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.828,
+        "mean": 0.828,
+        "stddev": 0.029496,
+        "samples": [
+          0.82,
+          0.78,
+          0.84,
+          0.85,
+          0.85
+        ],
+        "threshold": 0.7,
+        "reason": "Correct fix: prefix, specific subject, body explains consequence and cause. Subject slightly ambiguous about whether 'use minutes' is problem or solution.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "c17f2f214cec220ac31af3cfe88a52393c254cea8f9a94fc16e668f668fa88c3"
+        }
+      },
+      {
+        "id": "commit-message-conventional-type",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.286,
+        "mean": 0.286,
+        "stddev": 0.021909,
+        "samples": [
+          0.3,
+          0.28,
+          0.25,
+          0.3,
+          0.3
+        ],
+        "threshold": 0.7,
+        "reason": "Subject line violates criterion (1): missing conventional `fix:` type prefix—uses 'Fix' not `fix:`. Body is strong.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "c17f2f214cec220ac31af3cfe88a52393c254cea8f9a94fc16e668f668fa88c3"
+        }
+      },
+      {
+        "id": "semver-clean-bump",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.812,
+        "mean": 0.812,
+        "stddev": 0.017889,
+        "samples": [
+          0.84,
+          0.8,
+          0.8,
+          0.82,
+          0.8
+        ],
+        "threshold": 0.7,
+        "reason": "Correct version (2.4.0), correctly identifies optional parameter as MINOR feature addition, correctly rules out MAJOR, resets PATCH to 0. Shows understanding that new feature outranks fix, but lacks explicit statement of highest-change-wins rule.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "fb112eee97149fbfc7c47fcbfd7497baf86913145c61c8b21434dfd1c718497c"
+        }
+      },
+      {
+        "id": "semver-clean-bump",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.874,
+        "mean": 0.874,
+        "stddev": 0.005477,
+        "samples": [
+          0.88,
+          0.87,
+          0.88,
+          0.87,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Correct version 2.4.0; identifies optional param as MINOR-level feature; explicitly states highest-change-wins rule governing combined changes.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "fb112eee97149fbfc7c47fcbfd7497baf86913145c61c8b21434dfd1c718497c"
+        }
+      },
+      {
+        "id": "split-into-atomic-commits",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.876,
+        "mean": 0.876,
+        "stddev": 0.015166,
+        "samples": [
+          0.87,
+          0.88,
+          0.87,
+          0.86,
+          0.9
+        ],
+        "threshold": 0.7,
+        "reason": "All five criteria met: three commits, refactor/feature/formatting separated correctly, conventional prefixes used, commits properly ordered with explicit reviewability/revertability rationale.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "e330958b52d76b5d22c01fead311c482e5e00161dd9c367e403094bd0c19ac3b"
+        }
+      },
+      {
+        "id": "split-into-atomic-commits",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.87,
+        "mean": 0.87,
+        "stddev": 0.012247,
+        "samples": [
+          0.87,
+          0.88,
+          0.87,
+          0.85,
+          0.88
+        ],
+        "threshold": 0.7,
+        "reason": "All five checkable criteria met: three separate commits, refactor/formatting isolated, feature+tests grouped, correct prefixes (refactor:, feat:, chore:). Exemplary: correct ordering (refactor before feature) and explicit reviewability/revertability rationale per commit.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "e330958b52d76b5d22c01fead311c482e5e00161dd9c367e403094bd0c19ac3b"
+        }
+      },
+      {
+        "id": "changelog-curated-by-impact",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.872,
+        "mean": 0.872,
+        "stddev": 0.038987,
+        "samples": [
+          0.87,
+          0.85,
+          0.94,
+          0.85,
+          0.85
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all criteria: correct header, proper categorization, omits internal refactors and chore, exemplary Deprecated entry with replacement endpoint and removal timeline clearly signaled.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "a3f7f6d638ae14a768a15bfda476fdcef6fe752bd31a8216025483d1fd48c2c1"
+        }
+      },
+      {
+        "id": "changelog-curated-by-impact",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.866,
+        "mean": 0.866,
+        "stddev": 0.013416,
+        "samples": [
+          0.88,
+          0.88,
+          0.86,
+          0.85,
+          0.86
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all rubric criteria: correct header, grouped by impact category, internal refactors/chore omitted, exemplary Deprecated entry naming replacement endpoint and signaling clear migration path.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "a3f7f6d638ae14a768a15bfda476fdcef6fe752bd31a8216025483d1fd48c2c1"
+        }
+      },
+      {
+        "id": "trunk-based-short-lived-branches",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.87,
+        "mean": 0.87,
+        "stddev": 0.014142,
+        "samples": [
+          0.87,
+          0.89,
+          0.87,
+          0.85,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Fully meets all criteria: advises against long-lived branch with concrete reasons (merge risk, integration bugs, feedback delay), recommends short-lived 1-3 day branches, proposes feature flags to keep main deployable, and explicitly reconciles the teammate's valid concern about half-done work visib",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "35242fa22b28bbc6c03803b482e8bc5ec52b59693f02bd777d095ab415e0b5b8"
+        }
+      },
+      {
+        "id": "trunk-based-short-lived-branches",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.848,
+        "mean": 0.848,
+        "stddev": 0.028636,
+        "samples": [
+          0.8,
+          0.85,
+          0.87,
+          0.87,
+          0.85
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all three core criteria: advises against long-lived branches with concrete merge-risk reasoning, recommends short-lived branches with 1-3 day frequency, and proposes feature flags. Does not explicitly reconcile the teammate's stated concern (keeping half-done work off main) with the flag-based",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "35242fa22b28bbc6c03803b482e8bc5ec52b59693f02bd777d095ab415e0b5b8"
+        }
+      },
+      {
+        "id": "semver-hidden-breaking-change",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.882,
+        "mean": 0.882,
+        "stddev": 0.017889,
+        "samples": [
+          0.9,
+          0.88,
+          0.86,
+          0.9,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "All four rubric criteria met: rejects patch, identifies silent-truncation breaking change, proposes 2.0.0, ties to observable behavior not diff-size. Exemplary for invoking Hyrum's Law and suggesting deprecation pathway.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "f81d9fcccb146f143f65d296c9c41190098f4fdd6e4af2fdcda21d0270f17467"
+        }
+      },
+      {
+        "id": "semver-hidden-breaking-change",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.282,
+        "mean": 0.282,
+        "stddev": 0.020494,
+        "samples": [
+          0.28,
+          0.28,
+          0.3,
+          0.3,
+          0.25
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly identifies breaking change and rejects patch (criteria 1, 2, 4 met), but proposes 1.9.0 minor bump instead of required 2.0.0 major; triggers rubric's 0.3 cap for minor-bump responses.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "f81d9fcccb146f143f65d296c9c41190098f4fdd6e4af2fdcda21d0270f17467"
+        }
+      },
+      {
+        "id": "release-cut-version-tag-changelog",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.882,
+        "mean": 0.882,
+        "stddev": 0.019235,
+        "samples": [
+          0.89,
+          0.9,
+          0.88,
+          0.85,
+          0.89
+        ],
+        "threshold": 0.7,
+        "reason": "Version 2.0.0 correct and justified by breaking removal (not feature). Annotated tag with push included. Changelog properly grouped (Added/Fixed/Removed) with clear migration note for endpoint removal.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "eb0c916a6f2c15fbba7db0d821798433329872231de44663c115d08ced71bee0"
+        }
+      },
+      {
+        "id": "release-cut-version-tag-changelog",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.896,
+        "mean": 0.896,
+        "stddev": 0.024083,
+        "samples": [
+          0.93,
+          0.89,
+          0.87,
+          0.88,
+          0.91
+        ],
+        "threshold": 0.7,
+        "reason": "Version 2.0.0 exemplary justified by breaking change; annotated tag correct; changelog properly grouped with migration note.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "eb0c916a6f2c15fbba7db0d821798433329872231de44663c115d08ced71bee0"
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 7,
+        "pass_count": 7,
+        "borderline_count": 0,
+        "mean_score": 0.860286,
+        "stddev": 0.028271
+      },
+      "baseline": {
+        "case_count": 7,
+        "pass_count": 5,
+        "borderline_count": 0,
+        "mean_score": 0.703143,
+        "stddev": 0.286677
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.860286,
+    "baseline_score": 0.703143,
+    "delta": 0.157143,
+    "delta_uncertainty": 0.288068
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "5324f99f311c508918a93802869c2045af5f14c81357a1082e53b69c793f3944"
+}
