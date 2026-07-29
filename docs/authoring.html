@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driftproof — writing a fair suite</title>
+<meta name="description" content="How to write a fair Driftproof eval suite: cases grounded in the SKILL.md, rubrics anchored at 0.80, graded difficulty with headroom, sampling and bands, the 0.05 effect floor, and how to read a receipt.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a class="brand" href="index.html">Driftproof</a><nav><a href="index.html">Home</a><a href="reports/001/index.html">Report #001</a><a href="judge-policy.html">Judge policy</a><a href="https://github.com/driftproofhq/driftproof">GitHub</a></nav></header>
+<main class="hero">
+  <h1>Writing a fair suite.</h1>
+  <p class="lede">A receipt is only as trustworthy as the suite behind it. This is how to write a suite that measures whether a skill <strong>actually helps</strong> — and keeps measuring honestly as the model underneath it changes. Same rules and phrasing as the <a href="reports/001/index.html">Report #001 methodology</a>.</p>
+  <p>Scaffold a starting point with <code>driftproof init &lt;dir&gt;</code>; its three example cases already follow every rule here. The full guide also lives in the repo as <a href="https://github.com/driftproofhq/driftproof/blob/main/AUTHORING.md">AUTHORING.md</a>.</p>
+
+  <h2>The one rule everything serves</h2>
+  <div class="card">
+    <p><strong>Every case must be grounded in a claim the <code>SKILL.md</code> actually makes.</strong> A suite measures a skill's marginal effect — the lift between running a prompt <em>with</em> the skill and <em>without</em> it. If a case tests something the skill never says, the skill can't be what moves the score, and the case measures noise (or the base model), not the skill. Before writing a case, point at the sentence in <code>SKILL.md</code> it checks.</p>
+  </div>
+
+  <h2>Baseline = the same prompt, no <code>SKILL.md</code></h2>
+  <p>Driftproof runs each case twice: <strong>with_skill</strong> (the <code>SKILL.md</code> is the system prompt) and <strong>baseline</strong> (the identical prompt, no skill). A good case is one the base model gets <em>wrong or mediocre on its own</em> and <em>right with the skill</em> — that gap is the skill's value. A case both modes ace, or both flunk, measures the model, not the skill. (Caveat: skills that assume tools or context a bare baseline never had can show inflated lift — keep cases answerable from the prompt + skill text alone.)</p>
+
+  <h2>Anchor every rubric at 0.80</h2>
+  <p>Rubrics are graded by an LLM judge on a 0–1 scale. Anchor them so a <strong>fully correct, idiomatic answer scores 0.80</strong>, and reserve <strong>0.81–1.00 for exemplary work only</strong>. Subtract for concrete, named errors:</p>
+  <pre><code>SCORING ANCHOR (apply strictly): a fully correct, idiomatic response scores 0.80;
+award 0.81-0.90 only if it is ALSO exemplary (name the extra quality); 0.91-1.00
+only if flawless and exceptional (rare). Subtract ~0.2 for each &lt;specific error&gt;.
+If &lt;the skill's core requirement&gt; is missing, cap at 0.3.</code></pre>
+  <p>Anchoring at 0.80 (not 1.0) leaves <strong>headroom</strong> so a competent run is not pinned at the ceiling, and a later regression has room to show.</p>
+
+  <h2>Graded difficulty — avoid saturation</h2>
+  <p>Target a <strong>with_skill mean of roughly 0.7–0.9</strong>, not 1.0. A suite where every case scores 1.0 is <strong>saturated</strong>: it has no room to detect drift, because a model can get meaningfully worse and the number won't move. Mix a few straightforward cases with harder edge cases that have real headroom.</p>
+
+  <h2>Why sampling and bands exist</h2>
+  <div class="card">
+    <p>An LLM judge is <strong>noisy</strong>: grade the same answer twice and the score can differ. If a receipt carried one grade, judge noise could swing it by more than the drift you're trying to catch. So Driftproof <strong>judges each generation N times</strong> (default 5) and records the distribution — the per-case <strong>band</strong> is <code>mean ± stddev</code>. A verdict is claimed <strong>only</strong> when two <code>with_skill</code> bands are fully separated (<code>mean_new + sd_new &lt; mean_old − sd_old</code>, or symmetric), never on overlapping bands. The honest answer is allowed to be "nothing moved beyond the noise."</p>
+  </div>
+
+  <h2>The 0.05 effect floor</h2>
+  <p>Band separation alone is necessary but <strong>not sufficient</strong>. The judge quantizes scores to a coarse ~0.05–0.1 grid, so a confident grade often collapses to a zero-width "point band," and two point bands one quantum apart (0.60 vs 0.64) are technically separated yet mean no real change. So the mean must <strong>also</strong> move by at least the <strong>effect floor of 0.05</strong> (one judge-quantization step). Separated-but-trivial moves are reported as <em>within noise (below effect floor)</em>. Band separation <strong>plus</strong> a floor-sized delta — never either alone — triggers a verdict.</p>
+
+  <h2>What makes a case <em>unfair</em></h2>
+  <p>A case is unfair when it can fail for reasons the skill's author never signed up for:</p>
+  <ul>
+    <li><strong>Gotchas / trick questions</strong> — the "right" answer depends on a twist nothing in the <code>SKILL.md</code> prepares for.</li>
+    <li><strong>Undocumented expectations</strong> — the rubric demands behaviour the skill never claims. If the rubric asks for it, the <code>SKILL.md</code> must say it.</li>
+    <li><strong>Provider- or model-specific trivia</strong> — answers that hinge on one model's quirks, version-specific behaviour, or knowledge cutoffs rather than the skill's content.</li>
+    <li><strong>Saturated or degenerate cases</strong> — trivially passed by any model with or without the skill, or impossible for both. Either measures nothing.</li>
+    <li><strong>Ambiguous rubrics</strong> — if two careful graders would disagree on 0.80-vs-0.50, tighten the rubric with concrete, checkable criteria and explicit caps.</li>
+  </ul>
+  <p>If you wouldn't defend a case to the skill's author with "your own docs promise this," cut it.</p>
+
+  <h2>How to read the receipt</h2>
+  <ul>
+    <li><strong><code>comparison.delta</code></strong> — the skill's measured lift (<code>with_skill − baseline</code>). Read it through the effect floor: <code>≥ 0.05</code> is a real lift, <code>|delta| &lt; 0.05</code> is within noise.</li>
+    <li><strong><code>results.aggregates</code></strong> — <code>mean_score ± stddev</code> per mode. A with_skill mean of ~0.95+ across the suite suggests saturation.</li>
+    <li><strong>Per-case <code>outcome</code></strong> — <code>pass</code> / <code>fail</code>, or <strong><code>borderline</code></strong> when the threshold sits inside the band (the run can't confidently call it).</li>
+    <li><strong><code>run.judge</code></strong> — how grading was done (samples, temperature, surface). On <code>api</code> the judge is pinned to temperature 0; on <code>claude-cli</code> sampling is surface-controlled and the receipt says so.</li>
+    <li><strong>Hashes</strong> — <code>content_hash</code> / <code>suite_hash</code> / <code>receipt_hash</code> are reproducible; the self-hash makes a hand-edit detectable. <code>driftproof validate &lt;receipt&gt;</code> checks both.</li>
+  </ul>
+  <p>To compare two runs across a model release, <code>driftproof diff A.json B.json</code> applies the band + floor rule per case and summarizes the per-case verdicts into a headline.</p>
+
+  <h2>Contributing a suite for a public skill</h2>
+  <div class="card">
+    <p>Suites for public skills are <strong>welcome as PRs into <code>suites/</code></strong>. Driftproof does not commit third-party <code>SKILL.md</code> content — each skill is fetched at run time from a pinned commit and verified by sha256. So a contribution records provenance in <a href="https://github.com/driftproofhq/driftproof/blob/main/suites/manifest.json"><code>suites/manifest.json</code></a>: <code>slug</code>, <code>repo</code> + 40-hex <code>repo_sha</code> + pinned <code>raw_url</code>, 64-hex <code>content_sha256</code>, <code>author</code>, a permissive <code>license</code> (MIT / Apache-2.0 / BSD / ISC / CC-BY), and the documented <code>claims[]</code> your cases are grounded in. Put the suite at <code>suites/&lt;slug&gt;/evals.json</code> and run <code>npm run gate</code> before opening the PR.</p>
+  </div>
+
+  <p class="muted">Grounded in the docs, anchored at 0.80, graded for headroom, sampled and banded, floored at 0.05 — that is a suite whose verdict you can act on.</p>
+</main>
+<footer class="site"><span>Driftproof · Apache-2.0</span><span><a href="index.html">Home</a></span></footer>
+</body>
+</html>

@@ -1,0 +1,348 @@
+{
+  "schema_version": "0.2",
+  "skill": {
+    "name": "commit-work",
+    "version": "0.0.0",
+    "content_hash": "8f1f71640ab38a59c8e79c91623288b0cea09d508200c72dae4d08643d1ffe6c"
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "91ee92d7fc68edd7a7ff14e70f5efe047594ee2520f424d7b9b98005d1c1d0ec",
+    "case_count": 7
+  },
+  "run": {
+    "model_id": "claude-sonnet-4-6",
+    "model_release_date": "2026-02-17",
+    "surface": "claude-cli",
+    "runner_version": "0.2.0",
+    "date_utc": "2026-07-28T09:07:05.622Z",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "conventional-commit-single-change",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.846,
+        "mean": 0.846,
+        "stddev": 0.008944,
+        "samples": [
+          0.85,
+          0.85,
+          0.85,
+          0.83,
+          0.85
+        ],
+        "threshold": 0.7,
+        "reason": "Correct `type(scope): summary` format with proper blank-line separation; body clearly states WHAT (rate limiting after 5 failed attempts) and WHY (block password guessing); subject ~55 chars, no period; meets all baseline requirements with solid security motivation.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "01828e6cc0451ea887abec3370e671c8726efda7a12f886589b29121dda56cdb"
+        }
+      },
+      {
+        "id": "conventional-commit-single-change",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.266,
+        "mean": 0.266,
+        "stddev": 0.023022,
+        "samples": [
+          0.25,
+          0.28,
+          0.25,
+          0.3,
+          0.25
+        ],
+        "threshold": 0.7,
+        "reason": "Missing Conventional Commits type prefix; capped at 0.3. Blank line, WHAT, and WHY present but insufficient.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "01828e6cc0451ea887abec3370e671c8726efda7a12f886589b29121dda56cdb"
+        }
+      },
+      {
+        "id": "split-dependency-bump-vs-behavior",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.87,
+        "mean": 0.87,
+        "stddev": 0.012247,
+        "samples": [
+          0.87,
+          0.88,
+          0.87,
+          0.85,
+          0.88
+        ],
+        "threshold": 0.7,
+        "reason": "Correct two-commit split by logical boundary, explicit runnable staging commands for each, both messages proper Conventional Commits format with appropriate types (chore(deps), feat). No errors.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "b242b81a55d215abfc3e423b72d7512d6b68dd0b7e9742e5bfc0bd69d5e9cd14"
+        }
+      },
+      {
+        "id": "split-dependency-bump-vs-behavior",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.49,
+        "mean": 0.49,
+        "stddev": 0.022361,
+        "samples": [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.45
+        ],
+        "threshold": 0.7,
+        "reason": "Correct two-commit split and staging strategy, but both commit messages violate Conventional Commits requirement; need `type(scope):` prefix (e.g., `chore(deps):`, `feat(export):`).",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "b242b81a55d215abfc3e423b72d7512d6b68dd0b7e9742e5bfc0bd69d5e9cd14"
+        }
+      },
+      {
+        "id": "patch-stage-mixed-single-file",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.88,
+        "mean": 0.88,
+        "stddev": 0.015811,
+        "samples": [
+          0.9,
+          0.89,
+          0.86,
+          0.88,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly uses `git add -p` to stage only the rounding fix hunk, excludes formatting churn, uses proper Conventional Commits `fix` type, and exemplarily includes `git diff --cached` verification before committing.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "a9c6c87b1b4472c88c50eb19905f76e6c5baec7e7085bff75f26ca902edcd73c"
+        }
+      },
+      {
+        "id": "patch-stage-mixed-single-file",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.866,
+        "mean": 0.866,
+        "stddev": 0.011402,
+        "samples": [
+          0.85,
+          0.87,
+          0.88,
+          0.86,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Uses `git add -p` to patch-stage only the fix hunk, excludes formatting churn explicitly, valid Conventional Commits `fix` message, includes exemplary `git diff --cached` verification.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "a9c6c87b1b4472c88c50eb19905f76e6c5baec7e7085bff75f26ca902edcd73c"
+        }
+      },
+      {
+        "id": "split-feature-vs-refactor",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.86,
+        "mean": 0.86,
+        "stddev": 0.015811,
+        "samples": [
+          0.85,
+          0.88,
+          0.87,
+          0.84,
+          0.86
+        ],
+        "threshold": 0.7,
+        "reason": "Correct two-commit split with proper file grouping, appropriate types (`refactor`, `feat`), and Conventional Commits format. Exemplary justification for refactor-first ordering.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "dc2fc9253247ecd1f11df44859a9a3b4667ff7da672306663250fad041152768"
+        }
+      },
+      {
+        "id": "split-feature-vs-refactor",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.882,
+        "mean": 0.882,
+        "stddev": 0.016432,
+        "samples": [
+          0.9,
+          0.87,
+          0.9,
+          0.87,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Two commits with correct file grouping and Conventional Commits format (`refactor`/`feat`); exemplary ordering justification and pedagogical notes.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "dc2fc9253247ecd1f11df44859a9a3b4667ff7da672306663250fad041152768"
+        }
+      },
+      {
+        "id": "two-sentence-describability-test",
+        "mode": "with_skill",
+        "outcome": "borderline",
+        "score": 0.728,
+        "mean": 0.728,
+        "stddev": 0.029496,
+        "samples": [
+          0.73,
+          0.7,
+          0.7,
+          0.74,
+          0.77
+        ],
+        "threshold": 0.7,
+        "reason": "Invokes two-sentence test correctly, splits logically, uses valid Conventional Commits; only provides 3 of 4 expected commits (whitespace dropped intentionally).",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8c1038e086e5a980c89e61a7248f4408e6b44078c08eddb5b9f96982ce14ebaf"
+        }
+      },
+      {
+        "id": "two-sentence-describability-test",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.772,
+        "mean": 0.772,
+        "stddev": 0.021679,
+        "samples": [
+          0.8,
+          0.74,
+          0.78,
+          0.77,
+          0.77
+        ],
+        "threshold": 0.7,
+        "reason": "Applies 1-2 sentence test clearly, identifies failure reason, splits into logically separate commits with proper Conventional Commits types. Hedges on whitespace commit instead of decisively presenting four separate commits.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8c1038e086e5a980c89e61a7248f4408e6b44078c08eddb5b9f96982ce14ebaf"
+        }
+      },
+      {
+        "id": "review-cached-catch-secret-and-debug",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.834,
+        "mean": 0.834,
+        "stddev": 0.050299,
+        "samples": [
+          0.86,
+          0.83,
+          0.75,
+          0.85,
+          0.88
+        ],
+        "threshold": 0.7,
+        "reason": "Identifies both security issues (hardcoded secret, card-printing log), removes both via corrected code and deletion, verifies via `git diff --cached` grep, and provides proper Conventional Commits message with exemplary env-var replacement pattern.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "0b6bd2a77e4304635e80d888977a8b13e1f00116b5ac95cd36df7987ee491b96"
+        }
+      },
+      {
+        "id": "review-cached-catch-secret-and-debug",
+        "mode": "baseline",
+        "outcome": "borderline",
+        "score": 0.718,
+        "mean": 0.718,
+        "stddev": 0.120291,
+        "samples": [
+          0.6,
+          0.65,
+          0.88,
+          0.81,
+          0.65
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly catches and removes both security issues with exemplary env-var replacement; fails Conventional Commits format requirement (`feat:` prefix missing from message).",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "0b6bd2a77e4304635e80d888977a8b13e1f00116b5ac95cd36df7987ee491b96"
+        }
+      },
+      {
+        "id": "full-workflow-multi-concern-diff",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.884,
+        "mean": 0.884,
+        "stddev": 0.020736,
+        "samples": [
+          0.9,
+          0.85,
+          0.88,
+          0.89,
+          0.9
+        ],
+        "threshold": 0.7,
+        "reason": "Fully correct: correctly patch-stages mixed orders.js file to separate fix from feature; produces four cleanly-scoped, well-typed commits; includes clear order rationale and verification via git diff --cached.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "fc3714bf7f57c9bff25e0c05cb7eb5cf9693d98e801c57ea028817ddaf84ab5a"
+        }
+      },
+      {
+        "id": "full-workflow-multi-concern-diff",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.888,
+        "mean": 0.888,
+        "stddev": 0.014832,
+        "samples": [
+          0.89,
+          0.91,
+          0.88,
+          0.89,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Fully meets rubric: patch-stages mixed file via git add -p, produces four logically distinct Conventional Commits with correct types, provides sensible order with rationales, confirms each staged commit via git diff --staged. Exemplary clarity and practical guidance.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "fc3714bf7f57c9bff25e0c05cb7eb5cf9693d98e801c57ea028817ddaf84ab5a"
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 7,
+        "pass_count": 6,
+        "borderline_count": 1,
+        "mean_score": 0.843143,
+        "stddev": 0.053825
+      },
+      "baseline": {
+        "case_count": 7,
+        "pass_count": 4,
+        "borderline_count": 1,
+        "mean_score": 0.697429,
+        "stddev": 0.235917
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.843143,
+    "baseline_score": 0.697429,
+    "delta": 0.145714,
+    "delta_uncertainty": 0.241979
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "dc46c135079ce8744d8505245c2f2fc98dbcc35b5b5b1cedfb0b16dcdd83f560"
+}

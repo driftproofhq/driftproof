@@ -1,0 +1,19 @@
+{
+  "_comment": "Driftproof model registry. The runner resolves --models ids against this list; an unknown id still runs but its receipt is marked registry:\"unregistered\" and its cost is estimated with the conservative default price in lib/models.js. Prices are STANDARD first-party USD per 1,000,000 tokens (input/output) from platform.claude.com (July 2026); Sonnet 5's introductory rate is deliberately NOT used so projections stay an upper bound. `released` is best-effort (spec RECEIPT.md open question #4): dates derived from a dated model id or Anthropic launch posts, else null. `tier` drives nothing but reporting; `judge_eligible` encodes the fixed-judge policy (see docs/judge-policy.html) — only the cheap Haiku judge is eligible. The release trigger (scripts/release-watch.js) appends auto-discovered ids here with auto_added:true.",
+  "registry_version": "1.0",
+  "provider": "anthropic",
+  "default_price_note": "Unregistered ids are costed at the most expensive known tier (Fable, $10/$50) — a budget guard must never under-estimate. See lib/models.js DEFAULT_PRICE.",
+  "models": [
+    { "id": "claude-fable-5",              "family": "fable",  "provider": "anthropic", "released": null,         "input_price": 10.0, "output_price": 50.0, "tier": "frontier", "judge_eligible": false },
+    { "id": "claude-opus-5",               "family": "opus",   "provider": "anthropic", "released": null,         "input_price": 5.0,  "output_price": 25.0, "tier": "frontier", "judge_eligible": false },
+    { "id": "claude-opus-4-8",             "family": "opus",   "provider": "anthropic", "released": null,         "input_price": 5.0,  "output_price": 25.0, "tier": "frontier", "judge_eligible": false },
+    { "id": "claude-opus-4-7",             "family": "opus",   "provider": "anthropic", "released": null,         "input_price": 5.0,  "output_price": 25.0, "tier": "frontier", "judge_eligible": false },
+    { "id": "claude-opus-4-6",             "family": "opus",   "provider": "anthropic", "released": null,         "input_price": 5.0,  "output_price": 25.0, "tier": "frontier", "judge_eligible": false },
+    { "id": "claude-opus-4-5-20251101",    "family": "opus",   "provider": "anthropic", "released": "2025-11-01", "input_price": 5.0,  "output_price": 25.0, "tier": "frontier", "judge_eligible": false },
+    { "id": "claude-sonnet-5",             "family": "sonnet", "provider": "anthropic", "released": "2026-06-30", "input_price": 3.0,  "output_price": 15.0, "tier": "standard", "judge_eligible": false },
+    { "id": "claude-sonnet-4-6",           "family": "sonnet", "provider": "anthropic", "released": "2026-02-17", "input_price": 3.0,  "output_price": 15.0, "tier": "standard", "judge_eligible": false },
+    { "id": "claude-sonnet-4-5-20250929",  "family": "sonnet", "provider": "anthropic", "released": "2025-09-29", "input_price": 3.0,  "output_price": 15.0, "tier": "standard", "judge_eligible": false },
+    { "id": "claude-haiku-4-5",            "family": "haiku",  "provider": "anthropic", "released": "2025-10-01", "input_price": 1.0,  "output_price": 5.0,  "tier": "cheap",    "judge_eligible": true },
+    { "id": "claude-haiku-4-5-20251001",   "family": "haiku",  "provider": "anthropic", "released": "2025-10-01", "input_price": 1.0,  "output_price": 5.0,  "tier": "cheap",    "judge_eligible": true }
+  ]
+}
