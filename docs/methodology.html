@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driftproof — methodology</title>
+<meta name="description" content="How Driftproof turns a skill's eval suite into an honest, band-based verdict: sampled judging, the band + effect-floor drift rule, deterministic post-checks, the value-per-token axis, and the two-axis provider model.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a class="brand" href="index.html">Driftproof</a><nav><a href="index.html">Home</a><a href="neutrality.html">Neutrality</a><a href="judge-policy.html">Judge policy</a><a href="https://github.com/driftproofhq/driftproof">GitHub</a></nav></header>
+<main class="hero">
+  <h1>Methodology</h1>
+  <p class="lede">How Driftproof turns a skill's own eval suite into a verdict you can trust — and the newer axes (deterministic post-checks, value-per-token) layered on top. The full contract is the <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md">receipt spec</a>; this is the human companion.</p>
+
+  <h2>The core: with vs without, sampled, banded</h2>
+  <div class="card">
+    <p>For each eval case, Driftproof runs the model <strong>with</strong> the skill (SKILL.md supplied) and <strong>without</strong> it (bare baseline). Each response is graded by the fixed judge <strong>several times</strong> (n = 5), so a case carries a <em>mean ± stddev</em> band, not one fragile number. The skill's <strong>lift (delta)</strong> is the with-skill mean minus the baseline mean.</p>
+  </div>
+
+  <h2>The drift verdict rule (anti-false-positive)</h2>
+  <div class="card">
+    <p>Diffing two receipts yields a per-case verdict. A case counts as <strong>regressed</strong> or <strong>improved</strong> only when <strong>both</strong> conditions hold:</p>
+    <ul class="method">
+      <li><strong>Band separation.</strong> The two <code>with_skill</code> confidence bands (mean ± stddev over judge samples) do <em>not</em> overlap.</li>
+      <li><strong>Effect floor.</strong> The mean also moves by at least <strong>0.05</strong> — one judge quantization step. A separated-but-tiny move is downgraded to <em>within noise (below effect floor)</em>.</li>
+    </ul>
+    <p>Bands that touch or overlap, or moves below the floor, are reported as <em>within noise</em> — never as drift. A tool that cries wolf on judge noise is worse than useless, so band separation <strong>plus</strong> a real-sized delta, not either alone, is what triggers a verdict. The judge is deliberately fixed and cheap; see the <a href="judge-policy.html">judge policy</a>.</p>
+  </div>
+
+  <h2>Deterministic post-checks (supplementary column)</h2>
+  <div class="card">
+    <p>A suite case may declare optional <code>checks[]</code> — structural or regex assertions on the model output that simply hold or don't, with no LLM judgment (e.g. "the output contains a Conventional-Commits subject line", "the output mentions the 429 status the task described"). These run <strong>alongside</strong> the judge and are reported as a <strong>separate column</strong>.</p>
+    <p><strong>Post-checks are supplementary evidence only.</strong> They are <em>not</em> folded into the case outcome or the band-overlap verdict — they corroborate or contradict the judge with a cheap, unambiguous signal, they do not replace it. Authors add them where they are natural and in-text-groundable; they are never required, and a suite without them is unaffected. Each result is recorded in the receipt as <code>{ name, kind, pass }</code> (spec v0.3.1).</p>
+  </div>
+
+  <h2>The value-per-token axis</h2>
+  <div class="card">
+    <p>A skill is not free: its SKILL.md is prepended to every generation. A +0.10 lift for 400 skill tokens is a very different proposition from +0.10 for 6,000. So Driftproof reports each skill's lift <strong>both raw and normalized per 1,000 skill tokens</strong>: <code>delta ÷ (skill_tokens ÷ 1000)</code>.</p>
+    <p><strong>Method.</strong> <code>skill_tokens</code> is a coarse <code>ceil(chars ÷ 4)</code> estimate of the SKILL.md size — the standard rough proxy for English text, <em>not</em> a model tokenizer (no <code>tiktoken</code> dependency). It is a consistent yardstick for comparing skills to one another, not a billing figure, and it is recorded in the receipt (<code>skill.tokens</code>, spec v0.3.1). Value-per-token surfaces the skills that earn their context budget.</p>
+  </div>
+
+  <h2>Providers, surfaces, and neutrality</h2>
+  <div class="card">
+    <p>Driftproof's provider layer is <strong>two-axis</strong>: provider (anthropic / openai) × surface (api / cli), i.e. four concrete lanes. The same suites and the same fixed judge run across providers; only the target model varies. Every receipt records the <code>provider</code> and <code>surface</code> it ran on, the API surface is preferred for published runs, and a subscription CLI surface is disclosed whenever used.</p>
+    <p>Because one Claude-family judge grades every provider's output, a cross-provider report leads with the with/without <strong>delta</strong> — which cancels most judge style-affinity — and treats absolute cross-provider scores as context, never a ranking. Report #002 additionally holds the surface <em>type</em> constant: both substrates run on the vendor's own first-party subscription CLI (<code>claude -p</code> and <code>codex exec</code>), with each surface's harness overhead disclosed (Codex prepends a fixed ~12–15k-token preamble; <code>claude -p</code> a smaller first-party context). The full policy is on the <a href="neutrality.html">neutrality page</a>.</p>
+  </div>
+
+  <p class="muted">Sample the judge, band the scores, require separation <em>and</em> a real-sized effect, add cheap deterministic checks on the side, normalize lift by the tokens it costs, and hold everything constant except the model. That is the method.</p>
+</main>
+<footer class="site"><span>Driftproof · Apache-2.0</span><span><a href="neutrality.html">Neutrality</a></span></footer>
+</body>
+</html>

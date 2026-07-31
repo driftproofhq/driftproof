@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driftproof — continuous verification of agent skills</title>
+<meta name="description" content="Driftproof re-runs agent-skill evals across model versions and reports honest, band-based verdicts. Verdicts age because the substrate moves.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a class="brand" href="index.html">Driftproof</a><nav><a href="reports/002/index.html">Report #002</a><a href="reports/001/index.html">Report #001</a><a href="methodology.html">Methodology</a><a href="neutrality.html">Neutrality</a><a href="authoring.html">Authoring</a><a href="judge-policy.html">Judge policy</a><a href="https://github.com/driftproofhq/driftproof">GitHub</a></nav></header>
+<main class="hero">
+  <h1>A skill that helped last month may not help today.</h1>
+  <p>Skills are the SKILL.md files that teach AI agents your conventions: code-review discipline, commit style, writing rules. Tens of thousands are shared publicly, and almost none are re-tested when the model underneath them changes.</p>
+  <p class="lede">Driftproof re-runs an agent skill's own eval suite across model versions, samples the judge so every score carries a confidence band, and only claims a regression when the bands actually separate. The phenomenon is the story: <strong>verdicts age because the substrate moves.</strong></p>
+
+  <p>
+    <a class="cta" href="reports/002/index.html">Read Report #002 →</a>
+    <a class="cta secondary" href="https://github.com/driftproofhq/driftproof">View on GitHub</a>
+  </p>
+
+  <h2>What it does</h2>
+  <div class="card">
+    <p>For each skill, Driftproof runs its eval suite <strong>with</strong> the skill and <strong>without</strong> it, on two model versions. Each response is judged several times, so a case carries a <em>mean ± stddev</em> band rather than one fragile number. Diffing two runs yields a <strong>drift report</strong>: a case only counts as regressed or improved when its two confidence bands do <em>not</em> overlap. Everything is recorded in a signed <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md">receipt</a> — a dated, hash-verified record anyone can re-run — whose every hash is reproducible.</p>
+  </div>
+
+  <h2>Why band-based</h2>
+  <p>An LLM judge is noisy. A tool that cries wolf on that noise is worse than useless. Driftproof's core rule is that a verdict is claimed <strong>only</strong> on non-overlapping bands — so the honest answer is allowed to be "nothing moved beyond the noise." That restraint is the point.</p>
+
+  <h2>Latest report</h2>
+  <div class="card">
+    <p>Does a skill's benefit survive a change of <em>substrate</em>? We ran the same 10 eval suites on two different models behind two different first-party vendor CLIs — Sonnet 5 (<code>claude -p</code>) and GPT-5.6 (<code>codex exec</code>) — with the same fixed judge, and asked whether each skill's with/without lift holds on both. <strong><a href="reports/002/index.html">Report #002</a></strong>: across 10 skills, <strong>3 durable, 4 substrate-dependent, 2 regressed, 1 no-effect</strong> — durability is not a given, and the same skill can help on one substrate and not another. Absolute cross-provider scores are context, never a ranking.</p>
+    <p class="muted">Previously — <strong><a href="reports/001/index.html">Report #001</a></strong>: do skill verdicts hold across a Sonnet model release? Ten public, text-representable agent skills on a current-vs-previous Sonnet pair; 9 of 10 moved beyond noise (3 regressed, 3 improved, 3 mixed).</p>
+    <p class="muted">Driftproof publishes two report types. A <strong>release drift report</strong> (#001) asks whether a skill's verdict holds when the <em>model version</em> underneath it changes; a <strong>substrate durability report</strong> (#002) asks whether a skill's benefit holds across a change of <em>substrate</em> — a different model behind a different vendor CLI. Both use the same band-based, floor-gated rule; they differ only in what moves underneath the skill.</p>
+  </div>
+
+  <h2>Run it on your own skill</h2>
+  <div class="card">
+    <p>You need Node ≥ 22 and an <code>ANTHROPIC_API_KEY</code>. From "found the repo" to a receipt for your own skill is about five steps:</p>
+    <pre><code>npx driftproof init my-skill          # scaffold SKILL.md + evals/evals.json + .driftproofrc
+# edit the 3 example cases so each is grounded in a claim your SKILL.md makes
+export CLAUDE_PROVIDER=api
+read -rsp "Anthropic API key: " ANTHROPIC_API_KEY &amp;&amp; export ANTHROPIC_API_KEY
+npx driftproof run my-skill --models claude-haiku-4-5 --max-usd 2
+cat receipts/*.summary.md              # read the receipt + human summary</code></pre>
+    <p>The <strong>verdict</strong> answers "does the skill still help on this model?" — <code>PASSED</code> when the with-skill score beats the baseline by at least the effect floor, <code>NO_EFFECT</code> when it doesn't, <code>REGRESSED</code> when the skill hurts. Each case is judged several times so it carries a <em>mean ± stddev</em> band, and a case only counts as moved when its bands don't overlap <em>and</em> the mean shifts past the 0.05 effect floor. Full walkthrough in the <a href="https://github.com/driftproofhq/driftproof#quickstart--receipt-for-your-own-skill-in-10-minutes">README quickstart</a>; how to write a fair suite in the <a href="authoring.html">authoring guide</a>.</p>
+  </div>
+
+  <h2>Continuous verification</h2>
+  <div class="card">
+    <p>Wire drift detection into a repo with the <a href="https://github.com/driftproofhq/driftproof#continuous-verification-in-ci-github-action--badge">GitHub Action</a> (<code>uses: driftproofhq/driftproof@v0.3.0</code>): it re-runs the suite on every push, uploads the receipt, and fails the job if the skill <em>regressed</em>. <code>driftproof badge</code> turns any receipt into a shields.io badge — the one below is generated from the bundled example's own receipt.</p>
+    <p><img alt="driftproof" src="https://img.shields.io/endpoint?url=https://driftproofhq.com/badges/commit-message-conventions.json"></p>
+  </div>
+
+  <h2>Roadmap</h2>
+  <ul>
+    <li>Monthly drift reports, plus a run triggered on each new model release.</li>
+    <li>Signed receipts — a key signature over the canonical form, so a receipt can be <em>trusted</em>, not just read.</li>
+    <li>A sandboxed-execution harness for tool-execution skills (document renderers, diagram/asset generators) that Report #001 scopes out.</li>
+  </ul>
+</main>
+<footer class="site"><p>Driftproof · Apache-2.0 · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p></footer>
+</body>
+</html>

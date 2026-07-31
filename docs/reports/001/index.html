@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driftproof Report #001</title>
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<header class="site"><a class="brand" href="../../index.html">Driftproof</a><nav><a href="https://github.com/driftproofhq/driftproof">GitHub</a></nav></header>
+<main class="report">
+  <h1>Report #001 — do skill verdicts hold across a model release?</h1>
+  <p class="report-type">Release drift report</p>
+  <p class="version-note" style="margin:0 0 1rem;padding:.5rem .75rem;border-left:3px solid #62C7EF;background:rgba(98,199,239,.08);font-size:.95rem"><strong>v1.2</strong> (2026-07-30) — this edition supersedes v1.1. An in-text grounding policy was codified and applied across all 10 suites; imported rubric criteria in <code>git-workflow-and-versioning</code> and <code>commit-work</code> were amended and those two suites re-run. See <a href="#amendments">Amendments</a>.</p>
+  <p class="pair"><strong>Model pair:</strong> <code>claude-sonnet-5</code> (released 2026-06-30) vs <code>claude-sonnet-4-6</code> (released 2026-02-17)<br>
+  <strong>Judge:</strong> <code>claude-haiku-4-5</code>, 5 samples/case (surface-controlled) · <strong>Surface:</strong> claude-cli · <strong>Skills:</strong> 10</p>
+
+  <div class="headline">
+    <p class="big"><strong>9 of 10 skills moved beyond noise</strong> on this model pair.</p>
+    <p>2 regressed · 3 improved · 4 mixed · 1 within noise — across 9 case regression(s) and 8 case improvement(s). A verdict is claimed only when BOTH (1) two <code>with_skill</code> bands (mean ± stddev over judge samples) do <em>not</em> overlap AND (2) the mean moves at least the <strong>0.05 effect floor</strong>; bands that overlap, or separate by less than the floor, are reported as <em>within noise</em>, never as drift.</p>
+  </div>
+
+  <h2>Per-skill summary</h2>
+  <table class="summary"><thead><tr><th>skill</th><th>source</th><th>with_skill (old → new)</th><th>baseline (old → new)</th><th>verdict</th></tr></thead>
+  <tbody>
+      <tr>
+        <td><code>code-review-and-quality</code></td>
+        <td><a href="https://github.com/addyosmani/agent-skills">addyosmani</a> · MIT</td>
+        <td>0.869 ± 0.025 → 0.854 ± 0.031</td>
+        <td>0.824 → 0.836</td>
+        <td><span class="v v-noise">WITHIN NOISE</span></td>
+      </tr>
+      <tr>
+        <td><code>git-workflow-and-versioning</code></td>
+        <td><a href="https://github.com/addyosmani/agent-skills">addyosmani</a> · MIT</td>
+        <td>0.868 ± 0.025 → 0.834 ± 0.104</td>
+        <td>0.788 → 0.859</td>
+        <td><span class="v v-mixed">MIXED</span></td>
+      </tr>
+      <tr>
+        <td><code>documentation-and-adrs</code></td>
+        <td><a href="https://github.com/addyosmani/agent-skills">addyosmani</a> · MIT</td>
+        <td>0.825 ± 0.100 → 0.706 ± 0.297</td>
+        <td>0.809 → 0.720</td>
+        <td><span class="v v-mixed">MIXED</span></td>
+      </tr>
+      <tr>
+        <td><code>commit-work</code></td>
+        <td><a href="https://github.com/softaworks/agent-toolkit">Softaworks</a> · MIT</td>
+        <td>0.825 ± 0.082 → 0.849 ± 0.028</td>
+        <td>0.818 → 0.766</td>
+        <td><span class="v v-improved">IMPROVED (1)</span></td>
+      </tr>
+      <tr>
+        <td><code>writing-clearly-and-concisely</code></td>
+        <td><a href="https://github.com/softaworks/agent-toolkit">Softaworks</a> · MIT</td>
+        <td>0.864 ± 0.016 → 0.841 ± 0.064</td>
+        <td>0.839 → 0.813</td>
+        <td><span class="v v-regressed">REGRESSED (1)</span></td>
+      </tr>
+      <tr>
+        <td><code>crafting-effective-readmes</code></td>
+        <td><a href="https://github.com/softaworks/agent-toolkit">Softaworks</a> · MIT</td>
+        <td>0.870 ± 0.015 → 0.804 ± 0.192</td>
+        <td>0.849 → 0.811</td>
+        <td><span class="v v-regressed">REGRESSED (2)</span></td>
+      </tr>
+      <tr>
+        <td><code>naming-analyzer</code></td>
+        <td><a href="https://github.com/softaworks/agent-toolkit">Softaworks</a> · MIT</td>
+        <td>0.817 ± 0.077 → 0.839 ± 0.026</td>
+        <td>0.703 → 0.757</td>
+        <td><span class="v v-mixed">MIXED</span></td>
+      </tr>
+      <tr>
+        <td><code>requesting-code-review</code></td>
+        <td><a href="https://github.com/obra/superpowers">Jesse Vincent (obra)</a> · MIT</td>
+        <td>0.668 ± 0.249 → 0.719 ± 0.226</td>
+        <td>0.540 → 0.617</td>
+        <td><span class="v v-improved">IMPROVED (1)</span></td>
+      </tr>
+      <tr>
+        <td><code>writing-plans</code></td>
+        <td><a href="https://github.com/obra/superpowers">Jesse Vincent (obra)</a> · MIT</td>
+        <td>0.811 ± 0.089 → 0.785 ± 0.145</td>
+        <td>0.576 → 0.675</td>
+        <td><span class="v v-mixed">MIXED</span></td>
+      </tr>
+      <tr>
+        <td><code>skill-creator</code></td>
+        <td><a href="https://github.com/anthropics/skills">Anthropic, PBC</a> · Apache-2.0</td>
+        <td>0.842 ± 0.095 → 0.875 ± 0.012</td>
+        <td>0.828 → 0.774</td>
+        <td><span class="v v-improved">IMPROVED (1)</span></td>
+      </tr>
+  </tbody></table>
+
+    <section class="skill" id="code-review-and-quality">
+      <h3><code>code-review-and-quality</code> — Code Review and Quality <span class="v v-noise">WITHIN NOISE</span></h3>
+      <p>A five-axis code-review framework and severity-labeling discipline for assessing changes before merge.</p>
+      <p class="src">Source: <a href="https://github.com/addyosmani/agent-skills">https://github.com/addyosmani/agent-skills</a> @ <code>7829ffd90d</code> · License: MIT · Author: addyosmani<br>
+      Receipts: <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/code-review-and-quality__claude-sonnet-4-6.json">old</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/code-review-and-quality__claude-sonnet-5.json">new</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/code-review-and-quality__drift.md">drift</a></p>
+      <table class="agg"><thead><tr><th></th><th><code>claude-sonnet-4-6</code> (old)</th><th><code>claude-sonnet-5</code> (new)</th></tr></thead>
+      <tbody>
+        <tr><td>with_skill (mean ± sd)</td><td>0.869 ± 0.025</td><td>0.854 ± 0.031</td></tr>
+        <tr><td>baseline (mean ± sd)</td><td>0.824 ± 0.081</td><td>0.836 ± 0.051</td></tr>
+      </tbody></table>
+      <table class="cases"><thead><tr><th>case</th><th>old (mean ± sd)</th><th>new (mean ± sd)</th><th>Δ</th><th>verdict</th></tr></thead>
+      <tbody>
+        <tr><td><code>severity-labeled-findings</code></td><td>0.908 ± 0.042</td><td>0.794 ± 0.091</td><td>-0.114</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>security-axis-sql-injection</code></td><td>0.882 ± 0.008</td><td>0.858 ± 0.008</td><td>-0.024</td><td><span class="v v-noise">within noise (below floor)</span></td></tr>
+        <tr><td><code>commit-message-imperative-body</code></td><td>0.862 ± 0.013</td><td>0.856 ± 0.009</td><td>-0.006</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>reject-clean-it-up-later</code></td><td>0.866 ± 0.015</td><td>0.868 ± 0.008</td><td>+0.002</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>oversized-change-split</code></td><td>0.856 ± 0.015</td><td>0.860 ± 0.010</td><td>+0.004</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>propose-structural-remedy</code></td><td>0.878 ± 0.019</td><td>0.896 ± 0.022</td><td>+0.018</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>approve-when-improves-health</code></td><td>0.828 ± 0.028</td><td>0.848 ± 0.026</td><td>+0.020</td><td><span class="v v-noise">within noise</span></td></tr>
+      </tbody></table>
+    </section>
+    <section class="skill" id="git-workflow-and-versioning">
+      <h3><code>git-workflow-and-versioning</code> — Git Workflow and Versioning <span class="v v-mixed">MIXED</span></h3>
+      <p>Trunk-based git discipline, atomic commits, conventional commit types, and semantic-versioning / changelog conventions.</p>
+      <p class="src">Source: <a href="https://github.com/addyosmani/agent-skills">https://github.com/addyosmani/agent-skills</a> @ <code>7829ffd90d</code> · License: MIT · Author: addyosmani<br>
+      Receipts: <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/git-workflow-and-versioning__claude-sonnet-4-6.json">old</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/git-workflow-and-versioning__claude-sonnet-5.json">new</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/git-workflow-and-versioning__drift.md">drift</a></p>
+      <table class="agg"><thead><tr><th></th><th><code>claude-sonnet-4-6</code> (old)</th><th><code>claude-sonnet-5</code> (new)</th></tr></thead>
+      <tbody>
+        <tr><td>with_skill (mean ± sd)</td><td>0.868 ± 0.025</td><td>0.834 ± 0.104</td></tr>
+        <tr><td>baseline (mean ± sd)</td><td>0.788 ± 0.194</td><td>0.859 ± 0.024</td></tr>
+      </tbody></table>
+      <table class="cases"><thead><tr><th>case</th><th>old (mean ± sd)</th><th>new (mean ± sd)</th><th>Δ</th><th>verdict</th></tr></thead>
+      <tbody>
+        <tr><td><code>commit-message-conventional-type</code></td><td>0.856 ± 0.013</td><td>0.600 ± 0.000</td><td>-0.256</td><td><span class="v v-regressed">regressed</span></td></tr>
+        <tr><td><code>release-cut-version-tag-changelog</code></td><td>0.910 ± 0.017</td><td>0.888 ± 0.011</td><td>-0.022</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>changelog-curated-by-impact</code></td><td>0.888 ± 0.029</td><td>0.876 ± 0.011</td><td>-0.012</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>split-into-atomic-commits</code></td><td>0.868 ± 0.008</td><td>0.858 ± 0.011</td><td>-0.010</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>semver-clean-bump</code></td><td>0.860 ± 0.012</td><td>0.856 ± 0.009</td><td>-0.004</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>trunk-based-short-lived-branches</code></td><td>0.864 ± 0.023</td><td>0.868 ± 0.013</td><td>+0.004</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>semver-hidden-breaking-change</code></td><td>0.832 ± 0.020</td><td>0.894 ± 0.022</td><td>+0.062</td><td><span class="v v-improved">improved</span></td></tr>
+      </tbody></table>
+    </section>
+    <section class="skill" id="documentation-and-adrs">
+      <h3><code>documentation-and-adrs</code> — Documentation and ADRs <span class="v v-mixed">MIXED</span></h3>
+      <p>When and how to write Architecture Decision Records, inline comments, and API docs; document the why.</p>
+      <p class="src">Source: <a href="https://github.com/addyosmani/agent-skills">https://github.com/addyosmani/agent-skills</a> @ <code>7829ffd90d</code> · License: MIT · Author: addyosmani<br>
+      Receipts: <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/documentation-and-adrs__claude-sonnet-4-6.json">old</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/documentation-and-adrs__claude-sonnet-5.json">new</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/documentation-and-adrs__drift.md">drift</a></p>
+      <table class="agg"><thead><tr><th></th><th><code>claude-sonnet-4-6</code> (old)</th><th><code>claude-sonnet-5</code> (new)</th></tr></thead>
+      <tbody>
+        <tr><td>with_skill (mean ± sd)</td><td>0.825 ± 0.100</td><td>0.706 ± 0.297</td></tr>
+        <tr><td>baseline (mean ± sd)</td><td>0.809 ± 0.100</td><td>0.720 ± 0.293</td></tr>
+      </tbody></table>
+      <table class="cases"><thead><tr><th>case</th><th>old (mean ± sd)</th><th>new (mean ± sd)</th><th>Δ</th><th>verdict</th></tr></thead>
+      <tbody>
+        <tr><td><code>match-existing-adr-convention</code></td><td>0.858 ± 0.016</td><td>0.076 ± 0.043</td><td>-0.782</td><td><span class="v v-regressed">regressed</span></td></tr>
+        <tr><td><code>surface-conflicting-adr-conventions</code></td><td>0.850 ± 0.025</td><td>0.582 ± 0.149</td><td>-0.268</td><td><span class="v v-regressed">regressed</span></td></tr>
+        <tr><td><code>supersede-not-delete-old-adr</code></td><td>0.886 ± 0.013</td><td>0.876 ± 0.005</td><td>-0.010</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>comment-intent-not-implementation</code></td><td>0.860 ± 0.014</td><td>0.864 ± 0.017</td><td>+0.004</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>document-why-not-what-rewrite</code></td><td>0.860 ± 0.010</td><td>0.868 ± 0.013</td><td>+0.008</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>adr-for-costly-to-reverse-decision</code></td><td>0.864 ± 0.018</td><td>0.876 ± 0.005</td><td>+0.012</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>document-public-api-function</code></td><td>0.600 ± 0.000</td><td>0.800 ± 0.000</td><td>+0.200</td><td><span class="v v-improved">improved</span></td></tr>
+      </tbody></table>
+    </section>
+    <section class="skill" id="commit-work">
+      <h3><code>commit-work</code> — Commit Work <span class="v v-improved">IMPROVED (1)</span></h3>
+      <p>Producing high-quality git commits: staging discipline, logical splitting, Conventional Commits messages.</p>
+      <p class="src">Source: <a href="https://github.com/softaworks/agent-toolkit">https://github.com/softaworks/agent-toolkit</a> @ <code>3027f20f31</code> · License: MIT · Author: Softaworks<br>
+      Receipts: <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/commit-work__claude-sonnet-4-6.json">old</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/commit-work__claude-sonnet-5.json">new</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/commit-work__drift.md">drift</a></p>
+      <table class="agg"><thead><tr><th></th><th><code>claude-sonnet-4-6</code> (old)</th><th><code>claude-sonnet-5</code> (new)</th></tr></thead>
+      <tbody>
+        <tr><td>with_skill (mean ± sd)</td><td>0.825 ± 0.082</td><td>0.849 ± 0.028</td></tr>
+        <tr><td>baseline (mean ± sd)</td><td>0.818 ± 0.063</td><td>0.766 ± 0.222</td></tr>
+      </tbody></table>
+      <table class="cases"><thead><tr><th>case</th><th>old (mean ± sd)</th><th>new (mean ± sd)</th><th>Δ</th><th>verdict</th></tr></thead>
+      <tbody>
+        <tr><td><code>full-workflow-multi-concern-diff</code></td><td>0.906 ± 0.034</td><td>0.876 ± 0.011</td><td>-0.030</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>patch-stage-mixed-single-file</code></td><td>0.872 ± 0.008</td><td>0.860 ± 0.010</td><td>-0.012</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>review-cached-catch-secret-and-debug</code></td><td>0.852 ± 0.054</td><td>0.844 ± 0.092</td><td>-0.008</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>split-dependency-bump-vs-behavior</code></td><td>0.872 ± 0.004</td><td>0.866 ± 0.015</td><td>-0.006</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>split-feature-vs-refactor</code></td><td>0.852 ± 0.011</td><td>0.854 ± 0.011</td><td>+0.002</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>conventional-commit-single-change</code></td><td>0.738 ± 0.069</td><td>0.790 ± 0.041</td><td>+0.052</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>two-sentence-describability-test</code></td><td>0.682 ± 0.054</td><td>0.850 ± 0.023</td><td>+0.168</td><td><span class="v v-improved">improved</span></td></tr>
+      </tbody></table>
+    </section>
+    <section class="skill" id="writing-clearly-and-concisely">
+      <h3><code>writing-clearly-and-concisely</code> — Writing Clearly and Concisely <span class="v v-regressed">REGRESSED (1)</span></h3>
+      <p>Strunk-style prose rules for docs, commit / error messages, reports, and UI text.</p>
+      <p class="src">Source: <a href="https://github.com/softaworks/agent-toolkit">https://github.com/softaworks/agent-toolkit</a> @ <code>3027f20f31</code> · License: MIT · Author: Softaworks<br>
+      Receipts: <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/writing-clearly-and-concisely__claude-sonnet-4-6.json">old</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/writing-clearly-and-concisely__claude-sonnet-5.json">new</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/writing-clearly-and-concisely__drift.md">drift</a></p>
+      <table class="agg"><thead><tr><th></th><th><code>claude-sonnet-4-6</code> (old)</th><th><code>claude-sonnet-5</code> (new)</th></tr></thead>
+      <tbody>
+        <tr><td>with_skill (mean ± sd)</td><td>0.864 ± 0.016</td><td>0.841 ± 0.064</td></tr>
+        <tr><td>baseline (mean ± sd)</td><td>0.839 ± 0.044</td><td>0.813 ± 0.100</td></tr>
+      </tbody></table>
+      <table class="cases"><thead><tr><th>case</th><th>old (mean ± sd)</th><th>new (mean ± sd)</th><th>Δ</th><th>verdict</th></tr></thead>
+      <tbody>
+        <tr><td><code>concrete-language-incident-summary</code></td><td>0.862 ± 0.022</td><td>0.710 ± 0.073</td><td>-0.152</td><td><span class="v v-regressed">regressed</span></td></tr>
+        <tr><td><code>emphatic-word-at-end</code></td><td>0.848 ± 0.023</td><td>0.806 ± 0.013</td><td>-0.042</td><td><span class="v v-noise">within noise (below floor)</span></td></tr>
+        <tr><td><code>tighten-puffy-release-note</code></td><td>0.874 ± 0.032</td><td>0.862 ± 0.022</td><td>-0.012</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>positive-form-status-sentences</code></td><td>0.886 ± 0.038</td><td>0.884 ± 0.015</td><td>-0.002</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>active-voice-logging-passage</code></td><td>0.852 ± 0.004</td><td>0.862 ± 0.011</td><td>+0.010</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>omit-needless-words-cache-note</code></td><td>0.878 ± 0.033</td><td>0.894 ± 0.039</td><td>+0.016</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>keep-related-words-together-modifiers</code></td><td>0.846 ± 0.011</td><td>0.872 ± 0.023</td><td>+0.026</td><td><span class="v v-noise">within noise</span></td></tr>
+      </tbody></table>
+    </section>
+    <section class="skill" id="crafting-effective-readmes">
+      <h3><code>crafting-effective-readmes</code> — Crafting Effective READMEs <span class="v v-regressed">REGRESSED (2)</span></h3>
+      <p>Audience-first README structure with mandatory sections and project-type templates.</p>
+      <p class="src">Source: <a href="https://github.com/softaworks/agent-toolkit">https://github.com/softaworks/agent-toolkit</a> @ <code>3027f20f31</code> · License: MIT · Author: Softaworks<br>
+      Receipts: <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/crafting-effective-readmes__claude-sonnet-4-6.json">old</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/crafting-effective-readmes__claude-sonnet-5.json">new</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/crafting-effective-readmes__drift.md">drift</a></p>
+      <table class="agg"><thead><tr><th></th><th><code>claude-sonnet-4-6</code> (old)</th><th><code>claude-sonnet-5</code> (new)</th></tr></thead>
+      <tbody>
+        <tr><td>with_skill (mean ± sd)</td><td>0.870 ± 0.015</td><td>0.804 ± 0.192</td></tr>
+        <tr><td>baseline (mean ± sd)</td><td>0.849 ± 0.067</td><td>0.811 ± 0.144</td></tr>
+      </tbody></table>
+      <table class="cases"><thead><tr><th>case</th><th>old (mean ± sd)</th><th>new (mean ± sd)</th><th>Δ</th><th>verdict</th></tr></thead>
+      <tbody>
+        <tr><td><code>lead-with-one-sentence-problem</code></td><td>0.874 ± 0.005</td><td>0.374 ± 0.136</td><td>-0.500</td><td><span class="v v-regressed">regressed</span></td></tr>
+        <tr><td><code>categorize-task-before-writing</code></td><td>0.868 ± 0.008</td><td>0.818 ± 0.034</td><td>-0.050</td><td><span class="v v-regressed">regressed</span></td></tr>
+        <tr><td><code>audience-config-folder-future-you</code></td><td>0.876 ± 0.015</td><td>0.870 ± 0.012</td><td>-0.006</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>review-validate-against-project-files</code></td><td>0.888 ± 0.029</td><td>0.890 ± 0.024</td><td>+0.002</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>three-mandatory-sections-cli-tool</code></td><td>0.872 ± 0.008</td><td>0.876 ± 0.013</td><td>+0.004</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>audience-internal-service-runbook</code></td><td>0.872 ± 0.004</td><td>0.894 ± 0.028</td><td>+0.022</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>oss-project-type-sections</code></td><td>0.840 ± 0.090</td><td>0.908 ± 0.041</td><td>+0.068</td><td><span class="v v-noise">within noise</span></td></tr>
+      </tbody></table>
+    </section>
+    <section class="skill" id="naming-analyzer">
+      <h3><code>naming-analyzer</code> — Naming Analyzer <span class="v v-mixed">MIXED</span></h3>
+      <p>Variable / function / class naming conventions and how to suggest clearer names.</p>
+      <p class="src">Source: <a href="https://github.com/softaworks/agent-toolkit">https://github.com/softaworks/agent-toolkit</a> @ <code>3027f20f31</code> · License: MIT · Author: Softaworks<br>
+      Receipts: <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/naming-analyzer__claude-sonnet-4-6.json">old</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/naming-analyzer__claude-sonnet-5.json">new</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/naming-analyzer__drift.md">drift</a></p>
+      <table class="agg"><thead><tr><th></th><th><code>claude-sonnet-4-6</code> (old)</th><th><code>claude-sonnet-5</code> (new)</th></tr></thead>
+      <tbody>
+        <tr><td>with_skill (mean ± sd)</td><td>0.817 ± 0.077</td><td>0.839 ± 0.026</td></tr>
+        <tr><td>baseline (mean ± sd)</td><td>0.703 ± 0.214</td><td>0.757 ± 0.141</td></tr>
+      </tbody></table>
+      <table class="cases"><thead><tr><th>case</th><th>old (mean ± sd)</th><th>new (mean ± sd)</th><th>Δ</th><th>verdict</th></tr></thead>
+      <tbody>
+        <tr><td><code>go-acronym-casing</code></td><td>0.868 ± 0.016</td><td>0.814 ± 0.022</td><td>-0.054</td><td><span class="v v-regressed">regressed</span></td></tr>
+        <tr><td><code>constants-include-units-js</code></td><td>0.866 ± 0.011</td><td>0.814 ± 0.022</td><td>-0.052</td><td><span class="v v-regressed">regressed</span></td></tr>
+        <tr><td><code>vague-names-js</code></td><td>0.854 ± 0.045</td><td>0.816 ± 0.042</td><td>-0.038</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>language-casing-python</code></td><td>0.886 ± 0.024</td><td>0.882 ± 0.013</td><td>-0.004</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>misleading-name-mutation-js</code></td><td>0.828 ± 0.008</td><td>0.842 ± 0.004</td><td>+0.014</td><td><span class="v v-noise">within noise (below floor)</span></td></tr>
+        <tr><td><code>boolean-prefixes-js</code></td><td>0.720 ± 0.115</td><td>0.860 ± 0.010</td><td>+0.140</td><td><span class="v v-improved">improved</span></td></tr>
+        <tr><td><code>abbreviations-wellknown-js</code></td><td>0.696 ± 0.099</td><td>0.846 ± 0.027</td><td>+0.150</td><td><span class="v v-improved">improved</span></td></tr>
+      </tbody></table>
+    </section>
+    <section class="skill" id="requesting-code-review">
+      <h3><code>requesting-code-review</code> — Requesting Code Review <span class="v v-improved">IMPROVED (1)</span></h3>
+      <p>How to prepare and package a change for review: context, base/head SHAs, and severity triage of feedback.</p>
+      <p class="src">Source: <a href="https://github.com/obra/superpowers">https://github.com/obra/superpowers</a> @ <code>3dcbd5c4b4</code> · License: MIT · Author: Jesse Vincent (obra)<br>
+      Receipts: <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/requesting-code-review__claude-sonnet-4-6.json">old</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/requesting-code-review__claude-sonnet-5.json">new</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/requesting-code-review__drift.md">drift</a></p>
+      <table class="agg"><thead><tr><th></th><th><code>claude-sonnet-4-6</code> (old)</th><th><code>claude-sonnet-5</code> (new)</th></tr></thead>
+      <tbody>
+        <tr><td>with_skill (mean ± sd)</td><td>0.668 ± 0.249</td><td>0.719 ± 0.226</td></tr>
+        <tr><td>baseline (mean ± sd)</td><td>0.540 ± 0.262</td><td>0.617 ± 0.200</td></tr>
+      </tbody></table>
+      <table class="cases"><thead><tr><th>case</th><th>old (mean ± sd)</th><th>new (mean ± sd)</th><th>Δ</th><th>verdict</th></tr></thead>
+      <tbody>
+        <tr><td><code>request-package-basic</code></td><td>0.898 ± 0.030</td><td>0.866 ± 0.021</td><td>-0.032</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>full-handoff-before-merge</code></td><td>0.400 ± 0.000</td><td>0.396 ± 0.009</td><td>-0.004</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>mandatory-vs-optional-triggers</code></td><td>0.862 ± 0.013</td><td>0.864 ± 0.013</td><td>+0.002</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>resist-simple-self-review</code></td><td>0.864 ± 0.009</td><td>0.882 ± 0.022</td><td>+0.018</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>identify-base-head-shas</code></td><td>0.800 ± 0.000</td><td>0.824 ± 0.018</td><td>+0.024</td><td><span class="v v-noise">within noise (below floor)</span></td></tr>
+        <tr><td><code>crafted-context-not-session-history</code></td><td>0.290 ± 0.022</td><td>0.384 ± 0.188</td><td>+0.094</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>triage-review-findings</code></td><td>0.560 ± 0.029</td><td>0.820 ± 0.109</td><td>+0.260</td><td><span class="v v-improved">improved</span></td></tr>
+      </tbody></table>
+    </section>
+    <section class="skill" id="writing-plans">
+      <h3><code>writing-plans</code> — Writing Plans <span class="v v-mixed">MIXED</span></h3>
+      <p>How to author a concrete, self-contained implementation plan before coding.</p>
+      <p class="src">Source: <a href="https://github.com/obra/superpowers">https://github.com/obra/superpowers</a> @ <code>3dcbd5c4b4</code> · License: MIT · Author: Jesse Vincent (obra)<br>
+      Receipts: <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/writing-plans__claude-sonnet-4-6.json">old</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/writing-plans__claude-sonnet-5.json">new</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/writing-plans__drift.md">drift</a></p>
+      <table class="agg"><thead><tr><th></th><th><code>claude-sonnet-4-6</code> (old)</th><th><code>claude-sonnet-5</code> (new)</th></tr></thead>
+      <tbody>
+        <tr><td>with_skill (mean ± sd)</td><td>0.811 ± 0.089</td><td>0.785 ± 0.145</td></tr>
+        <tr><td>baseline (mean ± sd)</td><td>0.576 ± 0.230</td><td>0.675 ± 0.199</td></tr>
+      </tbody></table>
+      <table class="cases"><thead><tr><th>case</th><th>old (mean ± sd)</th><th>new (mean ± sd)</th><th>Δ</th><th>verdict</th></tr></thead>
+      <tbody>
+        <tr><td><code>task-right-sizing-testable-deliverable</code></td><td>0.816 ± 0.094</td><td>0.460 ± 0.150</td><td>-0.356</td><td><span class="v v-regressed">regressed</span></td></tr>
+        <tr><td><code>self-review-spec-coverage</code></td><td>0.882 ± 0.011</td><td>0.844 ± 0.029</td><td>-0.038</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>full-small-plan-header-and-tasks</code></td><td>0.882 ± 0.030</td><td>0.850 ± 0.041</td><td>-0.032</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>bite-sized-tdd-steps</code></td><td>0.864 ± 0.013</td><td>0.876 ± 0.005</td><td>+0.012</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>file-structure-by-responsibility</code></td><td>0.802 ± 0.004</td><td>0.826 ± 0.037</td><td>+0.024</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>repair-placeholder-steps</code></td><td>0.802 ± 0.004</td><td>0.836 ± 0.035</td><td>+0.034</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>interfaces-exact-signatures</code></td><td>0.626 ± 0.150</td><td>0.804 ± 0.009</td><td>+0.178</td><td><span class="v v-improved">improved</span></td></tr>
+      </tbody></table>
+    </section>
+    <section class="skill" id="skill-creator">
+      <h3><code>skill-creator</code> — Skill Creator <span class="v v-improved">IMPROVED (1)</span></h3>
+      <p>Conventions for authoring a SKILL.md: description-as-trigger, progressive disclosure, instructional tone.</p>
+      <p class="src">Source: <a href="https://github.com/anthropics/skills">https://github.com/anthropics/skills</a> @ <code>b29e7cf65e</code> · License: Apache-2.0 · Author: Anthropic, PBC<br>
+      Receipts: <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/skill-creator__claude-sonnet-4-6.json">old</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/skill-creator__claude-sonnet-5.json">new</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-001/skill-creator__drift.md">drift</a></p>
+      <table class="agg"><thead><tr><th></th><th><code>claude-sonnet-4-6</code> (old)</th><th><code>claude-sonnet-5</code> (new)</th></tr></thead>
+      <tbody>
+        <tr><td>with_skill (mean ± sd)</td><td>0.842 ± 0.095</td><td>0.875 ± 0.012</td></tr>
+        <tr><td>baseline (mean ± sd)</td><td>0.828 ± 0.070</td><td>0.774 ± 0.115</td></tr>
+      </tbody></table>
+      <table class="cases"><thead><tr><th>case</th><th>old (mean ± sd)</th><th>new (mean ± sd)</th><th>Δ</th><th>verdict</th></tr></thead>
+      <tbody>
+        <tr><td><code>restructure-oversized-skill</code></td><td>0.882 ± 0.018</td><td>0.854 ± 0.032</td><td>-0.028</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>reframe-rigid-musts</code></td><td>0.876 ± 0.005</td><td>0.872 ± 0.004</td><td>-0.004</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>domain-variant-organization</code></td><td>0.876 ± 0.015</td><td>0.872 ± 0.008</td><td>-0.004</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>write-triggering-description</code></td><td>0.874 ± 0.013</td><td>0.874 ± 0.011</td><td>+0.000</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>critique-and-fix-skillmd</code></td><td>0.890 ± 0.035</td><td>0.894 ± 0.025</td><td>+0.004</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>output-format-template</code></td><td>0.868 ± 0.011</td><td>0.880 ± 0.012</td><td>+0.012</td><td><span class="v v-noise">within noise</span></td></tr>
+        <tr><td><code>draft-full-skillmd</code></td><td>0.628 ± 0.074</td><td>0.882 ± 0.022</td><td>+0.254</td><td><span class="v v-improved">improved</span></td></tr>
+      </tbody></table>
+    </section>
+
+  <h2>Methodology</h2>
+  <ul class="method">
+    <li><strong>Sampling &amp; effect floor.</strong> Each (case, mode) generation is judged 5 times; the per-case band is mean ± sample stddev over those scores. A regression/improvement is claimed only when two <code>with_skill</code> bands are fully separated <em>and</em> the mean moved by at least the <strong>0.05 effect floor</strong>. The floor exists because the judge quantizes to a coarse ~0.05–0.1 grid, so a confident grade often collapses to a zero-width “point band”; without the floor, two point bands one quantum apart (e.g. 0.60 vs 0.64) would read as a verdict despite no meaningful change.</li>
+    <li><strong>Judge.</strong> <code>claude-haiku-4-5</code>, sampling mode <code>surface-controlled</code>. On the <code>api</code> surface the judge is pinned to temperature 0; this report ran on the <code>claude-cli</code> surface, where sampling is surface-controlled and cannot be pinned (recorded honestly in <code>run.judge</code>). That residual judge variance is exactly why verdicts require band separation, not a raw delta.</li>
+    <li><strong>Text-only scoping.</strong> Report #001 tests skills whose value shows up in text (review, commit, documentation, prose, naming, planning). Tool-execution skills (document renderers, diagram/asset generators, browser/CLI tools) are out of scope — future work, needing a sandboxed-execution harness. Each skill is supplied as its single <code>SKILL.md</code>; bundled reference files are out of scope, and skills whose value lives entirely in bundled files were excluded.</li>
+    <li><strong>Suite authorship (disclosure).</strong> <em>We wrote the eval suites</em>, one per skill, each case grounded in a claim documented in that skill's own <code>SKILL.md</code>. Rubrics anchor a fully-correct answer at 0.80 so a competent run is not saturated and a regression can show. Third-party skill content is not committed: each <code>SKILL.md</code> is fetched at run time from its pinned commit and sha256-verified.</li>
+    <li><strong>Grounding policy (codified).</strong> <em>Every gradable rubric criterion must trace to text present in the skill's <code>SKILL.md</code> at the pinned SHA. Criteria that import domain knowledge the skill does not state are not gradable, regardless of how standard that knowledge is. Claims may summarize; rubrics may not extrapolate.</em> Each case records a <code>grounding</code> reference; the gate requires it. v1.2 applied this policy across all 10 suites (<a href="https://github.com/driftproofhq/driftproof/blob/main/reports/rubric-sweep.md">sweep</a>) — see <a href="#amendments">Amendments</a>.</li>
+    <li><strong>Baseline.</strong> Same prompt, no <code>SKILL.md</code>.</li>
+  </ul>
+
+  <h2>Reproduce</h2>
+  <pre><code>node scripts/fetch-skills.js
+node scripts/run-report-001.js --concurrency 5
+node scripts/build-report-001.js</code></pre>
+
+  <h2 id="amendments">Amendments</h2>
+  <div class="amendment">
+    <p><strong>v1.2</strong> · 2026-07-30 — In-text grounding policy adopted and applied across all 10 suites. Headline: v1.1 read 3 regressed / 3 improved / 3 mixed / 1 within noise; v1.2 reads 2 regressed / 3 improved / 4 mixed / 1 within noise. This supersedes v1.1.</p>
+    <ul>
+      <li><strong>Policy adopted (codified, applied unilaterally).</strong> <em>Every gradable rubric criterion must trace to text present in the skill's SKILL.md at the pinned SHA. Criteria that import domain knowledge the skill does not state are not gradable, regardless of how standard that knowledge is. Claims may summarize; rubrics may not extrapolate.</em> The grading standard does not depend on the audited party's tolerance. Full sweep of all 10 suites (70 cases): <code>reports/rubric-sweep.md</code>.</li>
+      <li><strong>Criteria amended (2 of 10 suites; the other 8 were grounded and unchanged).</strong> <code>git-workflow-and-versioning/semver-clean-bump</code> required "the highest-precedence bump governs when changes are combined / reset PATCH to 0" — a rule the SKILL.md never states (it defines only MAJOR/MINOR/PATCH). That criterion was removed; the case now grades only the stated MAJOR/MINOR/PATCH definitions. <code>commit-work</code> (all 7 cases) required a <em>specific</em> Conventional Commits type token (e.g. <code>chore(deps)</code> vs <code>feat</code>) and, in one case, a subject &lt;=72-chars / no-trailing-period / imperative-mood rule — none of which its SKILL.md states (it names Conventional Commits and shows the <code>type(scope): summary</code> shape but does not enumerate the type vocabulary). Type grading is now shape-only; the length/period/mood rule was removed. The logical-split, patch-staging, and secret/debug checks the SKILL.md <em>does</em> state remain fully graded.</li>
+      <li><strong>Re-run.</strong> Only the two amended suites were re-run (both models, n=5, claude-cli, transcripts retained); the amendment changes only those two <code>suite_hash</code>es. The <code>grounding</code> reference now recorded on every case is excluded from <code>suite_hash</code>, so annotating the other eight suites did not disturb their receipts.</li>
+      <li><strong>Verdict changes (stated plainly, not softened).</strong> The amended case <code>git-workflow-and-versioning/semver-clean-bump</code> flips <strong>regression → within noise</strong> (v1.1 Δ−0.054 on separated bands; v1.2 Δ−0.004). The v1.1 "regression" was driven by the imported precedence/reset criterion; grading only the MAJOR/MINOR/PATCH definitions the SKILL.md actually states, the new model shows no drift on this case. But re-running a suite re-rolls all seven of its cases (one receipt covers the whole suite), and the fresh n=5 measurement surfaced, on two <em>unamended</em>, well-grounded cases, a real regression and a real improvement: <code>commit-message-conventional-type</code> now regresses (Δ−0.256 — the new model wrote <code>feat:</code> instead of <code>fix:</code> for a bug fix; all five judge samples scored 0.60 with that same reason, transcript-verified) and <code>semver-hidden-breaking-change</code> now improves (Δ+0.062). Net, the skill moves <strong>REGRESSED(1) → MIXED</strong>. <code>commit-work</code> is unchanged at <strong>IMPROVED(1)</strong>: its driver (<code>two-sentence-describability-test</code>, Δ+0.168) held, and its amended cases (specific type token → shape, and the removed ≤72-char/no-period/imperative-mood rule) remain within noise. The other eight skills were not re-run and keep their v1.1 labels.</li>
+    </ul>
+  </div>
+<div class="amendment">
+    <p><strong>v1.1</strong> · 2026-07-28 — Pre-launch QA corrections. Net headline change: v1.0 read 4 regressed / 3 improved / 3 mixed / 0 within noise; v1.1 reads 3 regressed / 3 improved / 3 mixed / 1 within noise. Two causes, below.</p>
+    <ul>
+      <li><strong>(1) Minimum-effect floor of 0.05.</strong> A case is now called regressed/improved only when its two with_skill bands do not overlap AND the mean moved ≥ 0.05 (one judge-quantization step) — band separation alone is no longer sufficient, because the judge quantizes to a coarse grid and a confident grade often collapses to a zero-width point band. This reclassified 3 hair-trigger cases (|Δ| 0.014–0.024) to “within noise (below effect floor)”: <code>code-review-and-quality/security-axis-sql-injection</code> (which flips that whole skill REGRESSED → WITHIN NOISE), <code>naming-analyzer/misleading-name-mutation-js</code> (MIXED 2r/3i → 2r/2i), and <code>requesting-code-review/identify-base-head-shas</code> (IMPROVED 2 → 1).</li>
+      <li><strong>(2) Two artifact-contaminated receipts re-run.</strong> A transcript audit found new-model bands containing a judge parse-fallback score of exactly 0.0 (an unparseable judge reply defaults to 0, per lib/judge.js). Both <code>__claude-sonnet-5</code> receipts were re-run on the same claude-cli surface, n=5 (old-model receipts, which were clean, were kept as-is): <code>writing-clearly-and-concisely</code> and <code>documentation-and-adrs</code>.</li>
+      <li><strong>What the re-run showed.</strong> <code>active-voice-logging-passage</code>’s v1.0 “regression” was <em>entirely</em> the artifact — the clean re-run scores 0.862 (vs old 0.852), i.e. within noise. <code>match-existing-adr-convention</code> reconfirmed as a genuine new-model failure (~0.08 again on an independent run). Because a receipt covers all 7 of a skill’s cases, re-running also refreshed the other cases honestly: <code>comment-intent-not-implementation</code>’s v1.0 regression did not reproduce (now within noise), while two <em>different</em>, real regressions surfaced — <code>documentation-and-adrs/surface-conflicting-adr-conventions</code> (Δ−0.268) and <code>writing-clearly-and-concisely/concrete-language-incident-summary</code> (Δ−0.152). Both skills keep their v1.0 labels (MIXED and REGRESSED-1 respectively); only the driving cases changed.</li>
+      <li>Full per-case transcript evidence and REAL-vs-artifact classifications are in <code>reports/report-001-audit.md</code>.</li>
+    </ul>
+  </div>
+
+  <p class="foot">Receipts validate against the Driftproof receipt spec (v0.2; the two suites re-run in v1.2 are v0.3, a superset the loader also accepts). Every verdict above is a function of the two <code>with_skill</code> bands recorded in the receipts. Verdicts age because the substrate moves — that is the phenomenon this report measures.</p>
+</main>
+<footer class="site"><p>Driftproof · Apache-2.0 · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p></footer>
+</body>
+</html>
