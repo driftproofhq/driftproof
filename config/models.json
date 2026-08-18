@@ -1,0 +1,29 @@
+{
+  "_comment": "Driftproof model registry. The runner resolves --models ids against this list; an unknown id still runs but its receipt is marked registry:\"unregistered\" and its cost is estimated with the conservative default price in lib/models.js. Prices are STANDARD first-party USD per 1,000,000 tokens (input/output). Anthropic prices are from platform.claude.com (July 2026); Sonnet 5's introductory rate is deliberately NOT used so projections stay an upper bound. OpenAI prices are the public standard per-MTok rates as of July 2026 (see reports/phase-6-providers.md for the fetched source): GPT-5.6 Sol $5/$30, Terra $2.50/$15, Luna $1/$6; GPT-5.5 $5/$30; GPT-5.4 $2.50/$15. gpt-5.4-mini is NOT in the published table (which lists a Nano tier at $0.20/$1.25), so its price here is a deliberately conservative UPPER-bound estimate flagged price_estimate:true. `released` is best-effort (spec RECEIPT.md open question #4). `tier` drives reporting; `judge_eligible` encodes the fixed-judge policy (docs/judge-policy.html) — only the cheap Haiku judge is eligible, and NO OpenAI model is judge-eligible (the judge stays claude-haiku across providers so a cross-substrate report varies only the target model). `provider` is the two-axis provider; per-provider surface/base_url config is under `providers`. The release trigger (scripts/release-watch.js) appends auto-discovered ids here with auto_added:true.",
+  "registry_version": "1.1",
+  "provider": "anthropic",
+  "providers": {
+    "anthropic": { "surfaces": ["api", "cli"] },
+    "openai": { "base_url": "https://api.openai.com/v1", "api_key_env": "OPENAI_API_KEY", "surfaces": ["api", "cli"] }
+  },
+  "default_price_note": "Unregistered ids are costed at the most expensive known tier (Fable, $10/$50) — a budget guard must never under-estimate. See lib/models.js DEFAULT_PRICE.",
+  "models": [
+    { "id": "claude-fable-5",              "family": "fable",  "provider": "anthropic", "released": "2026-06-09", "input_price": 10.0, "output_price": 50.0, "tier": "frontier", "judge_eligible": false },
+    { "id": "claude-opus-5",               "family": "opus",   "provider": "anthropic", "released": null,         "input_price": 5.0,  "output_price": 25.0, "tier": "frontier", "judge_eligible": false },
+    { "id": "claude-opus-4-8",             "family": "opus",   "provider": "anthropic", "released": null,         "input_price": 5.0,  "output_price": 25.0, "tier": "frontier", "judge_eligible": false },
+    { "id": "claude-opus-4-7",             "family": "opus",   "provider": "anthropic", "released": null,         "input_price": 5.0,  "output_price": 25.0, "tier": "frontier", "judge_eligible": false },
+    { "id": "claude-opus-4-6",             "family": "opus",   "provider": "anthropic", "released": null,         "input_price": 5.0,  "output_price": 25.0, "tier": "frontier", "judge_eligible": false },
+    { "id": "claude-opus-4-5-20251101",    "family": "opus",   "provider": "anthropic", "released": "2025-11-01", "input_price": 5.0,  "output_price": 25.0, "tier": "frontier", "judge_eligible": false },
+    { "id": "claude-sonnet-5",             "family": "sonnet", "provider": "anthropic", "released": "2026-06-30", "input_price": 3.0,  "output_price": 15.0, "tier": "standard", "judge_eligible": false },
+    { "id": "claude-sonnet-4-6",           "family": "sonnet", "provider": "anthropic", "released": "2026-02-17", "input_price": 3.0,  "output_price": 15.0, "tier": "standard", "judge_eligible": false },
+    { "id": "claude-sonnet-4-5-20250929",  "family": "sonnet", "provider": "anthropic", "released": "2025-09-29", "input_price": 3.0,  "output_price": 15.0, "tier": "standard", "judge_eligible": false },
+    { "id": "claude-haiku-4-5",            "family": "haiku",  "provider": "anthropic", "released": "2025-10-01", "input_price": 1.0,  "output_price": 5.0,  "tier": "cheap",    "judge_eligible": true },
+    { "id": "claude-haiku-4-5-20251001",   "family": "haiku",  "provider": "anthropic", "released": "2025-10-01", "input_price": 1.0,  "output_price": 5.0,  "tier": "cheap",    "judge_eligible": true },
+    { "id": "gpt-5.6-sol",                 "family": "gpt-5.6", "provider": "openai",   "released": "2026-07-09", "input_price": 5.0,  "output_price": 30.0, "tier": "frontier", "judge_eligible": false },
+    { "id": "gpt-5.6-terra",               "family": "gpt-5.6", "provider": "openai",   "released": "2026-07-09", "input_price": 2.5,  "output_price": 15.0, "tier": "standard", "judge_eligible": false },
+    { "id": "gpt-5.6-luna",                "family": "gpt-5.6", "provider": "openai",   "released": "2026-07-09", "input_price": 1.0,  "output_price": 6.0,  "tier": "cheap",    "judge_eligible": false },
+    { "id": "gpt-5.5",                     "family": "gpt-5.5", "provider": "openai",   "released": null,         "input_price": 5.0,  "output_price": 30.0, "tier": "frontier", "judge_eligible": false },
+    { "id": "gpt-5.4",                     "family": "gpt-5.4", "provider": "openai",   "released": null,         "input_price": 2.5,  "output_price": 15.0, "tier": "standard", "judge_eligible": false },
+    { "id": "gpt-5.4-mini",                "family": "gpt-5.4", "provider": "openai",   "released": null,         "input_price": 0.4,  "output_price": 2.0,  "tier": "cheap",    "judge_eligible": false, "price_estimate": true, "price_note": "conservative upper-bound estimate; the public table lists a GPT-5.4 Nano tier ($0.20/$1.25) but not a Mini rate as of July 2026" }
+  ]
+}
