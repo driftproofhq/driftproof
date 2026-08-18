@@ -1,0 +1,387 @@
+#!/usr/bin/env node
+// SPDX-License-Identifier: Apache-2.0
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const { PROJECT_NAME, RUNNER_VERSION, DEFAULT_JUDGE_SAMPLES, DEV_MAX_USD } = require('../config');
+const { loadSkill } = require('../lib/skill');
+const { runSkillOnModel, summarizeReceipt, projectCalls } = require('../lib/run');
+const { validateReceipt, verifyReceiptHash } = require('../lib/receipt');
+const { buildDriftReport } = require('../lib/diff');
+const { surfaceForModel, isSubscriptionSurface, resolveModel } = require('../lib/provider');
+const { estimateRunCostUSD, BudgetTracker } = require('../lib/cost');
+const { registryStatus } = require('../lib/models');
+const { verdictFromReceipt, badgeEndpoint, githubOutputLines } = require('../lib/verdict');
+const { scaffoldInit } = require('../lib/init');
+
+// Output dirs default to the USER's current directory, not the package dir, so a
+// global/npx install writes receipts/transcripts into the project being tested
+// (never into a read-only global install). --out overrides the receipts dir.
+const TRANSCRIPTS_DIR = path.join(process.cwd(), 'transcripts');
+
+// Write retained transcripts for one receipt to transcripts/<receipt_hash>/.
+// One JSON file per (case, mode); gitignored by default. Called only when
+// --keep-transcripts is set (run.transcripts === 'retained-local').
+function writeTranscripts(receipt, transcripts) {
+  const dir = path.join(TRANSCRIPTS_DIR, receipt.receipt_hash);
+  fs.mkdirSync(dir, { recursive: true });
+  const manifest = { receipt_hash: receipt.receipt_hash, model_id: receipt.run.model_id, date_utc: receipt.run.date_utc, entries: [] };
+  for (const t of transcripts) {
+    if (!t) continue;
+    const base = `${slug(t.id)}-${t.mode}`;
+    fs.writeFileSync(path.join(dir, `${base}.json`), JSON.stringify({ id: t.id, mode: t.mode, generation: t.generation, judge_outputs: t.judge_outputs }, null, 2));
+    manifest.entries.push(`${base}.json`);
+  }
+  fs.writeFileSync(path.join(dir, 'index.json'), JSON.stringify(manifest, null, 2));
+  return dir;
+}
+
+const RECEIPTS_DIR = path.join(process.cwd(), 'receipts');
+
+// Read an optional .driftproofrc (JSON) for per-project run defaults. Looked up
+// in the skill dir first (where `driftproof init` writes it), then the CWD. CLI
+// flags always win over the rc; the rc wins over built-in defaults.
+function loadRc(skillDir) {
+  const merged = {};
+  for (const dir of [process.cwd(), skillDir].filter(Boolean)) {
+    const p = path.join(dir, '.driftproofrc');
+    try {
+      if (fs.existsSync(p)) Object.assign(merged, JSON.parse(fs.readFileSync(p, 'utf8')));
+    } catch (_e) { /* a malformed rc is ignored, not fatal */ }
+  }
+  return merged;
+}
+
+function parseArgs(argv) {
+  const positional = [];
+  const flags = {};
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a.startsWith('--')) {
+      const key = a.slice(2);
+      const next = argv[i + 1];
+      if (next === undefined || next.startsWith('--')) { flags[key] = true; }
+      else { flags[key] = next; i++; }
+    } else positional.push(a);
+  }
+  return { positional, flags };
+}
+
+function usage() {
+  console.log(`${PROJECT_NAME} v${RUNNER_VERSION} — continuous verification of agent skills
+
+USAGE
+  ${PROJECT_NAME} init <dir>                          scaffold SKILL.md + evals/evals.json + .driftproofrc
+  ${PROJECT_NAME} run <skill-dir> [--models a,b] [--samples N] [--max-cases N] [--max-calls N]
+                        [--judge-model M] [--concurrency N] [--max-usd N]
+                        [--keep-transcripts] [--out DIR]
+  ${PROJECT_NAME} diff <receiptA.json> <receiptB.json> [--out FILE]
+  ${PROJECT_NAME} validate <receipt.json>
+  ${PROJECT_NAME} badge <receipt.json> [--out FILE] [--github-output]
+  ${PROJECT_NAME} import <results.json> --from agent-skills-eval|skillgrade [--out DIR]
+  ${PROJECT_NAME} export <receipt.json> [--to summary-json] [--report-url URL] [--out FILE]
+
+ENV
+  CLAUDE_PROVIDER   api | cli   (default: cli — spawns \`claude -p\`, strips ANTHROPIC_API_KEY)
+  ANTHROPIC_API_KEY required when CLAUDE_PROVIDER=api
+  DRIFTPROOF_REGISTRY  path to an alternate model registry (default: the packaged config/models.json)
+  DRIFTPROOF_STUB=1    offline stub surface — canned receipts, zero model calls (for CI)
+
+NOTES
+  - Default models list is 'haiku' only (cheap dev default).
+  - Sampled judging: each case does 2 generations + 2×samples judge calls.
+    Default --samples 5 → 12 calls/case; --samples 1 disables bands.
+  - --max-calls is a hard per-run call cap (default 200). The whole run is
+    projected up front and REFUSED before any call if it would exceed the cap.
+  - --max-usd is a hard dollar budget (default ${DEV_MAX_USD} for dev runs). The projected
+    cost is printed up front and the run is REFUSED on BOTH surfaces if it would
+    exceed the budget; on claude-cli the metered spend is $0 but the estimated-
+    equivalent api cost is counted against the cap identically. The run also
+    hard-stops mid-flight at 1.25× the cap.
+  - --keep-transcripts writes the raw generations + judge outputs to
+    transcripts/<receipt-hash>/ (gitignored) and records transcripts:"retained-
+    local" in the receipt. Default is "hashes-only" (only the sha256 hashes).
+  - Prices and registry status come from config/models.json; an unregistered
+    model still runs but is marked registry:"unregistered" and costed at the
+    conservative default price.
+  - --concurrency runs that many (case,mode) tasks at once (default 1). Higher
+    values cut wall-clock on the cli surface (cold-start dominated).
+  - import converts another tool's results into a valid receipt with HONEST
+    epistemics: verification_level DECLARED (never TESTED), surface "external",
+    source "imported/<tool>", and NO fabricated hashes. Imported receipts are
+    excluded from drift verdicts (diff reports NOT MEASURED). See docs/interop.md.
+  - export --to summary-json emits the minimal stable interchange summary
+    (driftproof/summary v1) other tools can consume without a receipt parser.`);
+}
+
+function slug(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+function dateStamp(iso) { return iso.slice(0, 10); }
+
+async function cmdRun(positional, flags) {
+  const skillDir = positional[0];
+  if (!skillDir) { usage(); process.exit(2); }
+
+  // Per-project defaults from .driftproofrc (if any); CLI flags override these.
+  const rc = loadRc(skillDir);
+  const models = String(flags.models || rc.models || 'haiku').split(',').map((s) => s.trim()).filter(Boolean);
+  const maxCases = flags['max-cases'] ? parseInt(flags['max-cases'], 10) : (rc.max_cases != null ? parseInt(rc.max_cases, 10) : null);
+  const maxCalls = flags['max-calls'] ? parseInt(flags['max-calls'], 10) : (rc.max_calls != null ? parseInt(rc.max_calls, 10) : 200);
+  const samples = flags.samples ? parseInt(flags.samples, 10) : (rc.samples != null ? parseInt(rc.samples, 10) : DEFAULT_JUDGE_SAMPLES);
+  const judgeModel = flags['judge-model'] || rc.judge_model || null;
+  const concurrency = flags.concurrency ? parseInt(flags.concurrency, 10) : (rc.concurrency != null ? parseInt(rc.concurrency, 10) : 1);
+  const maxUsd = flags['max-usd'] ? parseFloat(flags['max-usd']) : (rc.max_usd != null ? parseFloat(rc.max_usd) : DEV_MAX_USD);
+  const keepTranscripts = !!flags['keep-transcripts'];
+  const outDir = flags.out ? path.resolve(flags.out) : RECEIPTS_DIR;
+  fs.mkdirSync(outDir, { recursive: true });
+
+  const skill = loadSkill(skillDir);
+  const nCases = maxCases ? Math.min(maxCases, skill.suite.caseCount) : skill.suite.caseCount;
+  const perModelCalls = projectCalls(nCases, samples);
+  const totalProjected = perModelCalls * models.length;
+
+  // Dollar cost guard (Week 3): project the METERED USD cost up front. On the
+  // `api` surface this is real spend, so we refuse if it would exceed --max-usd.
+  // On `claude-cli` the metered spend is $0 (subscription); the figure is the
+  // hypothetical "if run on the metered API" cost — printed, never blocks.
+  const cost = estimateRunCostUSD({ caseCount: nCases, samples, models: models.map((m) => require('../lib/provider').resolveModel(m)), judgeModel: judgeModel || 'haiku' });
+  // Surface is per-model now (a run may mix an Anthropic and an OpenAI target).
+  const surfaces = [...new Set(models.map((m) => surfaceForModel(m)))];
+  const surface = surfaces.join(', ');
+  const subSurfaces = surfaces.filter(isSubscriptionSurface);
+
+  const regStatuses = models.map((m) => `${m}:${registryStatus(m)}`);
+  console.log(`\n${PROJECT_NAME} run — skill "${skill.name}" v${skill.version}`);
+  console.log(`  content_hash: ${skill.contentHash.slice(0, 16)}…  suite: ${skill.suite.caseCount} cases (${skill.suite.suiteHash.slice(0, 12)}…)`);
+  console.log(`  surface: ${surface}   models: ${models.join(', ')}   samples/case: ${samples}   concurrency: ${concurrency}`);
+  console.log(`  registry: ${regStatuses.join('  ')}${keepTranscripts ? '   transcripts: retained-local' : ''}`);
+  console.log(`  projected calls: ${perModelCalls}/model × ${models.length} model(s) = ${totalProjected}   per-model cap: ${maxCalls}`);
+  console.log(`  projected cost: ~$${cost.totalUSD.toFixed(2)} (rough upper bound; budget $${maxUsd.toFixed(2)}, hard-stop $${(maxUsd * 1.25).toFixed(2)})`);
+  if (subSurfaces.length) console.log(`  actual metered spend on ${subSurfaces.join(', ')}: $0.00 (subscription; the $ figure is the estimated-equivalent API cost, counted against the cap identically)`);
+
+  // Call-count guard: refuse before spending anything if a single model run
+  // would exceed the per-run call cap.
+  if (perModelCalls > maxCalls) {
+    console.error(`\n  ✗ ABORT (cost guard): projected ${perModelCalls} calls/model exceeds --max-calls ${maxCalls}.`);
+    console.error(`    Lower --samples/--max-cases or raise --max-calls.`);
+    process.exit(3);
+  }
+  // Dollar guard: the projection is refused on BOTH surfaces. Subscription (cli)
+  // attention is not free, so its estimated-equivalent cost is counted against
+  // --max-usd identically to metered api spend.
+  if (cost.totalUSD > maxUsd) {
+    console.error(`\n  ✗ ABORT (cost guard): projected cost ~$${cost.totalUSD.toFixed(2)} exceeds --max-usd $${maxUsd.toFixed(2)}.`);
+    console.error(`    Trim skills/cases or raise --max-usd (do NOT lower --samples for a published run).`);
+    process.exit(3);
+  }
+  console.log('');
+
+  // One live budget tracker for the whole run: accumulates estimated per-call
+  // cost across all models and hard-stops at 1.25× the cap.
+  const budget = new BudgetTracker(maxUsd);
+
+  const emitted = [];
+  for (const model of models) {
+    console.log(`── model: ${model} ──`);
+    let result;
+    try {
+      result = await runSkillOnModel({
+        skill,
+        model,
+        opts: {
+          maxCases, maxCalls, samples, judgeModel, concurrency, budget, keepTranscripts,
+          onProgress: (p) => {
+            if (p.phase === 'done') console.log(`  ${p.case} / ${p.mode}: ${p.outcome} (${p.score.toFixed(2)} ± ${(p.stddev || 0).toFixed(2)})`);
+          },
+        },
+      });
+    } catch (e) {
+      if (e && e.code === 'BUDGET_HARDSTOP') {
+        console.error(`\n  ✗ ABORT (budget hard-stop): ${e.message}`);
+        console.error(`    ${emitted.length} receipt(s) already written to ${path.relative(process.cwd(), outDir)}/.`);
+        process.exit(3);
+      }
+      throw e;
+    }
+    const { receipt, calls, transcripts } = result;
+
+    const { valid, errors } = validateReceipt(receipt);
+    if (!valid) {
+      console.error('  ✗ emitted receipt FAILED schema validation:', JSON.stringify(errors, null, 2));
+      process.exitCode = 1;
+    }
+    if (!verifyReceiptHash(receipt)) {
+      console.error('  ✗ receipt_hash does not verify');
+      process.exitCode = 1;
+    }
+
+    const base = `${slug(skill.name)}-${slug(receipt.run.model_id)}-${dateStamp(receipt.run.date_utc)}`;
+    const jsonPath = path.join(outDir, `${base}.json`);
+    const mdPath = path.join(outDir, `${base}.summary.md`);
+    fs.writeFileSync(jsonPath, JSON.stringify(receipt, null, 2));
+    fs.writeFileSync(mdPath, summarizeReceipt(receipt));
+    emitted.push(jsonPath);
+
+    // v0.3: retained transcripts are written keyed by the sealed receipt_hash,
+    // so a reader can verify every generation_hash / judge_sample_hash.
+    if (keepTranscripts && transcripts) {
+      const tdir = writeTranscripts(receipt, transcripts);
+      console.log(`  → transcripts (retained-local): ${path.relative(process.cwd(), tdir)}/`);
+    }
+
+    const cmp = receipt.comparison;
+    const aw = receipt.results.aggregates.with_skill;
+    const ab = receipt.results.aggregates.baseline;
+    console.log(`  → ${path.relative(process.cwd(), jsonPath)}  (${calls} calls)`);
+    console.log(`  → skill lift ${cmp.delta >= 0 ? '+' : ''}${cmp.delta.toFixed(3)} ± ${cmp.delta_uncertainty.toFixed(3)}  (with ${aw.mean_score.toFixed(3)} ± ${aw.stddev.toFixed(3)} vs base ${ab.mean_score.toFixed(3)} ± ${ab.stddev.toFixed(3)})\n`);
+  }
+
+  console.log(`Done. ${emitted.length} receipt(s) emitted to ${path.relative(process.cwd(), outDir)}/`);
+}
+
+function cmdDiff(positional, flags) {
+  const [aPath, bPath] = positional;
+  if (!aPath || !bPath) { usage(); process.exit(2); }
+  const a = JSON.parse(fs.readFileSync(aPath, 'utf8'));
+  const b = JSON.parse(fs.readFileSync(bPath, 'utf8'));
+
+  // Warn (do not block) if either receipt fails self-verification.
+  for (const [p, r] of [[aPath, a], [bPath, b]]) {
+    if (!verifyReceiptHash(r)) console.error(`  ⚠ ${path.basename(p)}: receipt_hash does not verify (tampered or hand-edited)`);
+  }
+
+  const labelA = dateStamp(a.run.date_utc);
+  const labelB = dateStamp(b.run.date_utc);
+  const { markdown } = buildDriftReport(a, b, { labelA, labelB });
+
+  if (flags.out) {
+    fs.writeFileSync(path.resolve(flags.out), markdown);
+    console.log(`Drift report written to ${flags.out}`);
+  } else {
+    console.log(markdown);
+  }
+}
+
+function cmdValidate(positional) {
+  const p = positional[0];
+  if (!p) { usage(); process.exit(2); }
+  const receipt = JSON.parse(fs.readFileSync(p, 'utf8'));
+  const { valid, errors } = validateReceipt(receipt);
+  const hashOk = verifyReceiptHash(receipt);
+  console.log(`schema: ${valid ? 'VALID' : 'INVALID'}   receipt_hash: ${hashOk ? 'VERIFIED' : 'MISMATCH'}`);
+  if (!valid) console.log(JSON.stringify(errors, null, 2));
+  process.exit(valid && hashOk ? 0 : 1);
+}
+
+function cmdInit(positional) {
+  const target = positional[0];
+  if (!target) {
+    console.error('usage: driftproof init <dir>\n');
+    console.error('Scaffolds SKILL.md (stub), evals/evals.json (3 example cases), and .driftproofrc.');
+    process.exit(2);
+  }
+  const { dir, created, skipped } = scaffoldInit(target);
+  const rel = (p) => path.relative(process.cwd(), p) || '.';
+  console.log(`driftproof init — ${rel(dir)}/`);
+  for (const f of created) console.log(`  + ${rel(f)}`);
+  for (const f of skipped) console.log(`  · ${rel(f)} (exists — left untouched)`);
+  if (!created.length) {
+    console.log('\nNothing to create; every file already existed. init never overwrites.');
+    return;
+  }
+  console.log(`\nNext:
+  1. Edit ${rel(path.join(dir, 'SKILL.md'))} with your skill's instructions.
+  2. Edit ${rel(path.join(dir, 'evals', 'evals.json'))} — replace the 3 example cases (rubrics anchored at 0.80).
+  3. driftproof run ${rel(dir)} --models claude-haiku-4-5 --max-usd 2
+See AUTHORING.md for how to write a fair suite.`);
+}
+
+// Emit a shields.io endpoint badge for a single receipt, or GitHub Actions
+// output lines. Default: print the shields JSON to stdout (commit it and point
+// the shields endpoint URL at it). --out FILE writes the JSON to a file.
+// --github-output prints verdict/delta/message/color as key=value lines.
+function cmdBadge(positional, flags) {
+  const p = positional[0];
+  if (!p) { console.error('usage: driftproof badge <receipt.json> [--out FILE] [--github-output]'); process.exit(2); }
+  const receipt = JSON.parse(fs.readFileSync(p, 'utf8'));
+  if (flags['github-output']) { console.log(githubOutputLines(receipt)); return; }
+  const badge = badgeEndpoint(receipt);
+  const json = JSON.stringify(badge, null, 2);
+  if (flags.out) {
+    const out = path.resolve(flags.out);
+    fs.mkdirSync(path.dirname(out), { recursive: true });
+    fs.writeFileSync(out, json + '\n');
+    const v = verdictFromReceipt(receipt);
+    console.log(`badge written to ${flags.out}  (${v.verdict}: ${badge.message}, ${badge.color})`);
+  } else {
+    console.log(json);
+  }
+}
+
+// Convert another tool's results file into a valid DECLARED receipt (interop,
+// Phase 7). The converted receipt is validated + self-hash-verified before it
+// is written; a failed conversion writes nothing.
+function cmdImport(positional, flags) {
+  const p = positional[0];
+  const from = flags.from;
+  const { IMPORT_TOOLS, importResults } = require('../lib/importers');
+  if (!p || typeof from !== 'string') {
+    console.error(`usage: driftproof import <results.json> --from ${IMPORT_TOOLS.join('|')} [--out DIR]`);
+    process.exit(2);
+  }
+  const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+  const receipt = importResults(data, { from, importedAt: new Date().toISOString() });
+  const { valid, errors } = validateReceipt(receipt);
+  if (!valid || !verifyReceiptHash(receipt)) {
+    console.error('✗ converted receipt failed validation — nothing written:', JSON.stringify(errors, null, 2));
+    process.exit(1);
+  }
+  const outDir = flags.out ? path.resolve(flags.out) : RECEIPTS_DIR;
+  fs.mkdirSync(outDir, { recursive: true });
+  const base = `${slug(receipt.skill.name)}-${slug(receipt.run.model_id)}-imported-${slug(from)}-${dateStamp(receipt.run.date_utc)}`;
+  const jsonPath = path.join(outDir, `${base}.json`);
+  fs.writeFileSync(jsonPath, JSON.stringify(receipt, null, 2));
+  console.log(`imported → ${path.relative(process.cwd(), jsonPath)}`);
+  console.log(`  verification_level: DECLARED (source ${receipt.run.source}) — the source tool's declaration, converted faithfully;`);
+  console.log(`  no generation hashes (never fabricated); excluded from drift verdicts unless re-run TESTED. See docs/interop.md.`);
+}
+
+// Emit the minimal stable interchange summary for one receipt (interop, Phase 7).
+function cmdExport(positional, flags) {
+  const p = positional[0];
+  const to = flags.to || 'summary-json';
+  if (!p) { console.error('usage: driftproof export <receipt.json> [--to summary-json] [--report-url URL] [--out FILE]'); process.exit(2); }
+  if (to !== 'summary-json') { console.error(`unknown export target "${to}" — supported: summary-json`); process.exit(2); }
+  const { toSummaryJson } = require('../lib/export');
+  const receipt = JSON.parse(fs.readFileSync(p, 'utf8'));
+  if (!verifyReceiptHash(receipt)) console.error(`  ⚠ ${path.basename(p)}: receipt_hash does not verify (tampered or hand-edited)`);
+  const summary = toSummaryJson(receipt, { reportUrl: typeof flags['report-url'] === 'string' ? flags['report-url'] : null });
+  const json = JSON.stringify(summary, null, 2);
+  if (flags.out) {
+    const out = path.resolve(flags.out);
+    fs.mkdirSync(path.dirname(out), { recursive: true });
+    fs.writeFileSync(out, json + '\n');
+    console.log(`summary written to ${flags.out}  (${summary.verdict}, delta ${summary.delta === null ? 'n/a' : summary.delta})`);
+  } else {
+    console.log(json);
+  }
+}
+
+async function main() {
+  const [, , cmd, ...rest] = process.argv;
+  const { positional, flags } = parseArgs(rest);
+  switch (cmd) {
+    case 'init': return cmdInit(positional);
+    case 'run': return cmdRun(positional, flags);
+    case 'diff': return cmdDiff(positional, flags);
+    case 'validate': return cmdValidate(positional);
+    case 'badge': return cmdBadge(positional, flags);
+    case 'import': return cmdImport(positional, flags);
+    case 'export': return cmdExport(positional, flags);
+    case 'version': case '--version': case '-v': console.log(RUNNER_VERSION); return;
+    case 'help': case '--help': case '-h': case undefined: return usage();
+    default: console.error(`unknown command: ${cmd}\n`); usage(); process.exit(2);
+  }
+}
+
+main().catch((e) => { console.error('FATAL', e && (e.stack || e.message || e)); process.exit(2); });

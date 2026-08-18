@@ -1,0 +1,67 @@
+{
+  "skill": "commit-message-conventions",
+  "version": "0.2.0",
+  "format": "agentskills.io/evals",
+  "cases": [
+    {
+      "id": "feat-basic",
+      "prompt": "Write a git commit message for a change that adds a dark mode toggle to the settings page.",
+      "rubric": "Response is ONLY a commit message (no prose, no code fence). Subject follows Conventional Commits '<type>(<scope>): <subject>' with type 'feat', imperative mood, lowercase first letter, no trailing period, <=72 chars. SCORING ANCHOR (apply strictly): a fully correct, idiomatic message scores 0.80. Award 0.81-0.90 only if it is ALSO exemplary (well-chosen scope AND a specific, information-dense subject); award 0.91-1.00 only if flawless AND exceptional in every respect (rare). Subtract ~0.2 from 0.80 for each Conventional-Commits error (wrong type, capitalization, past tense, trailing period, over-length, code fence, extra prose).",
+      "pass_threshold": 0.7
+    },
+    {
+      "id": "fix-with-body",
+      "prompt": "Write a git commit message for fixing a bug where expired JWT refresh tokens were still being accepted by the auth service. Include a short body explaining the cause.",
+      "rubric": "Response is only a commit message. Subject: type 'fix', ideally scope (auth), imperative, lowercase, no trailing period, <=72. Body separated by exactly one blank line, explaining the cause (what/why, not how). SCORING ANCHOR (apply strictly): a fully correct message scores 0.80; award 0.81-0.90 only if ALSO exemplary (scope present AND a body naming the concrete root cause, not a vague restatement); 0.91-1.00 only if flawless and exceptional (rare). Subtract ~0.2 per error (wrong type, malformed subject, missing blank line, body absent or off-topic).",
+      "pass_threshold": 0.7
+    },
+    {
+      "id": "breaking-change",
+      "prompt": "Write a git commit message for dropping support for Node.js 16; the new minimum is Node 18. This is a breaking change.",
+      "rubric": "Response is only a commit message. Signals the breaking change via '!' before the colon OR a 'BREAKING CHANGE:' footer (or both). Subject: valid type, imperative, lowercase, no trailing period, <=72. SCORING ANCHOR (apply strictly): signalling the break correctly one way with an otherwise clean message scores 0.80; award 0.81-0.90 only if it uses BOTH the '!' marker AND a 'BREAKING CHANGE:' footer describing the new minimum; 0.91-1.00 only if additionally flawless and exceptional. If no breaking-change signal at all, cap at 0.3. Subtract ~0.2 per subject error.",
+      "pass_threshold": 0.7
+    },
+    {
+      "id": "chore-vs-feat",
+      "prompt": "Write a git commit message for bumping the pinned version of the ESLint dev dependency from 8.50 to 8.57 in package.json.",
+      "rubric": "Response is only a commit message. This is dev-tooling maintenance: the correct type is 'chore' (a scope like (deps) is ideal); 'build' is a partial-credit alternative; 'feat'/'fix' are wrong (this adds no feature and fixes no bug). Subject imperative, lowercase, no trailing period, <=72. SCORING ANCHOR (apply strictly): if the type is 'feat' or 'fix', cap at 0.3. With type 'chore': a correct message scores 0.80, and 0.81-1.00 only if exemplary (scope (deps) AND names the tool and versions). With type 'build': cap at 0.65. Subtract ~0.2 per subject error.",
+      "pass_threshold": 0.7
+    },
+    {
+      "id": "perf-not-refactor",
+      "prompt": "Write a git commit message for a change that memoizes an expensive layout calculation so the component stops recomputing on every render, making the UI noticeably faster.",
+      "rubric": "Response is only a commit message. The type MUST be 'perf' ('refactor', 'fix', 'feat' are WRONG). Subject imperative, lowercase, no trailing period, <=72, referencing the performance intent. SCORING ANCHOR (apply strictly): if the type is not 'perf', cap at 0.4. With type 'perf': a correct message scores 0.80, and 0.81-1.00 only if exemplary (good scope AND a subject naming the mechanism, e.g. memoization). Subtract ~0.2 per subject error.",
+      "pass_threshold": 0.7
+    },
+    {
+      "id": "build-type-selection",
+      "prompt": "Write a git commit message for upgrading the project's JavaScript bundler from version 5 to version 6.",
+      "rubric": "Response is only a commit message. Appropriate type is 'build' (build-system/tooling change); 'chore' is a partial alternative; 'feat'/'fix' are wrong. Subject imperative, lowercase, no trailing period, <=72. SCORING ANCHOR (apply strictly): type feat/fix or malformed subject caps at 0.3; type 'chore' with a clean subject caps at 0.6; type 'build' with a correct subject scores 0.80, and 0.81-1.00 only if exemplary (scope such as (deps) AND names the bundler and versions).",
+      "pass_threshold": 0.7
+    },
+    {
+      "id": "revert-format",
+      "prompt": "Write a git commit message that reverts a previous commit (hash 9f3c1a2) which had added a dark mode toggle to settings.",
+      "rubric": "Response is only a commit message using the Conventional Commits revert form: subject begins 'revert:' (or 'revert(scope):') naming the reverted change, and the body contains a line like 'This reverts commit 9f3c1a2.'. SCORING ANCHOR (apply strictly): not using the revert form caps at 0.3; wrong or absent hash caps at 0.55; a correct revert message (revert prefix + names the change + exact 'This reverts commit 9f3c1a2.' line) scores 0.80, and 0.81-1.00 only if additionally flawless and exceptional.",
+      "pass_threshold": 0.7
+    },
+    {
+      "id": "footer-issue-ref",
+      "prompt": "Write a git commit message for fixing a null-pointer crash in the CSV export path. It resolves issue number 482 in the tracker.",
+      "rubric": "Response is only a commit message. Subject: type 'fix', imperative, lowercase, no trailing period, <=72. A footer references the issue correctly, e.g. 'Closes #482' / 'Fixes #482' / 'Refs: #482' on its own line after a blank-line-separated body (or after the subject). SCORING ANCHOR (apply strictly): missing or malformed issue footer caps at 0.5; a 'fix' message with a correctly-formatted 'Closes #482' footer scores 0.80, and 0.81-1.00 only if exemplary (scope AND an explanatory body AND the correct closing footer).",
+      "pass_threshold": 0.7
+    },
+    {
+      "id": "long-body-wrap-72",
+      "prompt": "Write a git commit message for a fix to a subtle race condition in the database connection pool where, under high concurrency, two worker threads could both be handed the same physical connection because the free-list check and the checkout were not atomic. Include a thorough body of at least six sentences that explains the race, the trigger conditions, the fix, and any follow-up, and hard-wrap the body at 72 columns.",
+      "rubric": "Response is only a commit message. Subject: type 'fix', imperative, lowercase, no trailing period, <=72. Body separated by one blank line, at least six sentences covering race/trigger/fix/follow-up. CRITICAL: measure each body line's length; NO body line may exceed 72 characters. SCORING ANCHOR (apply strictly): if ANY body line exceeds 72 chars, cap at 0.55 regardless of content quality; a thorough body with every line <=72 and a clean subject scores 0.80, and 0.81-1.00 only if additionally exceptional; subtract for a thin/short body (fewer than six sentences) or subject errors.",
+      "pass_threshold": 0.7
+    },
+    {
+      "id": "split-unrelated",
+      "prompt": "Today I renamed a bunch of variables for clarity, AND I also fixed a login bug, AND I updated the README. Write me one commit message covering all of it.",
+      "rubric": "A skilled response recognizes these are UNRELATED changes that should be SEPARATE commits (refactor for the rename, fix for the login bug, docs for the README) and says so. SCORING ANCHOR (apply strictly): one vague untyped message scores 0.1; one well-formed message that ignores the split scores 0.4; advising separation OR a single message that explicitly acknowledges the split scores ~0.75; 0.81-1.00 only if it advises separate commits AND gives the correct type for all three changes.",
+      "pass_threshold": 0.7
+    }
+  ]
+}
