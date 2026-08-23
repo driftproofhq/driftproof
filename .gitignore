@@ -1,0 +1,29 @@
+node_modules/
+*.log
+tests/gate-results.json
+.env
+.DS_Store
+# Third-party skill content is fetched here at run time and MUST NOT be committed
+# (see scripts/fetch-skills.js + suites/manifest.json). The publish tree never
+# contains third-party SKILL.md text.
+/.skills-workdir/
+# Emitted receipts are build artifacts by default; keep the dir, ignore contents
+# except an explicit .gitkeep and any receipts a user chooses to force-add.
+/receipts/*.json
+/receipts/*.md
+!/receipts/.gitkeep
+# Retained transcripts (--keep-transcripts) are raw model text; never committed.
+/transcripts/
+# Release-trigger state: the seen-models file and last-run markers.
+/state/
+# Auto-prepared DRAFT reports (release trigger). Never tracked, never published:
+# a sitting unreviewed draft must not ride along with an unrelated publish. On
+# approval they are promoted OUT of *-draft/ (see RUNBOOK.md), which un-ignores them.
+/docs/reports/*-draft/
+/receipts/report-*-draft/
+# Spec gate scratch: gate.sh writes .gate-results for specreceipt to read. It is
+# a transient artifact of RUNNING the gate, so tracking it would mean every gate
+# run dirties the tree — and the receipt's own tree_clean flag would then read
+# false on an otherwise clean checkout, making it meaningless. The receipts under
+# specs/*/evidence/ ARE tracked: those are the evidence.
+.gate-results

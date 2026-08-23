@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driftproof — Three model releases later: what actually happens to agent skills</title>
+<meta name="description" content="The launch essay: what the receipts from three Driftproof reports say about agent skills on a moving substrate.">
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<header class="site"><a class="brand" href="../../index.html">Driftproof</a><nav><a href="../../index.html">Home</a><a href="../../methodology.html">Methodology</a><a href="../../neutrality.html">Neutrality</a><a href="https://github.com/driftproofhq/driftproof">GitHub</a></nav></header>
+<main class="hero">
+  <h1>Three model releases later: what actually happens to agent skills</h1>
+  <p class="muted">By the Driftproof maintainer · 2026-08-11</p>
+
+  <p>Sonnet 5 shipped June 30. Opus 5 followed July 24. Most teams updated a model string and moved on. Almost nobody re-ran their skills.</p>
+
+  <p>Skills (the SKILL.md files that teach AI agents your conventions: code-review discipline, commit style, writing rules) are becoming how expertise gets encoded for the agent era. One recent count found more than 47,000 across public repos. Almost none are tested once, let alone re-tested when the model underneath them changes. Every release silently re-prices every skill. I wanted to know by how much, so I built the checker.</p>
+
+  <p>Driftproof is a small open-source tool with one job: run a skill's eval suite with and without the skill, across model versions or across providers, and say honestly whether anything moved. Every score is judged five times so it carries a confidence band, not a single fragile number. A verdict is claimed only when bands fully separate AND the mean moves at least 0.05. Overlapping bands are reported as within noise, never as drift. Every run emits a dated, hash-verified receipt anyone can reproduce.</p>
+
+  <p>Three reports in, here is what the receipts say.</p>
+
+  <p><a href="../../reports/001/index.html">Report #001</a> (sonnet-4-6 → sonnet-5, 10 popular public skills): 9 of 10 moved beyond noise. 3 regressed, 3 improved, 3 mixed. Same files, same suites, same judge; only the model changed.</p>
+
+  <p><a href="../../reports/002/index.html">Report #002</a> (the same skills, Claude vs GPT, one fixed judge): 3 durable, 4 substrate-dependent, 2 regressed, 1 no-effect. The strangest rows are sign flips: a skill-authoring skill lifts output quality on Claude and reduces it on GPT; a code-review skill is the exact mirror. A skill tuned on one substrate can be dead weight, or worse, on another, and nothing warns you when you switch.</p>
+
+  <p><a href="../../reports/003/index.html">Report #003</a> (opus-4-8 → opus-5): 4 improved, 2 regressed, 4 within noise. Both regressions are single cases on skills that are otherwise fine, one sitting exactly on the 0.05 floor. The sharpest signal is another sign flip, this time across versions rather than vendors: a skill that was net-negative on opus-4-8 is net-positive on opus-5, while three others went quiet because the new model does the thing without them.</p>
+
+  <p>Some honesty about the instrument, because a measurement tool that is not honest about itself is worthless. I wrote the eval suites; that authorship is disclosed, and every rubric criterion must trace to text the skill's own SKILL.md contains. When my own re-audit found one criterion importing outside knowledge, I tightened the standard, re-ran, and republished with a visible amendment; the maintainer of the largest affected skill pack was auditing the suites at the time, and the stricter standard went further than he asked. One of those amendments deleted a false regression. Another exposed a real one the earlier rubric had missed. The reports also carry low-resolution flags where the judge quantizes, and Report #001 is on its third published version because corrections belong in daylight.</p>
+
+  <p>What I take from three reports: skills are not static assets. They are bets on a moving substrate, re-priced by every release and every provider switch. Measured, disclosed, and in the strangest cases, still unexplained: the receipts show the sign flips; the mechanism is future work.</p>
+
+  <p>The spec, runner, receipts, and reports are open (Apache-2.0) at <a href="../../index.html">driftproofhq.com</a>. There is an <a href="../../index.html#quickstart">npx quickstart</a>, a GitHub Action that fails your CI when a skill regresses on a new model, and a badge. If you maintain a skill, "tested once" is not a durable answer, and now there is a way to know when it stops being true.</p>
+
+  <p>Verdicts age because the substrate moves.</p>
+</main>
+<footer class="site"><span>Driftproof · Apache-2.0</span><span><a href="../../index.html">driftproofhq.com</a></span></footer>
+</body>
+</html>

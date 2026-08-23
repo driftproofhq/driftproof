@@ -1,0 +1,690 @@
+{
+  "schema_version": "0.4",
+  "skill": {
+    "name": "git-workflow-and-versioning",
+    "version": "0.0.0",
+    "content_hash": "c0e9cf58fddf629451e5d6d3a130ca252cea78871b0044e1787d8cc417ad04ef",
+    "tokens": 3431
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "2f3e8cd66159c1dce708cad6a8a047cd6731438b0808e182a271f471315a0a0c",
+    "case_count": 7
+  },
+  "run": {
+    "model_id": "gpt-5.6-sol",
+    "model_release_date": null,
+    "provider": "openai",
+    "surface": "openai-cli",
+    "runner_version": "0.5.0",
+    "date_utc": "2026-08-18T19:01:02.260Z",
+    "registry": "registered",
+    "transcripts": "retained-local",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    },
+    "surface_overhead_note": "openai/cli surface (codex exec): every call carries a fixed Codex base-instruction preamble of ~12,000–15,000 input tokens that the harness prepends and we do not control; the model id is set by us via -m (it is not echoed in the JSONL stream). Approval prompting is off by default on `codex exec` (no -a flag is passed).",
+    "pricing_snapshot": {
+      "frozen_at": "2026-08-18T19:01:02.260Z",
+      "source": "config/models.json",
+      "currency": "USD",
+      "models": {
+        "gpt-5.6-sol": {
+          "input_per_mtok": 5,
+          "output_per_mtok": 30,
+          "registered": true
+        },
+        "claude-haiku-4-5": {
+          "input_per_mtok": 1,
+          "output_per_mtok": 5,
+          "registered": true
+        }
+      },
+      "note": "Prices frozen at run time. Every derived cost in this receipt is computed from THIS snapshot, never from the live registry, so the receipt keeps its meaning when registry prices later change."
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "commit-message-conventional-type",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.804,
+        "mean": 0.804,
+        "stddev": 0.039115,
+        "samples": [
+          0.84,
+          0.85,
+          0.79,
+          0.76,
+          0.78
+        ],
+        "generation_hash": "a1d22daf8837bdafbbc733b01985de2d595e57a3140d01306e89ef85ba47504f",
+        "judge_sample_hashes": [
+          "19ef9401f24f8d12802d925edae6366cf63f4b3efb3ffbdc1ffe8391667150cd",
+          "d2e858f569fc842f75180b0eb5b7a41ec3befa262a7621a477897e2f1a45b3b4",
+          "32ed570524088c6aa3417d17918fc338f78d55f7f1990a81882a9a09c6452d65",
+          "c3d081ab44e1a4433473c0f701531ef5bd52bf90540bc8f45af75232a08d1ea7",
+          "07e89814032f268cf29d2425faf4d438335bfeaa11731f02310d27bafc2f92e8"
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all criteria: uses `fix:` prefix, subject is specific, body explains both the cause (wrong unit) and impact (intended duration preserved). Exemplary and actionable for maintainers.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "c17f2f214cec220ac31af3cfe88a52393c254cea8f9a94fc16e668f668fa88c3"
+        },
+        "judge_usage": {
+          "input_tokens": 130443,
+          "output_tokens": 12245,
+          "cached_tokens": 110983,
+          "wall_ms": 137680
+        },
+        "usage": {
+          "input_tokens": 16636,
+          "output_tokens": 36,
+          "cached_tokens": 9984,
+          "wall_ms": 6002
+        }
+      },
+      {
+        "id": "commit-message-conventional-type",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.856,
+        "mean": 0.856,
+        "stddev": 0.016733,
+        "samples": [
+          0.87,
+          0.87,
+          0.85,
+          0.86,
+          0.83
+        ],
+        "generation_hash": "e23de9cf36ca1d52f04e72d1a4079d1870ebd778eea6fe28b2d9891b2ea12391",
+        "judge_sample_hashes": [
+          "b558ad805188289a4b69e6664e851284d640dc4af69b8b94b62ed8d8bd49857f",
+          "8700529ed8947f7f86328104c28d147c4559737406c524a1174f7bf94870487c",
+          "53e4a8bbc865478fc6e7ff18a548a93f2ec3c8b59eeff4b33f174fe0625bfdc5",
+          "bc5086d002bd5e7eb2d7cfc33b357a8a2b07e114f439f27b38bd5dd6426c7a1e",
+          "20c569b6e9a5efcce466a1c468b73f376ef1c64edd9b4941a6d24fa58e602570"
+        ],
+        "threshold": 0.7,
+        "reason": "Correct fix: prefix, specific subject, body clearly explains both root cause (unit conversion) and user-facing impact (premature expiry).",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "c17f2f214cec220ac31af3cfe88a52393c254cea8f9a94fc16e668f668fa88c3"
+        },
+        "judge_usage": {
+          "input_tokens": 130471,
+          "output_tokens": 9989,
+          "cached_tokens": 123329,
+          "wall_ms": 111715
+        },
+        "usage": {
+          "input_tokens": 13380,
+          "output_tokens": 39,
+          "cached_tokens": 9984,
+          "wall_ms": 7173
+        }
+      },
+      {
+        "id": "semver-clean-bump",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.87,
+        "mean": 0.87,
+        "stddev": 0.012247,
+        "samples": [
+          0.88,
+          0.87,
+          0.85,
+          0.88,
+          0.87
+        ],
+        "generation_hash": "e1934bd487917554cfd7066d1092af7012218f1539677a02420009fc236cf78b",
+        "judge_sample_hashes": [
+          "c9d9c261344337087a3e0d27767bcdf92d54363db3c603a25d1b00971bf57685",
+          "042088be7e51abcdcfe62fe31dd49d6696273389e92e93c735d053a7317bef40",
+          "050dc20ff3116b16513afe07861e03c23dcce762c711ba337845fd4229011a87",
+          "3eae5e02749cc26707597f449960303d144f93f6531368a31320f261ab51629a",
+          "ef974946ea82796239f31a7455518ad1ec5751d069d00b1373e72eb9953b02dc"
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly classifies both changes by SemVer definitions (MINOR for optional parameter, PATCH for memory leak fix), rules out MAJOR, proposes 2.4.0.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "4a5916ff39e2b4d5b9860ec84771d424556c81cf0925e37652516f69304a3fde"
+        },
+        "judge_usage": {
+          "input_tokens": 131245,
+          "output_tokens": 11155,
+          "cached_tokens": 103970,
+          "wall_ms": 118860
+        },
+        "usage": {
+          "input_tokens": 16544,
+          "output_tokens": 55,
+          "cached_tokens": 13056,
+          "wall_ms": 6227
+        }
+      },
+      {
+        "id": "semver-clean-bump",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.866,
+        "mean": 0.866,
+        "stddev": 0.008944,
+        "samples": [
+          0.85,
+          0.87,
+          0.87,
+          0.87,
+          0.87
+        ],
+        "generation_hash": "4b23c5d1f801788f975ba18e0f0389028fc79a473fe9286b6cb7cf7453fc9275",
+        "judge_sample_hashes": [
+          "ff2fa66544c05bcda9a565ab9382338df3ced6fea22f99e6be00b3a670514445",
+          "49378f3e823d717fd3b33e2f83fe87ef49423aa9a6d5fd3c1f4a4533cea2bef4",
+          "6844fa20d3d266d167858ff90d7bf52a4b88254637e277d6cde9f48408e238e9",
+          "658a28d4919e65dbea8cc84cb596114a4bde4391dac8e2218cbe6ddb7c392e10",
+          "ee96486bb16260ba48f4bda6fce4dcf78ad4a5be83e31fd9731f4e501d57418f"
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly classifies optional parameter as MINOR change, memory leak as PATCH, rules out breaking change, and proposes 2.4.0 with proper SemVer application.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "4a5916ff39e2b4d5b9860ec84771d424556c81cf0925e37652516f69304a3fde"
+        },
+        "judge_usage": {
+          "input_tokens": 131373,
+          "output_tokens": 10157,
+          "cached_tokens": 103228,
+          "wall_ms": 108396
+        },
+        "usage": {
+          "input_tokens": 13288,
+          "output_tokens": 53,
+          "cached_tokens": 9984,
+          "wall_ms": 5160
+        }
+      },
+      {
+        "id": "split-into-atomic-commits",
+        "mode": "with_skill",
+        "outcome": "fail",
+        "score": 0.6,
+        "mean": 0.6,
+        "stddev": 0,
+        "samples": [
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.6
+        ],
+        "generation_hash": "66e64532aaa41b381985f34990b943f8f28e57f9f65af96121dacaa9eed3135c",
+        "judge_sample_hashes": [
+          "b58c0cad376c2f1f2cdebbb87db2f41c8c4e5094d895c54ab63eb23d68d6c308",
+          "53367cf8cda47597bbc21220d824f62eb11f3fbaee0377715d08a4238636180e",
+          "78d86c7c15631653fcd64cbf7d830076a7246ea0b39da3fcce7aba61d46a2ed5",
+          "89b69b79f60a062da9cd99e2e9291bb63698daaea8744cb71dc3dc7824e35379",
+          "e3a008e4be763d5aa3410b29a61d2ddd5014c011224a3171d32b3d2ba15f0728"
+        ],
+        "threshold": 0.7,
+        "reason": "Produces only 2 commits instead of required minimum of 3; formatting changes should be separate commit, not excluded.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "e330958b52d76b5d22c01fead311c482e5e00161dd9c367e403094bd0c19ac3b"
+        },
+        "judge_usage": {
+          "input_tokens": 131634,
+          "output_tokens": 31122,
+          "cached_tokens": 119614,
+          "wall_ms": 309136
+        },
+        "usage": {
+          "input_tokens": 16597,
+          "output_tokens": 281,
+          "cached_tokens": 9984,
+          "wall_ms": 9624
+        }
+      },
+      {
+        "id": "split-into-atomic-commits",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.864,
+        "mean": 0.864,
+        "stddev": 0.021909,
+        "samples": [
+          0.9,
+          0.85,
+          0.85,
+          0.87,
+          0.85
+        ],
+        "generation_hash": "f340ed27630d4930dcb4ca1832919d9b622586e1c0b7b9bc1f64c615c302572d",
+        "judge_sample_hashes": [
+          "26d97e62f847c639734a96c445a392ecce92e6d16a201c94104f10b67d142d25",
+          "9d0dc86b3c2370af249ca6e7c45af888aec6473a2f4afe0af3f9a476797bccd0",
+          "8a0ae04c2b564ec806d1e84490cbfe0a3d6d43556fafea56a66008738d6cbfac",
+          "a606b9cbd5b3ef4d12f26a9cde85838452102e28c4bc28c43eda363558b61948",
+          "de68aaf799f3d0587cf6991fece07fdf3e9d2ab6878f52da097e27cd0e1e0e7e"
+        ],
+        "threshold": 0.7,
+        "reason": "Fully correct: three separate commits with refactor isolated from feature, formatting isolated, proper conventional types. Exemplary: commits ordered so refactor lands before dependent feature, rationale explicitly names reviewability/revertability.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "e330958b52d76b5d22c01fead311c482e5e00161dd9c367e403094bd0c19ac3b"
+        },
+        "judge_usage": {
+          "input_tokens": 131625,
+          "output_tokens": 18580,
+          "cached_tokens": 123399,
+          "wall_ms": 192026
+        },
+        "usage": {
+          "input_tokens": 13341,
+          "output_tokens": 285,
+          "cached_tokens": 9984,
+          "wall_ms": 10058
+        }
+      },
+      {
+        "id": "changelog-curated-by-impact",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.866,
+        "mean": 0.866,
+        "stddev": 0.011402,
+        "samples": [
+          0.86,
+          0.85,
+          0.88,
+          0.87,
+          0.87
+        ],
+        "generation_hash": "a9ca8b944d1f0865afc81757a2bc35ca02ab78d3ef2f5b68f3967665ff4d1356",
+        "judge_sample_hashes": [
+          "76daeb086b12140ab8cdbb21d9df0b1d53c6aad76fd05aea00a6c2eff958d5f4",
+          "95c8753ed73d5cc04501b5c80df69f3d67b6089873edfd7bb17853c4c8b20db3",
+          "42ceb0144ec040983855cf9ac83d26319c7f3b1a1f9f2955db9e03cc3c2b8888",
+          "3be6e19161ea4ef9e5353223f684848fc9d2e578f1b893554e2df0726d6f22b4",
+          "4e78bc6c0d52b239dcd9972f0f0b6fe0c62c263d467e660ab313208c7d6f6626"
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all criteria: correct header; grouped categories; omits internal refactors and chore; Deprecated entry clearly names replacement endpoint and migration path.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "a3f7f6d638ae14a768a15bfda476fdcef6fe752bd31a8216025483d1fd48c2c1"
+        },
+        "judge_usage": {
+          "input_tokens": 131110,
+          "output_tokens": 9789,
+          "cached_tokens": 115673,
+          "wall_ms": 104551
+        },
+        "usage": {
+          "input_tokens": 16586,
+          "output_tokens": 112,
+          "cached_tokens": 9984,
+          "wall_ms": 9234
+        }
+      },
+      {
+        "id": "changelog-curated-by-impact",
+        "mode": "baseline",
+        "outcome": "borderline",
+        "score": 0.65,
+        "mean": 0.65,
+        "stddev": 0.111803,
+        "samples": [
+          0.6,
+          0.85,
+          0.6,
+          0.6,
+          0.6
+        ],
+        "generation_hash": "f7b092072ef61d7232a67eb00946d7f289afb38a54e7feb5824e97955cce9a4f",
+        "judge_sample_hashes": [
+          "609f80fdebf5c92563cb54af6857129eb12673d90085bdee64cd8e0e685be33f",
+          "469fb2fd1f40fd19e9684c244b0ffa2c3c312624ed0abd142c35bb2e7cfcc4d1",
+          "8fdd7dfadab62e40b622647fdf04ce28af5a488fc44f3468e9226ca47ec50d04",
+          "41e10d0678aa8fa9a9363f62fc4bf27f46db4fb07a5d0d7a27bff263e1034b6b",
+          "12cd224b259c3da2e9af7e84b84154224df63fca8f82bb4724ac22689f6b44ef"
+        ],
+        "threshold": 0.7,
+        "reason": "Deprecation filed under Changed not Deprecated section; otherwise strong with endpoint replacement noted.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "a3f7f6d638ae14a768a15bfda476fdcef6fe752bd31a8216025483d1fd48c2c1"
+        },
+        "judge_usage": {
+          "input_tokens": 131193,
+          "output_tokens": 24312,
+          "cached_tokens": 119461,
+          "wall_ms": 242405
+        },
+        "usage": {
+          "input_tokens": 13330,
+          "output_tokens": 74,
+          "cached_tokens": 12032,
+          "wall_ms": 6245
+        }
+      },
+      {
+        "id": "trunk-based-short-lived-branches",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.846,
+        "mean": 0.846,
+        "stddev": 0.011402,
+        "samples": [
+          0.86,
+          0.85,
+          0.84,
+          0.83,
+          0.85
+        ],
+        "generation_hash": "0ea71e7132810f25cad9d3e2621b5b17950c99107d774ab85095dda7c64dc627",
+        "judge_sample_hashes": [
+          "e0e576f75e2d72c10c2d7e687f199c6908907e6cf42847f5399a0bce32ef206d",
+          "2d05f2038dd0767928974a5748325345045337d6f91bc3b5e0f1b1fcd7fa9c6e",
+          "feaf9c75d2ce0271cefdca3518d292927994009df114e5cf62e2d2ae93608aff",
+          "1fe73da6ebebf29d72811f82b72f1dc68aa0b77b5df9193e6b2ee5cbef739787",
+          "3742c9b6c793c8446ed67cb060e39b39ee60b08dba03919b1cc5750a509df2eb"
+        ],
+        "threshold": 0.7,
+        "reason": "Advises against long-lived branch with divergence/merge-risk rationale; recommends short-lived frequent merges; proposes feature flags to keep main deployable; explicitly reconciles teammate's concern.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "35242fa22b28bbc6c03803b482e8bc5ec52b59693f02bd777d095ab415e0b5b8"
+        },
+        "judge_usage": {
+          "input_tokens": 130664,
+          "output_tokens": 12406,
+          "cached_tokens": 123552,
+          "wall_ms": 134607
+        },
+        "usage": {
+          "input_tokens": 16527,
+          "output_tokens": 74,
+          "cached_tokens": 9984,
+          "wall_ms": 5941
+        }
+      },
+      {
+        "id": "trunk-based-short-lived-branches",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.836,
+        "mean": 0.836,
+        "stddev": 0.027019,
+        "samples": [
+          0.87,
+          0.84,
+          0.8,
+          0.82,
+          0.85
+        ],
+        "generation_hash": "fda469a82dd380281b528f9103f0fdd08d24491f2e45153c859634c1bd7079f5",
+        "judge_sample_hashes": [
+          "4e7ce15bf1da65ba57d15de2d9e1ce8c1fc14cc42a1af8c8c975933f8db9815b",
+          "1c29518bf13ad161bfea4e9fe73ee3ab2412f80b256ede5e79b6b16add9ce22f",
+          "24da9f1c48d67e9cb4450ec5e137969365a0db7d62e68657aed3c559489b4879",
+          "63d15de102a8cf23eb968439dab11f9308e145f5b344dda211bf658467940556",
+          "32f3d26b7413395920f0c352d914ddb79c3e1286433a9d43a70cbc2735cc1a19"
+        ],
+        "threshold": 0.7,
+        "reason": "Advises against long-lived branch with merge-risk rationale, recommends short-lived branches, proposes feature flags. Exemplary reconciliation of teammate's concern. Lacks 1-3 day guidance.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "35242fa22b28bbc6c03803b482e8bc5ec52b59693f02bd777d095ab415e0b5b8"
+        },
+        "judge_usage": {
+          "input_tokens": 130736,
+          "output_tokens": 11638,
+          "cached_tokens": 98682,
+          "wall_ms": 131114
+        },
+        "usage": {
+          "input_tokens": 13271,
+          "output_tokens": 85,
+          "cached_tokens": 9984,
+          "wall_ms": 6199
+        }
+      },
+      {
+        "id": "semver-hidden-breaking-change",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.868,
+        "mean": 0.868,
+        "stddev": 0.010954,
+        "samples": [
+          0.88,
+          0.87,
+          0.85,
+          0.87,
+          0.87
+        ],
+        "generation_hash": "f66b87f4d3463e28225c2bdde1fa932fc9a9bf5fecae1a3a695219427d3f3399",
+        "judge_sample_hashes": [
+          "1e327b3c06f53b0b6cf953c3fe1b38fc197928282606657e3392d06034ff9d15",
+          "92dbabedb61ca771c2b7d2315e686f185fefef1089ce77293a1c2fd084256110",
+          "3d718704d8ae4176f61ad1af8371ba079f1e52a536b26eb1221b882510ec1458",
+          "dc538f355054435b0e6cf68b6aee86692a5424c0e528cd56f317cd4739441102",
+          "a7c6165fee430bf2569605dee081aef36d664bc04edd466592493b7ba4f6bbc2"
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all four criteria: rejects patch, identifies breaking change from silent data loss, proposes 2.0.0, justifies by observable contract (explicitly noting 'despite the small diff'), mentions migration path.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "f81d9fcccb146f143f65d296c9c41190098f4fdd6e4af2fdcda21d0270f17467"
+        },
+        "judge_usage": {
+          "input_tokens": 130728,
+          "output_tokens": 8851,
+          "cached_tokens": 114689,
+          "wall_ms": 102746
+        },
+        "usage": {
+          "input_tokens": 16559,
+          "output_tokens": 69,
+          "cached_tokens": 16128,
+          "wall_ms": 6021
+        }
+      },
+      {
+        "id": "semver-hidden-breaking-change",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.804,
+        "mean": 0.804,
+        "stddev": 0.008944,
+        "samples": [
+          0.82,
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ],
+        "generation_hash": "1c8a72aa3bfad025ab3c864551c6debb49d9cc934087e23995d6f7d535a362d5",
+        "judge_sample_hashes": [
+          "017bb63921533002755c6af7aa892aed11c2b380da8f8b40ede0e579a51832ab",
+          "e7444fe8633dc7be98d17acbff4475fbf9a6e83129e23942f164b1cd14acde7a",
+          "ba6fb178fb41442df0921b1fc903f42e60395b85a1bd596768e41ff71f783521",
+          "ac4b0564e1d538324d8c519f0f30ee82627bf1cd95c509dc5d4dbdd83ff6b0b0",
+          "3ee1baab9bd42838e58c05493a1a29deb998f165a600e883e39af772dcfcbbc0"
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly rejects patch, identifies breaking change from observable consumer behavior (silent truncation), proposes 2.0.0, ties bump to semantic versioning principle not diff size.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "f81d9fcccb146f143f65d296c9c41190098f4fdd6e4af2fdcda21d0270f17467"
+        },
+        "judge_usage": {
+          "input_tokens": 130735,
+          "output_tokens": 6198,
+          "cached_tokens": 127076,
+          "wall_ms": 72372
+        },
+        "usage": {
+          "input_tokens": 13303,
+          "output_tokens": 68,
+          "cached_tokens": 9984,
+          "wall_ms": 5320
+        }
+      },
+      {
+        "id": "release-cut-version-tag-changelog",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.876,
+        "mean": 0.876,
+        "stddev": 0.011402,
+        "samples": [
+          0.88,
+          0.86,
+          0.87,
+          0.89,
+          0.88
+        ],
+        "generation_hash": "e89eedceb1f0ce40fb59ffd61b09dc26a134d395dcef23d30b47e10ac3850d67",
+        "judge_sample_hashes": [
+          "f76530f9790a04859b9f60ef0948ea7384b41567abc610e2710f13476ee22cad",
+          "fd3ae539c39d63ac25fe6b9016f1f2c898c3fa0d88e611c44391b0c910e4a5ac",
+          "396f3ca676af91cce38344835333d726d128896b9cc1599a590c341072c7c245",
+          "4ff6af0c776e76d2444727256af948217e2ca24cf9ccc9abf106b3dce501c832",
+          "ffc1fb1b06902109b7d01b1c60ec47e04d990b8182154dfe3e66b25a668a0381"
+        ],
+        "threshold": 0.7,
+        "reason": "Correct v2.0.0 justified by breaking removal, annotated tag with message, changelog properly grouped with migration note. Exemplary reasoning; lacks bonus push command.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "eb0c916a6f2c15fbba7db0d821798433329872231de44663c115d08ced71bee0"
+        },
+        "judge_usage": {
+          "input_tokens": 131936,
+          "output_tokens": 10362,
+          "cached_tokens": 119786,
+          "wall_ms": 111447
+        },
+        "usage": {
+          "input_tokens": 16580,
+          "output_tokens": 222,
+          "cached_tokens": 9984,
+          "wall_ms": 8536
+        }
+      },
+      {
+        "id": "release-cut-version-tag-changelog",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.87,
+        "mean": 0.87,
+        "stddev": 0.012247,
+        "samples": [
+          0.88,
+          0.88,
+          0.87,
+          0.85,
+          0.87
+        ],
+        "generation_hash": "4d0465658a4ebfeee76a0306897333311c0a9d8ec0fd9a964cf298066b614f67",
+        "judge_sample_hashes": [
+          "9829480d71df0475b67e24e3ed9ab1d15046ab4521c8e8c77c62f78e522ee729",
+          "7c192522658de18490171de715af3e4960c29833d626d22c79053789835fe19c",
+          "5ce5ef279de2bdaa7ccf4677cf266f31d1b339b4c01b893a4596cba2365f4452",
+          "2e3c3e932646b47b5353b861e3022e04badc1148aafb5ebeaa79b30838a350bf",
+          "8a3645c4e0887b56c97985c333ed24edff697101089637363ad8327a1514ddbe"
+        ],
+        "threshold": 0.7,
+        "reason": "Correct version (2.0.0), explicit breaking-removal justification, annotated tag syntax, and changelog grouped by category with clear migration note for removed endpoint.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "eb0c916a6f2c15fbba7db0d821798433329872231de44663c115d08ced71bee0"
+        },
+        "judge_usage": {
+          "input_tokens": 131851,
+          "output_tokens": 10661,
+          "cached_tokens": 124145,
+          "wall_ms": 115174
+        },
+        "usage": {
+          "input_tokens": 13324,
+          "output_tokens": 161,
+          "cached_tokens": 9984,
+          "wall_ms": 9830
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 7,
+        "pass_count": 6,
+        "borderline_count": 0,
+        "mean_score": 0.818571,
+        "stddev": 0.099477
+      },
+      "baseline": {
+        "case_count": 7,
+        "pass_count": 6,
+        "borderline_count": 1,
+        "mean_score": 0.820857,
+        "stddev": 0.078798
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.818571,
+    "baseline_score": 0.820857,
+    "delta": -0.002286,
+    "delta_uncertainty": 0.126905
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "9e14cd1e1d6475ed931648b2c77f83239a613e2dea24d1dc472494ca964d395c",
+  "economics": {
+    "basis": "metered-equivalent",
+    "surface": "openai-cli",
+    "with_skill": {
+      "call_count": 7,
+      "mean_input_tokens": 16575.57,
+      "mean_output_tokens": 121.29,
+      "mean_cost_usd_per_call": 0.086516,
+      "median_wall_ms": 6227,
+      "wall_ms_p25": 6002,
+      "wall_ms_p75": 9234,
+      "wall_ms_iqr": 3232
+    },
+    "baseline": {
+      "call_count": 7,
+      "mean_input_tokens": 13319.57,
+      "mean_output_tokens": 109.29,
+      "mean_cost_usd_per_call": 0.069876,
+      "median_wall_ms": 6245,
+      "wall_ms_p25": 5320,
+      "wall_ms_p75": 9830,
+      "wall_ms_iqr": 4510
+    },
+    "skill_incremental_cost_usd_per_call": 0.01664,
+    "skill_incremental_cost_usd_per_1k_calls": 16.64,
+    "output_tokens_delta": 12,
+    "median_wall_ms_delta": -18,
+    "judge_excluded": true,
+    "judge_overhead": {
+      "note": "Measurement overhead imposed by Driftproof, NOT a cost of running the skill. Excluded from every field above.",
+      "total_cost_usd": 2.773069,
+      "case_rows_measured": 14
+    },
+    "notes": {
+      "absolute_cost": "Absolute per-call cost on a CLI surface includes a fixed harness preamble (observed ~25k input tokens on claude-cli, ~11k on codex) that we do not control. It is identical in the with-skill and baseline arms, so it cancels in the Δ figures — read the incremental columns, not the absolute ones.",
+      "cache_pricing": "Cached input tokens are costed at the list input rate (an over-estimate where caching is heavy); cached_tokens is recorded per call so a reader can recompute.",
+      "latency": "observed on subscription CLI surface, indicative"
+    }
+  }
+}
