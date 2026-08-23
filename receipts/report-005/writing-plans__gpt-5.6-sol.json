@@ -1,0 +1,690 @@
+{
+  "schema_version": "0.4",
+  "skill": {
+    "name": "writing-plans",
+    "version": "0.0.0",
+    "content_hash": "5ac443162b528dbc693ccc3a6b7d9570131653bc2eabeea619bf8aae242f9b6a",
+    "tokens": 1722
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "37cb3c341572cea2b46e273727af6965f43ce94ca776338e06695cd3ff0bc406",
+    "case_count": 7
+  },
+  "run": {
+    "model_id": "gpt-5.6-sol",
+    "model_release_date": null,
+    "provider": "openai",
+    "surface": "openai-cli",
+    "runner_version": "0.5.0",
+    "date_utc": "2026-08-18T19:01:02.260Z",
+    "registry": "registered",
+    "transcripts": "retained-local",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    },
+    "surface_overhead_note": "openai/cli surface (codex exec): every call carries a fixed Codex base-instruction preamble of ~12,000–15,000 input tokens that the harness prepends and we do not control; the model id is set by us via -m (it is not echoed in the JSONL stream). Approval prompting is off by default on `codex exec` (no -a flag is passed).",
+    "pricing_snapshot": {
+      "frozen_at": "2026-08-18T19:01:02.260Z",
+      "source": "config/models.json",
+      "currency": "USD",
+      "models": {
+        "gpt-5.6-sol": {
+          "input_per_mtok": 5,
+          "output_per_mtok": 30,
+          "registered": true
+        },
+        "claude-haiku-4-5": {
+          "input_per_mtok": 1,
+          "output_per_mtok": 5,
+          "registered": true
+        }
+      },
+      "note": "Prices frozen at run time. Every derived cost in this receipt is computed from THIS snapshot, never from the live registry, so the receipt keeps its meaning when registry prices later change."
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "bite-sized-tdd-steps",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.872,
+        "mean": 0.872,
+        "stddev": 0.008367,
+        "samples": [
+          0.87,
+          0.88,
+          0.86,
+          0.88,
+          0.87
+        ],
+        "generation_hash": "58e42a75839ad68cf6067d15739c8ec4dc87bfc4b88bba1ac5183d4d86e15dbb",
+        "judge_sample_hashes": [
+          "9ef33f374b23b3b67ce8db48017aa0cb3d28db0aec1a0001c4e3d0e892703551",
+          "04bda6f38da555bb22dce39e12a2374cc9b639279b5f9ceee76fd3bc2b685cd7",
+          "20ead4740f7a842e09d146603eabf2f4420463bc7ced443a108e4bf1df7f3a98",
+          "9798745315106d92e85533947057c1c6d1555fa69a764a20b6e39965193d2c6d",
+          "8ab517baede439b1018055b547e5b3d4b038ba63cb44a863e574def8dc7e88ac"
+        ],
+        "threshold": 0.7,
+        "reason": "Test-first with all five discrete steps (failing test, run-fail, implementation, run-pass, commit) shown with actual code and exact commands; includes exemplary expected-output statements and good-practice regression test.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "d500d3f25d8e6b7aa80322f6ad22b9571dd6bec2805e6dd21db6ca1c19b06dc0"
+        },
+        "judge_usage": {
+          "input_tokens": 133695,
+          "output_tokens": 19145,
+          "cached_tokens": 129454,
+          "wall_ms": 186319
+        },
+        "usage": {
+          "input_tokens": 15732,
+          "output_tokens": 635,
+          "cached_tokens": 9984,
+          "wall_ms": 17916
+        }
+      },
+      {
+        "id": "bite-sized-tdd-steps",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.6,
+        "mean": 0.6,
+        "stddev": 0,
+        "samples": [
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.6
+        ],
+        "generation_hash": "59b0237ba2584118a8ce8a55a60bcce9ab46c79158c415ae5b178ad60e4436e1",
+        "judge_sample_hashes": [
+          "c954c04f3769f20399003f770fdd0a2c1be3e653081b8eb68739dbe1150e979d",
+          "3288d104615a57ce217c7389229af9adc876fb640779d53cd80464daaeafba68",
+          "85ed079bc3d0a7d292ec49705a1258ca31268a784c431bab640e6a08198a29ec",
+          "b0a690109abb3883038635e146ea6eadbb17c8bab02e7088e55aaae4e9995146",
+          "0302e171acc3be4b5ca17415b4f83c074a211a21640d3362e1bc0dca06093bc7"
+        ],
+        "threshold": 0.7,
+        "reason": "Four of five required steps correct; missing final commit step. Has test-first cycle with real code/commands.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "d500d3f25d8e6b7aa80322f6ad22b9571dd6bec2805e6dd21db6ca1c19b06dc0"
+        },
+        "judge_usage": {
+          "input_tokens": 133100,
+          "output_tokens": 20103,
+          "cached_tokens": 128978,
+          "wall_ms": 187146
+        },
+        "usage": {
+          "input_tokens": 14171,
+          "output_tokens": 512,
+          "cached_tokens": 9984,
+          "wall_ms": 15825
+        }
+      },
+      {
+        "id": "repair-placeholder-steps",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.8,
+        "mean": 0.8,
+        "stddev": 0,
+        "samples": [
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ],
+        "generation_hash": "7f30e1c364db12541fee9e48a2a734e6344f6f6beffc3e702ad0f6a0ba11e8fb",
+        "judge_sample_hashes": [
+          "683826c3b699c2d2dc691b7a1d0c9c3e4515fb8b1dadfc8423cd822e227aaa17",
+          "cb5cd42abb46bf53cff9fa57d48beda64a6b133ffc5d57ba2cf50af3f5778326",
+          "e0f9e6d5581aae4e6b8f77dcb735f48053f7575487489d2266ff076089688448",
+          "44cacf26a8aedb9740165b1e9c06bf9f27177df7df2e665bec06f05f97bba531",
+          "b70262f8793da0fdca2f432c2067fde8949529d12871ae2e9582ef4af415aa76"
+        ],
+        "threshold": 0.7,
+        "reason": "Explicitly flags all five placeholders and rewrites into concrete steps with real test code and implementation. Lacks exemplary explanation of why 'Similar to Task 1' must repeat code (engineer may read out of order).",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "05fe2da57d9d73c37d453dc3c34e4a0b2c215f77c8f5ea5bbff81310aac386fa"
+        },
+        "judge_usage": {
+          "input_tokens": 140690,
+          "output_tokens": 10328,
+          "cached_tokens": 135050,
+          "wall_ms": 117789
+        },
+        "usage": {
+          "input_tokens": 15648,
+          "output_tokens": 2088,
+          "cached_tokens": 9984,
+          "wall_ms": 59933
+        }
+      },
+      {
+        "id": "repair-placeholder-steps",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.79,
+        "mean": 0.79,
+        "stddev": 0.022361,
+        "samples": [
+          0.8,
+          0.8,
+          0.75,
+          0.8,
+          0.8
+        ],
+        "generation_hash": "973a8bf43c660918bad88fa6526e9e949ca4e026c976c7f38cad066338286a54",
+        "judge_sample_hashes": [
+          "99360abe7e700bdf018c2a0c72eabbd3efe4fef264e41f06478087a47be9ad0a",
+          "a22442383f6d58bb9cecd10516fbc082216a9a11e3fa6a42397dea244fce9950",
+          "073c155ec74c52c9cf0ad969f831d96cc4119cfe063a496f95cc9333e732a7ea",
+          "1b2cfec0b8dbded1297c988ee3c0a274cccb8bb1c01b4bc09ba3219164e2b522",
+          "5fa49cb5c5586b325b79900a54f64679d7f4caf4adcc03614e305734096b0b29"
+        ],
+        "threshold": 0.7,
+        "reason": "Flags all five placeholders explicitly; rewrites each with concrete validation, error handling, and test scenarios. Does not reach exemplary tier without explaining cross-task independence.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "05fe2da57d9d73c37d453dc3c34e4a0b2c215f77c8f5ea5bbff81310aac386fa"
+        },
+        "judge_usage": {
+          "input_tokens": 134920,
+          "output_tokens": 25602,
+          "cached_tokens": 130434,
+          "wall_ms": 253394
+        },
+        "usage": {
+          "input_tokens": 14087,
+          "output_tokens": 887,
+          "cached_tokens": 9984,
+          "wall_ms": 22497
+        }
+      },
+      {
+        "id": "file-structure-by-responsibility",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.8,
+        "mean": 0.8,
+        "stddev": 0,
+        "samples": [
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ],
+        "generation_hash": "efa0db95c493630627905eff54887643505337ae2d13f71f8a6da2cbc3340002",
+        "judge_sample_hashes": [
+          "2cb4b88be5c423f791b9a6700a8b68421f74be6f50180c9be8f187f7f417bd45",
+          "357891a7d6541a70aa02f08881b12db14a8662fec14f121b2d998aa1adeee08a",
+          "94da3442fef6c52f44140de21c3ad56701bbb7d052f492e58cbf2a5b5ef75dae",
+          "4b5921d6bcc0391f41a895573639c696a15db91ddb4aec2d9c386ddb2a487f20",
+          "fa31889229f4d1577b923b479a024c169f804afd92d62ad2d65a413c110cf82e"
+        ],
+        "threshold": 0.7,
+        "reason": "Correct responsibility-based grouping, single responsibility per file, sound rationale. Meets 0.80 baseline but lacks explicit 'files that change together' principle for 0.81+.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "d592ccbfa5611acfee0c191aea3e25b8a5c88267de4c66819b5f6426ee2460a4"
+        },
+        "judge_usage": {
+          "input_tokens": 132985,
+          "output_tokens": 16850,
+          "cached_tokens": 128886,
+          "wall_ms": 166482
+        },
+        "usage": {
+          "input_tokens": 33370,
+          "output_tokens": 734,
+          "cached_tokens": 19968,
+          "wall_ms": 19212
+        }
+      },
+      {
+        "id": "file-structure-by-responsibility",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.8,
+        "mean": 0.8,
+        "stddev": 0,
+        "samples": [
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ],
+        "generation_hash": "2522079708fc32cac5380dcdf98e20c4e71a4c7ff56a47ba4c1352ad21608e61",
+        "judge_sample_hashes": [
+          "871b0a0db15449238692952b9cca2d53e9110d7642cfd77059f33092fc747efc",
+          "8f3bf701e7857c02dcc971674b115609fda58476f5dd0036bfad16f9d135b6ac",
+          "ce9820b8093dc4c9ce12e16c304eec16d83ebe8aaef9b0f483f9db7d32218935",
+          "6b1350be872bbba0cb73a951d6a4ae803cefba14634b179bca825839eef308dd",
+          "3a08a4593ecc2020ba4067293453c0e7edee30026075d074fe3d4a7a93f3837f"
+        ],
+        "threshold": 0.7,
+        "reason": "Feature kept together under lib/invoices/ with each file assigned one clear responsibility. Grouping rationale explicitly stated. No layer-based scattering. Meets anchor criteria for fully correct response.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "d592ccbfa5611acfee0c191aea3e25b8a5c88267de4c66819b5f6426ee2460a4"
+        },
+        "judge_usage": {
+          "input_tokens": 133130,
+          "output_tokens": 11965,
+          "cached_tokens": 129002,
+          "wall_ms": 120721
+        },
+        "usage": {
+          "input_tokens": 53971,
+          "output_tokens": 923,
+          "cached_tokens": 37120,
+          "wall_ms": 28798
+        }
+      },
+      {
+        "id": "interfaces-exact-signatures",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.8,
+        "mean": 0.8,
+        "stddev": 0,
+        "samples": [
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ],
+        "generation_hash": "c1079c0a33737b7decb19d5ff924986076fd3214c7ad3d06b881bf8e19bb6508",
+        "judge_sample_hashes": [
+          "821bbaa330ce8e079cee424099176ab10bc5ce1de0909e16f5842524af5e189f",
+          "095aae53b3a47126b272f07f4a4079cd193731773cf1fe6b193d70f151134afe",
+          "ec1f14f63767076ae1097286e927d5997140c54ce6084de81b7b16c507070010",
+          "b90672af1cb37407b0d9d638509710c90f83cf3896db0fa9fc035790a79d73bc",
+          "53c5ae79dd2b54e7064cec3e0a88dff38619e59a09fb7b26b226e75f8d05c840"
+        ],
+        "threshold": 0.7,
+        "reason": "Both tasks declare explicit Produces/Consumes interfaces with concrete named types and exact file paths. Task 2's Consumes matches Task 1's Produces exactly (RateLimiter.__init__ and allow signatures are identical). Missing explicit note that Produces block informs neighboring task's implementer, bl",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "81555516732f291fd6432836e3103cecce0af03968b66cfbde681bf8875eb310"
+        },
+        "judge_usage": {
+          "input_tokens": 151990,
+          "output_tokens": 33072,
+          "cached_tokens": 144090,
+          "wall_ms": 292022
+        },
+        "usage": {
+          "input_tokens": 33873,
+          "output_tokens": 4039,
+          "cached_tokens": 19968,
+          "wall_ms": 78406
+        }
+      },
+      {
+        "id": "interfaces-exact-signatures",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.8,
+        "mean": 0.8,
+        "stddev": 0,
+        "samples": [
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ],
+        "generation_hash": "cb7c01ca863608bcb3f4b40a5faae0c53d05a0404d32ea5ac62d7ae9bccd641a",
+        "judge_sample_hashes": [
+          "7f8a1a03501173d64f41943e14123196e7dde756e3ccf2b162882160e26f3c30",
+          "dad3284dd2324096a9cd1db84fc58f93ee867bb3553442f7a66b6d1bf31672fd",
+          "6f255ea564a122b57b6aa84671b5a251d8dcb26df471ff14e9e671fc5de42bc6",
+          "e51913896c6ce5ad9bb759155e135ba8257d39e60c64619d4cf1f5fcaa29770b",
+          "b829dac4acbe38a0b5edf86dd6b599fb684f17f579f51d0be4e3cce3b408220c"
+        ],
+        "threshold": 0.7,
+        "reason": "Both tasks declare explicit Interfaces blocks with complete, concrete named types. Task 2's Consumes matches Task 1's Produces exactly (TokenBucketRateLimiter.allow(key: str) -> bool). Files and signatures complete.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "81555516732f291fd6432836e3103cecce0af03968b66cfbde681bf8875eb310"
+        },
+        "judge_usage": {
+          "input_tokens": 132089,
+          "output_tokens": 16809,
+          "cached_tokens": 124369,
+          "wall_ms": 161883
+        },
+        "usage": {
+          "input_tokens": 14080,
+          "output_tokens": 306,
+          "cached_tokens": 9984,
+          "wall_ms": 11123
+        }
+      },
+      {
+        "id": "task-right-sizing-testable-deliverable",
+        "mode": "with_skill",
+        "outcome": "fail",
+        "score": 0.542,
+        "mean": 0.542,
+        "stddev": 0.131605,
+        "samples": [
+          0.72,
+          0.38,
+          0.45,
+          0.58,
+          0.58
+        ],
+        "generation_hash": "3d2a577832872f5acab8d8c2a9b64d8bfc5971e91be9cc277c4cd61513159e32",
+        "judge_sample_hashes": [
+          "3685541b2008025cbf23581430c0099d4c289790aaab666c92855b85509ff5bc",
+          "72dafefe24af030489ae932bd5bbefeb8c41ddfc41c02138e17ecc6952bdbca1",
+          "c936d00ff65546cdc493a9c82aeb89cc39e3a6fa24ad1d263b86bdf87f8e542b",
+          "994c3046f920f1975191adb5ca4c71271f690306dd7d87fc5e2416c1ff13722d",
+          "e72392494bfd3fd8150a0808fc84dc15cf894d65b84097d7432465ccbb3968ca"
+        ],
+        "threshold": 0.7,
+        "reason": "Separates framework bootstrap into own task instead of folding into endpoint task per rubric's stated ideal, despite meeting all independent-test requirements.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "9dff2ee8451af1419a78de5240989b7fd38be170ccfd7339d4e1f8aa52e5ec9f"
+        },
+        "judge_usage": {
+          "input_tokens": 133805,
+          "output_tokens": 28299,
+          "cached_tokens": 129542,
+          "wall_ms": 290365
+        },
+        "usage": {
+          "input_tokens": 15608,
+          "output_tokens": 740,
+          "cached_tokens": 9984,
+          "wall_ms": 17503
+        }
+      },
+      {
+        "id": "task-right-sizing-testable-deliverable",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.336,
+        "mean": 0.336,
+        "stddev": 0.092087,
+        "samples": [
+          0.5,
+          0.3,
+          0.3,
+          0.28,
+          0.3
+        ],
+        "generation_hash": "b34e85b80d18b0fd3ed86a4084f3c6b372d772e3c716d737a3a5b9317ee9d7be",
+        "judge_sample_hashes": [
+          "ba54a010487a3b3ef2ee0f28bc803e2edc9a190399e0a822bae4637358caa5a9",
+          "1eea03afce3748e2e00112ba043e4968a69d5f1613b171d0376ffc92ae1fdddd",
+          "17f07b35603b309e369b8e8d626fcfad1701fa89349475d357fdf77dfdb0f89b",
+          "ac531deb73b13ad3bb21018af32eb7f33bb1d35418b48a87df0e7ada5205881a",
+          "fd201c60fb1ca1759730d5a2935b58c4d80dae5edb89d3fd359b3a781c6e953e"
+        ],
+        "threshold": 0.7,
+        "reason": "Splits setup/config/scaffolding (framework install, VERSION constant) into standalone tasks instead of folding into the /health endpoint deliverable, violating the skill's core principle. Despite describing independent tests, lacks 'could reviewer reject one while approving neighbor' justification f",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "9dff2ee8451af1419a78de5240989b7fd38be170ccfd7339d4e1f8aa52e5ec9f"
+        },
+        "judge_usage": {
+          "input_tokens": 132790,
+          "output_tokens": 37753,
+          "cached_tokens": 128730,
+          "wall_ms": 360335
+        },
+        "usage": {
+          "input_tokens": 14047,
+          "output_tokens": 381,
+          "cached_tokens": 9984,
+          "wall_ms": 11678
+        }
+      },
+      {
+        "id": "full-small-plan-header-and-tasks",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.874,
+        "mean": 0.874,
+        "stddev": 0.020736,
+        "samples": [
+          0.87,
+          0.9,
+          0.85,
+          0.89,
+          0.86
+        ],
+        "generation_hash": "e15baa86ded1574ec58cee538bb1e9921382ef4ba288af649e7610d3af5f3f65",
+        "judge_sample_hashes": [
+          "a2986cda5eb25a3daf6a1c4e8db969587e2ca4912de2c4220308aca6db0a30a4",
+          "15168186fe248f33ab69403d0b85c7ac65593c69fcb3f353278695c311f3669d",
+          "37728bf5659b0658749753005479a71cab3778c0b1d7854ed18e9f31b8061774",
+          "c9f0f889ebbf75ebbd8948e54e5e5becbe6a5f6b5669da88fd35f3c706224cae",
+          "7d6281a94dc0b9576fdba6a42bdb85cd27978a46bc847e64c30000c8c7dfa67d"
+        ],
+        "threshold": 0.7,
+        "reason": "Fully correct with all required elements: header + Global Constraints + exact file paths + 10 test-first steps with real code, run-to-fail/pass steps, commit, and comprehensive ValueError testing. Exemplary presentation of concrete run commands and expected outputs. Minor deductions for unnecessary ",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8913a63e7febea060d9293756dfd6843d9da26b1a6fbff4c127911b1ca5760ac"
+        },
+        "judge_usage": {
+          "input_tokens": 141895,
+          "output_tokens": 24009,
+          "cached_tokens": 136014,
+          "wall_ms": 240375
+        },
+        "usage": {
+          "input_tokens": 51816,
+          "output_tokens": 2742,
+          "cached_tokens": 37120,
+          "wall_ms": 59950
+        }
+      },
+      {
+        "id": "full-small-plan-header-and-tasks",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.876,
+        "mean": 0.876,
+        "stddev": 0.018166,
+        "samples": [
+          0.85,
+          0.87,
+          0.9,
+          0.88,
+          0.88
+        ],
+        "generation_hash": "ae4b3c8aedb5f307051f99c134fde54dd6ebe56de66fc47f456318955ccebb7e",
+        "judge_sample_hashes": [
+          "b5c877cb16eab701b485f85a66ac6f8fa1b2d0fa5cff18e729c60b5254af3c12",
+          "477c6ce88cfc7ede4c2c1f80a2bde00995a8186b6d09f02b7836f83f098e5a00",
+          "992176ac0966e54722344316aaa8aa75f0b5d8cce25eb2e49a26438f8bf9c869",
+          "886ab14e4fef4eb141adc843e67a48ed152925e3414a13308e4ece7be9cd741e",
+          "f5b6244b67729c49a2811d80b56c86be3210c45f304fbaad003255c2eb3e55d2"
+        ],
+        "threshold": 0.7,
+        "reason": "Fully satisfies rubric: header + Global Constraints (verbatim constraint values) + exact file paths + bite-sized test-first steps with real code, run-to-fail/pass, commit, and concrete ValueError tests across empty/unknown/malformed/non-string cases. Exemplary execution.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8913a63e7febea060d9293756dfd6843d9da26b1a6fbff4c127911b1ca5760ac"
+        },
+        "judge_usage": {
+          "input_tokens": 141550,
+          "output_tokens": 23591,
+          "cached_tokens": 135738,
+          "wall_ms": 219237
+        },
+        "usage": {
+          "input_tokens": 59233,
+          "output_tokens": 2267,
+          "cached_tokens": 36096,
+          "wall_ms": 48551
+        }
+      },
+      {
+        "id": "self-review-spec-coverage",
+        "mode": "with_skill",
+        "outcome": "borderline",
+        "score": 0.764,
+        "mean": 0.764,
+        "stddev": 0.092087,
+        "samples": [
+          0.8,
+          0.8,
+          0.82,
+          0.6,
+          0.8
+        ],
+        "generation_hash": "ddd2ece3c532470ba27f02b6109f521956aba4a85e7652c5e0c5f406551a838a",
+        "judge_sample_hashes": [
+          "7b3134ff66f4c71cb5f88e620a41c529a78d414086c68de189586224ab9417dc",
+          "1c97aa816466cfdcdd959e7b5c65ff5c812cac909dbdf87ebd8687e9b2f38a77",
+          "188b87fe0c5688af672eeab1694e8b5ba0b26e093dfc7e7ce5bbb8e7dc9db5d4",
+          "ac02ff74b50f64688b37644d863f4dd55767c78f41a7d76398bc41a63330716a",
+          "5ca2513f23911b0711e3cbe85eeac34a0e41cfab67da294d30607b814eaa0741"
+        ],
+        "threshold": 0.7,
+        "reason": "Correct per-requirement mapping, identifies purge_expired gap and clear/clear_all mismatch with concrete fixes, but lacks explicit requirement-to-task table for exemplary tier.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "a68d6f7dcdf49677b2d94ccb32ff7968253937b452078232226025a33cf93161"
+        },
+        "judge_usage": {
+          "input_tokens": 133185,
+          "output_tokens": 22470,
+          "cached_tokens": 129046,
+          "wall_ms": 215610
+        },
+        "usage": {
+          "input_tokens": 15736,
+          "output_tokens": 333,
+          "cached_tokens": 9984,
+          "wall_ms": 10367
+        }
+      },
+      {
+        "id": "self-review-spec-coverage",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.816,
+        "mean": 0.816,
+        "stddev": 0.023022,
+        "samples": [
+          0.8,
+          0.85,
+          0.8,
+          0.83,
+          0.8
+        ],
+        "generation_hash": "5564481dc7181331ef96bd64253ffd3b7bb7b2cda2af9058a29be2ced7c25a85",
+        "judge_sample_hashes": [
+          "f57214d9465faaf354319cb305d6dd2cca85840095a9df8d8997509c0f068093",
+          "d0fd9ac5c03dc7abb435aec55d6ac6e0ee7b9fe1a799f96819437c335c9a5798",
+          "017ec01058d9f1a682385a4c2369188aaa6d4e9aa92b1543db9c31a1ea6041f4",
+          "a8f18ce25fd4a4a7c1d9eb66df37257449b91dd9e11dd0d156c6738ead8cc7fa",
+          "36e8a93c17715b5008a8e8a4b50571aa2c45e4be8d2a99a1f60b5c0dc45addaf"
+        ],
+        "threshold": 0.7,
+        "reason": "Correct per-requirement mapping identifies purge_expired gap and clear/clear_all mismatch with concrete fixes; lacks tabular format for exemplary rating.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "a68d6f7dcdf49677b2d94ccb32ff7968253937b452078232226025a33cf93161"
+        },
+        "judge_usage": {
+          "input_tokens": 132550,
+          "output_tokens": 13088,
+          "cached_tokens": 128538,
+          "wall_ms": 135359
+        },
+        "usage": {
+          "input_tokens": 13967,
+          "output_tokens": 250,
+          "cached_tokens": 9984,
+          "wall_ms": 11255
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 7,
+        "pass_count": 5,
+        "borderline_count": 1,
+        "mean_score": 0.778857,
+        "stddev": 0.112094
+      },
+      "baseline": {
+        "case_count": 7,
+        "pass_count": 5,
+        "borderline_count": 0,
+        "mean_score": 0.716857,
+        "stddev": 0.188432
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.778857,
+    "baseline_score": 0.716857,
+    "delta": 0.062,
+    "delta_uncertainty": 0.219253
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "5188f797735771b279ede40d485cb7a25797154a92000ada9a550d3669276871",
+  "economics": {
+    "basis": "metered-equivalent",
+    "surface": "openai-cli",
+    "with_skill": {
+      "call_count": 7,
+      "mean_input_tokens": 25969,
+      "mean_output_tokens": 1615.86,
+      "mean_cost_usd_per_call": 0.178321,
+      "median_wall_ms": 19212,
+      "wall_ms_p25": 17503,
+      "wall_ms_p75": 59950,
+      "wall_ms_iqr": 42447
+    },
+    "baseline": {
+      "call_count": 7,
+      "mean_input_tokens": 26222.29,
+      "mean_output_tokens": 789.43,
+      "mean_cost_usd_per_call": 0.154794,
+      "median_wall_ms": 15825,
+      "wall_ms_p25": 11255,
+      "wall_ms_p75": 28798,
+      "wall_ms_iqr": 17543
+    },
+    "skill_incremental_cost_usd_per_call": 0.023527,
+    "skill_incremental_cost_usd_per_1k_calls": 23.527,
+    "output_tokens_delta": 826.43,
+    "median_wall_ms_delta": 3387,
+    "judge_excluded": true,
+    "judge_overhead": {
+      "note": "Measurement overhead imposed by Driftproof, NOT a cost of running the skill. Excluded from every field above.",
+      "total_cost_usd": 3.423794,
+      "case_rows_measured": 14
+    },
+    "notes": {
+      "absolute_cost": "Absolute per-call cost on a CLI surface includes a fixed harness preamble (observed ~25k input tokens on claude-cli, ~11k on codex) that we do not control. It is identical in the with-skill and baseline arms, so it cancels in the Δ figures — read the incremental columns, not the absolute ones.",
+      "cache_pricing": "Cached input tokens are costed at the list input rate (an over-estimate where caching is heavy); cached_tokens is recorded per call so a reader can recompute.",
+      "latency": "observed on subscription CLI surface, indicative"
+    }
+  }
+}

@@ -1,0 +1,87 @@
+# SPDX-License-Identifier: Apache-2.0
+name: 'Driftproof'
+description: 'Verify an agent skill still helps: run its eval suite with and without the skill, and fail the job if it regressed.'
+author: 'driftproofhq'
+branding:
+  icon: 'shield'
+  color: 'green'
+
+inputs:
+  skill-dir:
+    description: 'Path to the skill directory (contains SKILL.md and evals/evals.json), relative to the repo root.'
+    required: true
+  models:
+    description: 'Comma-separated model ids/aliases to run the suite on.'
+    required: false
+    default: 'claude-haiku-4-5'
+  max-usd:
+    description: 'Hard USD budget for the run. The projection is refused before any model call if it would exceed this.'
+    required: false
+    default: '2'
+  api-key:
+    description: 'Anthropic API key (pass from a repository secret). When set, the run uses the Messages API (CLAUDE_PROVIDER=api).'
+    required: false
+    default: ''
+  fail-on-regression:
+    description: 'Fail the job when the verdict is REGRESSED (the skill measurably hurt on this model).'
+    required: false
+    default: 'true'
+
+outputs:
+  verdict:
+    description: 'PASSED | NO_EFFECT | REGRESSED'
+    value: ${{ steps.run.outputs.verdict }}
+  delta:
+    description: 'Measured skill lift (with_skill mean minus baseline mean).'
+    value: ${{ steps.run.outputs.delta }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Install driftproof dependencies
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npm ci --omit=dev --no-audit --no-fund || npm install --omit=dev --no-audit --no-fund
+
+    - name: Run suite and emit receipt
+      id: run
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.api-key }}
+      run: |
+        set -euo pipefail
+        ACTION="${{ github.action_path }}"
+        OUT="${{ runner.temp }}/driftproof-receipts"
+        mkdir -p "$OUT"
+        # A key selects the metered Messages API; without one the run uses the
+        # default cli surface (or the offline stub when DRIFTPROOF_STUB=1).
+        if [ -n "${ANTHROPIC_API_KEY:-}" ]; then export CLAUDE_PROVIDER=api; fi
+        node "$ACTION/bin/driftproof" run "${{ inputs.skill-dir }}" \
+          --models "${{ inputs.models }}" --max-usd "${{ inputs.max-usd }}" --out "$OUT"
+        RECEIPT="$(ls "$OUT"/*.json | grep -v '\.summary\.' | head -1)"
+        {
+          echo "receipt=$RECEIPT"
+          node "$ACTION/bin/driftproof" badge "$RECEIPT" --github-output
+        } >> "$GITHUB_OUTPUT"
+        node "$ACTION/bin/driftproof" badge "$RECEIPT" --out "$OUT/badge.json"
+
+    - name: Upload receipt artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: driftproof-receipt
+        path: ${{ runner.temp }}/driftproof-receipts
+        if-no-files-found: error
+
+    - name: Enforce verdict
+      shell: bash
+      run: |
+        echo "Driftproof verdict: ${{ steps.run.outputs.verdict }} (delta ${{ steps.run.outputs.delta }})"
+        if [ "${{ inputs.fail-on-regression }}" = "true" ] && [ "${{ steps.run.outputs.verdict }}" = "REGRESSED" ]; then
+          echo "::error title=Driftproof::Skill REGRESSED on ${{ inputs.models }} (delta ${{ steps.run.outputs.delta }})"
+          exit 1
+        fi

@@ -1,0 +1,244 @@
+{
+  "manifest_version": "1.0",
+  "report": "report-001",
+  "description": "Public agent skills tested in Driftproof Report #001. Third-party SKILL.md content is NOT committed to this repo; it is fetched at run time from the pinned raw URL below into an untracked workdir (see scripts/fetch-skills.js) and its sha256 is verified against content_sha256. This repo commits only this manifest, our authored eval suites (suites/<slug>/evals.json), the emitted receipts, and the report.",
+  "scoping": "Report #001 tests TEXT-REPRESENTABLE skills only, supplied as their single SKILL.md file. Bundled reference files loaded on demand (progressive disclosure) are out of scope for this report; skills whose value lives entirely in bundled files (e.g. anthropics/internal-comms) were excluded.",
+  "model_pair": {
+    "new": "claude-sonnet-5",
+    "old": "claude-sonnet-4-6"
+  },
+  "judge_model": "claude-haiku-4-5",
+  "skills": [
+    {
+      "slug": "code-review-and-quality",
+      "name": "Code Review and Quality",
+      "description": "A five-axis code-review framework and severity-labeling discipline for assessing changes before merge.",
+      "repo": "https://github.com/addyosmani/agent-skills",
+      "repo_sha": "7829ffd90d973b6325f5f12f1b1226dcace74443",
+      "skill_path": "skills/code-review-and-quality/SKILL.md",
+      "raw_url": "https://raw.githubusercontent.com/addyosmani/agent-skills/7829ffd90d973b6325f5f12f1b1226dcace74443/skills/code-review-and-quality/SKILL.md",
+      "content_sha256": "bec431b759ff389e47b8d2c9d74e1981ff93cf5f3c36b4a3b6a71a75c250be2c",
+      "license": "MIT",
+      "author": "addyosmani",
+      "claims": [
+        "evaluate every change on correctness, readability/simplicity, architecture, security, performance",
+        "approve when the change definitely improves overall code health, even if not perfect",
+        "size discipline: ~100 lines ideal, ~1000 signals a needed split",
+        "label findings Critical / Required / Optional / Nit",
+        "propose the concrete refactor, don't just complain",
+        "never accept 'I'll clean it up later'"
+      ],
+      "suite_hash": "4729eb8fc298bbcf8baadc13f2d2cf1a9e573d0dbad57dfb67adc2f4df271760",
+      "evals_sha256": "0b01034920e1528a3caaf6dbc89bae6d1832d44d721752718e2f4b58617e3721"
+    },
+    {
+      "slug": "git-workflow-and-versioning",
+      "name": "Git Workflow and Versioning",
+      "description": "Trunk-based git discipline, atomic commits, conventional commit types, and semantic-versioning / changelog conventions.",
+      "repo": "https://github.com/addyosmani/agent-skills",
+      "repo_sha": "7829ffd90d973b6325f5f12f1b1226dcace74443",
+      "skill_path": "skills/git-workflow-and-versioning/SKILL.md",
+      "raw_url": "https://raw.githubusercontent.com/addyosmani/agent-skills/7829ffd90d973b6325f5f12f1b1226dcace74443/skills/git-workflow-and-versioning/SKILL.md",
+      "content_sha256": "51677cf03845dd29d08ea4d3125665057b720aea3dccc572f25d8b172409ece6",
+      "license": "MIT",
+      "author": "addyosmani",
+      "claims": [
+        "short-lived branches; main always deployable; merge in 1-3 days",
+        "atomic, focused commits (separate refactor from feature)",
+        "commit messages explain intent using conventional types (feat/fix/refactor/test/docs/chore)",
+        "SemVer: breaking = major, feature = minor, fix = patch",
+        "tag releases immutably",
+        "curate changelogs by user impact, not commit archaeology"
+      ],
+      "suite_hash": "2f3e8cd66159c1dce708cad6a8a047cd6731438b0808e182a271f471315a0a0c",
+      "evals_sha256": "2136c02914df110ef2995e7642caea641b1e528fff492e558dc8fc58ef707d49"
+    },
+    {
+      "slug": "documentation-and-adrs",
+      "name": "Documentation and ADRs",
+      "description": "When and how to write Architecture Decision Records, inline comments, and API docs; document the why.",
+      "repo": "https://github.com/addyosmani/agent-skills",
+      "repo_sha": "7829ffd90d973b6325f5f12f1b1226dcace74443",
+      "skill_path": "skills/documentation-and-adrs/SKILL.md",
+      "raw_url": "https://raw.githubusercontent.com/addyosmani/agent-skills/7829ffd90d973b6325f5f12f1b1226dcace74443/skills/documentation-and-adrs/SKILL.md",
+      "content_sha256": "b867bb80fb681257c7625ae59a0dfd849b1fc0f0a2f0338e7923f38030df9793",
+      "license": "MIT",
+      "author": "addyosmani",
+      "claims": [
+        "document the why, not the what",
+        "write ADRs for costly-to-reverse decisions",
+        "match existing repo doc conventions before inventing new ones",
+        "never delete old ADRs — supersede them",
+        "comment intent, not implementation",
+        "public APIs require documented params / returns / exceptions / examples"
+      ],
+      "suite_hash": "254e2b62720993392dc241a3efc59fec20d13df53c226748bbf311912753af1e",
+      "evals_sha256": "725e6e67557f5271b6c98c2766591b77f18b05ca5ab9a53c7aab480f3f21f949"
+    },
+    {
+      "slug": "commit-work",
+      "name": "Commit Work",
+      "description": "Producing high-quality git commits: staging discipline, logical splitting, Conventional Commits messages.",
+      "repo": "https://github.com/softaworks/agent-toolkit",
+      "repo_sha": "3027f20f3181758385a1bb8c022d4041dfb4de84",
+      "skill_path": "skills/commit-work/SKILL.md",
+      "raw_url": "https://raw.githubusercontent.com/softaworks/agent-toolkit/3027f20f3181758385a1bb8c022d4041dfb4de84/skills/commit-work/SKILL.md",
+      "content_sha256": "888588ea81b0b2c672e625ad9c49f6f3c69b4c2081962a9d7640a1ef24e105d8",
+      "license": "MIT",
+      "author": "Softaworks",
+      "claims": [
+        "commit messages follow Conventional Commits: type(scope): summary",
+        "split by logical boundary (feature vs refactor, tests vs prod, deps vs behavior)",
+        "use git add -p for mixed files",
+        "inspect git status / diff / diff --stat before staging",
+        "verify with git diff --cached before committing",
+        "a commit should be describable in two sentences"
+      ],
+      "suite_hash": "93e7d1363b3c3ae04756829c2ef9ee685437a17a0686e094fd569b7c89a9ce1d",
+      "evals_sha256": "77bd959d8949e9b98c2f95178e2801673ad56798aa1dcc17c857c955c8b46adf"
+    },
+    {
+      "slug": "writing-clearly-and-concisely",
+      "name": "Writing Clearly and Concisely",
+      "description": "Strunk-style prose rules for docs, commit / error messages, reports, and UI text.",
+      "repo": "https://github.com/softaworks/agent-toolkit",
+      "repo_sha": "3027f20f3181758385a1bb8c022d4041dfb4de84",
+      "skill_path": "skills/writing-clearly-and-concisely/SKILL.md",
+      "raw_url": "https://raw.githubusercontent.com/softaworks/agent-toolkit/3027f20f3181758385a1bb8c022d4041dfb4de84/skills/writing-clearly-and-concisely/SKILL.md",
+      "content_sha256": "c5f4ecc8bfa7984d0df70d30cea3bfeb824f7b24d31db111d5a1a9a959880575",
+      "license": "MIT",
+      "author": "Softaworks",
+      "claims": [
+        "prefer the active voice",
+        "put statements in positive form",
+        "use concrete, specific language",
+        "omit needless words",
+        "keep related words together",
+        "place the emphatic word at the end of the sentence"
+      ],
+      "suite_hash": "64c8f1554190129d551501fd1cd7c93891e104664d033b100180c53bcd66294e",
+      "evals_sha256": "8cb358a6e32d271a4ee21a9b6105645cef726369ef11c5e054db97900435d103"
+    },
+    {
+      "slug": "crafting-effective-readmes",
+      "name": "Crafting Effective READMEs",
+      "description": "Audience-first README structure with mandatory sections and project-type templates.",
+      "repo": "https://github.com/softaworks/agent-toolkit",
+      "repo_sha": "3027f20f3181758385a1bb8c022d4041dfb4de84",
+      "skill_path": "skills/crafting-effective-readmes/SKILL.md",
+      "raw_url": "https://raw.githubusercontent.com/softaworks/agent-toolkit/3027f20f3181758385a1bb8c022d4041dfb4de84/skills/crafting-effective-readmes/SKILL.md",
+      "content_sha256": "638b271fdc148249ed8896dbdcf15f9067a8d64ba7d2d82ec3e86f8d82831b51",
+      "license": "MIT",
+      "author": "Softaworks",
+      "claims": [
+        "design for the specific audience",
+        "three mandatory sections: Name, Description (what + why in 1-2 sentences), Usage with examples",
+        "structure varies by project type (OSS / personal / internal / config)",
+        "lead with the one-sentence problem the project solves",
+        "validate the draft against the actual project files",
+        "categorize the task (Creating / Adding / Updating / Reviewing) first"
+      ],
+      "suite_hash": "71c93b4775136355644bd38630bf64ec73383a87452062c58e744991e9bccb53",
+      "evals_sha256": "fab88e839e8df5b2a0788019ed57293bcd09f4e112970f730d427a21a748d655"
+    },
+    {
+      "slug": "naming-analyzer",
+      "name": "Naming Analyzer",
+      "description": "Variable / function / class naming conventions and how to suggest clearer names.",
+      "repo": "https://github.com/softaworks/agent-toolkit",
+      "repo_sha": "3027f20f3181758385a1bb8c022d4041dfb4de84",
+      "skill_path": "skills/naming-analyzer/SKILL.md",
+      "raw_url": "https://raw.githubusercontent.com/softaworks/agent-toolkit/3027f20f3181758385a1bb8c022d4041dfb4de84/skills/naming-analyzer/SKILL.md",
+      "content_sha256": "6c4ce79fd17a804a29f72d59bbc0379a7d4b0528b9605c781952cecbddd967b6",
+      "license": "MIT",
+      "author": "Softaworks",
+      "claims": [
+        "language-specific casing (camelCase / PascalCase / snake_case / UPPER_SNAKE_CASE)",
+        "boolean names take is / has / can / should prefixes",
+        "avoid vague names (data / info / temp / single letters)",
+        "names must reflect mutation / behavior",
+        "constants include units (e.g. ONE_HOUR_IN_MS)",
+        "minimize abbreviations except well-known ones (HTML / API / URL)"
+      ],
+      "suite_hash": "0d046f22ca976abc1b8e4fb41821df74765b80111c09c38b26b65e0aee0dca0a",
+      "evals_sha256": "d5eae5e2ebdef5989abbb971fc7242c1f89d334ee95a8e8370ce702bfeb065cb"
+    },
+    {
+      "slug": "requesting-code-review",
+      "name": "Requesting Code Review",
+      "description": "How to prepare and package a change for review: context, base/head SHAs, and severity triage of feedback.",
+      "repo": "https://github.com/obra/superpowers",
+      "repo_sha": "3dcbd5c4b48e02263fbf4a3c01e3fe4f81d584d9",
+      "skill_path": "skills/requesting-code-review/SKILL.md",
+      "raw_url": "https://raw.githubusercontent.com/obra/superpowers/3dcbd5c4b48e02263fbf4a3c01e3fe4f81d584d9/skills/requesting-code-review/SKILL.md",
+      "content_sha256": "d71cc01ba56d2325cf8af5f7c11837819b63ecd57de0bfdb812f7f3ff7751df8",
+      "license": "MIT",
+      "author": "Jesse Vincent (obra)",
+      "claims": [
+        "supply crafted context to the reviewer, never raw session history",
+        "collect BASE_SHA and HEAD_SHA for the change",
+        "fill the reviewer template with description / requirements / SHAs",
+        "triage findings Critical / Important / Minor",
+        "mandatory review triggers (after a task, after a major feature, before merge to main)",
+        "never self-review inline diffs or skip 'simple' changes"
+      ],
+      "suite_hash": "07e7866943122ea0809194318507f17eeb52c6f2c1aa019954b21f8f3d7c5d16",
+      "evals_sha256": "9d6e563bbbebdcd450bb065d754b04ad629d0c21bfb777c5ef915ea87e9fedad"
+    },
+    {
+      "slug": "writing-plans",
+      "name": "Writing Plans",
+      "description": "How to author a concrete, self-contained implementation plan before coding.",
+      "repo": "https://github.com/obra/superpowers",
+      "repo_sha": "3dcbd5c4b48e02263fbf4a3c01e3fe4f81d584d9",
+      "skill_path": "skills/writing-plans/SKILL.md",
+      "raw_url": "https://raw.githubusercontent.com/obra/superpowers/3dcbd5c4b48e02263fbf4a3c01e3fe4f81d584d9/skills/writing-plans/SKILL.md",
+      "content_sha256": "72190c88b2b5a67a96b91d66aa72b9161913e10e8769da3f28a226f4cc7b99d0",
+      "license": "MIT",
+      "author": "Jesse Vincent (obra)",
+      "claims": [
+        "concrete over abstract — no TBD / placeholder steps",
+        "self-contained tasks, each carrying its own test cycle",
+        "exact signatures / types / names, consistent across tasks",
+        "bite-sized 2-5 minute steps",
+        "files that change together live together (split by responsibility, not layer)",
+        "verify each spec requirement maps to a task before handoff"
+      ],
+      "suite_hash": "37cb3c341572cea2b46e273727af6965f43ce94ca776338e06695cd3ff0bc406",
+      "evals_sha256": "e0fb4575ead308cf8cb4928d80d1a8ece8458c11ca129b86f1b8337d558e51f4"
+    },
+    {
+      "slug": "skill-creator",
+      "name": "Skill Creator",
+      "description": "Conventions for authoring a SKILL.md: description-as-trigger, progressive disclosure, instructional tone.",
+      "repo": "https://github.com/anthropics/skills",
+      "repo_sha": "b29e7cf65e5cb78a5ac33d582270551bc74a14eb",
+      "skill_path": "skills/skill-creator/SKILL.md",
+      "raw_url": "https://raw.githubusercontent.com/anthropics/skills/b29e7cf65e5cb78a5ac33d582270551bc74a14eb/skills/skill-creator/SKILL.md",
+      "content_sha256": "dcd4803e61e913e6fc27294184cd3a71f09f5e924ff20c8a9a20173e7b3c2bcf",
+      "license": "Apache-2.0",
+      "author": "Anthropic, PBC",
+      "license_note": "Per-folder LICENSE.txt (Apache-2.0); the anthropics/skills repo has no single top-level LICENSE.",
+      "claims": [
+        "the description is the triggering mechanism — make it specific and list applicable contexts",
+        "three-layer progressive disclosure (metadata ~100 words / body < 500 lines / bundled resources on demand)",
+        "define the output format with exact templates",
+        "prefer theory-of-mind 'why' instructions over rigid all-caps MUSTs",
+        "organize domain variants into reference files with pointers from SKILL.md"
+      ],
+      "suite_hash": "39c3dd5b52de7e91c6c259b72a35237309bf2915fdbe430a6d4f538006db8cd6",
+      "evals_sha256": "91d7ba4699d993275d2782efeb8632b406668e3bc6ae90eb5e7bc43b433ef2cc"
+    }
+  ],
+  "suite_pins": {
+    "note": "OUR OWN suite pins, alongside the upstream skill pins above. suite_hash is the runner semantic hash (sha256Canonical over {id,prompt,rubric,pass_threshold}) — the same units receipts record in suite.suite_hash, so a receipt binds to a rubric. evals_sha256 is the committed evals.json bytes, which catches every field suite_hash deliberately excludes (grounding, metadata). Both are asserted by the repo gate: a rubric edit without a re-pin fails.",
+    "comparable_reports": [
+      "report-001",
+      "report-002",
+      "report-003",
+      "report-004",
+      "report-005"
+    ],
+    "comparable_note": "Reports whose pages claim the same suites. The gate requires every slug shared by these reports to carry one suite_hash, equal to the pin. A future rubric change means the new report is NOT added here until its page states what changed."
+  }
+}
