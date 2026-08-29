@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driftproof — neutrality policy</title>
+<meta name="description" content="Driftproof measures skill durability across substrates, not model rankings. Same suites, same fixed judge, same n across providers — with the judge-affinity limitation stated plainly and its mitigation.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a class="brand" href="index.html">Driftproof</a><nav><a href="index.html">Home</a><a href="methodology.html">Methodology</a><a href="judge-policy.html">Judge policy</a><a href="https://github.com/driftproofhq/driftproof">GitHub</a></nav></header>
+<main class="hero">
+  <h1>We measure skill durability across substrates — not model rankings.</h1>
+  <p class="lede">Driftproof now runs the same suites on more than one provider's models. This page states the neutrality policy that governs a cross-provider report, and the one limitation that matters most, plainly.</p>
+
+  <h2>What a cross-provider report is — and is not</h2>
+  <div class="card">
+    <p>A Driftproof report asks one question: <strong>does a skill still help, and by how much, on the substrate underneath it?</strong> When that substrate is two different model families — say a Claude flagship and a GPT flagship — the report shows the <em>skill's</em> with-vs-without lift on <em>each</em>, side by side. The interesting signal is whether a skill's benefit is <strong>durable</strong> across substrates or whether it depends on the model it was written against.</p>
+    <p>This is <strong>not</strong> a model leaderboard. Driftproof does not rank GPT against Claude, and a report's baseline scores are not a "which model is smarter" table. Comparing raw baseline numbers across providers would conflate model capability, judge affinity, and prompt-format differences into one meaningless figure. The unit of evidence is the <em>skill's delta on a fixed judge</em>, not a model's absolute score.</p>
+  </div>
+
+  <h2>Same suites, same judge, same n — no authoring favoritism</h2>
+  <div class="card">
+    <ul class="method">
+      <li><strong>Same suites.</strong> Every provider is run on the identical eval suites at the identical pinned rubrics (Report #001 v1.2 rubrics). No provider gets a suite tuned to its strengths.</li>
+      <li><strong>Same judge.</strong> One fixed, cheap judge (<code>claude-haiku-4-5</code>) grades every generation from every provider. The judge is held constant so the <em>target model</em> is the only thing that varies. Only a model with <code>judge_eligible: true</code> in the <a href="https://github.com/driftproofhq/driftproof/blob/main/config/models.json">registry</a> may judge — and no OpenAI model is judge-eligible, by policy.</li>
+      <li><strong>Same n.</strong> Identical sample count per case (n = 5) and the identical band + effect-floor verdict rule across providers. See the <a href="methodology.html">methodology</a>.</li>
+      <li><strong>No favoritism in authoring.</strong> Rubrics grade against a skill's own documented claims (the <a href="https://github.com/driftproofhq/driftproof/blob/main/reports/rubric-sweep.md">grounding policy</a>), not against any provider's house style.</li>
+    </ul>
+  </div>
+
+  <h2>The judge-affinity limitation (stated plainly)</h2>
+  <div class="card">
+    <p>The fixed judge is a Claude-family model, and it grades generations from <em>every</em> provider. An LLM judge can be marginally kinder to prose that resembles its own family's — so a Claude-family judge grading a Claude generation may score it slightly higher than an equally-good GPT generation. We do not pretend this is zero.</p>
+    <p><strong>The mitigation is structural: the headline metric is the with/without-skill <em>delta</em>, not the absolute score.</strong> Any constant style preference the judge holds toward a provider is present in <em>both</em> the with-skill and the baseline run for that provider, so it <strong>largely cancels in the difference</strong>. A report leads with each skill's delta on each substrate precisely because the delta is the judge-affinity-robust quantity; absolute cross-provider scores are reported as context, never as a ranking. The <a href="judge-policy.html">judge policy</a> covers style affinity, the grading ceiling on hard suites, quantization, and fail-closed parsing in full.</p>
+  </div>
+
+  <h2>Surfaces are disclosed per receipt</h2>
+  <div class="card">
+    <p>The same model can be reached over different <strong>surfaces</strong>: a metered API or a subscription CLI. Driftproof's provider layer is two-axis — provider (anthropic / openai) × surface (api / cli) — and <strong>every receipt records the exact <code>provider</code> and <code>surface</code> it ran on.</p>
+    <ul class="method">
+      <li>The <strong>API surface is preferred for published runs</strong> (temperature is settable, token usage is reported, and it is reproducible for a third party who has a key).</li>
+      <li>A <strong>CLI / subscription surface is disclosed whenever it is used</strong> — Report #001 ran on <code>claude-cli</code> and said so, and that precedent holds. On the <code>openai-cli</code> (Codex) surface the receipt additionally carries a <code>surface_overhead_note</code> stating the fixed harness preamble the surface prepends.</li>
+      <li>A drift comparison between receipts on <em>different</em> surfaces is flagged, because sampling control differs between them.</li>
+    </ul>
+  </div>
+
+  <h2>Matched surfaces in a cross-provider report</h2>
+  <div class="card">
+    <p>Report #002 goes further than disclosure: both substrate columns run on the <strong>vendor's own first-party subscription CLI</strong> — Claude via <code>claude -p</code> (surface <code>claude-cli</code>), GPT via <code>codex exec</code> (surface <code>openai-cli</code>). The <em>type</em> of surface (a first-party vendor CLI on a subscription) is therefore <strong>held constant across substrates</strong>, not merely recorded — so a difference between the columns is not an api-vs-cli artifact.</p>
+    <p><strong>Per-surface harness overhead is disclosed, because it differs.</strong> The <code>openai-cli</code> (Codex) surface prepends a fixed <strong>~12,000–15,000-token</strong> base-instruction preamble to every call (recorded in each receipt's <code>surface_overhead_note</code>); the <code>claude-cli</code> (<code>claude -p</code>) surface carries a <strong>smaller</strong> first-party harness/system context. Neither preamble is authored or controlled by Driftproof, both are first-party to the vendor, and each is noted so a reader knows the per-call input-token counts are dominated by a vendor-side constant, not by the skill.</p>
+    <p><strong>Absolute cross-substrate scores are not a ranking.</strong> Because the two substrates sit behind different first-party harnesses (with different overhead and different sampling control), comparing one column's raw number to the other's would conflate model, harness, and judge affinity. The headline metric is the <strong>within-substrate with/without-skill delta</strong> — computed against the same baseline on the same surface — which cancels the vendor-side constant and isolates the skill's contribution. Read the delta down each column; do not read across the columns as a scoreboard.</p>
+  </div>
+
+  <p class="muted">Hold the suites, the judge, and the sample count constant; vary only the target model; run both substrates on their matched first-party vendor CLI and disclose each surface's overhead; and lead with the within-substrate delta because it cancels judge affinity and the vendor-side harness constant. That is the whole neutrality policy.</p>
+</main>
+<footer class="site"><span>Driftproof · Apache-2.0</span><span><a href="methodology.html">Methodology</a></span></footer>
+</body>
+</html>

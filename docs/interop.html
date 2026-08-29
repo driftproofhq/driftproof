@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driftproof — receipts are an open format (interop)</title>
+<meta name="description" content="The Driftproof receipt JSON schema, how to emit receipts from any eval harness, importing results from neighboring tools, and the minimal summary-json interchange — with the DECLARED vs TESTED distinction explained plainly.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a class="brand" href="index.html">Driftproof</a><nav><a href="index.html">Home</a><a href="methodology.html">Methodology</a><a href="neutrality.html">Neutrality</a><a href="judge-policy.html">Judge policy</a><a href="https://github.com/driftproofhq/driftproof">GitHub</a></nav></header>
+<main class="hero">
+  <h1>Receipts are an open format.</h1>
+  <p class="lede">A receipt is a hash-verified, dated record of a skill's with-vs-without eval run — and nothing about it is proprietary. Any harness is encouraged to emit receipts; any tool can consume them. This page is the interop contract: the schema, the honesty rules, the import converters, and the lightweight summary interchange.</p>
+
+  <h2>The schema</h2>
+  <div class="card">
+    <p>The machine-readable contract is the JSON Schema (draft 2020-12), served at its canonical <code>$id</code>:</p>
+    <p><a href="spec/receipt.schema.json"><code>https://driftproofhq.com/spec/receipt.schema.json</code></a> — receipt spec v0.4 (economics revision; interop-additive since v0.3.1)</p>
+    <p>The human companion is <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md"><code>spec/RECEIPT.md</code></a>, and the full field-mapping guide for the import/export converters is <a href="interop.md"><code>interop.md</code></a>. Validate any receipt with <code>driftproof validate &lt;file&gt;</code> or any draft-2020-12 validator. Prior schema versions (v0.1–v0.3) are frozen in the repo; a receipt validates against the schema its own <code>schema_version</code> names.</p>
+  </div>
+
+  <h2>DECLARED vs TESTED — the distinction that keeps receipts honest</h2>
+  <div class="card">
+    <p>Every receipt names its <code>verification_level</code>, and the two levels that matter for interop are not interchangeable:</p>
+    <ul class="method">
+      <li><strong><code>TESTED</code></strong> — an eval suite was <em>executed and judged under the emitting harness's control</em>, with the full evidence chain: skill + suite content hashes, a sha256 of every generation that was graded, and a sha256 of every judge sample a verdict rests on. The schema enforces this — a receipt claiming <code>TESTED</code> without the evidence chain does not validate.</li>
+      <li><strong><code>DECLARED</code></strong> — someone asserts results they cannot bind to hashed evidence. This is exactly what an <em>import</em> is: Driftproof did not run, hash, or judge another tool's generations, so a converted receipt is that tool's declaration, recorded faithfully — surface <code>external</code>, source <code>imported/&lt;tool&gt;</code>, hashes <em>omitted rather than fabricated</em>.</li>
+    </ul>
+    <p><strong>The consequence is structural, not cosmetic:</strong> drift verdicts are computed only between <code>TESTED</code> receipts. <code>driftproof diff</code> reports <strong>NOT MEASURED</strong> when either side is below <code>TESTED</code>, and a DECLARED receipt's badge reads <em>not measured</em> — declared numbers are context, never band-verified evidence. There is no path from a declaration to a verdict except running the suite.</p>
+  </div>
+
+  <h2>Importing from neighboring tools</h2>
+  <div class="card">
+    <p>Working converters ship in the CLI for two neighboring skill-eval tools:</p>
+    <p><code>driftproof import &lt;results.json&gt; --from agent-skills-eval</code><br>
+    <code>driftproof import &lt;results.json&gt; --from skillgrade</code></p>
+    <ul class="method">
+      <li><strong><a href="https://github.com/darkrishabh/agent-skills-eval">agent-skills-eval</a></strong> — a test runner for agentskills.io-style skills (the same suite lineage Driftproof consumes). Its with/without-skill, per-assertion binary grading maps onto receipt cases with a real delta; single-grade cases are imported as single-sample (no bands, and the diff says so).</li>
+      <li><strong><a href="https://github.com/mgechev/skillgrade">skillgrade</a></strong> — "unit tests for your agent skills": N trials per task, weighted graders, a 0–1 reward. Trials are genuine repeated runs, so per-trial rewards map onto <code>samples[]</code> honestly. skillgrade has <em>no baseline mode</em>, so the imported receipt carries an empty baseline and a <code>null</code> comparison — never a fabricated zero-baseline delta.</li>
+    </ul>
+    <p>The full field mappings — including what is assumed where the upstream tool documents semantics but not a frozen schema — are in <a href="interop.md">the interop guide</a>.</p>
+  </div>
+
+  <h2>The lightweight interchange: summary-json</h2>
+  <div class="card">
+    <p>Most consumers don't want the whole evidence chain — they want the verdict. <code>driftproof export &lt;receipt.json&gt; --to summary-json</code> emits a minimal, stable, flat summary (<code>driftproof/summary</code> v1): skill, model + provider + surface, with/baseline bands, delta ± uncertainty, the effect-floor verdict (<code>PASSED</code> / <code>NO_EFFECT</code> / <code>REGRESSED</code> / <code>NOT_MEASURED</code>), verification level, source, the receipt hash it summarizes, and an optional report URL. Keys are frozen; additions bump <code>format_version</code>. The exact shape is in <a href="interop.md">the interop guide</a> and snapshot-tested in the repo's gate.</p>
+  </div>
+
+  <h2>Emitting receipts from your own harness</h2>
+  <div class="card">
+    <p>If you run agent-skill evals, emitting receipts costs you a JSON serializer and buys your users a portable, self-verifying, dated record. Two honest paths:</p>
+    <ul class="method">
+      <li>You ran a with/without suite yourself and can hash the generations and judge outputs → emit <strong><code>TESTED</code></strong>, and the schema will hold you to the evidence chain.</li>
+      <li>You're converting or asserting results you can't hash → emit <strong><code>DECLARED</code></strong> with surface <code>external</code> and omit the hashes — exactly what <code>driftproof import</code> does.</li>
+    </ul>
+    <p>The <code>receipt_hash</code> is a self-hash over the canonical form (sorted keys, no insignificant whitespace) with the field itself removed — integrity, not yet authenticity; key signatures are the spec's stated next step. Questions, or want an emit-receipts PR for your tool? <a href="https://github.com/driftproofhq/driftproof/issues">Open an issue</a> — converters and PRs are offered, not demanded.</p>
+  </div>
+
+  <p class="muted">One format, two honest levels, and a hard wall between them: declarations are recorded, verdicts are earned by running the suite. That is the whole interop policy.</p>
+</main>
+<footer class="site"><span>Driftproof · Apache-2.0</span><span><a href="methodology.html">Methodology</a></span></footer>
+</body>
+</html>
