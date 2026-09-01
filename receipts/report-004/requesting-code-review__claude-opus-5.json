@@ -1,0 +1,464 @@
+{
+  "schema_version": "0.3.1",
+  "skill": {
+    "name": "requesting-code-review",
+    "version": "0.0.0",
+    "content_hash": "91e606681d8786a9f58cc067ffdbde1e53f31fbf51eda12bc6c5a0beb2aa3ef1",
+    "tokens": 738
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "07e7866943122ea0809194318507f17eeb52c6f2c1aa019954b21f8f3d7c5d16",
+    "case_count": 7
+  },
+  "run": {
+    "model_id": "claude-opus-5",
+    "model_release_date": "2026-07-24",
+    "provider": "anthropic",
+    "surface": "claude-cli",
+    "runner_version": "0.3.0",
+    "date_utc": "2026-08-16T17:19:36.932Z",
+    "registry": "registered",
+    "transcripts": "retained-local",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "request-package-basic",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.918,
+        "mean": 0.918,
+        "stddev": 0.021679,
+        "samples": [
+          0.93,
+          0.9,
+          0.9,
+          0.91,
+          0.95
+        ],
+        "generation_hash": "77dd068b46ec00adb10d933d2d535bb6cb1cd3fd041c819edcf4eb3aa60accd1",
+        "judge_sample_hashes": [
+          "ea413ecd5522a73e4bcd7886c078e6b07914520a3f4f7268d914dc8369b340d9",
+          "2117538a27b82d41e0e00942fedccd978cf5c9246720df15772e3944336ef19b",
+          "d19be22fd8bc5ae5df6cce3ae43be5f965227859f940aeb3c0cb009a6b995f9f",
+          "54b0b90af083ffd58b25df3e7778da29eb038261c5b7969aa871f522cc6cbcf1",
+          "b2b1532ec6a7bba8b05b288e2a5b52e9c8dd600d281b10e728d59257bf6d7c6c"
+        ],
+        "threshold": 0.7,
+        "reason": "All four required elements present and clearly labeled: description (token-bucket limiter), requirements (per-key, 100 req/min, 429+Retry-After), BASE_SHA (HEAD~2), HEAD_SHA (HEAD). Exemplary structure with crisp acceptance criteria and distinguished start-vs-end commits. Flawless execution with exc",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "1f43fefdb450fc7d29e747f51aaea2eaa4e7a2e327f354f7fb177ccbb8b2d493"
+        }
+      },
+      {
+        "id": "request-package-basic",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.878,
+        "mean": 0.878,
+        "stddev": 0.019235,
+        "samples": [
+          0.88,
+          0.87,
+          0.89,
+          0.9,
+          0.85
+        ],
+        "generation_hash": "b5ab76c83c7342bf597943cca02576566c56e74f430ee7b36b20e7d6c712b8cc",
+        "judge_sample_hashes": [
+          "f482131e834188a8856ef14c3cb8119588b0c934d2db9bc6fb9c68cbc7a22703",
+          "74c9e93de0640c4e5dd42a8d85bb68bc60f678d1a5176409efe9116383ba5763",
+          "c779607072743f43aa2056d9da611f67717f7991eb1530c4470f88d798364a21",
+          "8719dcec58f2b40f2c549cc04856a989f66ee4faba55efb62b250bdc9ff71774",
+          "cd415cebb1c04cc2284d7b3179dcf9b40996eac9f2e2d99ffa08cce534568d67"
+        ],
+        "threshold": 0.7,
+        "reason": "Package contains all four elements (description, requirements as numbered criteria, BASE_SHA with instructions, HEAD_SHA with instructions), cleanly structured and exemplary. Commits clearly distinguished; no omissions or structural errors.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "1f43fefdb450fc7d29e747f51aaea2eaa4e7a2e327f354f7fb177ccbb8b2d493"
+        }
+      },
+      {
+        "id": "triage-review-findings",
+        "mode": "with_skill",
+        "outcome": "fail",
+        "score": 0.566,
+        "mean": 0.566,
+        "stddev": 0.04219,
+        "samples": [
+          0.55,
+          0.6,
+          0.5,
+          0.6,
+          0.58
+        ],
+        "generation_hash": "6458d4a57b567c75a5c26158a11bf29b1fdf77ec971963eb539b212cb5789415",
+        "judge_sample_hashes": [
+          "93417d1539c92cce563de7f972ec0f685782a3d8dc3354f2a36b3725093fd8fd",
+          "9531850032f762c1891e77914a2ecba0c95ce6f946eb9f2952accee0b0975f49",
+          "debd53b956f6606e51c3ea886053c7ba540d62769100dbed0524ab1a33b0de87",
+          "44a28a805fed1c076c338ad02b84317da5606e05cab12e618bdbe7d0c3278d31",
+          "c559588be5d6ffed099936319ba7fb0e2e99d9de13605a25bc5f98e064599beb"
+        ],
+        "threshold": 0.7,
+        "reason": "Uses High instead of Important tier; places security/crash #1/#5 in second tier instead of top tier with #2. Exemplary reasoning otherwise.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "dbc9551848eaca51f89c7a50edb46d53b0c6961965080767508a5b7d7418bded"
+        }
+      },
+      {
+        "id": "triage-review-findings",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.44,
+        "mean": 0.44,
+        "stddev": 0.248495,
+        "samples": [
+          0,
+          0.5,
+          0.55,
+          0.55,
+          0.6
+        ],
+        "generation_hash": "1ee9442dfcf5c50be611f96c57c14e4aacc56e44ece03af1120ba9cae2b0272b",
+        "judge_sample_hashes": [
+          "2a70e6482799bbd1053c56b38b1875e019cf3d0505735099db42ed2f48339cd6",
+          "b1ac9ff8fcc6dae277d2ffafe3c718965a7ff593cf78fe0e581997014c834b94",
+          "7eaeb962924326c3125fee20bb49218fc40b055264f1005af2e80aef643f36c1",
+          "62de0edf1ba71418042a7008a0bd237dd76387c2a33283a5836f2488c60d2b9c",
+          "8b3b435cebbdc1d17ff969ac2b8c46c1c96e62d884530849bb3b7ff040380206"
+        ],
+        "threshold": 0.7,
+        "reason": "judge output unparseable",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "dbc9551848eaca51f89c7a50edb46d53b0c6961965080767508a5b7d7418bded"
+        }
+      },
+      {
+        "id": "crafted-context-not-session-history",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.89,
+        "mean": 0.89,
+        "stddev": 0.018708,
+        "samples": [
+          0.89,
+          0.88,
+          0.87,
+          0.89,
+          0.92
+        ],
+        "generation_hash": "9a3f64a22a6bd053291a04df0bba6605f6de9baad90c34653211641b75f7d754",
+        "judge_sample_hashes": [
+          "0983a042e3a5379482b597634d1cef6d09a93e2c20f45549f997be8d14544c1d",
+          "fd4d57f197508161d4fbf716107d4b0b937972991d1f959689295bbf6178b002",
+          "d98f720f9da2dec2803de7d97da63f4cb2de470d68b40290e80daaac52d12611",
+          "b6f0039d0e91c9d338cd54ba3a570e2bb6761298e0486bee4c21c7607279de2a",
+          "0d0f6049579969ae7dcd411cafc7273350931bc052e47e962473982388640ea6"
+        ],
+        "threshold": 0.7,
+        "reason": "Crafted context package with clear description, requirements phrased as acceptance criteria, correct base/head SHAs (4c1d9a0, e77b2f1); successfully omits session narrative, abandoned Map attempt, revert, and debugging journey. Exemplary structure with design-choice callouts and targeted scrutiny gu",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "0da9f09eedf5e103828ac8dae00d0234fd928339a83007ecc70d7f6f63771d91"
+        }
+      },
+      {
+        "id": "crafted-context-not-session-history",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.284,
+        "mean": 0.284,
+        "stddev": 0.023022,
+        "samples": [
+          0.3,
+          0.3,
+          0.3,
+          0.25,
+          0.27
+        ],
+        "generation_hash": "ceb1a9ad892d065d7dbc092485772d17508a994e4755b9a856a8e54705455555",
+        "judge_sample_hashes": [
+          "65718de3d013b9d29b2f732e10cee623a1b3a8a91706f7baacc5d298898fc6da",
+          "ff32ffef7a5eedb7085ad6d4cf56bd18df5be251ac8d0b0deaef8a92717a90b8",
+          "febf1bd336c3c0df3bfcdd4b6973e67a2a9f58c00a33746349c04dc150629b09",
+          "1d94e57ce84d14cf805eebfa08ab5a97961f4dc144ca815c539ea61878e57fa8",
+          "7fecbb877a25e08f83021cc84c8a7076ead7a7eae3d56e8f54933db89c5b1018"
+        ],
+        "threshold": 0.7,
+        "reason": "Forwards session history by mentioning abandoned Map attempt, revert, and mock-clock debugging; capped at 0.3 per rubric.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "0da9f09eedf5e103828ac8dae00d0234fd928339a83007ecc70d7f6f63771d91"
+        }
+      },
+      {
+        "id": "identify-base-head-shas",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.882,
+        "mean": 0.882,
+        "stddev": 0.008367,
+        "samples": [
+          0.88,
+          0.89,
+          0.88,
+          0.89,
+          0.87
+        ],
+        "generation_hash": "82227f9129a5011e4b34d61bfe5cfc52773193993ae8646f4f1750c1954806c0",
+        "judge_sample_hashes": [
+          "1af106f634c1a385d64a5a80305da001fc37639623f49399f92ef7ddcf132155",
+          "f155cae03daa11e82eb4ca6bcd56ea1a474d08a2077384830084597ef4adede1",
+          "5231c736b208acf9762b709f6a423e809a521e9aea78bbe3dca85f6364baaacf",
+          "2a65ccf7de9f7628218a64549c2f5f6f15b64251cfedeb8c3978fb8c0f4be467",
+          "b0d483fed4a9ccd8bf74ecb227389bb47a8445644a5b1b11c5893feeed9fa8fb"
+        ],
+        "threshold": 0.7,
+        "reason": "Correct SHAs (e77b2f1, 4c1d9a0) with clear rationale; exemplary for explicitly flagging that naive HEAD~1 would wrongly exclude the first commit.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "ccf0028dc7f2cb06b2ad7d2072cc20da465d2c00c301d54a53fe014181b13fad"
+        }
+      },
+      {
+        "id": "identify-base-head-shas",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.876,
+        "mean": 0.876,
+        "stddev": 0.005477,
+        "samples": [
+          0.88,
+          0.87,
+          0.88,
+          0.88,
+          0.87
+        ],
+        "generation_hash": "6e8fa888d56b2518353ebede7eb0e69cc274641fc684e5162d2c6608fa174834",
+        "judge_sample_hashes": [
+          "ebb5f52e32e39e12d015af6990f4c49aad5901b203e7fa1f96800d128f6ccbfc",
+          "485e8ecb9d237e1c0f4028dc5530a4e5220c7451867db280de70120582e5497b",
+          "8ff08755bbff4ad769f73f8aecac8aec9cfd5d9beaa26e0e93ac76f27550e084",
+          "0fbf9b3d35cb6edabfd68ff3e16a9a36e70d95b72ef08745498b019a1cf2a399",
+          "64f5067be1068c03c1e9030cc5b1b7e60bda0d027a40030381ab6fd03efb4b79"
+        ],
+        "threshold": 0.7,
+        "reason": "Correct SHAs with exemplary rationale: explicitly explains why picking a0f3b21 as base would wrongly exclude part of the change, demonstrating deep understanding of the base..head range semantics.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "ccf0028dc7f2cb06b2ad7d2072cc20da465d2c00c301d54a53fe014181b13fad"
+        }
+      },
+      {
+        "id": "mandatory-vs-optional-triggers",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.892,
+        "mean": 0.892,
+        "stddev": 0.032711,
+        "samples": [
+          0.85,
+          0.88,
+          0.93,
+          0.92,
+          0.88
+        ],
+        "generation_hash": "6568769db0fafc2739504d95adcf8ab014d5f386138f2fa9ae955d9f01bc2d01",
+        "judge_sample_hashes": [
+          "2e6b9bd097ceb0b83d6770cb78e2d2845969f32ca8911bb3eb765afae81ee872",
+          "86ae6a63eb7c3c654aa651f5265216b3136249b791a5529eb5382a954189046f",
+          "a8b9bbda3bc848cc63a41337aef772d6cadd32a9fb6980f846e41433a7337405",
+          "7850c42deaaa3cbdec58fc1d0c879cdc0e386526e298908a5a94d5add4f1f572",
+          "9ba02f454617857cb00a59ae91e8b909a0765ef4248299a25c0ef9c84c7ab674"
+        ],
+        "threshold": 0.7,
+        "reason": "All four items correctly labeled (a,b,c Required; d Optional) with matching triggers; explicitly distinguishes mandatory from optional-but-valuable lists.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "99ac9f1ef33b8493ba54ce60c2712bbdab843fffefafdc8a2b492c16b7f69bfe"
+        }
+      },
+      {
+        "id": "mandatory-vs-optional-triggers",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.316,
+        "mean": 0.316,
+        "stddev": 0.115239,
+        "samples": [
+          0.4,
+          0.18,
+          0.4,
+          0.4,
+          0.2
+        ],
+        "generation_hash": "6c99e23f04d7035e67bff2cbc3f2c81ff4ce280f22e11bf7a51fe31258998813",
+        "judge_sample_hashes": [
+          "e489ed51941a7cbdd7cb26d7cb8a49b846f4748025d884afca4b944010ecfb93",
+          "0cea6c025ae3e9c3db8249216ae3d6c1634dc83241f3ac7cf6f0188c986701d7",
+          "d19d963c2d2dd97d243a834d11b89c604f711ada519bf431b4dc4cf2ea6a2ccc",
+          "56a58f9e7a8437b12683ba841a9e9535fb20040cda6de7de6977e1a2c683447a",
+          "8f7a8075886758e9ecfe1e239ac7958ff98cd9fec4d6b6126c7b02c5f0ceae82"
+        ],
+        "threshold": 0.7,
+        "reason": "Model misclassified (a), (b), (c) as Optional when rubric requires Required labels. CAP at 0.4 per rubric.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "99ac9f1ef33b8493ba54ce60c2712bbdab843fffefafdc8a2b492c16b7f69bfe"
+        }
+      },
+      {
+        "id": "resist-simple-self-review",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.898,
+        "mean": 0.898,
+        "stddev": 0.021679,
+        "samples": [
+          0.91,
+          0.88,
+          0.89,
+          0.88,
+          0.93
+        ],
+        "generation_hash": "22e60ce7253814b516f9463ed07caf9444fc54b5e97d0e36445da1cc6127ddcd",
+        "judge_sample_hashes": [
+          "9de8ccb0e6765e0e676a56d9a3a137d1d4664634d7721e8aaabeecd8ada464e5",
+          "05686d2f64f7f3e2ed372785774d055bb7d2901a1f517b5a1b5d364c9c53293b",
+          "1100dea2f7773493f3ca8b9903c4cf76c0d461d1dec55ce62abf7843cfc26ec2",
+          "34ddd2764d973a00175a9bc0b790b579c61cc1466bbe401e92b82ecd9e255ed1",
+          "f951063cf1fa74c2b6f61b156914e600638b9ba9be075336799b2b4396041a84"
+        ],
+        "threshold": 0.7,
+        "reason": "Firmly refuses to skip or self-review, explains context-window cost precisely, dispatches proper review request with description, detailed requirements, and both SHAs (as placeholders). Exceptional domain reasoning and review discipline.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "34b7ef88c1b93a2ccad7f9924585a039c7e97ad519d4ff38618870ace234379e"
+        }
+      },
+      {
+        "id": "resist-simple-self-review",
+        "mode": "baseline",
+        "outcome": "borderline",
+        "score": 0.664,
+        "mean": 0.664,
+        "stddev": 0.058992,
+        "samples": [
+          0.6,
+          0.72,
+          0.6,
+          0.7,
+          0.7
+        ],
+        "generation_hash": "d3c1356ad31eb4a14a2bfbfb2c116ae970b026ecc52de607c1954dcbca1abbe6",
+        "judge_sample_hashes": [
+          "0307972c3884e5b48a1c0381502cf0cb99aa4ed6a3cd82e33fb1f694b7df3d9d",
+          "67c0a5e314b42c8bd10e447e02f884b8f739ae423e0690bd64b6881da93ac66b",
+          "8a887786e8c24e32977b8af36a999f3095ff99ddbfda29869692bbc3392a51e7",
+          "f1c8d09aac659925e1251ddb433fdd0326f66fea040051b1a3e9e7c96b7c851a",
+          "eec0707e52eb49ca06a6ca29fa366e64982ce9869ac68b99defacb412f34ca33"
+        ],
+        "threshold": 0.7,
+        "reason": "Firmly refuses both traps and provides detailed review request targeting judgment calls, but omits BASE/HEAD SHAs.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "34b7ef88c1b93a2ccad7f9924585a039c7e97ad519d4ff38618870ace234379e"
+        }
+      },
+      {
+        "id": "full-handoff-before-merge",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.8,
+        "mean": 0.8,
+        "stddev": 0,
+        "samples": [
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ],
+        "generation_hash": "c2e43a7fa65478b7cfaee4fafb7662f303ec8913ffacadf87e4e38036b815191",
+        "judge_sample_hashes": [
+          "a21d1a542ef068f905a5675d51e341c5c0c8fae1febb0490b22e644917fc9308",
+          "d6ebd466a199e5ca3153b5b00a8e81e0a3c9efebe65061f54c96919409ad42ed",
+          "e75c32910f5070d455c3e3025560d9246a9ea8627d45b8e36dcbbc17525b816f",
+          "4cf1fa2b4040ac50a650521d9450fd905014bca23938663a4e1f88a2645123d5",
+          "90e9086aaa5da8f66057675b02859f82da49e094be272f6fe60113865f2a6c2f"
+        ],
+        "threshold": 0.7,
+        "reason": "Fills template completely with all four elements (description, requirements, base/head SHAs), excludes session history as required, but omits noting merge-to-main as a mandatory review trigger.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "5f6f149ca023f02fffae8d49f9d59da51a49d8ef9a425db64679209e969737be"
+        }
+      },
+      {
+        "id": "full-handoff-before-merge",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.39,
+        "mean": 0.39,
+        "stddev": 0.022361,
+        "samples": [
+          0.4,
+          0.4,
+          0.4,
+          0.35,
+          0.4
+        ],
+        "generation_hash": "9ec20d6b54ac52dffe76e19f58fed2751668f2dc44fe2ed3f1db486be6121ce5",
+        "judge_sample_hashes": [
+          "376a67567fc989ffa0b05bbd3f3a50787dacae55efff9bf1784dca06a50de9d9",
+          "40650323dedb60fd12320e6255aa888cd5bc46162797f804e83d53bbf6a18e59",
+          "13b8dea706459d2bbb797a734628d0ce16d32b1c839e5f6bcd6588cd3448700d",
+          "b3f1978a9b4e32fbf524d8340a8725ca3a67ed86f01d1b7f5f0cac0c313a6361",
+          "233a3b74f8a841dcd55b2d1e5f3bf4989ed43944e6afea06574d0362f2bcae56"
+        ],
+        "threshold": 0.7,
+        "reason": "Includes abandoned-flow and state-mismatch debugging narrative despite CRITICAL rubric instruction to omit raw journey; CAP triggered at 0.4.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "5f6f149ca023f02fffae8d49f9d59da51a49d8ef9a425db64679209e969737be"
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 7,
+        "pass_count": 6,
+        "borderline_count": 0,
+        "mean_score": 0.835143,
+        "stddev": 0.12445
+      },
+      "baseline": {
+        "case_count": 7,
+        "pass_count": 2,
+        "borderline_count": 1,
+        "mean_score": 0.549714,
+        "stddev": 0.254973
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.835143,
+    "baseline_score": 0.549714,
+    "delta": 0.285429,
+    "delta_uncertainty": 0.283724
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "2d55ca32bb56acbe7cca3ca24d5be2981244e653359e0cd5c3d1f6bb27e63fb8"
+}

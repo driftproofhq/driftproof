@@ -1,0 +1,689 @@
+{
+  "schema_version": "0.4",
+  "skill": {
+    "name": "code-review-and-quality",
+    "version": "0.0.0",
+    "content_hash": "13d360d7f786de371886e404b1eaa0cd37ecabab90e5c7126d62d42b73a872ea",
+    "tokens": 5120
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "4729eb8fc298bbcf8baadc13f2d2cf1a9e573d0dbad57dfb67adc2f4df271760",
+    "case_count": 7
+  },
+  "run": {
+    "model_id": "claude-fable-5",
+    "model_release_date": null,
+    "provider": "anthropic",
+    "surface": "claude-cli",
+    "runner_version": "0.5.0",
+    "date_utc": "2026-08-28T19:38:41.182Z",
+    "registry": "registered",
+    "transcripts": "hashes-only",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    },
+    "pricing_snapshot": {
+      "frozen_at": "2026-08-28T19:38:41.182Z",
+      "source": "config/models.json",
+      "currency": "USD",
+      "models": {
+        "claude-fable-5": {
+          "input_per_mtok": 10,
+          "output_per_mtok": 50,
+          "registered": true
+        },
+        "claude-haiku-4-5": {
+          "input_per_mtok": 1,
+          "output_per_mtok": 5,
+          "registered": true
+        }
+      },
+      "note": "Prices frozen at run time. Every derived cost in this receipt is computed from THIS snapshot, never from the live registry, so the receipt keeps its meaning when registry prices later change."
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "severity-labeled-findings",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.886,
+        "mean": 0.886,
+        "stddev": 0.105736,
+        "samples": [
+          0.94,
+          0.94,
+          0.9,
+          0.7,
+          0.95
+        ],
+        "generation_hash": "46a5ff837ba2c7e87a87b88ea7d495c9cdf788d5664a9a423fd849acad16f01e",
+        "judge_sample_hashes": [
+          "e503f0cdb9c936de371b438a2a3944eb3765a1e21ede141d450be676f2b97fb4",
+          "0c4ab16fa5f0f9aaa2fc51573b04d09dde023655cd37c49e6df902d8eab5b577",
+          "6b7a73f9f95b6b7dd22adfd72bb13141c5785fd483cf1167a8f4ecfe3bb4e790",
+          "c4b6616a3fa26c763edb6a809473075128488e60e4eaf5a9aea4f21c81539598",
+          "01cc386333e0d856ce93b1ceb17ccb0f893b970be20335ef9c3493105e4112b1"
+        ],
+        "threshold": 0.7,
+        "reason": "All findings have explicit severity labels with correct calibration: hardcoded secret as Critical, PII logging as Critical (within required band), cosmetic naming as Nit. Findings ordered by leverage (Critical→Required→Nit), concrete fixes provided for all substantive issues.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "a953d281f6a998f2b332172b431e3fd36792516ceefbc87ca00bab9ebcf015b0"
+        },
+        "judge_usage": {
+          "input_tokens": 113655,
+          "output_tokens": 20215,
+          "cached_tokens": 104504,
+          "wall_ms": 219495
+        },
+        "usage": {
+          "input_tokens": 24270,
+          "output_tokens": 1270,
+          "cached_tokens": 10130,
+          "wall_ms": 19962
+        }
+      },
+      {
+        "id": "severity-labeled-findings",
+        "mode": "baseline",
+        "outcome": "borderline",
+        "score": 0.696,
+        "mean": 0.696,
+        "stddev": 0.02881,
+        "samples": [
+          0.7,
+          0.65,
+          0.73,
+          0.7,
+          0.7
+        ],
+        "generation_hash": "8184a39d10c7f6f735e2a4c9a5b802c7106db72eebb422b2212693a7652b439f",
+        "judge_sample_hashes": [
+          "307f8cb512e0988b95d72d538ed7448a7137533080022b037432329281bed47b",
+          "34b39c70749a2fe3000089b62a3435023688e0f5370555d8d823b659998609c1",
+          "7fd3484ecc923c10af0667a2bda7c85976ef66f86aa502d4ce2c98ca1f745af7",
+          "2496f9f9825963ff54da21e4efbfed2c74d704ab3724a23c6f53da9da7703408",
+          "de2d6eb80889918ee31d2272a0368920cc31e49f98751faed00e676cda89116c"
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly marks hardcoded secret Critical with exemplary severity ordering and fixes. Omits explicit Nit label for variable naming; PII logging calibrated as High not Critical/Required.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "a953d281f6a998f2b332172b431e3fd36792516ceefbc87ca00bab9ebcf015b0"
+        },
+        "judge_usage": {
+          "input_tokens": 113475,
+          "output_tokens": 35520,
+          "cached_tokens": 108766,
+          "wall_ms": 350447
+        },
+        "usage": {
+          "input_tokens": 17295,
+          "output_tokens": 1211,
+          "cached_tokens": 10121,
+          "wall_ms": 18215
+        }
+      },
+      {
+        "id": "commit-message-imperative-body",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.88,
+        "mean": 0.88,
+        "stddev": 0.007071,
+        "samples": [
+          0.89,
+          0.88,
+          0.87,
+          0.88,
+          0.88
+        ],
+        "generation_hash": "d543566180e4242c9bc3cdbebd63c21613c087965b4758c3e3b5d3f61528838d",
+        "judge_sample_hashes": [
+          "0cd528c798155e6a262ace3913926fdc76451d79086b510ebe3c2f28a1019ecb",
+          "223c3ad3731d1f07f9ded48e99caa050a44a4e7d69973ed5fcb0458d3a9d8464",
+          "73d3727512089aa03373f1fdd7dda29ac58fd8cbf49a6dbbfca4b7d94f2cf7b1",
+          "d849a5401053d8bc93e97f6515319b1a547789ef4cd1402de5554621f5249701",
+          "c98e335ab3a9c8c74781b11803937a891aae2083310aaefac2b3ec12499e71fd"
+        ],
+        "threshold": 0.7,
+        "reason": "Imperative first line, comprehensive body explaining what and why, names retry parameters and mentions test—exemplary response.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "c0e72ffc8f491bba9621acce0290781529e9b4a4886abaa2637938944afdb2ca"
+        },
+        "judge_usage": {
+          "input_tokens": 110200,
+          "output_tokens": 13358,
+          "cached_tokens": 106146,
+          "wall_ms": 149116
+        },
+        "usage": {
+          "input_tokens": 24242,
+          "output_tokens": 450,
+          "cached_tokens": 20532,
+          "wall_ms": 10816
+        }
+      },
+      {
+        "id": "commit-message-imperative-body",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.872,
+        "mean": 0.872,
+        "stddev": 0.008367,
+        "samples": [
+          0.88,
+          0.88,
+          0.87,
+          0.86,
+          0.87
+        ],
+        "generation_hash": "1f61a13ae2c4606dca064c835344699033bd8e75a0ef95290e52cc057ce6a77a",
+        "judge_sample_hashes": [
+          "dd266d375ac1c560ff06af03a11d49149157b84560502b7f158d04fae42161a1",
+          "ad11e86f1a0fad4a2ebb76cc66f707da078ae090ff7c041a09ae70554d667943",
+          "9120e6bc0763600c4a2d6cda2e56a23ac376ce4c4eaab49f33c2b8ce999db7c2",
+          "8dfb3115946b968b546aca8b361b42a9ad628b0914083a819564e57268608c6a",
+          "3dc1698d3e3b3fae9ef0a2af05461979f4e294fdd53c5fcd4c0fde96ef2e39f1"
+        ],
+        "threshold": 0.7,
+        "reason": "Perfect imperative first line; body clearly explains problem (context/why) and solution (what). Additionally exemplary: explicitly names retry parameters (3 attempts, exponential backoff) and mentions added test.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "c0e72ffc8f491bba9621acce0290781529e9b4a4886abaa2637938944afdb2ca"
+        },
+        "judge_usage": {
+          "input_tokens": 109374,
+          "output_tokens": 9725,
+          "cached_tokens": 97242,
+          "wall_ms": 109447
+        },
+        "usage": {
+          "input_tokens": 17267,
+          "output_tokens": 213,
+          "cached_tokens": 13557,
+          "wall_ms": 6501
+        }
+      },
+      {
+        "id": "security-axis-sql-injection",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.87,
+        "mean": 0.87,
+        "stddev": 0.012247,
+        "samples": [
+          0.88,
+          0.87,
+          0.87,
+          0.88,
+          0.85
+        ],
+        "generation_hash": "1d49ac6bf80d1c430d8e540326cfcc182adfe38cc8cbbd629614d6f115b9fb55",
+        "judge_sample_hashes": [
+          "e527855108946f3b07bc61487f9d66fba929e9fe2ef607a255b23dfc2d5d7d43",
+          "dc8a6b9d49f08be440fac3ac6fbce4e2d8ce699567d88f3be2b0e7069af2acf4",
+          "f5e309f00778f284665b3c39708272957c51a3138c8cca7f814f8ba2e449f5d9",
+          "662babe5bbfa160d74e9e9eb02782055b5f62757af4bb981a76981a128261947",
+          "9bad018932bd2c2d3e6edf2d4c9df5770b65b0d2bf7f00f4fb4352149aa19027"
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly identifies SQL injection as Critical with concrete parameterized-query fix. Also flags boundary validation, keeps injection clearly-led, identifies IDOR, provides complete working example. No errors.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8b25d6a2eddc61bf07802a53d2bb92d65739b3731f0a8d51ff95803aa6d1354b"
+        },
+        "judge_usage": {
+          "input_tokens": 112314,
+          "output_tokens": 14421,
+          "cached_tokens": 103496,
+          "wall_ms": 163021
+        },
+        "usage": {
+          "input_tokens": 24229,
+          "output_tokens": 1035,
+          "cached_tokens": 10130,
+          "wall_ms": 16833
+        }
+      },
+      {
+        "id": "security-axis-sql-injection",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.888,
+        "mean": 0.888,
+        "stddev": 0.013038,
+        "samples": [
+          0.87,
+          0.89,
+          0.88,
+          0.9,
+          0.9
+        ],
+        "generation_hash": "398ec1edc7c8551e5db3bfb08d7ed195b198b277a837072446b57a24649a25da",
+        "judge_sample_hashes": [
+          "e11462cc4ff26419fdb621732b7151a0d0bd81764798fd2c6507fade150ffb15",
+          "22f53f30b1a2aa35530c0c3c9f23c5539fbaddb9abe403c611d48bf78e25a668",
+          "7ae59974607d61395ba2ee5db2849d239e962ef0516eccaee6343fdb4c012038",
+          "48bdb6afec9f707cf3c9f4cb362b45b35f136586ff25f0d837a485c69fa7872a",
+          "6cbebc972dc61b19161d542359cdfc5751164c5b2be833ac011be6e6ec540c75"
+        ],
+        "threshold": 0.7,
+        "reason": "Identifies SQL injection as blocking, proposes parameterized query fix, flags input validation. Exemplary organization with security citations, attack examples, and additional vulnerability identification.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8b25d6a2eddc61bf07802a53d2bb92d65739b3731f0a8d51ff95803aa6d1354b"
+        },
+        "judge_usage": {
+          "input_tokens": 112295,
+          "output_tokens": 12162,
+          "cached_tokens": 107830,
+          "wall_ms": 141359
+        },
+        "usage": {
+          "input_tokens": 17254,
+          "output_tokens": 945,
+          "cached_tokens": 10121,
+          "wall_ms": 16109
+        }
+      },
+      {
+        "id": "propose-structural-remedy",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.91,
+        "mean": 0.91,
+        "stddev": 0.022361,
+        "samples": [
+          0.94,
+          0.91,
+          0.92,
+          0.9,
+          0.88
+        ],
+        "generation_hash": "9cbf236cb264a66afab36f7f3512140ad905e85da6cf44a803e6de9a97af33b3",
+        "judge_sample_hashes": [
+          "ed28f2ffcef175a1473a66a77a2cadb65687ea8f4a0592b33a356a7d4606cb95",
+          "e1d103984e5d18cc61e06410a851f4ba506057959f943691348f7ab5ce30d622",
+          "c4078dc15656863a2a204f62900bc9ada3287bf64601815de32101249315c819",
+          "94aedf1ea06874b96f6585ccbc5a16c7f27a391a9f501d9407902daa14019c99",
+          "714a6e05e5714bc6d78e1a3582041156bf5046540e09d167a1f72ad7856c1956"
+        ],
+        "threshold": 0.7,
+        "reason": "Precisely identifies repeated-conditional/missing-model smell; proposes concrete Record<FileKind, FileKindMeta> typed-lookup-table restructuring collapsing three functions. Sketches actual data structure and explains multiple benefits with exceptional clarity.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "c8e38c61625d6142ea1ea24e60be2f50c0cbd62d08c6344496f759c022926114"
+        },
+        "judge_usage": {
+          "input_tokens": 114895,
+          "output_tokens": 11742,
+          "cached_tokens": 109910,
+          "wall_ms": 137391
+        },
+        "usage": {
+          "input_tokens": 24419,
+          "output_tokens": 1482,
+          "cached_tokens": 20543,
+          "wall_ms": 21945
+        }
+      },
+      {
+        "id": "propose-structural-remedy",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.902,
+        "mean": 0.902,
+        "stddev": 0.013038,
+        "samples": [
+          0.89,
+          0.92,
+          0.9,
+          0.91,
+          0.89
+        ],
+        "generation_hash": "b3f94d1b37dc71e7fa18fdec092f6671b05ea08daa5a45742a408104a68f5919",
+        "judge_sample_hashes": [
+          "a62acd68022058c289a3036d074b9f6364386a6c4f3503a1e62ceb22e4ffc2d2",
+          "653ddb5a519dd5572c12afac599df9071147b0038778e3d124c03ac0d9955f3d",
+          "865a8090051113ff5dc80d81dc449b08d62b93c7a120496903a7443d8a856452",
+          "1ef971e3efc4371aa380b6a7fbf851d2fe9fa91e2d43eaa98c3700b11b84faca",
+          "623813294f0951b2f8418eb39e6cd16f561a787d18bf567237152fbdb035b04f"
+        ],
+        "threshold": 0.7,
+        "reason": "Identifies repeated-conditional smell across three functions, proposes concrete typed-record lookup-table restructuring collapsing the switches, sketches actual data structure with benefits.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "c8e38c61625d6142ea1ea24e60be2f50c0cbd62d08c6344496f759c022926114"
+        },
+        "judge_usage": {
+          "input_tokens": 114550,
+          "output_tokens": 12993,
+          "cached_tokens": 109634,
+          "wall_ms": 141370
+        },
+        "usage": {
+          "input_tokens": 17444,
+          "output_tokens": 1358,
+          "cached_tokens": 13568,
+          "wall_ms": 21819
+        }
+      },
+      {
+        "id": "oversized-change-split",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.88,
+        "mean": 0.88,
+        "stddev": 0.012247,
+        "samples": [
+          0.88,
+          0.86,
+          0.89,
+          0.89,
+          0.88
+        ],
+        "generation_hash": "def7bb04d1f19f6e43c917d5db0d3859331345d71221152c6ad0bcd1f233c05c",
+        "judge_sample_hashes": [
+          "dc955a937743566f61d093e91a7e42d0a77bddf708ab3ea01208ef8b6ded099d",
+          "9d8ab370c48b00b9b8f48288e31668ca6ba4b181162a479ec0151d1d593f40ef",
+          "29afd619999510e4209cac361a81da8da38341def32ccbeb8c806ad1b65e9eb6",
+          "99b995f6893a8600a752222967cf76c4d50ac3de68d3be4e8bcf810af8655092",
+          "a58039eba4caad96723ad444509f6155eb02ad3a5152b31fa9f348affcacd76b"
+        ],
+        "threshold": 0.7,
+        "reason": "Flags size as too large, separates refactor from feature, names Stack strategy explicitly, requests standalone descriptions—all exemplary criteria met.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8cca4cf01b3900f46656510ee472f41de63953d0e0f4dbd0126fe41841a0ca50"
+        },
+        "judge_usage": {
+          "input_tokens": 112445,
+          "output_tokens": 13438,
+          "cached_tokens": 107950,
+          "wall_ms": 152068
+        },
+        "usage": {
+          "input_tokens": 24277,
+          "output_tokens": 1007,
+          "cached_tokens": 20543,
+          "wall_ms": 17865
+        }
+      },
+      {
+        "id": "oversized-change-split",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.87,
+        "mean": 0.87,
+        "stddev": 0.007071,
+        "samples": [
+          0.87,
+          0.87,
+          0.87,
+          0.86,
+          0.88
+        ],
+        "generation_hash": "5510d00af3b12dbf0cb239a788ce2ace3a85fec5ea4b6aa8746c7b36fca3bf22",
+        "judge_sample_hashes": [
+          "8199afa87a987b7c88db898fbc4dacdf122182a93de7997fdc9144fc6d458913",
+          "bcd3881756e36f5d61fb1b171bf24f8f233b20af321918dddd62212955eda36c",
+          "7485c806cb4bd62ede80f66b1de1ecc0a8358e8e47944860a124264ae92f1f0f",
+          "ab67214a2e3496be849a57607108a068ca5b122fe8f4c3eaa6f96cbe1a53d060",
+          "70cbb2003c09a38d48404ddb10bfd923e5939a75a43f6a3064f5f5ca3de5cf43"
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all rubric requirements: flags ~1,400 lines as too large/split needed, explicitly calls out refactor-feature mixing with reasoned explanation, names concrete Stack strategy ('PR A first, PR B branched on top'), and demands real descriptions. Professional and collaborative tone strengthens it.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8cca4cf01b3900f46656510ee472f41de63953d0e0f4dbd0126fe41841a0ca50"
+        },
+        "judge_usage": {
+          "input_tokens": 112165,
+          "output_tokens": 12432,
+          "cached_tokens": 107726,
+          "wall_ms": 139882
+        },
+        "usage": {
+          "input_tokens": 17302,
+          "output_tokens": 918,
+          "cached_tokens": 13568,
+          "wall_ms": 18282
+        }
+      },
+      {
+        "id": "approve-when-improves-health",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.868,
+        "mean": 0.868,
+        "stddev": 0.010954,
+        "samples": [
+          0.87,
+          0.87,
+          0.85,
+          0.87,
+          0.88
+        ],
+        "generation_hash": "39dc833b3a4b8778223458cfb6a644c8c3bdc3c013476cfe189f39ad907e45d6",
+        "judge_sample_hashes": [
+          "6839971a329624dc366a36ddac26db5ad675028a315e171f8defcbf3ec2e6a55",
+          "9d324671b762dfed9cd9c2802eaeeaf380b0bf17a47583b929b01a1855ddf759",
+          "188906d3632d03668f06e67d14bc7a7167581ddf69c622966aab700d85b839c2",
+          "1769a4719e0771badfd2f463aa7acd5e36c6e2ded9d4256a8cfe7b47f8dd9d41",
+          "cf5701323af540f7e4be6f77ccecfd534da5a71fa8779b804af49331ece0aa25"
+        ],
+        "threshold": 0.7,
+        "reason": "Verdict correctly approves; explicitly articulates don't-block-over-nits principle; addresses duplication, conventions, and test coverage; treats `re` naming as optional nit.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "18a2f6084ca93a4b3909b448971d44c2abea727cf40db2146a589390ea1e129e"
+        },
+        "judge_usage": {
+          "input_tokens": 111155,
+          "output_tokens": 11637,
+          "cached_tokens": 106918,
+          "wall_ms": 124917
+        },
+        "usage": {
+          "input_tokens": 24374,
+          "output_tokens": 582,
+          "cached_tokens": 20543,
+          "wall_ms": 11855
+        }
+      },
+      {
+        "id": "approve-when-improves-health",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.866,
+        "mean": 0.866,
+        "stddev": 0.011402,
+        "samples": [
+          0.87,
+          0.85,
+          0.88,
+          0.87,
+          0.86
+        ],
+        "generation_hash": "48efa825a1cb1f20d2b1751f32a2950f8392b830dd1e80682a4d7cd07df478d0",
+        "judge_sample_hashes": [
+          "f8857f05c14349836407c007541eb728c7b31e827becf703ed9cca0ce679d61d",
+          "7b0525b7f80499eed12d69fce160629476bcd4985828b09e43d382749387c9a7",
+          "8edb4f4429d53dc9791804759c186a38d01e4e35acee8bfccaf0372a9d84c142",
+          "0eb4ae648c3d9e1c1acca2daee31faa30f3ce6158334a3cc8331a04cc9ede69f",
+          "263a2dbe2f6156271c4e8606aebd28859b4cb88680f5e41ee0f542d71beed743"
+        ],
+        "threshold": 0.7,
+        "reason": "Approves correctly; explains code-health wins (dedup + test + conventions); explicitly frames `re` naming as non-blocking and wasteful to challenge, embodying the approval principle.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "18a2f6084ca93a4b3909b448971d44c2abea727cf40db2146a589390ea1e129e"
+        },
+        "judge_usage": {
+          "input_tokens": 110930,
+          "output_tokens": 7863,
+          "cached_tokens": 106738,
+          "wall_ms": 92800
+        },
+        "usage": {
+          "input_tokens": 17399,
+          "output_tokens": 510,
+          "cached_tokens": 13568,
+          "wall_ms": 11751
+        }
+      },
+      {
+        "id": "reject-clean-it-up-later",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.876,
+        "mean": 0.876,
+        "stddev": 0.008944,
+        "samples": [
+          0.87,
+          0.87,
+          0.89,
+          0.88,
+          0.87
+        ],
+        "generation_hash": "1574c32f2df0a50ddcabbeb0c3714bea8bf173f70a18739a9463b4f776eb619c",
+        "judge_sample_hashes": [
+          "2d591aa365427f26e2f778d74ac42970e86a7eaea06ebf72cb52074be57504a3",
+          "e491cdbd74a51c029961b5170f674964e1b5e1601a0f8f82741bb06c0290c3b9",
+          "741eefc34e639225b468039338e3f1196b4c5c1aed5d54548a8dd580daa6dc2b",
+          "0a3156c029c7a9952573124f4af2acfe90cc7af3a7432a3134a0594d5e3ece11",
+          "5c555777331b3c372590dea8ddb1324dde702d40e40e5b17c93c9b0111a1fbb0"
+        ],
+        "threshold": 0.7,
+        "reason": "Clearly declines defer-and-approve, requires fix before merge with concrete steps, explains WHY deferred cleanup fails, offers help to unblock author. Minor: escape hatch doesn't explicitly require self-assigned ticket, only 'tracked ticket.'",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "9d5f1b209285fd70399fb8bc1e80a909d78fae5fecd536bf3f6cf17af53778f5"
+        },
+        "judge_usage": {
+          "input_tokens": 111705,
+          "output_tokens": 9061,
+          "cached_tokens": 107358,
+          "wall_ms": 104983
+        },
+        "usage": {
+          "input_tokens": 24285,
+          "output_tokens": 749,
+          "cached_tokens": 20543,
+          "wall_ms": 15858
+        }
+      },
+      {
+        "id": "reject-clean-it-up-later",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.87,
+        "mean": 0.87,
+        "stddev": 0.007071,
+        "samples": [
+          0.86,
+          0.87,
+          0.87,
+          0.87,
+          0.88
+        ],
+        "generation_hash": "a1327613bbe047030091196c28a1bc666a2ec9ab1f24819fcf4d3c8d7cdfb417",
+        "judge_sample_hashes": [
+          "15be8c1bb90fd91688eae3badb95c3c0225fef69b0ebc3e197c7bc1dc35704c7",
+          "c9c03a7088e8713740bd639375bd6cf653c8ef5f03bc326a9c50561eda63ba0b",
+          "b6a98c21964958faa0da01cd1aaec1c9540629b600a860b13d291c803e296ceb",
+          "145828e97d16584bcd8f07d90ff80cdead7b4fd21d1c2ff68a75fd5590619111",
+          "3f8a567f3f1aad12a1c9c1bf1fc0cb31a54eac17da0d59c6536908fdb5102481"
+        ],
+        "threshold": 0.7,
+        "reason": "Clearly declines defer-and-approve; requires fix before merge with exemplary tone and concrete paths, but lacks explicit tracked-bug fallback.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "9d5f1b209285fd70399fb8bc1e80a909d78fae5fecd536bf3f6cf17af53778f5"
+        },
+        "judge_usage": {
+          "input_tokens": 111010,
+          "output_tokens": 18695,
+          "cached_tokens": 106802,
+          "wall_ms": 199450
+        },
+        "usage": {
+          "input_tokens": 17310,
+          "output_tokens": 558,
+          "cached_tokens": 13568,
+          "wall_ms": 13139
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 7,
+        "pass_count": 7,
+        "borderline_count": 0,
+        "mean_score": 0.881429,
+        "stddev": 0.014034
+      },
+      "baseline": {
+        "case_count": 7,
+        "pass_count": 6,
+        "borderline_count": 1,
+        "mean_score": 0.852,
+        "stddev": 0.069971
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.881429,
+    "baseline_score": 0.852,
+    "delta": 0.029429,
+    "delta_uncertainty": 0.071365
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "965d4dfdcc66916e2a4ba633b58e51f4c908fdaae17f98adf57cb8562aa7630c",
+  "economics": {
+    "basis": "metered-equivalent",
+    "surface": "claude-cli",
+    "with_skill": {
+      "call_count": 7,
+      "mean_input_tokens": 24299.43,
+      "mean_output_tokens": 939.29,
+      "mean_cost_usd_per_call": 0.289959,
+      "median_wall_ms": 16833,
+      "wall_ms_p25": 11855,
+      "wall_ms_p75": 19962,
+      "wall_ms_iqr": 8107
+    },
+    "baseline": {
+      "call_count": 7,
+      "mean_input_tokens": 17324.43,
+      "mean_output_tokens": 816.14,
+      "mean_cost_usd_per_call": 0.214051,
+      "median_wall_ms": 16109,
+      "wall_ms_p25": 11751,
+      "wall_ms_p75": 18282,
+      "wall_ms_iqr": 6531
+    },
+    "skill_incremental_cost_usd_per_call": 0.075908,
+    "skill_incremental_cost_usd_per_1k_calls": 75.908,
+    "output_tokens_delta": 123.15,
+    "median_wall_ms_delta": 724,
+    "judge_excluded": true,
+    "judge_overhead": {
+      "note": "Measurement overhead imposed by Driftproof, NOT a cost of running the skill. Excluded from every field above.",
+      "total_cost_usd": 2.586478,
+      "case_rows_measured": 14
+    },
+    "notes": {
+      "absolute_cost": "Absolute per-call cost on a CLI surface includes a fixed harness preamble (observed ~25k input tokens on claude-cli, ~11k on codex) that we do not control. It is identical in the with-skill and baseline arms, so it cancels in the Δ figures — read the incremental columns, not the absolute ones.",
+      "cache_pricing": "Cached input tokens are costed at the list input rate (an over-estimate where caching is heavy); cached_tokens is recorded per call so a reader can recompute.",
+      "latency": "observed on subscription CLI surface, indicative"
+    }
+  }
+}
