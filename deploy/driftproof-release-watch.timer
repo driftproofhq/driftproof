@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+# Fire driftproof-release-watch once a day. A randomized delay spreads load and
+# avoids hammering the endpoint at a fixed second; Persistent=true catches up a
+# missed run after the box was asleep.
+[Unit]
+Description=Daily Driftproof release-watch
+Documentation=file:%h/driftproof/RUNBOOK.md
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=1800
+Persistent=true
+Unit=driftproof-release-watch.service
+
+[Install]
+WantedBy=timers.target

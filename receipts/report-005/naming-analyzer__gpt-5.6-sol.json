@@ -1,0 +1,690 @@
+{
+  "schema_version": "0.4",
+  "skill": {
+    "name": "naming-analyzer",
+    "version": "0.0.0",
+    "content_hash": "6091f97965528eea38ad10d22af7df30b932b2749168328da413fb12d5be8845",
+    "tokens": 2291
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "0d046f22ca976abc1b8e4fb41821df74765b80111c09c38b26b65e0aee0dca0a",
+    "case_count": 7
+  },
+  "run": {
+    "model_id": "gpt-5.6-sol",
+    "model_release_date": null,
+    "provider": "openai",
+    "surface": "openai-cli",
+    "runner_version": "0.5.0",
+    "date_utc": "2026-08-18T19:01:02.260Z",
+    "registry": "registered",
+    "transcripts": "retained-local",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    },
+    "surface_overhead_note": "openai/cli surface (codex exec): every call carries a fixed Codex base-instruction preamble of ~12,000–15,000 input tokens that the harness prepends and we do not control; the model id is set by us via -m (it is not echoed in the JSONL stream). Approval prompting is off by default on `codex exec` (no -a flag is passed).",
+    "pricing_snapshot": {
+      "frozen_at": "2026-08-18T19:01:02.260Z",
+      "source": "config/models.json",
+      "currency": "USD",
+      "models": {
+        "gpt-5.6-sol": {
+          "input_per_mtok": 5,
+          "output_per_mtok": 30,
+          "registered": true
+        },
+        "claude-haiku-4-5": {
+          "input_per_mtok": 1,
+          "output_per_mtok": 5,
+          "registered": true
+        }
+      },
+      "note": "Prices frozen at run time. Every derived cost in this receipt is computed from THIS snapshot, never from the live registry, so the receipt keeps its meaning when registry prices later change."
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "boolean-prefixes-js",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.836,
+        "mean": 0.836,
+        "stddev": 0.021909,
+        "samples": [
+          0.85,
+          0.85,
+          0.85,
+          0.83,
+          0.8
+        ],
+        "generation_hash": "0906b0e053ac8dd63f7d0028aa8a606a09357ca02323ef2a3391539573d12e09",
+        "judge_sample_hashes": [
+          "ba6762af5593326437e66906683e72d205de8f6a003a63a977f4e30993b13c78",
+          "59abc500adda4f88d59fe88c9b22c6ce3c8d5897cae1bd9d096100e579ca0e8c",
+          "262de9a0818fe2db7ccfd6f1b6b3bb640a2d753be4a97fc309aca7a65134ee1a",
+          "d1cfe69700eb8be634bc5d8905e703ad1c23e18a44e94cdfb9447a7aaae90735",
+          "8565f74753535d09c3a094f8162fb4ab6f8ddb2612d90b1656c37a96bb984d85"
+        ],
+        "threshold": 0.7,
+        "reason": "All four variables correctly prefixed with semantically appropriate is/has/should; rationales justify choices by meaning (state, possession, decision). Solidly exemplary but lacks deeper meta-commentary on positive forms or anti-patterns.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "88a810b92020ee6d377b23325f33fd558b16a53bfae9e0cc7d309b8fed31fb1e"
+        },
+        "judge_usage": {
+          "input_tokens": 130820,
+          "output_tokens": 7695,
+          "cached_tokens": 127154,
+          "wall_ms": 76856
+        },
+        "usage": {
+          "input_tokens": 16507,
+          "output_tokens": 84,
+          "cached_tokens": 9984,
+          "wall_ms": 8302
+        }
+      },
+      {
+        "id": "boolean-prefixes-js",
+        "mode": "baseline",
+        "outcome": "borderline",
+        "score": 0.662,
+        "mean": 0.662,
+        "stddev": 0.065727,
+        "samples": [
+          0.6,
+          0.6,
+          0.65,
+          0.74,
+          0.72
+        ],
+        "generation_hash": "3ae9e75109ee765ebe5b4062100ff0c4c737a27326bebeb3862132c68b8f0e23",
+        "judge_sample_hashes": [
+          "f84cc8730f0b4ff5a2cbbcff7420a9f240827b087bb950ab075c41097261aab9",
+          "1abe08bd0ced7b96e7fb166f1fdd9b2ff188e489d7e5b7fd0f3fdbdcea413675",
+          "293b395c4925d0fd2a133681ef08300b68cf664a239163136c2d32f3fd3dae19",
+          "05be14547eb8be4f7c90043f4447f00a1d24cb4f26f1e59f0ac4b5513905bb61",
+          "22d2be19d4670d2cabd229a07eeb8810778f5b6ac21afdaec04868a250ebc74b"
+        ],
+        "threshold": 0.7,
+        "reason": "All four booleans receive appropriate prefixes; three match rubric expectations (isAuthenticated, shouldShowUnreadNotification, isUserValid), but permission→isAdmin incorrectly uses 'is' instead of 'has' for possession, deviating from rubric's semantic guidance.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "88a810b92020ee6d377b23325f33fd558b16a53bfae9e0cc7d309b8fed31fb1e"
+        },
+        "judge_usage": {
+          "input_tokens": 130855,
+          "output_tokens": 28172,
+          "cached_tokens": 127182,
+          "wall_ms": 275341
+        },
+        "usage": {
+          "input_tokens": 14098,
+          "output_tokens": 93,
+          "cached_tokens": 9984,
+          "wall_ms": 7981
+        }
+      },
+      {
+        "id": "vague-names-js",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.85,
+        "mean": 0.85,
+        "stddev": 0.031623,
+        "samples": [
+          0.86,
+          0.84,
+          0.87,
+          0.88,
+          0.8
+        ],
+        "generation_hash": "821b93a528c51ec2d7d33937c0ac2ea3d5cd8d6a4cbefcc31c983790ca8b070b",
+        "judge_sample_hashes": [
+          "1c0e1c03c0503029d084b68a5830cde0846790ea0412e2770f9855c858a8fa70",
+          "34346eec1c623a523404d2cdfde26e71f2da8ca625b84f4d3bfcc6e2cf06f6d7",
+          "9a5e4698f5525025ee228f8554d5d5cc9c5b79c54c7604cc81b711c3e756772e",
+          "44bc5075e8bce40a00058ad0af12166a70b3a6ebe76449049d65a90050d22015",
+          "380aa2bb73603fb90bb89df1f3018fdc4d3b0a2f1f0ab765431236e637c85e56"
+        ],
+        "threshold": 0.7,
+        "reason": "All five vague identifiers correctly renamed to specific, descriptive names reflecting load-and-filter behavior. Clear rationales and refactored code support exemplary execution.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8ad28a29d2226f1098ca8b02873b0e67b09b9968b916f7ebcf48e1c058d0a542"
+        },
+        "judge_usage": {
+          "input_tokens": 131135,
+          "output_tokens": 21741,
+          "cached_tokens": 127406,
+          "wall_ms": 210010
+        },
+        "usage": {
+          "input_tokens": 16418,
+          "output_tokens": 156,
+          "cached_tokens": 9984,
+          "wall_ms": 7910
+        }
+      },
+      {
+        "id": "vague-names-js",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.83,
+        "mean": 0.83,
+        "stddev": 0.057879,
+        "samples": [
+          0.88,
+          0.83,
+          0.75,
+          0.8,
+          0.89
+        ],
+        "generation_hash": "0b0caffcf6d7c633540e17c15e38521ebf52cdfffe6463add2f3eb773fcc0323",
+        "judge_sample_hashes": [
+          "196ce47abd48438536175bf18e216afe8dfc82a8020351d65be5673ef84bcf67",
+          "102ae6711480b53a54c11f2e41cc9ee465d1f7b21c2496d00af3a4e7fb8b366b",
+          "e3916778c6ba2597ba363e7c6ce5158f601a7be3b42f58385b3cef9f9f9e2a02",
+          "73fd49576b6f50a8371db05fd76cd578bbc0b7beac42503f6ecd8c3be319aa98",
+          "b02510f83a9e0bc757ece6c3c8df2e3f3bebc8ea1f9c7ace6f2fce7b493cd320"
+        ],
+        "threshold": 0.7,
+        "reason": "All five identifiers replaced with specific descriptive names reflecting load-and-filter behavior; strong rationales. Only minor point: userData vs rubric's userSettings.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8ad28a29d2226f1098ca8b02873b0e67b09b9968b916f7ebcf48e1c058d0a542"
+        },
+        "judge_usage": {
+          "input_tokens": 130880,
+          "output_tokens": 21694,
+          "cached_tokens": 127202,
+          "wall_ms": 214381
+        },
+        "usage": {
+          "input_tokens": 14009,
+          "output_tokens": 120,
+          "cached_tokens": 9984,
+          "wall_ms": 9061
+        }
+      },
+      {
+        "id": "constants-include-units-js",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.868,
+        "mean": 0.868,
+        "stddev": 0.010954,
+        "samples": [
+          0.87,
+          0.88,
+          0.85,
+          0.87,
+          0.87
+        ],
+        "generation_hash": "ee931d756abe595e3b442ca95830790c8b8a345409af1aaab9125839e3c39dc3",
+        "judge_sample_hashes": [
+          "e288b61c80c4457ae05a1e38be87c7cf2517587acc471d1578b669137b712369",
+          "91769aa82908cbb7c4855035525e7d36681bcecac9a5a87dcfc1a1dc13e5f0e8",
+          "6b6263e54a59c965c206116ce60b610e71906427142c1862dafb205e9ff3029d",
+          "ef3f2d6c05d899ae76495e302fb1ebf061d5dea77ae857dd8358d3a3dcdda6d5",
+          "ef5032016a39c745dd252a27009abb311b9d58e9fb1df876087cf0c68315c0c6"
+        ],
+        "threshold": 0.7,
+        "reason": "All magic numbers (3600000, 5242880) extracted as UPPER_SNAKE_CASE with correct unit suffixes (_MS, _BYTES); MAX made specific (MAX_RETRY_ATTEMPTS); exemplary with self-documenting calculations (60 * 60 * 1000, 5 * 1024 * 1024).",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "e44c7a1f79b697eb92fc0b5511f2e86b5a3322c16e02305033d434543f09c125"
+        },
+        "judge_usage": {
+          "input_tokens": 131865,
+          "output_tokens": 13672,
+          "cached_tokens": 127990,
+          "wall_ms": 126935
+        },
+        "usage": {
+          "input_tokens": 16412,
+          "output_tokens": 348,
+          "cached_tokens": 9984,
+          "wall_ms": 11611
+        }
+      },
+      {
+        "id": "constants-include-units-js",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.874,
+        "mean": 0.874,
+        "stddev": 0.013416,
+        "samples": [
+          0.88,
+          0.88,
+          0.88,
+          0.88,
+          0.85
+        ],
+        "generation_hash": "99cdc8a4257c342622aa7afc4f0882b9287fa7f173a8667ed53be068f5ff148c",
+        "judge_sample_hashes": [
+          "7daf12281b034229e5c3b905a7935b33a9203bdafec64bf853cf7570d94350f9",
+          "31ab0fa0cd3216aa6ab354d0870fd8cbc8ced786c114f818861f48000207aeec",
+          "333d9a482dc201c057e447691bcb80e77e9bebae47a3396fc90a7e0013e1ea05",
+          "707a45ca819f3aacfda55292102add7b035ba9052d748ccf3fb52ba1c459c893",
+          "107d4af621b860ea93e4621dc5a573f51790f8fc3b30153f0793346a9453e687"
+        ],
+        "threshold": 0.7,
+        "reason": "Perfectly extracts all magic numbers into correctly-named UPPER_SNAKE_CASE constants with proper units (_MS, _BYTES). MAX made specific. Self-documenting arithmetic expressions and exemplary rationale elevate beyond baseline.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "e44c7a1f79b697eb92fc0b5511f2e86b5a3322c16e02305033d434543f09c125"
+        },
+        "judge_usage": {
+          "input_tokens": 132160,
+          "output_tokens": 8925,
+          "cached_tokens": 128226,
+          "wall_ms": 91279
+        },
+        "usage": {
+          "input_tokens": 14003,
+          "output_tokens": 276,
+          "cached_tokens": 9984,
+          "wall_ms": 10891
+        }
+      },
+      {
+        "id": "misleading-name-mutation-js",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.8,
+        "mean": 0.8,
+        "stddev": 0,
+        "samples": [
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ],
+        "generation_hash": "1d3c1bc43562eb34f6a0c241e6cf82861e9a2c43fa4a3fb10b888898a31a717a",
+        "judge_sample_hashes": [
+          "08a92cd43dca65f70aff8dc308ec900578bdf50e2c3ed2cabc7c45c1b7a9d208",
+          "7c0cb2f03e3be2c59d87f6018be39c45a6f8d55c5ce340f640b3eb00a07a64d2",
+          "fbed2b01ba01b4e5192cce99ccba26028ec032833fffaedcff11f8a2a47fd3c4",
+          "17e035b1714e9f4573aa22f7571324205dd7689cd192b56dce4567476c393708",
+          "53c7f93b8813eeba791e8609586902c0aea122519a331ed8fcfc182769cd7aea"
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly identifies that `getUser` is misleading due to side effects (mutation + persist) and renames to `fetchAndUpdateUserLogin`, an exemplar from the rubric's acceptable list, with clear explanation of the reasoning.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "7e17ea185a995723ee14b8b750b80ce88c10171e53c86615195df4c609901723"
+        },
+        "judge_usage": {
+          "input_tokens": 130734,
+          "output_tokens": 9363,
+          "cached_tokens": 123556,
+          "wall_ms": 103380
+        },
+        "usage": {
+          "input_tokens": 16199,
+          "output_tokens": 188,
+          "cached_tokens": 9984,
+          "wall_ms": 9046
+        }
+      },
+      {
+        "id": "misleading-name-mutation-js",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.8,
+        "mean": 0.8,
+        "stddev": 0,
+        "samples": [
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ],
+        "generation_hash": "7dfa0d0ae107170f92ff93e0e5a0b907a99f49643cf41fb74440117b46e98e19",
+        "judge_sample_hashes": [
+          "1f8c6fb84ea512765dd420fc30efda98d6aa14d117974a8ad2f947460ac24497",
+          "1c644569431650b2137e9215bf37f9d32b31c9a27d6c0fe3f24d443256b8d211",
+          "4bde8d81afc5c348f58c9a66bf078f7c3bcdf8ed6364da3f89c54e921fb5a38c",
+          "d3b4ba004c286574295527e0d993f1ecf337bbc90aa3c1c98463b3e59877d6b6",
+          "6445d1506eae4e72237ebf07c93d61886d6362ee9e0c33eefc7ffd7dab47bd85"
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly identifies side effect (mutation/persistence) as the problem; renames to `updateUserLastLogin` per rubric; explains reasoning clearly. Meets all core requirements without exemplary depth.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "7e17ea185a995723ee14b8b750b80ce88c10171e53c86615195df4c609901723"
+        },
+        "judge_usage": {
+          "input_tokens": 130634,
+          "output_tokens": 7372,
+          "cached_tokens": 123496,
+          "wall_ms": 83880
+        },
+        "usage": {
+          "input_tokens": 13998,
+          "output_tokens": 134,
+          "cached_tokens": 9984,
+          "wall_ms": 8106
+        }
+      },
+      {
+        "id": "abbreviations-wellknown-js",
+        "mode": "with_skill",
+        "outcome": "fail",
+        "score": 0.62,
+        "mean": 0.62,
+        "stddev": 0.044721,
+        "samples": [
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.7
+        ],
+        "generation_hash": "ebee5f76d55306628d932d94bfd383d3fc564c2f4d52e66e8cbe8cf4f2c75451",
+        "judge_sample_hashes": [
+          "0cb04dd5e4f2019d8ad96368612124c331bdbb7924e7c1667907de34d0296c85",
+          "a9ce9a0f560d9b8a5373b95eb18e3a5dec148dcd6a4083e5d5b64e01797893ca",
+          "84734556fb138db748a50e544df5db0521c5735d8b7180d1923b7b1ccdf9fd4d",
+          "3984915372544bcf4e2476cc255ea260a26822bd368d0f2db11ffffb3f143d00",
+          "e812345db05ae5eca78fd5f47e0f59aa70cec0f692f716b067e7e466d848771a"
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly expanded usrCfg, calcTtl, arr and preserved api/url, but violated rubric by changing htmlEl to mainElement instead of htmlElement.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "6b6f499bc653ba4876c7223f567d2b73c5afe71e7801131ff79212418c0cb42e"
+        },
+        "judge_usage": {
+          "input_tokens": 131935,
+          "output_tokens": 38479,
+          "cached_tokens": 128046,
+          "wall_ms": 341129
+        },
+        "usage": {
+          "input_tokens": 16424,
+          "output_tokens": 325,
+          "cached_tokens": 9984,
+          "wall_ms": 11360
+        }
+      },
+      {
+        "id": "abbreviations-wellknown-js",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.6,
+        "mean": 0.6,
+        "stddev": 0,
+        "samples": [
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.6
+        ],
+        "generation_hash": "c69b090bfd21260256fc9ddf1fdd33453df48d438ec876dee741b77ecd8cb7da",
+        "judge_sample_hashes": [
+          "9c6506fc9c92b48658079bef12a6380e462b1377cbfeec447fec806f00451523",
+          "026293c36c43504fdea3d2711fe577ab49f006dac66f2e26959c37dd6a87a928",
+          "e0d774641b80cce2d229d2aa4e030e38daaf970bb91bb07224495d63d3f5340f",
+          "0ebfaf09b2e5a81653455ef1b79be80ddb6f0b963e369540995ddbbb3dac6199",
+          "165646301ea83dad0d2729ab883674ef24b911a50c5279ac39c1497b49fca64b"
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly expanded all unclear abbreviations; kept api/url intact. But violated explicit constraint by changing htmlEl→mainElement instead of keeping it or expanding only to htmlElement as specified.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "6b6f499bc653ba4876c7223f567d2b73c5afe71e7801131ff79212418c0cb42e"
+        },
+        "judge_usage": {
+          "input_tokens": 131895,
+          "output_tokens": 33895,
+          "cached_tokens": 128014,
+          "wall_ms": 322641
+        },
+        "usage": {
+          "input_tokens": 14015,
+          "output_tokens": 220,
+          "cached_tokens": 9984,
+          "wall_ms": 8790
+        }
+      },
+      {
+        "id": "language-casing-python",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.866,
+        "mean": 0.866,
+        "stddev": 0.015166,
+        "samples": [
+          0.85,
+          0.85,
+          0.87,
+          0.88,
+          0.88
+        ],
+        "generation_hash": "15f4b2af9b4e687a257903002af116aa965eb1f3d14a3dbce0333954cc3caeaa",
+        "judge_sample_hashes": [
+          "1f233c6e2e01a1ec9bb2c89b163f995701b0751ad5f3fbbac09a3da658030a15",
+          "1b5adc0eb6d3d6dd0f95dcf568f559b100376ee84ff10bd19dd45c692ed96152",
+          "0439266ff6353aab481fab854a998fa892043fe0ef3e20b4e3634b24290cf2e4",
+          "f30b0cff04aff7f95de305b3bdfeec90123a456da445c278512af01f62afec6f",
+          "0473ddd62f304b0d7ba74442cd944e5cd5255b6c0e8e3233a3a5570d9f2d7773"
+        ],
+        "threshold": 0.7,
+        "reason": "All six names correctly converted: constant→UPPER_SNAKE_CASE, class→PascalCase, method/parameter/locals→snake_case, boolean→is_ prefix. Explicitly distinguishes module constant from locals and names each convention.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "3666af4994351a91f7b9cf34d0388ba548510cfca2f05b38c99b96cdb618c810"
+        },
+        "judge_usage": {
+          "input_tokens": 131354,
+          "output_tokens": 9612,
+          "cached_tokens": 123928,
+          "wall_ms": 103181
+        },
+        "usage": {
+          "input_tokens": 16504,
+          "output_tokens": 193,
+          "cached_tokens": 9984,
+          "wall_ms": 9234
+        }
+      },
+      {
+        "id": "language-casing-python",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.6,
+        "mean": 0.6,
+        "stddev": 0,
+        "samples": [
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.6
+        ],
+        "generation_hash": "e4d817c3ddb40242ec4341a92beb440204ec71d60d4d7401b967f1dc1abebde8",
+        "judge_sample_hashes": [
+          "7f304164a4d55b7ecdbab23fc87be99e4094295a619aa5afa7b574d4a4a9a337",
+          "0e879e7020f4ece29b939ba8e5282fede1f6491a4e3942ea9b8e059670e5913c",
+          "329ef2e071212dd20c8475e2be3f66f4bbf07c258ea6da414b152773d03abb56",
+          "f3dec83f793230e546b247d70c538d76fb3b80dd1a3f94076cb343cdcb797eb2",
+          "368ac1c5543b99580df159205a16bc65dcddc18e02e01a4a57297b0a9289af06"
+        ],
+        "threshold": 0.7,
+        "reason": "Missing required boolean naming convention: `active` should be `is_active` per Python standards; five of six conversions correct.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "3666af4994351a91f7b9cf34d0388ba548510cfca2f05b38c99b96cdb618c810"
+        },
+        "judge_usage": {
+          "input_tokens": 131355,
+          "output_tokens": 13233,
+          "cached_tokens": 127582,
+          "wall_ms": 131777
+        },
+        "usage": {
+          "input_tokens": 14001,
+          "output_tokens": 174,
+          "cached_tokens": 9984,
+          "wall_ms": 8985
+        }
+      },
+      {
+        "id": "go-acronym-casing",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.864,
+        "mean": 0.864,
+        "stddev": 0.013416,
+        "samples": [
+          0.85,
+          0.87,
+          0.88,
+          0.87,
+          0.85
+        ],
+        "generation_hash": "db52cccc335fbb5d1679d329c76215ec996ce6ed0c81e5dbfbcde2af84600010",
+        "judge_sample_hashes": [
+          "d3f39a34dccb05a4a60a37ad9264cda2e4ceffc1eb5d13cd8943ce185bfd5d8a",
+          "f787eb25c42eda6ddf338e04928660ae42f709af919bad5a1fcc91f738c00cd6",
+          "a12dbdb9422ed18f54f1ee89384c514754e00a070c29948f019c12f538c54a67",
+          "76e57b381d63480a1e989aa921af6eab05fa63992cd09bb2e9fdd325a80bbed0",
+          "2b9ea7d2e3ff388ceb0d064bd15ab9245ca7e118a48ab0b137100d5a432771cc"
+        ],
+        "threshold": 0.7,
+        "reason": "All acronyms all-capped (HTTP, JSON, URL); export/unexport casing preserved correctly; explicitly explains why unexported field stays lowercase-initial while acronym is uppercased.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "e2795705ceb8b6019da8bbc7f5af28b6ab6e8fb3fd55f446b8ca25ebcaaf55f0"
+        },
+        "judge_usage": {
+          "input_tokens": 131210,
+          "output_tokens": 8229,
+          "cached_tokens": 127466,
+          "wall_ms": 87982
+        },
+        "usage": {
+          "input_tokens": 16428,
+          "output_tokens": 138,
+          "cached_tokens": 9984,
+          "wall_ms": 9606
+        }
+      },
+      {
+        "id": "go-acronym-casing",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.86,
+        "mean": 0.86,
+        "stddev": 0.014142,
+        "samples": [
+          0.85,
+          0.88,
+          0.87,
+          0.85,
+          0.85
+        ],
+        "generation_hash": "c37af872407dba79aab8eb46ca839086634ea8833e2649bc31cd40c986a5d338",
+        "judge_sample_hashes": [
+          "867668335ae3ac5430dec88183242770c3c6c7ca46bd43e555c9083f88c1ecd3",
+          "66530195eb2e04a20cdbb96a86ee11d8a1f85843a21ccc5d49105d6573c22649",
+          "6a931e4a66a81cec10600c865f95547b44e21190d6c6c0db36e2b5f9f042505e",
+          "51adb0565de9fc1a71a8388e3f22ee17b0b4de270514fa09f4670361da6147a7",
+          "0ba561a81e3cabbf106b6cb5d14eaced208e3d647cdd383b3db24b91596d109c"
+        ],
+        "threshold": 0.7,
+        "reason": "All three identifiers correctly renamed with acronyms all-caps; explanations explicitly address why unexported field stays lowercase-initial while acronym capitalizes.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "e2795705ceb8b6019da8bbc7f5af28b6ab6e8fb3fd55f446b8ca25ebcaaf55f0"
+        },
+        "judge_usage": {
+          "input_tokens": 131050,
+          "output_tokens": 6468,
+          "cached_tokens": 127338,
+          "wall_ms": 69460
+        },
+        "usage": {
+          "input_tokens": 14019,
+          "output_tokens": 109,
+          "cached_tokens": 9984,
+          "wall_ms": 6791
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 7,
+        "pass_count": 6,
+        "borderline_count": 0,
+        "mean_score": 0.814857,
+        "stddev": 0.089188
+      },
+      "baseline": {
+        "case_count": 7,
+        "pass_count": 4,
+        "borderline_count": 1,
+        "mean_score": 0.746571,
+        "stddev": 0.121818
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.814857,
+    "baseline_score": 0.746571,
+    "delta": 0.068286,
+    "delta_uncertainty": 0.150977
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "d7091ae86dd0c136c7c931add21cf7dc1d770fdd1c01b7350ee0a9652afd1fa2",
+  "economics": {
+    "basis": "metered-equivalent",
+    "surface": "openai-cli",
+    "with_skill": {
+      "call_count": 7,
+      "mean_input_tokens": 16413.14,
+      "mean_output_tokens": 204.57,
+      "mean_cost_usd_per_call": 0.088203,
+      "median_wall_ms": 9234,
+      "wall_ms_p25": 8302,
+      "wall_ms_p75": 11360,
+      "wall_ms_iqr": 3058
+    },
+    "baseline": {
+      "call_count": 7,
+      "mean_input_tokens": 14020.43,
+      "mean_output_tokens": 160.86,
+      "mean_cost_usd_per_call": 0.074928,
+      "median_wall_ms": 8790,
+      "wall_ms_p25": 7981,
+      "wall_ms_p75": 9061,
+      "wall_ms_iqr": 1080
+    },
+    "skill_incremental_cost_usd_per_call": 0.013275,
+    "skill_incremental_cost_usd_per_1k_calls": 13.275,
+    "output_tokens_delta": 43.71,
+    "median_wall_ms_delta": 444,
+    "judge_excluded": true,
+    "judge_overhead": {
+      "note": "Measurement overhead imposed by Driftproof, NOT a cost of running the skill. Excluded from every field above.",
+      "total_cost_usd": 2.980632,
+      "case_rows_measured": 14
+    },
+    "notes": {
+      "absolute_cost": "Absolute per-call cost on a CLI surface includes a fixed harness preamble (observed ~25k input tokens on claude-cli, ~11k on codex) that we do not control. It is identical in the with-skill and baseline arms, so it cancels in the Δ figures — read the incremental columns, not the absolute ones.",
+      "cache_pricing": "Cached input tokens are costed at the list input rate (an over-estimate where caching is heavy); cached_tokens is recorded per call so a reader can recompute.",
+      "latency": "observed on subscription CLI surface, indicative"
+    }
+  }
+}

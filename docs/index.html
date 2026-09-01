@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driftproof — a dated proof that this skill, this hash, this model, still helps</title>
+<meta name="description" content="Driftproof re-runs agent-skill evals across model versions and reports honest, band-based verdicts. Verdicts age because the substrate moves.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site"><a class="brand" href="index.html">Driftproof</a><nav><a href="reports/007/index.html">Report #007</a><a href="reports/006/index.html">Report #006</a><a href="reports/005/index.html">Report #005</a><a href="reports/004/index.html">Report #004</a><a href="reports/003/index.html">Report #003</a><a href="reports/002/index.html">Report #002</a><a href="reports/001/index.html">Report #001</a><a href="methodology.html">Methodology</a><a href="neutrality.html">Neutrality</a><a href="interop.html">Interop</a><a href="authoring.html">Authoring</a><a href="judge-policy.html">Judge policy</a><a href="https://github.com/driftproofhq/driftproof">GitHub</a></nav></header>
+<main class="hero">
+  <h1>A skill that helped last month may not help today.</h1>
+  <p>Skills are the SKILL.md files that teach AI agents your conventions: code-review discipline, commit style, writing rules. Tens of thousands are shared publicly, and almost none are re-tested when the model underneath them changes.</p>
+  <p class="lede">Driftproof re-runs an agent skill's own eval suite across model versions, samples the judge so every score carries a confidence band, and only claims a regression when the bands actually separate. The phenomenon is the story: <strong>verdicts age because the substrate moves.</strong></p>
+
+  <p>
+    <a class="cta" href="reports/007/index.html">Read Report #007 →</a>
+    <a class="cta secondary" href="https://github.com/driftproofhq/driftproof">View on GitHub</a>
+  </p>
+
+  <h2>What it does</h2>
+  <div class="card">
+    <p>For each skill, Driftproof runs its eval suite <strong>with</strong> the skill and <strong>without</strong> it, on two model versions. Each response is judged several times, so a case carries a <em>mean ± stddev</em> band rather than one fragile number. Diffing two runs yields a <strong>drift report</strong>: a case only counts as regressed or improved when its two confidence bands do <em>not</em> overlap. Everything is recorded in a <strong>hash-verified</strong> <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md">receipt</a> — a dated record anyone can re-run — whose every hash is verifiable. Signing is roadmap, not a property these receipts have.</p>
+    <p><strong>What the band covers, and which band it is.</strong> A legacy verdict rests on <strong>one generation draw per arm</strong>, so its band is the spread of the <em>judge</em> re-scoring that single response, not the spread of the model writing a different one. <a href="reports/006/index.html">Report #006</a> measured the second directly and found it larger. Receipt spec v0.5 samples the generation too, and a v0.5 per-case band is the <strong>across-draw spread</strong>: the sample standard deviation of the per-draw means, over n draws of that arm. Measured that way, draw-to-draw spread reaches <strong>sd 0.355</strong> on the 0&#8211;1 scale, on the <code>semver-hidden-breaking-change</code> baseline arm of <code>git-workflow-and-versioning</code> at <code>claude-sonnet-5</code>. The two are different statistics, a band now carries which one it is, and a surprising single-draw verdict is <strong>provisional and worth re-running</strong>.</p>
+  </div>
+
+  <h2>Why band-based</h2>
+  <p>An LLM judge is noisy. A tool that cries wolf on that noise is worse than useless. Driftproof's core rule is that a verdict is claimed <strong>only</strong> on non-overlapping bands — so the honest answer is allowed to be "nothing moved beyond the noise." That restraint is the point.</p>
+
+  <h2>Latest report</h2>
+  <div class="card">
+    <p>What happens when you fix the instrument and measure the same thing again? <strong><a href="reports/007/index.html">Report #007</a></strong> re-runs three cells <a href="reports/005/index.html">Report #005</a> published, on the same suites and the same substrates, with the <em>generation</em> sampled adaptively instead of once and with the call timeout the surface policy declares. <strong>No cell separates</strong>: every lift is smaller than its own band (+0.055 ± 0.111, -0.002 ± 0.167, +0.131 ± 0.157), and the 21 cases read <strong>3 improved · 0 regressed · 18 no effect · 0 not measured</strong>. Five of six comparisons against the archive were <strong>refused</strong> before a verdict existed, so the lower numbers are not offered as corrections. The defect it reports is its own: a declared 300 s timeout had been shadowed by a <code>120000</code> literal since 2026-07-27, and the truncated run that caused measured <em>less</em> variance than the clean re-run, which is the direction that makes an instrument look more precise than it is. Both runs are published, the broken one as evidence.</p>
+    <p class="muted">Previously — what happens when the skill's own text moves? <strong><a href="reports/006/index.html">Report #006</a></strong> holds the model, the surface, the suite and the judge still and changes only the skill — and it did not get to an answer. <strong>3 cells, 0 measured, 3 refused</strong>: each was blocked by its own baseline control, the no-skill arm a revision cannot touch, which failed to reproduce the arm #005 measured. A 120-call stability probe then found why — the baselines are single draws from wide distributions, and generation-level noise runs 3.2× and 7.5× larger than the judge-level noise this instrument samples five times. No cause beyond that is asserted; the control proves non-reproduction and cannot say why. The report publishes the refusal instead of a verdict it cannot support, and three cells in #005 now carry an amendment saying what their baselines rest on.</p>
+    <p class="muted">Before that — what does a skill <em>cost</em> to run? Reports #001–#004 asked whether a skill still helps while something moved underneath it. This one holds that question and adds the half a reader needs before adopting: the same 10 eval suites (Report #001 v1.2 rubrics) and the same fixed judge, across <strong>three substrates</strong> (<code>claude-sonnet-5</code>, <code>claude-fable-5</code>, <code>gpt-5.6-sol</code>), reporting accuracy lift, token cost and latency <em>side by side and never combined</em>. <strong><a href="reports/005/index.html">Report #005</a></strong>: of 30 skill × substrate pairs, <strong>20</strong> separated by at least one case (18 with an improving one, 2 with only a regressing one), and <strong>14</strong> cleared the effect floor on aggregate — 10 carry a price, 4 report a saving, having improved quality while <em>reducing</em> cost. The measurement itself cost <strong>9.2×</strong> its projection, and the report says so on the page.</p>
+    <p class="muted">Before those — <strong><a href="reports/003/index.html">Report #003</a></strong>: two versions of one model (<code>claude-opus-4-8</code> → <code>claude-opus-5</code>); 4 improved, 2 regressed (both single-case, one exactly on the floor), 4 within noise. <strong><a href="reports/002/index.html">Report #002</a></strong>: the same suites across two vendors' CLIs — 3 durable, 4 substrate-dependent, 2 regressed, 1 no-effect. <strong><a href="reports/001/index.html">Report #001</a></strong>: the first release-drift study, on a Sonnet pair; 9 of 10 moved beyond noise.</p>
+    <p class="muted">Driftproof publishes six report types. A <strong>release drift report</strong> (#001, #003) asks whether a skill's verdict holds when the <em>model version</em> underneath it changes; a <strong>substrate durability report</strong> (#002) asks whether it holds across a change of <em>substrate</em> — a different model behind a different vendor CLI; a <strong>capability-gap report</strong> (#004) asks whether it holds on a <em>higher tier</em> of the same provider; a <strong>value report</strong> (#005) holds the substrate still and asks what a skill <em>costs</em> to run alongside whether it helps; a <strong>revision drift report</strong> (#006) holds everything underneath still and moves the skill's own text; and an <strong>instrument re-measurement report</strong> (#007) moves neither, and re-runs cells an earlier report published on a corrected measuring device. All use the same band-based, floor-gated rule; they differ in what moves underneath the skill — or, in the value report, in which axes are measured.</p>
+  </div>
+
+  <p class="muted">Writing — <a href="writing/three-releases/index.html"><strong>Three model releases later: what actually happens to agent skills</strong></a>: the launch essay, revised to read all seven reports together on what a moving substrate does to encoded expertise, and on what a corrected instrument did to three published results.</p>
+
+  <h2 id="quickstart">Run it on your own skill</h2>
+  <div class="card">
+    <p>You need Node ≥ 22 and an <code>ANTHROPIC_API_KEY</code>. From "found the repo" to a receipt for your own skill is about five steps:</p>
+    <pre><code>npx driftproof init my-skill          # scaffold SKILL.md + evals/evals.json + .driftproofrc
+# edit the 3 example cases so each is grounded in a claim your SKILL.md makes
+export CLAUDE_PROVIDER=api
+read -rsp "Anthropic API key: " ANTHROPIC_API_KEY &amp;&amp; export ANTHROPIC_API_KEY
+npx driftproof run my-skill --models claude-haiku-4-5 --max-usd 2
+cat receipts/*.summary.md              # read the receipt + human summary</code></pre>
+    <p>The <strong>verdict</strong> answers "does the skill still help on this model?" — <code>PASSED</code> when the with-skill score beats the baseline by at least the effect floor, <code>NO_EFFECT</code> when it doesn't, <code>REGRESSED</code> when the skill hurts. Each case is judged several times so it carries a <em>mean ± stddev</em> band, and a case only counts as moved when its bands don't overlap <em>and</em> the mean shifts past the 0.05 effect floor. Full walkthrough in the <a href="https://github.com/driftproofhq/driftproof#quickstart--receipt-for-your-own-skill-in-10-minutes">README quickstart</a>; how to write a fair suite in the <a href="authoring.html">authoring guide</a>.</p>
+  </div>
+
+  <h2>Verification in CI</h2>
+  <div class="card">
+    <p>Wire drift detection into a repo with the <a href="https://github.com/driftproofhq/driftproof#verification-in-ci-github-action--badge">GitHub Action</a> (<code>uses: driftproofhq/driftproof@v0.7.0</code>): it re-runs the suite on every push, uploads the receipt, and fails the job if the skill <em>regressed</em>. <code>driftproof badge</code> turns any receipt into a shields.io badge — the one below is generated from the bundled example's own receipt.</p>
+    <p><img alt="driftproof" src="https://img.shields.io/endpoint?url=https://driftproofhq.com/badges/commit-message-conventions.json"></p>
+  </div>
+
+  <h2>Roadmap</h2>
+  <ul>
+    <li>More reports as the substrate moves — a release watcher polls for new model versions daily and queues a draft report for review when one ships.</li>
+    <li>Signed receipts — a key signature over the canonical form, so a receipt can be <em>trusted</em>, not just read.</li>
+    <li>A sandboxed-execution harness for tool-execution skills (document renderers, diagram/asset generators) that Report #001 scopes out.</li>
+  </ul>
+</main>
+<footer class="site"><p>Driftproof · Apache-2.0 · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p></footer>
+</body>
+</html>

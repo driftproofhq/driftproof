@@ -1,0 +1,348 @@
+{
+  "schema_version": "0.2",
+  "skill": {
+    "name": "writing-plans",
+    "version": "0.0.0",
+    "content_hash": "5ac443162b528dbc693ccc3a6b7d9570131653bc2eabeea619bf8aae242f9b6a"
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "37cb3c341572cea2b46e273727af6965f43ce94ca776338e06695cd3ff0bc406",
+    "case_count": 7
+  },
+  "run": {
+    "model_id": "claude-sonnet-4-6",
+    "model_release_date": "2026-02-17",
+    "surface": "claude-cli",
+    "runner_version": "0.2.0",
+    "date_utc": "2026-07-28T10:24:30.802Z",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "bite-sized-tdd-steps",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.864,
+        "mean": 0.864,
+        "stddev": 0.013416,
+        "samples": [
+          0.85,
+          0.85,
+          0.88,
+          0.87,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Five discrete single-action steps following test-first cycle with actual code/commands shown. Exemplary: provides exact pytest commands and states expected failure/pass outputs for each run step.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "d500d3f25d8e6b7aa80322f6ad22b9571dd6bec2805e6dd21db6ca1c19b06dc0"
+        }
+      },
+      {
+        "id": "bite-sized-tdd-steps",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.246,
+        "mean": 0.246,
+        "stddev": 0.02881,
+        "samples": [
+          0.25,
+          0.25,
+          0.28,
+          0.2,
+          0.25
+        ],
+        "threshold": 0.7,
+        "reason": "Non-test-first order (implementation before tests, capped at 0.3); missing run-to-fail verification and commit steps; only 3 steps vs. 5 required.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "d500d3f25d8e6b7aa80322f6ad22b9571dd6bec2805e6dd21db6ca1c19b06dc0"
+        }
+      },
+      {
+        "id": "repair-placeholder-steps",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.802,
+        "mean": 0.802,
+        "stddev": 0.004472,
+        "samples": [
+          0.8,
+          0.8,
+          0.81,
+          0.8,
+          0.8
+        ],
+        "threshold": 0.7,
+        "reason": "Flags all five placeholders explicitly and rewrites each into concrete steps with real code, validation rules, error format, and test content. Meets anchor exactly but doesn't explain the reasoning for repeating Task 1 content, so misses 0.81–0.90 exemplary band.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "05fe2da57d9d73c37d453dc3c34e4a0b2c215f77c8f5ea5bbff81310aac386fa"
+        }
+      },
+      {
+        "id": "repair-placeholder-steps",
+        "mode": "baseline",
+        "outcome": "borderline",
+        "score": 0.716,
+        "mean": 0.716,
+        "stddev": 0.074364,
+        "samples": [
+          0.8,
+          0.75,
+          0.7,
+          0.73,
+          0.6
+        ],
+        "threshold": 0.7,
+        "reason": "All five placeholders explicitly flagged; each rewritten concretely (RFC 5322 email, 8-char password, HTTP 400 JSON errors, specific test cases). No new placeholders.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "05fe2da57d9d73c37d453dc3c34e4a0b2c215f77c8f5ea5bbff81310aac386fa"
+        }
+      },
+      {
+        "id": "file-structure-by-responsibility",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.802,
+        "mean": 0.802,
+        "stddev": 0.004472,
+        "samples": [
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.81
+        ],
+        "threshold": 0.7,
+        "reason": "Each file has one clear responsibility, feature files are kept together logically, and rationale is detailed. Does not explicitly state 'files that change together live together' principle needed for exemplary tier.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "d592ccbfa5611acfee0c191aea3e25b8a5c88267de4c66819b5f6426ee2460a4"
+        }
+      },
+      {
+        "id": "file-structure-by-responsibility",
+        "mode": "baseline",
+        "outcome": "borderline",
+        "score": 0.62,
+        "mean": 0.62,
+        "stddev": 0.303315,
+        "samples": [
+          0.1,
+          0.8,
+          0.6,
+          0.8,
+          0.8
+        ],
+        "threshold": 0.7,
+        "reason": "Violates 'split by responsibility' principle: scatters fetch/format/handle across lib/ and routes/ (technical layers) instead of keeping export-feature files together; incurs CAP at 0.3 plus -0.2 penalty for splitting tightly-coupled pieces across distant locations.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "d592ccbfa5611acfee0c191aea3e25b8a5c88267de4c66819b5f6426ee2460a4"
+        }
+      },
+      {
+        "id": "interfaces-exact-signatures",
+        "mode": "with_skill",
+        "outcome": "borderline",
+        "score": 0.626,
+        "mean": 0.626,
+        "stddev": 0.149599,
+        "samples": [
+          0.65,
+          0.7,
+          0.8,
+          0.4,
+          0.58
+        ],
+        "threshold": 0.7,
+        "reason": "Both tasks declare explicit Produces/Consumes interfaces and Task 2 correctly consumes Task 1's signatures exactly. Error: Task 2's Produces declares undefined type 'Request' instead of 'dict' (shown in tests/implementation).",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "81555516732f291fd6432836e3103cecce0af03968b66cfbde681bf8875eb310"
+        }
+      },
+      {
+        "id": "interfaces-exact-signatures",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.8,
+        "mean": 0.8,
+        "stddev": 0,
+        "samples": [
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ],
+        "threshold": 0.7,
+        "reason": "All interface requirements met exactly: concrete types, complete signatures, Task 2 Consumes precisely matches Task 1 Produces.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "81555516732f291fd6432836e3103cecce0af03968b66cfbde681bf8875eb310"
+        }
+      },
+      {
+        "id": "task-right-sizing-testable-deliverable",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.816,
+        "mean": 0.816,
+        "stddev": 0.093968,
+        "samples": [
+          0.84,
+          0.85,
+          0.86,
+          0.88,
+          0.65
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly folds non-independently-testable scaffolding (framework, VERSION), splits independently-testable logic with sound justification, exemplarily invokes reviewer-rejection principle.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "9dff2ee8451af1419a78de5240989b7fd38be170ccfd7339d4e1f8aa52e5ec9f"
+        }
+      },
+      {
+        "id": "task-right-sizing-testable-deliverable",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.356,
+        "mean": 0.356,
+        "stddev": 0.130115,
+        "samples": [
+          0.35,
+          0.25,
+          0.3,
+          0.58,
+          0.3
+        ],
+        "threshold": 0.7,
+        "reason": "Splits scaffolding (framework install in Task 1, helpers in Task 2) into standalone tasks instead of folding into endpoint task as rubric requires; triggers explicit cap at 0.3.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "9dff2ee8451af1419a78de5240989b7fd38be170ccfd7339d4e1f8aa52e5ec9f"
+        }
+      },
+      {
+        "id": "full-small-plan-header-and-tasks",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.882,
+        "mean": 0.882,
+        "stddev": 0.030332,
+        "samples": [
+          0.85,
+          0.87,
+          0.89,
+          0.93,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Exemplary plan: header with Goal/Architecture/Tech Stack, Global Constraints copying verbatim values, exact file paths, bite-sized test-first steps with real code and concrete run commands. All test cases shown, including 8 ValueError cases. No placeholders. Minor deduction for confusing opening com",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8913a63e7febea060d9293756dfd6843d9da26b1a6fbff4c127911b1ca5760ac"
+        }
+      },
+      {
+        "id": "full-small-plan-header-and-tasks",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.45,
+        "mean": 0.45,
+        "stddev": 0.086603,
+        "samples": [
+          0.45,
+          0.3,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "threshold": 0.7,
+        "reason": "Missing formal header (Goal/Architecture/Tech Stack), Global Constraints section copying constraint values verbatim, and explicit test-first (run-to-fail/pass/commit) cycles in work order.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8913a63e7febea060d9293756dfd6843d9da26b1a6fbff4c127911b1ca5760ac"
+        }
+      },
+      {
+        "id": "self-review-spec-coverage",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.882,
+        "mean": 0.882,
+        "stddev": 0.010954,
+        "samples": [
+          0.88,
+          0.88,
+          0.88,
+          0.9,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Exemplary per-requirement table, correctly identifies purge_expired gap and clear/clear_all mismatch, proposes concrete fixes for both.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "a68d6f7dcdf49677b2d94ccb32ff7968253937b452078232226025a33cf93161"
+        }
+      },
+      {
+        "id": "self-review-spec-coverage",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.844,
+        "mean": 0.844,
+        "stddev": 0.021909,
+        "samples": [
+          0.85,
+          0.84,
+          0.81,
+          0.85,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Maps all five requirements per-requirement, correctly identifies purge_expired gap and clear/clear_all mismatch, proposes concrete fixes for both.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "a68d6f7dcdf49677b2d94ccb32ff7968253937b452078232226025a33cf93161"
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 7,
+        "pass_count": 6,
+        "borderline_count": 1,
+        "mean_score": 0.810571,
+        "stddev": 0.08879
+      },
+      "baseline": {
+        "case_count": 7,
+        "pass_count": 2,
+        "borderline_count": 2,
+        "mean_score": 0.576,
+        "stddev": 0.229751
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.810571,
+    "baseline_score": 0.576,
+    "delta": 0.234571,
+    "delta_uncertainty": 0.246311
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "b69fdabff0784e1e8831dde83c3f0d8200c5d2ba8ada0a13fc3b62f194ce7e07"
+}
