@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driftproof — judge policy</title>
+<meta name="description" content="Driftproof's judge is deliberately fixed and cheap (claude-haiku-4-5). Why: comparability across reports, cost, and honest limitations.">
+<link rel="stylesheet" href="style.css">
+<!-- driftproof:card-tags -->
+<meta property="og:title" content="Driftproof — judge policy">
+<meta property="og:description" content="Driftproof's judge is deliberately fixed and cheap (claude-haiku-4-5). Why: comparability across reports, cost, and honest limitations.">
+<meta property="og:image" content="https://driftproofhq.com/og.png">
+<meta property="og:url" content="https://driftproofhq.com/judge-policy.html">
+<meta name="twitter:card" content="summary_large_image">
+<!-- /driftproof:card-tags -->
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "d78764dd442f49cb9bb203bd6302e9b4"}'></script><!-- End Cloudflare Web Analytics -->
+</head>
+<body>
+<header class="site"><a class="brand" href="index.html">Driftproof</a><nav><a href="index.html">Home</a><a href="reports/001/index.html">Report #001</a><a href="https://github.com/driftproofhq/driftproof">GitHub</a></nav></header>
+<main class="hero">
+  <h1>The judge is deliberately fixed and cheap.</h1>
+  <p class="lede">Driftproof grades every generation with an LLM judge. That judge is <strong>fixed at <code>claude-haiku-4-5</code></strong> and changed only rarely. This page says why, and states the limitations plainly — a judge you can't inspect is not evidence.</p>
+
+  <h2>Why a fixed, cheap judge</h2>
+  <div class="card">
+    <p>Driftproof measures how a skill's effect <em>moves</em> as the model under it changes. If the <em>judge</em> also moved from report to report, a change in the verdict could come from the skill, the target model, or the grader — three variables, one number. Pinning the judge removes one of them: <strong>the judge is held constant so the target model is the only thing that varies</strong> across a drift comparison.</p>
+    <p>Cheap is a feature, not a compromise. A frontier judge would cost more than the runs it grades and would tempt per-report upgrades that quietly break comparability. Haiku is fast, inexpensive, and — paired with anchored rubrics and repeated sampling — stable enough that a verdict rests on band separation, not on the judge's brilliance.</p>
+  </div>
+
+  <h2>Determinism where the surface allows it</h2>
+  <div class="card">
+    <p>On the <code>api</code> surface the judge is <strong>pinned to temperature 0</strong>, and the receipt records <code>sampling: "api-temperature-0"</code>. On the <code>claude-cli</code> surface sampling parameters are surface-controlled and cannot be set; the receipt records <code>sampling: "surface-controlled"</code> and a <code>null</code> temperature — honestly, rather than pretending to a determinism we don't have. Either way the judge is sampled several times per case, and every verdict requires the two confidence bands to separate. Residual judge variance is <em>why</em> we band, not a bug in the banding.</p>
+  </div>
+
+  <h2>Upgrades are rare, announced, and reset comparability</h2>
+  <div class="card">
+    <p>The judge model changes only when there is a compelling reason (the pinned model retires, or a materially better cheap judge ships). When it does:</p>
+    <ul>
+      <li>the change is <strong>announced</strong> in the report that first uses the new judge;</li>
+      <li>it <strong>resets cross-report comparability</strong> — verdicts graded by different judges are not directly comparable, and reports say so;</li>
+      <li>the eligibility is encoded in the model registry: only a model with <code>judge_eligible: true</code> in <a href="https://github.com/driftproofhq/driftproof/blob/main/config/models.json"><code>config/models.json</code></a> may serve as the judge. Today that is the Haiku judge alone.</li>
+    </ul>
+  </div>
+
+  <h2>Known limitations (stated plainly)</h2>
+  <div class="card">
+    <ul>
+      <li><strong>Style affinity.</strong> An LLM judge can favor prose that resembles its own. A Haiku judge grading a Haiku-family generation may be marginally kinder to it than to another family's output. Anchored rubrics (a fully-correct answer scores ~0.80, not 1.0) and with/without-skill differencing blunt this, but it is not zero.</li>
+      <li><strong>Ceiling on hard suites.</strong> A cheap judge cannot reliably grade a task it could not itself do well. On genuinely hard rubrics the judge's own competence is the ceiling on grading accuracy; scores compress toward the middle and bands widen, which correctly makes verdicts <em>harder</em> to claim rather than falsely confident.</li>
+      <li><strong>Quantization.</strong> The judge emits scores on a coarse ~0.05–0.1 grid, so a confident grade often collapses to a zero-width "point band". This is exactly why the drift rule adds a <strong>0.05 minimum-effect floor</strong> on top of band separation — see any report's methodology.</li>
+      <li><strong>Parse failures fail closed.</strong> An unparseable judge reply scores 0, never a silent pass. The transcript hashes in receipt <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md">spec v0.3</a> let a reader check the raw judge outputs a verdict was built from.</li>
+    </ul>
+  </div>
+
+  <p class="muted">The judge is one held-constant instrument. Hold it constant, sample it, band it, and state where it is weak — that is the whole policy.</p>
+</main>
+<footer class="site"><span>Driftproof · Apache-2.0</span><span><a href="index.html">Home</a></span></footer>
+</body>
+</html>

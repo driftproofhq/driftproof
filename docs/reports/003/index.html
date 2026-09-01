@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driftproof — Report #003: do skill verdicts hold across a model release? (opus-4-8 → opus-5)</title>
+<meta name="description" content="Release drift report: the same 10 agent-skill suites and one fixed judge run on claude-opus-4-8 → claude-opus-5. 4 improved, 2 regressed, 4 within noise, band-separated and floor-gated.">
+<link rel="stylesheet" href="../../style.css">
+<!-- driftproof:card-tags -->
+<meta property="og:title" content="Report #003 — do skill verdicts hold across a model release?">
+<meta property="og:description" content="Release drift report: the same 10 agent-skill suites and one fixed judge run on claude-opus-4-8 → claude-opus-5. 4 improved, 2 regressed, 4 within noise, band-separated and floor-gated.">
+<meta property="og:image" content="https://driftproofhq.com/og.png">
+<meta property="og:url" content="https://driftproofhq.com/reports/003/">
+<meta name="twitter:card" content="summary_large_image">
+<!-- /driftproof:card-tags -->
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "d78764dd442f49cb9bb203bd6302e9b4"}'></script><!-- End Cloudflare Web Analytics -->
+</head>
+<body>
+<header class="site"><a class="brand" href="../../index.html">Driftproof</a><nav><a href="../../index.html">Home</a><a href="../../methodology.html">Methodology</a><a href="../../neutrality.html">Neutrality</a></nav></header>
+<main class="report">
+  <h1>Report #003 — do skill verdicts hold across a model release?</h1>
+  <p class="report-type">Release drift report</p>
+  <div class="headline">
+    <p class="big"><strong>2 regressed · 4 improved · 0 mixed · 4 within noise</strong> — over 10 skills.</p>
+    <p>The same 10 suites (Report #001 v1.2 rubrics) and the same fixed judge (<code>claude-haiku-4-5</code>, n=5) run on two versions of one model: <code>claude-opus-4-8</code> (older) → <code>claude-opus-5</code> (newer). Per skill, the verdict compares the two versions' <code>with_skill</code> bands per case; a regression/improvement is claimed only when BOTH (1) the two bands (mean ± stddev over the 5 judge samples) do <em>not</em> overlap AND (2) the mean moves at least the <strong>0.05 effect floor</strong>. Bands that overlap, or separate by less than the floor, are <em>within noise</em> — never drift. See the <a href="../../methodology.html">methodology</a>.</p>
+  </div>
+
+  <p class="src"><strong>Surface (disclosed):</strong> both versions → <code>claude-cli</code> (subscription — <code>claude -p -m</code>; metered spend $0, the $ figure is the estimated metered-equivalent). Same surface, same fixed judge, same suites for both columns — the only thing that moves is the model version, which is the point.</p>
+
+  <h2>Per-skill drift</h2>
+  <table class="summary">
+    <thead><tr>
+      <th>skill</th>
+      <th>with_skill (old → new)</th>
+      <th>baseline (old → new)</th>
+      <th>verdict</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td><code>code-review-and-quality</code></td>
+        <td>0.887 ± 0.024 → 0.886 ± 0.016 <span class="muted">Δ -0.000</span></td>
+        <td>0.819 → 0.833</td>
+        <td><span class="v v-noise">WITHIN NOISE</span></td>
+      </tr>
+      <tr>
+        <td><code>git-workflow-and-versioning</code></td>
+        <td>0.879 ± 0.009 → 0.877 ± 0.011 <span class="muted">Δ -0.002</span></td>
+        <td>0.839 → 0.878</td>
+        <td><span class="v v-noise">WITHIN NOISE</span></td>
+      </tr>
+      <tr>
+        <td><code>documentation-and-adrs</code></td>
+        <td>0.769 ± 0.232 → 0.867 ± 0.032 <span class="muted">Δ +0.098</span></td>
+        <td>0.795 → 0.839</td>
+        <td><span class="v v-improved">IMPROVED (1)</span></td>
+      </tr>
+      <tr>
+        <td><code>commit-work</code></td>
+        <td>0.882 ± 0.015 → 0.882 ± 0.014 <span class="muted">Δ -0.000</span></td>
+        <td>0.847 → 0.886</td>
+        <td><span class="v v-noise">WITHIN NOISE</span></td>
+      </tr>
+      <tr>
+        <td><code>writing-clearly-and-concisely</code></td>
+        <td>0.876 ± 0.024 → 0.845 ± 0.033 <span class="muted">Δ -0.030</span></td>
+        <td>0.874 → 0.861</td>
+        <td><span class="v v-regressed">REGRESSED (1)</span></td>
+      </tr>
+      <tr>
+        <td><code>crafting-effective-readmes</code></td>
+        <td>0.760 ± 0.213 → 0.871 ± 0.032 <span class="muted">Δ +0.111</span></td>
+        <td>0.870 → 0.795</td>
+        <td><span class="v v-improved">IMPROVED (2)</span></td>
+      </tr>
+      <tr>
+        <td><code>naming-analyzer</code></td>
+        <td>0.874 ± 0.012 → 0.866 ± 0.054 <span class="muted">Δ -0.008</span></td>
+        <td>0.797 → 0.798</td>
+        <td><span class="v v-regressed">REGRESSED (1)</span></td>
+      </tr>
+      <tr>
+        <td><code>requesting-code-review</code></td>
+        <td>0.762 ± 0.214 → 0.871 ± 0.025 <span class="muted">Δ +0.109</span></td>
+        <td>0.544 → 0.671</td>
+        <td><span class="v v-improved">IMPROVED (1)</span></td>
+      </tr>
+      <tr>
+        <td><code>writing-plans</code></td>
+        <td>0.864 ± 0.033 → 0.883 ± 0.028 <span class="muted">Δ +0.019</span></td>
+        <td>0.578 → 0.690</td>
+        <td><span class="v v-improved">IMPROVED (1)</span> <span class="muted" title="a driving case rests on a zero-width judge point band">†&nbsp;low-res</span></td>
+      </tr>
+      <tr>
+        <td><code>skill-creator</code></td>
+        <td>0.887 ± 0.007 → 0.885 ± 0.008 <span class="muted">Δ -0.001</span></td>
+        <td>0.849 → 0.889</td>
+        <td><span class="v v-noise">WITHIN NOISE</span></td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="muted">Columns: each skill's <code>with_skill</code> band (mean ± stddev over 5 judge samples) on the old version → the new version, with the aggregate Δ shown as <em>context</em>; the baseline (no-skill) mean old → new; and the drift <strong>verdict</strong>. The verdict does <strong>not</strong> rest on the aggregate Δ — following Report&nbsp;#001's anti-cry-wolf discipline it is the tally of <em>per-case</em> band-separated verdicts that clear the 0.05 floor. A <span class="muted">†&nbsp;low-res</span> mark means a driving case rests on a zero-width judge point band. Every number is re-derived from the receipts under <code>receipts/report-003/</code>; nothing here is hand-entered.</p>
+  <details class="card"><summary><strong>Verdict basis — the per-case band-separated drivers behind each label.</strong> A case drives a verdict only when its two <code>with_skill</code> bands (old vs new, mean ± stddev, n=5) do not overlap AND the mean moves ≥ 0.05. Cases marked <strong>†point-band</strong> rest on a zero-width band (all 5 judge samples identical) — see the low-resolution note.</summary><ul><li><code>documentation-and-adrs</code>: 🔼 <code>surface-conflicting-adr-conventions</code> (0.246 ± 0.058 → 0.890 ± 0.012, Δ+0.644)</li><li><code>writing-clearly-and-concisely</code>: 🔻 <code>positive-form-status-sentences</code> (0.916 ± 0.032 → 0.866 ± 0.011, Δ-0.050)</li><li><code>crafting-effective-readmes</code>: 🔼 <code>categorize-task-before-writing</code> (0.588 ± 0.096 → 0.828 ± 0.050, Δ+0.240), 🔼 <code>lead-with-one-sentence-problem</code> (0.346 ± 0.082 → 0.870 ± 0.012, Δ+0.524)</li><li><code>naming-analyzer</code>: 🔻 <code>abbreviations-wellknown-js</code> (0.872 ± 0.013 → 0.744 ± 0.096, Δ-0.128)</li><li><code>requesting-code-review</code>: 🔼 <code>crafted-context-not-session-history</code> (0.292 ± 0.011 → 0.906 ± 0.027, Δ+0.614)</li><li><code>writing-plans</code>: 🔼 <code>interfaces-exact-signatures</code> (0.800 ± 0.000 → 0.886 ± 0.030, Δ+0.086) <strong>†point-band</strong></li></ul></details>
+  <div class="card"><strong>Low-resolution: judge quantization (1).</strong> These verdicts are supported — in whole or in part — by a case whose old or new <code>with_skill</code> band is <em>zero-width</em>: all 5 judge samples returned the identical score. The judge grades on a coarse quantization grid, so a zero-width band is a clean grid-step effect the 0.05 floor still gates, but one whose finer structure the judge cannot resolve. The verdict stands; its confidence is grid-limited: <code>writing-plans</code> → IMPROVED (1) (<code>interfaces-exact-signatures</code>).</div>
+  
+
+  <h2>Run record</h2>
+  <div class="card">
+    <p>Completed 2026-08-12 on the <code>claude-cli</code> surface — 20 receipts (10 skills × 2 versions, with/without × n=5, judged by <code>claude-haiku-4-5</code>). Metered spend <strong>$0</strong> (vendor subscription CLI); estimated metered-equivalent <strong>~$11.79</strong>, under the $40 guard. All 20 receipts complete; zero timeouts, zero cases excluded.</p>
+  </div>
+  <h2>Receipts</h2>
+  <details class="card"><summary><strong>All 20 receipts for this report, each one resolvable.</strong> Every number on this page re-derives from these files. They are the evidence, not a description of it — open any one and check it against the table above.</summary>
+    <ul>
+      <li><code>code-review-and-quality</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/code-review-and-quality__claude-opus-4-8.json">claude-opus-4-8</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/code-review-and-quality__claude-opus-5.json">claude-opus-5</a></li>
+      <li><code>commit-work</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/commit-work__claude-opus-4-8.json">claude-opus-4-8</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/commit-work__claude-opus-5.json">claude-opus-5</a></li>
+      <li><code>crafting-effective-readmes</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/crafting-effective-readmes__claude-opus-4-8.json">claude-opus-4-8</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/crafting-effective-readmes__claude-opus-5.json">claude-opus-5</a></li>
+      <li><code>documentation-and-adrs</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/documentation-and-adrs__claude-opus-4-8.json">claude-opus-4-8</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/documentation-and-adrs__claude-opus-5.json">claude-opus-5</a></li>
+      <li><code>git-workflow-and-versioning</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/git-workflow-and-versioning__claude-opus-4-8.json">claude-opus-4-8</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/git-workflow-and-versioning__claude-opus-5.json">claude-opus-5</a></li>
+      <li><code>naming-analyzer</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/naming-analyzer__claude-opus-4-8.json">claude-opus-4-8</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/naming-analyzer__claude-opus-5.json">claude-opus-5</a></li>
+      <li><code>requesting-code-review</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/requesting-code-review__claude-opus-4-8.json">claude-opus-4-8</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/requesting-code-review__claude-opus-5.json">claude-opus-5</a></li>
+      <li><code>skill-creator</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/skill-creator__claude-opus-4-8.json">claude-opus-4-8</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/skill-creator__claude-opus-5.json">claude-opus-5</a></li>
+      <li><code>writing-clearly-and-concisely</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/writing-clearly-and-concisely__claude-opus-4-8.json">claude-opus-4-8</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/writing-clearly-and-concisely__claude-opus-5.json">claude-opus-5</a></li>
+      <li><code>writing-plans</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/writing-plans__claude-opus-4-8.json">claude-opus-4-8</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-003/writing-plans__claude-opus-5.json">claude-opus-5</a></li>
+    </ul>
+    <p class="muted">Directory: <a href="https://github.com/driftproofhq/driftproof/tree/main/receipts/report-003"><code>receipts/report-003/</code></a>. Validate any of them with <code>npx driftproof validate &lt;file&gt;</code>.</p>
+  </details>
+  <footer class="site"><span>Driftproof · Apache-2.0</span><span>Report #003</span></footer>
+</main>
+</body>
+</html>

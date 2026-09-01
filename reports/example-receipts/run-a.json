@@ -1,0 +1,474 @@
+{
+  "schema_version": "0.2",
+  "skill": {
+    "name": "commit-message-conventions",
+    "version": "0.2.0",
+    "content_hash": "7796e0efea3305302c52c4ad6079b663fc68e56fb12af7f3be95d302f75c02dc"
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "220b1101477f2417debdb03f2af8b803701467412ad0ecd8136ec7227eef2dfb",
+    "case_count": 10
+  },
+  "run": {
+    "model_id": "claude-haiku-4-5-20251001",
+    "model_release_date": "2025-10-01",
+    "surface": "claude-cli",
+    "runner_version": "0.2.0",
+    "date_utc": "2026-07-28T04:27:42.815Z",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "feat-basic",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.85,
+        "mean": 0.85,
+        "stddev": 0,
+        "samples": [
+          0.85,
+          0.85,
+          0.85,
+          0.85,
+          0.85
+        ],
+        "threshold": 0.7,
+        "reason": "Fully correct Conventional Commits format with well-chosen scope and specific, information-dense subject. Meets exemplary criteria but not exceptional.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "e29f2a7f1ee9dabf63aa0c916373d0d18481a0a28e2a356be4f1035aaa892450"
+        }
+      },
+      {
+        "id": "feat-basic",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.276,
+        "mean": 0.276,
+        "stddev": 0.075033,
+        "samples": [
+          0.25,
+          0.4,
+          0.28,
+          0.2,
+          0.25
+        ],
+        "threshold": 0.7,
+        "reason": "Response contains prose and code fences (violates 'ONLY a commit message'). Neither version follows Conventional Commits format—both lack the `feat:` type prefix and scope (e.g., should be `feat(settings): add dark mode toggle`).",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "e29f2a7f1ee9dabf63aa0c916373d0d18481a0a28e2a356be4f1035aaa892450"
+        }
+      },
+      {
+        "id": "fix-with-body",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.866,
+        "mean": 0.866,
+        "stddev": 0.011402,
+        "samples": [
+          0.87,
+          0.85,
+          0.88,
+          0.86,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Fully correct: type/scope/imperative present, ≤72 chars, single blank line separator. Body names concrete root cause (iat vs current time), qualifies as exemplary per rubric.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "10682b80cba23f57580002bbed166a07ec4ca4a83989c66e638648af48ecf400"
+        }
+      },
+      {
+        "id": "fix-with-body",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.552,
+        "mean": 0.552,
+        "stddev": 0.063797,
+        "samples": [
+          0.63,
+          0.5,
+          0.48,
+          0.55,
+          0.6
+        ],
+        "threshold": 0.7,
+        "reason": "Response includes extra explanatory text beyond the commit message (violates 'only a commit message'); type capitalized ('Fix' should be 'fix:'); scope format incorrect (should use 'fix(auth):' format).",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "10682b80cba23f57580002bbed166a07ec4ca4a83989c66e638648af48ecf400"
+        }
+      },
+      {
+        "id": "breaking-change",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.892,
+        "mean": 0.892,
+        "stddev": 0.008367,
+        "samples": [
+          0.89,
+          0.89,
+          0.88,
+          0.9,
+          0.9
+        ],
+        "threshold": 0.7,
+        "reason": "Uses both '!' marker and 'BREAKING CHANGE:' footer describing new minimum; perfect subject line format (type, imperative, lowercase, <=72 chars, no period); clean execution.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "ec9f179d1075fd41b940c78844fe4dac5ecad9665ade89d99e1f5cb5288ab3d4"
+        }
+      },
+      {
+        "id": "breaking-change",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.57,
+        "mean": 0.57,
+        "stddev": 0.056569,
+        "samples": [
+          0.62,
+          0.55,
+          0.6,
+          0.6,
+          0.48
+        ],
+        "threshold": 0.7,
+        "reason": "Response violates 'only a commit message' format—includes explanation text. Commit itself signals break via footer only, not both '!' and footer markers.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "ec9f179d1075fd41b940c78844fe4dac5ecad9665ade89d99e1f5cb5288ab3d4"
+        }
+      },
+      {
+        "id": "chore-vs-feat",
+        "mode": "with_skill",
+        "outcome": "fail",
+        "score": 0.65,
+        "mean": 0.65,
+        "stddev": 0,
+        "samples": [
+          0.65,
+          0.65,
+          0.65,
+          0.65,
+          0.65
+        ],
+        "threshold": 0.7,
+        "reason": "Type 'build' caps at 0.65 (should be 'chore'). Subject is flawless: imperative, lowercase, <72 chars, names tool and versions.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "7fb3aefc9e705eac4fe9ebc007a7c498473a737121f6b83416cd50c9acfd084b"
+        }
+      },
+      {
+        "id": "chore-vs-feat",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.914,
+        "mean": 0.914,
+        "stddev": 0.021909,
+        "samples": [
+          0.9,
+          0.92,
+          0.95,
+          0.9,
+          0.9
+        ],
+        "threshold": 0.7,
+        "reason": "Exemplary chore-type message with (deps) scope, tool name, and versions; minor format issue of including explanatory text beyond 'only a commit message.'",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "7fb3aefc9e705eac4fe9ebc007a7c498473a737121f6b83416cd50c9acfd084b"
+        }
+      },
+      {
+        "id": "perf-not-refactor",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.916,
+        "mean": 0.916,
+        "stddev": 0.008944,
+        "samples": [
+          0.9,
+          0.92,
+          0.92,
+          0.92,
+          0.92
+        ],
+        "threshold": 0.7,
+        "reason": "Type is 'perf', subject is imperative/lowercase/under-72/no-period, names mechanism (memoize), good scope, exemplary message.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "7f556aded03b8f82cdd427c39700b5166906d8f9d23bdf2b6d25c964deab4120"
+        }
+      },
+      {
+        "id": "perf-not-refactor",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.32,
+        "mean": 0.32,
+        "stddev": 0.09083,
+        "samples": [
+          0.3,
+          0.35,
+          0.45,
+          0.3,
+          0.2
+        ],
+        "threshold": 0.7,
+        "reason": "Missing required 'perf' type prefix in both messages (critical failure capping at 0.4 per rubric). First message subject exceeds 72 chars (79). Two messages provided instead of one.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "7f556aded03b8f82cdd427c39700b5166906d8f9d23bdf2b6d25c964deab4120"
+        }
+      },
+      {
+        "id": "build-type-selection",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.81,
+        "mean": 0.81,
+        "stddev": 0.022361,
+        "samples": [
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.85
+        ],
+        "threshold": 0.7,
+        "reason": "Type 'build' with correct imperative subject and (deps) scope meets base 0.80; lacks source version v5 for exemplary 0.81+.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "70dca2fb134bad96029aca9511823238a36fbf04e711251f02b8120c07e53531"
+        }
+      },
+      {
+        "id": "build-type-selection",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.03,
+        "mean": 0.03,
+        "stddev": 0.027386,
+        "samples": [
+          0,
+          0.05,
+          0.05,
+          0,
+          0.05
+        ],
+        "threshold": 0.7,
+        "reason": "Model provided clarifying questions instead of a commit message. Rubric explicitly requires 'Response is only a commit message.'",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "70dca2fb134bad96029aca9511823238a36fbf04e711251f02b8120c07e53531"
+        }
+      },
+      {
+        "id": "revert-format",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.828,
+        "mean": 0.828,
+        "stddev": 0.052154,
+        "samples": [
+          0.82,
+          0.8,
+          0.92,
+          0.8,
+          0.8
+        ],
+        "threshold": 0.7,
+        "reason": "Correct revert format: subject has 'revert:' prefix, names the change, and body contains exact 'This reverts commit 9f3c1a2.' line. Flawless but not exceptional.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "4f8f71aaf51147b3822158c2f28408a947f32a0aa3327f904a71c1cd23427713"
+        }
+      },
+      {
+        "id": "revert-format",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.276,
+        "mean": 0.276,
+        "stddev": 0.0251,
+        "samples": [
+          0.3,
+          0.3,
+          0.25,
+          0.28,
+          0.25
+        ],
+        "threshold": 0.7,
+        "reason": "Uses 'Revert' instead of 'revert:' (Conventional Commits requires lowercase prefix with colon). Hash and changelog correct, but fails strict format requirement.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "4f8f71aaf51147b3822158c2f28408a947f32a0aa3327f904a71c1cd23427713"
+        }
+      },
+      {
+        "id": "footer-issue-ref",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.8,
+        "mean": 0.8,
+        "stddev": 0,
+        "samples": [
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ],
+        "threshold": 0.7,
+        "reason": "Correct 'fix' type, scope (csv), and 'Fixes #482' footer format meet baseline. Lacks explanatory body for exemplary (0.81+) rating.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "d7ed9fcc35e902b563963897c2d7ff3afb61a3b4def8755b87f872f3a26ff6ce"
+        }
+      },
+      {
+        "id": "footer-issue-ref",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.464,
+        "mean": 0.464,
+        "stddev": 0.136858,
+        "samples": [
+          0.45,
+          0.42,
+          0.35,
+          0.4,
+          0.7
+        ],
+        "threshold": 0.7,
+        "reason": "Response provides multiple options with preamble (not 'only a commit message'). Footer uses 'Resolves' instead of rubric examples (Closes/Fixes/Refs), which violates correct formatting. 'Fix' is capitalized when rubric requires lowercase.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "d7ed9fcc35e902b563963897c2d7ff3afb61a3b4def8755b87f872f3a26ff6ce"
+        }
+      },
+      {
+        "id": "long-body-wrap-72",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.838,
+        "mean": 0.838,
+        "stddev": 0.047117,
+        "samples": [
+          0.82,
+          0.82,
+          0.92,
+          0.83,
+          0.8
+        ],
+        "threshold": 0.7,
+        "reason": "Perfect formatting: subject 66 chars, all body lines ≤70 chars, 6 sentences covering race/trigger/symptoms/fix/follow-up. Exceeds 0.80 baseline with exceptional clarity and technical depth.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "1ccb3587345103d4d3ed87a9a5990aa55583467fb1281d767f088a3183f106fe"
+        }
+      },
+      {
+        "id": "long-body-wrap-72",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.63,
+        "mean": 0.63,
+        "stddev": 0.067082,
+        "samples": [
+          0.7,
+          0.55,
+          0.7,
+          0.6,
+          0.6
+        ],
+        "threshold": 0.7,
+        "reason": "Commit message meets all technical requirements (subject/line-length/sentence-count/coverage), but response includes unwanted extra prose.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "1ccb3587345103d4d3ed87a9a5990aa55583467fb1281d767f088a3183f106fe"
+        }
+      },
+      {
+        "id": "split-unrelated",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.876,
+        "mean": 0.876,
+        "stddev": 0.013416,
+        "samples": [
+          0.9,
+          0.87,
+          0.87,
+          0.87,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Advises separation with correct commit types (fix, refactor, docs) and acknowledges the unrelated changes, meeting the 0.81-1.00 anchor.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "e3d48a24dfdb77c22a2548bd946f2cc7b208c616d06d69cebfbb64c6f3e51bb4"
+        }
+      },
+      {
+        "id": "split-unrelated",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.254,
+        "mean": 0.254,
+        "stddev": 0.084143,
+        "samples": [
+          0.22,
+          0.4,
+          0.2,
+          0.2,
+          0.25
+        ],
+        "threshold": 0.7,
+        "reason": "Response asks for staging info but completely misses the core insight: these three unrelated changes (refactor, fix, docs) require separate commits. Neither advises separation nor acknowledges the split.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "e3d48a24dfdb77c22a2548bd946f2cc7b208c616d06d69cebfbb64c6f3e51bb4"
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 10,
+        "pass_count": 9,
+        "borderline_count": 0,
+        "mean_score": 0.8326,
+        "stddev": 0.0736
+      },
+      "baseline": {
+        "case_count": 10,
+        "pass_count": 1,
+        "borderline_count": 0,
+        "mean_score": 0.4286,
+        "stddev": 0.249529
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.8326,
+    "baseline_score": 0.4286,
+    "delta": 0.404,
+    "delta_uncertainty": 0.260157
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "cd35abdd79c53f9e6d66b19708945c6e41c9cedaf1f343fe17edb7a15af65eb5"
+}
