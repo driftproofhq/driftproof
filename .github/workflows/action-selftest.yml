@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: Apache-2.0
+# Self-test for the Driftproof composite action. Runs the action against the
+# bundled example skill in STUB mode (DRIFTPROOF_STUB=1), so it exercises the
+# whole path — install, run, receipt, badge, verdict, artifact upload — with
+# ZERO model calls and zero spend. No API key required.
+name: action-selftest
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stub:
+    runs-on: ubuntu-latest
+    env:
+      DRIFTPROOF_STUB: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run the Driftproof action (stub mode)
+        id: driftproof
+        uses: ./
+        with:
+          skill-dir: examples/commit-message-conventions
+          models: claude-haiku-4-5
+          max-usd: '2'
+          fail-on-regression: 'true'
+
+      - name: Assert outputs
+        shell: bash
+        run: |
+          echo "verdict=${{ steps.driftproof.outputs.verdict }}"
+          echo "delta=${{ steps.driftproof.outputs.delta }}"
+          test "${{ steps.driftproof.outputs.verdict }}" = "PASSED"
