@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driftproof: Report 007, the baseline is the noisy arm</title>
+
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<header class="site"><a class="brand" href="../../index.html">Driftproof</a><nav><a href="../../index.html">Home</a><a href="../../methodology.html">Methodology</a><a href="../../neutrality.html">Neutrality</a></nav></header>
+<main class="report">
+  <h1>Report 007: the baseline is the noisy arm</h1>
+  <p class="report-type">Instrument re-measurement report<span class="muted">. Three cells Report 005 already published, re-run on the same suites and the same substrates with the generation sampled n times per arm instead of once. Nothing under the skill moves. The instrument does.</span></p>
+  <div class="headline">
+    <p class="big">Three skills re-measured under generation sampling, with a corrected instrument. <strong>At the cell level no effect separates from noise:</strong> each of the three lifts is smaller than its own band (+0.055 ± 0.111 on <code>code-review-and-quality</code>@<code>claude-fable-5</code>, -0.002 ± 0.167 on <code>git-workflow-and-versioning</code>@<code>claude-sonnet-5</code>, +0.131 ± 0.157 on <code>writing-plans</code>@<code>claude-fable-5</code>). Per case across all 21: <strong>3 improved · 0 regressed · 18 no effect · 0 not measured</strong>.</p>
+    <p>The cell band is <strong>suite dispersion</strong>: the sample standard deviation of the per-case means across a suite's seven cases, with the two arms' dispersions combined in quadrature. It is <strong>not</strong> the standard error of the mean, and the difference decides this page. A standard error shrinks as cases and draws are added, which makes a headline hypersensitive and turns trivial movement into an apparent result; <code>aggregateBands()</code> in <code>lib/stats.js</code> records that rationale beside the code that computes it.</p>
+    <p>Report 005 published lifts of +0.103, +0.116, +0.177 for these same three cells, each measured against a baseline arm generated <strong>once</strong>. All three are lower here. None of the three is a correction: two of the three archive comparisons were <strong>refused</strong> before any verdict was formed, and the skill text changed upstream between the two runs on every cell. What this report establishes is about the instrument, not about the skills.</p>
+  </div>
+
+  <div class="card">
+    <strong>What this report measures, and what it does not.</strong>
+    <ul>
+      <li><strong>Surface.</strong> The surface is <code>claude-cli</code> with local machine context, one box, held constant across all cells and all reports.</li>
+      <li><strong>Scope.</strong> The instrument measures skill text in context on the <code>append-system-prompt</code> surface. Out of scope: routing via <code>description:</code>, progressive disclosure, and tool execution.</li>
+      <li><strong>What moved.</strong> Nothing underneath the skill. Same suites, same substrates, same fixed judge (<code>claude-haiku-4-5</code>, five samples per draw) as Report 005. The instrument moved instead: receipt spec v0.5 samples the <em>generation</em> adaptively, a minimum of three draws per arm and more until the across-draw spread settles, and a call now gets the timeout its surface policy declares.</li>
+      <li><strong>The set.</strong> Three cells, 21 cases, <strong>144 draws</strong>, 143 measured. Every verdict below is verifiable from the four receipts linked at the foot of this page: three published, one retained as defect evidence.</li>
+    </ul>
+  </div>
+
+  <h2>The set</h2>
+  <table class="summary">
+    <thead><tr><th>cell</th><th>run</th><th>receipt</th><th>sha256 of file</th><th><code>receipt_hash</code></th></tr></thead>
+    <tbody>
+      <tr><td><code>code-review-and-quality</code>@<code>claude-fable-5</code></td><td>run 1</td><td><a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-007/code-review-and-quality-claude-fable-5-2026-08-31.json"><code>code-review-and-quality-claude-fable-5-2026-08-31.json</code></a></td><td><code>11e1a9f9d199ad54…</code></td><td><code>7d940158ee7f65b3…</code></td></tr>
+      <tr><td><code>git-workflow-and-versioning</code>@<code>claude-sonnet-5</code></td><td>run 1</td><td><a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-007/git-workflow-and-versioning-claude-sonnet-5-2026-08-31.json"><code>git-workflow-and-versioning-claude-sonnet-5-2026-08-31.json</code></a></td><td><code>69ded5000415053c…</code></td><td><code>abec2aed0bc78b80…</code></td></tr>
+      <tr><td><code>writing-plans</code>@<code>claude-fable-5</code></td><td>run 2</td><td><a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-007-rerun/writing-plans-claude-fable-5-2026-08-31.json"><code>writing-plans-claude-fable-5-2026-08-31.json</code></a></td><td><code>280b15259b9faa91…</code></td><td><code>f0dd7f573ee59593…</code></td></tr>
+    </tbody>
+  </table>
+  <p class="muted">All three are <code>schema_version</code> 0.5, <code>generation_sampled: true</code>, verification level <strong>TESTED</strong>, surface <code>claude-cli</code>, provider <code>anthropic</code>. <code>writing-plans</code>@<code>claude-fable-5</code> is <strong>run 2</strong>, and the next section is why. The other two cells were never re-run.</p>
+
+  <h2>Result: no cell separates</h2>
+  <table class="summary">
+    <thead><tr><th>cell</th><th>with_skill (mean ± band)</th><th>baseline (mean ± band)</th><th>lift</th><th>lift band</th><th>separates?</th></tr></thead>
+    <tbody>
+      <tr><td><code>code-review-and-quality</code>@<code>claude-fable-5</code></td><td>0.885 ± 0.017</td><td>0.830 ± 0.109</td><td><strong>+0.055</strong></td><td>± 0.111</td><td><span class="v v-noise">no</span></td></tr>
+      <tr><td><code>git-workflow-and-versioning</code>@<code>claude-sonnet-5</code></td><td>0.824 ± 0.122</td><td>0.826 ± 0.115</td><td><strong>-0.002</strong></td><td>± 0.167</td><td><span class="v v-noise">no</span></td></tr>
+      <tr><td><code>writing-plans</code>@<code>claude-fable-5</code></td><td>0.833 ± 0.074</td><td>0.701 ± 0.139</td><td><strong>+0.131</strong></td><td>± 0.157</td><td><span class="v v-noise">no</span></td></tr>
+    </tbody>
+  </table>
+  <p class="muted">Every band above is suite dispersion. All three cells are paired 7 against 7 with an empty exclusion list, so <code>run.failed_case_count</code> is absent from all three published receipts: that field appears only when a case was excluded from the aggregate.</p>
+
+  <h2>Per-case verdicts</h2>
+  <p>A case counts only when the two bands do not overlap <strong>and</strong> the mean moves at least 0.05. Every band below carries its provenance: <code>(generation)</code> is an across-draw spread over n generation draws, which is what receipt spec v0.5 records, and it is a different statistic from the judge-sample spread earlier receipts carried.</p>
+  <h3><code>code-review-and-quality</code>@<code>claude-fable-5</code> <span class="muted">(run 1)</span></h3>
+  <table class="summary">
+    <thead><tr><th>case</th><th>baseline band</th><th>with_skill band</th><th>&Delta;</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr><td><code>severity-labeled-findings</code></td><td>0.585 ± 0.071 <span class="muted">(generation)</span></td><td>0.917 ± 0.026 <span class="muted">(generation)</span></td><td>+0.332</td><td><span class="v v-improved">improved</span></td></tr>
+      <tr><td><code>commit-message-imperative-body</code></td><td>0.872 ± 0.003 <span class="muted">(generation)</span></td><td>0.868 ± 0.007 <span class="muted">(generation)</span></td><td>-0.004</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>security-axis-sql-injection</code></td><td>0.885 ± 0.009 <span class="muted">(generation)</span></td><td>0.881 ± 0.003 <span class="muted">(generation)</span></td><td>-0.003</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>propose-structural-remedy</code></td><td>0.885 ± 0.007 <span class="muted">(generation)</span></td><td>0.897 ± 0.011 <span class="muted">(generation)</span></td><td>+0.013</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>oversized-change-split</code></td><td>0.869 ± 0.021 <span class="muted">(generation)</span></td><td>0.882 ± 0.006 <span class="muted">(generation)</span></td><td>+0.013</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>approve-when-improves-health</code></td><td>0.877 ± 0.018 <span class="muted">(generation)</span></td><td>0.877 ± 0.002 <span class="muted">(generation)</span></td><td>+0.000</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>reject-clean-it-up-later</code></td><td>0.836 ± 0.023 <span class="muted">(generation)</span></td><td>0.872 ± 0.014 <span class="muted">(generation)</span></td><td>+0.036</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+    </tbody>
+  </table>
+  <p class="muted">1 improved · 0 regressed · 6 no effect · 0 not measured.</p>
+  <h3><code>git-workflow-and-versioning</code>@<code>claude-sonnet-5</code> <span class="muted">(run 1)</span></h3>
+  <table class="summary">
+    <thead><tr><th>case</th><th>baseline band</th><th>with_skill band</th><th>&Delta;</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr><td><code>commit-message-conventional-type</code></td><td>0.861 ± 0.011 <span class="muted">(generation)</span></td><td>0.863 ± 0.004 <span class="muted">(generation)</span></td><td>+0.002</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>semver-clean-bump</code></td><td>0.869 ± 0.004 <span class="muted">(generation)</span></td><td>0.867 ± 0.011 <span class="muted">(generation)</span></td><td>-0.003</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>split-into-atomic-commits</code></td><td>0.870 ± 0.018 <span class="muted">(generation)</span></td><td>0.863 ± 0.012 <span class="muted">(generation)</span></td><td>-0.007</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>changelog-curated-by-impact</code></td><td>0.867 ± 0.002 <span class="muted">(generation)</span></td><td>0.872 ± 0.007 <span class="muted">(generation)</span></td><td>+0.005</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>trunk-based-short-lived-branches</code></td><td>0.858 ± 0.009 <span class="muted">(generation)</span></td><td>0.865 ± 0.004 <span class="muted">(generation)</span></td><td>+0.007</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>semver-hidden-breaking-change</code></td><td>0.567 ± 0.355 <span class="muted">(generation)</span></td><td>0.548 ± 0.298 <span class="muted">(generation)</span></td><td>-0.019</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>release-cut-version-tag-changelog</code></td><td>0.888 ± 0.012 <span class="muted">(generation)</span></td><td>0.890 ± 0.005 <span class="muted">(generation)</span></td><td>+0.002</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+    </tbody>
+  </table>
+  <p class="muted">0 improved · 0 regressed · 7 no effect · 0 not measured.</p>
+  <h3><code>writing-plans</code>@<code>claude-fable-5</code> <span class="muted">(run 2)</span></h3>
+  <table class="summary">
+    <thead><tr><th>case</th><th>baseline band</th><th>with_skill band</th><th>&Delta;</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr><td><code>bite-sized-tdd-steps</code></td><td>0.752 ± 0.155 <span class="muted">(generation)</span></td><td>0.872 ± 0.008 <span class="muted">(generation)</span></td><td>+0.120</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>repair-placeholder-steps</code></td><td>0.740 ± 0.094 <span class="muted">(generation)</span></td><td>0.877 ± 0.004 <span class="muted">(generation)</span></td><td>+0.138</td><td><span class="v v-improved">improved</span></td></tr>
+      <tr><td><code>file-structure-by-responsibility</code></td><td>0.821 ± 0.010 <span class="muted">(generation)</span></td><td>0.831 ± 0.006 <span class="muted">(generation)</span></td><td>+0.009</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>interfaces-exact-signatures</code></td><td>0.725 ± 0.144 <span class="muted">(generation)</span></td><td>0.829 ± 0.006 <span class="muted">(generation)</span></td><td>+0.104</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>task-right-sizing-testable-deliverable</code></td><td>0.637 ± 0.133 <span class="muted">(generation)</span></td><td>0.676 ± 0.169 <span class="muted">(generation)</span></td><td>+0.039</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>full-small-plan-header-and-tasks</code></td><td>0.420 ± 0.084 <span class="muted">(generation)</span></td><td>0.903 ± 0.013 <span class="muted">(generation)</span></td><td>+0.482</td><td><span class="v v-improved">improved</span></td></tr>
+      <tr><td><code>self-review-spec-coverage</code></td><td>0.815 ± 0.005 <span class="muted">(generation)</span></td><td>0.843 ± 0.020 <span class="muted">(generation)</span></td><td>+0.028</td><td><span class="v v-noise">no effect</span> <span class="muted">(below floor)</span></td></tr>
+    </tbody>
+  </table>
+  <p class="muted">2 improved · 0 regressed · 5 no effect · 0 not measured.</p>
+  <p><strong>3 improved · 0 regressed · 18 no effect · 0 not measured</strong>, over 21 published cases.</p>
+
+  <div class="card">
+    <p><strong>Two of the eighteen are the ones a reader will argue with.</strong> <code>bite-sized-tdd-steps</code> lifts +0.120 and <code>interfaces-exact-signatures</code> lifts +0.104, each more than twice the 0.05 floor, and each reads no effect. The reason sits on the same row: their baseline bands are ± 0.155 and ± 0.144. <strong>A lift twice the effect floor is not a finding when the baseline it is measured against will not sit still.</strong> Exactly one of the eighteen fails on the floor rather than on overlap: <code>self-review-spec-coverage</code>, at +0.028.</p>
+  </div>
+
+  <h2>The instrument, and what it cost this study</h2>
+  <div class="card">
+    <p><strong>A declared 300 s timeout had never executed.</strong> <code>lib/provider.js</code> declares a per-surface retry policy, and for a <code>claude-cli</code> surface it declares <strong>300000 ms</strong>, with a written rationale about cold-start-dominated subprocesses. <code>lib/run.js</code> then set its own default as a numeric literal, <strong>120000</strong>, and the provider layer documents that an explicit caller value wins. So every run this project has ever made used 120 s on every surface, and the CLI policy was dead text from the day it was written.</p>
+    <p>The dates are the uncomfortable part. The literals landed on <strong>2026-07-27</strong> with the runner skeleton. The policy that they shadowed was written on <strong>2026-07-31</strong>, <strong>four days later</strong>, and read as authoritative from then on. Nothing failed, nothing logged, and no gate reached it until preparing this report did. It was fixed on <strong>2026-08-31</strong>.</p>
+    <p><strong>Run 1 lost 25 draws to it</strong>, 24 of them in <code>writing-plans</code>@<code>claude-fable-5</code>. Every loss carries the same recorded reason, and the string names the number: <code>provider(claude-cli) timed out after 120000ms</code>. Run 2 re-ran that one cell under the corrected timeout and measured <strong>55 of 55</strong>, with nothing lost.</p>
+    <p><strong>Both runs are published.</strong> Run 1's three receipts are committed at <code>7468e9e</code> and run 2's at <code>7050fd8</code>. Run 1's <code>writing-plans</code>@<code>claude-fable-5</code> receipt is retained as <strong>defect evidence</strong> and is not part of the published set; the other two cells of run 1 are the published receipts for their skills, and were never re-run.</p>
+  </div>
+
+  <h3>What the broken run measured, beside what the clean one measured</h3>
+  <table class="summary">
+    <thead><tr><th></th><th>run 1 (truncated at 120 s)</th><th>run 2 (300 s, clean)</th></tr></thead>
+    <tbody>
+      <tr><td>draws</td><td>71 drawn, 47 measured, <strong>24 lost</strong></td><td>55 drawn, 55 measured, <strong>0 lost</strong></td></tr>
+      <tr><td>mean draws per arm</td><td>5.07</td><td>3.93</td></tr>
+      <tr><td>arms with a variance ratio</td><td>13 of 14</td><td>14 of 14</td></tr>
+      <tr><td>maximum variance ratio</td><td><strong>1.55&times;</strong></td><td><strong>5.88&times;</strong></td></tr>
+      <tr><td>arms above 1&times;</td><td><strong>1 of 13</strong></td><td><strong>5 of 14</strong></td></tr>
+      <tr><td>cell lift</td><td>+0.116 ± 0.115</td><td>+0.131 ± 0.157</td></tr>
+      <tr><td>pairing</td><td>7 against 6, unpaired</td><td>7 against 7, paired</td></tr>
+    </tbody>
+  </table>
+
+  <div class="card">
+    <p><strong>The truncated run drew more, measured less, and looked calmer.</strong> 71 draws against 55, 5.07 per arm against 3.93, and a maximum variance ratio of <strong>1.55&times;</strong> where the clean run reports <strong>5.88&times;</strong>. 1 of 13 arms sat above 1&times; in run 1; 5 of 14 do in run 2.</p>
+    <p>The mechanism is the ordering. A 120 s ceiling removes the <em>long</em> generations first, and the long scattered generations are the ones carrying the across-draw spread. So the timeout did not merely lose data at random: <strong>it truncated the distribution from above, and biased the variance estimate downward.</strong> That is the direction that makes an instrument look more precise than it is. <strong>Silent truncation flatters stability.</strong></p>
+    <p>It also cost this study its one apparent result. Run 1's <code>writing-plans</code>@<code>claude-fable-5</code> lift of +0.116 ± 0.115 sat outside its own band by about a thousandth: the only separation anywhere in Report 007. Run 2's +0.131 ± 0.157 does not. Run 1 reported three improvements out of six measurable cases and could not measure the seventh at all; run 2, with every draw measured, reports two out of seven, and the case run 1 lost, <code>full-small-plan-header-and-tasks</code>, turns out to carry the largest case lift in the whole study at +0.482. <strong>The one result the study appeared to have was an artifact of the draws it lost.</strong></p>
+    <p class="muted">One arm of run 1 lost every draw it took, so its variance ratio is <code>null</code> with <code>variance_ratio_unavailable: "no_measured_draws"</code> rather than a fabricated zero. That is why run 1 reports 13 ratios over 14 arms and run 2 reports 14.</p>
+  </div>
+
+  <h2>Against Report 005</h2>
+  <table class="summary">
+    <thead><tr><th>cell</th><th>Report 005 lift and band</th><th>Report 007 lift and band</th><th>differ verdict, 005 to 007</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>code-review-and-quality</code>@<code>claude-fable-5</code></td>
+        <td><strong>+0.103</strong> ± 0.217 <span class="muted">(legacy)</span></td>
+        <td><strong>+0.055</strong> ± 0.111 <span class="muted">(generation)</span></td>
+        <td><span class="v v-noise">REFUSED</span><br><span class="muted">baseline did not reproduce: <code>severity-labeled-findings</code></span></td>
+      </tr>
+      <tr>
+        <td><code>git-workflow-and-versioning</code>@<code>claude-sonnet-5</code></td>
+        <td><strong>+0.116</strong> ± 0.224 <span class="muted">(legacy)</span></td>
+        <td><strong>-0.002</strong> ± 0.167 <span class="muted">(generation)</span></td>
+        <td><span class="v v-noise">REFUSED</span><br><span class="muted">baseline did not reproduce: <code>commit-message-conventional-type</code>, <code>changelog-curated-by-impact</code></span></td>
+      </tr>
+      <tr>
+        <td><code>writing-plans</code>@<code>claude-fable-5</code></td>
+        <td><strong>+0.177</strong> ± 0.194 <span class="muted">(legacy)</span></td>
+        <td><strong>+0.131</strong> ± 0.157 <span class="muted">(generation)</span></td>
+        <td><span class="v v-noise">WITHIN NOISE</span><br><span class="muted">precondition passed; 0 regressions, 0 improvements, 7 within noise</span></td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="muted"><strong>Band provenance, which the tool does not print on this row and which the report therefore supplies.</strong> Both columns are <code>comparison.delta_uncertainty</code>, the two arms' suite dispersions combined in quadrature, but they are built from different per-case statistics. The Report 005 column rests on <strong>legacy</strong> bands: a judge-sample spread over a single generation, which is what receipt spec v0.4 and earlier recorded. The Report 007 column rests on <strong>generation</strong> bands: an across-draw spread. <strong>They are different statistics, and the comparison is not like for like.</strong> It is also the only comparison the older receipt admits.</p>
+
+  <h3>Five of six comparisons refuse</h3>
+  <p>Six comparisons were run, one per cell against each of the two archives. <strong>Five of the six refused, and every refusal is a precondition failure rather than a computed result:</strong> four on baseline non-reproduction, one on a baseline with no measured draws. A refusal is an outcome this instrument publishes, not an error it recovers from. The reason strings below are the ones the tool emits.</p>
+
+  <h4>Against Report 005, <code>--mode revision</code></h4>
+  <ul>
+      <li><strong><code>code-review-and-quality</code>@<code>claude-fable-5</code></strong>, Report 005 to Report 007, <code>--mode revision</code>: <span class="muted">the baseline arm did not reproduce: this run observed 0.5845, the earlier receipt recorded 0.3, and the bands do not overlap. No verdict is asserted; the control shows non-reproduction and cannot establish a cause.</span> <span class="muted">Non-overlapping case(s): <code>severity-labeled-findings</code> (0.585 against 0.300).</span></li>
+      <li><strong><code>git-workflow-and-versioning</code>@<code>claude-sonnet-5</code></strong>, Report 005 to Report 007, <code>--mode revision</code>: <span class="muted">the baseline arm did not reproduce: this run observed 0.861333, the earlier receipt recorded 0.282, and the bands do not overlap. No verdict is asserted; the control shows non-reproduction and cannot establish a cause.</span> <span class="muted">Non-overlapping case(s): <code>commit-message-conventional-type</code> (0.861 against 0.282), <code>changelog-curated-by-impact</code> (0.867 against 0.630).</span></li>
+      <li><strong><code>writing-plans</code>@<code>claude-fable-5</code></strong>: <strong>the precondition passed.</strong> This is the one comparison of the six that produced a verdict, and it is quoted in full below.</li>
+  </ul>
+
+  <h4>Against Report 006, <code>--mode release</code></h4>
+  <ul>
+      <li><strong><code>code-review-and-quality</code>@<code>claude-fable-5</code></strong>: <span class="muted">the baseline arm did not reproduce: this run observed 0.5845, the earlier receipt recorded 0.696, and the bands do not overlap. No verdict is asserted; the control shows non-reproduction and cannot establish a cause.</span> <span class="muted">Non-overlapping case(s): <code>severity-labeled-findings</code> (0.585 against 0.696), <code>reject-clean-it-up-later</code> (0.836 against 0.870).</span></li>
+      <li><strong><code>git-workflow-and-versioning</code>@<code>claude-sonnet-5</code></strong>: <span class="muted">the baseline arm did not reproduce: this run observed 0.858, the earlier receipt recorded 0.876, and the bands do not overlap. No verdict is asserted; the control shows non-reproduction and cannot establish a cause.</span> <span class="muted">Non-overlapping case(s): <code>trunk-based-short-lived-branches</code> (0.858 against 0.876).</span></li>
+      <li><strong><code>writing-plans</code>@<code>claude-fable-5</code></strong>: <span class="muted">the baseline arm has no measured draws, so reproduction cannot be checked and no verdict is asserted.</span></li>
+  </ul>
+  <p class="muted"><strong>Why release mode and not revision.</strong> All three Report 006 pairs refuse in revision mode before any comparison is attempted, on a different precondition: <span class="muted">the two receipts carry the SAME skill.content_hash: there is no revision between them to measure. Compare these two with the default release mode, or supply a pair that differs only in skill.content_hash.</span> Release is therefore the only mode these three pairs admit, and it is the mode the list above reports.</p>
+
+  <p class="muted"><strong>Two of these refusals deserve a second sentence.</strong> On <code>git-workflow-and-versioning</code>@<code>claude-sonnet-5</code> against Report 005, <em>two</em> cases moved beyond their bands, and the rendered reason names only the first: <code>baselineReproduces</code> returns <code>bad[0]</code> into the message while carrying the full list in <code>cases</code>, so the refusal a reader sees understates how many cases moved. It is true and incomplete, and it is filed. On <code>writing-plans</code>@<code>claude-fable-5</code> against Report 006 the refusal is structural rather than empirical: Report 006's own receipt lost two arms to the same 120 s timeout, so a case on the Report 007 side has no band to compare against and the control returns <code>baseline_unmeasured</code>. <strong>Report 006's timeout losses are what stop Report 007 from comparing against it.</strong></p>
+
+  <div class="card">
+    <p><strong>The one comparison that passed its precondition.</strong> <code>writing-plans</code>@<code>claude-fable-5</code>, Report 005 to Report 007, <code>--mode revision</code>: <strong>WITHIN NOISE — the revision moved no case beyond its confidence band; the pinned text and the current text measure the same.</strong></p>
+    <p class="muted">with_skill mean moved +0.002 (0.831 ± 0.092 → 0.833 ± 0.074; band = suite dispersion). Per-case band-overlap verdicts: 0 regression(s), 0 improvement(s), 7 within noise.</p>
+    <p>So on the one cell where the control held, a lift of +0.177 and a lift of +0.131 are <strong>the same measurement</strong> as far as this instrument can tell. That is the honest reading of the mapping table above, and it is why none of the three lower lifts is presented as a correction.</p>
+  </div>
+
+  <p><strong>What the mapping shows, and what it cannot.</strong> Every lift fell and every band narrowed. All three Report 005 lifts sat inside their own bands too, so nothing here reverses a separated finding. The direction is consistent: Report 005's single-draw baselines were 0.786, 0.746, 0.654, and Report 007's multi-draw baselines are 0.830, 0.826, 0.701, higher on two of the three. <strong>A baseline generated once was, on this evidence, a low estimate, and the lift measured against it was correspondingly high.</strong> That is a claim about the instrument. It is not a claim about the skills, and this report cannot make one: two of the three comparisons never got past their control, and the skill text differs between the two runs on all three cells.</p>
+
+  <p class="muted">Why the two band types are different statistics, and why an instrument that samples one of them is not measuring the other: a variance decomposition that partitions benchmark score variance into scenario, generation, judge and residual components is given by <em>CyclicJudge</em>, <a href="https://arxiv.org/abs/2603.01865">arXiv:2603.01865</a>. Driftproof sampled the judge five times and the generation once until receipt spec v0.5, which is to say it had been putting its error bars on one component and reading them as the whole. <em>Second-Order Response Laws for LLM Judges</em>, <a href="https://arxiv.org/abs/2608.16253">arXiv:2608.16253</a>, which cites CyclicJudge for that decomposition, goes on to the estimator: it shows that a plug-in estimate of prompt instability is <strong>biased upward</strong> at finite repeat budgets, because it confounds within-prompt noise with between-prompt variation, and derives an unbiased estimator from the difference between within- and across-prompt agreement. Report 007 does not apply that correction, and says so in its limits.</p>
+
+  <h2>Economics</h2>
+  <p>No figure in this section comes from a projection. <code>estimateRunCostUSD</code>, the projection path, was not called. Each table is computed at build time from the draws the receipt records, priced at the snapshot the receipt froze at run time.</p>
+  <h3><code>code-review-and-quality</code>@<code>claude-fable-5</code></h3>
+  <table class="summary">
+    <caption class="muted"><strong>Basis.</strong> Subscription <code>claude-cli</code> surface; metered spend <strong>$0.00</strong>. Every dollar is a metered-equivalent derived at build time from <code>draws[].usage</code> at this receipt's own frozen snapshot (input $10 / Mtok, output $50 / Mtok, frozen 2026-08-31T07:59:57.284Z). Read the incremental row, not the absolute ones. Judge cost is measurement overhead this project imposes and is excluded from every field.</caption>
+    <thead><tr><th>arm</th><th>calls</th><th>mean input tok</th><th>mean output tok</th><th>$ / call</th><th>median wall</th><th>p25 / p75</th></tr></thead>
+    <tbody>
+      <tr><td>with_skill</td><td>21</td><td>24,184.95</td><td>1,251.81</td><td>$0.304440</td><td>21,635 ms</td><td>16,705 / 23,055.5</td></tr>
+      <tr><td>baseline</td><td>22</td><td>32,742.18</td><td>1,758.05</td><td>$0.415324</td><td>23,689 ms</td><td>19,855 / 40,100</td></tr>
+      <tr><td><strong>incremental</strong></td><td>n/a</td><td><strong>-8,557.23</strong></td><td><strong>-506.24</strong></td><td><strong>-$0.110884</strong> <span class="muted">(-$110.884 per 1k calls)</span></td><td><strong>-2054.0 ms</strong></td><td>n/a</td></tr>
+    </tbody>
+  </table>
+  <p class="muted">Judge overhead, excluded: $2.601445 over 14 case rows. Dollars re-derive from the recorded tokens and the frozen rates: <code>dollarsTraceable</code> returns <code>{&quot;traceable&quot;:true,&quot;mismatches&quot;:[]}</code>. Source block: <strong>the receipt's recorded economics block is null; this table is a recomputation from the same committed receipt</strong>.</p>
+  <h3><code>git-workflow-and-versioning</code>@<code>claude-sonnet-5</code></h3>
+  <table class="summary">
+    <caption class="muted"><strong>Basis.</strong> Subscription <code>claude-cli</code> surface; metered spend <strong>$0.00</strong>. Every dollar is a metered-equivalent derived at build time from <code>draws[].usage</code> at this receipt's own frozen snapshot (input $3 / Mtok, output $15 / Mtok, frozen 2026-08-31T05:42:11.959Z). Read the incremental row, not the absolute ones. Judge cost is measurement overhead this project imposes and is excluded from every field.</caption>
+    <thead><tr><th>arm</th><th>calls</th><th>mean input tok</th><th>mean output tok</th><th>$ / call</th><th>median wall</th><th>p25 / p75</th></tr></thead>
+    <tbody>
+      <tr><td>with_skill</td><td>23</td><td>33,082.39</td><td>300.22</td><td>$0.103750</td><td>6,250 ms</td><td>4,485 / 7,029</td></tr>
+      <tr><td>baseline</td><td>22</td><td>28,104.09</td><td>478.27</td><td>$0.091486</td><td>7,510.5 ms</td><td>5,051 / 10,389</td></tr>
+      <tr><td><strong>incremental</strong></td><td>n/a</td><td><strong>+4,978.30</strong></td><td><strong>-178.05</strong></td><td><strong>+$0.012264</strong> <span class="muted">(+$12.264 per 1k calls)</span></td><td><strong>-1260.5 ms</strong></td><td>n/a</td></tr>
+    </tbody>
+  </table>
+  <p class="muted">Judge overhead, excluded: $2.313420 over 14 case rows. Dollars re-derive from the recorded tokens and the frozen rates: <code>dollarsTraceable</code> returns <code>{&quot;traceable&quot;:true,&quot;mismatches&quot;:[]}</code>. Source block: <strong>the receipt's recorded economics block is null; this table is a recomputation from the same committed receipt</strong>.</p>
+  <h3><code>writing-plans</code>@<code>claude-fable-5</code></h3>
+  <table class="summary">
+    <caption class="muted"><strong>Basis.</strong> Subscription <code>claude-cli</code> surface; metered spend <strong>$0.00</strong>. Every dollar is a metered-equivalent derived at build time from <code>draws[].usage</code> at this receipt's own frozen snapshot (input $10 / Mtok, output $50 / Mtok, frozen 2026-08-31T19:52:29.216Z). Read the incremental row, not the absolute ones. Judge cost is measurement overhead this project imposes and is excluded from every field.</caption>
+    <thead><tr><th>arm</th><th>calls</th><th>mean input tok</th><th>mean output tok</th><th>$ / call</th><th>median wall</th><th>p25 / p75</th></tr></thead>
+    <tbody>
+      <tr><td>with_skill</td><td>24</td><td>37,688.21</td><td>5,206.83</td><td>$0.637224</td><td>43,164.5 ms</td><td>21,832.5 / 95,723.5</td></tr>
+      <tr><td>baseline</td><td>31</td><td>55,531.29</td><td>3,998.16</td><td>$0.755221</td><td>52,638 ms</td><td>37,538 / 60,930</td></tr>
+      <tr><td><strong>incremental</strong></td><td>n/a</td><td><strong>-17,843.08</strong></td><td><strong>+1,208.67</strong></td><td><strong>-$0.117997</strong> <span class="muted">(-$117.997 per 1k calls)</span></td><td><strong>-9473.5 ms</strong></td><td>n/a</td></tr>
+    </tbody>
+  </table>
+  <p class="muted">Judge overhead, excluded: $3.253265 over 14 case rows. Dollars re-derive from the recorded tokens and the frozen rates: <code>dollarsTraceable</code> returns <code>{&quot;traceable&quot;:true,&quot;mismatches&quot;:[]}</code>. Source block: <strong>present and verified, and the recomputation matches it field for field across both arms and the incremental</strong>.</p>
+
+  <div class="card">
+    <p><strong>2 of 3 cells are cheaper with the skill than without it</strong>, at -$110.884 per thousand calls on <code>code-review-and-quality</code>@<code>claude-fable-5</code> and -$117.997 per thousand calls on <code>writing-plans</code>@<code>claude-fable-5</code>. The mechanism is visible in the tokens rather than asserted: mean input falls by 8,557 and 17,843 tokens per call, which is the baseline's sprawl becoming unnecessary. The one cell that costs more, <code>git-workflow-and-versioning</code>@<code>claude-sonnet-5</code>, costs <strong>+$12.264 per thousand calls</strong>, and it is also the cell with no measured benefit at all: a lift of -0.002 and zero improved cases. Latency falls in 3 of 3.</p>
+    <p><strong>A caution the tables carry and a reader should not skip: call counts are draw counts, and draw counts differ per arm.</strong> <code>writing-plans</code>@<code>claude-fable-5</code>'s baseline drew 31 calls against with_skill's 24, because the baseline was unstable enough to keep drawing. Per-call means are therefore computed over differently sized draw sets in the two arms. That is correct, since a draw is a call and each measured draw contributes one usage row, but it means the cost delta and the score delta are averages over unequal n, and a reader who assumes matched n will misread both.</p>
+    <p class="muted">Two mechanical notes on the absolute columns. A CLI call carries a fixed harness preamble of roughly 25k input tokens that is identical in both arms and cancels in the delta, which is why the incremental row is the one to read. Cached input tokens are costed at the list input rate, which over-estimates; <code>cached_tokens</code> is recorded per call so a reader can recompute on other assumptions.</p>
+  </div>
+
+  <h2>Disclosures</h2>
+  <div class="card">
+    <p><strong>The published set is not fully clean, and one absorbed draw sits inside it.</strong> <code>code-review-and-quality</code>@<code>claude-fable-5</code>'s <code>severity-labeled-findings</code> baseline arm drew 5 and measured 4: one generation call was lost to the 120 s timeout, and the band for that arm was computed from the 4 that survived. It produced no <code>failed_timeout</code>, no exclusion and no <code>failed_case_count</code>, because 4 measured draws is a legal draw set. That is silent absorption, and it is the same failure mode this report's instrument section describes, sitting in a cell this report publishes. It is one draw of 144 and it does not move the verdict, which reads improved at +0.332 on a wide baseline band either way. But "run 2 fixed it" is true of <code>writing-plans</code>@<code>claude-fable-5</code> only. The other two cells were never re-run, and this one still carries the absorbed draw.</p>
+    <p><strong>Run 1's receipts were sealed with null economics, and the reader was fixed after the sealing.</strong> Both run-1 receipts record <code>call_count: 0</code> and <code>null</code> in every arm field. <code>generationUsages</code> read only the case-level <code>usage</code>, and a v0.5 receipt puts usage on the draws, so the arm figures came out empty while the draws carried complete usage the whole time. The judge block was never affected, because <code>judge_usage</code> stayed at case level, and that asymmetry is what located the defect. The economics tables above are recomputed from the same committed receipts through the corrected <code>armEconomics</code>, with <strong>no re-run and no edit to any receipt</strong>. <code>writing-plans</code>@<code>claude-fable-5</code>'s run-2 receipt was sealed after the fix, and its recorded block reproduces field for field under recomputation, which is the control on the other two.</p>
+    <p><strong>The per-case table above is computed by a path with no command behind it.</strong> <code>driftproof diff</code> compares two receipts. There is no shipped command that renders within-report, per-case, skill-against-baseline verdicts: a receipt carries one aggregate <code>comparison.delta</code>, and <code>lib/verdict.js</code> reads that aggregate through the effect floor with no band test at all. This page therefore calls the shipped rule functions directly, <code>bandOf</code> from <code>lib/reuse.js</code> and the band-and-floor rule from <code>lib/diff.js</code>, over each receipt's own case rows. No number is re-derived by hand, but the headline per-case table has no command a reader can run to get it, and no assertion over that command. It is filed as a gap in the tool, disclosed here rather than after someone notices.</p>
+    <p><strong>Surface.</strong> The surface is <code>claude-cli</code> with local machine context, one box, held constant across all cells and all reports.</p>
+    <p><strong>Scope.</strong> The instrument measures skill text in context on the <code>append-system-prompt</code> surface. Out of scope: routing via <code>description:</code>, progressive disclosure, and tool execution.</p>
+  </div>
+
+  <h2>Two observations, offered as observations</h2>
+  <p>Neither of the two sections below is a finding. Nothing in them was put to a band-separation test, and this report claims no verdict from them. They are stated because they are the most legible things in the clean run, and because leaving them out would be a choice about what a reader gets to see.</p>
+
+  <h3>Time to settle</h3>
+  <p>Draws are adaptive: a minimum of three per arm, and more until the across-draw spread settles. <code>stopping_reason</code> reads <code>min_reached</code> when three sufficed and <code>stabilised</code> when the arm needed more.</p>
+  <table class="summary">
+    <thead><tr><th>cell</th><th>arms</th><th>settled at the 3-draw minimum</th><th>needed extra draws</th><th>total drawn</th><th>mean draws / arm</th></tr></thead>
+    <tbody>
+      <tr><td><code>code-review-and-quality</code>@<code>claude-fable-5</code> <span class="muted">(run 1)</span></td><td>14</td><td>13</td><td>1</td><td>44</td><td>3.14</td></tr>
+      <tr><td><code>git-workflow-and-versioning</code>@<code>claude-sonnet-5</code> <span class="muted">(run 1)</span></td><td>14</td><td>12</td><td>2</td><td>45</td><td>3.21</td></tr>
+      <tr><td><code>writing-plans</code>@<code>claude-fable-5</code> <span class="muted">(run 2)</span></td><td>14</td><td>8</td><td>6</td><td>55</td><td>3.93</td></tr>
+    </tbody>
+  </table>
+  <p class="muted">The arms that needed extra draws are, with two exceptions, <strong>baseline</strong> arms. In <code>writing-plans</code>@<code>claude-fable-5</code> five of the six unstable arms are baselines. The with-skill arm settles at the minimum almost everywhere; the baseline is what will not sit still.</p>
+
+  <h3>Variance asymmetry</h3>
+  <p>The ratio below is an arm's across-draw spread over its mean judge-sample spread, the <code>variance_ratio</code> the receipt records. Above 1&times; means generation-level noise exceeds judge-level noise: the axis this instrument sampled once, against the axis it sampled five times.</p>
+  <table class="summary">
+    <thead><tr><th>cell</th><th>arms with a ratio</th><th>min</th><th>median</th><th>max</th><th>arms above 1&times;</th></tr></thead>
+    <tbody>
+      <tr><td><code>code-review-and-quality</code>@<code>claude-fable-5</code> <span class="muted">(run 1)</span></td><td>14</td><td>0.19&times;</td><td>0.50&times;</td><td><strong>1.14&times;</strong></td><td>2 of 14</td></tr>
+      <tr><td><code>git-workflow-and-versioning</code>@<code>claude-sonnet-5</code> <span class="muted">(run 1)</span></td><td>14</td><td>0.18&times;</td><td>0.63&times;</td><td><strong>10.26&times;</strong></td><td>5 of 14</td></tr>
+      <tr><td><code>writing-plans</code>@<code>claude-fable-5</code> <span class="muted">(run 2)</span></td><td>14</td><td>0.17&times;</td><td>0.73&times;</td><td><strong>5.88&times;</strong></td><td>5 of 14</td></tr>
+    </tbody>
+  </table>
+  <p class="muted">The distribution is not symmetric and the median misleads on its own: most arms are quiet at generation level and a few are extremely loud. <code>git-workflow-and-versioning</code>@<code>claude-sonnet-5</code>'s <code>semver-hidden-breaking-change</code> runs 10.26&times; on baseline and 6.06&times; on with_skill, one case supplying most of that cell's dispersion. Medians here are <code>median()</code> from <code>lib/value.js</code>, which averages the two middle values on an even count.</p>
+
+  <h4>Baseline spread against with-skill spread, <code>writing-plans</code>@<code>claude-fable-5</code> run 2</h4>
+  <table class="summary">
+    <thead><tr><th>case</th><th>baseline sd</th><th>with_skill sd</th><th>ratio</th></tr></thead>
+    <tbody>
+      <tr><td><code>bite-sized-tdd-steps</code></td><td>0.1549</td><td>0.0080</td><td><strong>19.36&times;</strong></td></tr>
+      <tr><td><code>repair-placeholder-steps</code></td><td>0.0943</td><td>0.0042</td><td><strong>22.66&times;</strong></td></tr>
+      <tr><td><code>file-structure-by-responsibility</code></td><td>0.0103</td><td>0.0061</td><td><strong>1.68&times;</strong></td></tr>
+      <tr><td><code>interfaces-exact-signatures</code></td><td>0.1444</td><td>0.0064</td><td><strong>22.46&times;</strong></td></tr>
+      <tr><td><code>task-right-sizing-testable-deliverable</code></td><td>0.1335</td><td>0.1687</td><td>0.79&times;</td></tr>
+      <tr><td><code>full-small-plan-header-and-tasks</code></td><td>0.0843</td><td>0.0133</td><td><strong>6.33&times;</strong></td></tr>
+      <tr><td><code>self-review-spec-coverage</code></td><td>0.0050</td><td>0.0200</td><td>0.25&times;</td></tr>
+    </tbody>
+  </table>
+  <div class="card">
+    <p><strong>5 of the seven cases have a baseline wider than the with-skill arm</strong>, three of them by more than nineteen times. <code>code-review-and-quality</code>@<code>claude-fable-5</code> shows the same shape more weakly (5 of seven wider, maximum 8.00&times;) and <code>git-workflow-and-versioning</code>@<code>claude-sonnet-5</code> weakly again (5 of seven, maximum 2.73&times;).</p>
+    <p>What the shape suggests, without this report having tested it, is that the skill's most visible effect on this corpus is on consistency rather than on the mean. That would also explain why so few cases separate: a wide baseline band is precisely what prevents a real mean difference from clearing an overlap test. <strong>This is a hypothesis the design of Report 007 cannot settle.</strong> A mean-difference test is not an instrument for a variance-reduction effect, and nothing here was pre-registered as a variance claim, so the shape is recorded and left open.</p>
+    <p class="muted"><strong>Why we looked, not what we confirmed.</strong> Two lines of prior work motivated these two tables and neither is evidence for them. Prompt rankings are unstable under ordinary evaluation variability, and ranking by a lower confidence bound rather than by a point estimate is a documented response: <em>On the Stability of Prompt Ranking in Large Language Model Evaluation</em>, <a href="https://arxiv.org/abs/2606.24381">arXiv:2606.24381</a>. A wide baseline band is exactly the condition under which that selection rule matters, and Driftproof does not currently apply one. The variance-component framing above is <em>CyclicJudge</em>, <a href="https://arxiv.org/abs/2603.01865">arXiv:2603.01865</a>, cited again here for the same decomposition.</p>
+  </div>
+
+  <h2>Related work</h2>
+  <table class="summary">
+    <thead><tr><th>work</th><th>identifier</th><th>cited for</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><em>CyclicJudge: Mitigating Judge Bias Efficiently in LLM-based Evaluation</em><br><span class="muted">2026-03-02</span></td>
+        <td><a href="https://arxiv.org/abs/2603.01865">arXiv:2603.01865</a></td>
+        <td>The variance decomposition that partitions benchmark score variance into scenario, generation, judge and residual components. It is why a judge-sample band and an across-draw band are different statistics, and why an instrument that samples one of them is not measuring the other.</td>
+      </tr>
+      <tr>
+        <td><em>Second-Order Response Laws for LLM Judges: Debiased Estimation of Prompt Instability</em><br><span class="muted">2026-08-17</span></td>
+        <td><a href="https://arxiv.org/abs/2608.16253">arXiv:2608.16253</a></td>
+        <td>The estimator, rather than the decomposition. It formalises the split between sampling noise within a prompt and systematic difference across prompts as a second-order response law, and shows that the usual plug-in measure of prompt instability is <strong>biased upward at finite repeat budgets</strong> because it confounds the two; unbiased estimators follow from the difference between within- and across-prompt agreement. It cites CyclicJudge for the variance decomposition. Cited here as the nearest published treatment of the small-repeat-budget estimator problem this report's three-to-six draws per arm sit inside, and as a bias pointing the <em>opposite</em> way from the truncation bias measured above. <strong>This report applies no such correction.</strong></td>
+      </tr>
+      <tr>
+        <td><em>On the Stability of Prompt Ranking in Large Language Model Evaluation</em><br><span class="muted">2026-06-23</span></td>
+        <td><a href="https://arxiv.org/abs/2606.24381">arXiv:2606.24381</a></td>
+        <td>A stability-aware selection rule based on a lower confidence bound, which accounts for performance and variance together instead of ranking on a point estimate. The selection rule a wide baseline band should force, and one this instrument does not yet apply.</td>
+      </tr>
+      <tr>
+        <td><em>WikiSkill: Compiling Agent Experience into Persistent Knowledge for Skill Evolution</em><br><span class="muted">2026-08-27</span></td>
+        <td><a href="https://arxiv.org/abs/2608.27454">arXiv:2608.27454</a></td>
+        <td>Prior art on skills as retrievable text carried in context, and on skills transferring across models and families. The boundary this report's scope sentence draws sits inside that picture: Driftproof measures the text in context and does not measure routing, progressive disclosure or tool execution.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="muted">Each identifier above was resolved and its abstract read before publication, on the precedent Report 004's methodology section set. One further work carried through this report's authoring material had no identifier on file and none was found; it is dropped rather than cited, and no claim on this page rests on it.</p>
+
+  <h2>Limits</h2>
+  <div class="card">
+    <ul>
+      <li><strong>This report has not corrected Report 005.</strong> Two of the three archive comparisons were refused on baseline non-reproduction, so for those two cells nothing here is comparable to what that page published.</li>
+      <li><strong>The skill text changed between the two runs on all three cells.</strong> Every 005-to-007 pair differs in <code>skill.content_hash</code>, so even the one comparison that passed its control is a revision pair and not a straight re-measurement of the same text.</li>
+      <li><strong>The across-draw bands are small-budget estimates, uncorrected.</strong> Three to six draws per arm is a finite repeat budget, and the literature cited below shows estimators in this regime carry bias whose direction depends on what is being estimated. No debiasing is applied on this page; the bands are the plain sample spreads the receipts record.</li>
+      <li><strong>Cost means are over unequal n.</strong> Draw counts differ per arm, so a cell's two per-call means are averages over differently sized call sets.</li>
+      <li><strong>One absorbed draw remains in the published set</strong>, in <code>code-review-and-quality</code>@<code>claude-fable-5</code>, disclosed above.</li>
+      <li><strong>The judge remains single-model</strong> (<code>claude-haiku-4-5</code>, five samples), and judge affinity is not measured here.</li>
+      <li><strong>Three cells is three cells.</strong> Twenty-one cases on two substrates is not a corpus, and nothing on this page generalises past the skills named on it.</li>
+      <li><strong>Every verdict is verifiable from the receipts</strong>, which are linked below rather than described.</li>
+    </ul>
+  </div>
+
+  <h2>Amendments filed by this report</h2>
+  <div class="card">
+    <p><strong><a href="../005/index.html">Report 005</a> to v1.2.</strong> The three cells' published lifts are named as single-draw, judge-spread figures, re-measured here with no cell-level separation. No figure on that page is edited.</p>
+    <p><strong><a href="../006/index.html">Report 006</a> to v1.1.</strong> That page's <code>writing-plans</code> cell is corrected under pairwise exclusion, from +0.055 to +0.031, and its 6 against 6 aggregate is restated as the 5 against 5 it should have been. The cell's verdict does not change and its baseline-reproduction control does not move.</p>
+    <p class="muted">Both amendments are versioned records appended to the pages they concern. Constitution invariant 4: a published report is amended visibly, never edited silently.</p>
+  </div>
+
+  <h2>Run record</h2>
+  <div class="card"><p>Run 1: 2 published cells plus one evidence cell, 2026-08-31 07:59 UTC, committed at <code>7468e9e</code>. Run 2: <code>writing-plans</code>@<code>claude-fable-5</code> re-run under the corrected timeout, 2026-08-31 19:52 UTC, committed at <code>7050fd8</code>. Published set: 144 draws, 143 measured, 1 absorbed. Judge <code>claude-haiku-4-5</code> at five samples per draw. Surfaces: claude-fable-5 to claude-cli, claude-sonnet-5 to claude-cli. Metered spend <strong>$0.00</strong> on vendor subscription CLIs; every dollar on this page is the if-it-had-been-metered equivalent at each receipt's own frozen snapshot. Verification level <strong>TESTED</strong> on all four receipts.</p></div>
+
+  <h2>Receipts</h2>
+  <details class="card" open><summary><strong>All four receipts for this report, each one resolvable.</strong> Every number on this page re-derives from these files. They are the evidence, not a description of it: open any one and check it against a table above.</summary>
+    <ul>
+      <li><code>code-review-and-quality</code>@<code>claude-fable-5</code> <span class="muted">(run 1, published)</span>: <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-007/code-review-and-quality-claude-fable-5-2026-08-31.json"><code>receipts/report-007/code-review-and-quality-claude-fable-5-2026-08-31.json</code></a></li>
+      <li><code>git-workflow-and-versioning</code>@<code>claude-sonnet-5</code> <span class="muted">(run 1, published)</span>: <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-007/git-workflow-and-versioning-claude-sonnet-5-2026-08-31.json"><code>receipts/report-007/git-workflow-and-versioning-claude-sonnet-5-2026-08-31.json</code></a></li>
+      <li><code>writing-plans</code>@<code>claude-fable-5</code> <span class="muted">(run 2, published)</span>: <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-007-rerun/writing-plans-claude-fable-5-2026-08-31.json"><code>receipts/report-007-rerun/writing-plans-claude-fable-5-2026-08-31.json</code></a></li>
+      <li><code>writing-plans</code>@<code>claude-fable-5</code> <span class="muted">(run 1, defect evidence, NOT published)</span>: <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-007/writing-plans-claude-fable-5-2026-08-31.json"><code>receipts/report-007/writing-plans-claude-fable-5-2026-08-31.json</code></a></li>
+    </ul>
+    <p class="muted">Directories: <a href="https://github.com/driftproofhq/driftproof/tree/main/receipts/report-007"><code>receipts/report-007/</code></a> and <a href="https://github.com/driftproofhq/driftproof/tree/main/receipts/report-007-rerun"><code>receipts/report-007-rerun/</code></a>. Validate any of them with <code>npx driftproof validate &lt;file&gt;</code>. Run 1 landed at <code>7468e9e</code> and run 2 at <code>7050fd8</code>; no receipt has been modified since it was sealed.</p>
+  </details>
+
+  <footer class="site"><span>Driftproof · Apache-2.0</span><span>Report 007 · Instrument re-measurement report</span></footer>
+</main>
+</body>
+</html>
