@@ -1,0 +1,225 @@
+/* SPDX-License-Identifier: Apache-2.0
+   Driftproof brand tokens. One file, no framework, no runtime font request.
+
+   THE ACCENT IS THE BADGE COLOUR. docs/badges/commit-message-conventions.json
+   carries "color": "brightgreen", which is a shields.io keyword, not a hex; it
+   resolves to #44CC11. specs/020-site-relaunch/gate.mjs reads the badge file,
+   resolves the keyword and asserts --accent equals it, so a badge whose colour
+   changes takes the site red rather than leaving it quietly off-brand.
+
+   --accent IS A VERDICT, NOT A BRAND COLOUR, and that is the answer to the
+   question AC-3 left open. It is used where the green MEANS a passed verdict:
+   PASSED chips and band fills. Everything that carries text - links, nav, the
+   buttons, card titles, the glyph drawn on paper - takes --accent-ink, a
+   darkened instance of the same hue. Against the paper ground #44CC11 measures
+   about 1.8:1 and fails WCAG AA by a wide margin. AC-40 asserts that no rule in
+   this file paints text with it.
+
+   THIS FILE PINS THE LEGACY PALETTE TOO, and the reason is a defect that
+   shipped. docs/style.css is loaded first by every page and redefines --code,
+   --card, --fg and --line under prefers-color-scheme: dark. This file pinned the
+   page to paper. Neither file contradicted itself, and neither contradicted the
+   other in any text a gate was reading; they disagreed only on a screen, where
+   every <code> element rendered near-black ink on a near-black chip and the
+   report summary block was a dark box on a paper page. So the legacy names are
+   re-declared here, for the media query and for an explicit data-theme both.
+
+   AND THE PAIRS ARE DECLARED, so the palette is measured rather than eyeballed.
+   The block below is read by AC-40, which resolves each token to a hex out of
+   this file and computes the WCAG contrast of every pair. A rule that paints a
+   colour or a background and is not covered by a pair takes the gate red.
+
+   driftproof:contrast
+   ink on paper
+   ink on paper-sunk
+   ink on chip
+   ink on accent
+   ink-muted on paper
+   ink-muted on paper-sunk
+   accent-ink on paper
+   accent-ink on paper-sunk
+   paper on accent-ink
+   state-separated on paper-sunk
+   state-overlapping on paper-sunk
+   state-refused on paper-sunk
+   reg on paper
+   imp on paper
+   noise on paper
+   mixed on paper
+   driftproof:/contrast */
+:root {
+  --paper: #FBFAF7;
+  --paper-sunk: #F2F1EC;
+  /* The chip a <code> element sits on: light grey ON PAPER, ink text. It is a
+     third ground rather than --paper-sunk so an inline identifier still reads
+     inside a card that is already sunk. */
+  --chip: #EEECE4;
+  --ink: #14181D;
+  --ink-muted: #5A646E;
+  --rule: #E2E0D8;
+
+  --accent: #44CC11;
+  --accent-ink: #2E7A0B;
+
+  --state-separated: #2E7A0B;
+  --state-overlapping: #5A646E;
+  --state-refused: #806300;
+
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* A single committed look. The reports were drawn on paper and read on paper;
+   a dark inversion of a page full of hand-tuned figure colours is a different
+   design, not a setting, so this loop does not ship half of one. */
+code, pre, .hash, .receipt, .mono { font-family: var(--mono); }
+
+
+/* THE LEGACY PALETTE, PINNED. docs/style.css declares each of these three times
+   over - once light, once under prefers-color-scheme: dark, once under an
+   explicit data-theme - and this file loads after it. The selector list is what
+   makes the pinning win: :root alone would lose to :root[data-theme="dark"] on
+   specificity, which is exactly the kind of quiet defeat that produced ink on
+   near-black. AC-40 asserts every name style.css declares is re-declared here. */
+:root,
+:root[data-theme="dark"],
+:root[data-theme="light"] {
+  --bg: var(--paper);
+  --fg: var(--ink);
+  --muted: var(--ink-muted);
+  --line: var(--rule);
+  --card: var(--paper-sunk);
+  --code: var(--chip);
+  --reg: #B4232A;
+  --imp: #1A7F52;
+  --noise: var(--ink-muted);
+  --mixed: #9A6A00;
+}
+
+/* ── what the legacy stylesheet gets wrong on paper ───────────────────────────
+   Four rules in docs/style.css read --accent as though it were a text colour.
+   It is not, and Q1 settled that. These override the four rather than editing
+   style.css out from under the report pages it also dresses. */
+a { color: var(--accent-ink); }
+.cta { background: var(--accent-ink); color: var(--paper); }
+.cta.secondary { background: transparent; color: var(--accent-ink); border-color: var(--accent-ink); }
+.report-type { color: var(--accent-ink); }
+
+/* THE CODE CHIP. Light grey fill on paper, ink text, and the same for a block.
+   This is the pair AC-40 exists for: it was ink on near-black on every page. */
+code, pre { background: var(--chip); color: var(--ink); }
+pre code { background: transparent; }
+
+/* THE REPORT SUMMARY BLOCK (fix pass R9). It rendered as a dark box with dim
+   text on a paper page, because --card and --fg were the dark-scheme values.
+   Restyled to the light card here, in the stylesheet, and not by touching a
+   line of a published report's HTML: spec 020 AC-21 compares every report body
+   against the branch base, byte for byte, and a restyle is not an amendment. */
+.card { background: var(--paper-sunk); color: var(--ink); border-color: var(--rule); }
+.headline { background: var(--paper-sunk); color: var(--ink); border-color: var(--rule); border-left-color: var(--accent-ink); }
+.muted, .lede { color: var(--ink-muted); }
+
+/* ── chrome ───────────────────────────────────────────────────────────────── */
+body { background: var(--paper); color: var(--ink); font-family: var(--sans); }
+header.site { display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  padding: 0.9rem 1.5rem; border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
+header.site .brand { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700;
+  font-size: 1.1rem; color: var(--ink); }
+.brand-mark { display: block; }
+nav.site-nav { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; font-size: 0.95rem; }
+nav.site-nav a { color: var(--accent-ink); text-decoration: none; }
+nav.site-nav a:hover { text-decoration: underline; }
+.docs-menu { position: relative; }
+.docs-menu summary { cursor: pointer; color: var(--accent-ink); list-style: none; }
+.docs-menu summary::-webkit-details-marker { display: none; }
+.docs-menu summary::after { content: " \25BE"; }
+.docs-menu-list { display: flex; flex-direction: column; gap: 0.35rem; padding: 0.6rem 0.8rem;
+  border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
+@media (min-width: 720px) {
+  .docs-menu-list { position: absolute; z-index: 5; top: 1.8rem; left: 0; min-width: 12rem;
+    box-shadow: 0 6px 24px rgba(20, 24, 29, 0.08); }
+}
+footer.site { border-top: 1px solid var(--rule); padding: 1.5rem; color: var(--ink-muted); font-size: 0.9rem; }
+footer.site p { margin: 0.3rem 0; }
+.foot-links a { color: var(--accent-ink); }
+
+/* ── screens ──────────────────────────────────────────────────────────────── */
+.screen { max-width: 62rem; margin: 0 auto; padding: 3rem 1.5rem; border-bottom: 1px solid var(--rule); }
+.screen:last-of-type { border-bottom: none; }
+.screen > h2 { font-size: 1.5rem; letter-spacing: -0.01em; margin: 0 0 1.2rem; }
+#hero { display: grid; gap: 2.5rem; grid-template-columns: 1fr; }
+@media (min-width: 900px) { #hero { grid-template-columns: 1.15fr 0.85fr; align-items: start; } }
+#hero h1 { font-size: clamp(1.9rem, 4.4vw, 2.9rem); line-height: 1.12; letter-spacing: -0.025em; margin: 0 0 1rem; }
+.hero-sub { font-size: 1.12rem; line-height: 1.6; color: var(--ink-muted); margin: 0 0 1.6rem; }
+.cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+.copy-cta { display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.8rem;
+  border: 1px solid var(--rule); border-radius: 10px; background: var(--paper-sunk); font-family: var(--mono); font-size: 0.9rem; }
+.copy-cta button { font: inherit; font-family: var(--sans); cursor: pointer; border: 1px solid var(--rule);
+  background: var(--paper); color: var(--accent-ink); border-radius: 7px; padding: 0.2rem 0.6rem; }
+a.cta { display: inline-block; padding: 0.62rem 1rem; border-radius: 10px; background: var(--accent-ink);
+  color: var(--paper); font-weight: 600; text-decoration: none; }
+a.cta.secondary { background: transparent; color: var(--accent-ink); border: 1px solid var(--accent-ink); }
+
+.receipt-card { border: 1px solid var(--rule); border-radius: 12px; background: var(--paper-sunk); padding: 1.1rem 1.2rem; }
+.receipt-card h2 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-muted); margin: 0 0 0.9rem; }
+.receipt-card dl { display: grid; grid-template-columns: auto 1fr; gap: 0.4rem 0.9rem; margin: 0; }
+.receipt-card dt { color: var(--ink-muted); font-size: 0.82rem; }
+.receipt-card dd { margin: 0; font-family: var(--mono); font-size: 0.86rem; word-break: break-word; }
+.receipt-card .lead dt, .receipt-card .lead dd { font-size: 1rem; }
+.field-verdict dd, .receipt-card .verdict { font-weight: 700; color: var(--accent-ink); font-family: var(--sans); }
+.receipt-plot { margin-top: 0.9rem; width: 100%; }
+
+.steps { counter-reset: step; list-style: none; padding: 0; margin: 0 0 1.4rem; display: grid; gap: 0.9rem; }
+.steps li { counter-increment: step; padding-left: 2.6rem; position: relative; font-size: 1.02rem; }
+.steps li::before { content: counter(step); position: absolute; left: 0; top: -0.1rem; width: 1.9rem; height: 1.9rem;
+  border-radius: 50%; background: var(--accent); color: var(--ink); font-weight: 700; display: grid; place-items: center; font-size: 0.9rem; }
+.naming { border-left: 4px solid var(--accent); padding: 0.6rem 0 0.6rem 1rem; margin: 1.4rem 0 2rem; font-size: 1.02rem; }
+.panels { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.panel { border: 1px solid var(--rule); border-radius: 12px; padding: 1rem; background: var(--paper-sunk); }
+.panel img, .panel svg { display: block; width: 100%; height: auto; max-width: 11rem; }
+.panel h3 { margin: 0.7rem 0 0.3rem; font-size: 1rem; }
+.panel p { margin: 0; color: var(--ink-muted); font-size: 0.93rem; }
+
+.stats { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); margin: 0 0 1.4rem; }
+.stat { border: 1px solid var(--rule); border-radius: 12px; padding: 0.9rem 1rem; background: var(--paper-sunk); }
+.stat b { display: block; font-size: 1.7rem; line-height: 1.1; letter-spacing: -0.02em; }
+.stat span { color: var(--ink-muted); font-size: 0.86rem; }
+.cols { display: grid; gap: 1.4rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.cols h3 { margin: 0 0 0.4rem; font-size: 1.02rem; }
+.cols p { margin: 0; color: var(--ink-muted); }
+
+.report-card { border: 1px solid var(--rule); border-radius: 12px; padding: 1.1rem 1.2rem; margin: 0 0 1rem;
+  display: grid; gap: 0.9rem; grid-template-columns: 1fr; background: var(--paper-sunk); }
+@media (min-width: 760px) { .report-card { grid-template-columns: 1fr 20rem; align-items: center; } }
+.report-card h3 { margin: 0 0 0.3rem; font-size: 1.12rem; }
+.report-card p { margin: 0.25rem 0; }
+.card-type { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.74rem; font-weight: 700; color: var(--accent-ink); }
+.card-models code { font-size: 0.82em; }
+.card-date, .card-counts { color: var(--ink-muted); font-size: 0.92rem; }
+.card-plot { width: 100%; height: auto; }
+
+.tldr { border: 1px solid var(--rule); border-left: 4px solid var(--accent); border-radius: 10px;
+  background: var(--paper-sunk); padding: 0.9rem 1.1rem; margin: 0 0 1.6rem; }
+/* Two columns, so a value that wraps stays in its own. The label used to be an
+   inline-block with a minimum width and the value followed it in the flow, so on
+   Report 007 the VERDICT line's second row ran back under the label. A fixed
+   track cannot be pushed by its content: the value edge is the same on every
+   row by construction. Asserted by spec 020 AC-19. */
+.tldr-line { display: grid; grid-template-columns: 7.5rem 1fr; gap: 0 0.6rem;
+  margin: 0.3rem 0; font-size: 0.95rem; }
+.tldr-key { color: var(--ink-muted); font-size: 0.8rem;
+  text-transform: uppercase; letter-spacing: 0.06em; padding-top: 0.15rem; }
+.tldr-cite summary { cursor: pointer; color: var(--accent-ink); font-size: 0.9rem; margin-top: 0.5rem; }
+.tldr-cite pre { overflow-x: auto; }
+
+.table-wrap { width: 100%; overflow-x: auto; }
+.subscribe input[type="email"] { font: inherit; padding: 0.5rem 0.7rem; border: 1px solid var(--rule); border-radius: 8px; min-width: 16rem; }
+.subscribe button { font: inherit; padding: 0.55rem 1rem; border-radius: 8px; border: 0; background: var(--accent-ink); color: var(--paper); cursor: pointer; }
+.playground { border: 1px solid var(--rule); border-radius: 12px; padding: 1rem; margin-top: 1.4rem; background: var(--paper-sunk); }
+.playground label { display: block; font-size: 0.9rem; margin: 0.5rem 0; }
+.playground output { font-weight: 700; color: var(--accent-ink); }
+.glossary dt { font-weight: 700; margin-top: 1.1rem; }
+.glossary dd { margin: 0.3rem 0 0; color: var(--ink-muted); }
+.report-type-card { border-top: 1px solid var(--rule); padding: 1.2rem 0; display: grid; gap: 1rem; grid-template-columns: 1fr; }
+@media (min-width: 700px) { .report-type-card { grid-template-columns: 6rem 1fr; } }
+.report-type-card img { width: 5rem; height: auto; }
