@@ -1,0 +1,262 @@
+# SPDX-License-Identifier: Apache-2.0
+# Self-test for the Driftproof composite action. Runs the action against the
+# bundled example skill in STUB mode (DRIFTPROOF_STUB=1), so it exercises the
+# whole path — install, run, receipt, badge, verdict, artifact upload — with
+# ZERO model calls and zero spend. No API key required.
+#
+# Spec 024: before the benign run, this job passes one hostile value through
+# each of the action's five inputs, on this runner, through the real action.yml,
+# and fails unless every one is refused before anything ran. A green run of
+# this workflow is the proof behind the v0.8.1 hardening (spec 023, audit A1
+# and A6). A red run means one of the assertions below failed, and the failing
+# step names which: the "Assert every hostile input was refused" step going red
+# means a hostile input got through; any other step going red is a defect in
+# the action or in this proof, never a hostile input.
+#
+# The action runs to SUCCESS exactly once in this job (the benign run, below).
+# action.yml uploads its receipt under the fixed artifact name driftproof-receipt,
+# and actions/upload-artifact v4 refuses a second upload of a name already on
+# the run, so a second successful run here would turn the job red for a reason
+# that is not a hostile input (spec 024 v1.1, approval F-1). The five hostile
+# runs fail before the upload step is reached.
+name: action-selftest
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stub:
+    runs-on: ubuntu-latest
+    env:
+      DRIFTPROOF_STUB: '1'
+      # ONE hostile value, passed to every input in turn. It carries a double
+      # quote, a semicolon, a command substitution, a backtick and a newline,
+      # and every clause would create a marker file under the runner's temp if
+      # a shell ever parsed it as code. The variable reference is literal text
+      # here; it expands only in that event, which is exactly what the marker
+      # detects. This is the value spec 023's gate used, made runner-relative.
+      HOSTILE: |
+        x"; touch $RUNNER_TEMP/driftproof-injection-semi; $(touch $RUNNER_TEMP/driftproof-injection-subst); `touch $RUNNER_TEMP/driftproof-injection-tick`;
+        touch $RUNNER_TEMP/driftproof-injection-nl; : "
+    steps:
+      # Pinned to the commit the v4 tag resolved to on 2026-09-03 (spec 023, audit A9).
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      # ── spec 024: hostile inputs, on this runner, before anything benign ──
+
+      # The v0.8.0 action pasted an input's text into a script. Do that with the
+      # payload, deliberately, once: four markers must appear, or the marker
+      # mechanism the assertions below rely on is not live on this runner.
+      - name: The payload is live (control)
+        id: control
+        shell: bash
+        run: |
+          set -uo pipefail
+          MARK="$RUNNER_TEMP/driftproof-injection"
+          rm -f "$MARK"-*
+          printf ': "%s"\n' "$HOSTILE" > "$RUNNER_TEMP/interpolated.sh"
+          bash "$RUNNER_TEMP/interpolated.sh" >/dev/null 2>&1 || true
+          n="$(ls "$MARK"-* 2>/dev/null | wc -l | tr -d ' ')"
+          rm -f "$MARK"-* "$RUNNER_TEMP/interpolated.sh"
+          if [ "$n" -ne 4 ]; then
+            echo "::error title=Driftproof selftest::the payload is not live: $n of 4 markers appeared when it was pasted into a script"
+            exit 1
+          fi
+          echo "control: pasted into a script, the payload created 4 markers (semi, subst, tick, nl); removed"
+
+      # Each step below is the real action, with the payload in ONE input and
+      # the others benign. continue-on-error lets the job go on to the assert
+      # step, which is where a pass or a fail is decided.
+      - name: Hostile skill-dir
+        id: hostile-skill-dir
+        continue-on-error: true
+        uses: ./
+        with:
+          skill-dir: ${{ env.HOSTILE }}
+          models: claude-haiku-4-5
+          max-usd: '3.53'
+          max-calls: '1200'
+          fail-on-regression: 'true'
+
+      - name: Hostile models
+        id: hostile-models
+        continue-on-error: true
+        uses: ./
+        with:
+          skill-dir: examples/commit-message-conventions
+          models: ${{ env.HOSTILE }}
+          max-usd: '3.53'
+          max-calls: '1200'
+          fail-on-regression: 'true'
+
+      - name: Hostile max-usd
+        id: hostile-max-usd
+        continue-on-error: true
+        uses: ./
+        with:
+          skill-dir: examples/commit-message-conventions
+          models: claude-haiku-4-5
+          max-usd: ${{ env.HOSTILE }}
+          max-calls: '1200'
+          fail-on-regression: 'true'
+
+      - name: Hostile max-calls
+        id: hostile-max-calls
+        continue-on-error: true
+        uses: ./
+        with:
+          skill-dir: examples/commit-message-conventions
+          models: claude-haiku-4-5
+          max-usd: '3.53'
+          max-calls: ${{ env.HOSTILE }}
+          fail-on-regression: 'true'
+
+      - name: Hostile fail-on-regression
+        id: hostile-fail-on-regression
+        continue-on-error: true
+        uses: ./
+        with:
+          skill-dir: examples/commit-message-conventions
+          models: claude-haiku-4-5
+          max-usd: '3.53'
+          max-calls: '1200'
+          fail-on-regression: ${{ env.HOSTILE }}
+
+      # Outcomes reach the shell through env:, never through an expression in
+      # run: (spec 023). The checks run in this order on purpose: the marker
+      # first, because it is the one that says code ran.
+      - name: Assert every hostile input was refused before anything ran
+        id: assert-refused
+        shell: bash
+        env:
+          O_SKILL_DIR: ${{ steps.hostile-skill-dir.outcome }}
+          O_MODELS: ${{ steps.hostile-models.outcome }}
+          O_MAX_USD: ${{ steps.hostile-max-usd.outcome }}
+          O_MAX_CALLS: ${{ steps.hostile-max-calls.outcome }}
+          O_FAIL_ON_REGRESSION: ${{ steps.hostile-fail-on-regression.outcome }}
+        run: |
+          set -uo pipefail
+          MARK="$RUNNER_TEMP/driftproof-injection"
+          fail() { echo "::error title=Driftproof selftest::$1"; exit 1; }
+          # 1. nothing the payload carries ran
+          if ls "$MARK"-* >/dev/null 2>&1; then
+            fail "injection marker present: $(ls "$MARK"-* | xargs -n1 basename | tr '\n' ' ')"
+          fi
+          # 2. every refusal came before the first thing the script creates
+          [ ! -e "$RUNNER_TEMP/driftproof-receipts" ] || fail "driftproof-receipts exists: a hostile value got past validation"
+          # 3. every hostile step failed
+          for s in "skill-dir:$O_SKILL_DIR" "models:$O_MODELS" "max-usd:$O_MAX_USD" "max-calls:$O_MAX_CALLS" "fail-on-regression:$O_FAIL_ON_REGRESSION"; do
+            [ "${s#*:}" = failure ] || fail "hostile ${s%%:*} step outcome is '${s#*:}', expected failure"
+          done
+          # 4. the refusal names the input. A later step cannot read a composite
+          #    step's log, so the shipped script is executed again here with the
+          #    mapping action.yml declares and the same payload, one input at a time.
+          for pair in INPUT_SKILL_DIR:skill-dir INPUT_MODELS:models INPUT_MAX_USD:max-usd INPUT_MAX_CALLS:max-calls INPUT_FAIL_ON_REGRESSION:fail-on-regression; do
+            var="${pair%%:*}"; name="${pair#*:}"
+            if out="$(env INPUT_SKILL_DIR=examples/commit-message-conventions INPUT_MODELS=claude-haiku-4-5 INPUT_MAX_USD=3.53 INPUT_MAX_CALLS=1200 INPUT_FAIL_ON_REGRESSION=true "$var=$HOSTILE" GITHUB_ACTION_PATH="$GITHUB_WORKSPACE" bash "$GITHUB_WORKSPACE/action/run.sh" 2>&1)"; then
+              fail "$name: run.sh exited 0 with the payload in $var"
+            fi
+            grep -q "^::error title=Driftproof::$name:" <<< "$out" || fail "$name: no ::error naming it; got: $(head -c 200 <<< "$out")"
+          done
+          if ls "$MARK"-* >/dev/null 2>&1; then fail "injection marker present after re-execution"; fi
+          [ ! -e "$RUNNER_TEMP/driftproof-receipts" ] || fail "driftproof-receipts exists after re-execution"
+          echo "hostile value refused in skill-dir, models, max-usd, max-calls, fail-on-regression: no marker, no receipts dir, ::error names each input"
+
+      # Refusing everything would also pass the step above. The same characters
+      # minus the newline are a legal directory name; the action must run on it.
+      # The benign run below IS that run: the directory is a copy of the bundled
+      # example skill, the same 10-case suite byte for byte.
+      - name: A hostile-looking name is data (prepare)
+        id: literal-prep
+        shell: bash
+        run: |
+          set -uo pipefail
+          NAME="${HOSTILE//$'\n'/ }"
+          D="$RUNNER_TEMP/$NAME"
+          mkdir -p "$D"
+          cp -r examples/commit-message-conventions/. "$D/"
+          delim="ghadelim_$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
+          printf 'LITERAL_DIR<<%s\n%s\n%s\n' "$delim" "$D" "$delim" >> "$GITHUB_ENV"
+          echo "literal directory prepared: ${#NAME} characters of hostile-looking name"
+
+      # ── the benign run, on the hostile-looking name ──
+
+      # CAPS ARE PINNED TO THE COMPUTED CEILING, NOT TO THE DEFAULTS (spec 018
+      # AC-1). The bundled 10-case suite projects 1200 calls and $3.525 at
+      # SAMPLING.max draws; $3.53 is the smallest two-decimal budget that clears
+      # it. Running under the generous defaults would test nothing about the
+      # projection — pinned here, this job goes red FIRST if it ever grows again.
+      # The skill-dir is the copy literal-prep made of examples/commit-message-
+      # conventions, so the projection is the example's; this is the one step in
+      # the job that runs the action to success and uploads the receipt.
+      - name: Run the Driftproof action (stub mode)
+        id: driftproof
+        uses: ./
+        with:
+          skill-dir: ${{ env.LITERAL_DIR }}
+          models: claude-haiku-4-5
+          max-usd: '3.53'
+          max-calls: '1200'
+          fail-on-regression: 'true'
+
+      - name: Assert the literal directory ran as data
+        id: assert-literal
+        shell: bash
+        env:
+          O_LITERAL: ${{ steps.driftproof.outcome }}
+          VERDICT: ${{ steps.driftproof.outputs.verdict }}
+        run: |
+          set -uo pipefail
+          fail() { echo "::error title=Driftproof selftest::$1"; exit 1; }
+          [ "$O_LITERAL" = success ] || fail "the benign step's outcome on the literal directory is '$O_LITERAL', expected success"
+          [ "$VERDICT" = PASSED ] || fail "verdict on the literal directory is '$VERDICT', expected PASSED"
+          if ls "$RUNNER_TEMP"/driftproof-injection-* >/dev/null 2>&1; then fail "injection marker present after the literal run"; fi
+          [ -f "$RUNNER_TEMP/driftproof-receipts/badge.json" ] || fail "no badge.json from the literal run"
+          echo "the literal directory ran as data: outcome success, verdict PASSED, badge.json, no marker"
+
+      # Step outputs reach the shell through env:, never through an expression
+      # inside run: (spec 023, the same pattern action.yml uses).
+      - name: Assert outputs
+        id: assert-outputs
+        shell: bash
+        env:
+          VERDICT: ${{ steps.driftproof.outputs.verdict }}
+          DELTA: ${{ steps.driftproof.outputs.delta }}
+        run: |
+          echo "verdict=$VERDICT"
+          echo "delta=$DELTA"
+          test "$VERDICT" = "PASSED"
+
+      # The A6 second site: a receipt's model_id is any string a .driftproofrc
+      # sets, and `driftproof badge --github-output` is a command an adopter
+      # can put in their own workflow. A line break in it must add nothing.
+      # GitHub runs a `shell: bash` step under `bash -eo pipefail`, so the exit
+      # code of a command that is EXPECTED to fail is captured with `|| rc=$?`;
+      # a bare `cmd; rc=$?` would end the step at cmd (spec 024 v1.1).
+      - name: A model id with a line break writes no output entry
+        id: model-id
+        shell: bash
+        run: |
+          set -uo pipefail
+          fail() { echo "::error title=Driftproof selftest::$1"; exit 1; }
+          [ -d node_modules ] || npm ci --omit=dev --no-audit --no-fund >/dev/null
+          D="$RUNNER_TEMP/newline-model-id"; rm -rf "$D"; mkdir -p "$D"
+          cp -r examples/commit-message-conventions/. "$D/"
+          printf '%s\n' '{"models":"claude-haiku-4-5\nverdict=PASSED\ncolor=brightgreen","max_cases":1,"samples":1}' > "$D/.driftproofrc"
+          OUT="$RUNNER_TEMP/newline-model-id-out"; rm -rf "$OUT"
+          node bin/driftproof run "$D" --out "$OUT" >/dev/null 2>&1 || fail "the stub run with the rc did not produce a receipt"
+          RECEIPT="$(ls "$OUT"/*.json | grep -v '\.summary\.' | head -1)"
+          grep -q 'verdict=PASSED' "$RECEIPT" || fail "the receipt's model_id does not carry the injected line"
+          before="$(wc -l < "$GITHUB_OUTPUT")"
+          rc=0; node bin/driftproof badge "$RECEIPT" --github-output >> "$GITHUB_OUTPUT" 2>/dev/null || rc=$?
+          after="$(wc -l < "$GITHUB_OUTPUT")"
+          [ "$after" -eq "$before" ] || fail "GITHUB_OUTPUT gained $((after - before)) line(s) from a model_id with a line break"
+          [ "$rc" -ne 0 ] || fail "badge --github-output exited 0 on a model_id with a line break"
+          ! grep -q '^verdict' "$GITHUB_OUTPUT" || fail "GITHUB_OUTPUT carries a verdict entry the receipt injected"
+          echo "a model id with a line break: badge --github-output refused (exit $rc), GITHUB_OUTPUT unchanged ($after lines)"

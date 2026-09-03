@@ -1,0 +1,642 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://driftproofhq.com/spec/receipt.v0.3.1.schema.json",
+  "title": "driftproof receipt",
+  "description": "FROZEN receipt spec v0.3.1. A signed, dated record of running one agent skill's eval suite with and without the skill on one model version, with sampled judge scores and confidence bands. Receipt spec v0.3.1 — additive over v0.3: adds run.provider (two-axis provider), expands the surface enum with the OpenAI lanes (openai-api, openai-cli), adds an optional run.surface_overhead_note (fixed harness preamble on the openai/cli surface), optional per-case deterministic post-check results, and an optional skill.tokens count for the value-per-token axis. Interop-additive revision: receipts IMPORTED from external tools (surface 'external', run.source 'imported/<tool>', verification_level DECLARED) may carry null content/suite/rubric hashes and omit generation hashes — hashes are never fabricated; the TESTED tightening (see allOf) requires the full evidence chain whenever verification_level is TESTED, so no previously issued receipt is invalidated and TESTED keeps its meaning.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "skill",
+    "suite",
+    "run",
+    "results",
+    "comparison",
+    "verification_level",
+    "receipt_hash"
+  ],
+  "allOf": [
+    {
+      "description": "TESTED tightening — the interop relaxations (null hashes, external surface, null comparison, transcripts 'none') are ONLY available to receipts below TESTED. A TESTED receipt must carry the full evidence chain, exactly as before the interop revision.",
+      "if": {
+        "required": [
+          "verification_level"
+        ],
+        "properties": {
+          "verification_level": {
+            "const": "TESTED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "skill": {
+            "properties": {
+              "content_hash": {
+                "type": "string"
+              }
+            }
+          },
+          "suite": {
+            "properties": {
+              "format": {
+                "const": "agentskills.io/evals"
+              },
+              "suite_hash": {
+                "type": "string"
+              }
+            }
+          },
+          "run": {
+            "properties": {
+              "surface": {
+                "enum": [
+                  "api",
+                  "claude-cli",
+                  "openai-api",
+                  "openai-cli"
+                ]
+              },
+              "transcripts": {
+                "enum": [
+                  "retained-local",
+                  "hashes-only"
+                ]
+              }
+            }
+          },
+          "comparison": {
+            "properties": {
+              "baseline_score": {
+                "type": "number"
+              },
+              "delta": {
+                "type": "number"
+              },
+              "delta_uncertainty": {
+                "type": "number"
+              }
+            }
+          },
+          "results": {
+            "properties": {
+              "cases": {
+                "items": {
+                  "if": {
+                    "not": {
+                      "required": [
+                        "case_status"
+                      ],
+                      "properties": {
+                        "case_status": {
+                          "const": "failed_timeout"
+                        }
+                      }
+                    }
+                  },
+                  "then": {
+                    "required": [
+                      "generation_hash",
+                      "judge_sample_hashes"
+                    ],
+                    "properties": {
+                      "judge": {
+                        "properties": {
+                          "rubric_hash": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "0.3.1"
+    },
+    "skill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "content_hash"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "content_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "sha256 (hex) over SKILL.md + all bundled files in canonical path-sorted order. Null ONLY on an imported (DECLARED) receipt whose skill bytes were never seen; a TESTED receipt must carry the hash (see the TESTED tightening).",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "tokens": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "v0.3.1 (optional). Estimated token size of the skill's SKILL.md (a coarse chars/4 proxy, not a model tokenizer), used for the value-per-token axis (delta per 1k skill tokens). See docs/methodology.html."
+        }
+      }
+    },
+    "suite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "suite_hash",
+        "case_count"
+      ],
+      "properties": {
+        "format": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Suite format. Driftproof-run (TESTED) receipts are always 'agentskills.io/evals' (see the TESTED tightening); an imported receipt names the source tool's format (e.g. 'skillgrade/eval.yaml')."
+        },
+        "suite_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "sha256 (hex) over the canonicalized normalized case list. Null ONLY on an imported (DECLARED) receipt whose suite bytes were never seen.",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "case_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_id",
+        "provider",
+        "surface",
+        "runner_version",
+        "date_utc",
+        "judge",
+        "registry",
+        "transcripts"
+      ],
+      "properties": {
+        "model_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model_release_date": {
+          "description": "ISO date (YYYY-MM-DD) of the model release if known, else null.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "provider": {
+          "type": "string",
+          "description": "v0.3.1. The two-axis provider the target model ran on (registry `provider`, else inferred from the id).",
+          "enum": [
+            "anthropic",
+            "openai"
+          ]
+        },
+        "surface": {
+          "type": "string",
+          "enum": [
+            "api",
+            "claude-cli",
+            "openai-api",
+            "openai-cli",
+            "external"
+          ],
+          "description": "'external' = the run happened on another tool's harness and was imported (never valid on a TESTED receipt)."
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Interop-additive (optional). Provenance of a converted receipt, e.g. 'imported/agent-skills-eval' or 'imported/skillgrade'. Absent on receipts Driftproof ran itself."
+        },
+        "surface_overhead_note": {
+          "type": "string",
+          "description": "v0.3.1 (optional). Present on the openai/cli surface: states the fixed Codex base-instruction preamble (~12–15k input tokens per call) that the harness prepends and does not control."
+        },
+        "status": {
+          "type": "string",
+          "description": "v0.3.1 (optional; default 'complete'). 'incomplete' when >=1 case persistently failed (e.g. failed_timeout) and was EXCLUDED from aggregates. A drift/durability report must not compute a verdict from an incomplete receipt.",
+          "enum": [
+            "complete",
+            "incomplete"
+          ]
+        },
+        "failed_case_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "v0.3.1 (optional). Number of cases marked failed_timeout (excluded from aggregates)."
+        },
+        "runner_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "date_utc": {
+          "type": "string",
+          "description": "ISO 8601 UTC timestamp of when the run finished.",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
+        },
+        "registry": {
+          "type": "string",
+          "description": "Whether model_id resolved in the model registry (config/models.json). 'unregistered' means the run still executed but the model was unknown, so cost estimates used the conservative default price.",
+          "enum": [
+            "registered",
+            "unregistered"
+          ]
+        },
+        "transcripts": {
+          "type": "string",
+          "description": "Transcript retention for this run. 'hashes-only' = only the sha256 hashes in results.cases are kept (the default). 'retained-local' = the raw generations + judge outputs were also written to transcripts/<receipt-id>/ (gitignored by default). 'none' = nothing retained, not even hashes — ONLY honest on an imported (DECLARED) receipt.",
+          "enum": [
+            "retained-local",
+            "hashes-only",
+            "none"
+          ]
+        },
+        "judge": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Judge sampling settings for this run.",
+          "required": [
+            "samples",
+            "temperature",
+            "sampling"
+          ],
+          "properties": {
+            "samples": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Judge samples taken per case."
+            },
+            "temperature": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Judge temperature when the surface allows setting it (api -> 0), else null (cli -> surface-controlled)."
+            },
+            "sampling": {
+              "type": "string",
+              "description": "How sampling params were controlled, e.g. 'api-temperature-0' or 'surface-controlled'."
+            },
+            "surface": {
+              "type": "string",
+              "enum": [
+                "api",
+                "claude-cli",
+                "openai-api",
+                "openai-cli",
+                "external"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "results": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cases",
+        "aggregates"
+      ],
+      "properties": {
+        "cases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "mode"
+            ],
+            "allOf": [
+              {
+                "description": "A completed case carries the full sampled band + hashes; a failed_timeout case is recorded WITHOUT fabricated samples (it is excluded from aggregates).",
+                "if": {
+                  "required": [
+                    "case_status"
+                  ],
+                  "properties": {
+                    "case_status": {
+                      "const": "failed_timeout"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "id",
+                    "mode",
+                    "case_status"
+                  ]
+                },
+                "else": {
+                  "required": [
+                    "outcome",
+                    "score",
+                    "mean",
+                    "stddev",
+                    "samples",
+                    "judge"
+                  ]
+                }
+              }
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "with_skill",
+                  "baseline"
+                ]
+              },
+              "case_status": {
+                "type": "string",
+                "description": "v0.3.1 (optional; default 'ok'). 'failed_timeout' = the case's model/judge call persistently timed out after retries; the case is recorded but EXCLUDED from aggregates/verdicts — no samples/hashes are fabricated for it.",
+                "enum": [
+                  "ok",
+                  "failed_timeout"
+                ]
+              },
+              "outcome": {
+                "type": "string",
+                "description": "borderline = the threshold lies within mean +/- stddev.",
+                "enum": [
+                  "pass",
+                  "fail",
+                  "borderline",
+                  "score"
+                ]
+              },
+              "score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Alias of mean, kept for v0.1 readers."
+              },
+              "mean": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "stddev": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Sample stddev of the judge samples (raw band half-width)."
+              },
+              "samples": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "minItems": 1
+              },
+              "generation_hash": {
+                "type": "string",
+                "description": "sha256 (hex) of the raw model generation that was judged for this (case, mode).",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "judge_sample_hashes": {
+                "type": "array",
+                "description": "sha256 (hex) of each raw judge output, one per judge sample. Same length as `samples`.",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "minItems": 1
+              },
+              "threshold": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0,
+                "maximum": 1
+              },
+              "reason": {
+                "type": "string"
+              },
+              "checks": {
+                "type": "array",
+                "description": "v0.3.1 (optional). Deterministic post-check results for this (case, mode): structural/regex assertions run on the model output ALONGSIDE the judge. Supplementary evidence reported as a separate column — NOT folded into the outcome/band verdict.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "name",
+                    "kind",
+                    "pass"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "regex",
+                        "contains",
+                        "not_contains",
+                        "min_length"
+                      ]
+                    },
+                    "pass": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              },
+              "judge": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "model_id",
+                  "rubric_hash"
+                ],
+                "properties": {
+                  "model_id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "rubric_hash": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Null ONLY on an imported (DECLARED) receipt whose rubric bytes were never seen.",
+                    "pattern": "^[a-f0-9]{64}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "aggregates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "with_skill",
+            "baseline"
+          ],
+          "properties": {
+            "with_skill": {
+              "$ref": "#/$defs/modeAggregate"
+            },
+            "baseline": {
+              "$ref": "#/$defs/modeAggregate"
+            }
+          }
+        }
+      }
+    },
+    "comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "with_skill_score",
+        "baseline_score",
+        "delta",
+        "delta_uncertainty"
+      ],
+      "properties": {
+        "with_skill_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "baseline_score": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Null ONLY on an imported (DECLARED) receipt from a tool with no baseline mode — never a fabricated 0."
+        },
+        "delta": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": -1,
+          "maximum": 1,
+          "description": "Null when baseline_score is null (no baseline mode was run)."
+        },
+        "delta_uncertainty": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Combined uncertainty of the delta (quadrature sum of the two aggregate bands). Null when delta is null."
+        }
+      }
+    },
+    "verification_level": {
+      "type": "string",
+      "description": "Community verification lattice. FORMAL is reserved/unimplemented in v0.3.",
+      "enum": [
+        "UNVERIFIED",
+        "DECLARED",
+        "TESTED"
+      ]
+    },
+    "editorial_reviews": {
+      "type": "array",
+      "description": "Optional pointers to external one-shot editorial reviews of this skill (context only; not verification evidence).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "url",
+          "source",
+          "date"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          }
+        }
+      }
+    },
+    "receipt_hash": {
+      "type": "string",
+      "description": "sha256 (hex) of the canonical receipt JSON with this field omitted.",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "$defs": {
+    "modeAggregate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_count",
+        "pass_count",
+        "mean_score",
+        "stddev"
+      ],
+      "properties": {
+        "case_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pass_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "borderline_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mean_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "stddev": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Suite dispersion: stddev of the per-case means across the suite. A reported summary stat; the drift headline is driven by per-case band-overlap verdicts, not this band."
+        }
+      }
+    }
+  }
+}

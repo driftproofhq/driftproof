@@ -1,0 +1,41 @@
+{
+  "_comment": "Fixture authored from mgechev/skillgrade's documented semantics (README: eval.yaml tasks + graders; N trials per task; per-trial reward = weighted grader scores 0..1; threshold default 0.8; deterministic grader stdout {score, details, checks[]}). The upstream repo does not publish a frozen persisted-results schema, so this fixture IS the converter's compatibility contract — see docs/interop.md. Note skillgrade has NO baseline mode: the import carries an empty baseline aggregate and null comparison.",
+  "skill": "superlint",
+  "agent": "claude",
+  "grader_model": "gemini-3-flash-preview",
+  "threshold": 0.8,
+  "timestamp": "2026-08-05T09:30:00.000Z",
+  "tasks": [
+    {
+      "name": "fix-linting-errors",
+      "trials": [
+        { "reward": 0.91 },
+        { "reward": 0.85 },
+        { "reward": 0.88 },
+        { "reward": 0.93 },
+        { "reward": 0.86 }
+      ]
+    },
+    {
+      "name": "explain-rule-violations",
+      "threshold": 0.7,
+      "trials": [
+        { "reward": 0.72 },
+        { "reward": 0.65 },
+        { "reward": 0.7 },
+        { "reward": 0.74 },
+        { "reward": 0.69 }
+      ]
+    },
+    {
+      "name": "skips-unrelated-files",
+      "trials": [
+        { "reward": 0.55 },
+        { "reward": 0.6 },
+        { "reward": 0.52 },
+        { "reward": 0.58 },
+        { "reward": 0.61 }
+      ]
+    }
+  ]
+}
