@@ -1,0 +1,100 @@
+{
+  "_comment": [
+    "Report 008 run record. THE FACTS OF THE RUN THAT ARE NOT IN THE RECEIPTS.",
+    "A receipt records what was measured. It does not record when the run was",
+    "launched, what was asserted before the first call, which timeout policy the",
+    "surface resolved, or that the operator never had to restart. Report 008's",
+    "page states those as facts, so they are committed here as data rather than",
+    "typed into the generator, and the generator reads this file.",
+    "Every field below is transcribed from run-008-fable51.log, whose sha256 is",
+    "recorded so the transcription is checkable against the artifact it came from.",
+    "The log itself is an operator-home file and is not committed to this repo.",
+    "NOTHING HERE IS A MEASUREMENT. No score, no band, no token count and no",
+    "dollar appears in this file; all of those come from the receipts."
+  ],
+  "report": "008",
+  "type": "release drift",
+  "axis": {
+    "from_model": "claude-fable-5",
+    "to_model": "claude-fable-5-1",
+    "to_model_release_date": "2026-09-01",
+    "held": ["skill content_hash", "suite_hash", "surface", "judge", "judge samples per case"]
+  },
+  "provenance": {
+    "repo": "driftproof-019b (isolated git worktree)",
+    "branch": "spec/019b-fable-5-1-registration",
+    "head_at_launch": "1b7b151",
+    "evidence_commit": "a0aecb0",
+    "log_file": "run-008-fable51.log",
+    "log_sha256": "fad4ddccc076c2713dde26177afb72e75020d524b0f3f54a17b18bca609993f9",
+    "launch_script_sha256": "f2b120c957fa748e175e70ad9ed97f09a550684405b1e4590e2dd83cd9986ef5",
+    "assert_script_sha256": "8baf48db3c55d2ecf58da2c134fb92f2d617d93452003236601cb23e29cebedb"
+  },
+  "timeout_policy": {
+    "timeout_ms": 300000,
+    "resolved_from": "the surface policy for a subscription CLI surface",
+    "source": "lib/provider.js retryPolicyForSurface",
+    "passed_as_flag": false,
+    "note": "Report 007 measured W-1, a declared 300s policy that a numeric literal at the call site had shadowed to 120s since 2026-07-27. This run is the first release-drift run to execute under the policy as declared."
+  },
+  "caps_per_cell": {
+    "max_cases": 7,
+    "max_calls": 840,
+    "max_usd": 11
+  },
+  "pre_launch_assertion": {
+    "ran_before_first_call": true,
+    "exit_code": 0,
+    "at_utc": "2026-09-01T18:45:54Z",
+    "cells": [
+      {
+        "slug": "code-review-and-quality",
+        "baseline_receipt": "receipts/report-007/code-review-and-quality-claude-fable-5-2026-08-31.json",
+        "skill_content_hash": "13d360d7f786de371886e404b1eaa0cd37ecabab90e5c7126d62d42b73a872ea",
+        "suite_hash": "4729eb8fc298bbcf8baadc13f2d2cf1a9e573d0dbad57dfb67adc2f4df271760",
+        "skill_content_hash_match": true,
+        "suite_hash_match": true,
+        "cases": 7
+      },
+      {
+        "slug": "writing-plans",
+        "baseline_receipt": "receipts/report-007-rerun/writing-plans-claude-fable-5-2026-08-31.json",
+        "skill_content_hash": "5325ab3d55d5bacdcecc23df609f03dcfcf2f4bde432f2210bb394a9cdc9e637",
+        "suite_hash": "37cb3c341572cea2b46e273727af6965f43ce94ca776338e06695cd3ff0bc406",
+        "skill_content_hash_match": true,
+        "suite_hash_match": true,
+        "cases": 7
+      }
+    ]
+  },
+  "cells": [
+    {
+      "slug": "code-review-and-quality",
+      "order": 1,
+      "start_utc": "2026-09-01T18:45:54Z",
+      "end_utc": "2026-09-01T20:44:42Z",
+      "exit_code": 0,
+      "calls": 258,
+      "receipt": "receipts/report-008/code-review-and-quality-claude-fable-5-1-2026-09-01.json"
+    },
+    {
+      "slug": "writing-plans",
+      "order": 2,
+      "start_utc": "2026-09-01T20:44:42Z",
+      "end_utc": "2026-09-02T01:14:17Z",
+      "exit_code": 0,
+      "calls": 294,
+      "receipt": "receipts/report-008/writing-plans-claude-fable-5-1-2026-09-02.json"
+    }
+  ],
+  "restart": {
+    "script_present": true,
+    "script": "run-008-fable51-restart.sh",
+    "invoked": false,
+    "note": "A restart path was prepared before launch and never used. Both cells exited 0 on the first attempt."
+  },
+  "baseline_pairing": {
+    "writing_plans_baseline": "receipts/report-007-rerun/",
+    "note": "Cell 2 is paired against Report 007's run-2 receipt, which is the one the launch script asserted its hashes against and the one Report 007 published. receipts/report-007/writing-plans-claude-fable-5-2026-08-31.json also exists, is Report 007's unpublished defect evidence, and was not used or modified."
+  }
+}

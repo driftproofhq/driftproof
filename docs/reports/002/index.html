@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report 002: Substrate durability, claude-sonnet-5, gpt-5.6-sol | Driftproof</title>
+<link rel="stylesheet" href="../../style.css">
+<!-- driftproof:card-tags -->
+<link rel="stylesheet" href="/tokens.css">
+<link rel="canonical" href="https://driftproofhq.com/reports/002/">
+<link rel="alternate" type="application/atom+xml" title="Driftproof reports" href="/feed.xml">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png" sizes="180x180">
+<link rel="icon" href="/icon-512.png" sizes="512x512" type="image/png">
+<meta name="description" content="Substrate durability report. Cross-provider skill durability, not a model ranking.">
+<meta property="og:title" content="Report 002: Substrate durability, claude-sonnet-5, gpt-5.6-sol | Driftproof">
+<meta property="og:description" content="Cross-provider skill durability, not a model ranking.">
+<meta property="og:image" content="https://driftproofhq.com/cards/report-002.84a7d206.png">
+<meta property="og:url" content="https://driftproofhq.com/reports/002/">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Report #002 — does a skill's benefit hold across substrates?",
+  "name": "Report 002: Substrate durability, claude-sonnet-5, gpt-5.6-sol | Driftproof",
+  "description": "Substrate durability report. Cross-provider skill durability, not a model ranking.",
+  "url": "https://driftproofhq.com/reports/002/",
+  "datePublished": "2026-07-31",
+  "publisher": {
+    "@type": "Organization",
+    "name": "Driftproof",
+    "url": "https://driftproofhq.com/"
+  },
+  "license": "https://www.apache.org/licenses/LICENSE-2.0",
+  "hasPart": [
+    {
+      "@type": "Dataset",
+      "name": "code-review-and-quality__claude-sonnet-5.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/code-review-and-quality__claude-sonnet-5.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "code-review-and-quality__gpt-5.6-sol.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/code-review-and-quality__gpt-5.6-sol.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "commit-work__claude-sonnet-5.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/commit-work__claude-sonnet-5.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "commit-work__gpt-5.6-sol.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/commit-work__gpt-5.6-sol.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "crafting-effective-readmes__claude-sonnet-5.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/crafting-effective-readmes__claude-sonnet-5.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "crafting-effective-readmes__gpt-5.6-sol.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/crafting-effective-readmes__gpt-5.6-sol.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "documentation-and-adrs__claude-sonnet-5.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/documentation-and-adrs__claude-sonnet-5.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "documentation-and-adrs__gpt-5.6-sol.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/documentation-and-adrs__gpt-5.6-sol.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "git-workflow-and-versioning__claude-sonnet-5.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/git-workflow-and-versioning__claude-sonnet-5.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "git-workflow-and-versioning__gpt-5.6-sol.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/git-workflow-and-versioning__gpt-5.6-sol.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "naming-analyzer__claude-sonnet-5.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/naming-analyzer__claude-sonnet-5.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "naming-analyzer__gpt-5.6-sol.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/naming-analyzer__gpt-5.6-sol.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "requesting-code-review__claude-sonnet-5.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/requesting-code-review__claude-sonnet-5.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "requesting-code-review__gpt-5.6-sol.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/requesting-code-review__gpt-5.6-sol.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "skill-creator__claude-sonnet-5.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/skill-creator__claude-sonnet-5.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "skill-creator__gpt-5.6-sol.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/skill-creator__gpt-5.6-sol.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "writing-clearly-and-concisely__claude-sonnet-5.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/writing-clearly-and-concisely__claude-sonnet-5.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "writing-clearly-and-concisely__gpt-5.6-sol.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/writing-clearly-and-concisely__gpt-5.6-sol.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "writing-plans__claude-sonnet-5.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/writing-plans__claude-sonnet-5.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "writing-plans__gpt-5.6-sol.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/writing-plans__gpt-5.6-sol.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Driftproof",
+      "item": "https://driftproofhq.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Reports",
+      "item": "https://driftproofhq.com/reports/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Report 002",
+      "item": "https://driftproofhq.com/reports/002/"
+    }
+  ]
+}
+</script>
+<!-- /driftproof:card-tags -->
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "d78764dd442f49cb9bb203bd6302e9b4"}'></script><!-- End Cloudflare Web Analytics -->
+</head>
+<body>
+<!--driftproof:nav--><header class="site">
+<a class="brand" href="/"><img class="brand-mark" src="/favicon.svg" alt="" width="28" height="28"><span>Driftproof</span></a>
+<nav class="site-nav" aria-label="Site">
+<a href="/reports/">Reports</a>
+<a href="/#how-it-works">How it works</a>
+<details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
+<a href="/methodology/">Methodology</a>
+<a href="/neutrality/">Neutrality</a>
+<a href="/interop/">Interop</a>
+<a href="/authoring/">Authoring</a>
+<a href="/judge-policy/">Judge policy</a>
+<a href="/glossary/">Glossary</a>
+<a href="/report-types/">Report types</a>
+</div></details>
+<a href="https://github.com/driftproofhq/driftproof">GitHub</a>
+</nav>
+</header><!--/driftproof:nav-->
+<main class="report">
+  <!--driftproof:tldr--><aside class="tldr" aria-label="Report summary">
+<p class="tldr-line"><span class="tldr-key">Report</span> <span class="tldr-title">Report 002: Substrate durability, claude-sonnet-5, gpt-5.6-sol</span></p>
+<p class="tldr-line"><span class="tldr-key">Type</span> <span class="tldr-type">Substrate durability report</span></p>
+<p class="tldr-line"><span class="tldr-key">What moved</span> <span class="tldr-moved">does a skill's benefit hold across substrates?</span></p>
+<p class="tldr-line"><span class="tldr-key">Models</span> <span class="tldr-models"><code>claude-sonnet-5</code> <code>gpt-5.6-sol</code></span></p>
+<p class="tldr-line"><span class="tldr-key">Headline</span> <span class="tldr-counts">Cross-provider skill durability, not a model ranking.</span></p>
+<p class="tldr-line"><span class="tldr-key">Receipts</span> <span class="tldr-receipts"><a href="https://github.com/driftproofhq/driftproof/tree/main/receipts/report-002/">20 receipts</a></span></p>
+<details class="tldr-cite"><summary>Cite this</summary><pre><code>@techreport{driftproof-002,
+  title  = {Report #002 — does a skill's benefit hold across substrates?},
+  author = {Driftproof},
+  year   = {2026},
+  type   = {Substrate durability report},
+  note   = {claude-sonnet-5, gpt-5.6-sol},
+  url    = {https://driftproofhq.com/reports/002/}
+}</code></pre></details>
+</aside><!--/driftproof:tldr-->
+<h1>Report #002 — does a skill's benefit hold across substrates?</h1>
+  <p class="report-type">Substrate durability report</p>
+  <div class="headline">
+    <p class="big"><strong>Cross-provider skill durability</strong>, not a model ranking.</p>
+    <p>The same 10 suites (Report #001 v1.2 rubrics) and the same fixed judge (<code>claude-haiku-4-5</code>, temp 0, n=5) run on two substrates: <code>claude-sonnet-5</code> and <code>gpt-5.6-sol</code>. The headline per skill is its with/without <strong>lift on each substrate</strong> — the judge-affinity-robust metric — read through the same 0.05 effect floor. Absolute cross-provider scores are context, never a ranking. See the <a href="../../neutrality.html">neutrality policy</a> and <a href="../../methodology.html">methodology</a>.</p>
+  </div>
+
+  <p class="src"><strong>Surfaces (disclosed):</strong> claude-sonnet-5 → <code>claude-cli</code> (subscription) · gpt-5.6-sol → <code>openai-cli</code> (subscription). Both columns run on the vendor’s own first-party subscription CLI (<code>claude -p</code> and <code>codex exec</code>), so the surface <em>type</em> is held constant across substrates — matched, not merely disclosed.</p>
+  <div class="card">
+    <p><strong>Matched first-party vendor CLI surfaces, per-surface overhead disclosed.</strong> The <code>openai-cli</code> (Codex) surface prepends a fixed <strong>~12–15k-token</strong> base-instruction preamble to every call (recorded in each receipt's <code>surface_overhead_note</code>); the <code>claude-cli</code> (<code>claude -p</code>) surface carries a <strong>smaller</strong> first-party harness/system context. Neither is authored by Driftproof. <strong>Absolute cross-substrate scores are not a ranking</strong> — the two columns sit behind different first-party harnesses. The headline metric is the <strong>within-substrate with/without-skill delta</strong> (same baseline, same surface), which cancels the vendor-side constant and isolates the skill. Read the delta down each column; do not read across as a scoreboard. See the <a href="../../neutrality.html">neutrality policy</a>.</p>
+  </div>
+
+  <h2>Per-skill durability</h2>
+  <!--driftproof:tw--><div class="table-wrap"><table class="summary">
+    <thead><tr>
+      <th>skill</th>
+      <th>claude-sonnet-5 — with_skill (Δ lift)</th>
+      <th>gpt-5.6-sol — with_skill (Δ lift)</th>
+      <th>Δ / 1k skill-tok (C / G)</th>
+      <th>post-checks (C · G)</th>
+      <th>durability</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td><code>code-review-and-quality</code></td>
+        <td>0.825 ± 0.083 <span class="muted">Δ -0.002</span></td>
+        <td>0.867 ± 0.029 <span class="muted">Δ +0.073</span></td>
+        <td>-0.000 / +0.014</td>
+        <td>— · —</td>
+        <td><span class="v v-mixed">SUBSTRATE-DEPENDENT</span></td>
+      </tr>
+      <tr>
+        <td><code>git-workflow-and-versioning</code></td>
+        <td>0.839 ± 0.085 <span class="muted">Δ -0.031</span></td>
+        <td>0.809 ± 0.128 <span class="muted">Δ +0.001</span></td>
+        <td>-0.009 / +0.000</td>
+        <td>— · —</td>
+        <td><span class="v v-regressed">REGRESSES on Claude</span></td>
+      </tr>
+      <tr>
+        <td><code>documentation-and-adrs</code></td>
+        <td>0.739 ± 0.301 <span class="muted">Δ +0.027</span></td>
+        <td>0.817 ± 0.100 <span class="muted">Δ +0.021</span></td>
+        <td>+0.011 / +0.009</td>
+        <td>— · —</td>
+        <td><span class="v v-mixed">SUBSTRATE-DEPENDENT</span> <span class="muted" title="rests on a zero-width judge point-band">†&nbsp;low-res</span></td>
+      </tr>
+      <tr>
+        <td><code>commit-work</code></td>
+        <td>0.867 ± 0.012 <span class="muted">Δ +0.004</span></td>
+        <td>0.831 ± 0.061 <span class="muted">Δ +0.057</span></td>
+        <td>+0.007 / +0.092</td>
+        <td>5/5 · 5/5</td>
+        <td><span class="v v-mixed">SUBSTRATE-DEPENDENT</span></td>
+      </tr>
+      <tr>
+        <td><code>writing-clearly-and-concisely</code></td>
+        <td>0.850 ± 0.056 <span class="muted">Δ -0.003</span></td>
+        <td>0.853 ± 0.060 <span class="muted">Δ +0.025</span></td>
+        <td>-0.003 / +0.026</td>
+        <td>— · —</td>
+        <td><span class="v v-noise">NO EFFECT</span></td>
+      </tr>
+      <tr>
+        <td><code>crafting-effective-readmes</code></td>
+        <td>0.789 ± 0.235 <span class="muted">Δ -0.085</span></td>
+        <td>0.849 ± 0.028 <span class="muted">Δ -0.014</span></td>
+        <td>-0.127 / -0.021</td>
+        <td>— · —</td>
+        <td><span class="v v-regressed">REGRESSES on Claude &amp; GPT</span> <span class="muted" title="rests on a zero-width judge point-band">†&nbsp;low-res</span></td>
+      </tr>
+      <tr>
+        <td><code>naming-analyzer</code></td>
+        <td>0.833 ± 0.084 <span class="muted">Δ +0.119</span></td>
+        <td>0.845 ± 0.034 <span class="muted">Δ +0.088</span></td>
+        <td>+0.052 / +0.038</td>
+        <td>— · —</td>
+        <td><span class="v v-improved">DURABLE</span> <span class="muted" title="rests on a zero-width judge point-band">†&nbsp;low-res</span></td>
+      </tr>
+      <tr>
+        <td><code>requesting-code-review</code></td>
+        <td>0.736 ± 0.202 <span class="muted">Δ +0.119</span></td>
+        <td>0.801 ± 0.059 <span class="muted">Δ +0.037</span></td>
+        <td>+0.162 / +0.050</td>
+        <td>— · —</td>
+        <td><span class="v v-improved">DURABLE</span> <span class="muted" title="rests on a zero-width judge point-band">†&nbsp;low-res</span></td>
+      </tr>
+      <tr>
+        <td><code>writing-plans</code></td>
+        <td>0.759 ± 0.186 <span class="muted">Δ +0.104</span></td>
+        <td>0.805 ± 0.084 <span class="muted">Δ +0.161</span></td>
+        <td>+0.061 / +0.093</td>
+        <td>— · —</td>
+        <td><span class="v v-improved">DURABLE</span> <span class="muted" title="rests on a zero-width judge point-band">†&nbsp;low-res</span></td>
+      </tr>
+      <tr>
+        <td><code>skill-creator</code></td>
+        <td>0.876 ± 0.014 <span class="muted">Δ +0.059</span></td>
+        <td>0.815 ± 0.113 <span class="muted">Δ -0.030</span></td>
+        <td>+0.007 / -0.004</td>
+        <td>— · —</td>
+        <td><span class="v v-mixed">SUBSTRATE-DEPENDENT</span></td>
+      </tr>
+    </tbody>
+  </table></div><!--/driftproof:tw-->
+  <p class="muted">Columns: each substrate's with-skill band (mean ± stddev over 5 judge samples) and its lift Δ vs baseline (shown as <em>context</em>); the <strong>value-per-token</strong> lift (Δ per 1,000 SKILL.md tokens) for Claude / GPT; the supplementary <strong>deterministic post-checks</strong> passed/total (Claude · GPT), reported alongside the judge and never folded into the verdict; and the cross-substrate <strong>durability</strong> verdict. The verdict does <strong>not</strong> rest on the aggregate Δ: following Report&nbsp;#001's anti-cry-wolf discipline, a skill is called improved/regressed on a substrate only when a <em>per-case</em> with_skill vs baseline band separation (non-overlapping bands, n=5) clears the 0.05 floor — a wide aggregate band from one outlier case never manufactures a verdict, and a real per-case effect hidden under a flat aggregate mean is not missed. A <span class="muted">†&nbsp;low-res</span> mark means a driving case rests on a zero-width judge point band. Every number is re-derived from the receipts under <code>receipts/report-002/</code>.</p>
+  <p class="muted"><strong>Post-checks footnote.</strong> Deterministic post-checks are authored only where a mechanical assertion is groundable in the skill's SKILL.md text (currently <code>commit-work</code>). A <strong>—</strong> in the post-checks column means <em>no checks are defined</em> for that skill, <em>not</em> that checks failed.</p>
+  <div class="card"><strong>How the durability label is composed.</strong> Each substrate first gets a per-case direction from the drivers below: <strong>helps</strong> (≥1 improved case, none regressed), <strong>regresses</strong> (≥1 regressed, none improved), <strong>mixed</strong> (both improved and regressed cases), or <strong>flat</strong> (no case separates beyond the floor). The two substrate directions then compose, in this precedence:
+    <ul>
+      <li><strong>REGRESSES on X</strong> — a substrate that <em>purely regresses</em> (regressed cases, none improved). This outranks everything: a clean regression on any one side is named even when the other side helps or is mixed. <em>Example:</em> <code>git-workflow-and-versioning</code> purely regresses on Claude (<code>commit-message-conventional-type</code>, none improved) while GPT is mixed (1 regressed, 2 improved) → <strong>REGRESSES on Claude</strong>. A pure regression is the actionable risk, so it takes the label over the other side's mixed result. If <em>both</em> substrates purely regress, both are named (e.g. <code>crafting-effective-readmes</code> → REGRESSES on Claude &amp; GPT).</li>
+      <li><strong>DURABLE</strong> — both substrates help, neither regresses.</li>
+      <li><strong>NO EFFECT</strong> — both substrates flat (no case separated beyond the floor).</li>
+      <li><strong>SUBSTRATE-DEPENDENT</strong> — anything else: helps on one substrate and flat on the other, or a mixed substrate with no pure-regression side. The benefit does not hold uniformly.</li>
+    </ul>
+  </div>
+  <details class="card"><summary><strong>Verdict basis — the per-case band-separated drivers behind each label.</strong> A case drives a verdict only when its with_skill and baseline bands (mean ± stddev, n=5) do not overlap AND the mean moves ≥ 0.05. Cases marked <strong>†point-band</strong> rest on a zero-width band (all 5 judge samples identical) — see the low-resolution note.</summary><ul><li><code>code-review-and-quality</code> on <code>gpt-5.6-sol</code>: 🔼 <code>severity-labeled-findings</code> (Δ+0.396), 🔼 <code>oversized-change-split</code> (Δ+0.070)</li><li><code>git-workflow-and-versioning</code> on <code>claude-sonnet-5</code>: 🔻 <code>commit-message-conventional-type</code> (Δ-0.214)</li><li><code>git-workflow-and-versioning</code> on <code>gpt-5.6-sol</code>: 🔻 <code>split-into-atomic-commits</code> (Δ-0.338), 🔼 <code>changelog-curated-by-impact</code> (Δ+0.238), 🔼 <code>semver-hidden-breaking-change</code> (Δ+0.062)</li><li><code>documentation-and-adrs</code> on <code>claude-sonnet-5</code>: 🔼 <code>document-public-api-function</code> (Δ+0.200) <strong>†point-band</strong></li><li><code>commit-work</code> on <code>gpt-5.6-sol</code>: 🔼 <code>conventional-commit-single-change</code> (Δ+0.376), 🔻 <code>full-workflow-multi-concern-diff</code> (Δ-0.056)</li><li><code>crafting-effective-readmes</code> on <code>claude-sonnet-5</code>: 🔻 <code>lead-with-one-sentence-problem</code> (Δ-0.596)</li><li><code>crafting-effective-readmes</code> on <code>gpt-5.6-sol</code>: 🔻 <code>categorize-task-before-writing</code> (Δ-0.070) <strong>†point-band</strong></li><li><code>naming-analyzer</code> on <code>claude-sonnet-5</code>: 🔼 <code>boolean-prefixes-js</code> (Δ+0.164), 🔼 <code>abbreviations-wellknown-js</code> (Δ+0.310), 🔼 <code>language-casing-python</code> (Δ+0.284) <strong>†point-band</strong></li><li><code>naming-analyzer</code> on <code>gpt-5.6-sol</code>: 🔼 <code>boolean-prefixes-js</code> (Δ+0.114), 🔼 <code>abbreviations-wellknown-js</code> (Δ+0.208), 🔼 <code>language-casing-python</code> (Δ+0.264) <strong>†point-band</strong></li><li><code>requesting-code-review</code> on <code>claude-sonnet-5</code>: 🔼 <code>triage-review-findings</code> (Δ+0.146), 🔼 <code>resist-simple-self-review</code> (Δ+0.124), 🔼 <code>full-handoff-before-merge</code> (Δ+0.404) <strong>†point-band</strong></li><li><code>requesting-code-review</code> on <code>gpt-5.6-sol</code>: 🔼 <code>resist-simple-self-review</code> (Δ+0.154)</li><li><code>writing-plans</code> on <code>claude-sonnet-5</code>: 🔼 <code>bite-sized-tdd-steps</code> (Δ+0.270), 🔼 <code>full-small-plan-header-and-tasks</code> (Δ+0.336)</li><li><code>writing-plans</code> on <code>gpt-5.6-sol</code>: 🔼 <code>bite-sized-tdd-steps</code> (Δ+0.292) <strong>†point-band</strong>, 🔼 <code>task-right-sizing-testable-deliverable</code> (Δ+0.330), 🔼 <code>full-small-plan-header-and-tasks</code> (Δ+0.514)</li><li><code>skill-creator</code> on <code>claude-sonnet-5</code>: 🔼 <code>write-triggering-description</code> (Δ+0.210), 🔼 <code>critique-and-fix-skillmd</code> (Δ+0.214)</li><li><code>skill-creator</code> on <code>gpt-5.6-sol</code>: 🔼 <code>write-triggering-description</code> (Δ+0.124), 🔻 <code>draft-full-skillmd</code> (Δ-0.288)</li></ul></details>
+  <div class="card"><strong>Low-resolution: judge quantization (5).</strong> These verdicts are supported — in whole or in part — by a case whose with_skill or baseline band is <em>zero-width</em>: all 5 judge samples returned the identical score. The judge grades on a coarse quantization grid, so a zero-width band is a clean grid-step effect the floor still gates, but one whose finer structure the judge cannot resolve. The verdict stands; its confidence is grid-limited: <code>documentation-and-adrs</code> → SUBSTRATE-DEPENDENT on claude-sonnet-5 (<code>document-public-api-function</code>); <code>crafting-effective-readmes</code> → REGRESSES on Claude & GPT on gpt-5.6-sol (<code>categorize-task-before-writing</code>); <code>naming-analyzer</code> → DURABLE on claude-sonnet-5 (<code>language-casing-python</code>), gpt-5.6-sol (<code>language-casing-python</code>); <code>requesting-code-review</code> → DURABLE on claude-sonnet-5 (<code>full-handoff-before-merge</code>); <code>writing-plans</code> → DURABLE on gpt-5.6-sol (<code>bite-sized-tdd-steps</code>).</div>
+  
+
+  <h2>Run record</h2>
+  <div class="card">
+    <p>The run completed <strong>2026-07-31</strong>, executed in resumed segments (checkpoint/resume: completed pairs are skipped on re-run). <strong>All 20 (skill × substrate) receipts are complete</strong> — 10 skills × 2 substrates, with/without × n=5, judged by <code>claude-haiku-4-5</code>. Surfaces are as disclosed above: both columns ran on the vendors' own subscription CLIs, so <strong>metered spend was $0</strong>; the estimated metered-equivalent is <strong>~$10.71</strong>, under the $40 report guard. One case required an extended <strong>600&nbsp;s</strong> timeout to complete (recorded in its receipt). Receipts are under <code>receipts/report-002/</code>.</p>
+  </div>
+  <h2>Receipts</h2>
+  <details class="card"><summary><strong>All 20 receipts for this report, each one resolvable.</strong> Every number on this page re-derives from these files. They are the evidence, not a description of it — open any one and check it against the table above.</summary>
+    <ul>
+      <li><code>code-review-and-quality</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/code-review-and-quality__claude-sonnet-5.json">claude-sonnet-5</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/code-review-and-quality__gpt-5.6-sol.json">gpt-5.6-sol</a></li>
+      <li><code>commit-work</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/commit-work__claude-sonnet-5.json">claude-sonnet-5</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/commit-work__gpt-5.6-sol.json">gpt-5.6-sol</a></li>
+      <li><code>crafting-effective-readmes</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/crafting-effective-readmes__claude-sonnet-5.json">claude-sonnet-5</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/crafting-effective-readmes__gpt-5.6-sol.json">gpt-5.6-sol</a></li>
+      <li><code>documentation-and-adrs</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/documentation-and-adrs__claude-sonnet-5.json">claude-sonnet-5</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/documentation-and-adrs__gpt-5.6-sol.json">gpt-5.6-sol</a></li>
+      <li><code>git-workflow-and-versioning</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/git-workflow-and-versioning__claude-sonnet-5.json">claude-sonnet-5</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/git-workflow-and-versioning__gpt-5.6-sol.json">gpt-5.6-sol</a></li>
+      <li><code>naming-analyzer</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/naming-analyzer__claude-sonnet-5.json">claude-sonnet-5</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/naming-analyzer__gpt-5.6-sol.json">gpt-5.6-sol</a></li>
+      <li><code>requesting-code-review</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/requesting-code-review__claude-sonnet-5.json">claude-sonnet-5</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/requesting-code-review__gpt-5.6-sol.json">gpt-5.6-sol</a></li>
+      <li><code>skill-creator</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/skill-creator__claude-sonnet-5.json">claude-sonnet-5</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/skill-creator__gpt-5.6-sol.json">gpt-5.6-sol</a></li>
+      <li><code>writing-clearly-and-concisely</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/writing-clearly-and-concisely__claude-sonnet-5.json">claude-sonnet-5</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/writing-clearly-and-concisely__gpt-5.6-sol.json">gpt-5.6-sol</a></li>
+      <li><code>writing-plans</code> — <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/writing-plans__claude-sonnet-5.json">claude-sonnet-5</a> · <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-002/writing-plans__gpt-5.6-sol.json">gpt-5.6-sol</a></li>
+    </ul>
+    <p class="muted">Directory: <a href="https://github.com/driftproofhq/driftproof/tree/main/receipts/report-002"><code>receipts/report-002/</code></a>. Validate any of them with <code>npx driftproof validate &lt;file&gt;</code>.</p>
+  </details>
+  <footer class="site"><span>Driftproof · Apache-2.0</span><span>Report #002</span></footer>
+</main>
+<!--driftproof:foot--><footer class="site">
+<p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
+<p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+</footer><!--/driftproof:foot-->
+<!--driftproof:scripts--><script src="/copy-button.js" defer></script>
+<script type="module" src="/islands/loader.js"></script><!--/driftproof:scripts-->
+</body>
+</html>
