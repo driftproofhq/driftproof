@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report 008: Release drift, claude-fable-5-1 | Driftproof</title>
+
+<link rel="stylesheet" href="../../style.css">
+<!-- driftproof:card-tags -->
+<link rel="stylesheet" href="/tokens.css">
+<link rel="canonical" href="https://driftproofhq.com/reports/008/">
+<link rel="alternate" type="application/atom+xml" title="Driftproof reports" href="/feed.xml">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png" sizes="180x180">
+<link rel="icon" href="/icon-512.png" sizes="512x512" type="image/png">
+<meta name="description" content="Release drift report. Two cells re-measured on claude-fable-5-1 against claude-fable-5, with the skill text and the suite asserted byte-identical before…">
+<meta property="og:title" content="Report 008: Release drift, claude-fable-5-1 | Driftproof">
+<meta property="og:description" content="Both cells came back WITHIN NOISE. Not one of the fourteen cases moved beyond its confidence band when the same skill text, over the same suite, on the same surface, was measured on claude-fable-5-1…">
+<meta property="og:image" content="https://driftproofhq.com/cards/report-008.bc0dc0d6.png">
+<meta property="og:url" content="https://driftproofhq.com/reports/008/">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Report 008: the skill stabilises the floor, not the ceiling",
+  "name": "Report 008: Release drift, claude-fable-5-1 | Driftproof",
+  "description": "Release drift report. Two cells re-measured on claude-fable-5-1 against claude-fable-5, with the skill text and the suite asserted byte-identical before…",
+  "url": "https://driftproofhq.com/reports/008/",
+  "datePublished": "2026-09-02",
+  "publisher": {
+    "@type": "Organization",
+    "name": "Driftproof",
+    "url": "https://driftproofhq.com/"
+  },
+  "license": "https://www.apache.org/licenses/LICENSE-2.0",
+  "hasPart": [
+    {
+      "@type": "Dataset",
+      "name": "code-review-and-quality-claude-fable-5-1-2026-09-01.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-008/code-review-and-quality-claude-fable-5-1-2026-09-01.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "writing-plans-claude-fable-5-1-2026-09-02.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-008/writing-plans-claude-fable-5-1-2026-09-02.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "code-review-and-quality-claude-fable-5-2026-08-31.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-007/code-review-and-quality-claude-fable-5-2026-08-31.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "writing-plans-claude-fable-5-2026-08-31.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-007-rerun/writing-plans-claude-fable-5-2026-08-31.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+      "@type": "Dataset",
+      "name": "writing-plans-claude-fable-5-2026-08-31.json",
+      "description": "A hash-verified Driftproof receipt.",
+      "encodingFormat": "application/json",
+      "contentUrl": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-007/writing-plans-claude-fable-5-2026-08-31.json",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Driftproof",
+      "item": "https://driftproofhq.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Reports",
+      "item": "https://driftproofhq.com/reports/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Report 008",
+      "item": "https://driftproofhq.com/reports/008/"
+    }
+  ]
+}
+</script>
+<!-- /driftproof:card-tags -->
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "d78764dd442f49cb9bb203bd6302e9b4"}'></script><!-- End Cloudflare Web Analytics -->
+</head>
+<body>
+<!--driftproof:nav--><header class="site">
+<a class="brand" href="/"><img class="brand-mark" src="/favicon.svg" alt="" width="28" height="28"><span>Driftproof</span></a>
+<nav class="site-nav" aria-label="Site">
+<a href="/reports/">Reports</a>
+<a href="/#how-it-works">How it works</a>
+<details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
+<a href="/methodology/">Methodology</a>
+<a href="/neutrality/">Neutrality</a>
+<a href="/interop/">Interop</a>
+<a href="/authoring/">Authoring</a>
+<a href="/judge-policy/">Judge policy</a>
+<a href="/glossary/">Glossary</a>
+<a href="/report-types/">Report types</a>
+</div></details>
+<a href="https://github.com/driftproofhq/driftproof">GitHub</a>
+</nav>
+</header><!--/driftproof:nav-->
+<main class="report">
+  <!--driftproof:tldr--><aside class="tldr" aria-label="Report summary">
+<p class="tldr-line"><span class="tldr-key">Report</span> <span class="tldr-title">Report 008: Release drift, claude-fable-5-1</span></p>
+<p class="tldr-line"><span class="tldr-key">Type</span> <span class="tldr-type">Release drift report</span></p>
+<p class="tldr-line"><span class="tldr-key">What moved</span> <span class="tldr-moved">the skill stabilises the floor, not the ceiling</span></p>
+<p class="tldr-line"><span class="tldr-key">Models</span> <span class="tldr-models"><code>claude-fable-5-1</code></span></p>
+<p class="tldr-line"><span class="tldr-key">Headline</span> <span class="tldr-counts">Both cells came back WITHIN NOISE.</span></p>
+<p class="tldr-line"><span class="tldr-key">Verdict</span> <span class="tldr-verdict">HOLDS ACROSS THE RELEASE, ON A PAIR WHERE THE MODEL IS THE ONLY THING THAT MOVED</span></p>
+<p class="tldr-line"><span class="tldr-key">Receipts</span> <span class="tldr-receipts"><a href="https://github.com/driftproofhq/driftproof/tree/main/receipts/report-008/">5 receipts</a></span></p>
+<details class="tldr-cite"><summary>Cite this</summary><pre><code>@techreport{driftproof-008,
+  title  = {Report 008: the skill stabilises the floor, not the ceiling},
+  author = {Driftproof},
+  year   = {2026},
+  type   = {Release drift report},
+  note   = {claude-fable-5-1},
+  url    = {https://driftproofhq.com/reports/008/}
+}</code></pre></details>
+</aside><!--/driftproof:tldr-->
+<h1>Report 008: the skill stabilises the floor, not the ceiling</h1>
+  <p class="report-type">Release drift report<span class="muted">. Two cells re-measured on <code>claude-fable-5-1</code> against <code>claude-fable-5</code>, with the skill text and the suite asserted byte-identical before launch. The first release pair in this project where both sides are generation-sampled receipts, which is what makes the delta attributable to the model.</span></p>
+  <div class="headline">
+    <p class="big"><strong>Both cells came back WITHIN NOISE.</strong> Not one of the fourteen cases moved beyond its confidence band when the same skill text, over the same suite, on the same surface, was measured on <code>claude-fable-5-1</code> instead of <code>claude-fable-5</code>. Per-case regressions, improvements and within-noise counts are <strong>0/0/7 and 0/0/7</strong>. <strong>The skill holds up on the new model.</strong></p>
+    <p class="muted"><strong><code>code-review-and-quality</code>@<code>claude-fable-5-1</code></strong>: WITHIN NOISE — no case moved beyond its confidence band; the skill holds up.<br>with_skill mean moved -0.020 (0.885 ± 0.017 → 0.865 ± 0.036; band = suite dispersion). Per-case band-overlap verdicts: 0 regression(s), 0 improvement(s), 7 within noise.</p>
+    <p class="muted"><strong><code>writing-plans</code>@<code>claude-fable-5-1</code></strong>: WITHIN NOISE — no case moved beyond its confidence band; the skill holds up.<br>with_skill mean moved +0.011 (0.833 ± 0.074 → 0.844 ± 0.048; band = suite dispersion). Per-case band-overlap verdicts: 0 regression(s), 0 improvement(s), 7 within noise (1 of them band-separated but below the 0.05 effect floor).</p>
+    <p class="muted">Both lines above are <code>driftproof diff</code>'s own output, quoted out of the markdown it emits rather than restated here. Neither invocation passed a flag that relaxes epistemics, both exited 0, and neither cell produced a refusal: the cross-version comparability refusal did not fire because the receipts are the same schema version, and the below-TESTED refusal did not fire because all four receipts are TESTED.</p>
+  </div>
+
+  <h2>Verdict</h2>
+  <div class="card">
+    <p class="verdict"><strong>HOLDS ACROSS THE RELEASE, ON A PAIR WHERE THE MODEL IS THE ONLY THING THAT MOVED.</strong></p>
+    <p><strong>What that does and does not say.</strong> It says the two skills' measured behaviour on <code>claude-fable-5-1</code> is indistinguishable, by this instrument, from their behaviour on <code>claude-fable-5</code>, and that the attribution is clean: skill <code>content_hash</code> and <code>suite_hash</code> were asserted identical against the Report 007 baselines before the first call, and surface, judge and judge samples per case are held on both sides of both pairs. It does not say the skills got better, it does not say they got worse, and it does not say nothing changed underneath. A within-noise verdict is a statement about what this instrument can resolve at this sample size, which is 92 generation draws across 28 arms.</p>
+    <p><strong>Where the verdict is closest to its own edge.</strong> Exactly one case in the run is held inside the verdict by the effect floor rather than by band overlap: <code>writing-plans</code>@<code>claude-fable-5-1</code>'s <code>file-structure-by-responsibility</code>, whose bands ARE separated (0.831 ± 0.006 <span class="muted">(generation)</span> against 0.853 ± 0.013 <span class="muted">(generation)</span>) and whose move of +0.023 is below the 0.05 floor. It is named here rather than left in a table, because it is the one row where a reader who set a lower floor would read a different verdict. Every other case in the run fails the separation test outright, so the verdict does not rest on the floor.</p>
+  </div>
+
+  <h2>The finding: Report 007's thesis, recurring on a second model pair</h2>
+  <div class="card">
+    <p><a href="../007/index.html">Report 007</a> found that across three cells the arm that would not sit still was the <strong>baseline</strong>, and that what the skill did was stabilise the floor rather than raise the ceiling. That report moved the instrument and held the substrate. This one moves the substrate and holds the instrument, and the same shape comes back.</p>
+
+    <p><strong>The headline case of <code>code-review-and-quality</code>@<code>claude-fable-5-1</code> went pass to borderline, and the reason is not the skill.</strong> <code>severity-labeled-findings</code> carries <strong>96.2%</strong> of that cell's entire lift: its +0.488 against a sum of +0.507 across all 7 cases, with the remaining six summing to +0.019. Take it out and the cell's lift is +0.003, indistinguishable from zero and far below the 0.05 floor. On the release axis that one case moved like this:</p>
+    <!--driftproof:tw--><div class="table-wrap"><table class="summary">
+      <thead><tr><th>arm</th><th>on <code>claude-fable-5</code></th><th>on <code>claude-fable-5-1</code></th><th>Δ</th></tr></thead>
+      <tbody>
+        <tr><td><strong>baseline</strong></td><td>0.585 ± 0.071 <span class="muted">(generation)</span></td><td>0.308 ± 0.019 <span class="muted">(generation)</span></td><td><strong>-0.277</strong></td></tr>
+        <tr><td>with_skill</td><td>0.917 ± 0.026 <span class="muted">(generation)</span></td><td>0.796 ± 0.147 <span class="muted">(generation)</span></td><td>-0.121</td></tr>
+      </tbody>
+    </table></div><!--/driftproof:tw-->
+    <p>The baseline arm fell 0.585 to 0.308. The with_skill arm held, moving -0.121 and staying inside its own band. The cell's lift on this case therefore <em>grew</em>, +0.332 to +0.488, and almost all of that growth is the unskilled arm getting worse rather than the skilled arm getting better. <strong>A report that quoted the lift without this sentence would credit the skill with something the model did to the arm that does not have it.</strong></p>
+
+    <p><strong>The stability moved the other way, and that is the cost of the same fact.</strong> The with_skill band on that case widened from ± 0.026 to ± 0.147, a factor of <strong>5.7</strong>, which is what took its outcome label from pass to borderline and what makes the release-axis verdict on it read within noise despite a move of -0.121. The receipt says where the width came from: the arm drew a fourth generation with <code>stopping_reason: "stabilised"</code>, and one of the four scored far below the others. A one-case pillar that has become unstable is a fragility this page discloses whatever the aggregate verdict says.</p>
+
+    <p><strong>The same pattern carries <code>writing-plans</code>@<code>claude-fable-5-1</code>, with two pillars instead of one.</strong> The 2 cases whose baseline arm outright fails carry <strong>88.6%</strong> of that cell's lift: <code>full-small-plan-header-and-tasks</code> at +0.480 (baseline 0.415) and <code>task-right-sizing-testable-deliverable</code> at +0.302 (baseline 0.449). The other 5 cases sum to +0.101. In both cells, on both models, the lift is not spread across the suite: it is a handful of cases where the unskilled arm fails and the skilled arm does not.</p>
+
+    <p><strong>Which arm actually moved between the two models.</strong> The differ compares the <code>with_skill</code> arm only, so baseline drift is invisible in its output. Computed here over the same receipts, the largest movements in the run are baseline movements:</p>
+    <!--driftproof:tw--><div class="table-wrap"><table class="summary">
+      <caption class="muted">The five cases whose baseline arm moved most between the two models, with the same case's with_skill movement beside it. Bands carry their source.</caption>
+      <thead><tr><th>cell</th><th>case</th><th>baseline, <code>claude-fable-5</code> to <code>claude-fable-5-1</code></th><th>Δ baseline</th><th>Δ with_skill</th></tr></thead>
+      <tbody>
+        <tr><td><code>code-review-and-quality</code>@<code>claude-fable-5-1</code></td><td><code>severity-labeled-findings</code></td><td>0.585 ± 0.071 <span class="muted">(generation)</span> to 0.308 ± 0.019 <span class="muted">(generation)</span></td><td><strong>-0.277</strong></td><td>-0.121</td></tr>
+        <tr><td><code>writing-plans</code>@<code>claude-fable-5-1</code></td><td><code>task-right-sizing-testable-deliverable</code></td><td>0.637 ± 0.133 <span class="muted">(generation)</span> to 0.449 ± 0.092 <span class="muted">(generation)</span></td><td><strong>-0.187</strong></td><td>+0.076</td></tr>
+        <tr><td><code>writing-plans</code>@<code>claude-fable-5-1</code></td><td><code>bite-sized-tdd-steps</code></td><td>0.752 ± 0.155 <span class="muted">(generation)</span> to 0.860 ± 0.021 <span class="muted">(generation)</span></td><td><strong>+0.108</strong></td><td>+0.017</td></tr>
+        <tr><td><code>writing-plans</code>@<code>claude-fable-5-1</code></td><td><code>interfaces-exact-signatures</code></td><td>0.725 ± 0.144 <span class="muted">(generation)</span> to 0.796 ± 0.054 <span class="muted">(generation)</span></td><td><strong>+0.072</strong></td><td>-0.006</td></tr>
+        <tr><td><code>writing-plans</code>@<code>claude-fable-5-1</code></td><td><code>repair-placeholder-steps</code></td><td>0.740 ± 0.094 <span class="muted">(generation)</span> to 0.790 ± 0.033 <span class="muted">(generation)</span></td><td><strong>+0.050</strong></td><td>-0.029</td></tr>
+      </tbody>
+    </table></div><!--/driftproof:tw-->
+    <p>Across all 14 cases the widest baseline movement is 0.277 and the widest with_skill movement is 0.121. <strong>The floor moved further than the ceiling did, on a release the skill text did not know about.</strong> That is Report 007's finding, reproduced on a substrate change rather than an instrument change, and it is the reason this report presents the aggregate lift with its per-case table attached rather than on its own.</p>
+
+    <p class="muted">One honest caution about the sentence above. The baseline arm is where a model's own default behaviour shows through, so it is the arm most exposed to a release, and finding the larger movement there is not by itself surprising. What the two reports together support is narrower than a law: on five cells across two model pairs, the arm with the skill text moved less than the arm without it, and the skill's measured value came from the cases where the unskilled arm failed. Five cells is five cells.</p>
+  </div>
+
+  <h2>The measurement, per cell</h2>
+  <h3><code>code-review-and-quality</code>@<code>claude-fable-5-1</code></h3>
+  <p class="muted">Release axis, <code>with_skill</code> on <code>claude-fable-5</code> against <code>with_skill</code> on <code>claude-fable-5-1</code>. This is the comparison the verdict rests on. Skill <code>content_hash</code> <code>13d360d7f786</code> and <code>suite_hash</code> <code>4729eb8fc298</code> are identical on both sides.</p>
+  <!--driftproof:tw--><div class="table-wrap"><table class="summary">
+    <caption class="muted">Every band below is an across-draw spread over the generation draws the receipt records, and carries <code>(generation)</code> as its source. No <code>(legacy)</code> band appears anywhere in this report: both sides of both pairs are v0.5 generation-sampled receipts, which is what makes this the first release pair the project can compare like for like.</caption>
+    <thead><tr><th>case</th><th>2026-08-31 <span class="muted">(claude-fable-5)</span></th><th>2026-09-01 <span class="muted">(claude-fable-5-1)</span></th><th>Δ</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr><td><code>severity-labeled-findings</code></td><td>0.917 ± 0.026 <span class="muted">(generation)</span></td><td>0.796 ± 0.147 <span class="muted">(generation)</span></td><td>-0.121</td><td><span class="v v-noise">within noise</span></td></tr>
+      <tr><td><code>approve-when-improves-health</code></td><td>0.877 ± 0.002 <span class="muted">(generation)</span></td><td>0.847 ± 0.034 <span class="muted">(generation)</span></td><td>-0.031</td><td><span class="v v-noise">within noise</span></td></tr>
+      <tr><td><code>reject-clean-it-up-later</code></td><td>0.872 ± 0.014 <span class="muted">(generation)</span></td><td>0.861 ± 0.022 <span class="muted">(generation)</span></td><td>-0.011</td><td><span class="v v-noise">within noise</span></td></tr>
+      <tr><td><code>commit-message-imperative-body</code></td><td>0.868 ± 0.007 <span class="muted">(generation)</span></td><td>0.869 ± 0.006 <span class="muted">(generation)</span></td><td>+0.001</td><td><span class="v v-noise">within noise</span></td></tr>
+      <tr><td><code>propose-structural-remedy</code></td><td>0.897 ± 0.011 <span class="muted">(generation)</span></td><td>0.903 ± 0.010 <span class="muted">(generation)</span></td><td>+0.005</td><td><span class="v v-noise">within noise</span></td></tr>
+      <tr><td><code>oversized-change-split</code></td><td>0.882 ± 0.006 <span class="muted">(generation)</span></td><td>0.890 ± 0.012 <span class="muted">(generation)</span></td><td>+0.008</td><td><span class="v v-noise">within noise</span></td></tr>
+      <tr><td><code>security-axis-sql-injection</code></td><td>0.881 ± 0.003 <span class="muted">(generation)</span></td><td>0.891 ± 0.008 <span class="muted">(generation)</span></td><td>+0.010</td><td><span class="v v-noise">within noise</span></td></tr>
+    </tbody>
+  </table></div><!--/driftproof:tw-->
+  <p class="muted">Cell aggregates: <code>with_skill</code> 0.865 ± 0.036, baseline 0.793, lift +0.072 ± 0.217. <strong>An aggregate band carries no source label because it is not a band over draws</strong>: it is the dispersion of the seven case means across the suite, a different statistic from the per-case bands above, and the two are not interchangeable.</p>
+
+  <h4>The lift inside <code>code-review-and-quality</code>@<code>claude-fable-5-1</code>, per case</h4>
+  <!--driftproof:tw--><div class="table-wrap"><table class="summary">
+    <caption class="muted">Within-report, <code>with_skill</code> against <code>baseline</code> on <code>claude-fable-5-1</code>, through the same band-and-floor rule. Share is the case's Δ over the sum of all 7 Δs; the sum over 7 reproduces the receipt's own <code>comparison.delta</code>.</caption>
+    <thead><tr><th>case</th><th>with_skill</th><th>baseline</th><th>Δ</th><th>share of lift</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr><td><code>severity-labeled-findings</code></td><td>0.796 ± 0.147 <span class="muted">(generation)</span></td><td>0.308 ± 0.019 <span class="muted">(generation)</span></td><td>+0.488</td><td>96.2%</td><td><span class="v v-improved">improved</span></td></tr>
+      <tr><td><code>oversized-change-split</code></td><td>0.890 ± 0.012 <span class="muted">(generation)</span></td><td>0.864 ± 0.037 <span class="muted">(generation)</span></td><td>+0.026</td><td>5.1%</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>security-axis-sql-injection</code></td><td>0.891 ± 0.008 <span class="muted">(generation)</span></td><td>0.878 ± 0.007 <span class="muted">(generation)</span></td><td>+0.013</td><td>2.6%</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>propose-structural-remedy</code></td><td>0.903 ± 0.010 <span class="muted">(generation)</span></td><td>0.900 ± 0.014 <span class="muted">(generation)</span></td><td>+0.003</td><td>0.5%</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>commit-message-imperative-body</code></td><td>0.869 ± 0.006 <span class="muted">(generation)</span></td><td>0.872 ± 0.005 <span class="muted">(generation)</span></td><td>-0.003</td><td>-0.7%</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>reject-clean-it-up-later</code></td><td>0.861 ± 0.022 <span class="muted">(generation)</span></td><td>0.868 ± 0.007 <span class="muted">(generation)</span></td><td>-0.007</td><td>-1.3%</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>approve-when-improves-health</code></td><td>0.847 ± 0.034 <span class="muted">(generation)</span></td><td>0.859 ± 0.017 <span class="muted">(generation)</span></td><td>-0.013</td><td>-2.5%</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+    </tbody>
+  </table></div><!--/driftproof:tw-->
+  <p class="muted"><strong>The aggregate lift of +0.072 ± 0.217 is not a band-verified improvement claim</strong>, and this page does not make one. The lift clears the 0.05 floor and fails the separation test, because the baseline aggregate band (± 0.214) overlaps the with_skill one. That width is produced by the 1 failing baseline case in the arm the skill is meant to fix, not by instability in the with_skill arm (± 0.036). Reading +0.072 ± 0.217 as "the lift might be negative" is the reading that width invites and the per-case table above contradicts.</p>
+
+  <h3><code>writing-plans</code>@<code>claude-fable-5-1</code></h3>
+  <p class="muted">Release axis, <code>with_skill</code> on <code>claude-fable-5</code> against <code>with_skill</code> on <code>claude-fable-5-1</code>. This is the comparison the verdict rests on. Skill <code>content_hash</code> <code>5325ab3d55d5</code> and <code>suite_hash</code> <code>37cb3c341572</code> are identical on both sides.</p>
+  <!--driftproof:tw--><div class="table-wrap"><table class="summary">
+    <caption class="muted">Every band below is an across-draw spread over the generation draws the receipt records, and carries <code>(generation)</code> as its source. No <code>(legacy)</code> band appears anywhere in this report: both sides of both pairs are v0.5 generation-sampled receipts, which is what makes this the first release pair the project can compare like for like.</caption>
+    <thead><tr><th>case</th><th>2026-08-31 <span class="muted">(claude-fable-5)</span></th><th>2026-09-02 <span class="muted">(claude-fable-5-1)</span></th><th>Δ</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr><td><code>repair-placeholder-steps</code></td><td>0.877 ± 0.004 <span class="muted">(generation)</span></td><td>0.848 ± 0.031 <span class="muted">(generation)</span></td><td>-0.029</td><td><span class="v v-noise">within noise</span></td></tr>
+      <tr><td><code>full-small-plan-header-and-tasks</code></td><td>0.903 ± 0.013 <span class="muted">(generation)</span></td><td>0.895 ± 0.019 <span class="muted">(generation)</span></td><td>-0.008</td><td><span class="v v-noise">within noise</span></td></tr>
+      <tr><td><code>interfaces-exact-signatures</code></td><td>0.829 ± 0.006 <span class="muted">(generation)</span></td><td>0.823 ± 0.033 <span class="muted">(generation)</span></td><td>-0.006</td><td><span class="v v-noise">within noise</span></td></tr>
+      <tr><td><code>self-review-spec-coverage</code></td><td>0.843 ± 0.020 <span class="muted">(generation)</span></td><td>0.850 ± 0.011 <span class="muted">(generation)</span></td><td>+0.007</td><td><span class="v v-noise">within noise</span></td></tr>
+      <tr><td><code>bite-sized-tdd-steps</code></td><td>0.872 ± 0.008 <span class="muted">(generation)</span></td><td>0.889 ± 0.013 <span class="muted">(generation)</span></td><td>+0.017</td><td><span class="v v-noise">within noise</span></td></tr>
+      <tr><td><code>file-structure-by-responsibility</code></td><td>0.831 ± 0.006 <span class="muted">(generation)</span></td><td>0.853 ± 0.013 <span class="muted">(generation)</span></td><td>+0.023</td><td><span class="v v-noise">within noise (below effect floor)</span></td></tr>
+      <tr><td><code>task-right-sizing-testable-deliverable</code></td><td>0.676 ± 0.169 <span class="muted">(generation)</span></td><td>0.752 ± 0.152 <span class="muted">(generation)</span></td><td>+0.076</td><td><span class="v v-noise">within noise</span></td></tr>
+    </tbody>
+  </table></div><!--/driftproof:tw-->
+  <p class="muted">Cell aggregates: <code>with_skill</code> 0.844 ± 0.048, baseline 0.718, lift +0.126 ± 0.203. <strong>An aggregate band carries no source label because it is not a band over draws</strong>: it is the dispersion of the seven case means across the suite, a different statistic from the per-case bands above, and the two are not interchangeable.</p>
+
+  <h4>The lift inside <code>writing-plans</code>@<code>claude-fable-5-1</code>, per case</h4>
+  <!--driftproof:tw--><div class="table-wrap"><table class="summary">
+    <caption class="muted">Within-report, <code>with_skill</code> against <code>baseline</code> on <code>claude-fable-5-1</code>, through the same band-and-floor rule. Share is the case's Δ over the sum of all 7 Δs; the sum over 7 reproduces the receipt's own <code>comparison.delta</code>.</caption>
+    <thead><tr><th>case</th><th>with_skill</th><th>baseline</th><th>Δ</th><th>share of lift</th><th>verdict</th></tr></thead>
+    <tbody>
+      <tr><td><code>full-small-plan-header-and-tasks</code></td><td>0.895 ± 0.019 <span class="muted">(generation)</span></td><td>0.415 ± 0.094 <span class="muted">(generation)</span></td><td>+0.480</td><td>54.3%</td><td><span class="v v-improved">improved</span></td></tr>
+      <tr><td><code>task-right-sizing-testable-deliverable</code></td><td>0.752 ± 0.152 <span class="muted">(generation)</span></td><td>0.449 ± 0.092 <span class="muted">(generation)</span></td><td>+0.302</td><td>34.3%</td><td><span class="v v-improved">improved</span></td></tr>
+      <tr><td><code>repair-placeholder-steps</code></td><td>0.848 ± 0.031 <span class="muted">(generation)</span></td><td>0.790 ± 0.033 <span class="muted">(generation)</span></td><td>+0.058</td><td>6.6%</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>bite-sized-tdd-steps</code></td><td>0.889 ± 0.013 <span class="muted">(generation)</span></td><td>0.860 ± 0.021 <span class="muted">(generation)</span></td><td>+0.029</td><td>3.2%</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>interfaces-exact-signatures</code></td><td>0.823 ± 0.033 <span class="muted">(generation)</span></td><td>0.796 ± 0.054 <span class="muted">(generation)</span></td><td>+0.026</td><td>3.0%</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>self-review-spec-coverage</code></td><td>0.850 ± 0.011 <span class="muted">(generation)</span></td><td>0.855 ± 0.009 <span class="muted">(generation)</span></td><td>-0.005</td><td>-0.5%</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+      <tr><td><code>file-structure-by-responsibility</code></td><td>0.853 ± 0.013 <span class="muted">(generation)</span></td><td>0.861 ± 0.012 <span class="muted">(generation)</span></td><td>-0.007</td><td>-0.8%</td><td><span class="v v-noise">no effect</span> <span class="muted">(bands overlap)</span></td></tr>
+    </tbody>
+  </table></div><!--/driftproof:tw-->
+  <p class="muted"><strong>The aggregate lift of +0.126 ± 0.203 is not a band-verified improvement claim</strong>, and this page does not make one. The lift clears the 0.05 floor and fails the separation test, because the baseline aggregate band (± 0.198) overlaps the with_skill one. That width is produced by the 2 failing baseline cases in the arm the skill is meant to fix, not by instability in the with_skill arm (± 0.048). Reading +0.126 ± 0.203 as "the lift might be negative" is the reading that width invites and the per-case table above contradicts.</p>
+
+  <p>Across all 14 published cases on the release axis: <strong>0 improved · 0 regressed · 14 within noise · 0 not measured</strong>.</p>
+
+  <h2>Economics, on fresh input</h2>
+  <div class="card">
+    <p><strong>Every dollar below excludes cached input tokens.</strong> The receipts price all input at the list input rate, cached included, and record <code>cached_tokens</code> per draw precisely so a reader can re-price. On this surface cached context is 90.1% to 92.2% of each call's input here, so on the list-rate basis the largest term in every mean is harness preamble that neither arm chose and the skill cannot move. <a href="../007/index.html">Report 007 v1.1</a> is what happened when a mechanism was read out of that basis: two of its three cells changed the sign of their incremental under this same re-pricing. This page therefore prints one basis and does not claim the other.</p>
+
+    <!--driftproof:tw--><div class="table-wrap"><table class="summary">
+      <caption class="muted">Per-call incremental, <code>with_skill</code> minus <code>baseline</code>, WITHIN each report, on fresh input at each receipt's own frozen rates. Both figures in a row are the same arithmetic over different receipts, so the row is a like-for-like comparison; neither figure is an absolute cost and neither was metered.</caption>
+      <thead><tr><th>skill</th><th>on <code>claude-fable-5</code> (Report 007)</th><th>on <code>claude-fable-5-1</code> (Report 008)</th><th>direction</th></tr></thead>
+      <tbody>
+        <tr><td><code>code-review-and-quality</code></td><td>-$0.028848</td><td><strong>+$0.012699</strong></td><td>changes sign between the reports</td></tr>
+        <tr><td><code>writing-plans</code></td><td>+$0.040498</td><td><strong>+$0.123954</strong></td><td>positive in both reports</td></tr>
+      </tbody>
+    </table></div><!--/driftproof:tw-->
+    <p><strong>The incremental is positive in both reports on <code>writing-plans</code>@<code>claude-fable-5-1</code> and only on that cell.</strong> <code>code-review-and-quality</code>@<code>claude-fable-5-1</code> is -$0.028848 on the older model and +$0.012699 on the newer one, so it changes sign between the reports on the fresh basis. A single sentence covering both cells would be wrong about one of them, and the difference is small enough in absolute terms that neither sign should be leaned on: the whole column is hundredths of a cent per call.</p>
+
+    <p><strong>What moved in the tokens, <code>writing-plans</code>@<code>claude-fable-5-1</code>.</strong> The with_skill arm's per-call cost rises between the two models, and <strong>77.3%</strong> of that rise is cached context priced at the list rate. <strong>22.7%</strong> of it survives on fresh input, and it is chiefly output: <strong>+1,635 mean output tokens per call</strong>, at an output rate 5 times the input rate, against +2,177 fresh input tokens. That comparison is at an <strong>identical draw allocation</strong>: 24 draws in both reports, allocated <code>3,3,3,3,6,3,3</code> both times, with the same case in the wide slot. Adaptive stopping made the same decisions on the new model in this arm, so the movement is per-draw token growth and not a change in what was averaged. <code>claude-fable-5-1</code> writes materially longer plans for the same seven cases.</p>
+
+    <p><strong>And on <code>code-review-and-quality</code>@<code>claude-fable-5-1</code>, the same arithmetic points the other way.</strong> Its with_skill arm emits -264 output tokens per call on the new model and takes on +244 fresh input tokens, so on fresh input that arm gets <em>cheaper</em> per call across the release while the list-rate basis says it gets dearer. Longer outputs are a property of one of these two skills' generations on <code>claude-fable-5-1</code>, not of the release.</p>
+
+    <p class="muted"><strong>The caveat this whole section rests on, stated plainly.</strong> Cached input is not free to the vendor and is not billed at the list rate either; the receipts over-estimate it and this page under-estimates it by excluding it entirely, and neither basis is the true one. Actual metered spend for this run was <strong>$0.00</strong>: the surface is a subscription CLI and every figure here is the if-it-had-been-metered equivalent at each receipt's own frozen pricing snapshot. Prices are identical across all four receipts (10 in / 50 out per Mtok for both Fable models), so nothing above is price-driven. Judge cost is measurement overhead this project imposes and is excluded from every field. No figure on this page comes from the run's pre-flight projection or from any cap.</p>
+    <p class="muted"><strong>Latency</strong>, observed on subscription CLI surface, indicative: inside this run a call is slower with the skill than without it, by +1262 ms of median wall-clock on <code>code-review-and-quality</code>@<code>claude-fable-5-1</code> and +2740 ms of median wall-clock on <code>writing-plans</code>@<code>claude-fable-5-1</code>. Wall-clock here includes cold starts and the vendor's own harness and is not a measurement of serving latency.</p>
+  </div>
+
+  <h2>Run record</h2>
+  <div class="card">
+    <p><strong>Launched against <code>claude-fable-5-1</code> on 2026-09-01</strong>, from an isolated git worktree at <code>1b7b151</code> on <code>spec/019b-fable-5-1-registration</code>. code-review-and-quality ran 2026-09-01T18:45:54Z to 2026-09-01T20:44:42Z, writing-plans ran 2026-09-01T20:44:42Z to 2026-09-02T01:14:17Z, 258 calls and 294 calls, both exit 0. The receipts landed at <code>a0aecb0</code>.</p>
+
+    <p><strong>The hashes were asserted before the first call, not after the last one.</strong> A pre-launch assertion exited 0 having compared, per cell, the skill <code>content_hash</code> and the <code>suite_hash</code> the run was about to use against the Report 007 baseline receipt it would be diffed against: <code>code-review-and-quality</code> (<code>13d360d7f786</code>, <code>4729eb8fc298</code>, 7 cases) and <code>writing-plans</code> (<code>5325ab3d55d5</code>, <code>37cb3c341572</code>, 7 cases). Both matched on both fields. <strong>That ordering is the whole attribution claim.</strong> Checking afterwards tells a reader what was measured; checking first is what makes it a controlled comparison, because a mismatch would have stopped the run before it spent anything. The differ re-confirms the same equality from the receipts themselves, so the assertion has a second, independent witness.</p>
+
+    <p><strong>Zero draws were lost to timeout.</strong> 92 generation draws across 28 arms, 92 measured, <strong>0 unmeasured</strong>. The per-call timeout was 300,000 ms, <strong>resolved from the surface policy rather than passed as a flag</strong> (<code>lib/provider.js retryPolicyForSurface</code>). Report 007's subject was that this policy had been declared and not executed since 2026-07-27, shadowed by a numeric literal at the call site, so every run before the fix ran at 120 s; this is the first release-drift run to execute under the policy as written, and the loss count is the control on that fix rather than a claim about this run's difficulty. A restart script was prepared before launch and never invoked.</p>
+
+    <p class="muted">Caps per cell: <code>--max-cases 7</code>, <code>--max-calls 840</code>, <code>--max-usd 11</code>. Judge <code>claude-haiku-4-5</code> at 5 samples per draw on both cells. Surface <code>claude-cli</code> throughout, metered spend <strong>$0.00</strong>. Verification level <strong>TESTED</strong> on all four receipts, none carrying a <code>run.source</code>, so none is an imported declaration and the differ's NOT MEASURED path was not reached. The timings, the assertion result and the timeout policy above are transcribed from the run log into <a href="https://github.com/driftproofhq/driftproof/blob/main/reports/report-008-run-record.json"><code>reports/report-008-run-record.json</code></a>, which records that log's sha256 so the transcription is checkable; the log is an operator-home file and is not committed.</p>
+  </div>
+
+  <h2>Limits</h2>
+  <div class="card">
+    <ul>
+      <li><strong>Two cells is two cells.</strong> Fourteen cases on one substrate family is not a corpus, and nothing here generalises past the two skills named on it.</li>
+      <li><strong>A within-noise verdict is not a finding of no change.</strong> It is a statement about what this instrument resolves at 92 draws across 28 arms, and a real move smaller than these bands would look exactly like this.</li>
+      <li><strong>One case is held inside the verdict by the effect floor alone</strong>, named in the Verdict above. A reader who set a lower floor would read that row differently.</li>
+      <li><strong>The aggregate lift in both cells is not band-verified</strong>, and the report claims no aggregate improvement from it. What is shown per case is shown per case.</li>
+      <li><strong>The lift in both cells is concentrated in a few cases</strong>, and in <code>code-review-and-quality</code>@<code>claude-fable-5-1</code> one case carries 96.2% of it. A concentrated lift is more fragile than a spread one, and that case's band widened on the new model.</li>
+      <li><strong>The differ compares the with_skill arm only.</strong> The baseline movements this report leans on are computed on this page from the same receipts, not emitted by a shipped command, which is the same disclosed gap Report 007 filed.</li>
+      <li><strong>One case is bimodal rather than merely noisy.</strong> <code>task-right-sizing-testable-deliverable</code> drew 6 times with a variance ratio above 1, its draw means splitting into a high and a low group. A single mean ± sd understates what a user of that case would experience, and it was the widest case on the older model too, so it is a property of the case rather than of the release.</li>
+      <li><strong>The economics rest on a basis choice, disclosed above</strong>, and the sign of an incremental on this surface depends on it.</li>
+      <li><strong><code>run.model_release_date</code> is null in both receipts</strong> for a report whose axis is a release. The date is asserted in the launch script and the run record, not in the receipt, which is a schema gap this run surfaces and does not fix.</li>
+      <li><strong>Every verdict is verifiable from the receipts</strong>, which are linked below rather than described.</li>
+    </ul>
+  </div>
+
+  <h2>Receipts</h2>
+  <details class="card" open><summary><strong>All four receipts this report rests on, each one resolvable.</strong> Two measured here, two the Report 007 baselines they are diffed against. Every number on this page re-derives from these files.</summary>
+    <ul>
+      <li><code>code-review-and-quality</code>@<code>claude-fable-5-1</code> <span class="muted">(measured for this report)</span>: <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-008/code-review-and-quality-claude-fable-5-1-2026-09-01.json"><code>receipts/report-008/code-review-and-quality-claude-fable-5-1-2026-09-01.json</code></a><br><span class="muted">sha256 <code>8f30edbc6dd121a2313edeb3a0707bb4d39202c3759bc4febb5c531e5d58ea41</code>, receipt_hash <code>1e6a697783d54e14</code></span></li>
+      <li><code>writing-plans</code>@<code>claude-fable-5-1</code> <span class="muted">(measured for this report)</span>: <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-008/writing-plans-claude-fable-5-1-2026-09-02.json"><code>receipts/report-008/writing-plans-claude-fable-5-1-2026-09-02.json</code></a><br><span class="muted">sha256 <code>e4e5c526921bfa566b48b171be96788c04195bb1abbc73251caa5ae15e25c155</code>, receipt_hash <code>3368a89f9b69401b</code></span></li>
+      <li><code>code-review-and-quality</code>@<code>claude-fable-5</code> <span class="muted">(Report 007 baseline)</span>: <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-007/code-review-and-quality-claude-fable-5-2026-08-31.json"><code>receipts/report-007/code-review-and-quality-claude-fable-5-2026-08-31.json</code></a><br><span class="muted">receipt_hash <code>7d940158ee7f65b3</code></span></li>
+      <li><code>writing-plans</code>@<code>claude-fable-5</code> <span class="muted">(Report 007 baseline)</span>: <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-007-rerun/writing-plans-claude-fable-5-2026-08-31.json"><code>receipts/report-007-rerun/writing-plans-claude-fable-5-2026-08-31.json</code></a><br><span class="muted">receipt_hash <code>f0dd7f573ee59593</code></span></li>
+    </ul>
+    <p class="muted">Validate any of them with <code>npx driftproof validate &lt;file&gt;</code>, and reproduce either verdict with <code>npx driftproof diff &lt;baseline&gt; &lt;receipt&gt;</code>. The two receipts measured here landed at <code>a0aecb0</code> and neither has been modified since it was sealed. <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-007/writing-plans-claude-fable-5-2026-08-31.json"><code>receipts/report-007/writing-plans-claude-fable-5-2026-08-31.json</code></a> also exists; it is Report 007's unpublished defect evidence for that cell, and this report neither reads nor modifies it.</p>
+  </details>
+
+  <footer class="site"><span>Driftproof · Apache-2.0</span><span>Report 008 · Release drift report</span></footer>
+</main>
+<!--driftproof:foot--><footer class="site">
+<p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
+<p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+</footer><!--/driftproof:foot-->
+<!--driftproof:scripts--><script src="/copy-button.js" defer></script>
+<script type="module" src="/islands/loader.js"></script><!--/driftproof:scripts-->
+</body>
+</html>

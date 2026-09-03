@@ -1,0 +1,465 @@
+{
+  "schema_version": "0.3.1",
+  "skill": {
+    "name": "skill-creator",
+    "version": "0.0.0",
+    "content_hash": "97b28eb90f76cca2fb56b223cd0728eba82c0f4094b88dc1aa89db62a4c47ebc",
+    "tokens": 8247
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "39c3dd5b52de7e91c6c259b72a35237309bf2915fdbe430a6d4f538006db8cd6",
+    "case_count": 7
+  },
+  "run": {
+    "model_id": "gpt-5.6-sol",
+    "model_release_date": null,
+    "provider": "openai",
+    "surface": "openai-cli",
+    "runner_version": "0.3.0",
+    "date_utc": "2026-07-31T01:51:31.357Z",
+    "registry": "registered",
+    "transcripts": "retained-local",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    },
+    "surface_overhead_note": "openai/cli surface (codex exec): every call carries a fixed Codex base-instruction preamble of ~12,000–15,000 input tokens that the harness prepends and we do not control; the model id is set by us via -m (it is not echoed in the JSONL stream). Approval prompting is off by default on `codex exec` (no -a flag is passed)."
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "write-triggering-description",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.866,
+        "mean": 0.866,
+        "stddev": 0.011402,
+        "samples": [
+          0.87,
+          0.85,
+          0.86,
+          0.88,
+          0.87
+        ],
+        "generation_hash": "bb459220fc8120c97813aa401457ce03ce526ac3448f43160613eb2312594229",
+        "judge_sample_hashes": [
+          "5a7b12392889f72586978c3a3c31d70edfe612cd5adc5c43377f430618636de9",
+          "738902685f59b34c22b1af2cf789f8dbb2a1e009bf854a11212bbdfe43f79e88",
+          "66a7e078e1e9c3924454eb7828f16cd4f5915aba195050c50f5c14904d78b99c",
+          "85ba39d5cc8bfbe89231572b71346b4811a9e71f1816d16b9e607fb008807ea5",
+          "f3f0b4ce4a3e354a5f543fc34e722c0f21148af9274c060548c61522343da1fe"
+        ],
+        "threshold": 0.7,
+        "reason": "Clearly states what it does; enumerates specific trigger phrasings (populate, complete, batch-fill, finalize, flatten); includes data format contexts; uses encouraging 'whenever' language; 'flatten' exemplifies user wouldn't literally say 'fill a form.'",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "281a287c019aec2841a803ddc1af4df00e71b740cae061d71058b4da321ce726"
+        }
+      },
+      {
+        "id": "write-triggering-description",
+        "mode": "baseline",
+        "outcome": "borderline",
+        "score": 0.742,
+        "mean": 0.742,
+        "stddev": 0.085849,
+        "samples": [
+          0.85,
+          0.8,
+          0.63,
+          0.73,
+          0.7
+        ],
+        "generation_hash": "52fc804c127946ccffe430cc17c6c2753ea443b3912d50a0cae385c08cff557e",
+        "judge_sample_hashes": [
+          "e871bba606c3bccac58cfb126222efb7cbb8bff0fb81de2662419c09f1907309",
+          "ddc8909afd44ee65d7cbed23d5084e466878bff32da8fc95fa40a8f662c03db5",
+          "bf84b24564fab52af0b05242b9658587fda258c2efe0ab8dcb69e73328df7b1b",
+          "a6841adcb898ea632cd5002ab63b3a9cfdb9c848f23837d065f7f66142cd2088",
+          "32f5e7ca43921776e9c1623df4e3ae74fe7ed4b4b22fd2358df736e4b313824f"
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all three criteria: states what the skill does, provides specific when-to-use contexts (AcroForm fields, finalized PDFs), includes contexts beyond literal 'fill form' phrasing.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "281a287c019aec2841a803ddc1af4df00e71b740cae061d71058b4da321ce726"
+        }
+      },
+      {
+        "id": "restructure-oversized-skill",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.768,
+        "mean": 0.768,
+        "stddev": 0.057184,
+        "samples": [
+          0.84,
+          0.7,
+          0.72,
+          0.79,
+          0.79
+        ],
+        "generation_hash": "fca7ea12f18a1f3b4393e86f0a79f4753ef201c299aee5d869465a7806d067da",
+        "judge_sample_hashes": [
+          "15fe4decf74d49a6fc6bf488498365dae660965c65bf036e813abac22e80738f",
+          "2fd6bed002606fe975b71432349a280a49056dfbacf6ee3ea1051cad4cab881b",
+          "84145f3e7d341aa337e92d1becbf5e0d27765a5c68995caee55cace0f49d97c2",
+          "fd39dac1a21d9b74094ac1636ee3bedf02593840ac4b41950cb4ed1916fc0720",
+          "a04cf62ecd60557085375b31228ab1994fc0f95e932db15cf1bdf83e4e42ddbd"
+        ],
+        "threshold": 0.7,
+        "reason": "Fully meets (a)-(c): stratifies into directory structure with pointers; moves four format recipes + troubleshooting to references/; retains shared workflow in SKILL.md with explicit pointer wording. Explains context-economy benefit and recommends TOC. Minor gap: doesn't explicitly label the three-le",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "d3c7b46e6c401c29d70ce035e3e2e356c08e67220a9dcfb4f8754cc51b4ab7ed"
+        }
+      },
+      {
+        "id": "restructure-oversized-skill",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.842,
+        "mean": 0.842,
+        "stddev": 0.040866,
+        "samples": [
+          0.89,
+          0.85,
+          0.87,
+          0.8,
+          0.8
+        ],
+        "generation_hash": "f45695031ac0f8910193ef73be3bdeb003ff11bd1a368a00dbe0ca5fba4ad81c",
+        "judge_sample_hashes": [
+          "5bdf300840c7a9039ee803ba63de61e23fa0cbde16b333c766b891c7062b34fb",
+          "86b19b3f01581c1dd272ecfacac28e2c001a83afa169229a6d4be195afbb54a2",
+          "01902306d65ec8a7a2de999c1ecee404c370790ee72880172ae90d9a77d39ec4",
+          "1cb911e899cf7bbd5c8641af405c87beaa59f915ee9b323bfb1181f5e666b8d6",
+          "2a0158218d4b0d6514de9c02ed9491febd746ade5fa49ed408d3894353970c6e"
+        ],
+        "threshold": 0.7,
+        "reason": "Fully addresses criteria (a)-(c): three-level model with frontmatter/body/<500 lines/resources, moves all four formats and troubleshooting to separate references with explicit pointers, explains context-economy WHY and provides concrete pointer wording. Exemplary and flawless.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "d3c7b46e6c401c29d70ce035e3e2e356c08e67220a9dcfb4f8754cc51b4ab7ed"
+        }
+      },
+      {
+        "id": "output-format-template",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.864,
+        "mean": 0.864,
+        "stddev": 0.011402,
+        "samples": [
+          0.85,
+          0.86,
+          0.88,
+          0.86,
+          0.87
+        ],
+        "generation_hash": "d96e3fd8912613acfef0171d1feb738f89fdb875bd983595ded1975f7dc57cad",
+        "judge_sample_hashes": [
+          "6bb5ce89a8e7a90ffe0d69cbc98dc3c6a989b04967dba04f46c58d6410eee339",
+          "86eccb68f347832e138896d2eaa81cf131fe814d753a59e803c22b59a6a41886",
+          "c2e768ee8f0952901bdcba7ea1f898b8ac3393c76307043fdfe2138b9edbdd8e",
+          "ef23c19643cc0a1289dc995cb098c4e2b12f656d982eb1ed63e3e86e29d75243",
+          "3f8bd90109ccced1667acbd03935f2cbb786a06de5381ad670bc2b966f0bd1f4"
+        ],
+        "threshold": 0.7,
+        "reason": "Provides explicit reusable template (a) with placeholders, includes worked Input/Output example (c), clearly separates both (exemplary structure). All rubric criteria met cleanly.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "9ed40daa81b3f0f22cfffb7f4805dc64ca1b55fea7939668e51830b827d27e4e"
+        }
+      },
+      {
+        "id": "output-format-template",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.864,
+        "mean": 0.864,
+        "stddev": 0.008944,
+        "samples": [
+          0.87,
+          0.87,
+          0.86,
+          0.87,
+          0.85
+        ],
+        "generation_hash": "ab4371b19e098d03a546e1a69ee67ab352030cd998ce4a4a4aca0050a838544b",
+        "judge_sample_hashes": [
+          "2c5fce1f6c0083caba4070c63e6be5dd68405441d0760e0611e75d13b2c718c9",
+          "5d025e09d0d22b2c3f16a6f5cf3617a3192693330115f4c2ebd70732ae24215c",
+          "f68e7be8b3609bf68c78fb9178d5878e0a8453ee272a6dafd1ec716d9dab3205",
+          "69017f903b03c45eac578b2178a6d70b0f5f2d6b72b978d24d18bb3c394b2186",
+          "12d9f96051ad475b183700c130a9c247610a1a6b249d512df27d74269e8bf21f"
+        ],
+        "threshold": 0.7,
+        "reason": "Provides concrete, reusable template with placeholders, clear requirements section, and effective worked example showing input→output transformation. Exemplary separation of template from example.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "9ed40daa81b3f0f22cfffb7f4805dc64ca1b55fea7939668e51830b827d27e4e"
+        }
+      },
+      {
+        "id": "reframe-rigid-musts",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.866,
+        "mean": 0.866,
+        "stddev": 0.015166,
+        "samples": [
+          0.85,
+          0.88,
+          0.88,
+          0.85,
+          0.87
+        ],
+        "generation_hash": "1a43d56adeb50c51fbf48aea5957aa8f5f483cd5fe8084e2a3adc5d1043bf8e0",
+        "judge_sample_hashes": [
+          "c954fa3ccb1e00659d5ce75728184ff014a513d4b38ca821784ad97b342b0824",
+          "c4a0b990f09b5206732494eaf647c8756e0884d31539044eeb743a7326aea2c2",
+          "1f7700cac00ee67b3ea61742fb034078f6577815d48c4c3b864269f2e42bd59f",
+          "094a64ddfb1a58d91e5ef68301bf5c14f858042a2650eb98a2e6d6121f9e870a",
+          "aa8d32f39b37436b8be240bacbbad07706d1a66b43139d46f9c0c96a2632c267"
+        ],
+        "threshold": 0.7,
+        "reason": "Response removes all-caps mandates, explains WHY for each requirement (injection risk, maintainability, hidden defects, review balance), preserves all five original requirements intact, reads naturally.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "f9ef4aa35fe7b7102c3682dbde2c4bae8d861fc4d9bc123ccc83523d3e7fb48a"
+        }
+      },
+      {
+        "id": "reframe-rigid-musts",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.842,
+        "mean": 0.842,
+        "stddev": 0.042661,
+        "samples": [
+          0.88,
+          0.8,
+          0.84,
+          0.89,
+          0.8
+        ],
+        "generation_hash": "498b429a0a1ec9b1d11c2bdfcad2be9f2057e55cba21bd1e5e410712129e716a",
+        "judge_sample_hashes": [
+          "a17090f75e708da1e54cf8a6bdfa8d287641622f3014b18379a917fa79473bf9",
+          "e727cd08eb69d4746031f2eb53614875fbe980772564e18e328b8b870ed049cb",
+          "66370ff5b39a9b42553974c53ece787a77b5796b3c9d366069f87ee2c41d82fd",
+          "12455696f099c4e74bedf9d7222f69d26b0736d234789f9244af61cb91c89e9e",
+          "e3effd1ed1a64459a55b1451edc001314e368135d13a0abedb9b0741ff8c593c"
+        ],
+        "threshold": 0.7,
+        "reason": "Eliminates all-caps mandates, provides instructive WHY reasoning for each requirement (data exposure, maintainability, reliability, feedback quality), and preserves all four original requirements intact.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "f9ef4aa35fe7b7102c3682dbde2c4bae8d861fc4d9bc123ccc83523d3e7fb48a"
+        }
+      },
+      {
+        "id": "domain-variant-organization",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.874,
+        "mean": 0.874,
+        "stddev": 0.013416,
+        "samples": [
+          0.89,
+          0.86,
+          0.86,
+          0.88,
+          0.88
+        ],
+        "generation_hash": "afbc447e630c4c75257b13e0c9a3d61e01a536f4eee23ea383e7ee2c3a6124fa",
+        "judge_sample_hashes": [
+          "13b194af162233ffc92061becc074297f05348dd273b1a7277556476b368fcf7",
+          "23835f49a7bfee971e7518de1f182ea837dcf1fb8911ce82e0b1a4c1bd2d9ead",
+          "c72c2dafdbf08accdbe262c9f8c1c5be4ef0b4d95aca043832bd903320dbe2ea",
+          "1b496593b70112084a017f80e17dd814f4f04343f897a0c1822f5b3d37102292",
+          "c331a34df3946fa3f2ce2c40cca6689a422d4132968fa1846d7bc3239223880d"
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all criteria (a)-(d): separate references/ per framework, routing logic in SKILL.md with concrete detection patterns, clear 'load only required' instruction, and concrete directory tree. Exemplary explanation of why this structure avoids loading irrelevant frameworks' rules into context.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "f557145e837c4eebc6c0d97d5e28dfa88ff84daa6657d93256d54355e0193cc3"
+        }
+      },
+      {
+        "id": "domain-variant-organization",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.874,
+        "mean": 0.874,
+        "stddev": 0.005477,
+        "samples": [
+          0.87,
+          0.87,
+          0.88,
+          0.88,
+          0.87
+        ],
+        "generation_hash": "a379aeaf8664bc4f9f76e5f816fa34a9d5d03918fe5cd9630c7127778c8f2839",
+        "judge_sample_hashes": [
+          "9a7de7b7a6690bd8d61f6706362bf9cc64bda7f992c56a921383f0a6257bc382",
+          "71639bedf0409730205fcd7b2cbb0b217a8efb24722a92b94b6d0ce31ff07b61",
+          "0e2f587908e3a3fc192378e47a3de5a484088ab8544d887309b9ae5e09b8b706",
+          "b44b12ee118461d6b6c5ffb8b9a6de7b8c40852285c38d9ad4a62721edb8cf9a",
+          "0af5bc18c1633df82f02fe93d1456f0ebacdc13b9a7ec847e3388163e9a994f9"
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all four criteria: (a) references/ with one file per framework; (b) SKILL.md routing logic with detection rules; (c) explicit progressive-disclosure explanation; (d) concrete directory tree. Exemplary—explains WHY (context waste prevention) and provides concrete pointer wording.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "f557145e837c4eebc6c0d97d5e28dfa88ff84daa6657d93256d54355e0193cc3"
+        }
+      },
+      {
+        "id": "draft-full-skillmd",
+        "mode": "with_skill",
+        "outcome": "fail",
+        "score": 0.574,
+        "mean": 0.574,
+        "stddev": 0.023022,
+        "samples": [
+          0.58,
+          0.55,
+          0.59,
+          0.55,
+          0.6
+        ],
+        "generation_hash": "33c032d63906dd82fa0f16736f993a282cdbadf76bf3ce8aa04eff887dcd29cb",
+        "judge_sample_hashes": [
+          "499d241fc0de8adcd1c84c887bd6d7a507eb7083cc18bc0cadd8664593184e43",
+          "3567024cbe80d28bde33c611a0fc37ef5fc38cb1a624dfd83d88c120dce5a0ca",
+          "7164ceb0a943b38b0af5bf2105bce566fa9d40e1fcaad64de71e1698bbaa3bcf",
+          "069bc20f895d05d01d3a7619a1b225875ad581ffa650e56782511ed2a9fa486e",
+          "a77ed13395e685064eebadbb609be3b0c09ce4678d415db840105fa97d562545"
+        ],
+        "threshold": 0.7,
+        "reason": "Strong frontmatter, description, structure, and reversibility reasoning. Missing required worked example (e.g., add-email-column → up/down SQL) capped at 0.6.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "ef5b44971eb9573d1778ed296016499ad1c5a95fca568247af04109db77cb81b"
+        }
+      },
+      {
+        "id": "draft-full-skillmd",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.862,
+        "mean": 0.862,
+        "stddev": 0.010954,
+        "samples": [
+          0.87,
+          0.87,
+          0.85,
+          0.87,
+          0.85
+        ],
+        "generation_hash": "9d474ecc7f6d9b1992da107e0734ebe5d0576f5ad4c3fded82d08db0cecfdeb4",
+        "judge_sample_hashes": [
+          "b377801b5bbebb1e7f08c5240166797f1ecaf7299f2d195f3be7fb754ceec69d",
+          "dc7920c2ce865608f153397d85c02247e5f02bff3e47116901951a874e6fff0a",
+          "ece41247c7f1d956c3158b3465064d706fb22caf159f2a8bcf2b5a18b31dde58",
+          "509214786f33d872cec5df27d879656f13a3787c0e6ea9892b08e7d8bdb4459f",
+          "1ad130edde6bfbf3d6a733dc1efdbcb17c343c6fed366ba538ebcdda4c4e0674"
+        ],
+        "threshold": 0.7,
+        "reason": "Frontmatter, triggering description, explicit template, and worked example present; exceptional reversibility handling (non-data-reversible ops); well-structured. Minor: slightly verbose in places, tone could be more consistently reasoned-why versus imperative.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "ef5b44971eb9573d1778ed296016499ad1c5a95fca568247af04109db77cb81b"
+        }
+      },
+      {
+        "id": "critique-and-fix-skillmd",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.89,
+        "mean": 0.89,
+        "stddev": 0.02,
+        "samples": [
+          0.9,
+          0.88,
+          0.88,
+          0.92,
+          0.87
+        ],
+        "generation_hash": "ec38ec0e99518189d7739de822830fc11290c425f071e0276a17c95e8852621e",
+        "judge_sample_hashes": [
+          "096304c42d64ba1fd48e02b7afcdb76b0037ada25a75a1056fa36bf12028b942",
+          "20b34b5fe8785197339ef6727e4bd78060f3478e3fce53b72165311c0b029b95",
+          "20ff28d1484bf0c4364eea3497e16a805ecb11cca0a79202e6a6a69f7acb163b",
+          "92aa902683f48ad8c1e42f5bb986a22f635cca04e0c83c34d436baa30bdd05fb",
+          "3d095db64ad24495d0d3920629509013ab24b56ab8b48567c39bc8c4ee9ba051"
+        ],
+        "threshold": 0.7,
+        "reason": "Cleanly identifies all four core issues (weak trigger description, misplaced when-to-use body section, 600-line monolith, all-caps tone), provides a strong concrete rewritten description with specific trigger phrases, recommends per-library reference files with selection pointers, and explains the r",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "875c8a456ba3a6887694099c4b20ba2589488d555aee030c68f616f86cb843ab"
+        }
+      },
+      {
+        "id": "critique-and-fix-skillmd",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.888,
+        "mean": 0.888,
+        "stddev": 0.019235,
+        "samples": [
+          0.88,
+          0.9,
+          0.89,
+          0.91,
+          0.86
+        ],
+        "generation_hash": "df346464cce3a498da80ddd46f6ee0868d4b0e35a321f581ac77d358c88234d1",
+        "judge_sample_hashes": [
+          "e2360a575fb4add90c15dec88b98d607bf58e6b46a62ef76702672406da55637",
+          "a4e2ee747b9a694af0342aee65f6ce1d71ff9ece7f4147a558aacdba787ad4b3",
+          "bd35d4e379e609828b36a3dc28b9e010eeb34285ccaa216bfedf2b2457c1e431",
+          "793cfcf7766f65647faa9931ff974674906c3c2305e27dec7c914c33f8a4805b",
+          "f22978e414603e3f719b1204ea6ec19bda0abed9853e7f2d337b815ddeacfbb9"
+        ],
+        "threshold": 0.7,
+        "reason": "Comprehensively hits (a)-(d): identifies trigger/description problem explicitly (point 2), provides strong rewritten description with concrete trigger phrasings, flags 600-line monolith with structural solution (point 4), reframes all-caps with reasoning (point 5). Exemplary quality.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "875c8a456ba3a6887694099c4b20ba2589488d555aee030c68f616f86cb843ab"
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 7,
+        "pass_count": 6,
+        "borderline_count": 0,
+        "mean_score": 0.814571,
+        "stddev": 0.113283
+      },
+      "baseline": {
+        "case_count": 7,
+        "pass_count": 6,
+        "borderline_count": 1,
+        "mean_score": 0.844857,
+        "stddev": 0.048247
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.814571,
+    "baseline_score": 0.844857,
+    "delta": -0.030286,
+    "delta_uncertainty": 0.123129
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "e716c88d78a164b05d2e2c86a4259c7fd7b54a9696f6538e15107d80db59fe18"
+}
