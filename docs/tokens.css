@@ -1,0 +1,615 @@
+/* SPDX-License-Identifier: Apache-2.0
+   Driftproof brand tokens and the site's one stylesheet. No framework.
+
+   ONE FILE HOLDS EVERY VALUE. Spec 025 D2: no stylesheet uses a raw colour,
+   radius, font size or content width that a token covers, and the one place a
+   raw value is legal is a token declaration inside the fenced block below.
+   specs/025-design-pass/gate.mjs AC-3 reads every .css file under docs/, every
+   <style> in a generated page and every <style> in a generated SVG, and fails on
+   a hex, a border-radius or a font-size outside that fence.
+
+   THE ACCENT IS THE BADGE COLOUR. docs/badges/commit-message-conventions.json
+   carries "color": "brightgreen", a shields.io keyword resolving to #44CC11.
+   specs/020-site-relaunch/gate.mjs reads the badge file, resolves the keyword and
+   asserts --accent equals it, so a badge whose colour changes takes the site red
+   rather than leaving it quietly off-brand. --arm-skill is the design system's
+   name for the same green, aliased rather than repeated.
+
+   --accent IS A VERDICT, NOT A BRAND COLOUR. It is used where the green MEANS a
+   passed verdict: band fills, the PASSED stamp's border, marks. Nothing paints
+   text with it: against paper it measures about 1.8:1. Everything carrying text
+   takes --accent-ink, a darkened instance of the same hue, and AC-40 asserts it.
+
+   THE PAIRS ARE DECLARED, so the palette is measured rather than eyeballed. The
+   block below is read by spec 020 AC-40, which resolves each token to a hex out
+   of this file and computes the WCAG contrast of every pair. A rule that paints
+   a colour and a background and is not covered by a pair takes the gate red.
+   Spec 025 AC-4 reads the same block and adds the display face's large-text
+   bound on the two grounds.
+
+   driftproof:contrast
+   ink on paper
+   ink on paper-2
+   ink on white
+   ink on code
+   ink on rule
+   ink on arm-skill
+   ink-muted on paper
+   ink-muted on paper-2
+   ink-muted on white
+   arm-baseline on paper
+   arm-baseline on paper-2
+   arm-baseline on white
+   accent-ink on paper
+   accent-ink on paper-2
+   accent-ink on white
+   paper on accent-ink
+   state-separated on paper
+   state-separated on paper-2
+   state-overlapping on paper
+   state-overlapping on paper-2
+   state-refused on paper
+   state-refused on paper-2
+   reg on paper
+   imp on paper
+   noise on paper
+   mixed on paper
+   driftproof:/contrast */
+
+/* driftproof:tokens */
+:root {
+  /* grounds */
+  --paper: #F9F9F7;
+  --paper-2: #F1F0EB;
+  --white: #FFFFFF;
+
+  /* ink */
+  --ink: #14181D;
+  --ink-muted: #5B6470;
+  --rule: #E3E2DC;
+
+  /* the two arms, named for what they are. Every plot, glyph, chip, stamp and
+     legend reads these two by name, in this file and inside every generated
+     SVG, so the picture and the page cannot disagree about which side is which. */
+  --arm-baseline: #2B3036;
+  --accent: #44CC11;
+  --arm-skill: var(--accent);
+  --accent-ink: #2E7A0B;
+
+  /* the refused state: a grey fill under one hatch, and a darker ink for the
+     word, because a hatch cannot carry text. */
+  --refused: #B4B8BE;
+
+  --state-separated: var(--accent-ink);
+  --state-overlapping: var(--ink-muted);
+  --state-refused: #7A5F00;
+
+  /* type */
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --display: "Instrument Serif", Georgia, "Times New Roman", Times, serif;
+  --values: var(--mono);
+
+  /* the scale, desktop */
+  --t-h1: 64px;
+  --t-h2: 34px;
+  --t-h3: 20px;
+  --t-report-title: 26px;
+  --t-receipt-heading: 22px;
+  --t-receipt-date: 24px;
+  --t-stat: 28px;
+  --t-body: 17px;
+  --t-verdict: 18px;
+  --t-mono: 15px;
+  --t-fine: 14px;
+  --t-mono-sm: 13px;
+  --t-eyebrow: 13px;
+  /* Inside a plot. It is a token like every other size, and every generated SVG
+     carries this declaration verbatim so the picture and the page agree. */
+  --t-plot: 12px;
+  --lh-h1: 1.05;
+  --lh-h2: 1.15;
+  --lh-body: 1.55;
+
+  /* shape and rhythm */
+  --radius: 6px;
+  --w-wide: 1100px;
+  --w-text: 720px;
+  --w-receipt-label: 7.5rem;
+
+  /* the legacy names, pinned. docs/style.css dresses eight published report
+     bodies and reads these; they are declared here, once, so nothing can move
+     them out from under the measured pairs above. */
+  --bg: var(--paper);
+  --fg: var(--ink);
+  --muted: var(--ink-muted);
+  --line: var(--rule);
+  --card: var(--paper-2);
+  --code: var(--paper-2);
+  --chip: var(--paper-2);
+  --paper-sunk: var(--paper-2);
+  --reg: #A3212A;
+  --imp: #14684A;
+  --noise: var(--ink-muted);
+  --mixed: #7A5F00;
+}
+
+/* THE PINNING OUTRANKS AN EXPLICIT data-theme, not only a media query. :root
+   alone would lose to :root[data-theme="dark"] on specificity, which is the kind
+   of quiet defeat that once produced near-black ink on a near-black chip. The
+   site ships one committed look: the reports were drawn on paper and read on
+   paper, and a dark inversion of a page full of hand-tuned figure colours is a
+   different design, not a setting. */
+:root[data-theme="dark"],
+:root[data-theme="light"] {
+  --bg: var(--paper);
+  --fg: var(--ink);
+  --muted: var(--ink-muted);
+  --line: var(--rule);
+  --card: var(--paper-2);
+  --code: var(--paper-2);
+}
+
+/* The scale under 720px. It is a token override and therefore inside the fence:
+   the rest of the file names sizes and never states them. */
+@media (max-width: 720px) {
+  :root {
+    --t-h1: 44px;
+    --t-h2: 28px;
+  }
+}
+/* driftproof:/tokens */
+
+/* ── self-hosted type ────────────────────────────────────────────────────────
+   Three files, Latin subset, woff2 only, served from this origin. Spec 020 AC-3
+   read "no web font is served at runtime"; spec 025 A-025-1 amends it to no font
+   request to any origin other than driftproofhq.com, under five conditions this
+   file and the head-tag builder satisfy and specs/025-design-pass/gate.mjs AC-2
+   asserts: subsetted woff2 only, all files together under 120 KB, every file
+   preloaded with crossorigin, font-display: swap, and a system fallback in every
+   stack above that names one of these families.
+
+   font-display: swap is the clause that keeps the amendment honest. Text paints
+   in the fallback immediately and is replaced when the face arrives, so the
+   render penalty the original clause was protecting against cannot occur however
+   slow the file is. Provenance and the subsetting command are in
+   docs/fonts/README.md. */
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("/fonts/instrument-serif-regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/ibm-plex-mono-regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/ibm-plex-mono-medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── the page ─────────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--t-body);
+  line-height: var(--lh-body);
+}
+img, svg, video { max-width: 100%; }
+a { color: var(--accent-ink); text-decoration: none; }
+a:hover { text-decoration: underline; }
+:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+
+h1, h2 { font-family: var(--display); font-weight: 400; letter-spacing: 0; }
+h1 { font-size: var(--t-h1); line-height: var(--lh-h1); margin: 0 0 1rem; }
+h2 { font-size: var(--t-h2); line-height: var(--lh-h2); margin: 0 0 1.2rem; }
+h3 { font-size: var(--t-h3); margin: 0 0 0.4rem; }
+
+/* THE VALUES FACE, and everything that is a value. A hash, a model id, a date, a
+   score, an axis label, a command and a chip are all the same kind of thing: a
+   string the instrument produced, which a reader may need to compare against
+   another one character by character. tnum is what makes a column of them line
+   up. */
+code, pre, .hash, .receipt, .mono {
+  font-family: var(--mono);
+  font-feature-settings: "tnum";
+}
+/* AN INLINE IDENTIFIER BREAKS RATHER THAN PUSHING THE PAGE. A sha256 is
+   sixty-four unbreakable characters, 522 pixels wide at a 390 viewport, and a
+   report body carries two of them in prose; the interop page carries a schema
+   URL of four hundred. Each pushed the whole document sideways, so a reader on
+   a phone lost the right edge of every line on the page to make room for one
+   hash.
+
+   The receipt is the exception, and it is the rule V3 states: a value there is a
+   token a reader compares character by character, and one broken across two
+   lines is a different string to look at. Its hash row breaks, because
+   sixty-four characters have to go somewhere; and a <code> inside a <pre>
+   breaks nothing, because the <pre> scrolls. */
+code {
+  background: var(--code);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 0.05em 0.3em;
+  font-size: var(--t-mono-sm);
+  overflow-wrap: anywhere;
+}
+pre code { overflow-wrap: normal; }
+.receipt-row > span:last-child code { overflow-wrap: normal; }
+.receipt-row-hash > span:last-child code { overflow-wrap: anywhere; }
+pre {
+  background: var(--paper-2);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: var(--t-mono-sm);
+}
+pre code { background: none; border: 0; padding: 0; font-size: var(--t-mono-sm); }
+
+/* ── chrome ───────────────────────────────────────────────────────────────── */
+header.site {
+  display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  padding: 0.9rem 1.5rem; border-bottom: 1px solid var(--rule); flex-wrap: wrap;
+}
+header.site .brand {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-family: var(--display); font-size: var(--t-h3); color: var(--ink);
+}
+.brand-mark { display: block; }
+nav.site-nav { display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap; font-size: var(--t-mono-sm); }
+nav.site-nav a { color: var(--accent-ink); }
+.docs-menu { position: relative; }
+.docs-menu summary { cursor: pointer; color: var(--accent-ink); list-style: none; }
+.docs-menu summary::-webkit-details-marker { display: none; }
+.docs-menu summary::after { content: " \25BE"; }
+.docs-menu-list {
+  display: flex; flex-direction: column; gap: 0.35rem; padding: 0.6rem 0.8rem;
+  border: 1px solid var(--rule); border-radius: var(--radius); background: var(--paper);
+}
+@media (min-width: 720px) {
+  .docs-menu-list { position: absolute; z-index: 5; top: 1.8rem; left: 0; min-width: 12rem; }
+}
+.nav-menu { display: none; }
+.nav-menu summary { cursor: pointer; color: var(--accent-ink); list-style: none; }
+.nav-menu summary::-webkit-details-marker { display: none; }
+.nav-menu summary::after { content: " \25BE"; }
+footer.site {
+  border-top: 1px solid var(--rule); padding: 2rem 1.5rem;
+  color: var(--ink-muted); font-size: var(--t-mono-sm); font-family: var(--values);
+}
+footer.site p { margin: 0.35rem 0; }
+.foot-links a { color: var(--accent-ink); }
+
+/* ── section rhythm ───────────────────────────────────────────────────────── */
+.screen { margin: 0 auto; padding: 4rem 1.5rem; border-bottom: 1px solid var(--rule); }
+.screen:last-of-type { border-bottom: none; }
+.is-wide { max-width: var(--w-wide); }
+.is-text { max-width: var(--w-text); }
+/* A full-bleed band spans the viewport in the second ground, with its content
+   held at the wide measure. */
+.is-bleed { max-width: none; background: var(--paper-2); border-bottom: 1px solid var(--rule); }
+.is-bleed > .bleed-inner { max-width: var(--w-wide); margin: 0 auto; }
+.eyebrow {
+  font-size: var(--t-eyebrow); letter-spacing: 0.01em; color: var(--ink-muted);
+  margin: 0 0 0.5rem;
+}
+
+/* ── the hero ─────────────────────────────────────────────────────────────── */
+/* THE HEADLINE GETS THE ROOM AND THE RECEIPT GETS A FLOOR. A 64px display face
+   needs width or it sets in five lines; a receipt whose value column is narrower
+   than a model id wraps every row. The minimums are what makes both true at once,
+   and the ratio is what decides the rest. */
+#hero { display: grid; gap: 3rem; grid-template-columns: 1fr; }
+@media (min-width: 900px) {
+  #hero { grid-template-columns: minmax(560px, 3fr) minmax(420px, 2fr); align-items: start; }
+}
+.hero-sub { font-size: var(--t-body); line-height: var(--lh-body); color: var(--ink-muted); margin: 0 0 1.8rem; }
+.cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+.copy-cta {
+  display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.7rem;
+  border: 1px solid var(--rule); border-radius: var(--radius); background: var(--paper-2);
+  font-family: var(--values); font-size: var(--t-mono-sm);
+}
+.copy-cta button {
+  font: inherit; font-family: var(--sans); cursor: pointer; border: 1px solid var(--rule);
+  background: var(--paper); color: var(--accent-ink); border-radius: var(--radius); padding: 0.2rem 0.6rem;
+}
+a.cta {
+  display: inline-block; padding: 0.6rem 1rem; border-radius: var(--radius);
+  background: var(--accent-ink); color: var(--paper); font-weight: 600;
+}
+a.cta.secondary { background: transparent; color: var(--accent-ink); border: 1px solid var(--accent-ink); }
+
+/* ── the receipt ──────────────────────────────────────────────────────────────
+   One template, two variants: the hero card and a report page's TL;DR. Single
+   column, white body, one 1px rule border, one radius, and a dashed bottom edge
+   because that is what a receipt does. */
+/* `.card.receipt`, not `.receipt`. A receipt carries both classes, and
+   `.card { background: var(--paper-2) }` below sits later in this file at the
+   same specificity, so the single-class rule lost and the card rendered on the
+   sunk ground. It measured paper-2 for the whole of D3 with a stylesheet that
+   said white. */
+.card.receipt {
+  background: var(--white); border: 1px solid var(--rule); border-radius: var(--radius);
+  padding: 24px; border-bottom-style: dashed;
+}
+.receipt-heading {
+  font-family: var(--display); font-size: var(--t-receipt-heading); font-weight: 400;
+  margin: 0 0 1rem; color: var(--ink);
+}
+/* THE VALUE IS ITS OWN COLUMN, so a value long enough to wrap stays inside it.
+   Spec 020 AC-19 fixed this once on the TL;DR card, after Report 007's verdict
+   wrapped back under its label; a fixed first track cannot be pushed by its
+   content, and the value edge is the same on every row by construction. */
+.receipt-row {
+  display: grid; grid-template-columns: var(--w-receipt-label) 1fr;
+  gap: 0 1rem; align-items: baseline;
+  padding: 0.55rem 0; border-top: 1px solid var(--rule); margin: 0;
+}
+.receipt-row:first-of-type { border-top: 0; }
+.receipt-key { color: var(--ink-muted); font-size: var(--t-mono-sm); font-family: var(--sans); }
+/* A VALUE NEVER BREAKS INSIDE A TOKEN. A model id, a skill name and a date are
+   single tokens that a reader compares character by character, and one broken
+   across two lines is a different string to look at. The hash is the exception
+   and the only one: sixty-four characters have to wrap somewhere. */
+.receipt-value {
+  font-family: var(--values); font-size: var(--t-mono); color: var(--ink);
+  font-feature-settings: "tnum"; overflow-wrap: normal; word-break: normal;
+}
+.receipt-row-date .receipt-value { font-size: var(--t-receipt-date); }
+/* `:last-child` AGAIN. `.receipt-row > span:last-child` is one class, one
+   pseudo-class and one type; `.receipt-row-hash .receipt-value` is two classes,
+   and loses - so the row that MUST wrap inherited `overflow-wrap: normal` and a
+   sixty-four character hash had nowhere to go. Third instance in this pass, and
+   the browser caught all three. */
+.receipt-row-hash > .receipt-value:last-child {
+  font-size: var(--t-mono-sm); overflow-wrap: anywhere; word-break: break-all;
+}
+.receipt-plot { margin: 1rem 0 0; width: 100%; }
+/* THE STAMP. A 2px border in the arm colour the verdict belongs to, tilted, and
+   never a green word: the green is a mark and the ink carries the text. */
+.receipt-stamp {
+  display: inline-block; font-family: var(--values); font-weight: 500;
+  font-size: var(--t-verdict); padding: 4px 10px; border-radius: var(--radius);
+  border: 2px solid var(--arm-baseline); color: var(--ink);
+  transform: rotate(-2deg); opacity: 0.92; white-space: nowrap;
+}
+.receipt-stamp.is-passed { border-color: var(--arm-skill); }
+.receipt-stamp.is-no-effect { border-color: var(--arm-baseline); }
+.receipt-stamp.is-refused { border-color: var(--refused); }
+.receipt-stamp.is-regressed { border-color: var(--state-refused); }
+.receipt-stamp.is-below-floor { border-color: var(--state-refused); }
+
+/* The TL;DR variant. Its value spans keep the classes spec 020 AC-19 and spec
+   021 AC-18 read by name; everything else is the receipt above. */
+.receipt.is-tldr { margin: 0 0 1.8rem; }
+/* A SENTENCE IS NOT A VALUE. Every row of the TL;DR card was mono, so a
+   report's type, what moved, its headline and its verdict - four sentences -
+   were set in the face this site reserves for a string a reader compares
+   character by character. The default is the body face; the value face is opted
+   into by the rows that carry values.
+
+   `--t-mono` names a STEP IN THE SCALE, 15px, and not a family. Both kinds of
+   row take it, so the rows keep one rhythm and only the letterforms differ. */
+.receipt-row > span:last-child {
+  font-family: var(--sans); font-size: var(--t-mono); overflow-wrap: normal;
+}
+/* `:last-child` COUNTS AS A CLASS. `.receipt-row > span:last-child` is one
+   class, one pseudo-class and one type; `.receipt-row > .tldr-models` is two
+   classes, and loses. Written that way the value rows measured sans with a
+   stylesheet that said mono - the same defect as the receipt's white body, two
+   rules apart. The value selectors carry the pseudo-class too. */
+.receipt-row > .receipt-value:last-child,
+.receipt-row > .tldr-models:last-child,
+.receipt-row > .tldr-receipts:last-child {
+  font-family: var(--values); font-feature-settings: "tnum";
+}
+.tldr-cite summary { cursor: pointer; color: var(--accent-ink); font-size: var(--t-mono-sm); margin-top: 0.7rem; }
+.tldr-cite pre { overflow-x: auto; }
+
+/* ── plots ───────────────────────────────────────────────────────────────── */
+.bandplot { display: block; width: 100%; height: auto; max-width: 100%; }
+/* THE hidden ATTRIBUTE WINS. The rule above is an author rule with display:block,
+   which outranks the user agent's [hidden] { display: none }; so the playground's
+   static fallback, which the island sets hidden on mount, stayed visible under the
+   live plot - measured in the approval fix pass (A-025-9), never seen by eye. */
+[hidden] { display: none !important; }
+.plot-figure { margin: 0; }
+.plot-figure figcaption { color: var(--ink-muted); font-size: var(--t-mono-sm); margin-top: 0.5rem; }
+/* A figure whose caption is the page's own prose (the methodology's band section
+   and floor block, A-025-8) keeps body type and ink: the muted small caption is
+   for a one-line label under a thumbnail, not for two paragraphs a reader reads. */
+.plot-figure.is-prose figcaption, .panel.plot-figure.is-prose figcaption { color: var(--ink); font-size: var(--t-body); line-height: var(--lh-body); margin-top: 0.8rem; }
+.plot-figure.is-prose figcaption p { margin: 0 0 0.8rem; }
+
+/* ── the three cards, and only three ──────────────────────────────────────────
+   The receipt, a report entry on the index, and the playground. Nothing else on
+   this site is a card, because a card is a claim that something is a discrete
+   object and six kinds of card on one page is a claim about nothing. */
+.card.report-card {
+  border: 1px solid var(--rule); border-radius: var(--radius); background: var(--paper-2);
+  padding: 1.2rem 1.3rem; margin: 0 0 1rem;
+  display: grid; gap: 1.2rem; grid-template-columns: 1fr;
+}
+@media (min-width: 760px) { .card.report-card { grid-template-columns: 1fr 260px; align-items: center; } }
+.card.report-card h3 {
+  font-family: var(--display); font-weight: 400; font-size: var(--t-report-title);
+  margin: 0 0 0.5rem; line-height: var(--lh-h2);
+}
+.card.report-card h3 a { color: var(--ink); }
+.card-type {
+  display: inline-block; font-size: var(--t-eyebrow); letter-spacing: 0.01em;
+  border: 1px solid currentColor; border-radius: var(--radius); padding: 0.1em 0.5em;
+  margin: 0 0 0.6rem; color: var(--state-overlapping);
+}
+.card-type.is-separated { color: var(--state-separated); }
+.card-type.is-overlapping { color: var(--state-overlapping); }
+.card-type.is-refused { color: var(--state-refused); }
+.card-models { margin: 0.3rem 0; }
+.card-date, .card-counts {
+  color: var(--ink-muted); font-size: var(--t-mono-sm);
+  font-family: var(--values); font-feature-settings: "tnum"; margin: 0.3rem 0;
+}
+.card-counts { font-family: var(--sans); }
+.card-plot { width: 100%; height: auto; }
+
+/* ── how it works ─────────────────────────────────────────────────────────── */
+.steps { counter-reset: step; list-style: none; padding: 0; margin: 0 0 1.6rem; display: grid; gap: 1rem; }
+.steps li { counter-increment: step; padding-left: 2.4rem; position: relative; }
+.steps li::before {
+  content: counter(step); position: absolute; left: 0; top: 0;
+  width: 1.7rem; text-align: center; font-family: var(--values);
+  font-size: var(--t-mono-sm); color: var(--accent-ink);
+  border-bottom: 2px solid var(--arm-skill);
+}
+.naming { border-left: 2px solid var(--arm-skill); padding: 0.4rem 0 0.4rem 1rem; margin: 1.6rem 0 2rem; }
+/* THREE, EXPLICITLY. `auto-fit` with a minimum is a rule about how many columns
+   FIT, and what fits depends on a width this pass has already been wrong about
+   once: at 672 pixels it fitted two and wrapped the third onto its own row. The
+   criterion is three states in one row, so the grid says three. */
+.panels { display: grid; gap: 1.5rem; grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 720px) { .panels { grid-template-columns: 1fr; } }
+.panel { border: 0; padding: 0; background: transparent; }
+.panel img, .panel svg { display: block; width: 100%; height: auto; max-width: 100%; }
+.panel figcaption { margin: 0.6rem 0 0; color: var(--ink-muted); font-size: var(--t-mono-sm); }
+.panel-title { display: block; color: var(--ink); font-family: var(--display); font-size: var(--t-h3); }
+
+/* ── the skeptic strip ────────────────────────────────────────────────────────
+   Not cards. One ruled row: the number in tabular mono, the label under it in
+   small muted sans, a 1px vertical rule between items. */
+.strip { display: grid; grid-template-columns: repeat(6, 1fr); margin: 0 0 1.6rem; }
+.strip-item { padding: 0 1rem; }
+.strip-item + .strip-item { border-left: 1px solid var(--rule); }
+.strip-value {
+  display: block; font-family: var(--values); font-size: var(--t-stat);
+  font-feature-settings: "tnum"; color: var(--ink); line-height: var(--lh-h2);
+}
+.strip-label { display: block; color: var(--ink-muted); font-size: var(--t-mono-sm); }
+.cols { display: grid; gap: 1.6rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.cols p { margin: 0; color: var(--ink-muted); }
+
+/* ── the playground ───────────────────────────────────────────────────────── */
+.card.playground {
+  border: 1px solid var(--rule); border-radius: var(--radius); background: var(--paper-2);
+  padding: 1.2rem; margin-top: 1.6rem;
+}
+.playground label { display: block; font-size: var(--t-mono-sm); color: var(--ink-muted); margin: 0.9rem 0 0.3rem; }
+.playground output { font-family: var(--values); font-feature-settings: "tnum"; color: var(--ink); }
+/* THE RANGE INPUT, DRAWN. The browser default is the one control on this site
+   that reads as unstyled beside everything else. */
+.pg-range { -webkit-appearance: none; appearance: none; width: 100%; background: transparent; }
+.pg-range::-webkit-slider-runnable-track { height: 4px; background: var(--rule); border-radius: var(--radius); }
+.pg-range::-moz-range-track { height: 4px; background: var(--rule); border-radius: var(--radius); }
+.pg-range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 16px; height: 16px; margin-top: -6px;
+  background: var(--arm-skill); border: 2px solid var(--ink); border-radius: var(--radius);
+}
+.pg-range::-moz-range-thumb {
+  width: 16px; height: 16px;
+  background: var(--arm-skill); border: 2px solid var(--ink); border-radius: var(--radius);
+}
+.pg-range:focus { outline: none; }
+.pg-range:focus::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--accent-ink); }
+.pg-range:focus::-moz-range-thumb { box-shadow: 0 0 0 3px var(--accent-ink); }
+.pg-seg { display: inline-flex; border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; }
+.pg-seg-option {
+  padding: 0.35rem 0.8rem; cursor: pointer; font-size: var(--t-mono-sm);
+  color: var(--ink-muted); background: var(--paper);
+}
+.pg-seg-option + .pg-seg-option { border-left: 1px solid var(--rule); }
+.pg-seg-option[aria-checked="true"] { color: var(--ink); background: var(--white); }
+.pg-plot { margin: 0.5rem 0 1rem; }
+.pg-seg-label { display: block; font-size: var(--t-mono-sm); color: var(--ink-muted); margin: 0.9rem 0 0.3rem; }
+.playground .pg-verdict { display: inline-flex; align-items: center; gap: 0.6rem; }
+
+/* ── subscribe ────────────────────────────────────────────────────────────── */
+.subscribe { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+.subscribe label { font-size: var(--t-mono-sm); color: var(--ink-muted); }
+.subscribe input[type="email"] {
+  font: inherit; font-size: var(--t-body); padding: 0.5rem 0.7rem;
+  border: 1px solid var(--rule); border-radius: var(--radius); min-width: 16rem;
+  background: var(--white); color: var(--ink);
+}
+.subscribe button {
+  font: inherit; font-size: var(--t-body); padding: 0.55rem 1rem; border-radius: var(--radius);
+  border: 0; background: var(--accent-ink); color: var(--paper); cursor: pointer;
+}
+.privacy-line { font-size: var(--t-fine); color: var(--ink-muted); margin: 0.8rem 0 0; }
+
+/* ── documentation pages ──────────────────────────────────────────────────── */
+.glossary dt { font-family: var(--display); font-size: var(--t-h3); margin-top: 1.4rem; }
+.glossary dd { margin: 0.3rem 0 0; color: var(--ink-muted); }
+.report-type-card { border-top: 1px solid var(--rule); padding: 1.4rem 0; display: grid; gap: 1rem; grid-template-columns: 1fr; }
+@media (min-width: 700px) { .report-type-card { grid-template-columns: 160px 1fr; } }
+.report-type-card img, .report-type-card svg { width: 100%; height: auto; max-width: 100%; }
+.table-wrap { width: 100%; overflow-x: auto; }
+
+/* ── the published report bodies ──────────────────────────────────────────────
+   Eight pages this loop may restyle and may not edit. docs/style.css carries
+   their structure; these are the colour and type rules, here so the palette has
+   one home. Spec 020 amendment 29: the freeze is on content, never on a path, so
+   every one of these may be re-cut. */
+.card { background: var(--paper-2); color: var(--ink); border: 1px solid var(--rule); border-radius: var(--radius); }
+.headline { background: var(--paper-2); color: var(--ink); border: 1px solid var(--rule); border-left: 2px solid var(--arm-skill); border-radius: var(--radius); }
+.muted, .lede { color: var(--ink-muted); }
+.report-type { color: var(--accent-ink); font-size: var(--t-eyebrow); letter-spacing: 0.01em; }
+
+/* ── under 720px ──────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .screen { padding: 2.5rem 1.1rem; }
+  /* The value drops below its label, because two columns inside 390px leaves a
+     hash nowhere to go. */
+  .receipt-row { grid-template-columns: 1fr; gap: 0.15rem 0; }
+  .receipt { padding: 1rem; }
+  /* Two rows of three, not six columns of nothing. */
+  .strip { grid-template-columns: repeat(3, 1fr); row-gap: 1.2rem; }
+  .strip-item:nth-child(3n + 1) { border-left: 0; }
+  .strip-item { padding: 0 0.6rem; }
+  /* The wordmark and one disclosure. The nav is the disclosure's sibling, so it
+     reappears on `[open]` without a script and without a second copy of the
+     links; see the comment beside NAV in scripts/site-chrome.js. */
+  nav.site-nav { display: none; }
+  .nav-menu { display: block; }
+  .nav-menu[open] ~ nav.site-nav {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 0.6rem;
+    width: 100%; padding-top: 0.8rem; border-top: 1px solid var(--rule);
+  }
+  .card.report-card { grid-template-columns: 1fr; }
+  .subscribe input[type="email"] { min-width: 0; width: 100%; }
+}
+
+/* ── the one animation on this site ───────────────────────────────────────────
+   The hero band plot draws once on load: each band scales from its mean to its
+   extent over 600ms, ease-out. Everything else is still.
+
+   THIS IS THE ONLY prefers-reduced-motion BLOCK IN THE REPOSITORY, and spec 025
+   AC-7 asserts that: exactly one such block across every stylesheet and every
+   generated plot, and no transition, animation or keyframes declared outside it.
+   A site with motion scattered through it cannot answer "does this respect the
+   setting" by reading one block, and a reader who has asked for less motion is
+   asking once, not per element. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes hero-band-draw {
+    from { transform: scaleX(0.02); }
+    to { transform: scaleX(1); }
+  }
+  .bandplot.is-hero .band {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: hero-band-draw 600ms ease-out 1 both;
+  }
+}

@@ -1,0 +1,590 @@
+#!/usr/bin/env node
+// SPDX-License-Identifier: Apache-2.0
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const { PROJECT_NAME, RUNNER_VERSION, DEFAULT_JUDGE_SAMPLES, DEV_MAX_USD, DEV_MAX_CALLS } = require('../config');
+const { loadSkill } = require('../lib/skill');
+const { runSkillOnModel, summarizeReceipt, projectCalls, answeredLine, band, uncertaintyStr } = require('../lib/run');
+const { SAMPLING } = require('../lib/sampling');
+const { validateReceipt, verifyReceiptHash } = require('../lib/receipt');
+const { buildDriftReport, revisionPairProblem } = require('../lib/diff');
+const { surfaceForModel, isSubscriptionSurface, resolveModel, evalUser } = require('../lib/provider');
+const { estimateRunCostUSD, BudgetTracker } = require('../lib/cost');
+const { registryStatus, assertRegistered, REGISTRY_PATH } = require('../lib/models');
+const { verdictFromReceipt, badgeEndpoint, githubOutputLines } = require('../lib/verdict');
+const { scaffoldInit } = require('../lib/init');
+
+// Output dirs default to the USER's current directory, not the package dir, so a
+// global/npx install writes receipts/transcripts into the project being tested
+// (never into a read-only global install). --out overrides the receipts dir.
+const TRANSCRIPTS_DIR = path.join(process.cwd(), 'transcripts');
+
+// Write retained transcripts for one receipt to transcripts/<receipt_hash>/.
+// One JSON file per (case, mode); gitignored by default. Called only when
+// --keep-transcripts is set (run.transcripts === 'retained-local').
+function writeTranscripts(receipt, transcripts) {
+  const dir = path.join(TRANSCRIPTS_DIR, receipt.receipt_hash);
+  fs.mkdirSync(dir, { recursive: true });
+  const manifest = { receipt_hash: receipt.receipt_hash, model_id: receipt.run.model_id, date_utc: receipt.run.date_utc, entries: [] };
+  for (const t of transcripts) {
+    if (!t) continue;
+    const base = `${slug(t.id)}-${t.mode}`;
+    fs.writeFileSync(path.join(dir, `${base}.json`), JSON.stringify({ id: t.id, mode: t.mode, generation: t.generation, judge_outputs: t.judge_outputs }, null, 2));
+    manifest.entries.push(`${base}.json`);
+  }
+  fs.writeFileSync(path.join(dir, 'index.json'), JSON.stringify(manifest, null, 2));
+  return dir;
+}
+
+const RECEIPTS_DIR = path.join(process.cwd(), 'receipts');
+
+// ── THE DISPLAY VERIFIES BEFORE IT READS (spec 026 AC-20, F7) ────────────────
+// badge, diff and export read a receipt somebody else may have edited. Until
+// this, badge never checked the hash and diff and export printed a warning
+// and proceeded, so a receipt with one digit moved and the hash left as it
+// was rendered `passing` (028's D-5, for the CLI). A receipt whose
+// receipt_hash does not verify is refused here: nothing on stdout, no file,
+// the reason on stderr naming receipt_hash and the file, exit 4. The bound the
+// threat model states does not move: the same edit followed by a re-seal
+// (sealReceipt) verifies and renders, which is what receipt_hash is: integrity
+// since sealing, not authenticity. The check lives here, in the three
+// commands, and not in lib/verdict.js's writer, which the repo gate calls on
+// synthetic unsealed receipts.
+function refuseUnverified(receipt, file, command) {
+  if (verifyReceiptHash(receipt)) return;
+  console.error(`  ✗ REFUSED (${command}): receipt_hash does not verify for ${path.basename(file)} (tampered or hand-edited since it was sealed); nothing rendered.`);
+  process.exit(4);
+}
+
+// Read an optional .driftproofrc (JSON) for per-project run defaults. Looked up
+// in the skill dir first (where `driftproof init` writes it), then the CWD. CLI
+// flags always win over the rc; the rc wins over built-in defaults.
+function loadRc(skillDir) {
+  const merged = {};
+  for (const dir of [process.cwd(), skillDir].filter(Boolean)) {
+    const p = path.join(dir, '.driftproofrc');
+    try {
+      if (fs.existsSync(p)) Object.assign(merged, JSON.parse(fs.readFileSync(p, 'utf8')));
+    } catch (_e) { /* a malformed rc is ignored, not fatal */ }
+  }
+  return merged;
+}
+
+// Flags that never take a value, so `--trusted-skill <skill-dir>` keeps the dir
+// positional instead of swallowing it as the flag's value.
+const BOOLEAN_FLAGS = new Set(['trusted-skill']);
+
+// ── THE INPUT CONTRACT (spec 026 AC-9, F5) ────────────────────────────────────
+// A COPY of action/lib.sh's RE_* rules, in the shape spec 028's fixture holds
+// them; specs/026-receipt-integrity/fixtures/input-contract.json carries the
+// same copy and AC-9 asserts the three identical, rule for rule, both ways.
+// Consolidating into one shared module is 028's decision 1, the spec after 026.
+//
+// Why a contract at the door: `parseInt('abc', 10)` is NaN, both cost guards
+// are `>` comparisons against it, both are false, and the run completed and
+// wrote a receipt that carried no trace of it (the dollar cap never compared;
+// the call cap silently became the dev default). `--samples abc` was quieter
+// still: `NaN || 5` is 5. Every numeric input, from the command line or the
+// rc, is checked against its rule BEFORE the projection is printed and before
+// any call; a flag given with no value (the parser records `true`) and an
+// empty string are refused the same way, not defaulted.
+const INPUT_CONTRACT = {
+  rules: {
+    models: { re: /^[A-Za-z0-9._-]+(,[A-Za-z0-9._-]+)*$/, message: 'models: expected a comma-separated list of model ids (letters, digits, . _ -)' },
+    max_usd: { re: /^[0-9]+(\.[0-9]+)?$/, message: 'max-usd: expected a positive decimal number such as 20 or 3.53' },
+    max_usd_zero: { re: /^0+(\.0+)?$/, reject_on_match: true, message: 'max-usd: must be greater than zero' },
+    max_calls: { re: /^[1-9][0-9]*$/, message: 'max-calls: expected a positive integer with no leading zero' },
+    skill_dir_control: { re: /[\x00-\x1f\x7f]/, reject_on_match: true, message: 'skill-dir: contains a control character' },
+  },
+  // Which rule each `driftproof run` input is checked against. samples,
+  // max-cases and concurrency are positive integers and reuse max_calls' rule.
+  flags: { 'models': ['models'], 'max-usd': ['max_usd', 'max_usd_zero'], 'max-calls': ['max_calls'], 'samples': ['max_calls'], 'max-cases': ['max_calls'], 'concurrency': ['max_calls'], 'skill-dir': ['skill_dir_control'] },
+};
+
+function shownValue(v) {
+  if (v === true) return '<no value>';
+  return JSON.stringify(String(v));
+}
+// Refuse one input: the rule's own message, the input's name and the value it
+// carried, exit 2. Nothing has been printed or spent when this runs.
+function refuseInput(name, value, message, where) {
+  console.error(`  ✗ REFUSED: ${message}, got ${shownValue(value)} (${where} ${name}); nothing run, no receipt written.`);
+  process.exit(2);
+}
+// Check one input against every rule its flag maps to. `value` is what was
+// given: a string, a number (from the rc), `true` (a flag with no value) or
+// an empty string; only a string that matches every rule passes.
+function checkInput(flag, value, where, shownName = flag) {
+  const rules = INPUT_CONTRACT.flags[flag] || [];
+  const text = typeof value === 'string' ? value : (typeof value === 'number' && Number.isFinite(value)) ? String(value) : null;
+  if (text === null) refuseInput(shownName, value, `${flag}: expected a value`, where);
+  for (const key of rules) {
+    const rule = INPUT_CONTRACT.rules[key];
+    const hit = rule.re.test(text);
+    if (rule.reject_on_match ? hit : !hit) refuseInput(shownName, value, rule.message, where);
+  }
+  return text;
+}
+// Every numeric input the run takes, from the command line first and the rc
+// second, checked before anything is printed. Returns the checked strings.
+// The registry door (spec 026 AC-10, F6): every target and the judge it will
+// run with must be a model the registry knows. lib/models.js assertRegistered
+// is the one rule; lib/run.js asks it too on the path every caller shares, and
+// this door is where bin/driftproof says the registry's path in its own
+// message, before the suite loads.
+function checkRegistered(models, judgeFor) {
+  try {
+    for (const m of models) { assertRegistered(m, 'model'); assertRegistered(judgeFor(m), 'judge model'); }
+  } catch (e) {
+    if (e && e.code === 'UNREGISTERED_MODEL') { console.error(`  ✗ REFUSED (${/judge/.test(e.message) ? 'judge-model / judge_model' : 'models'}): ${e.message}`); process.exit(2); }
+    throw e;
+  }
+}
+function checkNumericInputs(flags, rc) {
+  const out = {};
+  for (const [flag, rcKey] of [['max-calls', 'max_calls'], ['max-usd', 'max_usd'], ['samples', 'samples'], ['max-cases', 'max_cases'], ['concurrency', 'concurrency']]) {
+    if (Object.prototype.hasOwnProperty.call(flags, flag)) out[flag] = checkInput(flag, flags[flag], 'flag --');
+    else if (rc[rcKey] !== undefined && rc[rcKey] !== null) out[flag] = checkInput(flag, rc[rcKey], '.driftproofrc', rcKey);
+  }
+  return out;
+}
+
+function parseArgs(argv) {
+  const positional = [];
+  const flags = {};
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a.startsWith('--')) {
+      const key = a.slice(2);
+      const next = argv[i + 1];
+      if (BOOLEAN_FLAGS.has(key) || next === undefined || next.startsWith('--')) { flags[key] = true; }
+      else { flags[key] = next; i++; }
+    } else positional.push(a);
+  }
+  return { positional, flags };
+}
+
+function usage() {
+  console.log(`${PROJECT_NAME} v${RUNNER_VERSION} — continuous verification of agent skills
+
+USAGE
+  ${PROJECT_NAME} init <dir>                          scaffold SKILL.md + evals/evals.json + .driftproofrc
+  ${PROJECT_NAME} run <skill-dir> [--models a,b] [--samples N] [--max-cases N] [--max-calls N]
+                        [--judge-model M] [--concurrency N] [--max-usd N]
+                        [--keep-transcripts] [--out DIR] [--trusted-skill]
+  ${PROJECT_NAME} diff <receiptA.json> <receiptB.json> [--out FILE] [--mode release|revision]
+  ${PROJECT_NAME} validate <receipt.json>
+  ${PROJECT_NAME} badge <receipt.json> [--out FILE] [--github-output]
+  ${PROJECT_NAME} import <results.json> --from agent-skills-eval|skillgrade [--out DIR]
+  ${PROJECT_NAME} export <receipt.json> [--to summary-json] [--report-url URL] [--out FILE]
+
+ENV
+  CLAUDE_PROVIDER   api | cli   (default: cli — spawns \`claude -p\`, strips ANTHROPIC_API_KEY)
+  ANTHROPIC_API_KEY required when CLAUDE_PROVIDER=api
+  DRIFTPROOF_REGISTRY  path to an alternate model registry (default: the packaged config/models.json)
+  DRIFTPROOF_STUB=1    offline stub surface — canned receipts, zero model calls (for CI)
+  DRIFTPROOF_EVAL_USER the unix user the isolated hop runs the CLI as (default: driftproof-eval)
+
+NOTES
+  - Default models list is 'haiku' only (cheap dev default).
+  - Sampled judging: each case does 2 generations + 2×samples judge calls.
+    Default --samples 5 → 12 calls/case; --samples 1 disables bands AND the
+    variance ratio: with one judge sample the per-draw judge spread is zero by
+    construction, so the receipt records variance_ratio: null with
+    variance_ratio_unavailable: "single_judge_sample". Legal, but a run whose
+    ratio you intend to publish needs --samples 2 or more.
+  - --max-calls is a hard per-run call cap (default ${DEV_MAX_CALLS}). The whole run is
+    projected up front and REFUSED before any call if it would exceed the cap.
+  - --max-usd is a hard dollar budget (default ${DEV_MAX_USD} for dev runs). The projected
+    cost is printed up front and the run is REFUSED on BOTH surfaces if it would
+    exceed the budget; on claude-cli the metered spend is $0 but the estimated-
+    equivalent api cost is counted against the cap identically. The run also
+    hard-stops mid-flight at 1.25× the cap.
+  - --keep-transcripts writes the raw generations + judge outputs to
+    transcripts/<receipt-hash>/ (gitignored) and records transcripts:"retained-
+    local" in the receipt. Default is "hashes-only" (only the sha256 hashes).
+  - Prices and registry status come from config/models.json (or the registry
+    DRIFTPROOF_REGISTRY names). An unregistered model id is REFUSED before any call,
+    naming the id and the registry path (so is one not shaped like a model id);
+    registry:"unregistered" is an import-only receipt value, refused for a run.
+  - --concurrency runs that many (case,mode) tasks at once (default 1). Higher
+    values cut wall-clock on the cli surface (cold-start dominated).
+  - ISOLATION (default). On the two cli surfaces every \`claude\` / \`codex\` spawn
+    runs as a dedicated unprivileged unix user (DRIFTPROOF_EVAL_USER) through
+    sudo, from an EMPTY environment (only HOME and PATH, constructed), in a fresh
+    temp working directory removed after the call. A third-party SKILL.md is
+    instructions to an agent with tools; this is what keeps it away from your
+    keys, tokens and files. Operator prerequisite: that user, its own logged-in
+    CLIs, and a NOPASSWD sudoers rule (see RUNBOOK.md).
+  - --trusted-skill runs the legacy same-user path instead: your environment,
+    your cwd, your CLI login. FOR SKILLS YOU AUTHORED YOURSELF ONLY. Never pass
+    it for a skill fetched from anywhere else.
+  - import converts another tool's results into a valid receipt with HONEST
+    epistemics: verification_level DECLARED (never TESTED), surface "external",
+    source "imported/<tool>", and NO fabricated hashes. Imported receipts are
+    excluded from drift verdicts (diff reports NOT MEASURED). See docs/interop.md.
+  - export --to summary-json emits the minimal stable interchange summary
+    (driftproof/summary v1) other tools can consume without a receipt parser.`);
+}
+
+function slug(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+function dateStamp(iso) { return iso.slice(0, 10); }
+
+async function cmdRun(positional, flags) {
+  const skillDir = positional[0];
+  if (!skillDir) { usage(); process.exit(2); }
+
+  // Per-project defaults from .driftproofrc (if any); CLI flags override these.
+  const rc = loadRc(skillDir);
+  // The contract, at the door (spec 026 AC-9): every input checked against
+  // its rule before the projection and before any call. A value that fails
+  // its shape is refused naming the input and the value; nothing is defaulted.
+  if (INPUT_CONTRACT.rules.skill_dir_control.re.test(String(skillDir))) refuseInput('skill-dir', skillDir, INPUT_CONTRACT.rules.skill_dir_control.message, 'argument');
+  const checked = checkNumericInputs(flags, rc);
+  const modelsRaw = Object.prototype.hasOwnProperty.call(flags, 'models') ? flags.models : (rc.models !== undefined && rc.models !== null) ? rc.models : 'haiku';
+  const models = String(modelsRaw).split(',').map((s) => s.trim()).filter(Boolean);
+  const judgeModel = flags['judge-model'] || rc.judge_model || null;
+  // Spec 026 AC-10 (F6): every model id, and the judge, must be a model the
+  // registry knows; refused here naming the input, the id and the registry's
+  // absolute path, before the suite loads, before the projection, before any
+  // call. A shape failure is refused the same way (the contract's models rule
+  // below then never sees one). The same check stands in lib/run.js for every
+  // other caller.
+  const judgeFor = (m) => (judgeModel ? resolveModel(judgeModel) : resolveModel(m));
+  checkRegistered(models, judgeFor);
+  const modelsGiven = Object.prototype.hasOwnProperty.call(flags, 'models') ? checkInput('models', flags.models, 'flag --')
+    : (rc.models !== undefined && rc.models !== null) ? checkInput('models', rc.models, '.driftproofrc', 'models') : 'haiku';
+  void modelsGiven;
+  const maxCases = checked['max-cases'] !== undefined ? parseInt(checked['max-cases'], 10) : null;
+  const maxCalls = checked['max-calls'] !== undefined ? parseInt(checked['max-calls'], 10) : DEV_MAX_CALLS;
+  const samples = checked.samples !== undefined ? parseInt(checked.samples, 10) : DEFAULT_JUDGE_SAMPLES;
+  const concurrency = checked.concurrency !== undefined ? parseInt(checked.concurrency, 10) : 1;
+  const maxUsd = checked['max-usd'] !== undefined ? parseFloat(checked['max-usd']) : DEV_MAX_USD;
+  const keepTranscripts = !!flags['keep-transcripts'];
+  // spec 022: the same-user spawn exists only behind this flag.
+  //
+  // THE EVAL USER IS NOT RESOLVED HERE (F-022-4, spec 021). It used to be, on
+  // every run that was not --trusted-skill, including an api-surface-only run
+  // that spawns no CLI at all - so a hostile DRIFTPROOF_EVAL_USER refused a run
+  // that would never have read it. Fail-loud and harmless, and still wrong: a
+  // variable that governs a lane this run does not take should be neither read
+  // nor validated. It is resolved below, once a subscription surface is actually
+  // in the run, which is the same condition the isolation banner already used.
+  const trusted = !!flags['trusted-skill'];
+  const outDir = flags.out ? path.resolve(flags.out) : RECEIPTS_DIR;
+  fs.mkdirSync(outDir, { recursive: true });
+
+  const skill = loadSkill(skillDir);
+  const nCases = maxCases ? Math.min(maxCases, skill.suite.caseCount) : skill.suite.caseCount;
+  // Spec 026 AC-5 (F2): a suite with no cases measures nothing, and a receipt
+  // over nothing is a receipt about nothing. Refused here, before the
+  // projection and before any call, naming the suite file.
+  if (nCases < 1) {
+    console.error(`  ✗ REFUSED: the suite at ${path.join(path.resolve(skillDir), 'evals', 'evals.json')} has no cases${maxCases ? ` (after --max-cases ${maxCases})` : ''}; nothing to measure, no receipt written.`);
+    process.exit(2);
+  }
+  // v0.5 draws the generation up to SAMPLING.max times per arm, so BOTH the
+  // printed projection and the dollar guard below must be scaled by it. Left at
+  // draws=1 the guard would admit a run costing up to ten times its own
+  // projection — the display would say one number and the runner would refuse
+  // quoting another. Conservative on purpose: refusing a run that would have fit
+  // is recoverable, overspending is not.
+  const perModelCalls = projectCalls(nCases, samples, SAMPLING.max);
+  const totalProjected = perModelCalls * models.length;
+
+  // Dollar cost guard (Week 3): project the METERED USD cost up front. On the
+  // `api` surface this is real spend, so we refuse if it would exceed --max-usd.
+  // On `claude-cli` the metered spend is $0 (subscription); the figure is the
+  // hypothetical "if run on the metered API" cost — printed, never blocks.
+  // Spec 026 AC-10: the projection is priced with the judge the run will USE
+  // (lib/run.js: --judge-model when given, else the target itself), never a
+  // fixed haiku; each target is priced with its own judge and the figures summed.
+  const targets = models.map((m) => resolveModel(m));
+  const judges = models.map((m) => judgeFor(m));
+  const perModelCost = targets.map((t, i) => estimateRunCostUSD({ caseCount: nCases, draws: SAMPLING.max, samples, models: [targets[i]], judgeModel: judges[i] }));
+  const cost = { totalUSD: Math.round(perModelCost.reduce((a, c) => a + c.totalUSD, 0) * 1e4) / 1e4, perModel: perModelCost.flatMap((c) => c.perModel), judges };
+  // Surface is per-model now (a run may mix an Anthropic and an OpenAI target).
+  const surfaces = [...new Set(models.map((m) => surfaceForModel(m)))];
+  const surface = surfaces.join(', ');
+  const subSurfaces = surfaces.filter(isSubscriptionSurface);
+
+  const regStatuses = models.map((m) => `${m}:${registryStatus(m)}`);
+  console.log(`\n${PROJECT_NAME} run — skill "${skill.name}" v${skill.version}`);
+  // Spec 026 AC-1: a stub run says so before it starts, and its receipt says so
+  // after (surface stub, answered_by.kind stub, UNVERIFIED).
+  if (process.env.DRIFTPROOF_STUB === '1') console.log('  STUB RUN (DRIFTPROOF_STUB=1): nothing will answer; the receipt will be UNVERIFIED and measure nothing');
+  console.log(`  content_hash: ${skill.contentHash.slice(0, 16)}…  suite: ${skill.suite.caseCount} cases (${skill.suite.suiteHash.slice(0, 12)}…)`);
+  console.log(`  surface: ${surface}   models: ${models.join(', ')}   samples/case: ${samples}   concurrency: ${concurrency}`);
+  console.log(`  registry: ${regStatuses.join('  ')}${keepTranscripts ? '   transcripts: retained-local' : ''}`);
+  console.log(`  judge: ${[...new Set(cost.judges)].join(', ')}   (${judgeModel ? '--judge-model' : 'the target model itself; set --judge-model to change'})`);
+  if (subSurfaces.length) {
+    const isolation = trusted ? 'same-user (--trusted-skill: self-authored skill)' : `eval-user (${evalUser()})`;
+    console.log(`  isolation: ${isolation}`);
+  }
+  console.log(`  projected calls: ${perModelCalls}/model × ${models.length} model(s) = ${totalProjected}   per-model cap: ${maxCalls}`);
+  console.log(`  projected cost: ~$${cost.totalUSD.toFixed(2)} (rough upper bound; budget $${maxUsd.toFixed(2)}, hard-stop $${(maxUsd * 1.25).toFixed(2)})`);
+  if (subSurfaces.length) console.log(`  actual metered spend on ${subSurfaces.join(', ')}: $0.00 (subscription; the $ figure is the estimated-equivalent API cost, counted against the cap identically)`);
+
+  // Call-count guard: refuse before spending anything if a single model run
+  // would exceed the per-run call cap.
+  if (perModelCalls > maxCalls) {
+    console.error(`\n  ✗ ABORT (cost guard): projected ${perModelCalls} calls/model exceeds --max-calls ${maxCalls}.`);
+    console.error(`    Lower --samples/--max-cases or raise --max-calls.`);
+    process.exit(3);
+  }
+  // Dollar guard: the projection is refused on BOTH surfaces. Subscription (cli)
+  // attention is not free, so its estimated-equivalent cost is counted against
+  // --max-usd identically to metered api spend.
+  if (cost.totalUSD > maxUsd) {
+    console.error(`\n  ✗ ABORT (cost guard): projected cost ~$${cost.totalUSD.toFixed(2)} exceeds --max-usd $${maxUsd.toFixed(2)}.`);
+    console.error(`    Trim skills/cases or raise --max-usd (do NOT lower --samples for a published run).`);
+    process.exit(3);
+  }
+  console.log('');
+
+  // One live budget tracker for the whole run: accumulates estimated per-call
+  // cost across all models and hard-stops at 1.25× the cap.
+  const budget = new BudgetTracker(maxUsd);
+
+  const emitted = [];
+  for (const model of models) {
+    console.log(`── model: ${model} ──`);
+    let result;
+    try {
+      result = await runSkillOnModel({
+        skill,
+        model,
+        opts: {
+          maxCases, maxCalls, samples, judgeModel, concurrency, budget, keepTranscripts, trusted,
+          onProgress: (p) => {
+            if (p.phase === 'done') console.log(`  ${p.case} / ${p.mode}: ${p.outcome} (${p.score.toFixed(2)} ± ${(p.stddev || 0).toFixed(2)})`);
+          },
+        },
+      });
+    } catch (e) {
+      if (e && e.code === 'SUBSTRATE_MISMATCH') {
+        // Spec 026 AC-2: the surface answered as a different model. The run
+        // stopped before its next call and wrote no receipt.
+        console.error(`\n  ✗ REFUSED (substrate mismatch): ${e.message}`);
+        process.exit(5);
+      }
+      if (e && e.code === 'BUDGET_HARDSTOP') {
+        console.error(`\n  ✗ ABORT (budget hard-stop): ${e.message}`);
+        console.error(`    ${emitted.length} receipt(s) already written to ${path.relative(process.cwd(), outDir)}/.`);
+        process.exit(3);
+      }
+      throw e;
+    }
+    const { receipt, calls, transcripts } = result;
+
+    const { valid, errors } = validateReceipt(receipt);
+    if (!valid) {
+      console.error('  ✗ emitted receipt FAILED schema validation:', JSON.stringify(errors, null, 2));
+      process.exitCode = 1;
+    }
+    if (!verifyReceiptHash(receipt)) {
+      console.error('  ✗ receipt_hash does not verify');
+      process.exitCode = 1;
+    }
+
+    const base = `${slug(skill.name)}-${slug(receipt.run.model_id)}-${dateStamp(receipt.run.date_utc)}`;
+    const jsonPath = path.join(outDir, `${base}.json`);
+    const mdPath = path.join(outDir, `${base}.summary.md`);
+    fs.writeFileSync(jsonPath, JSON.stringify(receipt, null, 2));
+    fs.writeFileSync(mdPath, summarizeReceipt(receipt));
+    emitted.push(jsonPath);
+
+    // v0.3: retained transcripts are written keyed by the sealed receipt_hash,
+    // so a reader can verify every generation_hash / judge_sample_hash.
+    if (keepTranscripts && transcripts) {
+      const tdir = writeTranscripts(receipt, transcripts);
+      console.log(`  → transcripts (retained-local): ${path.relative(process.cwd(), tdir)}/`);
+    }
+
+    const cmp = receipt.comparison;
+    const aw = receipt.results.aggregates.with_skill;
+    const ab = receipt.results.aggregates.baseline;
+    console.log(`  → ${path.relative(process.cwd(), jsonPath)}  (${calls} calls)`);
+    console.log(`  → ${answeredLine(receipt)}; verification_level ${receipt.verification_level}`);
+    // Spec 026 AC-8: how many draws were cut at the output cap and excluded.
+    const nTruncated = receipt.results.cases.reduce((a, c) => a + (((c.generation || {}).n_truncated) || 0), 0);
+    if (nTruncated) console.log(`  → ${nTruncated} draw(s) truncated at the output cap: unmeasured, never judged, excluded from every band`);
+    // Spec 026 AC-6, AC-7: the band rule is named beside the band, and a band
+    // the formula could not form prints as n/a, never as 0.000.
+    if (cmp.delta == null) console.log(`  → skill lift n/a (${cmp.delta_uncertainty_unavailable === 'no_cases' ? 'no case was included on an arm' : 'no comparison'})\n`);
+    else console.log(`  → skill lift ${cmp.delta >= 0 ? '+' : ''}${cmp.delta.toFixed(3)} ± ${uncertaintyStr(cmp)}  (with ${band(aw.mean_score, aw.stddev)} vs base ${band(ab.mean_score, ab.stddev)}; band = sample stddev of the per-case means)\n`);
+  }
+
+  console.log(`Done. ${emitted.length} receipt(s) emitted to ${path.relative(process.cwd(), outDir)}/`);
+}
+
+function cmdDiff(positional, flags) {
+  const [aPath, bPath] = positional;
+  if (!aPath || !bPath) { usage(); process.exit(2); }
+  const a = JSON.parse(fs.readFileSync(aPath, 'utf8'));
+  const b = JSON.parse(fs.readFileSync(bPath, 'utf8'));
+
+  // Spec 026 AC-20: a side whose hash does not verify is refused, naming it.
+  for (const [p, r] of [[aPath, a], [bPath, b]]) refuseUnverified(r, p, 'diff');
+
+  // --mode revision inverts the axis: the skill text is the variable under test
+  // and the substrate is the control. The fields release drift merely warns about
+  // are preconditions here, so a pair that is not a revision pair is REFUSED
+  // (exit 6) rather than rendered with a caveat nobody reads. A differing model
+  // would be release drift wearing a revision label — the one confound this mode
+  // exists to exclude — and an EQUAL content_hash has no revision to measure.
+  const mode = flags.mode || 'release';
+  if (mode !== 'release' && mode !== 'revision') {
+    console.error(`unknown --mode "${mode}" — supported: release, revision`);
+    process.exit(2);
+  }
+  if (mode === 'revision') {
+    const problem = revisionPairProblem(a, b);
+    if (problem) {
+      const why = problem === 'skill.content_hash'
+        ? 'the two receipts carry the SAME skill.content_hash — there is no revision between them to measure'
+        : `${problem} differs between the two receipts — revision drift requires the substrate to be held fixed, and a differing ${problem} would confound the revision with release drift`;
+      console.error(`  ✗ REFUSED (--mode revision): ${why}.`);
+      console.error(`    Compare these two with the default release mode, or supply a pair that differs only in skill.content_hash.`);
+      process.exit(6);
+    }
+  }
+
+  const labelA = mode === 'revision' ? `pinned (${dateStamp(a.run.date_utc)})` : dateStamp(a.run.date_utc);
+  const labelB = mode === 'revision' ? `current (${dateStamp(b.run.date_utc)})` : dateStamp(b.run.date_utc);
+  const { markdown } = buildDriftReport(a, b, { labelA, labelB, mode });
+
+  if (flags.out) {
+    fs.writeFileSync(path.resolve(flags.out), markdown);
+    console.log(`Drift report written to ${flags.out}`);
+  } else {
+    console.log(markdown);
+  }
+}
+
+function cmdValidate(positional) {
+  const p = positional[0];
+  if (!p) { usage(); process.exit(2); }
+  const receipt = JSON.parse(fs.readFileSync(p, 'utf8'));
+  const { valid, errors } = validateReceipt(receipt);
+  const hashOk = verifyReceiptHash(receipt);
+  console.log(`schema: ${valid ? 'VALID' : 'INVALID'}   receipt_hash: ${hashOk ? 'VERIFIED' : 'MISMATCH'}`);
+  if (!valid) console.log(JSON.stringify(errors, null, 2));
+  process.exit(valid && hashOk ? 0 : 1);
+}
+
+function cmdInit(positional) {
+  const target = positional[0];
+  if (!target) {
+    console.error('usage: driftproof init <dir>\n');
+    console.error('Scaffolds SKILL.md (stub), evals/evals.json (3 example cases), and .driftproofrc.');
+    process.exit(2);
+  }
+  const { dir, created, skipped } = scaffoldInit(target);
+  const rel = (p) => path.relative(process.cwd(), p) || '.';
+  console.log(`driftproof init — ${rel(dir)}/`);
+  for (const f of created) console.log(`  + ${rel(f)}`);
+  for (const f of skipped) console.log(`  · ${rel(f)} (exists — left untouched)`);
+  if (!created.length) {
+    console.log('\nNothing to create; every file already existed. init never overwrites.');
+    return;
+  }
+  console.log(`\nNext:
+  1. Edit ${rel(path.join(dir, 'SKILL.md'))} with your skill's instructions.
+  2. Edit ${rel(path.join(dir, 'evals', 'evals.json'))} — replace the 3 example cases (rubrics anchored at 0.80).
+  3. driftproof run ${rel(dir)} --models claude-haiku-4-5
+See AUTHORING.md for how to write a fair suite.`);
+}
+
+// Emit a shields.io endpoint badge for a single receipt, or GitHub Actions
+// output lines. Default: print the shields JSON to stdout (commit it and point
+// the shields endpoint URL at it). --out FILE writes the JSON to a file.
+// --github-output prints verdict/delta/message/color as key=value lines.
+function cmdBadge(positional, flags) {
+  const p = positional[0];
+  if (!p) { console.error('usage: driftproof badge <receipt.json> [--out FILE] [--github-output]'); process.exit(2); }
+  const receipt = JSON.parse(fs.readFileSync(p, 'utf8'));
+  refuseUnverified(receipt, p, 'badge');
+  if (flags['github-output']) { console.log(githubOutputLines(receipt)); return; }
+  const badge = badgeEndpoint(receipt);
+  const json = JSON.stringify(badge, null, 2);
+  if (flags.out) {
+    const out = path.resolve(flags.out);
+    fs.mkdirSync(path.dirname(out), { recursive: true });
+    fs.writeFileSync(out, json + '\n');
+    const v = verdictFromReceipt(receipt);
+    console.log(`badge written to ${flags.out}  (${v.verdict}: ${badge.message}, ${badge.color})`);
+  } else {
+    console.log(json);
+  }
+}
+
+// Convert another tool's results file into a valid DECLARED receipt (interop,
+// Phase 7). The converted receipt is validated + self-hash-verified before it
+// is written; a failed conversion writes nothing.
+function cmdImport(positional, flags) {
+  const p = positional[0];
+  const from = flags.from;
+  const { IMPORT_TOOLS, importResults } = require('../lib/importers');
+  if (!p || typeof from !== 'string') {
+    console.error(`usage: driftproof import <results.json> --from ${IMPORT_TOOLS.join('|')} [--out DIR]`);
+    process.exit(2);
+  }
+  const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+  const receipt = importResults(data, { from, importedAt: new Date().toISOString() });
+  const { valid, errors } = validateReceipt(receipt);
+  if (!valid || !verifyReceiptHash(receipt)) {
+    console.error('✗ converted receipt failed validation — nothing written:', JSON.stringify(errors, null, 2));
+    process.exit(1);
+  }
+  const outDir = flags.out ? path.resolve(flags.out) : RECEIPTS_DIR;
+  fs.mkdirSync(outDir, { recursive: true });
+  const base = `${slug(receipt.skill.name)}-${slug(receipt.run.model_id)}-imported-${slug(from)}-${dateStamp(receipt.run.date_utc)}`;
+  const jsonPath = path.join(outDir, `${base}.json`);
+  fs.writeFileSync(jsonPath, JSON.stringify(receipt, null, 2));
+  console.log(`imported → ${path.relative(process.cwd(), jsonPath)}`);
+  console.log(`  verification_level: DECLARED (source ${receipt.run.source}) — the source tool's declaration, converted faithfully;`);
+  console.log(`  no generation hashes (never fabricated); excluded from drift verdicts unless re-run TESTED. See docs/interop.md.`);
+}
+
+// Emit the minimal stable interchange summary for one receipt (interop, Phase 7).
+function cmdExport(positional, flags) {
+  const p = positional[0];
+  const to = flags.to || 'summary-json';
+  if (!p) { console.error('usage: driftproof export <receipt.json> [--to summary-json] [--report-url URL] [--out FILE]'); process.exit(2); }
+  if (to !== 'summary-json') { console.error(`unknown export target "${to}" — supported: summary-json`); process.exit(2); }
+  const { toSummaryJson } = require('../lib/export');
+  const receipt = JSON.parse(fs.readFileSync(p, 'utf8'));
+  refuseUnverified(receipt, p, 'export');
+  const summary = toSummaryJson(receipt, { reportUrl: typeof flags['report-url'] === 'string' ? flags['report-url'] : null });
+  const json = JSON.stringify(summary, null, 2);
+  if (flags.out) {
+    const out = path.resolve(flags.out);
+    fs.mkdirSync(path.dirname(out), { recursive: true });
+    fs.writeFileSync(out, json + '\n');
+    console.log(`summary written to ${flags.out}  (${summary.verdict}, delta ${summary.delta === null ? 'n/a' : summary.delta})`);
+  } else {
+    console.log(json);
+  }
+}
+
+async function main() {
+  const [, , cmd, ...rest] = process.argv;
+  const { positional, flags } = parseArgs(rest);
+  switch (cmd) {
+    case 'init': return cmdInit(positional);
+    case 'run': return cmdRun(positional, flags);
+    case 'diff': return cmdDiff(positional, flags);
+    case 'validate': return cmdValidate(positional);
+    case 'badge': return cmdBadge(positional, flags);
+    case 'import': return cmdImport(positional, flags);
+    case 'export': return cmdExport(positional, flags);
+    case 'version': case '--version': case '-v': console.log(RUNNER_VERSION); return;
+    case 'help': case '--help': case '-h': case undefined: return usage();
+    default: console.error(`unknown command: ${cmd}\n`); usage(); process.exit(2);
+  }
+}
+
+main().catch((e) => { console.error('FATAL', e && (e.stack || e.message || e)); process.exit(2); });
