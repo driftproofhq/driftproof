@@ -1,0 +1,64 @@
+/* SPDX-License-Identifier: Apache-2.0
+   Driftproof site structure. The palette, the type scale, the radius and the two
+   content widths are all in docs/tokens.css; this file names them and states
+   none of them. specs/025-design-pass/gate.mjs AC-3 reads every stylesheet under
+   docs/ and fails on a hex, a border-radius or a font-size outside the fenced
+   token block in that file.
+
+   WHY THIS FILE STILL EXISTS. Eight published report pages link it from their
+   own <head>, and those heads are rendered by eight pinned per-report
+   generators. Folding it into tokens.css would mean either editing eight
+   published pages' heads or leaving a link that resolves to nothing, and spec
+   020 AC-37 asserts that every internal href resolves. So it survives, holding
+   the structure of a published report body: the tables, the verdict chips, the
+   summary blocks. Its palette declarations are gone, which is the half that
+   mattered - it used to redefine --code, --card, --fg and --line under
+   prefers-color-scheme: dark, and that is how every <code> element on the site
+   once rendered near-black on near-black. */
+
+/* A REPORT BODY IS A TEXT DOCUMENT and takes the text measure. A GENERATED PAGE
+   IS A COLUMN OF SECTIONS and takes none: each `.screen` constrains itself, and
+   a full-bleed band has to reach the edges of the viewport to be one.
+   `main { max-width: 720px }` applied to both, which is how every section on
+   this site rendered at 672 pixels on a 1470-wide screen while the stylesheet
+   said 1100. The class is on the element rather than inferred with `:has()`,
+   because a layout that fails closed on an older engine fails as a clamped page
+   and nobody sees it. */
+main {
+  max-width: var(--w-text);
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+main.screens {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── a published report body ──────────────────────────────────────────────── */
+.report .pair, .report .src { color: var(--muted); font-size: var(--t-mono-sm); }
+.headline { padding: 1rem 1.25rem; margin: 1.5rem 0; }
+.headline .big { font-size: var(--t-h3); margin: 0 0 0.4rem; }
+.card { padding: 1rem 1.25rem; margin: 1rem 0; }
+.lede { font-size: var(--t-body); }
+
+table { border-collapse: collapse; margin: 1rem 0; font-size: var(--t-mono-sm); width: 100%; }
+th, td { text-align: left; padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { color: var(--muted); font-weight: 600; }
+td { font-family: var(--values); font-feature-settings: "tnum"; }
+table.summary td:first-child, table.cases td:first-child { white-space: normal; font-family: var(--sans); }
+
+/* The per-case verdict chip a report table carries. One radius, one rule, the
+   colour of the state it names. */
+.v {
+  font-weight: 600; font-size: var(--t-mono-sm); padding: 0.1em 0.5em;
+  border-radius: var(--radius); border: 1px solid currentColor;
+}
+.v-regressed { color: var(--reg); }
+.v-improved { color: var(--imp); }
+.v-noise { color: var(--noise); }
+.v-mixed { color: var(--mixed); }
+
+section.skill { margin-top: 2.5rem; padding-top: 0.5rem; }
+ul.method li { margin: 0.5rem 0; }
+.foot { color: var(--muted); font-size: var(--t-mono-sm); margin-top: 2rem; }
