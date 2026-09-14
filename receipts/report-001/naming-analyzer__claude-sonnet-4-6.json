@@ -1,0 +1,348 @@
+{
+  "schema_version": "0.2",
+  "skill": {
+    "name": "naming-analyzer",
+    "version": "0.0.0",
+    "content_hash": "6091f97965528eea38ad10d22af7df30b932b2749168328da413fb12d5be8845"
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "0d046f22ca976abc1b8e4fb41821df74765b80111c09c38b26b65e0aee0dca0a",
+    "case_count": 7
+  },
+  "run": {
+    "model_id": "claude-sonnet-4-6",
+    "model_release_date": "2026-02-17",
+    "surface": "claude-cli",
+    "runner_version": "0.2.0",
+    "date_utc": "2026-07-28T09:50:21.633Z",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "boolean-prefixes-js",
+        "mode": "with_skill",
+        "outcome": "borderline",
+        "score": 0.72,
+        "mean": 0.72,
+        "stddev": 0.115109,
+        "samples": [
+          0.75,
+          0.85,
+          0.6,
+          0.8,
+          0.6
+        ],
+        "threshold": 0.7,
+        "reason": "All four booleans prefixed appropriately; three perfect (isLoggedIn, shouldShowNotification, isUserValid); isAdmin is valid but frames as state rather than possession as rubric expects.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "88a810b92020ee6d377b23325f33fd558b16a53bfae9e0cc7d309b8fed31fb1e"
+        }
+      },
+      {
+        "id": "boolean-prefixes-js",
+        "mode": "baseline",
+        "outcome": "borderline",
+        "score": 0.692,
+        "mean": 0.692,
+        "stddev": 0.095237,
+        "samples": [
+          0.6,
+          0.6,
+          0.79,
+          0.79,
+          0.68
+        ],
+        "threshold": 0.7,
+        "reason": "Three renamings are semantically correct. `permission` should use `has` (possession) not `is`; the rubric expects `hasPermission`. Rationales lack consistent semantic justification for prefix choices.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "88a810b92020ee6d377b23325f33fd558b16a53bfae9e0cc7d309b8fed31fb1e"
+        }
+      },
+      {
+        "id": "vague-names-js",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.854,
+        "mean": 0.854,
+        "stddev": 0.045056,
+        "samples": [
+          0.85,
+          0.87,
+          0.78,
+          0.87,
+          0.9
+        ],
+        "threshold": 0.7,
+        "reason": "All five identifiers renamed to specific descriptors; no generic-term renamings; cleaned code demonstrates idiomatic application. Exemplary but not exceptional.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8ad28a29d2226f1098ca8b02873b0e67b09b9968b916f7ebcf48e1c058d0a542"
+        }
+      },
+      {
+        "id": "vague-names-js",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.854,
+        "mean": 0.854,
+        "stddev": 0.035777,
+        "samples": [
+          0.8,
+          0.89,
+          0.88,
+          0.84,
+          0.86
+        ],
+        "threshold": 0.7,
+        "reason": "Replaces all five vague names with specific, descriptive ones matching the behavior; four match rubric guidance perfectly, one deviates defensibly without error.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8ad28a29d2226f1098ca8b02873b0e67b09b9968b916f7ebcf48e1c058d0a542"
+        }
+      },
+      {
+        "id": "constants-include-units-js",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.866,
+        "mean": 0.866,
+        "stddev": 0.011402,
+        "samples": [
+          0.87,
+          0.87,
+          0.85,
+          0.86,
+          0.88
+        ],
+        "threshold": 0.7,
+        "reason": "All magic numbers extracted with correct unit suffixes (_MS, _BYTES); MAX made specific; exemplary self-documenting arithmetic forms and detailed rationale.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "e44c7a1f79b697eb92fc0b5511f2e86b5a3322c16e02305033d434543f09c125"
+        }
+      },
+      {
+        "id": "constants-include-units-js",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.852,
+        "mean": 0.852,
+        "stddev": 0.032711,
+        "samples": [
+          0.85,
+          0.88,
+          0.85,
+          0.8,
+          0.88
+        ],
+        "threshold": 0.7,
+        "reason": "All magic numbers extracted with correct unit suffixes (_MS, _BYTES); MAX made specific; numeric separators and comments elevate it to exemplary—meets all rubric points.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "e44c7a1f79b697eb92fc0b5511f2e86b5a3322c16e02305033d434543f09c125"
+        }
+      },
+      {
+        "id": "misleading-name-mutation-js",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.828,
+        "mean": 0.828,
+        "stddev": 0.008367,
+        "samples": [
+          0.83,
+          0.84,
+          0.83,
+          0.82,
+          0.82
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly identifies side effect (mutation + persist) as reason for misleading name, renames to `recordUserLogin` (acceptable direction), explains mismatch clearly. Touches on primary purpose consideration but could develop it further for exemplary tier.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "7e17ea185a995723ee14b8b750b80ce88c10171e53c86615195df4c609901723"
+        }
+      },
+      {
+        "id": "misleading-name-mutation-js",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.804,
+        "mean": 0.804,
+        "stddev": 0.015166,
+        "samples": [
+          0.83,
+          0.8,
+          0.79,
+          0.8,
+          0.8
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly identifies side-effect problem and renames to signal mutation. Primary suggestion `loginUser` is acceptable but less explicit than rubric examples; alternatives (`recordUserLogin`) are stronger and better aligned with the rubric's exemplars.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "7e17ea185a995723ee14b8b750b80ce88c10171e53c86615195df4c609901723"
+        }
+      },
+      {
+        "id": "abbreviations-wellknown-js",
+        "mode": "with_skill",
+        "outcome": "borderline",
+        "score": 0.696,
+        "mean": 0.696,
+        "stddev": 0.099146,
+        "samples": [
+          0.75,
+          0.7,
+          0.6,
+          0.6,
+          0.83
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly expands unclear abbreviations and keeps apiUrl with explicit reasoning; incorrectly suggests mainElement for htmlEl (should be htmlElement or kept), removing html prefix rather than preserving the well-known acronym.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "6b6f499bc653ba4876c7223f567d2b73c5afe71e7801131ff79212418c0cb42e"
+        }
+      },
+      {
+        "id": "abbreviations-wellknown-js",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.27,
+        "mean": 0.27,
+        "stddev": 0.09083,
+        "samples": [
+          0.15,
+          0.4,
+          0.25,
+          0.25,
+          0.3
+        ],
+        "threshold": 0.7,
+        "reason": "Fails to expand unclear abbreviations (usrCfg→userConfig, calcTtl→calculateTotal); misses arr entirely; removes html acronym (should keep).",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "6b6f499bc653ba4876c7223f567d2b73c5afe71e7801131ff79212418c0cb42e"
+        }
+      },
+      {
+        "id": "language-casing-python",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.886,
+        "mean": 0.886,
+        "stddev": 0.024083,
+        "samples": [
+          0.87,
+          0.92,
+          0.9,
+          0.88,
+          0.86
+        ],
+        "threshold": 0.7,
+        "reason": "All six names correctly renamed per Python conventions (UPPER_SNAKE_CASE, PascalCase, snake_case, is_-prefix). Exemplary presentation: clearly distinguishes module constant from locals, names each convention explicitly, one-line rationales provided.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "3666af4994351a91f7b9cf34d0388ba548510cfca2f05b38c99b96cdb618c810"
+        }
+      },
+      {
+        "id": "language-casing-python",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.604,
+        "mean": 0.604,
+        "stddev": 0.008944,
+        "samples": [
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.62
+        ],
+        "threshold": 0.7,
+        "reason": "All conversions correct except boolean `active` should be `is_active` per Python convention.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "3666af4994351a91f7b9cf34d0388ba548510cfca2f05b38c99b96cdb618c810"
+        }
+      },
+      {
+        "id": "go-acronym-casing",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.868,
+        "mean": 0.868,
+        "stddev": 0.016432,
+        "samples": [
+          0.88,
+          0.85,
+          0.85,
+          0.88,
+          0.88
+        ],
+        "threshold": 0.7,
+        "reason": "All three names correctly fixed with all-caps acronyms. Explicitly explains the unexported/exported distinction (field stays lowercase-initial but acronym uppercased).",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "e2795705ceb8b6019da8bbc7f5af28b6ab6e8fb3fd55f446b8ca25ebcaaf55f0"
+        }
+      },
+      {
+        "id": "go-acronym-casing",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.848,
+        "mean": 0.848,
+        "stddev": 0.028636,
+        "samples": [
+          0.85,
+          0.85,
+          0.87,
+          0.87,
+          0.8
+        ],
+        "threshold": 0.7,
+        "reason": "All three acronyms correctly all-capped (HTTP, JSON, URL) with export/unexport status preserved. Exemplary: explicitly explains why unexported field stays lowercase-initial while acronym is uppercased.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "e2795705ceb8b6019da8bbc7f5af28b6ab6e8fb3fd55f446b8ca25ebcaaf55f0"
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 7,
+        "pass_count": 5,
+        "borderline_count": 2,
+        "mean_score": 0.816857,
+        "stddev": 0.076706
+      },
+      "baseline": {
+        "case_count": 7,
+        "pass_count": 4,
+        "borderline_count": 1,
+        "mean_score": 0.703429,
+        "stddev": 0.213556
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.816857,
+    "baseline_score": 0.703429,
+    "delta": 0.113428,
+    "delta_uncertainty": 0.226914
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "2c9a5dbad639973f9b1e2a57435166a8b945a8d537fa65c13c0964fb37c82610"
+}
