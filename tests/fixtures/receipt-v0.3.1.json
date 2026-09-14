@@ -1,0 +1,140 @@
+{
+  "schema_version": "0.3.1",
+  "skill": {
+    "name": "commit-work",
+    "version": "0.0.0",
+    "content_hash": "8f1f71640ab38a59c8e79c91623288b0cea09d508200c72dae4d08643d1ffe6c",
+    "tokens": 621
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "93e7d1363b3c3ae04756829c2ef9ee685437a17a0686e094fd569b7c89a9ce1d",
+    "case_count": 1
+  },
+  "run": {
+    "model_id": "claude-opus-5",
+    "model_release_date": "2026-07-24",
+    "provider": "anthropic",
+    "surface": "claude-cli",
+    "runner_version": "0.3.0",
+    "date_utc": "2026-08-16T17:19:36.932Z",
+    "registry": "registered",
+    "transcripts": "retained-local",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "conventional-commit-single-change",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.874,
+        "mean": 0.874,
+        "stddev": 0.005477,
+        "samples": [
+          0.87,
+          0.87,
+          0.88,
+          0.88,
+          0.87
+        ],
+        "generation_hash": "f511060d8c18a8629d7a102faec822f7f235479146aecb90ee09fd97fb07df6b",
+        "judge_sample_hashes": [
+          "27d1c057a8a6ae10e5b469f6bf420db1455e4eb9a327c270a65ed7f0a52dfccf",
+          "f0eea1f2798f4479a371983d3fdeb3fdec73fe62a37b02844cb9da00695e884c",
+          "c51d03b6bcaec3e07763c19d274f9ca849aa4446f7a6395047fbca6e36af07df",
+          "1d44d12344bae613b57b66ffd87ad14cc6f95cac688655e7c79b48984087f717",
+          "cfdd91a6c5cbd3b6f1f83719eed32475b512b008cbb71e8de49e7ff2368f0837"
+        ],
+        "threshold": 0.7,
+        "reason": "Valid Conventional Commits shape, blank line, clear what/why body, and exemplary security motivation explaining the threat model.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "2940e2265479973aa94b81af20614f2ce5edfb34d81fb4f72f90f42c29111ba6"
+        },
+        "checks": [
+          {
+            "name": "conventional-commit-subject",
+            "kind": "regex",
+            "pass": true
+          },
+          {
+            "name": "mentions-rate-limit-status",
+            "kind": "contains",
+            "pass": true
+          }
+        ]
+      },
+      {
+        "id": "conventional-commit-single-change",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.812,
+        "mean": 0.812,
+        "stddev": 0.017889,
+        "samples": [
+          0.83,
+          0.8,
+          0.81,
+          0.83,
+          0.79
+        ],
+        "generation_hash": "078bd4b503fcc3d71dd42c69b25474f6e64d3c8fa748c26c9b0de8e6b90903e3",
+        "judge_sample_hashes": [
+          "0e4384f668c2dcb679b8e145f49b062a8b0951996e67c0489ebc821de26a8d25",
+          "43298d33dc590cb608d0517eb59f3166a04e7a43ba2e018cf7eb15a55e36158a",
+          "32331c4fcc91538082718bad4b15c6d4245542ac951ed8852c4263cdd8acb5b8",
+          "30dbef978fe441ea9fa4deb98545089f07d86536146967839f4b60c932279d0c",
+          "e2ef4a3a461838df21e2061739b3f3c5add62e54f10a6915ad95745ae3130bbf"
+        ],
+        "threshold": 0.7,
+        "reason": "Valid Conventional Commits shape, blank line present, WHAT clearly stated (429 after 5 failed attempts). WHY stated implicitly (prevent unlimited guessing); could be more explicit. Solid execution.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "2940e2265479973aa94b81af20614f2ce5edfb34d81fb4f72f90f42c29111ba6"
+        },
+        "checks": [
+          {
+            "name": "conventional-commit-subject",
+            "kind": "regex",
+            "pass": true
+          },
+          {
+            "name": "mentions-rate-limit-status",
+            "kind": "contains",
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 7,
+        "pass_count": 7,
+        "borderline_count": 0,
+        "mean_score": 0.878,
+        "stddev": 0.019356
+      },
+      "baseline": {
+        "case_count": 7,
+        "pass_count": 7,
+        "borderline_count": 0,
+        "mean_score": 0.877143,
+        "stddev": 0.031493
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.878,
+    "baseline_score": 0.877143,
+    "delta": 0.000857,
+    "delta_uncertainty": 0.036966
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "669dc7381399cbb5d5e6aa65fd9f2ebb96e60f4796aeb8ddfdf603ee61aaecdb"
+}
