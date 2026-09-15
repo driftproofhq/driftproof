@@ -1,0 +1,348 @@
+{
+  "schema_version": "0.2",
+  "skill": {
+    "name": "documentation-and-adrs",
+    "version": "0.0.0",
+    "content_hash": "e11562bf0b5776583af0745ad5bd0d2425215921b2cacf9b2e2a40eaa843f9bf"
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "254e2b62720993392dc241a3efc59fec20d13df53c226748bbf311912753af1e",
+    "case_count": 7
+  },
+  "run": {
+    "model_id": "claude-sonnet-5",
+    "model_release_date": "2026-06-30",
+    "surface": "claude-cli",
+    "runner_version": "0.2.0",
+    "date_utc": "2026-07-28T16:16:10.390Z",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "comment-intent-not-implementation",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.864,
+        "mean": 0.864,
+        "stddev": 0.016733,
+        "samples": [
+          0.85,
+          0.89,
+          0.87,
+          0.85,
+          0.86
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all criteria: removes restatement comments and dead code, eliminates stale TODO with sound reasoning, adds exemplary intent-focused comments explaining business logic.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "b38f01e6671fc0b28a94de550fe70f879134a3168b35e5b1fb53a9a6773478b0"
+        }
+      },
+      {
+        "id": "comment-intent-not-implementation",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.866,
+        "mean": 0.866,
+        "stddev": 0.011402,
+        "samples": [
+          0.85,
+          0.87,
+          0.86,
+          0.87,
+          0.88
+        ],
+        "threshold": 0.7,
+        "reason": "Removes all code-restating comments, commented-out code, and stale TODO. Added comments explain business intent (loyalty accrual rule, gold-tier discount rationale), not just what code does.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "b38f01e6671fc0b28a94de550fe70f879134a3168b35e5b1fb53a9a6773478b0"
+        }
+      },
+      {
+        "id": "document-public-api-function",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.8,
+        "mean": 0.8,
+        "stddev": 0,
+        "samples": [
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ],
+        "threshold": 0.7,
+        "reason": "All four criteria met: parameters (with positive-integer constraint), return, both exceptions, example. Example shows happy path only, not error handling.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "3e8f1bde6b4820c528d7799e686413813a10377aae65b94cf59d0f1535765873"
+        }
+      },
+      {
+        "id": "document-public-api-function",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.6,
+        "mean": 0.6,
+        "stddev": 0,
+        "samples": [
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.6
+        ],
+        "threshold": 0.7,
+        "reason": "Omits required @example; parameters, return, and both exceptions properly documented.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "3e8f1bde6b4820c528d7799e686413813a10377aae65b94cf59d0f1535765873"
+        }
+      },
+      {
+        "id": "adr-for-costly-to-reverse-decision",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.876,
+        "mean": 0.876,
+        "stddev": 0.005477,
+        "samples": [
+          0.87,
+          0.88,
+          0.88,
+          0.88,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all five criteria: Context names constraints (ordering, replay, throughput, ops capacity); Decision is clear; Alternatives section explains why RabbitMQ and SQS were rejected; Consequences honestly detail follow-on costs and dependencies; Status and Date included. Exemplary for realistic, cand",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8984e8255d89ee9580f92373d1a529dd9d69431c7f0c6dee216c11b7f6f2f1ac"
+        }
+      },
+      {
+        "id": "adr-for-costly-to-reverse-decision",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.878,
+        "mean": 0.878,
+        "stddev": 0.004472,
+        "samples": [
+          0.88,
+          0.88,
+          0.88,
+          0.87,
+          0.88
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all five criteria: comprehensive Context (constraints stated, not restated decision), clear Decision, thorough Alternatives with rejection reasons for both options, honest Consequences including real trade-offs (learning curve, partitioning migration risk, vendor lock-in), and Status/Date. Exe",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8984e8255d89ee9580f92373d1a529dd9d69431c7f0c6dee216c11b7f6f2f1ac"
+        }
+      },
+      {
+        "id": "match-existing-adr-convention",
+        "mode": "with_skill",
+        "outcome": "fail",
+        "score": 0.076,
+        "mean": 0.076,
+        "stddev": 0.043359,
+        "samples": [
+          0.1,
+          0.1,
+          0.08,
+          0,
+          0.1
+        ],
+        "threshold": 0.7,
+        "reason": "Model declined to write ADR, citing false premise. Did not provide filename, path, reStructuredText file, or heading structure (all four rubric criteria failed).",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "dcafe5aa41e2e82c5d2d04df9549a77fd7c7a1c5727b14e456c06207b02c29aa"
+        }
+      },
+      {
+        "id": "match-existing-adr-convention",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.096,
+        "mean": 0.096,
+        "stddev": 0.061887,
+        "samples": [
+          0.05,
+          0.05,
+          0.2,
+          0.08,
+          0.1
+        ],
+        "threshold": 0.7,
+        "reason": "Response produces no ADR file at any path in any format; fails all four checkable criteria: no filename matching `ADR-004-*.rst`, no path at `Documentation/Decisions/`, no rST content, no heading structure.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "dcafe5aa41e2e82c5d2d04df9549a77fd7c7a1c5727b14e456c06207b02c29aa"
+        }
+      },
+      {
+        "id": "supersede-not-delete-old-adr",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.876,
+        "mean": 0.876,
+        "stddev": 0.005477,
+        "samples": [
+          0.88,
+          0.88,
+          0.87,
+          0.88,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Fully meets all four criteria: preserves ADR-007 with unchanged decision, updates Status to Superseded, creates new ADR with explicit backward reference, captures WHY and consequences. Exemplary for bidirectional linking and philosophical grounding on why historical records matter.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "c72cd012b7471210b5e43ca90614eb801b3699d8190fb2625ebd058ffab93e53"
+        }
+      },
+      {
+        "id": "supersede-not-delete-old-adr",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.882,
+        "mean": 0.882,
+        "stddev": 0.013038,
+        "samples": [
+          0.88,
+          0.87,
+          0.9,
+          0.89,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all four criteria: preserves ADR-007 untouched, updates Status to Superseded, creates new ADR with explicit reference, captures WHY and consequences. Exemplary bidirectional linking and articulate explanation of historical record preservation.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "c72cd012b7471210b5e43ca90614eb801b3699d8190fb2625ebd058ffab93e53"
+        }
+      },
+      {
+        "id": "document-why-not-what-rewrite",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.868,
+        "mean": 0.868,
+        "stddev": 0.013038,
+        "samples": [
+          0.88,
+          0.86,
+          0.88,
+          0.87,
+          0.85
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all criteria: explains 30s trade-off (a), Redis vs in-process rationale (b), rejected alternatives with reasons (c). Exemplary in framing 30s as tunable trade-off point for future reconsideration.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "36e9f57fcab88f89040e9fa5682a7bc81e275d5bc85ee4f947f26feb0f637ca5"
+        }
+      },
+      {
+        "id": "document-why-not-what-rewrite",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.848,
+        "mean": 0.848,
+        "stddev": 0.010954,
+        "samples": [
+          0.83,
+          0.85,
+          0.85,
+          0.85,
+          0.86
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all criteria: explains 30s TTL trade-off (a), Redis vs in-process rationale (b), rejected alternatives with reasons (c). Frames as tunable trade-off. Minor flaw: opening sentence is mechanically redundant.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "36e9f57fcab88f89040e9fa5682a7bc81e275d5bc85ee4f947f26feb0f637ca5"
+        }
+      },
+      {
+        "id": "surface-conflicting-adr-conventions",
+        "mode": "with_skill",
+        "outcome": "borderline",
+        "score": 0.582,
+        "mean": 0.582,
+        "stddev": 0.148896,
+        "samples": [
+          0.65,
+          0.38,
+          0.65,
+          0.48,
+          0.75
+        ],
+        "threshold": 0.7,
+        "reason": "Verified premise rather than engaging scenario; shows methodology understanding but doesn't surface the stated conflict. CAP rules satisfied.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "e9d21e56eb9402910f6ab7b3da3d054ade4abe5ee952b2cc4e843bf9b62c4624"
+        }
+      },
+      {
+        "id": "surface-conflicting-adr-conventions",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.872,
+        "mean": 0.872,
+        "stddev": 0.013038,
+        "samples": [
+          0.87,
+          0.88,
+          0.85,
+          0.88,
+          0.88
+        ],
+        "threshold": 0.7,
+        "reason": "Surfaces conflict explicitly (a), avoids third scheme (b), recommends concrete resolution (c), drafts ADR following one existing scheme with continued numbering while marking provisional (d). Exemplary with thorough reconciliation guidance.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "e9d21e56eb9402910f6ab7b3da3d054ade4abe5ee952b2cc4e843bf9b62c4624"
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 7,
+        "pass_count": 5,
+        "borderline_count": 1,
+        "mean_score": 0.706,
+        "stddev": 0.297243
+      },
+      "baseline": {
+        "case_count": 7,
+        "pass_count": 5,
+        "borderline_count": 0,
+        "mean_score": 0.720286,
+        "stddev": 0.293197
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.706,
+    "baseline_score": 0.720286,
+    "delta": -0.014286,
+    "delta_uncertainty": 0.417514
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "df20b5c5166d4a2e3e383553b2ee1c6a8d98dc9f042892ba4e7215373aa6a64c"
+}
