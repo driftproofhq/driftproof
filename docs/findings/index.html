@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Findings | Driftproof</title>
+<link rel="stylesheet" href="/style.css">
+<!-- driftproof:card-tags -->
+<link rel="stylesheet" href="/tokens.css">
+<link rel="canonical" href="https://driftproofhq.com/findings/">
+<link rel="alternate" type="application/atom+xml" title="Driftproof reports" href="/feed.xml">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/ibm-plex-mono-medium.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/ibm-plex-mono-regular.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/instrument-serif-regular.woff2" crossorigin="anonymous">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png" sizes="180x180">
+<link rel="icon" href="/icon-512.png" sizes="512x512" type="image/png">
+<meta name="description" content="Three external audits examined Driftproof 0.10.0 and 0.10.1 in September 2026. This page records what each found, what is fixed and by which spec, and what is…">
+<meta property="og:site_name" content="Driftproof">
+<meta property="og:title" content="Findings | Driftproof">
+<meta property="og:description" content="Three external audits examined Driftproof 0.10.0 and 0.10.1 in September 2026. This page records what each found, what is fixed and by which spec, and what is still open.">
+<meta property="og:image" content="https://driftproofhq.com/og.54764dc7.png">
+<meta property="og:url" content="https://driftproofhq.com/findings/">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Findings | Driftproof",
+  "description": "Three external audits examined Driftproof 0.10.0 and 0.10.1 in September 2026. This page records what each found, what is fixed and by which spec, and what is…",
+  "url": "https://driftproofhq.com/findings/",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Driftproof",
+    "url": "https://driftproofhq.com/"
+  }
+}
+</script>
+<!-- /driftproof:card-tags -->
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "d78764dd442f49cb9bb203bd6302e9b4"}'></script><!-- End Cloudflare Web Analytics -->
+</head>
+<body>
+<!--driftproof:nav--><header class="site">
+<a class="brand" href="/"><img class="brand-mark" src="/favicon.svg" alt="" width="28" height="28"><span>Driftproof</span></a>
+<details class="nav-menu"><summary>Menu</summary></details>
+<nav class="site-nav" aria-label="Site">
+<a href="/reports/">Reports</a>
+<a href="/#how-it-works">How it works</a>
+<details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
+<a href="/methodology/">Methodology</a>
+<a href="/neutrality/">Neutrality</a>
+<a href="/interop/">Interop</a>
+<a href="/authoring/">Authoring</a>
+<a href="/judge-policy/">Judge policy</a>
+<a href="/findings/">Findings</a>
+<a href="/how-this-is-built/">How this is built</a>
+<a href="/glossary/">Glossary</a>
+<a href="/report-types/">Report types</a>
+</div></details>
+<a href="https://github.com/driftproofhq/driftproof">GitHub</a>
+</nav>
+</header><!--/driftproof:nav-->
+<main class="hero">
+  <h1>What outside audits found, and what we fixed.</h1>
+  <p class="lede">Three external audits examined Driftproof 0.10.0 and 0.10.1 in September 2026. This page records what each found, what is fixed and by which spec, and what is still open.</p>
+  <p>We publish this for the same reason we publish refusals. A measuring tool that keeps its own defects quiet is asking to be trusted on the one point it cannot show. Every figure below is the auditors' own, taken from their reports.</p>
+
+  <section id="audits">
+  <h2>The audits</h2>
+
+  <h3>The 0.10.0 plugin audit, 13 September 2026</h3>
+  <p>It installed the published Claude Code plugin, validated its manifest and commands, and ran the <code>init</code>, <code>run</code> and <code>badge</code> backends with the model stubbed out.</p>
+  <p>It found that each command file told Claude to fill in the plugin's location itself, where Claude Code only substitutes <code>${CLAUDE_PLUGIN_ROOT}</code>, so a command ran from whatever path the model wrote. It also found that no command set <code>disable-model-invocation</code>, so Claude could start <code>/driftproof:run</code> on its own judgement and spend the user's subscription. Both were fixed in 0.10.1 (spec 028, amendment A-028-37), and our gate now checks each of the two properties separately (A-028-39). The same audit raised the <code>--trusted-skill</code> flag and Windows, which are still open.</p>
+
+  <h3>The 0.10.1 end-to-end retest, 14 September 2026</h3>
+  <p>It installed 0.10.1 from the marketplace and ran all three commands in a fresh Claude Code session on a subscription, with no API key. The live receipt was TESTED, its schema valid and its hash verified, and every generation and judge hash matched the output the auditor captured.</p>
+  <p>It found that the badge refused an edited generation text but accepted an edited judge output, and that the badge said judge text was not retained when the transcripts beside the receipt held it. On the auditor's macOS machine the shipped gate passed 592 of 611, with 19 failed and 1 not applicable. All nineteen failures are in the publishing helper, which needs GNU <code>realpath -m</code>, and the run published nothing.</p>
+
+  <h3>The 0.10.1 reliability audit, received 14 September</h3>
+  <p>It ran 210 subscription CLI calls on three small exact-answer cases it wrote itself, then injected faults at the provider boundary and ran 200,000 synthetic run pairs through the production statistics. On the live cases the planted regression and the planted improvement were each reported on all three, and the unchanged comparison reported no separation on any of them. The auditor is clear that three authored cases cannot establish a long-run error rate.</p>
+  <p>A judge reply whose score was not a number was measured anyway: null, false, an empty string and an empty array became 0, and true became 1. With the generated answers unchanged, switching the judge's scores from 1 to null produced a regression report. This was fault injection at the provider boundary, not a reply a live model sent.</p>
+  <p>The badge did not verify retained judge output, and it said judge text was not kept.</p>
+  <p>Disagreement between judge samples can vanish from a band. In a synthetic control where every draw got conflicting grades, the spread within the judge's samples was 0.707 and 0.566 in two runs while the spread across draws was zero, and Driftproof reported an improvement on bands of zero width.</p>
+  <p>Failure handling mostly held: timeouts and empty or truncated generations produced incomplete receipts and no verdict. But a receipt with no reported model identity records attested as false and can still be marked TESTED, and an incomplete receipt can carry TESTED as well.</p>
+  <p>In a separate challenge of 12 fixed responses each graded twice, the Haiku judge scored 22 of 24 (91.7%), below the auditor's 95% target. It twice accepted a quoted answer where the rubric asked for the bare string. Opus 5 scored 24 of 24.</p>
+  <p>The statistical tests set targets before any result: at most 5% false changes, and at least 90% detection of a planted regression. A synthetic perfect judge isolates the rule, so these are results under stated assumptions, not general error rates.</p>
+  <!--driftproof:tw--><div class="table-wrap"><table>
+  <thead><tr><th scope="col">Score distribution</th><th scope="col">Shift</th><th scope="col">Measured</th><th scope="col">Wilson interval</th><th scope="col">Target met</th></tr></thead>
+  <tbody>
+  <tr><th scope="row">clipped normal, sd 0.05</th><td>0.00</td><td>false change 6.43%</td><td>6.10% to 6.78%</td><td>no</td></tr>
+  <tr><th scope="row">clipped normal, sd 0.05</th><td>0.30</td><td>detection 100.00%</td><td>99.98% to 100.00%</td><td>yes</td></tr>
+  <tr><th scope="row">clipped normal, sd 0.1</th><td>0.00</td><td>false change 6.16%</td><td>5.83% to 6.50%</td><td>no</td></tr>
+  <tr><th scope="row">clipped normal, sd 0.1</th><td>0.30</td><td>detection 94.21%</td><td>93.88% to 94.53%</td><td>yes</td></tr>
+  <tr><th scope="row">clipped normal, sd 0.2</th><td>0.00</td><td>false change 3.26%</td><td>3.02% to 3.51%</td><td>yes</td></tr>
+  <tr><th scope="row">clipped normal, sd 0.2</th><td>0.30</td><td>detection 38.39%</td><td>37.72% to 39.07%</td><td>no</td></tr>
+  <tr><th scope="row">binary</th><td>0.00</td><td>false change 8.85%</td><td>8.46% to 9.25%</td><td>no</td></tr>
+  <tr><th scope="row">binary</th><td>0.30</td><td>detection 16.11%</td><td>15.61% to 16.63%</td><td>no</td></tr>
+  <tr><th scope="row">rare outlier</th><td>0.00</td><td>false change 0.27%</td><td>0.20% to 0.35%</td><td>yes</td></tr>
+  <tr><th scope="row">rare outlier</th><td>0.30</td><td>detection 82.62%</td><td>82.09% to 83.14%</td><td>no</td></tr>
+  </tbody>
+  </table></div><!--/driftproof:tw-->
+  </section>
+
+  <section id="fixed">
+  <h2>What is fixed in 0.10.2</h2>
+  <p>Specs 031 and 032 are merged and ship in 0.10.2.</p>
+  <ul>
+  <li>Spec 031: the badge rechecks retained judge text against the digests the receipt carries, and refuses the receipt when any retained judge output no longer matches. Before, it checked generation text only.</li>
+  <li>Spec 031: the badge's statement says what it checked. It no longer says judge text is not retained when the transcripts beside the receipt hold it.</li>
+  <li>Spec 031: the caveat that calls a comparison not like for like prints only when the two receipts' bands really do come from different sources. It had printed whenever either receipt's band carried a source label, which every v0.4 and v0.5 band does, so it printed on pairs that were like for like.</li>
+  <li>Spec 031: when our plugin gate declines to judge a case, it records a refusal rather than a failure. The two used to write the same result, so a gate that would not judge looked like a product that had failed.</li>
+  <li>Spec 031: the band wording. A band is the mean plus or minus one standard deviation, a descriptive spread and not a confidence interval. The site, the differ's output and twelve published records described overlapping bands as though they showed that nothing had changed, and separated bands as though they proved a change. The wording is corrected on the site and in the differ. The twelve records keep their original text and carry a versioned amendment that corrects it, as every <a href="/reports/">report</a> amendment does.</li>
+  <li>Spec 032: a judge reply whose score is not a number is refused the way an unparseable reply is, and no score is recorded from it. It had been measured as 0 or 1.</li>
+  <li>Spec 032: the badge reads transcripts only from inside the transcripts directory. It refuses an index entry, or an index file, that resolves outside it, where a crafted index could have made it read files elsewhere.</li>
+  </ul>
+  </section>
+
+  <section id="open">
+  <h2>What is still open</h2>
+  <ul>
+  <li>False changes. In the five no-change conditions of the ten synthetic conditions, a change was reported from 0.27% to 8.85% of the time, and three of the five missed the 5% target. The highest rate was on the binary suite.</li>
+  <li>Missed regressions. A planted regression was detected 16.11% of the time on the binary suite, and 38.39% of the time on the clipped normal suite with sd 0.2, against a 90% target.</li>
+  <li>The single-receipt badge uses only the effect floor, with no requirement that bands separate. Under the synthetic binary null it showed passing 34.56% of the time and regressed 34.785% of the time, though the underlying means were equal. A green badge is not a calibrated claim.</li>
+  <li>A receipt can be TESTED with attested set to false, meaning no model identity was reported, and an incomplete receipt can carry TESTED too. Read a receipt's status and its verdict, not its level alone.</li>
+  <li>The <code>--trusted-skill</code> flag checks only that the skill resolves inside the current git repository. That is not authorship or review, and the name claims more than the check.</li>
+  <li>Disagreement between judge samples can still disappear from a band, as the reliability audit's synthetic control showed.</li>
+  <li>The Haiku judge's 22 of 24 on the judge challenge is below the auditor's target. The sample is small and clustered, and the judge has not changed.</li>
+  <li>Windows is untested. From Node's source, the plugin starts <code>npx</code> without a shell, which on a standard Windows install would not find it, but no Windows run has been made and that failure has never been observed. A CI matrix across Linux, macOS and Windows is planned.</li>
+  <li>How few samples can support a verdict. The underpowered-verdict rule is decided, and it is the next spec.</li>
+  </ul>
+  </section>
+</main>
+<!--driftproof:foot--><footer class="site">
+<p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
+<p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+</footer><!--/driftproof:foot-->
+<!--driftproof:scripts--><script src="/copy-button.js" defer></script>
+<script type="module" src="/islands/loader.js"></script><!--/driftproof:scripts-->
+</body>
+</html>

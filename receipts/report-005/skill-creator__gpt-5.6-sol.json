@@ -1,0 +1,690 @@
+{
+  "schema_version": "0.4",
+  "skill": {
+    "name": "skill-creator",
+    "version": "0.0.0",
+    "content_hash": "97b28eb90f76cca2fb56b223cd0728eba82c0f4094b88dc1aa89db62a4c47ebc",
+    "tokens": 8247
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "39c3dd5b52de7e91c6c259b72a35237309bf2915fdbe430a6d4f538006db8cd6",
+    "case_count": 7
+  },
+  "run": {
+    "model_id": "gpt-5.6-sol",
+    "model_release_date": null,
+    "provider": "openai",
+    "surface": "openai-cli",
+    "runner_version": "0.5.0",
+    "date_utc": "2026-08-18T19:01:02.260Z",
+    "registry": "registered",
+    "transcripts": "retained-local",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    },
+    "surface_overhead_note": "openai/cli surface (codex exec): every call carries a fixed Codex base-instruction preamble of ~12,000–15,000 input tokens that the harness prepends and we do not control; the model id is set by us via -m (it is not echoed in the JSONL stream). Approval prompting is off by default on `codex exec` (no -a flag is passed).",
+    "pricing_snapshot": {
+      "frozen_at": "2026-08-18T19:01:02.260Z",
+      "source": "config/models.json",
+      "currency": "USD",
+      "models": {
+        "gpt-5.6-sol": {
+          "input_per_mtok": 5,
+          "output_per_mtok": 30,
+          "registered": true
+        },
+        "claude-haiku-4-5": {
+          "input_per_mtok": 1,
+          "output_per_mtok": 5,
+          "registered": true
+        }
+      },
+      "note": "Prices frozen at run time. Every derived cost in this receipt is computed from THIS snapshot, never from the live registry, so the receipt keeps its meaning when registry prices later change."
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "write-triggering-description",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.856,
+        "mean": 0.856,
+        "stddev": 0.008944,
+        "samples": [
+          0.85,
+          0.87,
+          0.85,
+          0.85,
+          0.86
+        ],
+        "generation_hash": "50b73fa4f070bdea50d6fcc6b754ffb099c459d1451ea3b60a6542be319d6144",
+        "judge_sample_hashes": [
+          "454907b18a69f3d0269226c492bd6492cbc93baf41444df4238e0c4216c7f70e",
+          "cd032e3721182dbd51bb20f30dd1aebc45fa544cb784adaee54e2060b87c3fe8",
+          "a9ea855648998c57f7abe8a6d2008663f707685da7adb856ab733c584eba254c",
+          "5cdaaa2b953c3d2ff7ec7e47759553906aa0952ee68d9d591eb5c14a1bd983fd",
+          "cbcb4ff17025da3a82ba507ccd4ea7f4dd020a16d42420d403f8587e3ef1d7f2"
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all three criteria: states what skill does clearly, enumerates specific trigger contexts (populate, autofill, complete, from structured data types), and uses 'use whenever' to encourage triggering. Good trigger coverage with data-source examples.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "281a287c019aec2841a803ddc1af4df00e71b740cae061d71058b4da321ce726"
+        },
+        "judge_usage": {
+          "input_tokens": 131075,
+          "output_tokens": 10734,
+          "cached_tokens": 127358,
+          "wall_ms": 113924
+        },
+        "usage": {
+          "input_tokens": 71357,
+          "output_tokens": 315,
+          "cached_tokens": 53504,
+          "wall_ms": 20306
+        }
+      },
+      {
+        "id": "write-triggering-description",
+        "mode": "baseline",
+        "outcome": "borderline",
+        "score": 0.664,
+        "mean": 0.664,
+        "stddev": 0.070922,
+        "samples": [
+          0.6,
+          0.63,
+          0.68,
+          0.63,
+          0.78
+        ],
+        "generation_hash": "2c8b500a29fc40a9523bdc8001381375398b6f7c4b72a0d79800d40a2c998c6b",
+        "judge_sample_hashes": [
+          "985ba026ab8b4a3d37f4a7dd09e8d93d67dc8270b093d8edfea28426d1d2d947",
+          "25f7e10993b25d06991fb9447b66030471907f062cb6e03331213e878ab8680b",
+          "6c0a3b8cb56743d770c7c0963cbf80362af73ad4423e0769d9a158c39e0af2b8",
+          "bc72d521dd4ee4b8d4a2e0fc882d1c0e5b66b19890dba03056ac507f7c1d9b75",
+          "ba90cab093dae4959b6b8a4fd29a282eaf6dcdbd3fbbc3ddd67ff2415b8063b3"
+        ],
+        "threshold": 0.7,
+        "reason": "States what skill does (criterion a) and uses specific language (criterion b, partial), but enumerates only one trigger context instead of 'several distinct' phrasings/contexts required; misses non-literal triggers like 'auto-fill from data' or 'lock/flatten PDF.'",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "281a287c019aec2841a803ddc1af4df00e71b740cae061d71058b4da321ce726"
+        },
+        "judge_usage": {
+          "input_tokens": 130915,
+          "output_tokens": 16475,
+          "cached_tokens": 127230,
+          "wall_ms": 179287
+        },
+        "usage": {
+          "input_tokens": 14107,
+          "output_tokens": 52,
+          "cached_tokens": 9984,
+          "wall_ms": 7487
+        }
+      },
+      {
+        "id": "restructure-oversized-skill",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.814,
+        "mean": 0.814,
+        "stddev": 0.040988,
+        "samples": [
+          0.85,
+          0.86,
+          0.8,
+          0.76,
+          0.8
+        ],
+        "generation_hash": "08f2e3ecf5baca55239f5df46cd48cfba1023a018df0e9ffbb415212254c2499",
+        "judge_sample_hashes": [
+          "6bfdc40fbfcd37cfdc670bdc32f01e16e3bfeaa42c64148aa10f799ec9aea8ad",
+          "b0c5c7e5c5c064aeb78eb32ea8c9aa3708df8ed03f4cb913e7f5b2087d5e3ef5",
+          "2b55ee63862b66303be70b5369ab0373ffad965d7c34c1770c70c1bb9a83deca",
+          "4f3520770233049ae39158c81fb77c01e75bb9ee2bb8d62e706810b278a4c8ec",
+          "d581d8d268abeadcb8dbd77fc79ad1c6bee5bca7dd8ed00ccacf25f4637eb476"
+        ],
+        "threshold": 0.7,
+        "reason": "Meets (a)–(c): clearly moves per-format recipes to separate references with explicit pointers; keeps SKILL.md lean with shared workflow/principles; explains context-economy benefit (invoking loads only common workflow, unused recipes consume no context). Exemplary guidance on consistent internal str",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "d3c7b46e6c401c29d70ce035e3e2e356c08e67220a9dcfb4f8754cc51b4ab7ed"
+        },
+        "judge_usage": {
+          "input_tokens": 134555,
+          "output_tokens": 19319,
+          "cached_tokens": 130142,
+          "wall_ms": 199490
+        },
+        "usage": {
+          "input_tokens": 47403,
+          "output_tokens": 836,
+          "cached_tokens": 30208,
+          "wall_ms": 21422
+        }
+      },
+      {
+        "id": "restructure-oversized-skill",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.862,
+        "mean": 0.862,
+        "stddev": 0.026833,
+        "samples": [
+          0.85,
+          0.83,
+          0.89,
+          0.89,
+          0.85
+        ],
+        "generation_hash": "051084c0604e7f5d0d23e09a5b3078c52e7c1b2ddc5bfb2ed2fa9165b37fd31f",
+        "judge_sample_hashes": [
+          "39a49e334bbcf997b2a2b4c1e4a2c52983a1ed665307742bf40469c50ff448bd",
+          "ddac66d09dee54290847925b8179b0f2f849fd3be798e1806d33d9952d8991f8",
+          "9367a64cc25dc68b46d985537a9a8d4cdef4590c0a3115ae50ec3d70bdc9d644",
+          "e79a0e80b0b0de0df1a00ee3a8755893710499f299be5d99189a79085eaf8a58",
+          "dcebc83ae2b4eb225074f50343ebe3fc741c407cf2796dbeb02d93de4cdf46cd"
+        ],
+        "threshold": 0.7,
+        "reason": "Fully executes (b)-(c): moves per-format recipes into separate references with explicit pointers and embeds shared workflow in SKILL.md. Meets (a) practically via directory structure and disclosure path, but lacks explicit three-level framing (metadata/body/resources layers). Exemplary pointer wordi",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "d3c7b46e6c401c29d70ce035e3e2e356c08e67220a9dcfb4f8754cc51b4ab7ed"
+        },
+        "judge_usage": {
+          "input_tokens": 136029,
+          "output_tokens": 17004,
+          "cached_tokens": 126733,
+          "wall_ms": 184852
+        },
+        "usage": {
+          "input_tokens": 49689,
+          "output_tokens": 1158,
+          "cached_tokens": 39168,
+          "wall_ms": 29408
+        }
+      },
+      {
+        "id": "output-format-template",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.868,
+        "mean": 0.868,
+        "stddev": 0.008367,
+        "samples": [
+          0.87,
+          0.87,
+          0.86,
+          0.86,
+          0.88
+        ],
+        "generation_hash": "4af7c240d1a4c342e176eed1471d0cceddea2775a4e544895c4c8baeadcc9efe",
+        "judge_sample_hashes": [
+          "77b8b9d6f469d5e2ad4ea4fa62217b7bd197e2d8b7b968afeb8bf67ece84161e",
+          "b29e4c9f9af741989a81f0b6ee7784cc8161b7c40b7ea32e7d765c241d4c0bb3",
+          "c5e3aa6b462be819ae77837d2946dec95fc55cb5ed0091a0ec6bbd0f8638373b",
+          "72bfd4a852cbcc4213d009bc9564be77552ead0543b40f386ab4d9cb6c4ee78a",
+          "98968da103af934b14842cea83635105264d0247a05df5c221571f7105be9bd2"
+        ],
+        "threshold": 0.7,
+        "reason": "Provides explicit, reusable template with fixed structure, clearly separated from worked example demonstrating input-to-output transformation.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "9ed40daa81b3f0f22cfffb7f4805dc64ca1b55fea7939668e51830b827d27e4e"
+        },
+        "judge_usage": {
+          "input_tokens": 131990,
+          "output_tokens": 12848,
+          "cached_tokens": 128090,
+          "wall_ms": 135433
+        },
+        "usage": {
+          "input_tokens": 47332,
+          "output_tokens": 580,
+          "cached_tokens": 30208,
+          "wall_ms": 23487
+        }
+      },
+      {
+        "id": "output-format-template",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.86,
+        "mean": 0.86,
+        "stddev": 0.014142,
+        "samples": [
+          0.85,
+          0.88,
+          0.87,
+          0.85,
+          0.85
+        ],
+        "generation_hash": "fa36a422981cd3176fbf87f8dec7854ce27b1abdb2131931a05f1fddb8307df8",
+        "judge_sample_hashes": [
+          "9bf3eb09826dae113a0223486930b85173bc4169bfed8d3e13b8226cc22340e5",
+          "86743bb067196bdee54379db8e3778194dce75918c6d1af6ac44754fabf75f6a",
+          "f557860ff831db0f8101692cab18835c21e19db7879db214d5bd33fa248f296e",
+          "73ee9c5c1848a36bff5d925a1fb4eaa3678717c08de997f4f638de2d32888b53",
+          "71e5d960d5d6cd212a7dcf8817a44dbc36ad9aba6876387835d9186a860ee117"
+        ],
+        "threshold": 0.7,
+        "reason": "Provides explicit, reusable template with placeholders (a), comprehensive requirements, and clear Input/Output-style worked example (c) demonstrating transformation from rough to structured format (b).",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "9ed40daa81b3f0f22cfffb7f4805dc64ca1b55fea7939668e51830b827d27e4e"
+        },
+        "judge_usage": {
+          "input_tokens": 132175,
+          "output_tokens": 9092,
+          "cached_tokens": 128238,
+          "wall_ms": 103229
+        },
+        "usage": {
+          "input_tokens": 13998,
+          "output_tokens": 346,
+          "cached_tokens": 13056,
+          "wall_ms": 13719
+        }
+      },
+      {
+        "id": "reframe-rigid-musts",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.846,
+        "mean": 0.846,
+        "stddev": 0.015166,
+        "samples": [
+          0.85,
+          0.85,
+          0.82,
+          0.85,
+          0.86
+        ],
+        "generation_hash": "19dc9c225c13db63ba560569307491d37faeac4b5873a85bea08a7a2f4730c50",
+        "judge_sample_hashes": [
+          "b718ea9a3fcd8f43549efcc601d9e7d0db68a52b3a70ece6baa68959721bdf2f",
+          "38aaae4a2f4577013718c06ad31eb0bbbb33353c091e16160c61361e7cd2f676",
+          "4af8140a9a1a27c1079ca08136b6641480bc1be82211c588e02e3fa937bc66a3",
+          "ff96fd585b4e39dc565038c3b51eb53054b93f712b8fe0b4879b0f17b8599d17",
+          "11c807fcc3504539ad94109f05d57e145837a16ed45629a1cf33b3aaafbed132"
+        ],
+        "threshold": 0.7,
+        "reason": "Removes all-caps style, explains WHY for each requirement, preserves all original requirements. Genuinely instructive framing gives model useful judgment rather than mechanical restatement.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "f9ef4aa35fe7b7102c3682dbde2c4bae8d861fc4d9bc123ccc83523d3e7fb48a"
+        },
+        "judge_usage": {
+          "input_tokens": 131350,
+          "output_tokens": 10748,
+          "cached_tokens": 127578,
+          "wall_ms": 115960
+        },
+        "usage": {
+          "input_tokens": 71558,
+          "output_tokens": 408,
+          "cached_tokens": 53504,
+          "wall_ms": 15152
+        }
+      },
+      {
+        "id": "reframe-rigid-musts",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.844,
+        "mean": 0.844,
+        "stddev": 0.013416,
+        "samples": [
+          0.86,
+          0.83,
+          0.85,
+          0.83,
+          0.85
+        ],
+        "generation_hash": "2d8ed3e0daeceab77f7a90662ed0b6d37395019528642867ea0f6fd2281cd048",
+        "judge_sample_hashes": [
+          "f95e0d6da90b3481201aec290bb2159340d98913d81ec905181dba8f954be7e4",
+          "1758d35b0025f1e602fe1e83f5fca6bd9d7bc35058663609f16291cc106bc649",
+          "bf1b5232793060555e4e9796fda387e40f4c552ce07d421a1c7726ca76a4c2a6",
+          "b5e6bd740f7e5bc0bf5a8273cde86ba71cac1cc53ee814655902892eff2acb8b",
+          "dbd21a310dc2a21634b809927ca9c582e73f3739b0ec2e8971dc02724621183b"
+        ],
+        "threshold": 0.7,
+        "reason": "Removes all-caps mandates, explains WHY for all four requirements (SQL injection consequences, maintainability concerns, failure handling, feedback balance), preserves every original requirement completely.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "f9ef4aa35fe7b7102c3682dbde2c4bae8d861fc4d9bc123ccc83523d3e7fb48a"
+        },
+        "judge_usage": {
+          "input_tokens": 131320,
+          "output_tokens": 17621,
+          "cached_tokens": 127554,
+          "wall_ms": 178508
+        },
+        "usage": {
+          "input_tokens": 14038,
+          "output_tokens": 112,
+          "cached_tokens": 9984,
+          "wall_ms": 8781
+        }
+      },
+      {
+        "id": "domain-variant-organization",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.87,
+        "mean": 0.87,
+        "stddev": 0.012247,
+        "samples": [
+          0.85,
+          0.88,
+          0.87,
+          0.88,
+          0.87
+        ],
+        "generation_hash": "b573471692d78b0a310f53d43ec55181aee004e9887711a8656ed08319196eb0",
+        "judge_sample_hashes": [
+          "13491f06feef573cb9f13e2edcaa994aa0e900500eaf20e5b33f647010082f6a",
+          "18f63eca68a5479632fbcc618ba1fbb874480335b0479f59716ee3ee635d0b75",
+          "33a71baf8380515f6731156f3fb04ec8337df4f2a5002bc2aaf806adbe201b57",
+          "86fd6e73c0c8d10170d4f279b8f1330a804d9509a45e0ccdabcbf3f94f98e4ca",
+          "2db57ba77acc436bf2fcefa579163abd88a1e7cc141a4f03ac88d4181a56e7a5"
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all criteria (a-d): references/ with one file per framework, SKILL.md routing logic with concrete pointer examples, clear progressive-disclosure rationale avoiding redundant context loads, concrete directory tree. Minor: unexplained agents/openai.yaml entry detracts slightly from clarity.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "f557145e837c4eebc6c0d97d5e28dfa88ff84daa6657d93256d54355e0193cc3"
+        },
+        "judge_usage": {
+          "input_tokens": 134014,
+          "output_tokens": 11572,
+          "cached_tokens": 125524,
+          "wall_ms": 111669
+        },
+        "usage": {
+          "input_tokens": 71629,
+          "output_tokens": 897,
+          "cached_tokens": 53504,
+          "wall_ms": 23738
+        }
+      },
+      {
+        "id": "domain-variant-organization",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.882,
+        "mean": 0.882,
+        "stddev": 0.016432,
+        "samples": [
+          0.9,
+          0.9,
+          0.87,
+          0.87,
+          0.87
+        ],
+        "generation_hash": "643ce45410829e4b2540fc9da9a50e9d3ed1155ce3f1a4efa377d0f2e2b14bcf",
+        "judge_sample_hashes": [
+          "90e87f98a25f750d8c7b6f982b46f598ce5d8b486e700e6e7a1cbb3d0db21a68",
+          "e29f1ee803e86435728ba97be4f8f0920b60692cff1fa6fb6e28993f9e717106",
+          "e2cafbbc8bfe7898f8ddcfebf67aeaeac4e320c79d979cf1d4cb5c8b6ebd7d2f",
+          "830cd97714da8c81754535da695ded4b91b1878b80412da2d210c01a212aa1a5",
+          "7bee6b1a84e6db4f5450d64dcc654dd747fcd07f35c8184b02bddcb49c16e59e"
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all criteria: (a) references/ with one file per framework, (b) SKILL.md routing logic, (c) progressive disclosure explanation, (d) concrete directory tree. Exemplary with clear routing wording.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "f557145e837c4eebc6c0d97d5e28dfa88ff84daa6657d93256d54355e0193cc3"
+        },
+        "judge_usage": {
+          "input_tokens": 135160,
+          "output_tokens": 10187,
+          "cached_tokens": 130626,
+          "wall_ms": 112717
+        },
+        "usage": {
+          "input_tokens": 30663,
+          "output_tokens": 1054,
+          "cached_tokens": 23040,
+          "wall_ms": 26201
+        }
+      },
+      {
+        "id": "draft-full-skillmd",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.866,
+        "mean": 0.866,
+        "stddev": 0.011402,
+        "samples": [
+          0.86,
+          0.85,
+          0.87,
+          0.88,
+          0.87
+        ],
+        "generation_hash": "c73a34ae77d8ed44792798662811de32ba949b87d7956360c5123a1840d9535c",
+        "judge_sample_hashes": [
+          "d7a287fddb4be83a42f9ee2cb8fe5ea2737c2d45f821887122e6f1070fcc9906",
+          "67f37daee8310e74b96ee20a34d16a4e2042753f561b94630832e47c4c5205e0",
+          "b7a6a1948a27ffafa6e70ad534434d923089c07e7f411547af2e56fe45a476dc",
+          "c461efc1afa5620ede9c8936f0870cecaa6e26e4b2a256ef053197d56e5f395e",
+          "8a696df9fe0304e3b3cc870ba65eec8f9e2e47a6445f411203ccc84dff043f2d"
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all rubric requirements: strong YAML frontmatter with specific when-to-use contexts; explicit up/down migration template and concrete example; emphasizes reversibility with reasoning about irreversible operations and data safety; coherent structure without bloat.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "ef5b44971eb9573d1778ed296016499ad1c5a95fca568247af04109db77cb81b"
+        },
+        "judge_usage": {
+          "input_tokens": 137700,
+          "output_tokens": 16608,
+          "cached_tokens": 132658,
+          "wall_ms": 183727
+        },
+        "usage": {
+          "input_tokens": 47548,
+          "output_tokens": 1414,
+          "cached_tokens": 30208,
+          "wall_ms": 33087
+        }
+      },
+      {
+        "id": "draft-full-skillmd",
+        "mode": "baseline",
+        "outcome": "borderline",
+        "score": 0.712,
+        "mean": 0.712,
+        "stddev": 0.083187,
+        "samples": [
+          0.8,
+          0.72,
+          0.76,
+          0.58,
+          0.7
+        ],
+        "generation_hash": "af4095ae2a824f9434b87a03834c6dc96d27a037fea0e31ddfbec67a39a94f1d",
+        "judge_sample_hashes": [
+          "a872b13b5a430f06eb7cb31cfe0a76a52212e32de5e06675d0d9517631439695",
+          "a46973784705e6f863e56cd2ccb476690130ed7624d36718156a7afacdff5fda",
+          "3611574c2f82e699a8cfcb4e22ff252acbd960e8a49a833baed67470b24afc10",
+          "a83763475a1737010bbb1cb1cc2b349cbc1f302f1597dae8602856123c8ab079",
+          "daf9c7669944dbd6d24ae96634bf31d34d888cf1589d9182709d175d557fe663"
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all core criteria: valid frontmatter, explicit output template (up/down/safety), worked example, strong reversibility reasoning addressing non-reversible operations; example described but not shown as SQL code.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "ef5b44971eb9573d1778ed296016499ad1c5a95fca568247af04109db77cb81b"
+        },
+        "judge_usage": {
+          "input_tokens": 138750,
+          "output_tokens": 16944,
+          "cached_tokens": 133498,
+          "wall_ms": 189775
+        },
+        "usage": {
+          "input_tokens": 49658,
+          "output_tokens": 1666,
+          "cached_tokens": 35072,
+          "wall_ms": 38431
+        }
+      },
+      {
+        "id": "critique-and-fix-skillmd",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.876,
+        "mean": 0.876,
+        "stddev": 0.019494,
+        "samples": [
+          0.87,
+          0.85,
+          0.9,
+          0.87,
+          0.89
+        ],
+        "generation_hash": "c577457a8c62c15eccb723951e59957593ad6627dbeb2ed6060e3000584b84ba",
+        "judge_sample_hashes": [
+          "5b61acedaef6b743af8a803b0512ad95155399d7fcdf2f2acecd6f92228e1258",
+          "172d7a9ea2d9628379b103a25f71700d978972e029c4af1627f8aae5d1c99417",
+          "f97faf53de351d7b7cb98b8d45f5d5ae3448228b60cc4480510002d9174afdca",
+          "66e17e56cd18c3094fe7f966596dc6ea7be2f600b42b5ca8dfdbfb44485d9ccf",
+          "087c5856a71ccf6c0b97637466eeb36768d5b9ae578d13b539f0dec927b46f1a"
+        ],
+        "threshold": 0.7,
+        "reason": "Hits all rubric criteria (a-d): correctly identifies description/trigger weakness and when-to-use misplacement, provides concrete rewritten description with strong triggering phrasings, flags 600-line monolith and recommends per-library reference split, reframes all-caps rules with reasoning. Exempl",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "875c8a456ba3a6887694099c4b20ba2589488d555aee030c68f616f86cb843ab"
+        },
+        "judge_usage": {
+          "input_tokens": 142044,
+          "output_tokens": 16093,
+          "cached_tokens": 130342,
+          "wall_ms": 171160
+        },
+        "usage": {
+          "input_tokens": 71680,
+          "output_tokens": 2150,
+          "cached_tokens": 50432,
+          "wall_ms": 51417
+        }
+      },
+      {
+        "id": "critique-and-fix-skillmd",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.876,
+        "mean": 0.876,
+        "stddev": 0.008944,
+        "samples": [
+          0.87,
+          0.87,
+          0.89,
+          0.88,
+          0.87
+        ],
+        "generation_hash": "515d6a76774968ec75e9d172c1ec5c24cea03834da3ecb06d87be8afbf4727d8",
+        "judge_sample_hashes": [
+          "6cddef402690743dc66b1dbd506b967f3a1e4394b50bb059b495e1a57e2861e8",
+          "8439bfe38e3351f3ad1726c74f4ac508487ec6013df8d229533590651a192d89",
+          "65ec70f3d7155b798c06f51f88953d4aeeb87f72574efce32e18d5072a150199",
+          "eba7adcee8872b243309022027dfe2d913453aa107f5aa49f06e5c58787eefa3",
+          "b9409dbd70a6b909c42816addfe54cbbfd47c59b6ef2a41eb5e074b34d4628eb"
+        ],
+        "threshold": 0.7,
+        "reason": "Identifies all four core issues (a–d): vague description + misplaced when-to-use, weak trigger content, 600-line monolith needing progressive disclosure, all-caps tone. Rewritten description is strong with concrete trigger phrasings; explains WHY throughout.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "875c8a456ba3a6887694099c4b20ba2589488d555aee030c68f616f86cb843ab"
+        },
+        "judge_usage": {
+          "input_tokens": 141390,
+          "output_tokens": 14569,
+          "cached_tokens": 135610,
+          "wall_ms": 165528
+        },
+        "usage": {
+          "input_tokens": 49898,
+          "output_tokens": 2117,
+          "cached_tokens": 33024,
+          "wall_ms": 49135
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 7,
+        "pass_count": 7,
+        "borderline_count": 0,
+        "mean_score": 0.856571,
+        "stddev": 0.02122
+      },
+      "baseline": {
+        "case_count": 7,
+        "pass_count": 5,
+        "borderline_count": 2,
+        "mean_score": 0.814286,
+        "stddev": 0.088215
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.856571,
+    "baseline_score": 0.814286,
+    "delta": 0.042285,
+    "delta_uncertainty": 0.090731
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "dc9e29833a39700d64270620f93474cbed6c61bc30dfb0e8c373ede11f511019",
+  "economics": {
+    "basis": "metered-equivalent",
+    "surface": "openai-cli",
+    "with_skill": {
+      "call_count": 7,
+      "mean_input_tokens": 61215.29,
+      "mean_output_tokens": 942.86,
+      "mean_cost_usd_per_call": 0.334362,
+      "median_wall_ms": 23487,
+      "wall_ms_p25": 20306,
+      "wall_ms_p75": 33087,
+      "wall_ms_iqr": 12781
+    },
+    "baseline": {
+      "call_count": 7,
+      "mean_input_tokens": 31721.57,
+      "mean_output_tokens": 929.29,
+      "mean_cost_usd_per_call": 0.186486,
+      "median_wall_ms": 26201,
+      "wall_ms_p25": 8781,
+      "wall_ms_p75": 38431,
+      "wall_ms_iqr": 29650
+    },
+    "skill_incremental_cost_usd_per_call": 0.147876,
+    "skill_incremental_cost_usd_per_1k_calls": 147.876,
+    "output_tokens_delta": 13.57,
+    "median_wall_ms_delta": -2714,
+    "judge_excluded": true,
+    "judge_overhead": {
+      "note": "Measurement overhead imposed by Driftproof, NOT a cost of running the skill. Excluded from every field above.",
+      "total_cost_usd": 2.887537,
+      "case_rows_measured": 14
+    },
+    "notes": {
+      "absolute_cost": "Absolute per-call cost on a CLI surface includes a fixed harness preamble (observed ~25k input tokens on claude-cli, ~11k on codex) that we do not control. It is identical in the with-skill and baseline arms, so it cancels in the Δ figures — read the incremental columns, not the absolute ones.",
+      "cache_pricing": "Cached input tokens are costed at the list input rate (an over-estimate where caching is heavy); cached_tokens is recorded per call so a reader can recompute.",
+      "latency": "observed on subscription CLI surface, indicative"
+    }
+  }
+}
