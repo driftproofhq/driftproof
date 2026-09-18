@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://driftproofhq.com/spec/receipt.schema.json",
+  "title": "driftproof receipt",
+  "description": "A signed, dated record of running one agent skill's eval suite with and without the skill on one model version. Receipt spec v0.1.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "skill", "suite", "run", "results", "comparison", "verification_level", "receipt_hash"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "0.1"
+    },
+    "skill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "content_hash"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "content_hash": {
+          "type": "string",
+          "description": "sha256 (hex) over SKILL.md + all bundled files in canonical path-sorted order.",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "suite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "suite_hash", "case_count"],
+      "properties": {
+        "format": { "type": "string", "const": "agentskills.io/evals" },
+        "suite_hash": {
+          "type": "string",
+          "description": "sha256 (hex) over the canonicalized normalized case list.",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "case_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model_id", "surface", "runner_version", "date_utc"],
+      "properties": {
+        "model_id": { "type": "string", "minLength": 1 },
+        "model_release_date": {
+          "description": "ISO date (YYYY-MM-DD) of the model release if known, else null.",
+          "type": ["string", "null"],
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "surface": {
+          "type": "string",
+          "enum": ["api", "claude-cli"]
+        },
+        "runner_version": { "type": "string", "minLength": 1 },
+        "date_utc": {
+          "type": "string",
+          "description": "ISO 8601 UTC timestamp of when the run finished.",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
+        }
+      }
+    },
+    "results": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cases", "aggregates"],
+      "properties": {
+        "cases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "mode", "outcome", "score", "judge"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "mode": { "type": "string", "enum": ["with_skill", "baseline"] },
+              "outcome": { "type": "string", "enum": ["pass", "fail", "score"] },
+              "score": { "type": "number", "minimum": 0, "maximum": 1 },
+              "reason": { "type": "string" },
+              "judge": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["model_id", "rubric_hash"],
+                "properties": {
+                  "model_id": { "type": "string", "minLength": 1 },
+                  "rubric_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+                }
+              }
+            }
+          }
+        },
+        "aggregates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["with_skill", "baseline"],
+          "properties": {
+            "with_skill": { "$ref": "#/$defs/modeAggregate" },
+            "baseline": { "$ref": "#/$defs/modeAggregate" }
+          }
+        }
+      }
+    },
+    "comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["with_skill_score", "baseline_score", "delta"],
+      "properties": {
+        "with_skill_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "baseline_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "delta": { "type": "number", "minimum": -1, "maximum": 1 }
+      }
+    },
+    "verification_level": {
+      "type": "string",
+      "description": "Community verification lattice. FORMAL is reserved/unimplemented in v0.1.",
+      "enum": ["UNVERIFIED", "DECLARED", "TESTED"]
+    },
+    "receipt_hash": {
+      "type": "string",
+      "description": "sha256 (hex) of the canonical receipt JSON with this field omitted.",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "$defs": {
+    "modeAggregate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_count", "pass_count", "mean_score"],
+      "properties": {
+        "case_count": { "type": "integer", "minimum": 0 },
+        "pass_count": { "type": "integer", "minimum": 0 },
+        "mean_score": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  }
+}
