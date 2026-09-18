@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How this is built | Driftproof</title>
+<link rel="stylesheet" href="/style.css">
+<!-- driftproof:card-tags -->
+<link rel="stylesheet" href="/tokens.css">
+<link rel="canonical" href="https://driftproofhq.com/how-this-is-built/">
+<link rel="alternate" type="application/atom+xml" title="Driftproof reports" href="/feed.xml">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-italic.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-medium.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-regular.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/courier-prime-regular.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/newsreader-variable.woff2" crossorigin="anonymous">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png" sizes="180x180">
+<link rel="icon" href="/icon-512.png" sizes="512x512" type="image/png">
+<meta name="description" content="Driftproof is an instrument, so it is built the way it asks skills to be measured: every change is written down before it is made, checked by something that…">
+<meta property="og:site_name" content="Driftproof">
+<meta property="og:title" content="How this is built | Driftproof">
+<meta property="og:description" content="Driftproof is an instrument, so it is built the way it asks skills to be measured: every change is written down before it is made, checked by something that can fail, and reviewed by something that…">
+<meta property="og:image" content="https://driftproofhq.com/og.7a9c3a6e.png">
+<meta property="og:url" content="https://driftproofhq.com/how-this-is-built/">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "How this is built | Driftproof",
+  "description": "Driftproof is an instrument, so it is built the way it asks skills to be measured: every change is written down before it is made, checked by something that…",
+  "url": "https://driftproofhq.com/how-this-is-built/",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Driftproof",
+    "url": "https://driftproofhq.com/"
+  }
+}
+</script>
+<!-- /driftproof:card-tags -->
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "d78764dd442f49cb9bb203bd6302e9b4"}'></script><!-- End Cloudflare Web Analytics -->
+</head>
+<body>
+<!--driftproof:nav--><header class="site">
+<a class="brand" href="/"><img class="brand-mark" src="/favicon.svg" alt="" width="28" height="28"><span>Driftproof</span></a>
+<details class="nav-menu"><summary>Menu</summary></details>
+<nav class="site-nav" aria-label="Site">
+<a href="/reports/">Reports</a>
+<a href="/#how-it-works">How it works</a>
+<details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
+<a href="/methodology/">Methodology</a>
+<a href="/neutrality/">Neutrality</a>
+<a href="/interop/">Interop</a>
+<a href="/authoring/">Authoring</a>
+<a href="/judge-policy/">Judge policy</a>
+<a href="/findings/">Findings</a>
+<a href="/how-this-is-built/">How this is built</a>
+<a href="/glossary/">Glossary</a>
+<a href="/report-types/">Report types</a>
+</div></details>
+<a href="https://github.com/driftproofhq/driftproof">GitHub</a>
+</nav>
+</header><!--/driftproof:nav-->
+<main class="prose how-built">
+<h1>How this is built</h1>
+<p>Driftproof is an instrument, so it is built the way it asks skills to be measured: every change is written down before it is made, checked by something that can fail, and reviewed by something that did not write it. This page describes the method. It shows counts read from the source repository's records as of <span data-fact="at_date">2026-09-16</span>, and none of the records' contents.</p>
+
+<h2>Criteria before code</h2>
+<p>Every change starts as a specification that says what it must do, as numbered acceptance criteria, before any code is written. The records hold <span data-fact="specs">36</span> specifications and <span data-fact="criteria">358</span> acceptance criteria.</p>
+
+<h2>Red before green, and red again under mutation</h2>
+<p>A specification carries a gate, a script that checks its criteria. In this method the gate is written first and run while nothing is built, so it reads red, and those red runs are kept: <span data-fact="red_records">18</span> are on record. Once the work passes, the gate is run again against copies with a violation planted in them, and each planted copy has to turn it red. <span data-fact="gates">35</span> specifications carry a gate, and their gate files name a planted mutation on <span data-fact="mutation_lines">315</span> lines.</p>
+
+<h2>An approver that did not build it</h2>
+<p>Approval is a separate session. It reads the specification, the gate, the change and the operator's written rules from disk, runs the gate again, and works without the build's context: it receives no account of how the change was made. There are <span data-fact="approvals">135</span> approval records. In <span data-fact="held">44</span> of them the approver rejected the work or recorded blocking findings that held the merge, and <span data-fact="rejected">11</span> are outright rejections.</p>
+
+<h2>Amendments rather than edits</h2>
+<p>A published report or a merged specification is amended rather than edited in place: a numbered entry says what changed and why, and the original text stays where it was. The specifications carry <span data-fact="amendments">117</span> amendments numbered in the current format.</p>
+
+<h2>A constitution and a decision log</h2>
+<p>A constitution sets the rules every change is checked against, such as no published number without a receipt behind it. Decisions go into an append-only decision log that records what was chosen, what was not, and why; it holds <span data-fact="decisions">151</span> entries.</p>
+
+<h2>Audits from outside, published against the project</h2>
+<p>Outside audits of the tool are committed as received, and <a href="/findings/">the findings page</a> publishes what each found, what is fixed and what is still open. <span data-fact="audits">2</span> audit documents are on record.</p>
+
+<p class="muted">The counts are taken by <code>scripts/build-facts.mjs</code> at one commit of the source repository, whose records do not reach the public tree. The rule behind each count is in <a href="/data/build-facts.json"><code>/data/build-facts.json</code></a>.</p>
+</main>
+<!--driftproof:foot--><footer class="site">
+<p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
+<p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+</footer><!--/driftproof:foot-->
+<!--driftproof:scripts--><script src="/copy-button.js" defer></script>
+<script type="module" src="/islands/loader.js"></script><!--/driftproof:scripts-->
+</body>
+</html>
