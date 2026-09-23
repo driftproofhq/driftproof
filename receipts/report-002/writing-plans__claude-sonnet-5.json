@@ -1,0 +1,464 @@
+{
+  "schema_version": "0.3.1",
+  "skill": {
+    "name": "writing-plans",
+    "version": "0.0.0",
+    "content_hash": "5ac443162b528dbc693ccc3a6b7d9570131653bc2eabeea619bf8aae242f9b6a",
+    "tokens": 1722
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "37cb3c341572cea2b46e273727af6965f43ce94ca776338e06695cd3ff0bc406",
+    "case_count": 7
+  },
+  "run": {
+    "model_id": "claude-sonnet-5",
+    "model_release_date": "2026-06-30",
+    "provider": "anthropic",
+    "surface": "claude-cli",
+    "runner_version": "0.3.0",
+    "date_utc": "2026-07-31T04:02:40.951Z",
+    "registry": "registered",
+    "transcripts": "retained-local",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "bite-sized-tdd-steps",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.88,
+        "mean": 0.88,
+        "stddev": 0.024495,
+        "samples": [
+          0.9,
+          0.88,
+          0.88,
+          0.84,
+          0.9
+        ],
+        "generation_hash": "3c8d8d34a4fd435a6ab3a413f91632a5bb6d0143c57fc67d9278427ce7ba69ba",
+        "judge_sample_hashes": [
+          "116f29341f4703b78aecbfb1cc977e42899d18cc9e6d3c0d5878c4d4344435ee",
+          "a146ae542f2b37cfacc41d3cff267dbb03940ede1f71fd5cf15d3881e304a1fe",
+          "42ce0e7eedcacca02311547ebe86661c04658371e83ea6aa067a371f6fb4ab95",
+          "a54a8aed96821f5bc02b3b300c04cae86d4d5a0d5ab32e48986557e6bcf34338",
+          "1c659fa7cbfd8a2b0995dbfd052ced15930442b2a1f85d672593342ad7ab40b9"
+        ],
+        "threshold": 0.7,
+        "reason": "Five discrete single-action steps with actual code/commands shown; test-first approach (write-fail-run-pass-commit sequence); exemplary with exact pytest commands and specific expected outputs (ModuleNotFoundError, 8 passed).",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "d500d3f25d8e6b7aa80322f6ad22b9571dd6bec2805e6dd21db6ca1c19b06dc0"
+        }
+      },
+      {
+        "id": "bite-sized-tdd-steps",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.61,
+        "mean": 0.61,
+        "stddev": 0.022361,
+        "samples": [
+          0.6,
+          0.6,
+          0.65,
+          0.6,
+          0.6
+        ],
+        "generation_hash": "cc7df07860a06194a6ff5bbf2610685f80565ee936e1ad4906959fbd7feb6acd",
+        "judge_sample_hashes": [
+          "1eb9a883c12aebff092611b45daac0a81c3d63ef1f0ca7b13637251473512acf",
+          "b15f4d66767a2c48604ebd504b9a7a1c39765f5667a2c43cb2cb7cbf04d57d24",
+          "691ea759e3fe52d4a798c46a179b50536ffa358d1e514db76456e05b66fb4cd6",
+          "d21c6f09f13d087a5e20fbc6423f6d9381d6d8c29af6b465ed2240045f8ee541",
+          "8f80d5edbbd05845027b6cdbf8f9061b3d5a82bfde6ca80465aa4b909167591d"
+        ],
+        "threshold": 0.7,
+        "reason": "Correct test-first approach with exact commands and actual code; missing final commit step per rubric (one deductible error: −0.2).",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "d500d3f25d8e6b7aa80322f6ad22b9571dd6bec2805e6dd21db6ca1c19b06dc0"
+        }
+      },
+      {
+        "id": "repair-placeholder-steps",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.824,
+        "mean": 0.824,
+        "stddev": 0.0251,
+        "samples": [
+          0.85,
+          0.85,
+          0.82,
+          0.8,
+          0.8
+        ],
+        "generation_hash": "5004a696b6a3423bf94f05742841ce34a61beed3d9c80117ddf88f86f27f6fe5",
+        "judge_sample_hashes": [
+          "ad8aba29493680bf9d8170c59da7566fe832d96f23670fca4e04d0e579201101",
+          "2f3482f724e93c456edadf3d7900108879834f755ed53662fbad17739716daa0",
+          "680736e36d564e0db570505a25d29d0b5777266784cf74fb4b976eb8ca6eebf3",
+          "99c2560862e93e35533fe54055b4a087025188c18ad6cfbabbe432a7a56aa25e",
+          "c41a73508ac855eea201e64ae709b4d0a4fbc6be2f934e104015245f58842f59"
+        ],
+        "threshold": 0.7,
+        "reason": "Explicitly flags all five placeholders as defects; rewrites each concretely with validation rules, test code shown, and error handling specified. Addresses 'Task 1' reference by noting meaninglessness if read out of order.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "05fe2da57d9d73c37d453dc3c34e4a0b2c215f77c8f5ea5bbff81310aac386fa"
+        }
+      },
+      {
+        "id": "repair-placeholder-steps",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.8,
+        "mean": 0.8,
+        "stddev": 0,
+        "samples": [
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ],
+        "generation_hash": "68e603555c6f1e4180f537d23bbdc66f05878faa1b0f1d176cc4f6e4b642ef6d",
+        "judge_sample_hashes": [
+          "42cc7d728e6f56197a10ccb2372aea9033968eb5b859fc669f9a2ccfad8f7b7d",
+          "6010b80658f220a5a3c0ec509238146928c7e069721f5294ec35ddca7529594b",
+          "5046eb4795d1445a4573357d23a00bd745a1439f49deea7f04dd63c1c6d575c0",
+          "a989dcc94ff1753c566a0abf5875595151a0ffe1b273a658d973ed011977fb38",
+          "312a3c61be1ee7b5c66f4e08ee5bf14b47817f313ef77e4b9b8169d0b80ec47d"
+        ],
+        "threshold": 0.7,
+        "reason": "Flags all five placeholders explicitly; rewrites concretely without reintroducing vagueness; test cases enumerated; doesn't explain Task 1 self-containment principle for exemplary credit.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "05fe2da57d9d73c37d453dc3c34e4a0b2c215f77c8f5ea5bbff81310aac386fa"
+        }
+      },
+      {
+        "id": "file-structure-by-responsibility",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.824,
+        "mean": 0.824,
+        "stddev": 0.035777,
+        "samples": [
+          0.84,
+          0.8,
+          0.8,
+          0.88,
+          0.8
+        ],
+        "generation_hash": "43ebbe29516c5d1f5d69acb72c1510ae059917f2b76a4bdae4fc1719cb534197",
+        "judge_sample_hashes": [
+          "756f3ff61d3f249ac652b9af9ec18e8c96307455e05526567d6401813c1d6938",
+          "3f4ddc9d76fb432d170c549cff112cf63d7895ca8be182092bc770207ec0d594",
+          "2269975543c0634983f0c2d7ce0d0094a2ed8cb4cd6d4badc28e779ea5078ae9",
+          "ae9c4de81df6273cb86e43ed465231cc97366ecc731a956133be8fc74f3c4475",
+          "fb445596d83dd2be5cb3ff209b29aa7f47d1e852a8542c9508ab0b93728ca790"
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly groups feature files together by responsibility (invoices/), each file has one clear responsibility, and provides detailed rationale. Explicitly compares against technical-layer alternative and explains the 'files that change together' principle, though doesn't precisely state it would fol",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "d592ccbfa5611acfee0c191aea3e25b8a5c88267de4c66819b5f6426ee2460a4"
+        }
+      },
+      {
+        "id": "file-structure-by-responsibility",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.832,
+        "mean": 0.832,
+        "stddev": 0.017889,
+        "samples": [
+          0.85,
+          0.83,
+          0.82,
+          0.85,
+          0.81
+        ],
+        "generation_hash": "0e4132072a6fa7331f420915588d9ca05bc1448ad052d650e59b13b1a50af18f",
+        "judge_sample_hashes": [
+          "557e12e0bd76e5ccb12d6bd3ff26b0c493a0797c1f64a05f64883334e0e0e520",
+          "f8ca43fe8b78544b25b5a6fc23c51f97ce2451b5543ac99e019ea3056d426095",
+          "37b3a4897711aa87806b1abc2e8426e75803877aaf87a613a1534815b390c89e",
+          "8001bd2120967f963c712f5ad4e3a475ced1394fc4474e7f30669f5014d567b3",
+          "fac07f4e76900bfdd6802a69a2ed85763063bcf6ebae8b6454b8f5bcb790660c"
+        ],
+        "threshold": 0.7,
+        "reason": "Organizes by responsibility, not layer; each file has one clear duty; grouping rationale explicitly cites change seams and defers to codebase conventions.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "d592ccbfa5611acfee0c191aea3e25b8a5c88267de4c66819b5f6426ee2460a4"
+        }
+      },
+      {
+        "id": "interfaces-exact-signatures",
+        "mode": "with_skill",
+        "outcome": "borderline",
+        "score": 0.696,
+        "mean": 0.696,
+        "stddev": 0.22154,
+        "samples": [
+          0.78,
+          0.8,
+          0.8,
+          0.3,
+          0.8
+        ],
+        "generation_hash": "090ad5a47ef4264bc0bdbed1c35748e31a90c6aff5319b87751b42737a1bc3de",
+        "judge_sample_hashes": [
+          "86ccd96a99f0b5f5e9508c043cfb01b1bfe2fa7ad12a45a037b9c1986d90ca9d",
+          "9956e77684761d429f9b46f5de6e8fdbd97cb27e9676466a2a66745d202173ca",
+          "9d85bd4cf5369f18dde22ebd45b40ac4e289a9a91a17cfbe427815e58ddbfe78",
+          "15eb78234b6717ec32914f9ed0f0caae5882d1a76c61ef2d717672987d26d83a",
+          "90cf7c3f3f4ee1b30b69e07816035880cfda374d6e0d2e4af0caf2c7edc8623e"
+        ],
+        "threshold": 0.7,
+        "reason": "Explicit Interfaces blocks with complete signatures; Task 2's Consumes matches Task 1's Produces exactly. Minor type accuracy issues: `key_func` defaults to None but lacks `Optional` annotation; `start_response: Callable` is somewhat vague.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "81555516732f291fd6432836e3103cecce0af03968b66cfbde681bf8875eb310"
+        }
+      },
+      {
+        "id": "interfaces-exact-signatures",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.622,
+        "mean": 0.622,
+        "stddev": 0.030332,
+        "samples": [
+          0.6,
+          0.6,
+          0.66,
+          0.6,
+          0.65
+        ],
+        "generation_hash": "5ae6c2b8334054844c3b6595b384389acc0823c0ee3a9dace5573672f9fff0f1",
+        "judge_sample_hashes": [
+          "3fa86f1a8e30cc1741bd850634d2adacd51d5f2262283c5aa55e68a9a4ff1a4a",
+          "01d9a4457c895c83e23ce96e1fcd73fcbf7433b88b25a5a44e72a63ba1d84dae",
+          "500c0a3848330512efba361306668f515194ec88ce4015f222d1bde8c9fc1c6a",
+          "835ce1663adec0aae456d692b7ea48565ff93ad4d2f4801fa6f1d86a761a8c52",
+          "161619e18f02b403b0d5427ef62b863caf2be1cb497fa7681c3da7d97364fbcd"
+        ],
+        "threshold": 0.7,
+        "reason": "Task 2 Consumes matches Task 1 exactly. Both tasks declare Files and Interfaces blocks. Missing type annotation for `request` parameter in Task 2's `__call__` signature—violates concrete named types requirement.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "81555516732f291fd6432836e3103cecce0af03968b66cfbde681bf8875eb310"
+        }
+      },
+      {
+        "id": "task-right-sizing-testable-deliverable",
+        "mode": "with_skill",
+        "outcome": "fail",
+        "score": 0.362,
+        "mean": 0.362,
+        "stddev": 0.067971,
+        "samples": [
+          0.42,
+          0.3,
+          0.32,
+          0.45,
+          0.32
+        ],
+        "generation_hash": "923826687b523c690fd48fe75d5657245d4fea2cd9f2e6780f35f1894bdf4b07",
+        "judge_sample_hashes": [
+          "013ef3a53207987aab37ec214a1fe20f20101a0a962bc89ad8e3cd77177cd33d",
+          "c0d5e3d44fef3a0bb8fb6336de11188aad3e26eadc921f13f2ae97184922186f",
+          "bb45f82a30acdbf9d98f0a59b13b0b59ca9bae124e1e8d17cf65bb6f47d7d29a",
+          "d47212e13463eeeb35291ab591293ad11ee218dc9132f76d47c4d8132213c0e5",
+          "3f89c49c0462e3cbe761618944d13e310781e8cd37bae5758e680dd0d1490fc4"
+        ],
+        "threshold": 0.7,
+        "reason": "Violates core rubric requirement: splits scaffolding (framework, VERSION, uptime) into standalone tasks rather than folding into endpoint. Meets secondary criteria: independent testing, reviewer-rejection justification present.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "9dff2ee8451af1419a78de5240989b7fd38be170ccfd7339d4e1f8aa52e5ec9f"
+        }
+      },
+      {
+        "id": "task-right-sizing-testable-deliverable",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.318,
+        "mean": 0.318,
+        "stddev": 0.06261,
+        "samples": [
+          0.25,
+          0.3,
+          0.42,
+          0.32,
+          0.3
+        ],
+        "generation_hash": "44c226e59a7cd154afe7fd0019493b7b276db20ebc1cbc503bbb5623b6962f2e",
+        "judge_sample_hashes": [
+          "e2687b820f2716aa239892efbb6719861042d2b1c9985d6031a3b959eec0a5f7",
+          "1b7a4f4f870ec9ebba35f3c7c9a793c07acc7dbd975ab0fd50992edc2b4429a7",
+          "a7ed957d5e86d6a079bbc19a4c8467d37c2a06a33162b2798fba4ca3647ea7d2",
+          "7b2ece46ed9c01efa218780c42a47f5418d0884fd7ba1e6c86e26c9d9320e77d",
+          "6a98d0202a44732c5f581b724209870a9bddf5961f9caa15bfa7ee09e8c0e2e6"
+        ],
+        "threshold": 0.7,
+        "reason": "Splits scaffolding (framework, VERSION, uptime) into standalone tasks instead of folding into endpoint task; violates core rubric principle.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "9dff2ee8451af1419a78de5240989b7fd38be170ccfd7339d4e1f8aa52e5ec9f"
+        }
+      },
+      {
+        "id": "full-small-plan-header-and-tasks",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.882,
+        "mean": 0.882,
+        "stddev": 0.013038,
+        "samples": [
+          0.9,
+          0.89,
+          0.88,
+          0.87,
+          0.87
+        ],
+        "generation_hash": "68d4218df042368648c77c293c584c22f7956d44b241f6d511e315315aeed5a1",
+        "judge_sample_hashes": [
+          "098f267841c31fccb9eb3b37e05e7cb4eb455d94afb99d9be096259a12b55e33",
+          "861371586cd04b13bf9df158ea8858c0a946ce62d1fd1ddb1683f4ebb42d18f7",
+          "2c3ba84285922aeeb5bb0a1bb0bf2efef6d9600d83968423a17c5b958aa0ed3c",
+          "3245210032aeb8f1a55dd7423c9efe0b13f1b2f08976b335e0c54329cc6dbbfb",
+          "dd9dbff061d575271c7fbdf86517b2e01f85d5836c017b2e7a07834826b88bce"
+        ],
+        "threshold": 0.7,
+        "reason": "Fully exemplary: complete header with Goal/Architecture/Tech Stack, Global Constraints copying values verbatim, exact-path Files blocks, bite-sized test-first tasks with actual code (7 valid + 10 ValueError cases), concrete run commands with expected output, and commit steps for both tasks.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8913a63e7febea060d9293756dfd6843d9da26b1a6fbff4c127911b1ca5760ac"
+        }
+      },
+      {
+        "id": "full-small-plan-header-and-tasks",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.546,
+        "mean": 0.546,
+        "stddev": 0.085615,
+        "samples": [
+          0.55,
+          0.68,
+          0.5,
+          0.55,
+          0.45
+        ],
+        "generation_hash": "77bc81d22936bee566ec93e8dcd09489267ef31403b954e199e32bd51f43553e",
+        "judge_sample_hashes": [
+          "9f0b899a51628d7f1f61ba41a00e032044c047a4665474f6cc6341c29684070c",
+          "3e8d9c20e8ba90ebd2bb1e7d4a45cf7d3207cf5e7c899f7da2239d0456f572e8",
+          "9aabf21d08b4cb17e81eeafbf31143c680ba5fc6a1d28da2a0eec03362f24829",
+          "61e7fe79c682371cf30a503ee7228824bb627c872772b1212d467905ef056c47",
+          "1023122391eb49988a9af50ea5954100733fd0e9d7b07ffb02e967e8a19d7aae"
+        ],
+        "threshold": 0.7,
+        "reason": "Real code and comprehensive tests present, but lacks formal HEADER section with labeled Goal/Architecture/Tech Stack, missing dedicated Global Constraints section copying values verbatim, and step-by-step tasks are not bite-sized iterative test-first steps.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8913a63e7febea060d9293756dfd6843d9da26b1a6fbff4c127911b1ca5760ac"
+        }
+      },
+      {
+        "id": "self-review-spec-coverage",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.844,
+        "mean": 0.844,
+        "stddev": 0.026077,
+        "samples": [
+          0.8,
+          0.87,
+          0.85,
+          0.85,
+          0.85
+        ],
+        "generation_hash": "9e30cc46bdfab18315ed3d111aa6a11dc0781f3db00f602191940c9930e1f5d8",
+        "judge_sample_hashes": [
+          "95b4507321f50e5f65a6535b6831c50e390f5fa52e3dae405443d267cfe7f721",
+          "8a460ead2fed212f104a9755e40070d613cc86bd051c13842350076d6b7d3273",
+          "54c08ec71c544b8d20d867934ad7aefb5e50699efc69ef974d871add98e248f4",
+          "bda7e3d85ad3ef915464ccbfa6837e5cac390c922a0a87e84f0e2b342d9530bc",
+          "673b974b09d3ddeb67276ec7c87302358d670b2f0537f92b685e1159876260d4"
+        ],
+        "threshold": 0.7,
+        "reason": "Performs per-requirement mapping, correctly identifies purge_expired gap and clear/clear_all mismatch, proposes concrete fixes. Anchors at fully correct, idiomatic response.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "a68d6f7dcdf49677b2d94ccb32ff7968253937b452078232226025a33cf93161"
+        }
+      },
+      {
+        "id": "self-review-spec-coverage",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.854,
+        "mean": 0.854,
+        "stddev": 0.016733,
+        "samples": [
+          0.83,
+          0.87,
+          0.87,
+          0.85,
+          0.85
+        ],
+        "generation_hash": "10034256001f3950f48be1ab811b1d46c66fdc928ca09b62775fed6796984739",
+        "judge_sample_hashes": [
+          "3582e1bdebaa856dc4a4c99eb30b146b381da085816f05b1b6ed5201d779ad37",
+          "3cb2447d5308fa5bcffec0c96dab5d6d0d2be640ad0f704f222ae4064fd1e029",
+          "ff1ea8d8e232cabd7d27a6143061459cdaef63a9502c07c67548ea3f605e6721",
+          "79e8b8c3cc0fa922739b9aea8b0af83670c8c3628745342cbaf4e1965f2206fe",
+          "26d0e072b0356f4f8c294917cf8b0470483a9583e33e5b881492bf9fd623f3ae"
+        ],
+        "threshold": 0.7,
+        "reason": "Maps all five requirements correctly, identifies both purge_expired gap and clear/clear_all mismatch with concrete fixes; lacks formal table structure but meets exemplary criteria through explicit mappings and detailed remedies.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "a68d6f7dcdf49677b2d94ccb32ff7968253937b452078232226025a33cf93161"
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 7,
+        "pass_count": 5,
+        "borderline_count": 1,
+        "mean_score": 0.758857,
+        "stddev": 0.185752
+      },
+      "baseline": {
+        "case_count": 7,
+        "pass_count": 3,
+        "borderline_count": 0,
+        "mean_score": 0.654571,
+        "stddev": 0.191711
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.758857,
+    "baseline_score": 0.654571,
+    "delta": 0.104286,
+    "delta_uncertainty": 0.26694
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "e5ceed3638123b50a842ebbf69a328a3692a411d3dc3acee030511e099e22cbf"
+}
