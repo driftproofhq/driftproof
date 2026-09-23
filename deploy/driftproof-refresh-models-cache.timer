@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+# Refresh the models cache daily at ~23:00 UTC — roughly one hour BEFORE
+# driftproof-release-watch fires (OnCalendar=daily = 00:00 UTC + up to 30min
+# jitter), so the release-watch always diffs a fresh snapshot. A small randomized
+# delay keeps the fixed-second load off the public endpoint; Persistent=true
+# catches up a missed run after the box was asleep.
+[Unit]
+Description=Daily Driftproof models-cache refresh (~1h before release-watch)
+Documentation=file:%h/driftproof/RUNBOOK.md
+
+[Timer]
+OnCalendar=*-*-* 23:00:00
+RandomizedDelaySec=600
+Persistent=true
+Unit=driftproof-refresh-models-cache.service
+
+[Install]
+WantedBy=timers.target

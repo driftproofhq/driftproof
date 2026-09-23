@@ -1,0 +1,33 @@
+{
+  "expectations": [
+    {
+      "id": 1,
+      "text": "The ADR states context, decision, alternatives, and consequences distinctly",
+      "passed": true,
+      "evidence": "The Write call created docs/decisions/ADR-001-adopt-event-sourcing-for-orders.md. It has separate '## Context', '## Decision', '## Alternatives Considered' and '## Consequences' sections, plus Status and Date. Each section has its own content: requirements and constraints under Context, the scoped event-sourcing choice under Decision, three option subsections under Alternatives, and a bullet list of effects under Consequences."
+    },
+    {
+      "id": 2,
+      "text": "Trade-offs and rejected options are recorded, not just the winning choice",
+      "passed": true,
+      "evidence": "The audit-table option and the change-data-capture option each have their own Pros, Cons and 'Rejected:' reason. For example, the audit table is rejected because 'It does not reliably provide a complete transition history', and CDC because it records 'storage-level changes'. The chosen option's Cons are also listed: projection rebuilds, event versioning, eventual consistency and operational complexity. Consequences flags the conflict with the reporting service's synchronous reads as an open trade-off."
+    },
+    {
+      "id": 3,
+      "text": "The document is written in timeless language describing current state",
+      "passed": false,
+      "evidence": "The agent dropped 'currently' from the source ('The orders service stores mutable order rows'), and most of the text is in present tense. However, the file still has several time-relative, transitional phrases: 'Two requirements are not met today', 'The system of record becomes an append-only log', 'Before cutover we need to decide how reporting will get order data', and 'Operations get more complex'. These describe a change from a previous state and a pending future step, not a timeless description of the current state."
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 1,
+    "total": 3,
+    "pass_rate": 0.6666666666666666
+  },
+  "run": {
+    "executor_model": "claude-opus-5",
+    "grader_model": "unknown",
+    "timestamp": "2026-09-21T14:53:23.182Z"
+  }
+}

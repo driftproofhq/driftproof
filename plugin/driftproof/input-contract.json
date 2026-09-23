@@ -1,0 +1,72 @@
+{
+  "_comment": [
+    "SHIPPED WITH THE PLUGIN. The input contract the three commands validate",
+    "against, at the door, before anything is spawned.",
+    "",
+    "It is a copy, and the copy is asserted rather than trusted: spec 028 NFR-4",
+    "holds this file, specs/028-claude-code-plugin/fixtures/input-contract.json",
+    "and the RE_* assignments in action/lib.sh identical rule for rule and in both",
+    "directions. A regex that moves in any one of the three and not the others",
+    "takes the gate red.",
+    "",
+    "It ships because the published tree carries no specs/ directory, so an",
+    "installed plugin cannot read the spec fixture. Collapsing the copies into one",
+    "shared module is the spec after 028 (its decision 1).",
+    "",
+    "The runner has had the same contract at its own door since spec 026. This one",
+    "runs FIRST: the runner refuses after a process has already started, and the",
+    "plugin refuses before one does."
+  ],
+  "source": "action/lib.sh",
+  "rules": {
+    "models": {
+      "bash_name": "RE_MODELS",
+      "re": "^[A-Za-z0-9._-]+(,[A-Za-z0-9._-]+)*$",
+      "message": "models: expected a comma-separated list of model ids (letters, digits, . _ -)"
+    },
+    "max_usd": {
+      "bash_name": "RE_USD",
+      "re": "^[0-9]+(\\.[0-9]+)?$",
+      "message": "max-usd: expected a positive decimal number such as 20 or 3.53"
+    },
+    "max_usd_zero": {
+      "bash_name": "RE_ZERO",
+      "re": "^0+(\\.0+)?$",
+      "reject_on_match": true,
+      "message": "max-usd: must be greater than zero"
+    },
+    "max_calls": {
+      "bash_name": "RE_CALLS",
+      "re": "^[1-9][0-9]*$",
+      "message": "max-calls: expected a positive integer with no leading zero"
+    },
+    "skill_dir_shell_metachar": {
+      "_note": [
+        "THE PLUGIN'S OWN, and the one rule in this file that action/lib.sh does",
+        "not carry — so it declares no bash_name, and spec 028 NFR-4 holds it",
+        "between this file and the spec fixture rather than against the Action.",
+        "",
+        "Why the door is stricter here than the Action is. The Action validates a",
+        "value it is about to hand to a shell script. This door hands it to an",
+        "argv array with shell:false, so the characters below cannot execute",
+        "anything through it. They are refused because AC-4 says a person running",
+        "on the trusted lane, in their own checkout, should be TOLD about a path",
+        "that looks like a command substitution rather than have it quietly work.",
+        "",
+        "Before spec 028 v1.3 only the control-character rule applied here, and",
+        "five of AC-4's six payload classes were refused by the existence check",
+        "instead — a refusal for a reason that has nothing to do with the",
+        "character in the path."
+      ],
+      "re": "[\"'`;]|\\$\\(",
+      "reject_on_match": true,
+      "message": "skill-dir: contains a shell metacharacter (a quote, a semicolon, a backtick, or a $( command substitution)"
+    },
+    "skill_dir_control": {
+      "bash_name": "RE_CNTRL",
+      "re": "[[:cntrl:]]",
+      "reject_on_match": true,
+      "message": "skill-dir: contains a control character"
+    }
+  }
+}

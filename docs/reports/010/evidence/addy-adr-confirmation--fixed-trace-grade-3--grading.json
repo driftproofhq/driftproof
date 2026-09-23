@@ -1,0 +1,28 @@
+{
+  "expectations": [
+    {
+      "id": 1,
+      "text": "The ADR states context, decision, alternatives, and consequences distinctly",
+      "passed": true,
+      "evidence": "Write tool created docs/decisions/ADR-001-event-sourcing-for-orders-service.md with explicit separate headings: '## Status', '## Date', '## Context' (mutable rows, best-effort webhooks, auditor/support requirements, constraints), '## Decision' (adopt event sourcing, append-only stream as system of record, read projections), '## Alternatives Considered' (three sub-sections), and '## Consequences' (six bullets). No blending of sections."
+    },
+    {
+      "id": 2,
+      "text": "Trade-offs and rejected options are recorded, not just the winning choice",
+      "passed": true,
+      "evidence": "All three options from decision-context.md are preserved, each with Pros/Cons and an explicit disposition: audit table — 'Rejected: Auditors need history to be the source of truth, not a secondary record that can silently diverge'; CDC — 'Rejected: ...physical changelog does not answer their questions'; event sourcing — 'Accepted' with its own Cons ('projection rebuilds, event schema versioning, and eventual consistency'). Downsides of the winning choice are carried into Consequences (eventual consistency with reporting, upcasting for schema evolution, rebuild procedure)."
+    },
+    {
+      "id": 3,
+      "text": "The document is written in timeless language describing current state",
+      "passed": true,
+      "evidence": "Prose is present-tense and declarative: 'The orders service stores mutable order rows and emits best-effort webhooks', 'Adopt event sourcing for the orders service', 'The event stream becomes the system of record'. No meeting narrative, no 'we discussed on <date>' or 'previously we thought' framing; the source file's 'Options discussed:' was rewritten into a neutral 'Alternatives Considered' structure. The only forward-looking phrases ('needs to be validated ... before rollout') are appropriate statements of outstanding consequence rather than historical narration."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1
+  }
+}
