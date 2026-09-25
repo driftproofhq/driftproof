@@ -1,0 +1,101 @@
+/* SPDX-License-Identifier: Apache-2.0
+   Driftproof site structure. The palette, the type scale, the radius and the two
+   content widths are all in docs/tokens.css; this file names them and states
+   none of them. specs/025-design-pass/gate.mjs AC-3 reads every stylesheet under
+   docs/ and fails on a hex, a border-radius or a font-size outside the fenced
+   token block in that file.
+
+   WHY THIS FILE STILL EXISTS. Eight published report pages link it from their
+   own <head>, and those heads are rendered by eight pinned per-report
+   generators. Folding it into tokens.css would mean either editing eight
+   published pages' heads or leaving a link that resolves to nothing, and spec
+   020 AC-37 asserts that every internal href resolves. So it survives, holding
+   the structure of a published report body: the tables, the verdict chips, the
+   summary blocks. Its palette declarations are gone, which is the half that
+   mattered - it used to redefine --code, --card, --fg and --line under
+   prefers-color-scheme: dark, and that is how every <code> element on the site
+   once rendered near-black on near-black. */
+
+/* A REPORT BODY IS A TEXT DOCUMENT and takes the text measure. A GENERATED PAGE
+   IS A COLUMN OF SECTIONS and takes none: each `.screen` constrains itself, and
+   a full-bleed band has to reach the edges of the viewport to be one.
+   `main { max-width: 720px }` applied to both, which is how every section on
+   this site rendered at 672 pixels on a 1470-wide screen while the stylesheet
+   said 1100. The class is on the element rather than inferred with `:has()`,
+   because a layout that fails closed on an older engine fails as a clamped page
+   and nobody sees it. */
+main {
+  max-width: var(--w-text);
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+main.screens {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── a published report body ──────────────────────────────────────────────── */
+.report .pair, .report .src { color: var(--muted); font-size: var(--t-mono-sm); }
+.headline { padding: 1.1rem 1.35rem; margin: 1.6rem 0; }
+.headline .big { font-family: var(--sans); font-weight: 500; font-size: var(--t-h3); line-height: 1.4; margin: 0 0 0.5rem; }
+.card { padding: 1.1rem 1.35rem; margin: 1.2rem 0; }
+.lede { font-size: var(--t-body); }
+
+/* A TABLE OF FIGURES IS SET, NOT TYPED: sentences and counts in the body face with tabular
+   numerals, so a column of them lines up; the identifiers inside it are <code> and typed. */
+table { border-collapse: collapse; margin: 1.2rem 0; font-size: var(--t-mono); width: 100%; background: var(--paper-2); }
+th, td { text-align: left; padding: 0.45rem 0.75rem; border-bottom: 1px dotted var(--line); white-space: nowrap; }
+th { color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--muted); }
+td { font-family: var(--sans); font-variant-numeric: tabular-nums lining-nums; }
+table.summary td:first-child, table.cases td:first-child { white-space: normal; font-family: var(--sans); }
+
+/* The per-case verdict chip a report table carries: flat, one radius, one rule, the ink of the
+   state it names. Only the verdict stamp tilts. */
+.v {
+  font-weight: 500; font-size: var(--t-mono-sm); padding: 0.05em 0.45em;
+  border-radius: var(--radius); border: 1px solid currentColor;
+}
+.v-regressed { color: var(--reg); }
+.v-improved { color: var(--imp); }
+.v-noise { color: var(--noise); }
+.v-mixed { color: var(--mixed); }
+
+section.skill { margin-top: 2.5rem; padding-top: 1rem; border-top: var(--perforation) dotted var(--line); }
+ul.method li { margin: 0.5rem 0; }
+.foot { color: var(--muted); font-size: var(--t-mono-sm); margin-top: 2rem; }
+
+/* ── receipt pages (spec 036) ───────────────────────────────────────────────
+   One page per receipt, laid on the desk as one sheet of stock (tokens.css gives it its torn
+   edges), so the grain never sits under its figures. The verdict is a stamp in the ink of its
+   state; UNDERPOWERED keeps a dashed rule around its block, not an alarm colour. Long commands
+   and hashes wrap rather than widen the page. */
+main.receipt-page { margin: 2.6rem auto 3.4rem; padding: 2.4rem 2.2rem 2.2rem; }
+.receipt-page code { overflow-wrap: anywhere; }
+.receipt-page section { border-top: var(--perforation) dotted var(--line); padding-top: 1.2rem; margin-top: 1.6rem; }
+.receipt-meta { color: var(--muted); }
+.receipt-verdict { padding: 1.2rem 0 0.4rem; margin: 1.4rem 0; }
+.receipt-page section.receipt-verdict { border-top: var(--perforation) dotted var(--line); }
+.receipt-verdict.state-underpowered { outline: 2px dashed var(--mixed); outline-offset: 0.6rem; }
+.receipt-verdict .receipt-label { margin: 0 0 0.9rem; }
+.receipt-verdict.state-passed .receipt-label { border-color: var(--state-separated); color: var(--state-separated); }
+.receipt-verdict.state-regressed .receipt-label { border-color: var(--reg); color: var(--reg); }
+.receipt-verdict.state-underpowered .receipt-label { border-color: var(--mixed); color: var(--mixed); }
+.receipt-verdict.state-no-effect .receipt-label { border-color: var(--state-overlapping); color: var(--state-overlapping); }
+.receipt-verdict.state-not-measured .receipt-label { border-color: var(--state-refused); color: var(--state-refused); }
+.receipt-honest { margin: 0 0 0.5rem; }
+.receipt-draws { margin: 0 0 0.5rem; color: var(--muted); }
+.receipt-badge { display: block; max-width: 100%; height: auto; }
+.receipt-verify details.verify p { margin: 0.5rem 0; }
+.receipt-lede { color: var(--muted); margin-bottom: 0.25rem; }
+.receipt-arms .bandplot { margin-top: 1rem; max-width: var(--w-plot); }
+@media (max-width: 720px) {
+  main.receipt-page { margin: 1.8rem 0.6rem 2.6rem; padding: 1.8rem 1.1rem 1.6rem; }
+}
+
+/* ── the homepage's first screen and How this is built (spec 037) ─────────── */
+.install-first { margin: 1.5rem 0 1rem; }
+.install-first .copy-cta { margin: 0.4rem 0; }
+.install-label { font-weight: 600; margin-bottom: 0.25rem; }
+.hero-links { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; }
+.states li { margin: 0.5rem 0; }

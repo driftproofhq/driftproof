@@ -1,0 +1,33 @@
+{
+  "expectations": [
+    {
+      "id": 1,
+      "text": "The ADR states context, decision, alternatives, and consequences distinctly",
+      "passed": true,
+      "evidence": "Write tool created docs/decisions/ADR-001-event-sourcing-for-orders-service.md with separate headed sections: '## Status', '## Date', '## Context' (mutable rows, best-effort webhooks, auditor/support requirements, constraints), '## Decision' (append-only event stream + read projections), '## Alternatives Considered', and '## Consequences'. Each concern lives in its own section with no blending."
+    },
+    {
+      "id": 2,
+      "text": "Trade-offs and rejected options are recorded, not just the winning choice",
+      "passed": true,
+      "evidence": "The Alternatives Considered section covers all three options from decision-context.md, each with Pros/Cons and an explicit 'Rejected:' rationale: the audit table is 'not the system of record [and] can silently diverge from actual state'; CDC 'Gives a technical changelog, not the business-level transition history'. The chosen option also lists its own Cons (projection rebuilds, event versioning, eventual consistency, operational complexity), and Consequences records the unresolved reporting-service synchronous-read conflict as 'the main integration risk'."
+    },
+    {
+      "id": 3,
+      "text": "The document is written in timeless language describing current state",
+      "passed": true,
+      "evidence": "Context is written in present tense describing the system ('The orders service stores mutable order rows and emits best-effort webhooks'), not as a narrative of a meeting. The source file's 'Options discussed:' framing was converted into a standing 'Alternatives Considered' section. Decision is stated as a standing position ('Adopt event sourcing for orders: ... are persisted as ...') and Consequences describe resulting state ('Order reads served from projections become eventually consistent', 'Event versioning and upcasting are now a standing maintenance obligation'). No 'we met', 'last week', or 'will be changed' narrative."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1
+  },
+  "run": {
+    "executor_model": "claude-opus-5",
+    "grader_model": "unknown",
+    "timestamp": "2026-09-21T15:09:17.806Z"
+  }
+}

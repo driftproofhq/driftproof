@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+# Driftproof models-cache refresher — a oneshot that reads a PUBLIC, no-auth model
+# enumeration surface (OpenRouter) and writes state/models-cache.json, the keyless
+# diff surface that driftproof-release-watch reads an hour later. It NEVER calls a
+# vendor with a key and NEVER publishes; on any failure it keeps the old cache and
+# exits 0 (see scripts/refresh-models-cache.js + RUNBOOK.md).
+#
+# Installed as a systemd --user unit (see deploy/install-timer.sh). Paths use the
+# %h home specifier so the unit carries no absolute home path; the repo is
+# expected at %h/driftproof.
+[Unit]
+Description=Driftproof models-cache refresher (public no-auth enumeration -> state/models-cache.json)
+Documentation=file:%h/driftproof/RUNBOOK.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/driftproof
+ExecStart=/usr/bin/env node scripts/refresh-models-cache.js
+# Bound the run so a hung fetch can't wedge the timer.
+TimeoutStartSec=300
+Nice=10
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,33 @@
+{
+  "expectations": [
+    {
+      "id": 1,
+      "text": "The ADR states context, decision, alternatives, and consequences distinctly",
+      "passed": true,
+      "evidence": "Write tool created docs/decisions/ADR-001-event-sourcing-for-orders-service.md with separate headed sections: '## Context' (mutable rows, auditor/support requirements, constraints), '## Decision' (adopt event sourcing, stream as system of record, projections for reporting), '## Alternatives Considered', and '## Consequences' (6 bullets). Also includes Status and Date headers."
+    },
+    {
+      "id": 2,
+      "text": "Trade-offs and rejected options are recorded, not just the winning choice",
+      "passed": true,
+      "evidence": "'## Alternatives Considered' contains all three options from decision-context.md, each with Pros/Cons and a verdict line: audit table ('Rejected: Gives an approximation of history rather than an authoritative one'), CDC ('Rejected: ... CDC output is not a durable contract across schema evolution'), and event sourcing ('Accepted: ...'). Cons of the winning option are recorded too (projection rebuilds, event versioning, eventual consistency, operational complexity), and Consequences names the reporting service's tolerance of replication lag."
+    },
+    {
+      "id": 3,
+      "text": "The document is written in timeless language describing current state",
+      "passed": true,
+      "evidence": "Text uses present/declarative tense throughout: 'The orders service stores mutable order rows and emits best-effort webhooks.', 'Adopt event sourcing for orders. Order state transitions are persisted as an append-only event stream', 'The event stream becomes the system of record', 'Read models are projections and are eventually consistent.' No meeting-minutes narration ('we discussed', 'last Tuesday', 'will decide later'); only minor time-flavored phrase is 'are now ongoing obligations', which still describes the current state."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1
+  },
+  "run": {
+    "executor_model": "claude-opus-5",
+    "grader_model": "unknown",
+    "timestamp": "2026-09-21T15:10:00.088Z"
+  }
+}

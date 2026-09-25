@@ -1,0 +1,45 @@
+{
+  "_comment": "Fixture authored from darkrishabh/agent-skills-eval's documented artifact semantics (README: meta.json run metadata; benchmark.json rolled-up pass/fail per skill+eval; per-eval with_skill/without_skill grading.json with per-assertion pass/fail + reasoning). The upstream repo does not publish a frozen results schema, so this fixture IS the converter's compatibility contract — see docs/interop.md.",
+  "skill_name": "csv-summarizer",
+  "version": "1.0.0",
+  "target": "gpt-4o-mini",
+  "judge": "gpt-4o-mini",
+  "baseline": true,
+  "timestamp": "2026-08-01T12:00:00.000Z",
+  "evals": [
+    {
+      "id": "basic",
+      "name": "basic behavior",
+      "with_skill": {
+        "pass": true,
+        "assertions": [
+          { "assertion": "The output identifies the highest revenue month.", "pass": true, "reasoning": "Named March explicitly with the correct figure." },
+          { "assertion": "The output cites the input file.", "pass": true, "reasoning": "References input.csv." }
+        ]
+      },
+      "without_skill": {
+        "pass": false,
+        "assertions": [
+          { "assertion": "The output identifies the highest revenue month.", "pass": false, "reasoning": "Summarized totals but never named the peak month." },
+          { "assertion": "The output cites the input file.", "pass": true, "reasoning": "References input.csv." }
+        ]
+      }
+    },
+    {
+      "id": "edge-empty",
+      "name": "empty file handling",
+      "with_skill": {
+        "pass": true,
+        "assertions": [
+          { "assertion": "The output states the file has no data rows.", "pass": true, "reasoning": "Says the CSV contains headers only." }
+        ]
+      },
+      "without_skill": {
+        "pass": false,
+        "assertions": [
+          { "assertion": "The output states the file has no data rows.", "pass": false, "reasoning": "Hallucinated a revenue summary for an empty file." }
+        ]
+      }
+    }
+  ]
+}
