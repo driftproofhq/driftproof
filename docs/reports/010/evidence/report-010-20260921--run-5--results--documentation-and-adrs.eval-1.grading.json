@@ -1,0 +1,33 @@
+{
+  "expectations": [
+    {
+      "id": 1,
+      "text": "The ADR states context, decision, alternatives, and consequences distinctly",
+      "passed": true,
+      "evidence": "The Write call to docs/decisions/ADR-001-adopt-event-sourcing-for-orders.md creates separate '## Context', '## Decision', '## Alternatives Considered' and '## Consequences' sections, plus Status and Date. Each section has its own content: the problems and constraints, the event-sourcing choice and its scope, the two rejected options, and the positive and negative outcomes."
+    },
+    {
+      "id": 2,
+      "text": "Trade-offs and rejected options are recorded, not just the winning choice",
+      "passed": true,
+      "evidence": "'Alternatives Considered' covers both non-chosen options from the source: the append-only audit table and CDC. Each has Pros, Cons and a 'Rejected:' reason, such as 'does not make the history authoritative or replayable' and 'not the business transition behind each change'. Consequences lists the chosen option's costs as Negatives: projection rebuilds, event versioning, eventual consistency and operational complexity. It also names the conflict with reporting's synchronous reads as an open issue."
+    },
+    {
+      "id": 3,
+      "text": "The document is written in timeless language describing current state",
+      "passed": true,
+      "evidence": "The agent dropped the source's word 'currently' ('The orders service currently stores...') and wrote 'The orders service stores mutable order rows'. The Decision is in declarative present tense: 'The append-only stream of order events becomes the source of truth'. There are no relative time markers like 'recently', 'now' or 'next sprint'; the only date is the explicit Date field. One small exception: the Open issue says 'The team still needs to decide', which is mildly time-bound, but it is scoped as a follow-up-ADR item, not a transient status note."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1
+  },
+  "run": {
+    "executor_model": "claude-opus-5",
+    "grader_model": "unknown",
+    "timestamp": "2026-09-21T14:56:03.532Z"
+  }
+}

@@ -1,0 +1,153 @@
+{
+  "schema_version": "0.1",
+  "skill": {
+    "name": "commit-message-conventions",
+    "version": "0.1.0",
+    "content_hash": "4c44f5cb0ea5cba36759e0673ec1489fea858a5e09e72223f2580f8f779883b4"
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "7182f4181faaf4b168562237afbe0deb4b571cca12e134c3af771b497beb8051",
+    "case_count": 5
+  },
+  "run": {
+    "model_id": "claude-haiku-4-5-20251001",
+    "model_release_date": "2025-10-01",
+    "surface": "claude-cli",
+    "runner_version": "0.1.0",
+    "date_utc": "2026-07-27T18:01:27.909Z"
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "feat-basic",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 1,
+        "reason": "Response is a bare commit message following Conventional Commits exactly: type 'feat', scope 'settings', imperative verb 'add', lowercase start, no period, 37/72 chars.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "51e44d8a880e96f13d55c16534f079a8ef372efe7608cd42b662ee493776617d"
+        }
+      },
+      {
+        "id": "feat-basic",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.1,
+        "reason": "Response contains prose and code fences (violates 'ONLY commit message' requirement). Missing Conventional Commits format 'type(scope): subject'. Subject has uppercase 'A' not lowercase.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "51e44d8a880e96f13d55c16534f079a8ef372efe7608cd42b662ee493776617d"
+        }
+      },
+      {
+        "id": "fix-with-body",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 1,
+        "reason": "Subject has correct type 'fix' with (auth) scope, imperative mood, lowercase (acronym capitalization acceptable), 46 chars well under 72-char limit, no period. Body properly separated by exactly one blank line and clearly explains the cause.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "5e675c6a819fc9f64dfc34803048bf303978096c25ff321ec3ea6f6324efd148"
+        }
+      },
+      {
+        "id": "fix-with-body",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.82,
+        "reason": "Commit message perfectly formatted (type, scope, imperative, ≤72 chars, proper blank line separation, body explains what/why). Violates rubric: response includes explanatory text after the commit; should be ONLY the commit message.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "5e675c6a819fc9f64dfc34803048bf303978096c25ff321ec3ea6f6324efd148"
+        }
+      },
+      {
+        "id": "breaking-change",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 1,
+        "reason": "Signals breaking change with both '!' and 'BREAKING CHANGE:' footer; subject follows Conventional Commits with valid type, imperative mood, lowercase, no period.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "5e4d2de570acac59105f5c169111cfb43d5d0a5327975e387e027e6268080bbf"
+        }
+      },
+      {
+        "id": "breaking-change",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.75,
+        "reason": "Commit message correctly uses `chore!:` marker and follows Conventional Commits format; violates 'only a commit message' by including explanation and alternatives.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "5e4d2de570acac59105f5c169111cfb43d5d0a5327975e387e027e6268080bbf"
+        }
+      },
+      {
+        "id": "reject-vague",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 1,
+        "reason": "Response asks for specifics about what changed and educates on Conventional Commits format; avoids the vague 'update stuff' message entirely.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "437c6114e44a391534de53adc4860af8a58c9324ca108e2b53eb904ff75977b5"
+        }
+      },
+      {
+        "id": "reject-vague",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0,
+        "reason": "Model accepts the vague 'update stuff' message instead of proposing a Conventional Commit or asking for specifics as rubric requires.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "437c6114e44a391534de53adc4860af8a58c9324ca108e2b53eb904ff75977b5"
+        }
+      },
+      {
+        "id": "docs-scope",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 1,
+        "reason": "Commit message is only a message, uses 'docs' type, has appropriate scope (install), imperative lowercase subject, no period, 56 chars (well under 72), references the documentation change.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "aebbf37fca26be0c87ad418069416a8f2b667f0f5dadf8ee7d4b29a0083ed554"
+        }
+      },
+      {
+        "id": "docs-scope",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.7,
+        "reason": "Commit messages well-formed with docs type and imperative subjects, but response violates 'only a commit message' by including explanatory prose around them.",
+        "judge": {
+          "model_id": "claude-haiku-4-5-20251001",
+          "rubric_hash": "aebbf37fca26be0c87ad418069416a8f2b667f0f5dadf8ee7d4b29a0083ed554"
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 5,
+        "pass_count": 5,
+        "mean_score": 1
+      },
+      "baseline": {
+        "case_count": 5,
+        "pass_count": 3,
+        "mean_score": 0.474
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 1,
+    "baseline_score": 0.474,
+    "delta": 0.526
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "4c2f6a92539b8dea167ea37ccb762ae0cad7143653c5777e095e5094340a89d1"
+}
