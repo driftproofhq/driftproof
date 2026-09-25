@@ -1,0 +1,33 @@
+{
+  "expectations": [
+    {
+      "id": 1,
+      "text": "The ADR states context, decision, alternatives, and consequences distinctly",
+      "passed": true,
+      "evidence": "Write tool created docs/decisions/ADR-001-event-sourcing-for-orders-service.md with separate headed sections: '## Status', '## Date', '## Context' (current mutable-row model, audit/point-in-time requirements, constraints), '## Decision' (adopt event sourcing, append-only stream as system of record with read projections), '## Alternatives Considered', and '## Consequences' (7 bullets). No section content bleeds into another."
+    },
+    {
+      "id": 2,
+      "text": "Trade-offs and rejected options are recorded, not just the winning choice",
+      "passed": true,
+      "evidence": "All three options from decision-context.md are captured with Pros/Cons and an explicit verdict line: audit table ('Rejected: Auditability depends on discipline rather than on the storage model'), CDC ('Rejected: Auditors need business-level transitions, not schema-level diffs'), and event sourcing ('Cons: Introduces projection rebuilds, event schema versioning, eventual consistency, and higher operational complexity' / 'Accepted: ...'). The chosen option's downsides are recorded, and the synchronous-read conflict for reporting is surfaced as the main cost rather than hidden."
+    },
+    {
+      "id": 3,
+      "text": "The document is written in timeless language describing current state",
+      "passed": true,
+      "evidence": "Prose uses present/declarative tense throughout: 'The orders service stores mutable order rows and emits best-effort webhooks', 'Adopt event sourcing for the orders service', 'The event stream becomes the system of record', 'Scope is limited to the orders bounded context.' No meeting narrative, no 'we discussed/yesterday/currently we are considering' framing; the fixture's 'Options discussed' phrasing was rewritten as 'Alternatives Considered'. Forward-looking items appear only where appropriate (consequences/follow-up), not as historical storytelling."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1
+  },
+  "run": {
+    "executor_model": "claude-opus-5",
+    "grader_model": "unknown",
+    "timestamp": "2026-09-21T15:10:44.007Z"
+  }
+}

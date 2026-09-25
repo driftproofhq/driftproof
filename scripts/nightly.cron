@@ -1,0 +1,6 @@
+# The nightly full sweep of dev (spec 051; CONSTITUTION § Proportional oversight, clause 3).
+# 18:00 UTC is 02:00 SGT. The box clock is UTC; CRON_TZ says so for a cron that reads it.
+# Written, not installed: install with `crontab -e` and this line, on the operator's word.
+# Output goes beside the nightly's own records; the morning report is ~/.driftproof-nightly/morning-report.md.
+CRON_TZ=UTC
+0 18 * * * mkdir -p "$HOME/.driftproof-nightly" && cd "$HOME/driftproof" && TMPDIR=/var/tmp /usr/bin/node scripts/nightly.mjs --ref dev >> "$HOME/.driftproof-nightly/cron.log" 2>&1

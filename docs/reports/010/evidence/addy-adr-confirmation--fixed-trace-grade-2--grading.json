@@ -1,0 +1,28 @@
+{
+  "expectations": [
+    {
+      "id": 1,
+      "text": "The ADR states context, decision, alternatives, and consequences distinctly",
+      "passed": true,
+      "evidence": "The Write call created docs/decisions/ADR-001-event-sourcing-for-orders-service.md with separate headed sections: '## Status', '## Date', '## Context' (mutable rows, best-effort webhooks, auditor/support requirements, constraints), '## Decision' (adopt event sourcing, append-only stream as system of record, read projections), '## Alternatives Considered', and '## Consequences'. Each concern lives in its own distinct section rather than being blended."
+    },
+    {
+      "id": 2,
+      "text": "Trade-offs and rejected options are recorded, not just the winning choice",
+      "passed": true,
+      "evidence": "The 'Alternatives Considered' section documents all three options from decision-context.md with explicit Pros/Cons and a verdict line: audit table ('Rejected: Auditors need history to be the source of truth, not a secondary record that can silently diverge'), CDC ('Rejected: ... a physical changelog does not answer their questions'), and event sourcing marked '(chosen)' with its own Cons listing projection rebuilds, event schema versioning, and eventual consistency. The Consequences section further records downsides (eventual consistency, upcasting burden, rebuild procedures)."
+    },
+    {
+      "id": 3,
+      "text": "The document is written in timeless language describing current state",
+      "passed": true,
+      "evidence": "The ADR uses present-tense declarative statements ('The orders service stores mutable order rows and emits best-effort webhooks', 'Adopt event sourcing for the orders service', 'The event stream becomes the system of record', 'Event schemas must be versioned', 'Scope is limited to the orders bounded context'). It avoids meeting-narrative or dated-progress phrasing such as 'we discussed yesterday' or 'previously we decided', and does not describe the authoring process. Minor forward-looking phrasing ('needs to be validated with the reporting service before rollout') is framed as a standing implication rather than a changelog entry, so the document still reads as a description of the current decided state."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1
+  }
+}
