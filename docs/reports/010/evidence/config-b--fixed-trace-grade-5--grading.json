@@ -1,0 +1,28 @@
+{
+  "expectations": [
+    {
+      "id": 1,
+      "text": "The ADR states context, decision, alternatives, and consequences distinctly",
+      "passed": true,
+      "evidence": "Write tool created docs/decisions/ADR-001-event-sourcing-for-orders-service.md with separate headed sections: '## Status', '## Date', '## Context' (problem: mutable rows, best-effort webhooks, auditor/support requirements, plus constraints), '## Decision' (adopt event sourcing, append-only stream as system of record with read projections), '## Alternatives Considered', and '## Consequences' (6 bullets). Each concern is confined to its own section rather than blended."
+    },
+    {
+      "id": 2,
+      "text": "Trade-offs and rejected options are recorded, not just the winning choice",
+      "passed": true,
+      "evidence": "The 'Alternatives Considered' section covers all three options from decision-context.md, each with explicit Pros/Cons plus a verdict line: audit table — 'Rejected: Auditors need history to be the source of truth, not a secondary record that can silently diverge'; CDC — 'Rejected: ... a physical changelog does not answer their questions'; event sourcing — listed with its own Cons ('projection rebuilds, event schema versioning, and eventual consistency') and 'Accepted:' rationale. Downsides of the winning choice are also carried into Consequences (eventual consistency, upcasting, rebuild procedures)."
+    },
+    {
+      "id": 3,
+      "text": "The document is written in timeless language describing current state",
+      "passed": true,
+      "evidence": "Written in present tense describing state rather than narrating a meeting: 'The orders service stores mutable order rows and emits best-effort webhooks' (drops the source's 'currently'), 'Order state transitions are recorded as an append-only stream...', 'The event stream becomes the system of record', 'Event schemas must be versioned'. No 'we discussed', 'yesterday', or 'we will decide' phrasing. Minor forward-looking phrases appear only in Consequences ('needs to be validated ... before rollout', 'can be replaced'), which is conventional for stating implications and does not undermine the timeless framing."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1
+  }
+}

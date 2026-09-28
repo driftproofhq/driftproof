@@ -1,0 +1,1107 @@
+{
+  "schemaVersion": 1,
+  "claudeVersion": "2.1.272",
+  "startedAt": "2026-09-15T17:26:26.349Z",
+  "durationSeconds": 862,
+  "costUsd": 6.5422115000000005,
+  "partial": false,
+  "suite": {
+    "root": "/private/tmp/driftproof-full-plugin-ngnitzme/agent-skills",
+    "ablation": "with-without",
+    "modelOverride": "claude-opus-5",
+    "judgeModel": "claude-opus-5",
+    "threshold": 1,
+    "concurrency": 1,
+    "plugins": [
+      {
+        "name": "agent-skills",
+        "version": "0.6.9",
+        "path": "/private/tmp/driftproof-full-plugin-ngnitzme/agent-skills"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "code-review-and-quality",
+      "dir": "codex-full-evals/code-review-and-quality",
+      "source": "mixed",
+      "promptMarkdown": "Review the current working-tree change in this tiny repository. Use the code-review-and-quality skill if it is available. Read the requirements and actual source; run the local test command to verify your findings. Write review.md with prioritized, actionable findings tied to source locations and concrete failing examples. Do not fix or commit the code. Work only in this disposable repository; do not publish anything or use network services.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 420,
+      "maxTurns": 35,
+      "graders": [
+        {
+          "name": "report",
+          "type": "file_exists",
+          "weight": 1,
+          "config": {
+            "path": "review.md",
+            "exists": true
+          }
+        },
+        {
+          "name": "quantity",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": {
+              "source": "file",
+              "path": "review.md"
+            },
+            "pattern": "quantity|quantities",
+            "flags": "i",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "validation",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": {
+              "source": "file",
+              "path": "review.md"
+            },
+            "pattern": "negative|positive|validation|validate|reject",
+            "flags": "i",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "tested",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Bash",
+            "input_match": "npm test|node --test"
+          }
+        },
+        {
+          "name": "skill-activated",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "code-review-and-quality"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 15,
+            "costUsd": 0.5676739999999999,
+            "judgeCostUsd": 0,
+            "durationSeconds": 67,
+            "startedAt": "2026-09-15T17:26:26.368Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-cfUXqj/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "report",
+                "passed": true,
+                "weight": 1,
+                "explanation": "review.md exists as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "quantity",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched quantity|quantities",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "validation",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched negative|positive|validation|validate|reject",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "tested",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 5x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-activated",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 13,
+            "costUsd": 0.527878,
+            "judgeCostUsd": 0,
+            "durationSeconds": 62,
+            "startedAt": "2026-09-15T17:27:33.514Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-IbF8mx/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "report",
+                "passed": true,
+                "weight": 1,
+                "explanation": "review.md exists as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "quantity",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched quantity|quantities",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "validation",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched negative|positive|validation|validate|reject",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "tested",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 4x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-activated",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 12,
+            "costUsd": 0.4871665,
+            "judgeCostUsd": 0,
+            "durationSeconds": 60,
+            "startedAt": "2026-09-15T17:28:35.109Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-Hwg0bV/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "report",
+                "passed": true,
+                "weight": 1,
+                "explanation": "review.md exists as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "quantity",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched quantity|quantities",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "validation",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched negative|positive|validation|validate|reject",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "tested",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-activated",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 12,
+            "costUsd": 0.3448545,
+            "judgeCostUsd": 0,
+            "durationSeconds": 63,
+            "startedAt": "2026-09-15T17:29:34.675Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-qJP7ZS/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "report",
+                "passed": true,
+                "weight": 1,
+                "explanation": "review.md exists as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "quantity",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched quantity|quantities",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "validation",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched negative|positive|validation|validate|reject",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "tested",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 3x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 13,
+            "costUsd": 0.3736465,
+            "judgeCostUsd": 0,
+            "durationSeconds": 71,
+            "startedAt": "2026-09-15T17:30:37.704Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-WIhhPO/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "report",
+                "passed": true,
+                "weight": 1,
+                "explanation": "review.md exists as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "quantity",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched quantity|quantities",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "validation",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched negative|positive|validation|validate|reject",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "tested",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 4x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 12,
+            "costUsd": 0.3327505,
+            "judgeCostUsd": 0,
+            "durationSeconds": 60,
+            "startedAt": "2026-09-15T17:31:48.505Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-6LzI4w/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "report",
+                "passed": true,
+                "weight": 1,
+                "explanation": "review.md exists as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "quantity",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched quantity|quantities",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "validation",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched negative|positive|validation|validate|reject",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "tested",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 1,
+        "passRateWithout": 1,
+        "delta": 0
+      }
+    },
+    {
+      "name": "documentation-and-adrs",
+      "dir": "codex-full-evals/documentation-and-adrs",
+      "source": "mixed",
+      "promptMarkdown": "Record our accepted architecture decision using the documentation-and-adrs skill if available. Inspect the repository's existing ADR convention first. The decision is already made: use a transactional PostgreSQL outbox for reliable order-confirmation email delivery, with an idempotent worker. The requirements and alternatives are in decision-brief.md. Create the next ADR using the established location, file format, numbering and section conventions, with filename ADR-003-Email-Outbox.rst. Preserve all existing ADRs. Explain the decision, alternatives, drawbacks, and delivery/idempotency implications. Do not implement application code, commit, publish, or access external services.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 420,
+      "maxTurns": 35,
+      "graders": [
+        {
+          "name": "correct-path",
+          "type": "file_exists",
+          "weight": 1,
+          "config": {
+            "path": "Documentation/Decisions/ADR-003-Email-Outbox.rst",
+            "exists": true
+          }
+        },
+        {
+          "name": "idempotency",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": {
+              "source": "file",
+              "path": "Documentation/Decisions/ADR-003-Email-Outbox.rst"
+            },
+            "pattern": "idempoten",
+            "flags": "i",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "alternatives",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": {
+              "source": "file",
+              "path": "Documentation/Decisions/ADR-003-Email-Outbox.rst"
+            },
+            "pattern": "Kafka",
+            "flags": "",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "delivery",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": {
+              "source": "file",
+              "path": "Documentation/Decisions/ADR-003-Email-Outbox.rst"
+            },
+            "pattern": "at.least.once",
+            "flags": "i",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "skill-activated",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "documentation-and-adrs"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 9,
+            "costUsd": 0.350233,
+            "judgeCostUsd": 0,
+            "durationSeconds": 36,
+            "startedAt": "2026-09-15T17:32:48.756Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-sLaSDs/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "correct-path",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Documentation/Decisions/ADR-003-Email-Outbox.rst exists as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "idempotency",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched idempoten",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "alternatives",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched Kafka",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "delivery",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched at.least.once",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-activated",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 10,
+            "costUsd": 0.37169949999999996,
+            "judgeCostUsd": 0,
+            "durationSeconds": 41,
+            "startedAt": "2026-09-15T17:33:24.459Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-socEXn/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "correct-path",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Documentation/Decisions/ADR-003-Email-Outbox.rst exists as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "idempotency",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched idempoten",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "alternatives",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched Kafka",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "delivery",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched at.least.once",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-activated",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 7,
+            "costUsd": 0.3791135,
+            "judgeCostUsd": 0,
+            "durationSeconds": 47,
+            "startedAt": "2026-09-15T17:34:05.677Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-3bvmUC/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "correct-path",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Documentation/Decisions/ADR-003-Email-Outbox.rst exists as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "idempotency",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched idempoten",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "alternatives",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched Kafka",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "delivery",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched at.least.once",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-activated",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 9,
+            "costUsd": 0.26893799999999995,
+            "judgeCostUsd": 0,
+            "durationSeconds": 53,
+            "startedAt": "2026-09-15T17:34:52.351Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-234NVE/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "correct-path",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Documentation/Decisions/ADR-003-Email-Outbox.rst exists as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "idempotency",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched idempoten",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "alternatives",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched Kafka",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "delivery",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched at.least.once",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 12,
+            "costUsd": 0.314098,
+            "judgeCostUsd": 0,
+            "durationSeconds": 61,
+            "startedAt": "2026-09-15T17:35:45.595Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-ifnjRn/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "correct-path",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Documentation/Decisions/ADR-003-Email-Outbox.rst exists as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "idempotency",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched idempoten",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "alternatives",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched Kafka",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "delivery",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched at.least.once",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 8,
+            "costUsd": 0.241517,
+            "judgeCostUsd": 0,
+            "durationSeconds": 38,
+            "startedAt": "2026-09-15T17:36:46.196Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-UPK2KU/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "correct-path",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Documentation/Decisions/ADR-003-Email-Outbox.rst exists as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "idempotency",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched idempoten",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "alternatives",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched Kafka",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "delivery",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched at.least.once",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 1,
+        "passRateWithout": 1,
+        "delta": 0
+      }
+    },
+    {
+      "name": "git-workflow-and-versioning",
+      "dir": "codex-full-evals/git-workflow-and-versioning",
+      "source": "mixed",
+      "promptMarkdown": "The bug fix and its regression test are already implemented and passing. Review the working tree and use the git-workflow-and-versioning skill if available to commit the intended work into two atomic commits: the behavior fix with its test, then the separate README wording change. Run npm test before committing. Use conventional commit subjects and explain the reason for the bug fix. Leave notes.txt unchanged and untracked. Do not modify the existing code or tests, do not push, and do not add remotes. Write a short summary in commit-report.md after committing. This is a disposable local repository.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 420,
+      "maxTurns": 35,
+      "graders": [
+        {
+          "name": "report",
+          "type": "file_exists",
+          "weight": 1,
+          "config": {
+            "path": "commit-report.md",
+            "exists": true
+          }
+        },
+        {
+          "name": "committed",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Bash",
+            "input_match": "git[^\\n]*commit"
+          }
+        },
+        {
+          "name": "tested",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Bash",
+            "input_match": "npm test|node --test"
+          }
+        },
+        {
+          "name": "skill-activated",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "git-workflow-and-versioning"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 8,
+            "costUsd": 0.38986649999999995,
+            "judgeCostUsd": 0,
+            "durationSeconds": 34,
+            "startedAt": "2026-09-15T17:37:24.140Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-CenLpJ/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "report",
+                "passed": true,
+                "weight": 1,
+                "explanation": "commit-report.md exists as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "committed",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 2x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "tested",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 2x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-activated",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 9,
+            "costUsd": 0.4065465,
+            "judgeCostUsd": 0,
+            "durationSeconds": 35,
+            "startedAt": "2026-09-15T17:37:57.774Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-CeZYFv/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "report",
+                "passed": true,
+                "weight": 1,
+                "explanation": "commit-report.md exists as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "committed",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 2x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "tested",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-activated",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 10,
+            "costUsd": 0.423832,
+            "judgeCostUsd": 0,
+            "durationSeconds": 35,
+            "startedAt": "2026-09-15T17:38:32.323Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-ubP5mv/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "report",
+                "passed": true,
+                "weight": 1,
+                "explanation": "commit-report.md exists as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "committed",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 3x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "tested",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-activated",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 7,
+            "costUsd": 0.2370235,
+            "judgeCostUsd": 0,
+            "durationSeconds": 31,
+            "startedAt": "2026-09-15T17:39:06.926Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-QSpAED/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "report",
+                "passed": true,
+                "weight": 1,
+                "explanation": "commit-report.md exists as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "committed",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 2x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "tested",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 9,
+            "costUsd": 0.263191,
+            "judgeCostUsd": 0,
+            "durationSeconds": 36,
+            "startedAt": "2026-09-15T17:39:37.503Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-jrIwtO/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "report",
+                "passed": true,
+                "weight": 1,
+                "explanation": "commit-report.md exists as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "committed",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 3x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "tested",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 2x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 9,
+            "costUsd": 0.26218300000000005,
+            "judgeCostUsd": 0,
+            "durationSeconds": 35,
+            "startedAt": "2026-09-15T17:40:13.701Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-3HYqnJ/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "report",
+                "passed": true,
+                "weight": 1,
+                "explanation": "commit-report.md exists as expected",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "committed",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 3x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "tested",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 1x (expected 1..∞)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 1,
+        "passRateWithout": 1,
+        "delta": 0
+      }
+    }
+  ],
+  "aggregates": {
+    "casesTotal": 3,
+    "casesPassed": 3,
+    "overallScore": 1,
+    "overallPassRate": 1,
+    "meanDelta": 0
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "expectations": [
+    {
+      "id": 1,
+      "text": "The ADR states context, decision, alternatives, and consequences distinctly",
+      "passed": true,
+      "evidence": "The agent used the Write tool to create docs/decisions/ADR-001-adopt-event-sourcing-for-orders-service.md. The file has separate '## Context', '## Decision', '## Alternatives Considered' and '## Consequences' sections, plus Status and Date. Each section has its own content: requirements and constraints in Context, the event-sourcing choice and its scope in Decision, two alternatives with their own subheadings, and consequences labelled Positive, Negative or Scope."
+    },
+    {
+      "id": 2,
+      "text": "Trade-offs and rejected options are recorded, not just the winning choice",
+      "passed": true,
+      "evidence": "Both rejected options from the source get Pros, Cons and an explicit 'Rejected:' reason: the append-only audit table is a secondary record that can drift, and CDC records row-level diffs tied to the physical schema. Consequences lists the costs of the chosen option: projection rebuilds, event versioning, eventual consistency that conflicts with the reporting service's synchronous reads, and operational complexity. It notes that the team's event-stream experience reduces this risk but does not remove it."
+    },
+    {
+      "id": 3,
+      "text": "The document is written in timeless language describing current state",
+      "passed": true,
+      "evidence": "The Decision and Consequences sections use present tense to describe the resulting state, for example 'Order state changes are recorded as an append-only sequence of events, which is the source of truth' and 'Other bounded contexts are unaffected'. The document avoids narrative words such as 'recently', 'new', 'now' and 'will soon'. One minor caveat: Context keeps 'The orders service currently stores mutable order rows', copied from the source. It describes the situation that prompted the decision, which is normal for ADR context. One consequence is phrased as a precondition ('must be resolved before the reporting service moves...') rather than as a narrative about the future."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1
+  },
+  "run": {
+    "executor_model": "claude-opus-5",
+    "grader_model": "unknown",
+    "timestamp": "2026-09-21T14:55:24.509Z"
+  }
+}
