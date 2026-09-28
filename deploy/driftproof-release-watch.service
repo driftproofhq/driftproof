@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+# Driftproof release-watch — a oneshot that polls the Anthropic models endpoint,
+# diffs the model registry, and prepares a DRAFT drift report when a new model
+# appears. It NEVER publishes; it only queues a draft + notifies (see RUNBOOK.md).
+#
+# Installed as a systemd --user unit (see deploy/install-timer.sh). Paths use the
+# %h home specifier so the unit carries no absolute home path; the repo is
+# expected at %h/driftproof.
+[Unit]
+Description=Driftproof release-watch (poll models endpoint, prepare draft on new model)
+Documentation=file:%h/driftproof/RUNBOOK.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/driftproof
+# Optional env file for ANTHROPIC_API_KEY (leading '-' = ignore if absent). The
+# poll needs a key for a LIVE endpoint call; without one the run logs and exits.
+EnvironmentFile=-%h/.driftproof.env
+ExecStart=/usr/bin/env node scripts/release-watch.js
+# Bound the run so a hung poll can't wedge the timer.
+TimeoutStartSec=1800
+Nice=10
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,348 @@
+{
+  "schema_version": "0.2",
+  "skill": {
+    "name": "code-review-and-quality",
+    "version": "0.0.0",
+    "content_hash": "534b6663e6ffb8e398ac7ed613425d369e7885e51f56a537e6306f3ee638a6ff"
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "4729eb8fc298bbcf8baadc13f2d2cf1a9e573d0dbad57dfb67adc2f4df271760",
+    "case_count": 7
+  },
+  "run": {
+    "model_id": "claude-sonnet-4-6",
+    "model_release_date": "2026-02-17",
+    "surface": "claude-cli",
+    "runner_version": "0.2.0",
+    "date_utc": "2026-07-28T15:44:13.435Z",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "severity-labeled-findings",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.908,
+        "mean": 0.908,
+        "stddev": 0.042071,
+        "samples": [
+          0.92,
+          0.94,
+          0.95,
+          0.85,
+          0.88
+        ],
+        "threshold": 0.7,
+        "reason": "Explicit labels on all findings; hardcoded secret correctly Critical; PII correctly Required; cosmetic Nit included; ordered by severity; concrete fixes for each substantive issue.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "a953d281f6a998f2b332172b431e3fd36792516ceefbc87ca00bab9ebcf015b0"
+        }
+      },
+      {
+        "id": "severity-labeled-findings",
+        "mode": "baseline",
+        "outcome": "borderline",
+        "score": 0.646,
+        "mean": 0.646,
+        "stddev": 0.067676,
+        "samples": [
+          0.75,
+          0.6,
+          0.6,
+          0.6,
+          0.68
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly labels hardcoded secret as Critical and identifies key issues with explicit severity; miscalibrates PII logging as Medium instead of Required/Critical; omits the non-descriptive `data` variable name as a Nit.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "a953d281f6a998f2b332172b431e3fd36792516ceefbc87ca00bab9ebcf015b0"
+        }
+      },
+      {
+        "id": "commit-message-imperative-body",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.862,
+        "mean": 0.862,
+        "stddev": 0.013038,
+        "samples": [
+          0.85,
+          0.88,
+          0.85,
+          0.86,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Imperative first line clearly describes the change; body comprehensively explains what and why, explicitly names retry parameters (3 attempts, delays), mentions the test, and justifies architectural placement.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "c0e72ffc8f491bba9621acce0290781529e9b4a4886abaa2637938944afdb2ca"
+        }
+      },
+      {
+        "id": "commit-message-imperative-body",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.872,
+        "mean": 0.872,
+        "stddev": 0.013038,
+        "samples": [
+          0.89,
+          0.86,
+          0.87,
+          0.88,
+          0.86
+        ],
+        "threshold": 0.7,
+        "reason": "Imperative first line, clear what/why body with specific parameters (3 attempts, 1s/2s/4s delays) and test context. Exemplary execution within the 0.81-0.90 range.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "c0e72ffc8f491bba9621acce0290781529e9b4a4886abaa2637938944afdb2ca"
+        }
+      },
+      {
+        "id": "security-axis-sql-injection",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.882,
+        "mean": 0.882,
+        "stddev": 0.008367,
+        "samples": [
+          0.89,
+          0.89,
+          0.88,
+          0.88,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Identifies SQL injection as Critical blocker, proposes concrete parameterized-query fix, flags input validation at boundary, and keeps injection clearly led; also identifies additional IDOR issue.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8b25d6a2eddc61bf07802a53d2bb92d65739b3731f0a8d51ff95803aa6d1354b"
+        }
+      },
+      {
+        "id": "security-axis-sql-injection",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.846,
+        "mean": 0.846,
+        "stddev": 0.033615,
+        "samples": [
+          0.87,
+          0.87,
+          0.8,
+          0.87,
+          0.82
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly identifies SQL injection as Critical with concrete parameterized-query fix and attack examples; exceeds baseline by flagging authorization and input validation issues clearly.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8b25d6a2eddc61bf07802a53d2bb92d65739b3731f0a8d51ff95803aa6d1354b"
+        }
+      },
+      {
+        "id": "propose-structural-remedy",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.878,
+        "mean": 0.878,
+        "stddev": 0.019235,
+        "samples": [
+          0.88,
+          0.9,
+          0.89,
+          0.85,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly identifies repeated-conditional smell across three functions, proposes concrete typed-lookup-table restructuring (FILE_KIND_META Record), and explicitly notes the benefit (single entry per new kind vs. three edits). Exemplary execution with working code and secondary typing fix.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "c8e38c61625d6142ea1ea24e60be2f50c0cbd62d08c6344496f759c022926114"
+        }
+      },
+      {
+        "id": "propose-structural-remedy",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.878,
+        "mean": 0.878,
+        "stddev": 0.004472,
+        "samples": [
+          0.87,
+          0.88,
+          0.88,
+          0.88,
+          0.88
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly identifies repeated-conditional smell across three functions and proposes concrete typed-record lookup-table replacement with example data structure and maintenance benefits.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "c8e38c61625d6142ea1ea24e60be2f50c0cbd62d08c6344496f759c022926114"
+        }
+      },
+      {
+        "id": "oversized-change-split",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.856,
+        "mean": 0.856,
+        "stddev": 0.015166,
+        "samples": [
+          0.84,
+          0.86,
+          0.85,
+          0.88,
+          0.85
+        ],
+        "threshold": 0.7,
+        "reason": "Flags 1,400 lines as too large, insists refactor and feature be separate PRs, names Stack strategy explicitly. Minor: doesn't request rewritten descriptions for each PR.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8cca4cf01b3900f46656510ee472f41de63953d0e0f4dbd0126fe41841a0ca50"
+        }
+      },
+      {
+        "id": "oversized-change-split",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.822,
+        "mean": 0.822,
+        "stddev": 0.046043,
+        "samples": [
+          0.86,
+          0.88,
+          0.8,
+          0.8,
+          0.77
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all requirements: flags ~1400 lines too large, insists on separating refactor from feature, describes concrete two-PR strategy (refactor first, feature on top), requests standalone descriptions.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8cca4cf01b3900f46656510ee472f41de63953d0e0f4dbd0126fe41841a0ca50"
+        }
+      },
+      {
+        "id": "approve-when-improves-health",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.828,
+        "mean": 0.828,
+        "stddev": 0.027749,
+        "samples": [
+          0.83,
+          0.86,
+          0.8,
+          0.85,
+          0.8
+        ],
+        "threshold": 0.7,
+        "reason": "Correct verdict (Approve) with sound reasoning citing de-duplication + test + conventions. Treats `re` naming as optional Nit (author may ignore). Implicitly articulates 'improves health even if imperfect' principle but could have stated it more explicitly.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "18a2f6084ca93a4b3909b448971d44c2abea727cf40db2146a589390ea1e129e"
+        }
+      },
+      {
+        "id": "approve-when-improves-health",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.846,
+        "mean": 0.846,
+        "stddev": 0.0251,
+        "samples": [
+          0.81,
+          0.88,
+          0.85,
+          0.84,
+          0.85
+        ],
+        "threshold": 0.7,
+        "reason": "Correct Approve verdict with sound reasoning (de-duplication + test + conventions improve health). Treats `re` naming as non-blocking nit. Demonstrates the principle clearly but doesn't explicitly state it in abstract terms.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "18a2f6084ca93a4b3909b448971d44c2abea727cf40db2146a589390ea1e129e"
+        }
+      },
+      {
+        "id": "reject-clean-it-up-later",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.866,
+        "mean": 0.866,
+        "stddev": 0.015166,
+        "samples": [
+          0.88,
+          0.87,
+          0.88,
+          0.85,
+          0.85
+        ],
+        "threshold": 0.7,
+        "reason": "Declines defer-and-approve, explains why (permanent debt), requires fix before merge with three specific options, professional tone. Minor gap: doesn't mention tracked bug self-assignment as explicit fallback.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "9d5f1b209285fd70399fb8bc1e80a909d78fae5fecd536bf3f6cf17af53778f5"
+        }
+      },
+      {
+        "id": "reject-clean-it-up-later",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.856,
+        "mean": 0.856,
+        "stddev": 0.013416,
+        "samples": [
+          0.85,
+          0.84,
+          0.87,
+          0.85,
+          0.87
+        ],
+        "threshold": 0.7,
+        "reason": "Declines defer-and-approve, explains why (release-week follow-ups slip), requires fix before merge via two practical options. Minor gap: doesn't explicitly state tracked-bug fallback if neither option viable.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "9d5f1b209285fd70399fb8bc1e80a909d78fae5fecd536bf3f6cf17af53778f5"
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 7,
+        "pass_count": 7,
+        "borderline_count": 0,
+        "mean_score": 0.868571,
+        "stddev": 0.024758
+      },
+      "baseline": {
+        "case_count": 7,
+        "pass_count": 6,
+        "borderline_count": 1,
+        "mean_score": 0.823714,
+        "stddev": 0.080519
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.868571,
+    "baseline_score": 0.823714,
+    "delta": 0.044857,
+    "delta_uncertainty": 0.084239
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "d9dac43d21f82fcd992a22b8aa18661fb9ff37ef373375738bbb4c8a9493994a"
+}

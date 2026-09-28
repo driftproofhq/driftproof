@@ -1,0 +1,353 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://driftproofhq.com/spec/stale.v1.schema.json",
+  "title": "driftproof stale, output v1",
+  "description": "What `driftproof stale --json` prints (spec 053): for each receipt, what it recorded against what would run today, per axis, the decision per arm (rerun, then regrade, then unknown, then reuse), the status, any newer-model advisory and the command to run next; or the reason the receipt could not be read. An axis nobody records or gives is unknown, never current. Fields are only ever added, never renamed or removed; a consumer ignores fields it does not know. An axis effect of advisory is a patch release of the same harness (spec 053 A-053-1): it reruns and regrades nothing and counts in summary.advisories with any newer-model advisory. exit_code is the process exit: 0 every receipt current with no advisory, 1 any stale, 3 none stale but something unknown or advised, 2 any error; with strict, 3 becomes 1.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema",
+    "runner_version",
+    "strict",
+    "receipts",
+    "summary",
+    "exit_code"
+  ],
+  "properties": {
+    "schema": {
+      "const": "driftproof.stale/1"
+    },
+    "runner_version": {
+      "type": "string"
+    },
+    "strict": {
+      "type": "boolean"
+    },
+    "receipts": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "path",
+              "receipt_hash",
+              "skill",
+              "model_id",
+              "date_utc",
+              "verification_level",
+              "status",
+              "arms",
+              "axes",
+              "advisories",
+              "runner_version",
+              "next"
+            ],
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "receipt_hash": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "skill": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "model_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "date_utc": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "verification_level": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "status": {
+                "enum": [
+                  "current",
+                  "stale",
+                  "unknown"
+                ]
+              },
+              "arms": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "with_skill",
+                  "baseline"
+                ],
+                "properties": {
+                  "with_skill": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "required": [
+                      "decision",
+                      "axes"
+                    ],
+                    "properties": {
+                      "decision": {
+                        "enum": [
+                          "rerun",
+                          "regrade",
+                          "unknown",
+                          "reuse"
+                        ]
+                      },
+                      "axes": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "cases": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "baseline": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "required": [
+                      "decision",
+                      "axes"
+                    ],
+                    "properties": {
+                      "decision": {
+                        "enum": [
+                          "rerun",
+                          "regrade",
+                          "unknown",
+                          "reuse"
+                        ]
+                      },
+                      "axes": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "cases": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "axes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "required": [
+                    "axis",
+                    "recorded",
+                    "current",
+                    "effect",
+                    "arms",
+                    "reason"
+                  ],
+                  "properties": {
+                    "axis": {
+                      "enum": [
+                        "model",
+                        "harness",
+                        "skill",
+                        "suite",
+                        "judge_model",
+                        "judge_template",
+                        "rubric"
+                      ]
+                    },
+                    "recorded": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "current": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "effect": {
+                      "enum": [
+                        "current",
+                        "rerun",
+                        "regrade",
+                        "unknown",
+                        "advisory"
+                      ]
+                    },
+                    "arms": {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "with_skill",
+                          "baseline"
+                        ]
+                      },
+                      "minItems": 1
+                    },
+                    "reason": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "cases": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "cases_added": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "cases_removed": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "minItems": 1
+              },
+              "advisories": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "required": [
+                    "model_id",
+                    "released"
+                  ],
+                  "properties": {
+                    "model_id": {
+                      "type": "string"
+                    },
+                    "released": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "runner_version": {
+                "type": "object",
+                "additionalProperties": true,
+                "required": [
+                  "recorded",
+                  "current"
+                ],
+                "properties": {
+                  "recorded": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "current": {
+                    "type": "string"
+                  }
+                }
+              },
+              "next": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "error"
+            ],
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "error": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "receipts",
+        "current",
+        "stale",
+        "unknown",
+        "errors",
+        "advisories"
+      ],
+      "properties": {
+        "receipts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "current": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "stale": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unknown": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "errors": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "advisories": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "exit_code": {
+      "enum": [
+        0,
+        1,
+        2,
+        3
+      ]
+    }
+  }
+}

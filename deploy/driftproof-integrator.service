@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+# Driftproof integrator service (spec 067): the loop of passes that advances the release train,
+# runs the merge queue's tick (spec 066) and fast-forwards ~/driftproof when dev moves and the
+# checkout is idle and clean. It runs outside tmux, as a systemd --user unit.
+#
+# BUILT, NOT SWITCHED ON. This file is not installed by deploy/install-timer.sh. Installing,
+# enabling and starting it is the operator's switch-on step (see specs/067-integrator-release-train/PACKET.md).
+# Paths use the %h home specifier so the unit carries no absolute home path.
+[Unit]
+Description=Driftproof integrator (merge queue, release train, checkout follow)
+Documentation=file:%h/driftproof/RUNBOOK.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/driftproof
+Environment=TMPDIR=/var/tmp
+Environment="PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/usr/bin/env node scripts/integrate.mjs serve %h/.driftproof-integrator/config.json
+# SIGTERM ends the loop after the current pass; a staged build can take as long as the repository gate
+KillSignal=SIGTERM
+TimeoutStopSec=3h
+Restart=on-failure
+RestartSec=60
+Nice=10
+
+[Install]
+WantedBy=default.target

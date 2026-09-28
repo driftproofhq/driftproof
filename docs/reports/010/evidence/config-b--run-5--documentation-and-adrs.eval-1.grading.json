@@ -1,0 +1,33 @@
+{
+  "expectations": [
+    {
+      "id": 1,
+      "text": "The ADR states context, decision, alternatives, and consequences distinctly",
+      "passed": true,
+      "evidence": "Write tool created docs/decisions/ADR-001-event-sourcing-for-orders-service.md with separate headed sections: '## Status', '## Date', '## Context' (drivers + constraints), '## Decision' (append-only event stream with projections), '## Alternatives Considered', and '## Consequences'. Each concern is confined to its own section — the Context states the problem without asserting the choice, and the Decision is a single concise statement."
+    },
+    {
+      "id": 2,
+      "text": "Trade-offs and rejected options are recorded, not just the winning choice",
+      "passed": true,
+      "evidence": "The 'Alternatives Considered' section documents all three options from decision-context.md, each with Pros/Cons and an explicit verdict line: 'Keep the current model and add an append-only audit table' (Rejected: audit table is a secondary write, can drift, reconstruction best-effort), 'Database change-data capture' (Rejected: captures physical row diffs not business intent, coupled to schema), and 'Event sourcing (chosen)' with its own Cons listed (projection rebuilds, event versioning, eventual consistency, operational complexity). Consequences also record the unresolved synchronous-read conflict as 'the main open risk', and the agent flagged it to the user rather than papering over it."
+    },
+    {
+      "id": 3,
+      "text": "The document is written in timeless language describing current state",
+      "passed": true,
+      "evidence": "Written in present tense throughout: 'The orders service stores mutable order rows and emits best-effort webhooks', 'Auditors need a complete history...', 'Order state is derived from the event stream; writes append events rather than updating rows', 'Scope is the orders bounded context only.' The agent dropped the source file's 'currently' and 'Options discussed' framing, and avoided meeting-minutes/narrative phrasing ('we met', 'it was decided last week'). Section headings are declarative rather than chronological."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1
+  },
+  "run": {
+    "executor_model": "claude-opus-5",
+    "grader_model": "unknown",
+    "timestamp": "2026-09-21T15:11:26.302Z"
+  }
+}
