@@ -1,0 +1,464 @@
+{
+  "schema_version": "0.3.1",
+  "skill": {
+    "name": "documentation-and-adrs",
+    "version": "0.0.0",
+    "content_hash": "e11562bf0b5776583af0745ad5bd0d2425215921b2cacf9b2e2a40eaa843f9bf",
+    "tokens": 2437
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "254e2b62720993392dc241a3efc59fec20d13df53c226748bbf311912753af1e",
+    "case_count": 7
+  },
+  "run": {
+    "model_id": "claude-opus-5",
+    "model_release_date": "2026-07-24",
+    "provider": "anthropic",
+    "surface": "claude-cli",
+    "runner_version": "0.3.0",
+    "date_utc": "2026-08-11T17:55:33.935Z",
+    "registry": "registered",
+    "transcripts": "retained-local",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "comment-intent-not-implementation",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.88,
+        "mean": 0.88,
+        "stddev": 0.01,
+        "samples": [
+          0.87,
+          0.87,
+          0.88,
+          0.89,
+          0.89
+        ],
+        "generation_hash": "c495eca63112894e8f25967e3266c3f50992d933b94485c47441ba6b721a34d1",
+        "judge_sample_hashes": [
+          "12ea098801bb7843f819d2168a24192dcc018f83c89af055ba8caa00bd678add",
+          "64b1937eada514dfb0299d62e650692c18df821bf0326d32a33fe9482fd0aea9",
+          "3d6ee9356453711365646a8f0b4fb14102899d0583295890d8d2fa4fb038fea0",
+          "9689e4badf472f70f45ca8fc451b56cfc9f61d638e9f78a63c8d519f52994379",
+          "41fa8c30e44e382995a81f5bbbf05bf19ae9540986ae55e8ccf4b9fc223d4a49"
+        ],
+        "threshold": 0.7,
+        "reason": "Removes all 'what'-restating comments and commented-out code; converts bare TODO to documented gap with reasoning; all remaining comments explain intent/assumptions, not actions. Exemplary JSDoc and inline comments clarify non-obvious business logic.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "b38f01e6671fc0b28a94de550fe70f879134a3168b35e5b1fb53a9a6773478b0"
+        }
+      },
+      {
+        "id": "comment-intent-not-implementation",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.872,
+        "mean": 0.872,
+        "stddev": 0.008367,
+        "samples": [
+          0.88,
+          0.86,
+          0.87,
+          0.87,
+          0.88
+        ],
+        "generation_hash": "376d79dd9559b5b72e070c5f43750871ac8b223d89d346c9664c3a1710923f0e",
+        "judge_sample_hashes": [
+          "6c8769c100e880f4bbfdb7eec7624fdf8be6dc113d6eff00ed8333e2f1e4805f",
+          "adee22ffbe2c651e21707ad04e418b868df03fe5f4dec20520530d5793b63829",
+          "091665d92faaad746a79449b8615a55dcef0932d9f6217fbab924afc6eac3b6c",
+          "35c701e7ef2b169aa92d367284e3774a149a24ba07ec9b871b84c081afef1489",
+          "521649ba6088ce8fd95ba044ec411109a49703abb042df966fc7324e6c248508"
+        ],
+        "threshold": 0.7,
+        "reason": "Removes all restatement comments and commented code; transforms bare TODO into actionable explanation; adds exemplary intent-explaining comments (business logic, safety gotchas) while leaving self-explanatory code uncommented.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "b38f01e6671fc0b28a94de550fe70f879134a3168b35e5b1fb53a9a6773478b0"
+        }
+      },
+      {
+        "id": "document-public-api-function",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.8,
+        "mean": 0.8,
+        "stddev": 0,
+        "samples": [
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ],
+        "generation_hash": "759cfb1655ed86e5153565141f70565a3da455f12e9d29eb6cd907a897dc913c",
+        "judge_sample_hashes": [
+          "26c4e46fc730f1378ff8f8836747ba0274371dce5ba242f4acf40b4afd1de1b8",
+          "99ff80e1a664b504cafcee41f420850350c614d2f391b474967a338829e53be1",
+          "94cb67a91b370ba38db167bc9959a762d31a66c1b65ce17cd817e5ac4c0da61b",
+          "b274058ab313fe30c6a85dfc1e67698c928993968d9b46f214021d03b483e742",
+          "a01075f09ae762ce7f1520507a30bee35e0401f9dd822450d53f2ce6ff16278d"
+        ],
+        "threshold": 0.7,
+        "reason": "All four criteria met (parameters, return, both exceptions, example); lacks error handling in example to reach 0.81+.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "3e8f1bde6b4820c528d7799e686413813a10377aae65b94cf59d0f1535765873"
+        }
+      },
+      {
+        "id": "document-public-api-function",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.6,
+        "mean": 0.6,
+        "stddev": 0,
+        "samples": [
+          0.6,
+          0.6,
+          0.6,
+          0.6,
+          0.6
+        ],
+        "generation_hash": "f1badb4c1453eefeb9a05123ddeb4bd969b657a2c0d34c2dd71c8306b5ce8cb3",
+        "judge_sample_hashes": [
+          "6640d3a8e95856ea48ddd64d539c9dea237090cc8b07327c20cf31f336e02bd1",
+          "a08fe72ec11e03cd1dcc5511ef16dfd74aa4641b5a5300ce435d69dbc5460de1",
+          "0f46ad63f93e812fa049450572c2c139eec099e4492f1b596d723a2488cffb04",
+          "295af206b4cc2d27176f051ea508316f306af312064e59b3f60a7888e0a35591",
+          "d928dd879b4d9cd7a9d1d3990f6c7bb44471767bcacadecd112ee035a4b6efac"
+        ],
+        "threshold": 0.7,
+        "reason": "Fully documents parameters (including positive-integer constraint), return value, and both exceptions clearly, but completely omits the required @example tag.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "3e8f1bde6b4820c528d7799e686413813a10377aae65b94cf59d0f1535765873"
+        }
+      },
+      {
+        "id": "adr-for-costly-to-reverse-decision",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.88,
+        "mean": 0.88,
+        "stddev": 0.012247,
+        "samples": [
+          0.89,
+          0.88,
+          0.89,
+          0.88,
+          0.86
+        ],
+        "generation_hash": "69f52654185faaedba0a81db2ff671682068a9367a71242330ac16a06b2a62a2",
+        "judge_sample_hashes": [
+          "560579a496f5b796337db88ab5aad3ad304546be4a9d36400a7423eae056f99e",
+          "c302e32ccf18cfaf6552388c3e9b2f46ad9b5e96da9287d4620979e8cb267f13",
+          "daf28df46f97f6e73f19c7407ea15edde560d7aca7c368c23625a925e7cd6ca1",
+          "ac556c873df5fea7898e32b89c07f9c43074d5d83b121b78b8384a6ce516c414",
+          "a1769af8938717c6671bf30de894e602d4be49e79702174ef44aeca630acf528"
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all criteria (a-e): strong Context with constraints, clear Decision, detailed Alternatives with rejection reasoning, exemplary Consequences that honestly name real costs (throughput/price trade-offs, not just benefits), Status/Date present.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8984e8255d89ee9580f92373d1a529dd9d69431c7f0c6dee216c11b7f6f2f1ac"
+        }
+      },
+      {
+        "id": "adr-for-costly-to-reverse-decision",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.88,
+        "mean": 0.88,
+        "stddev": 0.007071,
+        "samples": [
+          0.89,
+          0.87,
+          0.88,
+          0.88,
+          0.88
+        ],
+        "generation_hash": "5b3971a75b5007bd7063f1cba9e751bfcf4c29e96951ce1f6e8e5d593bef03d3",
+        "judge_sample_hashes": [
+          "36765fd01473aa232f0d42583884544d5770849ff983ad289e8c20f4300498b6",
+          "bd2ace9dafbbd4db58e1cc3b326a194fd09c102fec9095ec6a06ec03ca0658f7",
+          "301635e69a1ecea155fa683f23d464be285c5447357202d7d99778745361fcd8",
+          "f6b821ecb110abda329261ad640aec8eb7365a8a7ecba0e241df350b55abd258",
+          "b8009c1cf71d23fb5a91d529d2dad4db9dca726bb8325c707f758dbc7c2dafee"
+        ],
+        "threshold": 0.7,
+        "reason": "All rubric criteria present and exemplary: comprehensive Context, clear Decision with details, thorough Alternatives with specific rejections, honest Consequences with real costs/trade-offs, Status/Date clear. Notably strong consequences section and follow-ups.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8984e8255d89ee9580f92373d1a529dd9d69431c7f0c6dee216c11b7f6f2f1ac"
+        }
+      },
+      {
+        "id": "match-existing-adr-convention",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.854,
+        "mean": 0.854,
+        "stddev": 0.005477,
+        "samples": [
+          0.85,
+          0.86,
+          0.85,
+          0.86,
+          0.85
+        ],
+        "generation_hash": "6247a372a9f0042ac77929b5ca66b9f60a22050762e498c9d0a8ba490dce17c2",
+        "judge_sample_hashes": [
+          "151deefa40032033cc1c536b71377edfd74dcc3dcaf737c4917307499bfba37d",
+          "4bd38759abc28743cc9ddd15139a94936e5c49c146371e905a78d7242709ad88",
+          "91de52e0ba2a3c0a90c8bd6acc93b74f8fa2d12f620394228044a810d63635bf",
+          "49375e321a3eb33a5717ae359070af960f178f6b5a88b43b61dc003179306f02",
+          "7fbe7b6fcbea9389c47bd138531ca657ac9175c9288c2ef8d8f970a45e705369"
+        ],
+        "threshold": 0.7,
+        "reason": "All criteria met: ADR-004 numbered correctly, path is Documentation/Decisions/, content is reStructuredText, heading set matches exactly (Context, Decision, Status, Consequences). Exemplary in explicitly noting adherence to established scheme and rST conventions.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "dcafe5aa41e2e82c5d2d04df9549a77fd7c7a1c5727b14e456c06207b02c29aa"
+        }
+      },
+      {
+        "id": "match-existing-adr-convention",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.874,
+        "mean": 0.874,
+        "stddev": 0.008944,
+        "samples": [
+          0.86,
+          0.88,
+          0.87,
+          0.88,
+          0.88
+        ],
+        "generation_hash": "6412d0a7525df7780cc68e0421bf88b7f398198a2253b2a7debab68561398793",
+        "judge_sample_hashes": [
+          "334fac30ff3246b0d73ef0978b2245e1a991a31a4d2bd54dc57edfe9a5c61d92",
+          "47ede17894cef02914eb76149724ccfca30970f55df919a3cbd1e4e3cab573ef",
+          "f4c36f2506c188d04417859256288c01df8747aa8b99109b213b821065ae1973",
+          "e531d9bdddbbf8b8d5b05deb0f63c5bbdcd18fd1625d46209d9e41ac304ed1e2",
+          "97a3ef45772ae00d095cc9c4f049bbf5c42f3897045cead35d6c7b89edeb4be9"
+        ],
+        "threshold": 0.7,
+        "reason": "Meets all four checkable criteria perfectly (filename ADR-004, path Documentation/Decisions/, rST markup, Context/Decision/Status/Consequences order). Exemplary for explicitly citing repo convention compliance.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "dcafe5aa41e2e82c5d2d04df9549a77fd7c7a1c5727b14e456c06207b02c29aa"
+        }
+      },
+      {
+        "id": "supersede-not-delete-old-adr",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.88,
+        "mean": 0.88,
+        "stddev": 0.02,
+        "samples": [
+          0.89,
+          0.87,
+          0.85,
+          0.89,
+          0.9
+        ],
+        "generation_hash": "2b7fbb982bee4e566dc104463ea96aa01a9b8fce5a84bc2896b2c954595b02f2",
+        "judge_sample_hashes": [
+          "779001f6f1755e4decf84bc98a295d7b12c63e7e355eebd891099e845c7620a3",
+          "89720e11a2aefb5d57ad10ddbe2fd041b353e27deee00912afd664a53bbb2fea",
+          "1f44c130f495d6d8ca317d2f76370156de2e41483c4486f29d79455d2aa8183b",
+          "6a7ef7f764ffff37dafd89a4d69f5623bb0a1443590c6a0850a983aa82ba2377",
+          "ea528a6630301e3288393d03eb930ad7f2f952f8cef4fb35ec94edbf8339dc63"
+        ],
+        "threshold": 0.7,
+        "reason": "Fully meets all criteria: preserves ADR-007 (✓a), marks it Superseded (✓b), creates new ADR-008 with supersession (✓c), captures WHY and consequences (✓d). Exemplary: explains principle clearly, makes bidirectional links, fairly re-evaluates REST, captures critical gotchas (HTTP caching, complexity ",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "c72cd012b7471210b5e43ca90614eb801b3699d8190fb2625ebd058ffab93e53"
+        }
+      },
+      {
+        "id": "supersede-not-delete-old-adr",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.89,
+        "mean": 0.89,
+        "stddev": 0.02,
+        "samples": [
+          0.87,
+          0.88,
+          0.9,
+          0.88,
+          0.92
+        ],
+        "generation_hash": "46ac819a26e4790feb265ebbffc49dcfec71bb1f2b8dc35a9e2d2cc75241e662",
+        "judge_sample_hashes": [
+          "a070f4e422a85db1b91522d1e13851b32c53dc264a3336fefa0bb1384d17a728",
+          "a564824791d8daa13d8c473c02e689b3646f3a9ebe9d08ef0ee2b0d9dce6e142",
+          "204846c5998048a214d224f02538501e94a21b4492ffa64cc02a513dff9d7f08",
+          "3a29537e7c3b59ca5ba33229f93bb8ee8d3fbbc71566ddcebb94b191545cacd2",
+          "09f1ecf236ddf1905e9e05379685e5a38915b9903c4f28b1c84b6402189f568a"
+        ],
+        "threshold": 0.7,
+        "reason": "All criteria met: preserves ADR-007 intact (a), updates Status to Superseded (b), creates new ADR-012 referencing ADR-007 (c), captures WHY and Consequences (d). Exemplary bidirectional links and principled historical-record justification.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "c72cd012b7471210b5e43ca90614eb801b3699d8190fb2625ebd058ffab93e53"
+        }
+      },
+      {
+        "id": "document-why-not-what-rewrite",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.886,
+        "mean": 0.886,
+        "stddev": 0.011402,
+        "samples": [
+          0.87,
+          0.9,
+          0.89,
+          0.89,
+          0.88
+        ],
+        "generation_hash": "3133ceaee889c1491205d71848f7182916fad6fc9f2764c7171f392006323dce",
+        "judge_sample_hashes": [
+          "cfee37c86a83fe4c404bb4b45cebd5be05903911bccd17c6450ae2f102a888c5",
+          "6321261d2d18cc349512dd057192d2bd53cbaac766e1a249f878f569da8e406a",
+          "3291e48126f4c500516a34a584abef835e43c00bcdb1897c30d40da2a34743ee",
+          "285c5b9e661b668d1f7281485590455ae4bb40962161d49fc5fa794fc8208299",
+          "d1a37e7cff04e849a754135947e240475c60915aaf82de5363a577b4e740eb2e"
+        ],
+        "threshold": 0.7,
+        "reason": "All criteria met: TTL trade-off clearly explained (a), Redis rationale for shared instances articulated (b), both rejected alternatives documented with reasons (c), mechanics deemphasized for why-focused structure (d). Exemplary: frames 30s as explicitly tunable trade-off and adds forward-looking co",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "36e9f57fcab88f89040e9fa5682a7bc81e275d5bc85ee4f947f26feb0f637ca5"
+        }
+      },
+      {
+        "id": "document-why-not-what-rewrite",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.882,
+        "mean": 0.882,
+        "stddev": 0.025884,
+        "samples": [
+          0.85,
+          0.89,
+          0.88,
+          0.92,
+          0.87
+        ],
+        "generation_hash": "cefb104710a4b6fddb9a6a763dc0df5f41464b110c6916c0d438c5ee2b8c9a6a",
+        "judge_sample_hashes": [
+          "36426145869db0211b7b7adc15338e5ba4a963ffe0e4cf4b5fb8e194fb06db6d",
+          "a45e52db075d9920bc72a216b28c369879c612b7ee453ea0b9ad5b6476b34d10",
+          "7f86cad300b8ec825316e79c1d97d794214b089038df66f4124340c765537d5d",
+          "3dcd9e53d34ba23c73948f1d229a072349998930d183aff200d66cd833336931",
+          "3ff8c09266b2ed6b656204fad652e3f7262574da8fb24f7cee0c4447e2eb83da"
+        ],
+        "threshold": 0.7,
+        "reason": "Fully addresses all criteria: TTL trade-off (agents+load), Redis vs in-process (shared view across 8 instances), rejected alternatives with rationale, and frames 30s as tunable trade-off with future guidance. Well-structured, no mechanics-only restatement.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "36e9f57fcab88f89040e9fa5682a7bc81e275d5bc85ee4f947f26feb0f637ca5"
+        }
+      },
+      {
+        "id": "surface-conflicting-adr-conventions",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.89,
+        "mean": 0.89,
+        "stddev": 0.012247,
+        "samples": [
+          0.89,
+          0.88,
+          0.91,
+          0.88,
+          0.89
+        ],
+        "generation_hash": "b6b9930ea86012a1a277f8e638fa7e40ce414872cd8a43ee12a2f90f01e72edc",
+        "judge_sample_hashes": [
+          "66192db5682a7e7af299e837774c602ad576505e78ef5bf46b28bcda8499da41",
+          "29d56e348169652c4a67a226ba8a42b46cf1d2999acee4b08cbc59250f81e3a6",
+          "ac3dd097953be1bddf52e0b443ad84e8ea935b5a60f0005a0267363c58200948",
+          "7fe5ccd1ba521bb27dafa93f937d08d5b5d1ec40d140765ceb9de7ff0ce27472",
+          "d0e01b9e6924540ba3fa23c5bce29cb3b34677ad1c0605d833cb0d6a29056f21"
+        ],
+        "threshold": 0.7,
+        "reason": "Surfaces conflict explicitly in a table, recommends concrete resolution (follow Markdown, fix CONTRIBUTING.md), provides due-diligence tiebreakers, follows one established scheme (0003), exemplary but not exceptional in every respect.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "e9d21e56eb9402910f6ab7b3da3d054ade4abe5ee952b2cc4e843bf9b62c4624"
+        }
+      },
+      {
+        "id": "surface-conflicting-adr-conventions",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.874,
+        "mean": 0.874,
+        "stddev": 0.016733,
+        "samples": [
+          0.87,
+          0.9,
+          0.86,
+          0.86,
+          0.88
+        ],
+        "generation_hash": "343b51c8427e40acefd0a84cfbb667b73e3fb0d4729fed52610c4309697f95ae",
+        "judge_sample_hashes": [
+          "e57e948b31a31a479df270bcf2d87450f63eaffa81cf86f7fd1727d7127e2f31",
+          "b11ac1d715b4dacda461ffbec955413d4f7f72c5e29256300b6d8ad774c18c96",
+          "da4f238b952c774541d7c05f74e8f15894e28303f509849e3f08f90e562da454",
+          "febc995fe38fd745eae349e03e78cc97871bba074c2eddda467e74bb5086b908",
+          "4e6d2433879bb2a7b46eaca06635bdf9c436244b53200786c675e45f18f9d675"
+        ],
+        "threshold": 0.7,
+        "reason": "Surfaces conflict explicitly, recommends concrete resolution (update CONTRIBUTING.md), follows established Markdown scheme with proper 0003 numbering, avoids inventing third pattern.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "e9d21e56eb9402910f6ab7b3da3d054ade4abe5ee952b2cc4e843bf9b62c4624"
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 7,
+        "pass_count": 7,
+        "borderline_count": 0,
+        "mean_score": 0.867143,
+        "stddev": 0.031767
+      },
+      "baseline": {
+        "case_count": 7,
+        "pass_count": 6,
+        "borderline_count": 0,
+        "mean_score": 0.838857,
+        "stddev": 0.105507
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.867143,
+    "baseline_score": 0.838857,
+    "delta": 0.028286,
+    "delta_uncertainty": 0.110186
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "18069ad861ab6d615a5d9ae6300570eafe1c33462c1f2954b16f75b5cba9d65e"
+}

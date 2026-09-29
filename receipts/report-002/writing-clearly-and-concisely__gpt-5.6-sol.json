@@ -1,0 +1,465 @@
+{
+  "schema_version": "0.3.1",
+  "skill": {
+    "name": "writing-clearly-and-concisely",
+    "version": "0.0.0",
+    "content_hash": "0c1678b0debc7564e30d63d3f97b496f33704fd78c8f0ede975fb8ae19fb0ddd",
+    "tokens": 941
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "64c8f1554190129d551501fd1cd7c93891e104664d033b100180c53bcd66294e",
+    "case_count": 7
+  },
+  "run": {
+    "model_id": "gpt-5.6-sol",
+    "model_release_date": null,
+    "provider": "openai",
+    "surface": "openai-cli",
+    "runner_version": "0.3.0",
+    "date_utc": "2026-07-30T17:24:33.992Z",
+    "registry": "registered",
+    "transcripts": "retained-local",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    },
+    "surface_overhead_note": "openai/cli surface (codex exec): every call carries a fixed Codex base-instruction preamble of ~12,000–15,000 input tokens that the harness prepends and we do not control; the model id is set by us via -m (it is not echoed in the JSONL stream). Approval prompting is off by default on `codex exec` (no -a flag is passed)."
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "active-voice-logging-passage",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.876,
+        "mean": 0.876,
+        "stddev": 0.008944,
+        "samples": [
+          0.87,
+          0.89,
+          0.87,
+          0.87,
+          0.88
+        ],
+        "generation_hash": "69621ed91ed60920851936a2b1a07f6f596cc87a1b5b8eba43dae5c385b086be",
+        "judge_sample_hashes": [
+          "977f3c1869646d1f5952ede28670b585e2c0703a643199d9cabefc6f3c9a107f",
+          "42e639147af71e4e3c3e6ecad80b2b998ef65dd5e9a0df3c185b7e8b79b13e8b",
+          "f6543e9ceb5a00cb0013150e105fd7c146850fa3482e4c2375a102b0b96c5973",
+          "478796f2195fd823a6ac21d9b0f2c3c60edbeb4d5491160f828978b1422dc198",
+          "8033aa6cb80e2f84e702a2fa7058119bf87084d28c3e4224e9bfd3461b0cbe54"
+        ],
+        "threshold": 0.7,
+        "reason": "All three main statements are active with clear subjects (platform team, middleware, monitor). All named actors and meaning preserved. Response trims redundant 'and are written by it' while reading naturally.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "b4b4c2df3a7e4fe0a1304ce4d43cdc1042c0d50a63fe62e8222bac61540724f5"
+        }
+      },
+      {
+        "id": "active-voice-logging-passage",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.874,
+        "mean": 0.874,
+        "stddev": 0.005477,
+        "samples": [
+          0.88,
+          0.87,
+          0.88,
+          0.87,
+          0.87
+        ],
+        "generation_hash": "69621ed91ed60920851936a2b1a07f6f596cc87a1b5b8eba43dae5c385b086be",
+        "judge_sample_hashes": [
+          "808a8ce8be2af4e73421a18bc4a2fd700fac965d7d361958caf1dcf89ea031a9",
+          "88af81e4727404bce81fc29a20032ba98e41997bf7edd880350104dc8a68ef99",
+          "4eb2cf99e3fa76c74434bd9629f520afd25e2aa8f795f0039b09ccaa86751e46",
+          "01fbd528c3bbafb208078d5c1aba9e050bd450c0399acc375c3fbd4cf6479875",
+          "c768cc84d2e03ca9076d38f905640ae09f1397fc2fb97d73402bfa8d77cf3f23"
+        ],
+        "threshold": 0.7,
+        "reason": "All three main statements correctly converted to active voice with clear grammatical subjects; all named actors preserved; notably tighter and more natural than original; no new passive constructions.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "b4b4c2df3a7e4fe0a1304ce4d43cdc1042c0d50a63fe62e8222bac61540724f5"
+        }
+      },
+      {
+        "id": "omit-needless-words-cache-note",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.888,
+        "mean": 0.888,
+        "stddev": 0.029496,
+        "samples": [
+          0.87,
+          0.88,
+          0.88,
+          0.94,
+          0.87
+        ],
+        "generation_hash": "d30d944bb97a40a112a76b1b0d1135536885aa089688ba4b9226f0c233e126e1",
+        "judge_sample_hashes": [
+          "62a50021644fab5a7b2544ddade0d56e893ba043126cbda779388b181055cc35",
+          "a618840114917795e8e64eda08d621cab3d886183bd3628499ce70f9a98ec470",
+          "82cd7665929c2528b734e626caabdf6daabc29529c9391ab89ea01c7297b2297",
+          "e2befb5154f2797609cd8bd3560cc7ec3b206d8894539c642ccdeebf25ea88fe",
+          "0a278ee14809204ba77ac8dc595cf5980852dbeb6565997eafa9afbbe56522dc"
+        ],
+        "threshold": 0.7,
+        "reason": "All padded phrases trimmed cleanly; 61% word reduction (22 vs 57 words); both facts preserved; maximally tight, natural reading.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "cdafa1b69005260c8f1c656c8d322b139847a9e29fd23a1e5811104fec602054"
+        }
+      },
+      {
+        "id": "omit-needless-words-cache-note",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.856,
+        "mean": 0.856,
+        "stddev": 0.030496,
+        "samples": [
+          0.82,
+          0.87,
+          0.9,
+          0.84,
+          0.85
+        ],
+        "generation_hash": "58f06d7aaa2a4da9d17206df3cd6d4a478fd271550896557ec31f4fe6f2d5ad9",
+        "judge_sample_hashes": [
+          "fdb4b756f52bceca2ff580347e99ba3e4ae9b1c47e8b9a07b7757d0b045a74ae",
+          "551feaa77e4ca3bf85dc60370c93b49d4eae552f1a4fa7c5c6bfda75f29dffc5",
+          "53315cb0dc0033414089baa31ac0a9911cf345dc0306257d4d909a91f04a46f3",
+          "97fd483d4a465f8c01def7c563643bb29e467887530e1010f57ebbf093595611",
+          "34ab40a1f22b6042d6e94b4980880d6733cc50a1a7505874516ce9e2918f5660"
+        ],
+        "threshold": 0.7,
+        "reason": "Cuts 58% of words by eliminating padded phrases (possibility, potentially, in event, owing to, limited validity, necessary...in order, regular and periodic), preserves both facts. Minor: 'call to renew' could tighten to 'renew.'",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "cdafa1b69005260c8f1c656c8d322b139847a9e29fd23a1e5811104fec602054"
+        }
+      },
+      {
+        "id": "positive-form-status-sentences",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.828,
+        "mean": 0.828,
+        "stddev": 0.016432,
+        "samples": [
+          0.84,
+          0.82,
+          0.82,
+          0.85,
+          0.81
+        ],
+        "generation_hash": "6e4a23834f42d7dff78e87201215679e33cbbfc51b75b9408364c6dee5a23399",
+        "judge_sample_hashes": [
+          "2057521cc4427e48634d757601441d41c16f6dfa65113b9c32ee4afae22217f4",
+          "9df7dfe85a54129904e5befc045dc570c242cfd60416464badc79da018c6b01e",
+          "be600b4d624bf4b03a6638ce89c66c5056957fd8817782cd6701b2425eef09d4",
+          "425b5c168431489aceb00a8e541b6e9262c4acb2faa2aebe3e5184726b645855",
+          "62225438666df7377b6fa2a352d54782a2fa939fe3f0f90bfb651ac5d283a752"
+        ],
+        "threshold": 0.7,
+        "reason": "All five sentences correctly converted to positive form with preserved meaning. Four use strong single words ('forgot', 'failed', 'rarely'); sentence 2 ('had little confidence') is valid but could employ a stronger verb like 'doubted.'",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "4187d0f5305cd20213dad3351dc020c90da92a331659eedc72f925b3c2b6212f"
+        }
+      },
+      {
+        "id": "positive-form-status-sentences",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.83,
+        "mean": 0.83,
+        "stddev": 0.027386,
+        "samples": [
+          0.8,
+          0.85,
+          0.85,
+          0.8,
+          0.85
+        ],
+        "generation_hash": "6e4a23834f42d7dff78e87201215679e33cbbfc51b75b9408364c6dee5a23399",
+        "judge_sample_hashes": [
+          "a4f2478724fdf87595e84cd27c38a4e5c792a06ead8a00e6827953976bb3b5dc",
+          "c31db4484a976c7662c92dec5f216e32242b79bbd9243c23e72c1307537ef004",
+          "84f033d50db51919a8afbf34a56f476a74adaee00f8222355559877ec101bebd",
+          "4d3153cbc0d14831eb6a3ff3cd5b39a8e4c0ab224a31a83e72cb250e56d61933",
+          "24f2f309bffa2602467e4628910ecb5ca682a314ffbe9b372171e3059532471e"
+        ],
+        "threshold": 0.7,
+        "reason": "All five sentences successfully recast in positive form. Four use crisp single words (thought/poor, forgot, rarely, failed) matching rubric examples. Sentence 2 uses 'had little confidence' instead of the stronger 'distrusted/doubted' the rubric recommends.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "4187d0f5305cd20213dad3351dc020c90da92a331659eedc72f925b3c2b6212f"
+        }
+      },
+      {
+        "id": "concrete-language-incident-summary",
+        "mode": "with_skill",
+        "outcome": "borderline",
+        "score": 0.726,
+        "mean": 0.726,
+        "stddev": 0.061887,
+        "samples": [
+          0.67,
+          0.83,
+          0.7,
+          0.73,
+          0.7
+        ],
+        "generation_hash": "0750bad01a3a01fb18a7334cc6ca050b8569bb5c154110a06dbee622758876f2",
+        "judge_sample_hashes": [
+          "ea043abb31395821a1d384284fcd4126176d63bb5ff0ae91b8af68df6c9d37b7",
+          "a3685092e199e1c39dd80df49697cc7dfd8fc81423baf654d9080e6dcd0ce95f",
+          "5e23813c0ddd2e2f6d8037fd22cad419efd4bde0244f055f189b612471f1264b",
+          "aa21791beee007175bdb135e8c0bd0a1d699f984489f1e7bee007263015f0224",
+          "e559e4c61c587143a9cf16287d72277e24e0527b0b353a749c8ee4bfa83a4cb7"
+        ],
+        "threshold": 0.7,
+        "reason": "Improves concreteness significantly but doesn't reach rubric's specificity standards (e.g., 'performed poorly' vs 'slowed', generic 'affected users' vs concrete impacts).",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "71524764f9b8a5e66a4f4cb627549252d57b6efdac22ec80f9bc1102fdd86e40"
+        }
+      },
+      {
+        "id": "concrete-language-incident-summary",
+        "mode": "baseline",
+        "outcome": "borderline",
+        "score": 0.68,
+        "mean": 0.68,
+        "stddev": 0.380592,
+        "samples": [
+          0.82,
+          0.85,
+          0,
+          0.87,
+          0.86
+        ],
+        "generation_hash": "642397ef2b035282733eb154ea3ba7497facf01923c6845331448be2bcb20c59",
+        "judge_sample_hashes": [
+          "3c0e7c2ff27b41a641a0e90dfe3fbd0f45dce1b7fce79f9e8535e93955827a68",
+          "d8579caabbdf17fb8b773364bcc1a3ca72be8d08470e9fab23903b2c3c80026d",
+          "fca0a218da3609cd393acec41a8df0f71b2397e40a5f5c83f3f725228a0bdf1d",
+          "6344c0a795914c8f2be1443a0da18213a6fb10b52a98026641120586d9f61c8c",
+          "d8180edc38fe98658d658bdf4bc03e1840af76bb8078e2b19ea5ab8a0a7f0617"
+        ],
+        "threshold": 0.7,
+        "reason": "Replaces abstract phrasing with active voice and concrete verbs; successfully removes vague hedges; minor interpretive addition ('than expected') and slight remaining vagueness in 'problems.'",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "71524764f9b8a5e66a4f4cb627549252d57b6efdac22ec80f9bc1102fdd86e40"
+        }
+      },
+      {
+        "id": "keep-related-words-together-modifiers",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.876,
+        "mean": 0.876,
+        "stddev": 0.018166,
+        "samples": [
+          0.9,
+          0.87,
+          0.88,
+          0.88,
+          0.85
+        ],
+        "generation_hash": "95ece7e80735065bb190229b744b25677a07d51cad99cf14910aa2388d884bb5",
+        "judge_sample_hashes": [
+          "fc543439d7d073f2099b2b047db21e5b30998a33066b51d9272bde8eb76b3743",
+          "bc7bae0b4070264315cd6211dea248f927e3940a40b25a5f3290dc4f01899fa5",
+          "93506f256829c214d285d880ac4526d36565f03ee322c95d5ea5ebec01f47f15",
+          "064db86904a503916bcf26b15efe1b2e7121640083fe51df380d3489a2d4f08b",
+          "fe04e0087ac5c3ce88cd112efbae31e30bc9fbd50dcdfffee1014dc3845fabf8"
+        ],
+        "threshold": 0.7,
+        "reason": "All four sentences correctly disambiguated with related words adjacent to proper nouns. Rewrites are natural and concise, no awkward padding.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "b5592b671dfc13e74d3e274e7ca01f0c9fa2053fd4365391e5496b86201797f9"
+        }
+      },
+      {
+        "id": "keep-related-words-together-modifiers",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.862,
+        "mean": 0.862,
+        "stddev": 0.013038,
+        "samples": [
+          0.86,
+          0.85,
+          0.87,
+          0.88,
+          0.85
+        ],
+        "generation_hash": "bd2bba4f0933ef343acb30058e8183434d77e0f56b72e2bd51f53256515cc93b",
+        "judge_sample_hashes": [
+          "e0f5ed2c55392cf625df9a278238c07d9f09555a1a0eb8346bf6a29b45e13faf",
+          "559bf0e314afad669d59224fb5337b479b2be112ced590a528db7556a6011262",
+          "b1f87667fe3bd5ad812f344cfbd4c2c5365733c3675a2c8175d047f65ddb448a",
+          "2d0477ee2f636db13bb6a7e158bb6fe1066d2d8198da3499bc54d51e136a8068",
+          "19b91520b0d77b262301005f313e7c09dbb49a296c0048f110b82accfb6c3bbd"
+        ],
+        "threshold": 0.7,
+        "reason": "All four sentences correctly disambiguated with modifiers adjacent to referents. Natural rewrites throughout. Sentence 3 is valid but less concise than the rubric's example form.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "b5592b671dfc13e74d3e274e7ca01f0c9fa2053fd4365391e5496b86201797f9"
+        }
+      },
+      {
+        "id": "emphatic-word-at-end",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.896,
+        "mean": 0.896,
+        "stddev": 0.035071,
+        "samples": [
+          0.89,
+          0.85,
+          0.92,
+          0.88,
+          0.94
+        ],
+        "generation_hash": "70e08081d6b4ef6eee320fe6582e0da1b7d862dfeba37fbf9cf384abb7b596fd",
+        "judge_sample_hashes": [
+          "11780b69b27612733c0bdf563bfbcb57f50dec06e44495c7e471bf6fc60f74cd",
+          "fc001c7f29dd2a4633ab5a463f72aa7010b22fc107497126b76ca7a118b347fa",
+          "d99a2e0eb48460af7979cea9a4f14cad0f1816d9fb695a7fe9444dc4f4127504",
+          "5e4b954be76e1b85ff42115f7789fe957bfc69ab63644d69b4ce50f1a153355a",
+          "0b5a86c9a7cdd1244b8849d11721b164f521a39cfbc303b7ca516bc4e3996d85"
+        ],
+        "threshold": 0.7,
+        "reason": "All three sentences correctly end on the emphatic idea. Tight, active voice, natural phrasing without filler. Matches or improves on rubric's expected shapes.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "b032710cfdf951b608677d5889c716008e8038ecbf94138e7d0968545358a39a"
+        }
+      },
+      {
+        "id": "emphatic-word-at-end",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.832,
+        "mean": 0.832,
+        "stddev": 0.029496,
+        "samples": [
+          0.83,
+          0.8,
+          0.88,
+          0.82,
+          0.83
+        ],
+        "generation_hash": "f523b7d3d0f418ace44b080518c0e8f6db9d7343b0379e756058acbdca4b5585",
+        "judge_sample_hashes": [
+          "e6ca57aa22eeb934f92d1ed1f6417d4af227b03e884f3923853cd3bc6bdf1bb9",
+          "1a204a42a57215fe807dd7e6fea7a2663d95b3d66ceea9b81474ca6a83ca1043",
+          "92f27fb460d13640e38946463b2383c99ebab3c518c462eb1e63d8eb54dcfef5",
+          "81ecb6f79887b02e0c6e2c058768fad287f583bb87bed2a9167ecdae24a64f2e",
+          "4799747cb167e3626f01d64a774f6c590c44ca3d913f6e29f6a3a19575e210bb"
+        ],
+        "threshold": 0.7,
+        "reason": "All three emphatic ideas correctly placed at sentence ends with meaning preserved. Mostly tight and active voice, but sentences 1–3 include added transition phrases (\"its main purpose is,\" \"also,\" \"but most importantly\") that slightly exceed the tightness of ideal examples.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "b032710cfdf951b608677d5889c716008e8038ecbf94138e7d0968545358a39a"
+        }
+      },
+      {
+        "id": "tighten-puffy-release-note",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.884,
+        "mean": 0.884,
+        "stddev": 0.011402,
+        "samples": [
+          0.88,
+          0.9,
+          0.87,
+          0.88,
+          0.89
+        ],
+        "generation_hash": "3a368fca26dd7a9fb76ad55ab97ef1a0e568c21c15d5687dba0c45848bdcf01d",
+        "judge_sample_hashes": [
+          "0d666371c36c2fdcb28efcb2fb51741da3fea4796f8eede213f6f83c31083a11",
+          "89eeb5180ba6dd5f2e4049bc87027880909d141c359d75b123f9c86b4b15b660",
+          "0c6da488fe48b99db3b2a094321c053f2a7e36a70652f05e7e8c8b81e4a4dc42",
+          "4202b5dfe564ac9bc5c7e2a6969338a6eef78c7c5974e13ef85c0a2d88b5e41d",
+          "669370a3ca545694183142c540303c06db1fe7796a4b8c61fae84f3cf8366025"
+        ],
+        "threshold": 0.7,
+        "reason": "Removes all puffery (thrilled, groundbreaking, cutting-edge, etc.), converts passive to active voice, adds zero invented specifics, achieves marked brevity. Admirably plain and precise.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "cfe397b022bc391bec6de5dd5bba3987b930eb89ccc880670e327bf9c1caf129"
+        }
+      },
+      {
+        "id": "tighten-puffy-release-note",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.866,
+        "mean": 0.866,
+        "stddev": 0.011402,
+        "samples": [
+          0.86,
+          0.88,
+          0.87,
+          0.87,
+          0.85
+        ],
+        "generation_hash": "237595ec3d014a09af34953983b164ddbc229c336a12170ce05a7e83fdcae380",
+        "judge_sample_hashes": [
+          "e31bdd59366fba3e80c0dde8ba28aa2ed7da0cb42752582872f0d7dac627f6ee",
+          "6a078319dd06b80575c2c878576946ef2547dac4fbe66a895e9cf089738df6df",
+          "1ac72e2edb7f36e7fbbdd685f77777e3fb9153ff7b6e8694b10c880d2240da23",
+          "22614109ff67e3f88361771dace4dc77f07ac686d344bc3724f9c411891618f7",
+          "4b32e16297dcf574d5c839f21ff6419e7f40f9b58f8bb4dc9c62033339d856f6"
+        ],
+        "threshold": 0.7,
+        "reason": "Removes puffery, activates main claims, eliminates marketing tone, materially shorter. Minor: 'is available' copular construction persists.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "cfe397b022bc391bec6de5dd5bba3987b930eb89ccc880670e327bf9c1caf129"
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 7,
+        "pass_count": 6,
+        "borderline_count": 1,
+        "mean_score": 0.853429,
+        "stddev": 0.06034
+      },
+      "baseline": {
+        "case_count": 7,
+        "pass_count": 6,
+        "borderline_count": 1,
+        "mean_score": 0.828571,
+        "stddev": 0.067604
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.853429,
+    "baseline_score": 0.828571,
+    "delta": 0.024858,
+    "delta_uncertainty": 0.090616
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "bb57e8559fc8c8908bb5436b58368cbd2636f390933086b4eefd1c08ba320b69"
+}

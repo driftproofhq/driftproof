@@ -1,0 +1,108 @@
+# SPDX-License-Identifier: Apache-2.0
+name: 'Driftproof staleness check'
+description: 'On a schedule, check whether your receipts still stand, and keep one issue open while any is stale.'
+author: 'driftproofhq'
+branding:
+  icon: 'clock'
+  color: 'green'
+
+# Spec 057. `driftproof stale` over the repository's receipts: a job summary, one labelled issue
+# kept up to date while any receipt is stale and closed when all are current, and a job that fails
+# only on an error, or on stale when fail-on-stale is 'true'. It makes no model call.
+#
+# The workflow that runs it needs `contents: read` and, to keep the issue, `issues: write`, and
+# nothing else (examples/workflows/driftproof-stale.yml).
+
+inputs:
+  receipts:
+    description: 'Glob of receipt files, relative to the repository root. One glob per line for several. ** crosses directories.'
+    required: false
+    default: 'receipts/**/*.json'
+  skill:
+    description: 'The skill directory the receipts measured, as it is today. Without it, the skill axis reads unknown.'
+    required: false
+    default: ''
+  suite:
+    description: 'The eval suite file, when it is not the skill directory''s evals/evals.json.'
+    required: false
+    default: ''
+  model:
+    description: 'The model that would run today. Empty reads the models in .driftproofrc.'
+    required: false
+    default: ''
+  judge:
+    description: 'The judge model that would grade today. Empty reads judge_model in .driftproofrc.'
+    required: false
+    default: ''
+  harness-version:
+    description: 'The Claude Code version that would run today: a version such as 2.1.280; latest, read from npm; or none, which leaves the harness unchecked.'
+    required: false
+    default: 'latest'
+  strict:
+    description: 'When true, an unknown axis or an advisory counts as stale.'
+    required: false
+    default: 'false'
+  fail-on-stale:
+    description: 'When true, the job fails while any receipt is stale. An error fails it either way.'
+    required: false
+    default: 'false'
+  open-issue:
+    description: 'When true, keep one issue open while any receipt is stale, and close it when all are current.'
+    required: false
+    default: 'true'
+  issue-label:
+    description: 'The label that marks the issue. Give each check its own label to keep separate issues.'
+    required: false
+    default: 'driftproof-stale'
+  github-token:
+    description: 'The token the issue is kept with. The default is the workflow''s own.'
+    required: false
+    default: '${{ github.token }}'
+
+outputs:
+  result:
+    description: 'current | advisory | stale | error. advisory: nothing is stale, but an axis is unknown or an advisory fired.'
+    value: ${{ steps.check.outputs.result }}
+  stale-count:
+    description: 'How many receipts need a rerun or a regrade.'
+    value: ${{ steps.check.outputs.stale-count }}
+  issue-number:
+    description: 'The issue this run opened, updated or closed. Empty when it touched none.'
+    value: ${{ steps.check.outputs.issue-number }}
+  report-dir:
+    description: 'Directory holding the driftproof.stale/1 document(s) this run read, for an artifact upload.'
+    value: ${{ steps.check.outputs.report-dir }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node
+      # The commit action.yml pins (spec 023, audit A9).
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      with:
+        node-version: '22'
+
+    - name: Install driftproof dependencies
+      shell: bash
+      # The driftproof tree this action ships in: the version is the ref the workflow named.
+      working-directory: ${{ github.action_path }}/..
+      run: npm ci --omit=dev --no-audit --no-fund
+
+    # Every input crosses into the step as an environment variable, and the run: line carries no
+    # expression, so no input is ever shell text (spec 023's rule, applied here by spec 057).
+    - name: Check the receipts
+      id: check
+      shell: bash
+      env:
+        INPUT_RECEIPTS: ${{ inputs.receipts }}
+        INPUT_SKILL: ${{ inputs.skill }}
+        INPUT_SUITE: ${{ inputs.suite }}
+        INPUT_MODEL: ${{ inputs.model }}
+        INPUT_JUDGE: ${{ inputs.judge }}
+        INPUT_HARNESS_VERSION: ${{ inputs.harness-version }}
+        INPUT_STRICT: ${{ inputs.strict }}
+        INPUT_FAIL_ON_STALE: ${{ inputs.fail-on-stale }}
+        INPUT_OPEN_ISSUE: ${{ inputs.open-issue }}
+        INPUT_ISSUE_LABEL: ${{ inputs.issue-label }}
+        INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: node "$GITHUB_ACTION_PATH/run.mjs"

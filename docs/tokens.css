@@ -1,0 +1,645 @@
+/* SPDX-License-Identifier: Apache-2.0
+   Driftproof brand tokens and the site's one stylesheet. No framework.
+
+   THE LOOK IS A RECEIPT ON A DESK (spec 038). The page is desk paper under a faint grain; a
+   record - a receipt, a receipt page, a report's summary, a block of code - is receipt stock
+   laid on it; a dotted perforation is where one record ends; the ink is a ribbon's two passes
+   and one stamp pad. plan.md § Design plan is the reasoning, and this file is the only place
+   its values are written.
+
+   ONE FILE HOLDS EVERY VALUE. Spec 025 D2: no stylesheet uses a raw colour, radius, font size
+   or content width that a token covers, and the one place a raw value is legal is a token
+   declaration inside the fenced block below. specs/025-design-pass/gate.mjs AC-3 reads every
+   .css file under docs/, every <style> in a generated page and every <style> in a generated
+   SVG, and fails on a hex, a border-radius or a font-size outside that fence.
+
+   THE ACCENT IS THE BADGE COLOUR, AND IT PAINTS NOTHING. docs/badges/commit-message-conventions.json
+   carries "color": "brightgreen", which resolves to #44CC11, and spec 020 AC-3 asserts --accent
+   equals it. Since spec 038 the site is drawn in ink and no rule reads --accent (I-11); links,
+   focus and the passing stamp take --accent-ink, the stamp pad.
+
+   THE PAIRS ARE DECLARED, so the palette is measured rather than eyeballed. The block below is
+   read by spec 020 AC-40, which resolves each token to a hex out of this file and computes the
+   WCAG contrast of every pair. A rule that paints a colour and a background and is not covered
+   by a pair takes the gate red. Spec 038 AC-3 measures every rendered pair in a browser as well,
+   against the ground moved by the texture.
+
+   driftproof:contrast
+   ink on paper
+   ink on paper-2
+   ink on white
+   ink on code
+   ink on rule
+   ink-muted on paper
+   ink-muted on paper-2
+   ink-muted on white
+   arm-baseline on paper
+   arm-baseline on paper-2
+   arm-baseline on white
+   accent-ink on paper
+   accent-ink on paper-2
+   accent-ink on white
+   paper on accent-ink
+   paper-2 on accent-ink
+   paper-2 on ink
+   paper-2 on arm-skill
+   state-separated on paper
+   state-separated on paper-2
+   state-overlapping on paper
+   state-overlapping on paper-2
+   state-refused on paper
+   state-refused on paper-2
+   reg on paper
+   reg on paper-2
+   imp on paper
+   imp on paper-2
+   noise on paper
+   mixed on paper
+   mixed on paper-2
+   driftproof:/contrast */
+
+/* driftproof:tokens */
+:root {
+  /* grounds */
+  --paper: #ECE5D5;
+  --paper-2: #FBF8F0;
+  --white: #FFFFFF;
+
+  /* ink: the ribbon, its second pass, and the perforation */
+  --ink: #1F1D1A;
+  --ink-muted: #625C50;
+  --rule: #CBC1AC;
+
+  /* the two arms, named for what they are, drawn in the ribbon's two passes (spec 038 I-6).
+     Every plot, glyph, chip, stamp and legend reads these two by name, in this file and inside
+     every generated SVG, so the picture and the page cannot disagree about which side is which. */
+  --arm-baseline: var(--ink-muted);
+  --accent: #44CC11;
+  --arm-skill: var(--ink);
+  --accent-ink: #2A3C9E;
+
+  /* the refused state: a warm grey under one hatch, and a darker ink for the word */
+  --refused: #BDB3A0;
+
+  --state-separated: var(--accent-ink);
+  --state-overlapping: var(--ink-muted);
+  --state-refused: #6F5500;
+
+  /* type (spec 038): Newsreader names things, Alegreya Sans sets sentences, Courier Prime
+     types what a reader compares character by character */
+  --sans: "Alegreya Sans", "Gill Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "Courier Prime", ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --values: var(--mono);
+
+  /* the scale, desktop */
+  --t-h1: 52px;
+  --t-h1-page: 46px;
+  --t-h2: 36px;
+  --t-h3: 22px;
+  --t-report-title: 28px;
+  --t-receipt-heading: 26px;
+  --t-receipt-date: 20px;
+  --t-stat: 38px;
+  --t-body: 18px;
+  --t-verdict: 24px;
+  --t-mono: 15px;
+  --t-fine: 15px;
+  --t-mono-sm: 14px;
+  --t-eyebrow: 15px;
+  /* Inside a plot. It is a token like every other size, and every generated SVG carries this
+     declaration verbatim so the picture and the page agree. */
+  --t-plot: 12px;
+  /* the hero plot is drawn at 520 and set smaller than that on the homepage card, so its text
+     takes the larger step. The rule is scoped to .is-hero: an inline plot's <style> reaches every
+     SVG on its page, the playground island's among them. */
+  --t-plot-lg: 19px;
+  --lh-h1: 1.04;
+  --lh-h2: 1.12;
+  --lh-body: 1.6;
+
+  /* shape and rhythm */
+  --radius: 3px;
+  --w-wide: 1100px;
+  --w-text: 720px;
+  --w-receipt-label: 6rem;
+  --w-plot: 560px;
+  --w-measure: 38em;
+  --perforation: 2px;
+  --tooth: 12px;
+  --stamp-tilt: -2.5deg;
+  --sheet-shadow: 0 1px 1px rgba(70, 52, 20, 0.10), 0 14px 22px -14px rgba(70, 52, 20, 0.35);
+  --texture: url("/textures/paper-grain.svg");
+
+  /* the legacy names, pinned. docs/style.css dresses eight published report bodies and reads
+     these; they are declared here, once, so nothing can move them out from under the measured
+     pairs above. */
+  --bg: var(--paper);
+  --fg: var(--ink);
+  --muted: var(--ink-muted);
+  --line: var(--rule);
+  --card: var(--paper-2);
+  --code: var(--paper-2);
+  --chip: var(--paper-2);
+  --paper-sunk: var(--paper-2);
+  --reg: #9B2C24;
+  --imp: var(--accent-ink);
+  --noise: var(--ink-muted);
+  --mixed: #6F5500;
+}
+
+/* THE PINNING OUTRANKS AN EXPLICIT data-theme, not only a media query. :root alone would lose
+   to :root[data-theme="dark"] on specificity. The site ships one committed look: receipts are
+   read on paper. */
+:root[data-theme="dark"],
+:root[data-theme="light"] {
+  --bg: var(--paper);
+  --fg: var(--ink);
+  --muted: var(--ink-muted);
+  --line: var(--rule);
+  --card: var(--paper-2);
+  --code: var(--paper-2);
+}
+
+/* The scale under 720px. It is a token override and therefore inside the fence: the rest of
+   the file names sizes and never states them. */
+@media (max-width: 720px) {
+  :root {
+    --t-h1: 40px;
+    --t-h1-page: 34px;
+    --t-h2: 30px;
+    --t-receipt-heading: 22px;
+    --t-verdict: 21px;
+    --t-stat: 30px;
+    --t-body: 17px;
+  }
+}
+/* driftproof:/tokens */
+
+/* ── self-hosted type ─────────────────────────────────────────────────────────
+   Five files, Latin subset, woff2 only, served from this origin (spec 038 AC-2; provenance and
+   the subsetting commands are in docs/fonts/README.md). font-display: swap keeps the text
+   painting in the fallback until a face arrives, so a slow file costs a repaint, never a blank
+   page. docs/fonts/instrument-serif-regular.woff2 is the share cards' face and is declared
+   nowhere here, so no page loads it (I-10). */
+@font-face {
+  font-family: "Newsreader";
+  src: url("/fonts/newsreader-variable.woff2") format("woff2");
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Alegreya Sans";
+  src: url("/fonts/alegreya-sans-regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Alegreya Sans";
+  src: url("/fonts/alegreya-sans-italic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Alegreya Sans";
+  src: url("/fonts/alegreya-sans-medium.woff2") format("woff2");
+  font-weight: 500 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Courier Prime";
+  src: url("/fonts/courier-prime-regular.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── the page ─────────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+/* THE GRAIN LIES ON THE DESK, NEVER ON A RECORD. It is one tile under the paper colour, faint
+   enough that spec 038 AC-4 measures no pixel of it more than 8 of 255 from --paper, and every
+   receipt sheet, table and code block paints solid stock over it (I-8). */
+body {
+  margin: 0;
+  background-color: var(--paper);
+  background-image: var(--texture);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--t-body);
+  line-height: var(--lh-body);
+  font-variant-numeric: lining-nums;
+  text-rendering: optimizeLegibility;
+}
+img, svg, video { max-width: 100%; }
+a { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.18em; text-decoration-color: var(--rule); }
+a:hover { color: var(--accent-ink); text-decoration-color: var(--accent-ink); }
+:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 3px; }
+p, li, dd { max-width: var(--w-measure); }
+
+h1, h2, h3, dt { font-family: var(--display); font-weight: 400; font-optical-sizing: auto; color: var(--ink); }
+h1 { font-size: var(--t-h1); line-height: var(--lh-h1); letter-spacing: -0.015em; margin: 0 0 1.2rem; }
+h2 { font-size: var(--t-h2); line-height: var(--lh-h2); letter-spacing: -0.01em; margin: 0 0 1.2rem; }
+h3 { font-size: var(--t-h3); line-height: var(--lh-h2); margin: 0 0 0.5rem; }
+h4 { font-family: var(--sans); font-weight: 500; font-size: var(--t-body); margin: 1.2rem 0 0.4rem; }
+strong, b { font-weight: 500; }
+/* A control takes the body face; a browser's own button face is not one of the three. */
+button, input, select, textarea { font-family: var(--sans); }
+
+/* THE VALUES FACE, and everything that is a value. A hash, a model id, a date, a command: a
+   string the instrument produced, which a reader may need to compare against another one
+   character by character, so it is typed rather than set. */
+code, pre, kbd, .hash {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+/* AN INLINE IDENTIFIER BREAKS RATHER THAN PUSHING THE PAGE. A sha256 is sixty-four unbreakable
+   characters; one in prose used to push a phone's page sideways. The receipt's own value rows
+   are the exception (below): a value there is compared whole. */
+code {
+  background: var(--code);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 0.02em 0.28em;
+  font-size: var(--t-mono);
+  overflow-wrap: anywhere;
+}
+pre code { overflow-wrap: normal; }
+.receipt-row > span:last-child code { overflow-wrap: normal; }
+.receipt-row-hash > span:last-child code { overflow-wrap: anywhere; }
+pre {
+  background: var(--paper-2);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--ink-muted);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  font-size: var(--t-mono-sm);
+  line-height: 1.6;
+}
+pre code { background: none; border: 0; padding: 0; font-size: var(--t-mono-sm); }
+
+/* ── chrome ───────────────────────────────────────────────────────────────── */
+header.site {
+  display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  padding: 1.1rem 1.5rem; flex-wrap: wrap;
+  max-width: var(--w-wide); margin: 0 auto;
+}
+header.site .brand {
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  font-family: var(--display); font-size: var(--t-report-title); letter-spacing: -0.01em;
+  color: var(--ink); text-decoration: none;
+}
+.brand-mark { display: block; }
+nav.site-nav { display: flex; align-items: center; gap: 1.6rem; flex-wrap: wrap; font-size: var(--t-body); }
+nav.site-nav a { color: var(--ink); text-decoration: none; }
+nav.site-nav a:hover { color: var(--accent-ink); text-decoration: underline; }
+.docs-menu { position: relative; }
+.docs-menu summary { cursor: pointer; color: var(--ink); list-style: none; }
+.docs-menu summary::-webkit-details-marker { display: none; }
+/* The disclosure's chevron is drawn, not typed: the body face carries no triangle. */
+.docs-menu summary::after {
+  content: ""; display: inline-block; width: 0.36em; height: 0.36em; margin-left: 0.45em;
+  border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+  transform: translateY(-0.22em) rotate(45deg);
+}
+.docs-menu-list {
+  display: flex; flex-direction: column; gap: 0; padding: 0.5rem 1.1rem;
+  background: var(--paper-2); box-shadow: var(--sheet-shadow);
+}
+.docs-menu-list a { padding: 0.35rem 0; border-bottom: 1px dotted var(--rule); }
+.docs-menu-list a:last-child { border-bottom: 0; }
+@media (min-width: 720px) {
+  .docs-menu-list { position: absolute; z-index: 5; top: 2rem; right: -1.1rem; min-width: 14rem; }
+}
+.nav-menu { display: none; }
+.nav-menu summary {
+  cursor: pointer; color: var(--ink); list-style: none;
+  padding: 0.3rem 0.8rem; border: 1px solid var(--ink-muted); border-radius: var(--radius);
+}
+.nav-menu summary::-webkit-details-marker { display: none; }
+footer.site {
+  max-width: var(--w-wide); margin: 0 auto;
+  border-top: var(--perforation) dotted var(--rule); padding: 2rem 1.5rem 3.5rem;
+  color: var(--ink-muted); font-size: var(--t-fine);
+}
+footer.site p { margin: 0.35rem 0; max-width: none; }
+footer.site a, .foot-links a { color: var(--ink-muted); }
+
+/* ── section rhythm ───────────────────────────────────────────────────────────
+   A dotted perforation between sections: this is where one record ends. */
+.screen { margin: 0 auto; padding: 4.5rem 1.5rem; border-bottom: var(--perforation) dotted var(--rule); }
+.screen:last-of-type { border-bottom: none; }
+.is-wide { max-width: var(--w-wide); }
+/* A section that names no width takes the wide measure, so it lines up with the header above it. */
+.screen:not(.is-wide):not(.is-text):not(.is-bleed) { max-width: var(--w-wide); }
+.is-text { max-width: var(--w-text); }
+/* A full-bleed band spans the viewport, with its content held at the wide measure. On this
+   site it is still desk paper: the band is a width, not a second ground. */
+.is-bleed { max-width: none; }
+.is-bleed > .bleed-inner { max-width: var(--w-wide); margin: 0 auto; }
+.eyebrow { font-size: var(--t-eyebrow); color: var(--ink-muted); margin: 0 0 0.5rem; }
+
+/* ── the hero ─────────────────────────────────────────────────────────────────
+   THE HEADLINE GETS THE ROOM AND THE RECEIPT GETS A FLOOR. The minimums are what keep the
+   headline in three lines (spec 025 AC-11, spec 038 AC-9) and the receipt's model id on one. */
+#hero { display: grid; gap: 3rem; grid-template-columns: 1fr; }
+@media (min-width: 900px) {
+  #hero { grid-template-columns: minmax(560px, 3fr) minmax(420px, 2fr); align-items: start; }
+}
+.hero-sub { font-size: var(--t-body); line-height: var(--lh-body); color: var(--ink); margin: 0 0 1.8rem; }
+.cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+.copy-cta {
+  display: inline-flex; align-items: center; gap: 0.7rem; padding: 0.45rem 0.5rem 0.45rem 0.8rem;
+  background: var(--paper-2); border-left: 3px solid var(--ink-muted);
+  font-family: var(--values); font-size: var(--t-mono-sm); max-width: 100%;
+}
+.copy-cta code { background: none; border: 0; padding: 0; font-size: var(--t-mono-sm); }
+.copy-cta button {
+  font: inherit; font-family: var(--sans); font-weight: 500; font-size: var(--t-mono-sm); cursor: pointer;
+  border: 1px solid var(--ink-muted); background: var(--paper-2); color: var(--ink);
+  border-radius: var(--radius); padding: 0.2rem 0.65rem;
+}
+.copy-cta button:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
+a.cta {
+  display: inline-block; padding: 0.6rem 1.1rem; border-radius: var(--radius);
+  background: var(--accent-ink); color: var(--paper-2); font-weight: 500; text-decoration: none;
+}
+a.cta:hover { color: var(--paper-2); text-decoration: underline; }
+a.cta.secondary { background: transparent; color: var(--accent-ink); border: 1px solid var(--accent-ink); }
+
+/* ── a record laid on the desk ────────────────────────────────────────────────
+   A receipt sheet has torn edges: a row of teeth above and below, cut by a mask on two
+   pseudo-elements so the sheet itself paints solid stock and nothing else (AC-4). */
+.card.receipt, main.receipt-page {
+  position: relative; background: var(--paper-2); box-shadow: var(--sheet-shadow);
+}
+.card.receipt::before, .card.receipt::after, main.receipt-page::before, main.receipt-page::after {
+  content: ""; position: absolute; left: 0; right: 0; height: var(--tooth);
+  background-color: var(--paper-2);
+  -webkit-mask: conic-gradient(from -45deg at bottom, black 90deg, transparent 0) bottom / calc(2 * var(--tooth)) var(--tooth) repeat-x;
+          mask: conic-gradient(from -45deg at bottom, black 90deg, transparent 0) bottom / calc(2 * var(--tooth)) var(--tooth) repeat-x;
+}
+.card.receipt::before, main.receipt-page::before { top: calc(-1 * var(--tooth) + 1px); }
+.card.receipt::after, main.receipt-page::after {
+  bottom: calc(-1 * var(--tooth) + 1px);
+  -webkit-mask: conic-gradient(from 135deg at top, black 90deg, transparent 0) top / calc(2 * var(--tooth)) var(--tooth) repeat-x;
+          mask: conic-gradient(from 135deg at top, black 90deg, transparent 0) top / calc(2 * var(--tooth)) var(--tooth) repeat-x;
+}
+
+/* ── the receipt ──────────────────────────────────────────────────────────────
+   One template, two variants: the hero card and a report page's TL;DR. `.card.receipt`, not
+   `.receipt`: a receipt carries both classes, and a single-class rule loses to `.card` below. */
+.card.receipt { padding: 2rem 1.75rem 1.75rem; margin-top: var(--tooth); }
+.receipt-heading {
+  font-family: var(--display); font-size: var(--t-receipt-heading); font-weight: 400;
+  text-align: center; margin: 0 0 1rem; padding-bottom: 0.9rem;
+  border-bottom: var(--perforation) dotted var(--rule); color: var(--ink); letter-spacing: -0.01em;
+}
+/* THE VALUE IS ITS OWN COLUMN, so a value long enough to wrap stays inside it, and the value
+   edge is the same on every row by construction. The row rule is a dotted leader. */
+.receipt-row {
+  display: grid; grid-template-columns: var(--w-receipt-label) 1fr;
+  gap: 0 1rem; align-items: baseline;
+  padding: 0.5rem 0; border-top: 1px dotted var(--rule); margin: 0;
+}
+.receipt-row:first-of-type { border-top: 0; }
+.receipt-key { color: var(--ink-muted); font-size: var(--t-mono); font-family: var(--sans); }
+.receipt-value {
+  font-family: var(--values); font-size: var(--t-mono); color: var(--ink);
+  font-variant-numeric: tabular-nums; overflow-wrap: normal; word-break: normal;
+}
+.receipt-value code { background: none; border: 0; padding: 0; font-size: var(--t-mono); }
+.receipt-row-date .receipt-value, .receipt-row-date .receipt-value code { font-size: var(--t-receipt-date); }
+.receipt-row-hash > .receipt-value:last-child {
+  font-size: var(--t-mono-sm); overflow-wrap: anywhere; word-break: break-all;
+}
+.receipt-row-hash > .receipt-value:last-child code { font-size: var(--t-mono-sm); }
+.receipt-plot {
+  margin: 0.6rem 0 0.4rem; width: 100%;
+  padding: 0.6rem 0 0.2rem; border-top: var(--perforation) dotted var(--rule); border-bottom: var(--perforation) dotted var(--rule);
+}
+
+/* THE STAMP IS PRESSED, NOT THROWN (spec 038 AC-5). A double rule in the ink of its state, the
+   word in the same ink, a tilt of two and a half degrees and a multiply blend so the rule sits in
+   the paper rather than on it. No animation, no filter, no shadow: the one rotated object on the
+   page is the one that was pressed. */
+.receipt-stamp, .receipt-verdict .receipt-label {
+  display: inline-block; font-family: var(--display); font-weight: 600; font-size: var(--t-verdict);
+  line-height: 1.1; letter-spacing: 0.01em; padding: 0.14em 0.5em 0.2em;
+  border: 4px double var(--state-overlapping); border-radius: var(--radius); color: var(--state-overlapping);
+  transform: rotate(var(--stamp-tilt)); mix-blend-mode: multiply; white-space: nowrap;
+}
+.receipt-stamp.is-passed { border-color: var(--state-separated); color: var(--state-separated); }
+.receipt-stamp.is-no-effect { border-color: var(--state-overlapping); color: var(--state-overlapping); }
+.receipt-stamp.is-refused { border-color: var(--state-refused); color: var(--state-refused); }
+.receipt-stamp.is-regressed { border-color: var(--reg); color: var(--reg); }
+.receipt-stamp.is-below-floor { border-color: var(--mixed); color: var(--mixed); }
+.receipt-row-verdict { align-items: center; padding: 0.7rem 0 0.9rem; }
+/* `.receipt-row > .receipt-value:last-child` below is three classes deep and would type the
+   stamp's word in the values face; the stamp's own selector has to outrank it. */
+.receipt-row-verdict > .receipt-value.receipt-stamp:last-child {
+  justify-self: start; font-family: var(--display); font-size: var(--t-verdict); font-variant-numeric: normal;
+}
+
+/* The TL;DR variant. Its value spans keep the classes spec 020 AC-19 and spec 021 AC-18 read by
+   name. A SENTENCE IS NOT A VALUE: its prose rows are set in the body face, and only the rows
+   that carry values are typed. */
+.receipt.is-tldr { margin: var(--tooth) 0 2.4rem; }
+.receipt-row > span:last-child { font-family: var(--sans); font-size: var(--t-body); overflow-wrap: normal; }
+.receipt-row > .receipt-value:last-child,
+.receipt-row > .tldr-models:last-child,
+.receipt-row > .tldr-receipts:last-child {
+  font-family: var(--values); font-size: var(--t-mono); font-variant-numeric: tabular-nums;
+}
+.receipt-row > .tldr-receipts:last-child a { font-family: var(--sans); font-size: var(--t-body); }
+.receipt-row > .tldr-receipts:last-child:not(:has(a)) { font-family: var(--sans); font-size: var(--t-body); }
+.tldr-cite summary { cursor: pointer; color: var(--accent-ink); font-size: var(--t-mono-sm); margin-top: 0.7rem; }
+.tldr-cite pre { overflow-x: auto; }
+
+/* ── plots ───────────────────────────────────────────────────────────────── */
+.bandplot { display: block; width: 100%; height: auto; max-width: 100%; }
+/* THE hidden ATTRIBUTE WINS over the display rule above (spec 025 A-025-9). */
+[hidden] { display: none !important; }
+.plot-figure { margin: 0; }
+.plot-figure figcaption { color: var(--ink-muted); font-size: var(--t-mono-sm); margin-top: 0.5rem; }
+.plot-figure.is-prose figcaption, .panel.plot-figure.is-prose figcaption { color: var(--ink); font-size: var(--t-body); line-height: var(--lh-body); margin-top: 0.8rem; }
+.plot-figure.is-prose figcaption p { margin: 0 0 0.8rem; }
+
+/* ── the three cards, and only three ──────────────────────────────────────────
+   The receipt, a report entry on the index, and the playground: each a sheet of stock. */
+.card.report-card {
+  background: var(--paper-2); box-shadow: var(--sheet-shadow); border-radius: var(--radius);
+  padding: 1.4rem 1.5rem; margin: 0 0 1.25rem;
+  display: grid; gap: 1.2rem; grid-template-columns: 1fr;
+}
+@media (min-width: 760px) { .card.report-card { grid-template-columns: 1fr 260px; align-items: center; } }
+.card.report-card h3 {
+  font-family: var(--display); font-weight: 400; font-size: var(--t-report-title);
+  margin: 0 0 0.5rem; line-height: var(--lh-h2); letter-spacing: -0.01em;
+}
+.card.report-card h3 a { color: var(--ink); text-decoration: none; }
+.card.report-card h3 a:hover { text-decoration: underline; }
+.card-type {
+  display: inline-block; font-size: var(--t-eyebrow); font-style: italic;
+  margin: 0 0 0.5rem; color: var(--state-overlapping);
+}
+.card-type.is-separated { color: var(--state-separated); }
+.card-type.is-overlapping { color: var(--state-overlapping); }
+.card-type.is-refused { color: var(--state-refused); }
+.card-models { margin: 0.3rem 0; }
+.card-date, .card-counts {
+  color: var(--ink-muted); font-size: var(--t-mono-sm); font-variant-numeric: tabular-nums; margin: 0.3rem 0;
+}
+.card-date { font-family: var(--sans); }
+.card-counts { font-family: var(--sans); font-size: var(--t-body); }
+.card-plot { width: 100%; height: auto; }
+
+/* ── how it works ─────────────────────────────────────────────────────────── */
+.steps { counter-reset: step; list-style: none; padding: 0; margin: 0 0 1.8rem; display: grid; gap: 1rem; }
+.steps li { counter-increment: step; padding-left: 2.8rem; position: relative; }
+.steps li::before {
+  content: counter(step); position: absolute; left: 0; top: -0.1em;
+  font-family: var(--display); font-size: var(--t-h3); color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+.naming { font-size: var(--t-h3); line-height: 1.45; margin: 1.8rem 0 2.2rem; }
+/* THREE, EXPLICITLY: the criterion is three states in one row, so the grid says three. */
+.panels { display: grid; gap: 1.5rem; grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 720px) { .panels { grid-template-columns: 1fr; } }
+.panel { border: 0; padding: 0; background: transparent; }
+.panel img, .panel svg { display: block; width: 100%; height: auto; max-width: 100%; }
+.panel figcaption { margin: 0.7rem 0 0; color: var(--ink-muted); font-size: var(--t-fine); }
+.panel-title { display: block; color: var(--ink); font-family: var(--sans); font-weight: 500; font-size: var(--t-body); }
+
+/* ── the skeptic strip ────────────────────────────────────────────────────────
+   One ruled row, the figure over its label, a dotted rule between items. The sixth label is the
+   longest by far, so its column takes two shares (spec 025 AC-11). */
+.strip { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(0, 2fr); margin: 0 0 1.8rem; }
+.strip-item { padding: 0 1rem; }
+.strip-item + .strip-item { border-left: 1px dotted var(--ink-muted); }
+.strip-value {
+  display: block; font-family: var(--sans); font-size: var(--t-stat);
+  font-variant-numeric: tabular-nums lining-nums; color: var(--ink); line-height: var(--lh-h2);
+}
+.strip-label { display: block; color: var(--ink-muted); font-size: var(--t-mono-sm); line-height: 1.35; }
+.cols { display: grid; gap: 1.6rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.cols p { margin: 0; color: var(--ink-muted); }
+
+/* ── the playground ───────────────────────────────────────────────────────── */
+.card.playground {
+  background: var(--paper-2); box-shadow: var(--sheet-shadow); border-radius: var(--radius);
+  padding: 1.4rem; margin-top: 1.8rem;
+}
+.playground label { display: block; font-size: var(--t-mono-sm); color: var(--ink-muted); margin: 0.9rem 0 0.3rem; }
+.playground output { font-family: var(--sans); font-variant-numeric: tabular-nums; color: var(--ink); }
+.pg-range { -webkit-appearance: none; appearance: none; width: 100%; background: transparent; }
+.pg-range::-webkit-slider-runnable-track { height: 4px; background: var(--rule); border-radius: var(--radius); }
+.pg-range::-moz-range-track { height: 4px; background: var(--rule); border-radius: var(--radius); }
+.pg-range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 16px; height: 16px; margin-top: -6px;
+  background: var(--arm-skill); border: 2px solid var(--ink); border-radius: var(--radius);
+}
+.pg-range::-moz-range-thumb {
+  width: 16px; height: 16px;
+  background: var(--arm-skill); border: 2px solid var(--ink); border-radius: var(--radius);
+}
+.pg-range:focus { outline: none; }
+.pg-range:focus::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--accent-ink); }
+.pg-range:focus::-moz-range-thumb { box-shadow: 0 0 0 3px var(--accent-ink); }
+.pg-seg { display: inline-flex; border: 1px solid var(--ink-muted); border-radius: var(--radius); overflow: hidden; }
+.pg-seg-option {
+  padding: 0.35rem 0.8rem; cursor: pointer; font-size: var(--t-mono-sm);
+  color: var(--ink-muted); background: var(--paper-2);
+}
+.pg-seg-option + .pg-seg-option { border-left: 1px solid var(--ink-muted); }
+.pg-seg-option[aria-checked="true"] { color: var(--paper-2); background: var(--ink); }
+.pg-plot { margin: 0.5rem 0 1rem; }
+.pg-seg-label { display: block; font-size: var(--t-mono-sm); color: var(--ink-muted); margin: 0.9rem 0 0.3rem; }
+.playground .pg-verdict { display: inline-flex; align-items: center; gap: 0.8rem; }
+.playground .receipt-stamp { font-size: var(--t-h3); }
+
+/* ── subscribe ────────────────────────────────────────────────────────────── */
+.subscribe { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; align-items: center; }
+.subscribe label { font-size: var(--t-mono-sm); color: var(--ink-muted); }
+.subscribe input[type="email"] {
+  font: inherit; font-size: var(--t-body); padding: 0.45rem 0.1rem;
+  border: 0; border-bottom: 1.5px solid var(--ink); min-width: 16rem;
+  background: transparent; color: var(--ink);
+}
+.subscribe button {
+  font: inherit; font-weight: 500; font-size: var(--t-body); padding: 0.55rem 1.1rem; border-radius: var(--radius);
+  border: 0; background: var(--accent-ink); color: var(--paper-2); cursor: pointer;
+}
+.privacy-line { font-size: var(--t-fine); color: var(--ink-muted); margin: 0.8rem 0 0; }
+
+/* ── documentation pages ──────────────────────────────────────────────────── */
+.glossary dt { font-size: var(--t-h3); margin-top: 1.6rem; }
+.glossary dd { margin: 0.3rem 0 0; color: var(--ink); }
+.report-type-card { border-top: var(--perforation) dotted var(--rule); padding: 1.6rem 0; display: grid; gap: 1rem; grid-template-columns: 1fr; }
+@media (min-width: 700px) { .report-type-card { grid-template-columns: 160px 1fr; } }
+.report-type-card img, .report-type-card svg { width: 100%; height: auto; max-width: 100%; }
+.table-wrap { width: 100%; overflow-x: auto; }
+
+/* ── the published report bodies ──────────────────────────────────────────────
+   Pages this pass may restyle and may not edit. docs/style.css carries their structure; these
+   are the colour and type rules, here so the palette has one home. */
+.card { background: var(--paper-2); color: var(--ink); border-radius: var(--radius); box-shadow: var(--sheet-shadow); }
+.headline { background: var(--paper-2); color: var(--ink); border-left: 3px solid var(--ink); border-radius: var(--radius); box-shadow: var(--sheet-shadow); }
+.muted, .lede { color: var(--ink-muted); }
+.report-type { color: var(--ink-muted); font-size: var(--t-fine); }
+main.report h1, main.receipt-page h1 { font-size: var(--t-h1-page); }
+h1 code { font-size: var(--t-h3); vertical-align: 0.2em; }
+
+/* ── under 720px ──────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .screen { padding: 2.75rem 1.1rem; }
+  header.site { padding: 0.9rem 1.1rem; }
+  /* The value drops below its label, because two columns inside 390px leave a hash nowhere to go. */
+  .receipt-row { grid-template-columns: 1fr; gap: 0.15rem 0; }
+  .card.receipt { padding: 1.5rem 1.1rem 1.25rem; }
+  /* Two rows of three, not six columns of nothing. */
+  .strip { grid-template-columns: repeat(3, 1fr); row-gap: 1.2rem; }
+  .strip-item:nth-child(3n + 1) { border-left: 0; }
+  .strip-item { padding: 0 0.6rem; }
+  /* The wordmark and one disclosure. The nav is the disclosure's sibling, so it reappears on
+     `[open]` without a script and without a second copy of the links. */
+  nav.site-nav { display: none; }
+  .nav-menu { display: block; }
+  .nav-menu[open] ~ nav.site-nav {
+    display: flex; flex-direction: column; align-items: stretch; gap: 0;
+    width: 100%; margin-top: 0.8rem; padding: 0.4rem 1rem; background: var(--paper-2); box-shadow: var(--sheet-shadow);
+  }
+  .nav-menu[open] ~ nav.site-nav > a, .nav-menu[open] ~ nav.site-nav summary { display: block; padding: 0.5rem 0; border-bottom: 1px dotted var(--rule); }
+  .docs-menu-list { box-shadow: none; padding: 0 0 0 1rem; }
+  .card.report-card { grid-template-columns: 1fr; }
+  .subscribe input[type="email"] { min-width: 0; width: 100%; }
+  .copy-cta { flex-wrap: wrap; }
+}
+
+/* ── the one animation on this site ───────────────────────────────────────────
+   The hero band plot draws once on load: each band scales from its mean to its extent over
+   600ms, ease-out. Everything else is still, the stamp included (spec 038 AC-5).
+
+   THIS IS THE ONLY prefers-reduced-motion BLOCK IN THE REPOSITORY, and spec 025 AC-7 asserts
+   that: exactly one such block across every stylesheet and every generated plot, and no
+   transition, animation or keyframes declared outside it. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes hero-band-draw {
+    from { transform: scaleX(0.02); }
+    to { transform: scaleX(1); }
+  }
+  /* THE HOMEPAGE'S HERO CARD, and nothing else. Spec 038 A-038-3 inlines a hero-size plot into every
+     receipt page and the methodology page, and a rule on `.bandplot.is-hero` alone set five hundred
+     bands drawing on load across the site. The one animation is the one on the first screen. */
+  #hero .bandplot.is-hero .band {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: hero-band-draw 600ms ease-out 1 both;
+  }
+}

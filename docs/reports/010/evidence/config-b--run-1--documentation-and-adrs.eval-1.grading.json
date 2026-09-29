@@ -1,0 +1,33 @@
+{
+  "expectations": [
+    {
+      "id": 1,
+      "text": "The ADR states context, decision, alternatives, and consequences distinctly",
+      "passed": true,
+      "evidence": "Write tool created docs/decisions/ADR-001-event-sourcing-for-orders-service.md with separate headed sections: '## Status', '## Date', '## Context' (mutable rows, best-effort webhooks, auditor/support requirements, constraints), '## Decision' (adopt event sourcing, append-only stream as system of record, read projections), '## Alternatives Considered' (three sub-headings), and '## Consequences' (six bullets). Each concern is in its own distinct section with no bleed-over."
+    },
+    {
+      "id": 2,
+      "text": "Trade-offs and rejected options are recorded, not just the winning choice",
+      "passed": true,
+      "evidence": "All three options from decision-context.md are documented, each with explicit Pros/Cons plus a verdict line: audit table — 'Rejected: Auditors need history to be the source of truth, not a secondary record that can silently diverge'; CDC — 'Rejected: ... a physical changelog does not answer their questions without heavy interpretation'; event sourcing — 'Accepted' with its own Cons listed ('projection rebuilds, event schema versioning, and eventual consistency'). Downsides of the chosen option are also carried into Consequences (eventual consistency, versioning, rebuild procedure)."
+    },
+    {
+      "id": 3,
+      "text": "The document is written in timeless language describing current state",
+      "passed": true,
+      "evidence": "Present-tense declarative throughout: 'The orders service stores mutable order rows and emits best-effort webhooks' (the source's 'currently' was dropped), 'Order state transitions are recorded as an append-only stream', 'The event stream becomes the system of record', 'Event schemas must be versioned'. No 'we decided today', 'recently', or narrative retelling. Minor forward-looking phrasing appears in two spots ('needs to be validated with the reporting service before rollout', 'can be replaced by publishing from the committed event stream'), but these are consequence/follow-up statements and do not dominate the document's otherwise timeless voice."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1
+  },
+  "run": {
+    "executor_model": "claude-opus-5",
+    "grader_model": "unknown",
+    "timestamp": "2026-09-21T15:08:32.804Z"
+  }
+}
