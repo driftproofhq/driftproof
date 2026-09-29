@@ -1,0 +1,17 @@
+# Protocol frozen before results
+
+Three skills from addyosmani/agent-skills commit be4e44a9fbc5e8df0beaefadbb28bd22ee61cc39: code-review-and-quality, git-workflow-and-versioning, documentation-and-adrs. One text-representable case per skill, selected as the first case in each matching Driftproof suite at source commit 378bac8378e2c536f17a05875d6a55a2c1b59d9f. The skill content is current; these pre-existing suite cases come from that older pinned runner checkout. This is a small comparison, not a full skill evaluation.
+
+Inputs are saved under inputs/. SKILL.md bytes, task prompts and numeric rubrics match across harnesses. Native grading wraps the original rubric with PASS if numeric score >= 0.7 and otherwise FAIL. Native native skill-fired grader is diagnostic, excluded from both-arm scores by Claude's standard ablation behavior.
+
+Native: official Claude Code 2.1.272 temporary native binary; each single-skill plugin consists only of manifest and that unmodified SKILL.md. No hooks, agents, scripts, other skills or shared references are packaged. Three independent runs per arm; judge uses majority voting internally. Only Skill is granted by the case; no write/shell/network tool grants. --no-publish, no scaffold. $5 list-price ceiling per skill.
+
+Driftproof: official npm 0.10.1. Same SKILL.md supplied through its standard CLI provider, three judge samples per output and generation sampling under the runner's native policy. Call cap 80 per skill and global launcher cap 240 attempts; $8 per skill estimated API-equivalent ceiling. --trusted-skill explicitly authorized by user for these three reviewed third-party text-only skills. Despite runner's generic 'self-authored' log label, these skills are third-party and are NOT self-authored. Guard disables tools, hooks, MCP, persisted sessions, custom API credential/endpoint environment overrides, and requires explicit claude-opus-5 without fallback flags. All raw invocation prompts, argv and stream-json are retained.
+
+Both: existing Claude.ai Max subscription; target/judge explicit claude-opus-5. Utility model environment overrides set to Opus 5. Initial auth probe, before overrides, recorded one additional Haiku 4.5 utility call, allowed by user's revised model restriction. No public publishing authorized; delivery is a downloadable local bundle.
+
+Important comparison limit: native tests discovery and skill-tool activation; Driftproof injects the instructions directly. Native scores are pass fractions; Driftproof scores are continuous judge ratings. Different system prompts, activation, sampling and grading machinery remain. Do not interpret their absolute scores as interchangeable or as proof one harness is superior. No full repository workflow or tool-based skill action is being tested.
+
+Version labeling: the native minimal plugin manifests use the upstream plugin version 0.6.9. Driftproof prints skill v0.0.0 because standalone upstream SKILL.md files have no version field; that is the runner default, not a different skill revision. Exact SKILL.md SHA-256 values and the upstream commit are the provenance anchors.
+
+Native transcript supplement: after discovering that the primary native run had deleted its temporary trace files, one additional run per arm per skill was performed with --keep-temp. Those six traces and results are separate from the preplanned three-per-arm comparison. No original result was replaced.
