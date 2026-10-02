@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "claudeVersion": "2.1.272",
+  "startedAt": "2026-09-15T16:05:47.286Z",
+  "durationSeconds": 42,
+  "costUsd": 0.23096699999999998,
+  "partial": false,
+  "suite": {
+    "root": "/private/tmp/three-skill-eval-BZVlI9/plugins/documentation-and-adrs",
+    "ablation": "with-without",
+    "modelOverride": "claude-opus-5",
+    "judgeModel": "claude-opus-5",
+    "threshold": 1,
+    "concurrency": 1,
+    "plugins": [
+      {
+        "name": "documentation-and-adrs",
+        "version": "0.6.9",
+        "path": "/private/tmp/three-skill-eval-BZVlI9/plugins/documentation-and-adrs"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "comment-intent-not-implementation",
+      "dir": "evals/comment-intent-not-implementation",
+      "source": "prose",
+      "promptMarkdown": "Improve the comments on this JavaScript function. Return the revised function.\n\n```javascript\nfunction applyDiscount(cart, user) {\n  // Increment loyalty points by 1\n  user.points += 1;\n  // Loop over the items in the cart\n  for (const item of cart.items) {\n    // Multiply price by quantity and store it\n    item.subtotal = item.price * item.quantity;\n  }\n  // const legacyRate = 0.05;\n  // TODO: handle expired coupons\n  if (user.tier === 'gold') {\n    cart.total *= 0.9;\n  }\n  return cart;\n}\n```",
+      "runsPerCase": 3,
+      "timeoutSeconds": 180,
+      "maxTurns": 5,
+      "graders": [
+        {
+          "name": "criteria",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "Apply the following rubric to the final answer. PASS if its score is at least 0.7; otherwise FAIL.\n\nGrade ONLY against: comment intent not implementation; delete comments that restate the code; remove commented-out code; don't leave stale TODOs; add a comment only where intent is non-obvious.\n\nCheckable criteria:\n(a) Removes the comments that merely restate the code ('Increment loyalty points by 1', 'Loop over the items in the cart', 'Multiply price by quantity and store it').\n(b) Removes the commented-out legacy line (`// const legacyRate = 0.05;`).\n(c) Does not leave the bare `// TODO: handle expired coupons` dangling — either implements/handles it or removes it (a mere restatement of the TODO is not acceptable).\n(d) Any comment that remains or is added explains WHY/intent (e.g. why gold-tier gets a 10% discount, or a business reason), not what the line does.\n\nCAP rules: If the response keeps one or more of the 'what'-restating comments (still narrates the code), cap at 0.3. Subtract ~0.2 for each distinct miss: leaving the commented-out code, leaving the bare TODO, adding a new comment that also restates the 'what'.\n\nSCORING ANCHOR (apply strictly): a fully correct, idiomatic response scores 0.80. Award 0.81-0.90 only if it is ALSO exemplary — e.g. it adds a genuinely useful intent comment where one is warranted and leaves the self-explanatory lines comment-free. Award 0.91-1.00 only if flawless AND exceptional in every respect (rare).",
+          "config": {
+            "criteria": "Apply the following rubric to the final answer. PASS if its score is at least 0.7; otherwise FAIL.\n\nGrade ONLY against: comment intent not implementation; delete comments that restate the code; remove commented-out code; don't leave stale TODOs; add a comment only where intent is non-obvious.\n\nCheckable criteria:\n(a) Removes the comments that merely restate the code ('Increment loyalty points by 1', 'Loop over the items in the cart', 'Multiply price by quantity and store it').\n(b) Removes the commented-out legacy line (`// const legacyRate = 0.05;`).\n(c) Does not leave the bare `// TODO: handle expired coupons` dangling — either implements/handles it or removes it (a mere restatement of the TODO is not acceptable).\n(d) Any comment that remains or is added explains WHY/intent (e.g. why gold-tier gets a 10% discount, or a business reason), not what the line does.\n\nCAP rules: If the response keeps one or more of the 'what'-restating comments (still narrates the code), cap at 0.3. Subtract ~0.2 for each distinct miss: leaving the commented-out code, leaving the bare TODO, adding a new comment that also restates the 'what'.\n\nSCORING ANCHOR (apply strictly): a fully correct, idiomatic response scores 0.80. Award 0.81-0.90 only if it is ALSO exemplary — e.g. it adds a genuinely useful intent comment where one is warranted and leaves the self-explanatory lines comment-free. Award 0.91-1.00 only if flawless AND exceptional in every respect (rare).",
+            "focus": "last_message"
+          }
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "documentation-and-adrs"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.11017099999999999,
+            "judgeCostUsd": 0.022425,
+            "durationSeconds": 19,
+            "startedAt": "2026-09-15T16:05:47.298Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-eZhKZn/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "The existing comments narrate the code line by line, which adds length without adding information. Here's the revision, keeping only comments that say something the code can't:\n\n```javascript\n/**\n * Applies tier-based pricing to a cart, in place.\n *\n * Note: also credits the user a loyalty point as a side effect — callers\n * that only want pricing (e.g. cart previews) will over-credit.\n *\n * @param {Object} cart - Mutated: each item gains `subtotal`, and `total` may be discounted.\n * @param {Object} user - Mutated: `points` is incremented.\n * @returns {Object} The same cart object that was passed in.\n */\nfunction applyDiscount(cart, user) {\n  user.points += 1;\n\n  for (const item of cart.items) {\n    item.subtotal = item.price * item.quantity;\n  }\n\n  // TODO: skip the discount when the user's coupon has expired — we currently\n  // apply the gold rate unconditionally, so expired coupons still discount.\n  if (user.tier === 'gold') {\n    // Discount is taken off the pre-computed cart.total, not the subtotals\n    // above, so the two will disagree if a caller re-derives the total.\n    cart.total *= 0.9;\n  }\n\n  return cart;\n}\n```\n\nWhat changed and why:\n\n- **Dropped the restating comments.** `// Increment loyalty points by 1` above `user.points += 1` costs a line and carries no information; same for the loop and the multiplication.\n- **Deleted `// const legacyRate = 0.05;`.** Commented-out code rots silently — version control already remembers it, and leaving it invites someone to wonder whether 0.05 is still meant to apply.\n- **Made the TODO actionable.** \"handle expired coupons\" doesn't say what's currently wrong; the revision states the actual bug so whoever picks it up knows what they're fixing.\n- **Documented the side effects**, since both parameters are mutated and the loyalty-point increment is surprising in a function named `applyDiscount`.\n\nTwo things I noticed but didn't change, since you asked for comments only:\n\n1. `item.subtotal` is computed but never used — `cart.total` is discounted independently. If `cart.total` is stale, the subtotals and the total will disagree. I documented that rather than rewiring it.\n2. The loyalty point is awarded on every call, so calling this twice (a preview then a checkout) double-credits. Splitting that into its own function would be the cleaner fix."
+              },
+              {
+                "name": "skill-fired",
+                "passed": false,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.120796,
+            "judgeCostUsd": 0.02166,
+            "durationSeconds": 23,
+            "startedAt": "2026-09-15T16:06:06.313Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-QdEnmY/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Here's the revised function. The main changes: dropped comments that just narrate the next line, added a header documenting the mutations the name doesn't advertise, and kept the TODO but made it say what's actually broken.\n\n```javascript\n/**\n * Applies tier-based pricing to a cart, in place.\n *\n * Does more than the name suggests: also awards a loyalty point to `user` and\n * fills in `item.subtotal` on every line item. Callers who only want the\n * discount get those side effects too.\n *\n * @param {{items: Array<{price: number, quantity: number, subtotal?: number}>, total: number}} cart\n * @param {{points: number, tier: string}} user - Mutated: `points` is incremented.\n * @returns {object} The same `cart` that was passed in, not a copy.\n */\nfunction applyDiscount(cart, user) {\n  user.points += 1;\n\n  for (const item of cart.items) {\n    item.subtotal = item.price * item.quantity;\n  }\n\n  // `cart.total` is trusted as supplied by the caller — it is deliberately not\n  // re-derived from the subtotals computed above.\n  // TODO: handle expired coupons. The discount currently applies on tier alone,\n  // so a lapsed coupon still gets the reduced total.\n  if (user.tier === 'gold') {\n    cart.total *= 0.9; // 10% gold-tier discount\n  }\n\n  return cart;\n}\n```\n\nNotes on what I changed and why:\n\n- **Deleted `// const legacyRate = 0.05;`** — commented-out code rots and git history already preserves it. If 0.05 is still a live requirement, it belongs in code, not a comment.\n- **Left the `0.9` inline comment short.** I can tell you *what* it is (10% off) but not *why* 10% — if that number comes from a pricing policy or contract, a link to that source is worth more than anything I can infer.\n- **Two things I flagged rather than invented rationale for:** `user.points += 1` — the increment happens on every call regardless of whether a discount applies or whether checkout succeeds, which may be a bug rather than a design choice; and the fact that `cart.total` ignores the freshly computed subtotals. I documented both as observed behavior. If either is unintentional, the fix belongs in the code and the comments should change with it."
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 1,
+        "passRateWithout": 1,
+        "delta": 0
+      }
+    }
+  ],
+  "aggregates": {
+    "casesTotal": 1,
+    "casesPassed": 1,
+    "overallScore": 1,
+    "overallPassRate": 1,
+    "meanDelta": 0
+  }
+}

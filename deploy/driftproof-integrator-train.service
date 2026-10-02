@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+# Driftproof release train cutoff (spec 067): a oneshot that pins the staging tip as the release
+# candidate, or on a night the operator asked for a release, queues the version bump item.
+# It makes no commit and pushes nothing. Started by driftproof-integrator-train.timer.
+#
+# BUILT, NOT SWITCHED ON. Not installed by deploy/install-timer.sh; installing it is the operator's
+# switch-on step. Paths use the %h home specifier.
+[Unit]
+Description=Driftproof release train cutoff (pin the release candidate)
+Documentation=file:%h/driftproof/RUNBOOK.md
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/driftproof
+Environment=TMPDIR=/var/tmp
+Environment="PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/usr/bin/env node scripts/integrate.mjs train %h/.driftproof-integrator/config.json
+TimeoutStartSec=900
+Nice=10

@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Methodology | Driftproof</title>
+<link rel="stylesheet" href="/style.css">
+<!-- driftproof:card-tags -->
+<link rel="stylesheet" href="/tokens.css">
+<link rel="canonical" href="https://driftproofhq.com/methodology/">
+<link rel="alternate" type="application/atom+xml" title="Driftproof reports" href="/feed.xml">
+<link rel="alternate" type="text/markdown" href="/methodology/index.md">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-italic.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-medium.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-regular.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/courier-prime-regular.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/newsreader-variable.woff2" crossorigin="anonymous">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png" sizes="180x180">
+<link rel="icon" href="/icon-512.png" sizes="512x512" type="image/png">
+<meta name="description" content="We run a skill's own test tasks with the skill and without it, score every answer several times, and call a change only when it is clearly bigger than…">
+<meta property="og:site_name" content="Driftproof">
+<meta property="og:title" content="Methodology | Driftproof">
+<meta property="og:description" content="We run a skill's own test tasks with the skill and without it, score every answer several times, and call a change only when it is clearly bigger than…">
+<meta property="og:image" content="https://driftproofhq.com/og.7a9c3a6e.png">
+<meta property="og:url" content="https://driftproofhq.com/methodology/">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Methodology | Driftproof",
+  "description": "We run a skill's own test tasks with the skill and without it, score every answer several times, and call a change only when it is clearly bigger than…",
+  "url": "https://driftproofhq.com/methodology/",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Driftproof",
+    "url": "https://driftproofhq.com/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://driftproofhq.com/#organization",
+  "name": "Driftproof",
+  "alternateName": "driftproofhq",
+  "url": "https://driftproofhq.com/",
+  "logo": "https://driftproofhq.com/icon-512.png",
+  "description": "Driftproof (driftproofhq): open-source agent skill evaluation and regression testing across model releases",
+  "sameAs": [
+    "https://github.com/driftproofhq",
+    "https://dev.to/driftproofhq",
+    "https://www.npmjs.com/package/driftproof",
+    "https://skillsllm.com/skill/driftproof"
+  ]
+}
+</script>
+<!-- /driftproof:card-tags -->
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "d78764dd442f49cb9bb203bd6302e9b4"}'></script><!-- End Cloudflare Web Analytics -->
+</head>
+<body>
+<!--driftproof:nav--><header class="site">
+<a class="brand" href="/"><img class="brand-mark" src="/favicon.svg" alt="" width="28" height="28"><span>Driftproof</span></a>
+<details class="nav-menu"><summary>Menu</summary></details>
+<nav class="site-nav" aria-label="Site">
+<a href="/reports/">Reports</a>
+<a href="/#how-it-works">How it works</a>
+<details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
+<a href="/methodology/">Methodology</a>
+<a href="/neutrality/">Neutrality</a>
+<a href="/interop/">Interop</a>
+<a href="/authoring/">Authoring</a>
+<a href="/judge-policy/">Judge policy</a>
+<a href="/findings/">Findings</a>
+<a href="/how-this-is-built/">How this is built</a>
+<a href="/glossary/">Glossary</a>
+<a href="/report-types/">Report types</a>
+</div></details>
+<a href="/paper/">Paper</a>
+<a href="https://github.com/driftproofhq/driftproof">GitHub</a>
+</nav>
+</header><!--/driftproof:nav-->
+<!--driftproof:layout--><div class="page-grid">
+<nav class="page-toc" aria-label="On this page"><div class="rail-in"><p class="eyebrow">On this page</p><ol>
+<li><a href="#the-core-with-vs-without-sampled-banded">With and without the skill</a></li>
+<li><a href="#the-drift-verdict-rule-anti-false-positive">When we call a change</a></li>
+<li><a href="#extra-checks-and-cost">Extra checks, and what a skill costs</a></li>
+<li><a href="#providers-surfaces-and-neutrality">Other models, and one grader for all</a></li>
+<li><a href="#receipts-are-an-open-format">Receipts are an open format</a></li>
+<li><a href="#the-precise-method">The precise method</a></li>
+<li><a href="#where-a-band-comes-from">Where a band comes from</a></li>
+</ol></div></nav><!--/driftproof:layout-->
+<main class="docs">
+  <h1>How Driftproof measures a skill</h1>
+  <div class="split">
+    <p class="lede">We run a skill's own test tasks with the skill and without it, score every answer several times, and call a change only when it is clearly bigger than the usual spread of the scores.</p>
+    <p class="caption">The full contract is the <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md">receipt specification</a>. This page is its plain companion; the precise method, in the specification's own terms, is folded at the bottom.</p>
+  </div>
+
+  <section>
+  <div class="split">
+    <div>
+      <h2 id="the-core-with-vs-without-sampled-banded">With and without the skill</h2>
+      <p>For each task in a skill's own test set, Driftproof asks the model twice: once with the skill's instructions loaded, and once with the task alone. The model answers each way several times.</p>
+      <p>A fixed grader, another model, scores every answer several times. So each task gets a spread of scores, not one fragile number. What the skill adds is the average with the skill minus the average without it.</p>
+    </div>
+    <div class="tile">
+      <p class="tile-label">In short</p>
+      <ul>
+        <li>One task, asked two ways: with the skill and without it.</li>
+        <li>Several answers each way, each scored several times.</li>
+        <li>What the skill adds: the average with it minus the average without it.</li>
+      </ul>
+    </div>
+  </div>
+  </section>
+
+  <section>
+  <h2 id="the-drift-verdict-rule-anti-false-positive">When we call a change</h2>
+  <div class="split conditions">
+    <p>When two runs of the same skill are compared, a task counts as better or worse only when both of these hold.</p>
+    <div class="stack">
+      <div class="tile">
+        <p class="tile-label">First</p>
+        <h3>The spreads are apart</h3>
+        <p>Each side's spread is its average plus or minus the usual variation of its scores. If the two spreads overlap, we do not call a change.</p>
+      </div>
+      <div class="tile">
+        <p class="tile-label">Second</p>
+        <h3>The gap is big enough</h3>
+        <p>The averages must differ by at least <data value="0.05" data-src="config.js" data-at="EFFECT_FLOOR = ([0-9]+\.[0-9]+)" data-fn="re">0.05</data>. The grader scores on a coarse grid of about <data value="0.05–0.1" data-src="spec/RECEIPT.md" data-at="The LLM judge quantizes scores to a coarse ~0.05–0.1 grid" data-fn="quote">0.05 to 0.1</data>, so 0.05 is about one step of it. A smaller gap is not called, even when the spreads are apart.</p>
+      </div>
+    </div>
+    <p>When a change is not called, a report says which of two things it saw. If the scores were so spread out that a gap of 0.05 could not show, or a side had only one answer, there were too few answers to tell. Otherwise the spreads overlapped or the gap was too small, and there was no clear difference. Neither means that nothing changed. A clear difference is what these tests saw, not proof that the skill itself changed.</p>
+  </div>
+  </section>
+
+  <section>
+  <h2 id="extra-checks-and-cost">Extra checks, and what a skill costs</h2>
+  <div class="cols2">
+    <div>
+      <h3>Simple checks beside the grader</h3>
+      <p>A task may also carry plain checks on the answer that simply pass or fail, with no model judging: for example, that a commit message starts with the expected kind of first line.</p>
+      <p>They sit beside the grader's scores as extra evidence. They never decide whether we call a change.</p>
+    </div>
+    <div>
+      <h3>What the skill adds per 1,000 tokens</h3>
+      <p>A skill is not free: its instructions are sent with every answer. Adding 0.10 with 400 tokens of instructions is a different deal from adding 0.10 with 6,000.</p>
+      <p>So Driftproof gives what the skill adds both as it is and per 1,000 tokens of the skill. The token count is a rough estimate: the length in characters divided by four.</p>
+    </div>
+  </div>
+  </section>
+
+  <section>
+  <h2 id="providers-surfaces-and-neutrality">Other models, and one grader for all</h2>
+  <div class="cols2">
+    <p>The same tasks and the same grader run for every model we test; only the model answering changes. Every receipt records which model answered, and through which service.</p>
+    <p>Because one grader from one model family scores every answer, a report comparing model families leads with what the skill adds to each model. That reduces a grader's taste for its own family's writing, but does not remove it, and no report has measured how much is left. Raw scores across families are background, never a ranking. The <a href="/neutrality/">neutrality page</a> has the full policy.</p>
+  </div>
+  </section>
+
+  <section>
+  <div class="split">
+    <div>
+      <h2 id="receipts-are-an-open-format">Receipts are an open format</h2>
+      <p>A receipt is the file behind every published number. Its format is public and any tool may write one; Driftproof also converts results from neighbouring test tools (see <a href="/interop/">interop</a>).</p>
+      <p>A receipt records what produced its numbers: the model, the tools, the skill and the tasks by their content, and the grader with its instructions. The <code>stale</code> command compares those with what would run today and says what has moved.</p>
+    </div>
+    <div class="tile">
+      <p class="tile-label">The method in one sentence</p>
+      <p>Score every answer several times, call a change only when it is clearly bigger than the spread and big enough to matter, keep simple checks on the side, count the cost in tokens, and hold everything fixed except the model.</p>
+    </div>
+  </div>
+  </section>
+
+  <div class="split">
+    <div>
+      <h2 id="the-precise-method">The precise method</h2>
+    </div>
+    <p>The folded sections are the method as the receipt specification states it, in the terms reports and receipts use. They say what the sections above say, precisely.</p>
+  </div>
+  <details class="fold precise"><summary>The precise method, in the receipt specification's own terms</summary>
+  <h3 id="the-core-with-vs-without-sampled-banded-precise">The core: with vs without, sampled, banded</h3>
+  <div class="card">
+    <p>For each eval case, Driftproof runs the model <strong>with</strong> the skill (SKILL.md supplied) and <strong>without</strong> it (bare baseline). Each response is graded by the fixed judge <strong>several times</strong> (n = 5), so a case carries a <em>mean ± stddev</em> band, not one fragile number. The skill's <strong>lift (delta)</strong> is the with-skill mean minus the baseline mean.</p>
+  </div>
+
+  <h3 id="the-drift-verdict-rule-anti-false-positive-precise">The drift verdict rule (anti-false-positive)</h3>
+  <div class="card">
+    <p>Diffing two receipts yields a per-case verdict. A case counts as <strong>regressed</strong> or <strong>improved</strong> only when <strong>both</strong> conditions hold:</p>
+    <ul class="method">
+      <li><strong>Band separation.</strong> The two <code>with_skill</code> bands do <em>not</em> overlap. A band is a descriptive spread: the mean plus or minus one sample standard deviation of the case's scores, with no coverage probability.</li>
+    </ul>
+  </div>
+
+  <!--driftproof:bands--><h2 id="where-a-band-comes-from">Where a band comes from</h2>
+  <figure class="panel plot-figure is-prose">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" width="100%" role="img" class="bandplot is-hero state-separated">
+<title>Two horizontal ranges from a published cell, one without the skill and one with it, drawn apart with the effect floor marked.</title>
+<style>/* driftproof:tokens */
+svg {
+  --paper: #ECE5D5;
+  --paper-2: #FBF8F0;
+  --ink: #1F1D1A;
+  --ink-muted: #625C50;
+  --rule: #CBC1AC;
+  --arm-baseline: var(--ink-muted);
+  --accent: #44CC11;
+  --arm-skill: var(--ink);
+  --accent-ink: #2A3C9E;
+  --refused: #BDB3A0;
+  --state-separated: var(--accent-ink);
+  --state-overlapping: var(--ink-muted);
+  --state-refused: #6F5500;
+  --sans: "Alegreya Sans", "Gill Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "Courier Prime", ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --values: var(--mono);
+  --radius: 3px;
+  --t-plot: 12px;
+  --t-plot-lg: 19px;
+}
+/* driftproof:/tokens */
+.bandplot.is-hero text { font-family: var(--sans); font-size: var(--t-plot-lg); font-variant-numeric: tabular-nums lining-nums; }
+.bandplot.is-hero .tick { fill: var(--ink-muted); }
+.bandplot.is-hero .arm-label { font-style: italic; fill: var(--ink-muted); }
+.bandplot.is-hero .verdict { font-weight: 500; fill: var(--state-separated); }
+.bandplot.is-hero .value { font-weight: 500; fill: var(--ink); }
+.bandplot.is-hero .value.on-band { fill: var(--paper-2); }
+.bandplot.is-hero .grat { stroke: var(--rule); stroke-width: 1; }
+.bandplot.is-hero .floor { stroke: var(--ink-muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.bandplot.is-hero .axis { stroke: var(--ink); stroke-width: 1; }
+</style>
+<defs><pattern id="hatch-commit-message-conventions-claude-haiku-4-5-20251001-2026-07-27-hero" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+<rect width="6" height="6" fill="var(--refused)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--paper)" stroke-width="2"/>
+</pattern></defs>
+<line class="grat" x1="28.0" y1="26" x2="28.0" y2="124"/>
+<line class="grat" x1="144.0" y1="26" x2="144.0" y2="124"/>
+<line class="grat" x1="260.0" y1="26" x2="260.0" y2="124"/>
+<line class="grat" x1="376.0" y1="26" x2="376.0" y2="124"/>
+<line class="grat" x1="492.0" y1="26" x2="492.0" y2="124"/>
+<line class="axis" x1="28.0" y1="124" x2="492.0" y2="124"/>
+<text class="tick" x="28.0" y="142" text-anchor="start">0</text>
+<text class="tick" x="144.0" y="142" text-anchor="middle">0.25</text>
+<text class="tick" x="260.0" y="142" text-anchor="middle">0.5</text>
+<text class="tick" x="376.0" y="142" text-anchor="middle">0.75</text>
+<text class="tick" x="492.0" y="142" text-anchor="end">1</text>
+<line class="floor" x1="271.1" y1="26" x2="271.1" y2="124"/>
+<text class="verdict" x="492.0" y="16" text-anchor="end">separated</text>
+<text class="arm-label" x="28.0" y="34">without the skill</text>
+<rect class="band band-baseline" x="66.5" y="40" width="362.8" height="20" rx="1.5" fill="var(--arm-baseline)"/>
+<text class="value value-baseline on-band" x="247.9" y="56.3" text-anchor="middle">0.474</text>
+<text class="arm-label" x="28.0" y="84">with the skill</text>
+<circle class="band band-skill point" cx="492.0" cy="100.0" r="6" fill="var(--arm-skill)" stroke="var(--arm-baseline)" stroke-width="1.5"/>
+<text class="value value-skill beside" x="481.0" y="106.3" text-anchor="end">1.000</text>
+</svg>
+    <figcaption>
+    <p>Each arm is generated at least three times, and more until the across-draw spread settles. Each generation is scored by the fixed judge. A band is the mean and the spread of the per-case score across those draws.</p>
+    <p>Every report published before Report 007 used a single generation per arm, judged several times, so its bands measured the judge and not the model. Report 006's probe measured generation noise at 3.2&times; and 7.5&times; the judge noise on the two cases it probed, ten draws each. Report 007 re-measured Report 005's cells under the corrected instrument. Every table since Report 007 labels each band's source as legacy or generation.</p>
+    </figcaption>
+  </figure><!--/driftproof:bands-->
+
+  <figure class="panel plot-figure is-prose" id="effect-floor-figure">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" width="100%" role="img" class="bandplot is-hero state-overlapping">
+<title>Two horizontal ranges from a published cell that overlap, with the effect floor marked as a dashed line.</title>
+<style>/* driftproof:tokens */
+svg {
+  --paper: #ECE5D5;
+  --paper-2: #FBF8F0;
+  --ink: #1F1D1A;
+  --ink-muted: #625C50;
+  --rule: #CBC1AC;
+  --arm-baseline: var(--ink-muted);
+  --accent: #44CC11;
+  --arm-skill: var(--ink);
+  --accent-ink: #2A3C9E;
+  --refused: #BDB3A0;
+  --state-separated: var(--accent-ink);
+  --state-overlapping: var(--ink-muted);
+  --state-refused: #6F5500;
+  --sans: "Alegreya Sans", "Gill Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "Courier Prime", ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --values: var(--mono);
+  --radius: 3px;
+  --t-plot: 12px;
+  --t-plot-lg: 19px;
+}
+/* driftproof:/tokens */
+.bandplot.is-hero text { font-family: var(--sans); font-size: var(--t-plot-lg); font-variant-numeric: tabular-nums lining-nums; }
+.bandplot.is-hero .tick { fill: var(--ink-muted); }
+.bandplot.is-hero .arm-label { font-style: italic; fill: var(--ink-muted); }
+.bandplot.is-hero .verdict { font-weight: 500; fill: var(--state-overlapping); }
+.bandplot.is-hero .value { font-weight: 500; fill: var(--ink); }
+.bandplot.is-hero .value.on-band { fill: var(--paper-2); }
+.bandplot.is-hero .grat { stroke: var(--rule); stroke-width: 1; }
+.bandplot.is-hero .floor { stroke: var(--ink-muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.bandplot.is-hero .axis { stroke: var(--ink); stroke-width: 1; }
+</style>
+<defs><pattern id="hatch-report-001--code-review-and-quality__claude-sonnet-4-6-hero" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+<rect width="6" height="6" fill="var(--refused)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--paper)" stroke-width="2"/>
+</pattern></defs>
+<line class="grat" x1="28.0" y1="26" x2="28.0" y2="124"/>
+<line class="grat" x1="144.0" y1="26" x2="144.0" y2="124"/>
+<line class="grat" x1="260.0" y1="26" x2="260.0" y2="124"/>
+<line class="grat" x1="376.0" y1="26" x2="376.0" y2="124"/>
+<line class="grat" x1="492.0" y1="26" x2="492.0" y2="124"/>
+<line class="axis" x1="28.0" y1="124" x2="492.0" y2="124"/>
+<text class="tick" x="28.0" y="142" text-anchor="start">0</text>
+<text class="tick" x="144.0" y="142" text-anchor="middle">0.25</text>
+<text class="tick" x="260.0" y="142" text-anchor="middle">0.5</text>
+<text class="tick" x="376.0" y="142" text-anchor="middle">0.75</text>
+<text class="tick" x="492.0" y="142" text-anchor="end">1</text>
+<line class="floor" x1="433.4" y1="26" x2="433.4" y2="124"/>
+<text class="verdict" x="492.0" y="16" text-anchor="end">overlapping</text>
+<text class="arm-label" x="28.0" y="34">without the skill</text>
+<rect class="band band-baseline" x="372.8" y="40" width="74.7" height="20" rx="1.5" fill="var(--arm-baseline)"/>
+<text class="value value-baseline on-band" x="410.2" y="56.3" text-anchor="middle">0.824</text>
+<text class="arm-label" x="28.0" y="84">with the skill</text>
+<rect class="band band-skill" x="419.5" y="90" width="23.0" height="20" rx="1.5" fill="var(--arm-skill)"/>
+<text class="value value-skill beside" x="447.5" y="106.3" text-anchor="start">0.869</text>
+</svg>
+    <figcaption>
+    <ul class="method">
+      <li><strong>Effect floor.</strong> The mean also moves by at least <strong>0.05</strong>, about one judge quantization step. A separated but tiny move is not called a regression or an improvement, and the per-case table labels it <em>below effect floor</em>. The comparison's summary line counts those cases apart from the cases with no separation detected, under the same label.</li>
+    </ul>
+    <p>Where bands touch or overlap, or a move is below the floor, the report says <em>no separation detected at this sample size</em>: never drift, and never that nothing changed. A separation is a separation detected under this rule, not proof that the skill moved. A tool that cries wolf on judge noise is worse than useless, so band separation <strong>plus</strong> a real-sized delta, not either alone, is what triggers a verdict. The judge is deliberately fixed and cheap; see the <a href="/judge-policy/">judge policy</a>.</p>
+    </figcaption>
+  </figure>
+
+  <p id="underpowered"><strong>Not enough draws.</strong> A case the rule does not separate is also asked whether it could have been separated. Its resolution is the two arms' spreads added together, plus two standard errors of the difference between their means; when that reaches the 0.05 floor, or when an arm has a single draw, the case is <em>underpowered</em>, and a receipt with no separated case and an underpowered one reads <code>UNDERPOWERED</code>, in words: <em>Not enough draws to conclude at this effect floor</em>. The badge, the Action and the comparison report print the draws per arm that would have been needed with the spreads held, or say that no draw count reaches the floor when the spreads alone do, because more draws narrow the standard error and not the spread. The single-receipt badge reads passing or regressed only when a case separated under the rule. The rule is R-1 to R-6 of the receipt specification.</p>
+
+  <p id="band-rung"><strong>A wide band over several cases.</strong> A receipt in which two or more cases read no separation, and none is underpowered on its own, is asked the same question once more, over the receipt as a whole. Its comparison band, each arm's spread of its per-case means added in quadrature, must be under the 0.05 floor. When it reaches the floor the receipt reads <code>UNDERPOWERED</code>, <em>Not enough draws to conclude at this effect floor</em>, with no draw count, because more draws do not narrow a spread between cases. Where a case lost draws, its band is widened by the most its mean could move at any score those draws could have had. A one-case receipt forms no such band and reads as before. The reader applies this rule to every receipt it reads, whatever its schema version.</p>
+
+  <p id="judged-answer"><strong>Which answer is graded.</strong> On the two command-line surfaces the model answers as an agent with tools. From receipt v0.10 on, the receipt says which answer the grader saw, in <code>run.capture</code>. By default, <code>text</code>, the agent runs with its file-writing tools off and its reply is the graded answer. With <code>--capture files</code> it may write files in a fresh working directory of its own, and the files it leaves there are graded with its reply, each named with its path and size; each draw lists them in <code>captured_files</code>, and a file too large to include is named as not included. When the directory could not be read back, the draw is lost, and a regrade keeps it lost. Before any grading call, a reply that points at a file the answer does not include, or that only describes work it did, is a lost draw with its reason and is never given a score. On these two surfaces the runner also records the harness in <code>run.harness</code>: its name and the version its own binary printed when the run began, never a typed value. A regrade keeps the original's mode and harness, because the answers it grades came from that harness, so <code>driftproof stale</code> still reads the version the answers were made with.</p>
+
+  <p>A comparison report's headline says <em>no separation detected</em> when no case separated under the rule, and names the direction of each separation it detected. A comparison report names the band source of each receipt beside its bands, legacy or generation, and its legend describes only the sources that appear on the page. It prints the sentence that the two receipts' bands come from different sources, and that a per-case comparison across them is not like for like, only when the two sources differ. Two receipts whose bands share a source are compared without that sentence.</p>
+
+  <h3 id="deterministic-post-checks-supplementary-column">Deterministic post-checks (supplementary column)</h3>
+  <div class="card">
+    <p>A suite case may declare optional <code>checks[]</code> - structural or regex assertions on the model output that simply hold or don't, with no LLM judgment (e.g. "the output contains a Conventional-Commits subject line", "the output mentions the 429 status the task described"). These run <strong>alongside</strong> the judge and are reported as a <strong>separate column</strong>.</p>
+    <p><strong>Post-checks are supplementary evidence only.</strong> They are <em>not</em> folded into the case outcome or the band-overlap verdict - they corroborate or contradict the judge with a cheap, unambiguous signal, they do not replace it. Authors add them where they are natural and in-text-groundable; they are never required, and a suite without them is unaffected. Each result is recorded in the receipt as <code>{ name, kind, pass }</code><!--driftproof:checks--> (spec v0.3.1)<!--/driftproof:checks-->.</p>
+  </div>
+
+  <h3 id="the-value-per-token-axis">The value-per-token axis</h3>
+  <div class="card">
+    <p>A skill is not free: its SKILL.md is prepended to every generation. A +0.10 lift for 400 skill tokens is a very different proposition from +0.10 for 6,000. So Driftproof reports each skill's lift <strong>both raw and normalized per 1,000 skill tokens</strong>: <code>delta ÷ (skill_tokens ÷ 1000)</code>.</p>
+    <p><strong>Method.</strong> <code>skill_tokens</code> is a coarse <code>ceil(chars ÷ 4)</code> estimate of the SKILL.md size - the standard rough proxy for English text, <em>not</em> a model tokenizer (no <code>tiktoken</code> dependency). It is a consistent yardstick for comparing skills to one another, not a billing figure, and it is recorded in the receipt (<code>skill.tokens</code><!--driftproof:tokens-cite-->, spec v0.3.1)<!--/driftproof:tokens-cite-->. Value-per-token surfaces the skills that earn their context budget.</p>
+  </div>
+
+  <h3 id="providers-surfaces-and-neutrality-precise">Providers, surfaces, and neutrality</h3>
+  <div class="card">
+    <p>Driftproof's provider layer is <strong>two-axis</strong>: provider (anthropic / openai) × surface (api / cli), i.e. four concrete lanes. The same suites and the same fixed judge run across providers; only the target model varies. Every receipt records the <code>provider</code> and <code>surface</code> it ran on, the API surface is preferred for published runs, and a subscription CLI surface is disclosed whenever used.</p>
+    <p>Because one Claude-family judge grades every provider's output, a cross-provider report leads with the with/without <strong>delta</strong> - which reduces judge style-affinity but does not remove it - and treats absolute cross-provider scores as context, never a ranking. Report #002 additionally holds the surface <em>type</em> constant: both substrates run on the vendor's own first-party subscription CLI (<code>claude -p</code> and <code>codex exec</code>), with each surface's harness overhead disclosed (Codex prepends a fixed ~12–15k-token preamble; <code>claude -p</code> a smaller first-party context). The full policy is on the <a href="/neutrality/">neutrality page</a>.</p>
+  </div>
+
+  <h3 id="related-work">Related work</h3>
+  <div class="card">
+    <p><a href="https://arxiv.org/abs/2605.10990">Skill Drift Is Contract Violation</a> (Fan et al., arXiv:2605.10990) treats skill decay as a violation of environment contracts - external services and APIs moving under a skill - and repairs against them; that environmental axis is complementary to the substrate axis measured here (the model itself moving under a skill). The verification levels our receipts carry (<code>UNVERIFIED</code> / <code>DECLARED</code> / <code>TESTED</code> / <code>FORMAL</code>) follow the lattice introduced in <a href="https://arxiv.org/abs/2605.00424">Skills as Verifiable Artifacts</a> (Metere, arXiv:2605.00424), whose companion, <a href="https://arxiv.org/abs/2605.23951">Methods for Formal Verification of Agent Skills</a> (arXiv:2605.23951), works toward the <code>FORMAL</code> level our schema still marks reserved.</p>
+  </div>
+
+  <h3 id="receipts-are-an-open-format-precise">Receipts are an open format</h3>
+  <div class="card">
+    <p>The receipt is not proprietary: the JSON Schema is served at its canonical id (<a href="/spec/receipt.schema.json"><code>/spec/receipt.schema.json</code></a>), and a receipt validates against the schema its own <code>schema_version</code> names; any harness is encouraged to emit receipts, and working converters import results from neighboring eval tools - with the <strong>DECLARED vs TESTED</strong> distinction enforced structurally (imported declarations are recorded faithfully but never earn drift verdicts). The schema, the import mappings, and the minimal <code>summary-json</code> interchange are on the <a href="/interop/">interop page</a>. A receipt at the current schema says what its counts count: generations per arm and judge samples per generation are separate fields, written only at the scope the data establishes, and an imported receipt carries neither unless its source format defines one. Where a count is not established the differ and the export say it is unknown; they do not read it as a single sample. An imported receipt at the current schema also names what produced it: the harness and its version, the document it was converted from with that document's sha256, and each thing the source did not record, which stays unknown rather than taking a default. Where the source ran a skill-fired indicator, as <code>claude plugin eval</code> does, the receipt records how often the skill fired beside the score and never inside it, and runs the source recorded an error for are kept out of the figures and listed with the error.</p>
+    <p>A receipt also records what produced its numbers, as far as its schema version allows: the model, the harness, the skill's and the suite's content hashes, the judge, the judge's prompt template and each case's rubric hash. <code>driftproof stale</code> compares those with what would run today and says, for each arm, whether the result still stands, needs the arm run again, or needs only its saved answers graded again. A change to the skill leaves the baseline arm standing, since that arm contains no skill text. A new major or minor version of the harness means running again; a patch release of the same harness is reported as an advisory. For scale, from our own runs: <a href="/reports/009/">Report 009</a> ran on Claude Code 2.1.272 on 15 September, and on 23 September <a href="/reports/011/">Report 011</a> needed 2.1.280 or newer. Anything a receipt does not record is reported as unknown, never as current.</p>
+  </div>
+
+  <p class="muted">Sample the judge, band the scores, require separation <em>and</em> a real-sized effect, add cheap deterministic checks on the side, normalize lift by the tokens it costs, and hold everything constant except the model. That is the method.</p>
+  </details>
+</main>
+<!--driftproof:layout-end--></div><!--/driftproof:layout-end-->
+<!--driftproof:foot--><footer class="site">
+<p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
+<p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+</footer><!--/driftproof:foot-->
+<!--driftproof:scripts--><script src="/copy-button.js" defer></script>
+<script type="module" src="/islands/loader.js"></script><!--/driftproof:scripts-->
+</body>
+</html>

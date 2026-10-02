@@ -1,0 +1,28 @@
+{
+  "expectations": [
+    {
+      "id": 1,
+      "text": "The ADR states context, decision, alternatives, and consequences distinctly",
+      "passed": true,
+      "evidence": "Write tool created docs/decisions/ADR-001-event-sourcing-for-orders-service.md with explicitly separated headings: '## Status', '## Date', '## Context' (mutable rows, best-effort webhooks, auditor/support requirements, constraints), '## Decision' (adopt event sourcing, append-only stream as system of record), '## Alternatives Considered', and '## Consequences'. Each section contains only its own content with no bleed-over."
+    },
+    {
+      "id": 2,
+      "text": "Trade-offs and rejected options are recorded, not just the winning choice",
+      "passed": true,
+      "evidence": "The Alternatives Considered section documents all three options from decision-context.md with Pros/Cons and an explicit disposition line: audit table ('Rejected: Auditors need history to be the source of truth, not a secondary record that can silently diverge'), CDC ('Rejected: ... a physical changelog does not answer their questions'), and event sourcing ('Cons: Introduces projection rebuilds, event schema versioning, and eventual consistency ... Accepted: ...'). Downsides of the winning option are also carried into Consequences (eventual consistency, versioning via upcasting, rebuild procedures)."
+    },
+    {
+      "id": 3,
+      "text": "The document is written in timeless language describing current state",
+      "passed": true,
+      "evidence": "Prose is present-tense and state-describing: 'The orders service stores mutable order rows and emits best-effort webhooks', 'Order state transitions are recorded as an append-only stream of domain events, which is the system of record', 'The event stream becomes the system of record for orders'. No meeting-narrative or dated storytelling ('we discussed on Tuesday', 'options were debated'); the source file's 'Options discussed:' framing was rewritten into neutral alternative descriptions. Only minor forward-looking phrasing ('needs to be validated ... before rollout', 'can be replaced'), which reads as consequence/follow-up rather than temporal narration."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1
+  }
+}

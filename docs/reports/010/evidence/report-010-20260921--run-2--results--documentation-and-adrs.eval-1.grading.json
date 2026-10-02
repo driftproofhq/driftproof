@@ -1,0 +1,33 @@
+{
+  "expectations": [
+    {
+      "id": 1,
+      "text": "The ADR states context, decision, alternatives, and consequences distinctly",
+      "passed": true,
+      "evidence": "The Write call created docs/decisions/ADR-001-adopt-event-sourcing-for-orders.md with separate '## Context', '## Decision', '## Alternatives Considered' and '## Consequences' sections, plus Status and Date. Each section holds different content: Context covers requirements and constraints, Decision covers the event stream as source of truth scoped to orders, Alternatives covers the two rejected options, and Consequences covers the effects."
+    },
+    {
+      "id": 2,
+      "text": "Trade-offs and rejected options are recorded, not just the winning choice",
+      "passed": true,
+      "evidence": "Both rejected options from the source ('append-only audit table' and 'change-data capture') get Pros, Cons and an explicit 'Rejected:' reason. Consequences also records the costs of the chosen option: projection rebuilds, event versioning, eventual consistency (called out as conflicting with the reporting service's synchronous reads), and operational complexity."
+    },
+    {
+      "id": 3,
+      "text": "The document is written in timeless language describing current state",
+      "passed": true,
+      "evidence": "The ADR is written mostly in present tense and states facts about the current state. The agent dropped the source's 'currently' ('The orders service stores mutable order rows...'), and the ADR has no 'recently' or 'new' framing. There are minor slips: 'Two requirements are not met today', and change framing such as 'Operational complexity goes up' and 'before cutover'. These are small and do not dominate the document."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1
+  },
+  "run": {
+    "executor_model": "claude-opus-5",
+    "grader_model": "unknown",
+    "timestamp": "2026-09-21T14:54:05.167Z"
+  }
+}

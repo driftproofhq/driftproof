@@ -1,0 +1,526 @@
+{
+  "schema_version": "0.3.1",
+  "skill": {
+    "name": "commit-work",
+    "version": "0.0.0",
+    "content_hash": "8f1f71640ab38a59c8e79c91623288b0cea09d508200c72dae4d08643d1ffe6c",
+    "tokens": 621
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "93e7d1363b3c3ae04756829c2ef9ee685437a17a0686e094fd569b7c89a9ce1d",
+    "case_count": 7
+  },
+  "run": {
+    "model_id": "claude-opus-5",
+    "model_release_date": "2026-07-24",
+    "provider": "anthropic",
+    "surface": "claude-cli",
+    "runner_version": "0.3.0",
+    "date_utc": "2026-08-11T17:55:33.935Z",
+    "registry": "registered",
+    "transcripts": "retained-local",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli"
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "conventional-commit-single-change",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.868,
+        "mean": 0.868,
+        "stddev": 0.010954,
+        "samples": [
+          0.85,
+          0.87,
+          0.87,
+          0.87,
+          0.88
+        ],
+        "generation_hash": "7a28ccfaeb371e6f7163c9fb83045e049e0629ab1ee33451a4c43b5cc4486155",
+        "judge_sample_hashes": [
+          "b008c59b70a315d78984df9e3795d6bcfddf43dcf218380b101afe604907321c",
+          "6c22aa732d2ee099980f00d2f3123892639f201909aad9e3ce3f6645423308db",
+          "16c91578977e4cc89e1e1730984ff610a16f7d7a95bd99cf51b49afa30c2b160",
+          "d766ed406a4f972f639f3c53e8d4415f8f0ece463e42c142928ef5dbd1717d83",
+          "847abe473f84e7218be353d64a7b3aa807eb75f7f66cd84800b3b851e7009015"
+        ],
+        "threshold": 0.7,
+        "reason": "Valid Conventional Commits shape with blank line; body exemplarily explains what changed and the security motivation (brute-force risk).",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "2940e2265479973aa94b81af20614f2ce5edfb34d81fb4f72f90f42c29111ba6"
+        },
+        "checks": [
+          {
+            "name": "conventional-commit-subject",
+            "kind": "regex",
+            "pass": true
+          },
+          {
+            "name": "mentions-rate-limit-status",
+            "kind": "contains",
+            "pass": true
+          }
+        ]
+      },
+      {
+        "id": "conventional-commit-single-change",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.876,
+        "mean": 0.876,
+        "stddev": 0.011402,
+        "samples": [
+          0.88,
+          0.88,
+          0.89,
+          0.87,
+          0.86
+        ],
+        "generation_hash": "ddecc9c527eb1cda857bc90ac323980643c2d5d48b4ae3c3b46b7cd7d157e8ad",
+        "judge_sample_hashes": [
+          "4c18756a52b785497f87ace0acd3059c018aa7181497abb495cb8c8d4516cf55",
+          "2232d51c1a0b76f1020f458c349974780f7a6553d2143dcaaaefa8d2613a75b7",
+          "2d8453a975ad83b4b819fed8b7d04d454398fb130ee2bf79bc6189e3fd2b563d",
+          "9a1a2edc174de8bad86e2d7f4f22f00a7efdb599e53e203d1e14a080ace46c2e",
+          "0b2a0bc86894e4df7b3d455ff6956d41f45915518dbe34a9366c89231d61d4c4"
+        ],
+        "threshold": 0.7,
+        "reason": "Valid Conventional Commits shape with blank line and body. Exemplary statement of security motivation (brute-force threat) in plain prose alongside clear what-changed description.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "2940e2265479973aa94b81af20614f2ce5edfb34d81fb4f72f90f42c29111ba6"
+        },
+        "checks": [
+          {
+            "name": "conventional-commit-subject",
+            "kind": "regex",
+            "pass": true
+          },
+          {
+            "name": "mentions-rate-limit-status",
+            "kind": "contains",
+            "pass": true
+          }
+        ]
+      },
+      {
+        "id": "split-dependency-bump-vs-behavior",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.874,
+        "mean": 0.874,
+        "stddev": 0.015166,
+        "samples": [
+          0.88,
+          0.88,
+          0.89,
+          0.87,
+          0.85
+        ],
+        "generation_hash": "f4587dbc01192797341ff8ad535a88ad2b2a6a895cfe12a7e602f5d1758e3b1c",
+        "judge_sample_hashes": [
+          "a6f7c07730ea39b5051f9856c03b94f70451baca2c45f0d6675a6f5ee8d02624",
+          "8c52a0a80852a4b91b7551773bcb44cdcd0fb6d9e5295a11946836546da2b386",
+          "a8871a9db952fdcb3533a493d8265ee62f9284c88057814f239440a57f9b3141",
+          "c3d43c49d7414f34d81244ded2e69f78f687d63a864497e4c58f9100262446b2",
+          "77032608ca9907f80b5158cf0ff20ffb2342d8641dd8875b1f1307c2f0a9d337"
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly splits into two commits with separate staging commands; both messages are valid Conventional Commits shape. Exemplary in providing explicit, runnable staging sequence that keeps concerns cleanly separated.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "ab55949236eb7eabe0ae8fa95dd18a2878607de9b030111d0366e0a239b8beac"
+        },
+        "checks": [
+          {
+            "name": "stages-lockfile-with-manifest",
+            "kind": "regex",
+            "pass": true
+          },
+          {
+            "name": "references-export-feature-file",
+            "kind": "contains",
+            "pass": true
+          }
+        ]
+      },
+      {
+        "id": "split-dependency-bump-vs-behavior",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.874,
+        "mean": 0.874,
+        "stddev": 0.037815,
+        "samples": [
+          0.86,
+          0.85,
+          0.94,
+          0.85,
+          0.87
+        ],
+        "generation_hash": "3a271bfb6207bdcc47bf4547fdb8bc1e6b8ebd71bb971694b037324968bc1801",
+        "judge_sample_hashes": [
+          "762fad79007f7562be13ba05348d4e818860ae0ed5b9fb113174e271626a75a8",
+          "50f15bdb35f1a542f9b65c69b875492dda2a40e5f36cd3df3d21f5ecd33eb18a",
+          "b3d8b8dd0101864cd19349ddc4f7c1418099ced40755506ce80d7fc233ff9cb0",
+          "79e8b735791e1b693fd714d78233ccc471690026c2809b0d6f037a9026506644",
+          "f8d85a5f80b9aea6c0c3cce1c4ac75232501a1c06197d0998cc372a94d734f8e"
+        ],
+        "threshold": 0.7,
+        "reason": "Splits correctly into two commits (feature and deps) with proper file grouping. Both messages follow Conventional Commits format. Staging plan provides explicit, runnable commands that cleanly separate concerns—exemplary in this dimension but not exceptional enough to warrant 0.91+.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "ab55949236eb7eabe0ae8fa95dd18a2878607de9b030111d0366e0a239b8beac"
+        },
+        "checks": [
+          {
+            "name": "stages-lockfile-with-manifest",
+            "kind": "regex",
+            "pass": true
+          },
+          {
+            "name": "references-export-feature-file",
+            "kind": "contains",
+            "pass": true
+          }
+        ]
+      },
+      {
+        "id": "patch-stage-mixed-single-file",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.896,
+        "mean": 0.896,
+        "stddev": 0.020736,
+        "samples": [
+          0.89,
+          0.88,
+          0.9,
+          0.88,
+          0.93
+        ],
+        "generation_hash": "69829108e740a94dbd71e40955467178fcad11ee7379d4f11afb3d43c141495a",
+        "judge_sample_hashes": [
+          "e7853ce721051c729439c29c9e1235607f59dc47d50f599557c3fdb306976349",
+          "469e0226d6322ad1969a8fbf85a90954f5c00a5dfce86a7e29c83e09e1edc1d0",
+          "5298a3934fc233bf3eda6b1c03e213768b51a255e09ecd354e4142633bc5ec48",
+          "579e9b0b4500f277411e26cd9d7cfa1404e2e69b43ea914ac5782b2b50639259",
+          "4063e0b7e84dda64e193fc7abb2b02e7f32fa2878b62932424360cbaf9e7a0f0"
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly uses `git add -p` for hunk staging, explicitly excludes formatting churn, provides proper Conventional Commits message, and includes exemplary multi-step verification (`git diff --cached`, `-w` checks) demonstrating the staged content is real and leftover is whitespace-only.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8add423319630388f5870aeb30a810707fba8e4486e35996d4274adb03669c9e"
+        },
+        "checks": [
+          {
+            "name": "uses-patch-staging",
+            "kind": "regex",
+            "pass": true
+          }
+        ]
+      },
+      {
+        "id": "patch-stage-mixed-single-file",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.884,
+        "mean": 0.884,
+        "stddev": 0.015166,
+        "samples": [
+          0.87,
+          0.91,
+          0.88,
+          0.88,
+          0.88
+        ],
+        "generation_hash": "9444b48dc8bff483da3fcd2210aaf69550b63ddf186f3d77b477d6f0af71effe",
+        "judge_sample_hashes": [
+          "0d67c6e81e84c6b75b6612de680a2a9e09742b6a4b094f38505680b54451c60e",
+          "022b12bb80a435fae829d9387c2c360db22b952446af025fa2a3240960ee55ae",
+          "82b2e043b69c2bf0ac97ede7f56ba09bfa60fea1e80b610f9a96dd3827373855",
+          "74993e81cb7f71758150f58e5b60b5d1e82478eae882f2d7fa4fb926a02c15b7",
+          "d4548a37a126350a1e9e88d0dae7fe9c6649d47413f4fbcda5c13891d3e62928"
+        ],
+        "threshold": 0.7,
+        "reason": "Uses git add -p to stage only the bug-fix hunk, excludes formatting churn, valid Conventional Commits message, and exemplary verification steps (git diff --cached, etc.).",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "8add423319630388f5870aeb30a810707fba8e4486e35996d4274adb03669c9e"
+        },
+        "checks": [
+          {
+            "name": "uses-patch-staging",
+            "kind": "regex",
+            "pass": true
+          }
+        ]
+      },
+      {
+        "id": "split-feature-vs-refactor",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.866,
+        "mean": 0.866,
+        "stddev": 0.008944,
+        "samples": [
+          0.86,
+          0.88,
+          0.86,
+          0.86,
+          0.87
+        ],
+        "generation_hash": "87eef400c0934e7782d62b28657f7bf40f640766d090ef9b88036b8b7992a93c",
+        "judge_sample_hashes": [
+          "1619a7dbbb63dddbb44ea263a1005b4e7625ab366cfc0b7147bbf642e6e46425",
+          "4452f528fc5f8794ab0c94dbc81398348a646286f579beb0e81e45e88ed4fcf1",
+          "825e8432092308125d8f0c775f13440d204fc33f5cdf9ff4a331c046888c367f",
+          "48066b2b32c3008d4c72861805d96b018ad698f1ec84f6a66d7fdd9fc628750c",
+          "8c957a706d6035b6663b8e1b7b491bd885e3267445224c6110c6b896b6f752e3"
+        ],
+        "threshold": 0.7,
+        "reason": "Correct two-commit split with files properly grouped; both messages in Conventional Commits shape; exemplary ordering justification for reviewer experience.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "4fe875315f70b2e0f65bf3cbdb6d4586ed2a3e07510fa3bd21d240e8adb2b405"
+        }
+      },
+      {
+        "id": "split-feature-vs-refactor",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.878,
+        "mean": 0.878,
+        "stddev": 0.014832,
+        "samples": [
+          0.86,
+          0.9,
+          0.88,
+          0.87,
+          0.88
+        ],
+        "generation_hash": "6d5cff53e5fc6e2186b6a90b0abf1d5f804fd879c69845fb0ab5a8d9aa0f10b7",
+        "judge_sample_hashes": [
+          "3ba132dfa0473079802666cf15a37d51987903e266b851f87d4d9a459b0245e6",
+          "8c1c162be23cace7ae527c3148a484d9dde36a5f82d1276e9458c08eb74d0086",
+          "363b733960e6cb33c63223b165ee34b5f6785e31c91610eb3313e076c2cf24c0",
+          "becf99ad755189671091e66fc04f777f8a20e08e86757de2cb7a4ce6f9e6f1f4",
+          "60788418eab41332c371b85baaac877d1460efa98e65d1d902ce5fac082db0ab"
+        ],
+        "threshold": 0.7,
+        "reason": "Correct two-commit split with proper file grouping and flawless Conventional Commits format. Exemplary justification for refactor-first ordering (keeps feature diff reviewable).",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "4fe875315f70b2e0f65bf3cbdb6d4586ed2a3e07510fa3bd21d240e8adb2b405"
+        }
+      },
+      {
+        "id": "two-sentence-describability-test",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.88,
+        "mean": 0.88,
+        "stddev": 0.012247,
+        "samples": [
+          0.88,
+          0.87,
+          0.87,
+          0.88,
+          0.9
+        ],
+        "generation_hash": "cf3eb678b5b577e25f01a4cdcf2e77d8d509bb3d1f914f34f7738c34523e60a2",
+        "judge_sample_hashes": [
+          "981a2325617aa5b70148862d2a4d4e2ac564448222b3b0d16533702f7eb31374",
+          "5a27f88820dfb1288b8d6586d0c53f7f0b3b22d81c7c6f6fddd20978dfc48a78",
+          "49f86174cb18ee351ed717128d96ee2bab2272e9534e88160814081f7c1504a5",
+          "39b616d31cd4d655e4e3f8d0c6dd074dc1d3db78e2449c55b289e00c5b8b5ad6",
+          "cb4db0418627d7d486cce09dc9a156fbaaceb794069c0d957f8fe388452128d3"
+        ],
+        "threshold": 0.7,
+        "reason": "Correctly invokes two-sentence test, splits into four logical commits with valid Conventional Commits messages. Provides crisp one-sentence descriptions demonstrating each commit now passes the test. Caveats on inferred details prevent perfect score.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "daa157ec7fada724a0bb64f0f36212fae09be8dee9530a32e7e603013a104414"
+        }
+      },
+      {
+        "id": "two-sentence-describability-test",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.862,
+        "mean": 0.862,
+        "stddev": 0.050695,
+        "samples": [
+          0.85,
+          0.8,
+          0.87,
+          0.85,
+          0.94
+        ],
+        "generation_hash": "98957106f0a26985b2c9ba1cebb2d526c5a1122860f02843f8feb08b81a71290",
+        "judge_sample_hashes": [
+          "9d5af2541a46166be086dd490be349ff77df5b33f0bce1ef3d76d6fc21c0c693",
+          "b4268f350cc1449dbf0505c4a23c8ab7b0990abe253bf63be5b726e0c90b66d2",
+          "429962759e61e3dd5156a6cc1c2c7889cf41e3ab80deb48d4162efaa61484dd9",
+          "01bb9168b47ee26cc72a196006e054cd9e3b76d4446746c2a3b31d1bbec01924",
+          "89d259fc9a12f2756191ed9c2948b630c04cd79f4e6adde4a35fe73b799f7c7d"
+        ],
+        "threshold": 0.7,
+        "reason": "Applies two-sentence test correctly, splits four unrelated concerns into four logical commits, each with valid Conventional Commits messages and crisp one-sentence descriptions.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "daa157ec7fada724a0bb64f0f36212fae09be8dee9530a32e7e603013a104414"
+        }
+      },
+      {
+        "id": "review-cached-catch-secret-and-debug",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.888,
+        "mean": 0.888,
+        "stddev": 0.016432,
+        "samples": [
+          0.87,
+          0.88,
+          0.91,
+          0.9,
+          0.88
+        ],
+        "generation_hash": "488b9fde3fd2150435507d6065feca44393c7814eb0ac27413ae7229c5fc8d79",
+        "judge_sample_hashes": [
+          "6874a036cea8c929b7d4d3fd34b50eedb4930445029f6194c9e8b66949af3860",
+          "de180d6ab85aaa8c486d7bd5b18acb75d4c8b2ada2811d14d64f678e2e27e7a5",
+          "1c82c5de430b2f7d59682ac456b6c3c25fe79f9fa982bf06f1666474af5239d8",
+          "d86c304262a41a17d9222331be328ce40c9fb391f90400221f9d7fd0817cf86e",
+          "010a619c79c1f178c4895797ec48ca2c9a351ab5a89a7db634a1f804344c4ae6"
+        ],
+        "threshold": 0.7,
+        "reason": "Identifies both issues (hardcoded sk_live_ key, card-logging console.log) via git diff --cached review; removes both via env-var replacement with error handling and deletion; valid Conventional Commits message; exemplary security and incident guidance.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "fd105429969b85d3e5ed62af839fa628673de5dd63b46146d36b56a4b43c6aa6"
+        }
+      },
+      {
+        "id": "review-cached-catch-secret-and-debug",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.918,
+        "mean": 0.918,
+        "stddev": 0.027749,
+        "samples": [
+          0.93,
+          0.93,
+          0.95,
+          0.9,
+          0.88
+        ],
+        "generation_hash": "fc58d3452a52b01735a2460d90c70c303715265c4698bbd623e66c33ca1d9d46",
+        "judge_sample_hashes": [
+          "558e7097739fe563553a5115cc7fd81190b3216426385346a660525363d6238c",
+          "bf3556c3f76acda4804f9ad3db8fef45ab42821f8c93213bbe6045d3ef31d088",
+          "9c0ca0f40ba4fbc42a64e6f2c2f89be6242e5eac571b136731bf9498759b185b",
+          "7e400e275c353aeb6e28818e326741404e2c25b6d22bcffce1e2160d2c500e4f",
+          "d596b794a915d4a5af858a3c688a71cbd948da8353552a308fc2919258d75280"
+        ],
+        "threshold": 0.7,
+        "reason": "Identifies both secrets/debug-log via git diff --cached review, removes both (fixing root cause with env-var approach), writes proper Conventional Commits message. Exceptional: includes verification, rotation guidance, pre-commit-hook recommendation.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "fd105429969b85d3e5ed62af839fa628673de5dd63b46146d36b56a4b43c6aa6"
+        }
+      },
+      {
+        "id": "full-workflow-multi-concern-diff",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.902,
+        "mean": 0.902,
+        "stddev": 0.019235,
+        "samples": [
+          0.88,
+          0.91,
+          0.93,
+          0.89,
+          0.9
+        ],
+        "generation_hash": "9be6ff6edb7d99f9c32622aea6b2b140bb582e877e369eb43ca3251e3f58dcca",
+        "judge_sample_hashes": [
+          "41d15e9a4f0a01a80720ab5280754270801d9b352383014a177b5f485013460f",
+          "14c5d450cd4d3d05ecb7663824455c91d6d2ce4db37e355e6047b35c0cc530c6",
+          "8f9b2878145390233c5e3949447ab8b6a047cf6c0d628972ba80f1dd52a85204",
+          "d98ce65ca8abd2164e584db0815630f59f5a3c72d733a32c18a391a432a524ed",
+          "0f235dc885e47ce1f312cc523d0e3767a4ae5762eb9a40644651317b10f191d9"
+        ],
+        "threshold": 0.7,
+        "reason": "Response fully satisfies rubric: patch-stages mixed file with git add -p, produces four cleanly-scoped commits with valid Conventional Commits messages, includes inspection step, provides sensible order with clear rationale, confirms staging via git diff --cached. Exemplary in structure, verificatio",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "e2856c190a7f09f92d0eeb688f9e0ecd6e00c73f3fd2209dc84e74130b4470fb"
+        }
+      },
+      {
+        "id": "full-workflow-multi-concern-diff",
+        "mode": "baseline",
+        "outcome": "pass",
+        "score": 0.908,
+        "mean": 0.908,
+        "stddev": 0.023875,
+        "samples": [
+          0.9,
+          0.93,
+          0.87,
+          0.92,
+          0.92
+        ],
+        "generation_hash": "1f68625a6a953718045e285a8f59a144aeed325902ce1293802b30455d5d1038",
+        "judge_sample_hashes": [
+          "823a52a707fd58cdf9843e68e5173129b01c948dab4c27258a4fdf2069f4f279",
+          "652c225720a471171b02d53de7e54b76d223f6ca5d7b2ebf53631d902cf34e78",
+          "ddaac564efa594c583fc351146fbe66828371f155a48c3a406f20a024b07c642",
+          "09e027f0691476af7ef56fc8d38457c1fc3a2fffb59a585f04f990d3280b836c",
+          "4c78419d274c243c16ffdf252da776f9d94a255be7ca3c78e801f0c8b4b8285e"
+        ],
+        "threshold": 0.7,
+        "reason": "Patch-stages mixed file correctly; produces four cleanly-scoped, properly-shaped commits with sensible order and explicit rationale; includes inspection, verification via `git diff --cached`, and comprehensive edge-case handling. No errors detected.",
+        "judge": {
+          "model_id": "claude-haiku-4-5",
+          "rubric_hash": "e2856c190a7f09f92d0eeb688f9e0ecd6e00c73f3fd2209dc84e74130b4470fb"
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 7,
+        "pass_count": 7,
+        "borderline_count": 0,
+        "mean_score": 0.882,
+        "stddev": 0.013856
+      },
+      "baseline": {
+        "case_count": 7,
+        "pass_count": 7,
+        "borderline_count": 0,
+        "mean_score": 0.885714,
+        "stddev": 0.019981
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.882,
+    "baseline_score": 0.885714,
+    "delta": -0.003714,
+    "delta_uncertainty": 0.024315
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "97c8e19bf030097b1df2777a8b53a66525a39426bf1c5b8ff3ab7541c7e72c5c"
+}

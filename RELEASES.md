@@ -1,0 +1,2446 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+# Releases
+
+Newest first. Each entry states what shipped, what it changed about numbers
+already published, and what it does **not** include. A release note that only
+lists additions is an advertisement; the "Known open" section is the half that
+makes this one a record.
+
+---
+
+## v0.13.0 - 2026-10-02
+
+**`package.json` reads 0.13.0**, and `config.js`'s `RUNNER_VERSION` is held equal to it.
+The Action pins in `README.md` and `docs/index.html` are `@v0.13.0`, the plugin's pin in
+`plugin/driftproof/.claude-plugin/plugin.json` is 0.13.0, and so is the `minimum` in
+`plugin/driftproof/version-guard.json`; `examples/workflows/driftproof-stale.yml` pins `stale@v0.13.0`. `package-lock.json` moves with them, and
+`tests/fixtures/export-summary.snapshot.json`'s `receipt_hash` is re-cut because
+`runner_version` is inside the canonical receipt that hash is taken over. The receipt pages'
+`npx driftproof@<version> validate` command names 0.13.0. **Not yet on npm** at the bump; a
+Published section is added here after the publish.
+
+This is a minor release because it adds two options, a command, three Action inputs, three options
+to the plugin's run, and receipt spec v0.10. Receipts written by 0.13.0 are receipt spec v0.10;
+0.12.1's were v0.9. v0.10 adds two optional fields, so a v0.9 receipt restamped `0.10` validates.
+v0.9 is frozen as `spec/receipt.v0.9.schema.json`, and every earlier receipt still validates
+against its own version.
+
+### What changed
+
+- **You can now fail the job when a verdict cannot resolve (spec 072).** `driftproof decide` takes
+  `--fail-on-underpowered true|false`, and the Action takes the input `fail-on-underpowered`. The
+  default is `false`, so a workflow that does not set it behaves as on 0.12.1: these decisions warn
+  and do not fail the job. Set it to `true` and the job fails on each decision that measured and did
+  not resolve:
+  - every `UNDERPOWERED` decision: *Not enough draws to conclude at this effect floor*;
+  - an `INCONCLUSIVE` decision whose reading rests on lost draws, that is, one that does not hold
+    for every score its lost draws could have had (spec 119's rule).
+
+  Each such model fails the job with one `::error` that names it. For an underpowered model the
+  line says how many draws per arm it would need, or that no draw count would resolve it at its
+  spreads, or, when draws were lost, which ones and that no count is given. For an inconclusive
+  model it names the lost draws. An `INCONCLUSIVE` run that did not complete, and `NOT_MEASURED`,
+  still do not fail the job on their own. `decide` refuses any value other than `true` or `false`
+  with exit 2, naming the flag, before it reads a receipt. `README.md` § What fails the job says
+  the same, and its verdict table now lists `UNDERPOWERED`.
+- **The lockfile's `fast-uri` is 3.1.7 (spec 123).** `package-lock.json` locked `fast-uri` 3.1.6,
+  which two High advisories cover: GHSA-qw65-cvwx-89v3 (versions `>= 3.0.0, < 3.1.7`) and
+  GHSA-58mr-gqgx-xq4g (in the 3.x line, `3.1.6` only), both first patched in 3.1.7
+  (`specs/123-fast-uri-lockfile-3-1-7/evidence/advisories-20260930T004402Z.json`). The Action
+  installs with `npm ci` from this lockfile, so from `@v0.13.0` Action users install 3.1.7. npm
+  consumers do not get the lockfile, and a fresh `npm install driftproof` already resolved a
+  patched `fast-uri`. `npm audit --package-lock-only --omit=dev` read high 1 at spec 123's Base and
+  0 of every severity at the new lock. Neither advisory is reachable from receipt data in
+  Driftproof's use, for receipt schema versions 0.1 to 0.9: spec 123's AC-5 installed as the Action
+  does and counted `fast-uri` calls while validating every tracked receipt: 1008 calls on the
+  receipts as committed, and 0 on the same receipts salted with the advisories' hostile forms
+  (`specs/123-fast-uri-lockfile-3-1-7/evidence/reach-20260930T011653Z.json`).
+
+- **You can read results without a terminal (spec 128).** `driftproof view <receipts-dir>` writes
+  one HTML page from a folder of receipts, `driftproof-view.html` unless `--out FILE` names another.
+  For each skill and model the page shows the result in plain words, the band plot, a timeline when
+  there are several receipts, and whether each receipt is up to date by the stale check. `view`
+  takes the stale check's options: `--skill`, `--suite`, `--model`, `--judge`, `--harness-version`
+  and `--no-harness-check`. The page opens from disk and loads nothing. The command makes no model
+  call and no network request. It refuses with exit 2, and writes nothing, when the directory is
+  missing or holds no receipts, when it is given a flag it does not take, a flag without its value
+  or a second positional, and when `--out` names an existing file it did not write.
+
+- **On a pull request, the Action posts the result as one comment (spec 128).** The Action takes two
+  new inputs: `pr-comment`, default `'true'`, and `github-token`, default the job's own token. On a
+  `pull_request` or `pull_request_target` event it posts one comment with the result in plain words.
+  On each later run with a bot's token, as the default token is, it finds that comment among the
+  pull request's first 1,000 comments and edits it, so a pull request holds one comment per skill
+  directory. The comment needs a token that holds `pull-requests: write`, which a job grants under
+  `permissions:`. Without it, as with a fork's read-only token or on any error from the GitHub API,
+  the Action writes one notice, posts nothing, and the run's result is unchanged. The comment step
+  runs before the enforcement step with `continue-on-error: true`, and the enforcement step's exit
+  is the same with it as without it. Set `pr-comment: false` to turn it off; the step then makes no
+  request. On any other event it makes no request.
+
+- **The job summary opens with the result in plain words (spec 128).** `decide --summary` now
+  writes one line under its heading, above the table: the model with the lowest result, that result
+  in plain words, and whether the run fails the job. It reads the same fail-on inputs as the
+  enforcement step; the Action passes both. Spec 128 leaves the table and the lines after it as
+  they were. An `UNDERPOWERED` row keeps *Not enough draws to conclude at this effect floor* in the
+  table. On the `view` page that line is the detail under the result's sentence; in the comment it
+  is the why line under the result's label.
+
+- **A name with a backslash keeps the job summary's columns (spec 111).** `decide --summary` now
+  escapes a cell's backslashes before its pipes. On 0.12.1 a model id, a receipt file name or a
+  reason that carried `\|` came out as `\\|`. A markdown reader that lets a backslash escape any
+  character read that pipe as a column break, so the row gained a column and its decision moved out
+  of the Decision column. A reader that escapes only `\|` kept the columns and lost the backslash.
+  Now each such row keeps the header's columns and its decision in the Decision column under both
+  readings, and a receipt file name or a reason reads back as itself. Spec 111 moves no byte of a
+  summary whose names carry no backslash. This is the fix for CodeQL alert #10.
+
+- **The staleness check's summary keeps its columns for a name with a backslash too (spec 132).**
+  The stale Action's `cell()` now escapes a backslash before a pipe, as spec 111 does for
+  `decide --summary`. On `stale@v0.12.1` an error text that carried `\|` split its row into seven
+  cells against the header's six, under a reader that lets a backslash escape any character. A
+  trailing backslash before a closing quote was dropped, so the Not current cell did not show the
+  name as written. Now each such row keeps the header's columns, and each name reads back as itself.
+  The same `cell()` writes the Axis, Effect and Why columns of the issue the Action keeps open. A
+  summary whose texts carry no backslash is the same bytes as before. The fix ships in the stale
+  Action, `driftproofhq/driftproof/stale@v0.13.0`; the npm package does not carry `stale/`. This is
+  the fix for CodeQL alert #17.
+
+- **Two site generators escape quotes in attributes (spec 132).** The homepage generator now
+  escapes `'` in the playground's single-quoted `data-cases` attribute. Report 001's generator now
+  escapes `"` and `'` in its `esc()`. No value either generator writes today holds a quote. Each of
+  the 14 pages the site generator writes is the same bytes with the change as before it. Report
+  001's generator writes the same bytes too, and no published page moves. This is the fix for CodeQL
+  alerts #9, #6, #7 and #8.
+
+- **The plugin's directory listing (spec 131).** `plugin.json` gains a display name, `Driftproof`,
+  and an icon, `favicon.svg`, which is the site's favicon byte for byte. Its description, and both
+  descriptions in `.claude-plugin/marketplace.json`, now read "Driftproof (driftproofhq): open-source
+  agent skill evaluation and regression testing across model releases". Five keywords are added:
+  `skills`, `evaluation`, `testing`, `claude-code` and `regression`. The plugin gains a README that
+  lists its three commands, says that each runs `npx driftproof@0.13.0` with no shell, and says what
+  it sends and where. Spec 131 changes none of the plugin's commands, its version or its version
+  guard; spec 138 changes its run command (below).
+
+- **The README opens in plain words, with the plugin install and the latest finding (spec 126).**
+  Its title is now "Driftproof (driftproofhq): open-source agent skill evaluation and regression
+  testing across model releases". It opens with "Does your AI coding skill really help, and does the
+  help survive a new model?", then says what a skill is and that Driftproof tells you whether the
+  skill "clearly helps, clearly hurts, makes no clear difference, or whether there were too few
+  answers to tell". The Claude Code plugin install now comes first, under "Try it in Claude Code, no
+  API key", and stays in `### Install` too. A "Latest finding" line names and links the newest
+  report, gives its date, and quotes the first sentence of the "What we found." point in that
+  report's row of `docs/data/report-summaries.json`: today Report 013, 29 Sep 2026.
+  `scripts/build-readme-opening.mjs` writes the opening from `docs/data/readme-opening.json`, with
+  the newest report and its date read from `docs/data/stats.json`. A screenshot of the page
+  `npx driftproof view` makes from Report 013's receipts follows the badge, loaded from the site.
+
+- **The README's report list sits under Reports, and its release-watch paragraph says what runs
+  (spec 126).** The opening links "All twelve reports" to `## Reports`, where every report entry
+  now sits, in order and unchanged. The sentence "Model-release triggers are live" is gone. The
+  paragraph now opens "Model releases are watched daily; reports are published by hand.": a daily
+  timer runs `scripts/release-watch.js`, which queues each new generative model for review; a draft
+  report runs the tests and calls the models only once a model is registered and its run fits the
+  cost limit; registering a model and publishing a report are done by hand. The README is the npm
+  package's page; no other file the npm package ships changes in spec 126.
+
+- **The site takes a new layout, and the reports gain plain summaries (spec 125).** Every page but
+  the homepage takes a new layout, with rails beside its content: most pages take a wide track
+  filled by columns, and the frozen bodies of Reports 001 to 011 and the essay "What happens to
+  agent skills when the model changes" keep a reading-width column. A page with two or more
+  sections gets an "On this page" contents rail that stays in view at 1440 and 1920 pixels wide and
+  is hidden at 390. A report page also gets a facts rail at 1600 and wider: its type, models,
+  receipts and date, and its grader and how it ran where its receipts record them. Each of the 12
+  published reports gained a plain summary of 4 or 5 points, 90 to 120 words, from "What we
+  tested." to "What it doesn't show.". Ten still open with it; Reports 009 and 013 now open with
+  sentences read from their receipts (spec 134, below). The summaries are in
+  `docs/data/report-summaries.json`, where each point names its sources. The bodies of Reports 001
+  to 011 are unchanged. Methodology, Neutrality, Interop, Authoring, Judge policy and Findings open
+  with plain sections and keep their earlier text in one closed fold. The Glossary keeps its words.
+  By the operator's ruling, the summaries, Report 013's page and these Docs pages say "too few
+  answers to tell" where spec 035's line reads *Not enough draws to conclude at this effect floor*.
+  Frozen report bodies keep their own words.
+
+- **Report 013 is retitled and rearranged (spec 125).** It is now "Report 013: Claude Sonnet 5.5,
+  the day after its release". It was first published as "Report 013: Claude Sonnet 5.5 on release
+  day, three skills, three runs". The vendor's announcement dates Claude Sonnet 5.5 28 Sep 2026, and
+  the first run began on 29 Sep 2026. The page now opens with its summary and one table of every
+  comparison in every run. Its Amendment one records the new title and the new arrangement, and says
+  that no receipt, figure, file or result changed.
+
+- **Reports 009 and 013 now open with sentences read from their receipts (spec 134).** Each
+  sentence names the day, the model by its name, the skill and a figure, and links the receipt it
+  is read from. Report 009 opens with four: three give a skill's average with the skill and without
+  it, over its test tasks, and say what that means; the last says what the report does not show.
+  Report 013 was run three times, so it opens with one sentence per comparison. Each says in how
+  many runs the two models differed clearly, and in how many of the rest there were too few answers
+  to tell. A fold under each sentence lists every receipt it counts. The sentence on Claude Opus 5.5
+  against Report 011 names both Claude Code versions, 2.1.284 and 2.1.280, read from the run
+  records, and says the date changed too. The other ten reports keep spec 125's summary: Reports 001
+  to 008 record no answering model in their receipts, Report 010 links no receipt, and Report 011's
+  body compares two receipts within one run. Every report's summary is now headed "What did Report
+  NNN find?". No receipt, figure or verdict changed.
+
+- **Report 013's headings state their questions, and two amendments record the changes (spec 134).**
+  Amendment two, made on 1 Oct 2026, lists each of the ten section headings as first published
+  beside the question it now asks, such as "Why run every test three times?". A link made to a
+  section before the change still lands on it. Amendment three, made the same day, says that
+  Amendment one's list of the runner's phrases left out "below effect floor". The page labels that
+  result no clear difference, as it labels "no separation detected", unless there were too few
+  answers to tell. Amendment one is not changed, because a published amendment only grows. Neither
+  amendment changes a receipt, figure or result.
+
+- **The site's width fixes (spec 130).** The reading measure is set in em, `--w-read: 26.5em`, about
+  68 characters a line in the body face. Spec 125's `50ch` ran small text to 73 to 79 characters a
+  line. On wide screens, short blocks on Report 013, the reports index, Methodology, the Glossary and
+  receipt pages share their row, from 900 or 1180 pixels wide by block. The Glossary and the essay
+  "What happens to agent skills when the model changes" gain the "On this page" rail. No page's
+  words or figures change, and the homepage is unchanged. With these fixes, spec 125's gate
+  `--final` read 43 of 43 green on spec 130's branch, its captures at 390, 1440 and 1920 among them.
+
+- **The paper page and its citation (spec 127).** The site has a new page, `/paper/`, for "Reported,
+  Not Measured: An Empirical Study of Measurement Defects in LLM and Agent Evaluation Tools", by
+  driftproofhq, Version 1, 30 September 2026, a preprint, not peer reviewed. It links the Zenodo
+  record and the PDF on Zenodo, gives the DOI for this version, 10.5281/zenodo.23050796, and for all
+  versions, 10.5281/zenodo.23050795, and links `defects.csv` and `defects.json` on the same record,
+  the paper's Appendix A.1 as data. It carries a plain citation, a BibTeX entry and Google Scholar's
+  citation tags. The site nav links it, and the sitemap lists it. The repository gains a root
+  `CITATION.cff` whose preferred citation is the paper, by the version DOI.
+
+- **Page titles, descriptions and structured data (spec 133).** `package.json`'s `description`,
+  which npm shows for the package, now reads "Driftproof (driftproofhq): open-source agent skill
+  evaluation and regression testing across model releases", as the plugin and the README do. The
+  site's builders now write every page's title and description. They name a model by its name, so
+  `claude-sonnet-5-5` reads "Claude Sonnet 5.5". Titles end "| Driftproof", and descriptions are at
+  most 155 characters. A receipt page's title no longer begins "Receipt:", and no two receipt pages
+  now share a title; before, 136 of the 158 did. Report 013's title is its headline, by the
+  operator's ruling. Every page carries Organization structured data that links the project's
+  GitHub, DEV, npm and SkillsLLM profiles. The homepage adds SoftwareApplication, at version 0.13.0,
+  and each report page a TechArticle.
+
+- **A sitemap index, a receipts index and an IndexNow key (spec 133).** `/sitemap.xml` is now an
+  index of `/sitemap-pages.xml` and `/sitemap-receipts.xml`, and each page's date there is the last
+  commit that changed its words. A new page, `/r/`, lists every receipt page, and every page's
+  footer links it. The not-found page and `/subscribed/` are marked `noindex`. The site publishes an
+  IndexNow key file, and `scripts/indexnow.mjs` sends the pages a range of commits changed only when
+  given `--send`; its gate ran it against a local stub only. Lighthouse 13.5.0, on mobile, scored
+  SEO 1 on the homepage, Report 013, one receipt page and the paper page, on the site as spec 133
+  merged it.
+
+- **Four pages answer common questions (spec 135).** `/what-is-driftproof/` is "What is
+  Driftproof?", `/agent-skill-evaluation/` is "Agent skill evaluation",
+  `/agent-skill-regression-testing/` is "Agent skill regression testing", and `/compare/` is "What
+  each evaluation tool measures". Each paragraph on the evaluation and regression testing pages is
+  quoted word for word from text the site already publishes, followed by the report it came from
+  and the models that report ran. Each number on the four pages is a link to its source. Those two
+  pages carry FAQPage structured data. The
+  homepage and the reports index gain a list linking the four pages, and every page's footer links
+  them. Lighthouse 13.5.0, on mobile, scored SEO 1 on the four and on the paper page, on the site as
+  spec 135 merged it.
+
+- **`/compare/` sets out what five evaluation tools measure, from each tool's own docs or code
+  (spec 135).** The tools are claude plugin eval (Claude Code), alibaba/skill-up, NVIDIA
+  SkillEvaluator, agent-skills-eval and Driftproof, across seven rows from "What it measures" to
+  "Licence". Each cell links the sources its words rest on, and each link gives the day that source
+  was read. Eight cells read "Not shown": the page says such a cell could not be confirmed from that
+  tool's own docs or code, and that this does not mean the tool lacks it. The page says that no
+  tool is placed above another. Driftproof's cells link `README.md` and `spec/RECEIPT.md` at the
+  `v0.13.0` tag.
+
+- **The paper page opens with a question, and the launch essay is retitled (spec 135).** Before
+  its abstract, the paper page now asks "Can an LLM evaluator report a score for something it did
+  not measure?" and answers from the abstract's own sentences. Its head gains ScholarlyArticle
+  structured data, and Dataset structured data for `defects.csv` and `defects.json` on the Zenodo
+  record. The essay that launched as "Three model releases later: what actually happens to agent
+  skills" is now "What happens to agent skills when the model changes". Its byline says so. Its
+  address, `/writing/three-releases/`, does not change, and neither does its text below the byline.
+
+- **Ten pages gain a Markdown copy, and the site gains `llms-full.txt` (spec 135).** The four new
+  pages, Methodology, the paper page and Reports 009, 010, 011 and 013 each have an `index.md`
+  beside the page, linked from its head as `rel="alternate"` with type `text/markdown`. In
+  `llms.txt`, each report line now gives the first sentence of that report's "What we found."
+  summary point and the report's models by their names, and "Method and definitions" lists the four
+  new pages and the paper. `/llms-full.txt` carries the full Markdown of the four pages, the paper
+  and Methodology, then one line per report. No report body is carried.
+
+- **None of the site changes touches the npm package's code, the Action or the plugin** (specs 125,
+  127, 130, 133, 134 and 135). Spec 125 also rewrites Report 013's entry in the repository README,
+  which npm packs with the package. Spec 133 sets `package.json`'s description, above.
+
+- **The judge now grades what the model produced (spec 137).** On the two command-line surfaces,
+  `claude-cli` and `openai-cli`, the model answers as an agent with tools. On 0.12.1 it ran with its
+  harness's default tools in a working directory removed after the call, and only its final message
+  reached the judge, so a model that wrote its answer to a file and said so was graded on what it
+  said. `driftproof run` now takes `--capture text|files`, or `capture` in the working directory's
+  `.driftproofrc`. A skill directory's `capture` is ignored and named, as its `samples` and
+  `judge_model` are. In `text`, the default, the model runs with its file-writing tools off: claude
+  with `--disallowedTools Bash,Edit,MultiEdit,NotebookEdit,Write,Task`, codex with `-s read-only`
+  as before. Its reply is the graded answer, byte for byte. In `files` the model may write files in
+  a fresh working directory of its own, with Bash and Task still off for claude, and its reply is
+  graded with the files it left there, each in a block that names its path and size. A link is
+  never collected. A file is included whole when it is text of at most 65536 bytes, among the first
+  50 in path order, within 262144 bytes together; files the limits leave out are named in the
+  answer as not included, up to the 51st (see Known open). When the directory cannot be read back,
+  the draw is lost. An api surface has no tools, so `--capture files` there is refused with exit 2
+  before any call. Every receipt a run writes records the mode in `run.capture`, each `files` draw lists its
+  files in `captured_files`, and `run` prints the mode before its projection and after the receipt.
+
+- **An answer the judge was not shown is a lost draw, never a score (spec 137).** Before any judge
+  call, the runner reads each answer by pattern, with no model call. A reply whose own claim says it
+  wrote, saved or created a file and names its path is a lost draw when the answer neither includes
+  that file nor shows it in a fenced block after that line; the reason names up to three paths. A
+  reply that includes no file and has no fenced block, every line of which only describes work, says
+  it is done or offers more ("Let me know ..."), is a lost draw too. `driftproof regrade` reads each answer the
+  same way before its judge calls, and keeps lost a draw the run lost because its working directory
+  could not be read back. A lost draw is recorded unmeasured with its reason, so spec 119's rule reads
+  the case: a result that does not hold for every score the lost draw could have had does not stand,
+  and an arm that loses every draw is `failed_unmeasured`. None of the 28 tracked real answers in
+  spec 031's transcripts reads as lost. Known open lists the shapes the reading gets wrong.
+
+- **A wide band over several cases reads *Not enough draws to conclude at this effect floor* (spec
+  137).** On 0.12.1 a receipt in which no case separated and none was underpowered read `NO_EFFECT`
+  whatever its comparison band: a receipt of 3 cases, 3 draws an arm and 2 judge samples a draw read
+  `NO_EFFECT` beside a band of plus or minus 0.305941. Now, where two or more cases were kept, the
+  reader computes the comparison band over them by the band rule every receipt states, each arm's
+  sample sd of the per-case means added in quadrature, widened where a case lost draws by the most
+  its mean could move at any score of those draws. A band at or above the 0.05 effect floor reads
+  `UNDERPOWERED`, *Not enough draws to conclude at this effect floor*, with no draw count, because
+  more draws do not narrow a spread between cases. The badge's draws text reads "no count at this
+  band", and the plain sentence ends "but the test tasks scored too far apart from each other to call
+  it". A one-case receipt forms no band and reads as before. The reader applies the rule to every
+  receipt it reads, whatever its schema version.
+
+- **No published report's numbers or verdict changed (spec 137).** Before the rule changed, the
+  build read every published receipt with the new reader and the old one: 206 receipts under
+  `receipts/` and `docs/reports/`, 0 refused, and 0 whose verdict, message, colour or draws needed
+  moves. They read as before: 36 `PASSED`, 44 `UNDERPOWERED`, 6 `NO_EFFECT` and 120 `NOT_MEASURED`.
+  No published receipt reads `NO_EFFECT` over two or more cases, so the band rung reaches none of
+  them: the six that read `NO_EFFECT`, all in Report 013, keep one case each. That is also why "0
+  of 206 move" says little about the rung itself; spec 137's AC-7 reads the rung. Spec 137 changes
+  no receipt and no report page.
+
+- **Receipt spec v0.10 (spec 137).** `spec/RECEIPT.md` and `spec/receipt.schema.json` are v0.10, and
+  the site serves the same schema. v0.10 adds two optional fields: `run.capture` `{mode}`, written
+  by every run, and a draw's `captured_files` `{path, bytes, included}`, written in `files` capture
+  only. v0.9 is frozen as `spec/receipt.v0.9.schema.json`, the v0.9 schema byte for byte but its
+  `$id`. The README's sample receipt and the interop page now say v0.10.
+
+- **A regrade keeps the harness version (spec 137).** Since 0.12.0, `driftproof run` has recorded the
+  harness in `run.harness` on the command-line surfaces: `claude-code` on `claude-cli` and `codex` on
+  `openai-cli`, each with the version its own binary printed, read through the run's spawn plan.
+  Spec 137 holds that on each surface in both capture modes. `driftproof regrade` now carries the
+  original's `run.harness` and `run.capture`, because the answers it grades came from that harness.
+  On 0.12.1 a regraded receipt carried no harness, so `driftproof stale` read its harness as
+  unknown and the receipt could never read current. `spec/RECEIPT.md` now says the runner writes
+  `run.harness`; until v0.10 it said no Driftproof run did.
+
+- **The methodology page explains the change (spec 137).** Methodology gains two paragraphs. "A wide
+  band over several cases" states the band rung as the reader applies it. "Which answer is graded"
+  explains the two capture modes, `captured_files`, the lost answer, and `run.harness`. The page's
+  Markdown copy and `llms-full.txt` carry the same text. Nothing under `docs/findings/` changes:
+  the findings entry for this defect is not in this release (below).
+
+- **A warning when the judge is the target (spec 138).** When a run's judge for a model is that
+  model, compared on canonical ids so that a dated id and its undated form are one model,
+  `driftproof run` prints three lines on stderr before any call:
+
+  ```
+    ! WARNING: the judge is the target model, <model>.
+    !   The model that wrote each answer also grades it.
+    !   To grade with another model, pass --judge-model <id>, or set judge_model in the working directory's .driftproofrc.
+  ```
+
+  It does so whether the judge was named with `--judge-model`, set by `judge_model` in the working
+  directory's `.driftproofrc`, or left to the default, which is the target. `driftproof regrade`
+  prints the same lines when its `--judge-model` is the model whose answers it grades.
+  `/driftproof:run` passes the warning through. The plugin takes no `--judge-model`, so there the
+  working directory's `.driftproofrc` chooses another judge. The receipt already records both
+  models, so no field is added, and the `judge:` line on stdout is unchanged.
+
+- **Progress per call, with the time left (spec 138).** `driftproof run` now prints a line on stderr
+  each time a generation finishes, and each time a draw's judge calls finish:
+  `progress: call <n> of <fewest> to <most> · <time> elapsed · about <time> to <time> left ·
+  <case> / <arm> draw <n>: <what> done`. The fewest is the run's calls in all when every call
+  answers, and the most is the most it can make; each arm draws at least 3 times and at most 10. The
+  time left is the time per call so far times the fewest and the most calls still to make. A call
+  that timed out counts as made, because it took its time; the receipt's call count leaves it out,
+  so on a run with timeouts the two differ. Nothing is added to stdout or the receipt. `regrade`
+  prints no progress line.
+
+- **`/driftproof:run` takes `--samples`, `--concurrency` and `--max-cases` (spec 138).** The plugin's
+  run command passes each to the runner as given, after the check the runner makes of it: a positive
+  whole number with no leading zero. A value that fails is refused with exit 2, naming the flag,
+  before anything is spawned, and over the spec's set of test values the plugin refuses exactly the
+  values the CLI refuses. Every other flag it does not take, `--judge-model` among them, is still
+  refused. The plugin's three commands now also refuse a second folder or receipt, where they ran
+  on the first and dropped the rest. Every refusal in spec 138's census, 69 for the CLI and 44 for
+  the plugin, still refuses with its exit status and its words.
+
+### What you may see differently
+
+- With `fail-on-underpowered` unset or `false`, every line the enforcement step writes for a
+  verdict is the one 0.12.1 wrote for that verdict. Spec 137 can change the verdict itself (below).
+- `decide` now refuses a flag it does not declare with exit 2, where 0.12.1 ignored it. A misspelt
+  fail-on flag is refused rather than run with its default. Apart from spec 137's band rung
+  (below), this is the one change to `decide` a caller who never passes the new flag can see.
+
+- If you pin this action, move your pin to `@v0.13.0` to get the option and the new lockfile in CI.
+- If your workflow runs the Action on pull requests and does not set `pr-comment`, it now posts a
+  comment, or, without `pull-requests: write`, writes one notice. Set `pr-comment: false` to post
+  nothing.
+
+- A `github-token` that is a person's token posts a new comment on each run. The comment is found
+  again only when a bot wrote it, and the default token is a bot's.
+
+- The job summary has one more line, above the table.
+
+- A model id with a backslash shows the backslash doubled in the job summary's Model cell. The cell
+  is a code span, which takes no backslash escapes; no model id in the registry carries one.
+
+- If you pin the staleness check, move your pin to `stale@v0.13.0` to get spec 132's fix. A
+  staleness summary whose texts carry no backslash reads as before.
+
+- Search results and link previews for report and receipt pages name models, not model ids.
+
+- On `claude-cli` and `openai-cli`, `driftproof run` now runs the model with its file-writing tools
+  off unless you pass `--capture files`. The Action takes no capture input, so it runs `text`. A
+  skill whose model writes its answer to a file and says so now loses that draw in `text`; run it
+  with `--capture files`. A `capture` key in a skill directory's `.driftproofrc` is ignored, and
+  the run names it.
+
+- An answer that points at a file the judge was not shown, or only describes work, is now a lost
+  draw with its reason, where 0.12.1 graded it. A case with lost draws is read by spec 119's rule,
+  so a result can read `INCONCLUSIVE` or `UNDERPOWERED` where the same answers read otherwise on
+  0.12.1, and an arm that loses every draw is `failed_unmeasured`.
+
+- A receipt of two or more cases that read `NO_EFFECT` on 0.12.1 reads `UNDERPOWERED` when its
+  comparison band is at or above the floor, and this holds for receipts already written. With
+  `fail-on-underpowered: true` such a receipt now fails the job; unset or `false`, it warns as any
+  underpowered decision does. No published receipt is of this kind (above).
+
+- `driftproof run` prints the capture mode before its projection and after the receipt, and a
+  receipt's summary prints it too when the receipt records one.
+
+- `driftproof run` writes progress lines, and `run` and `regrade` write the judge warning, on
+  stderr; spec 138 adds nothing to stdout. A run with no `--judge-model` and no `judge_model` in the working
+  directory's `.driftproofrc` is judged by the target, so it prints the warning. The Action passes
+  no judge, so every Action run prints it, and an Action log gains a progress line per generation
+  and per draw's judge calls. No option silences the progress lines.
+
+- `/driftproof:run`, `/driftproof:init` and `/driftproof:badge` refuse a second folder or receipt
+  with exit 2, where they ran on the first.
+
+### What this release does not include
+
+- Spec 124, npm audit in the release sweep, is not in this release.
+
+- Spec 073, keep the answers, is not in this release.
+- Spec 074, the site pass and the related-work page, is not in this release.
+- Spec 108, judge injection, is not in this release.
+- Spec 112, CodeQL hygiene, is not in this release. Spec 132 covers its scope.
+
+- The findings page entry for the answer-capture defect, spec 137's fourth priority, is not in this
+  release. It goes in the next.
+
+- Spec 139, the quick run and the guided first run, is not in this release. It goes next.
+- Spec 140, init into an existing skill and the trusted lane outside a git repository, is not in
+  this release. It goes first after it.
+
+### Known open
+
+- **The README's commented workflow line names the underpowered decision only.** The input also
+  fails an `INCONCLUSIVE` decision that rests on lost draws, as § What fails the job and
+  `action.yml` say (spec 072, finding F-3, carried).
+- **With `fail-on-underpowered` false, the enforcement step's `::warning` renders a lost-draws
+  case id as the receipt holds it**, from spec 119 (spec 072, carried).
+- **The pull request comment prints a refused row's reason as it is.** For an ambiguous receipt
+  that reason carries the id of each case with duplicate rows, so a case id holding a mention or a
+  markdown link renders live in a comment posted with the Action's token (spec 128, approval
+  finding F-1, carried).
+
+- **The job summary's lead prints the lowest result's scores without its verification level.** The
+  comment states the level on its last line (spec 128, approval finding F-4, carried).
+
+- **The `view` page's lede says "None showed the skill clearly hurting." whenever nothing regressed
+  and anything was measured**, including a page where every result is `UNDERPOWERED` (spec 128,
+  approval finding F-3, carried).
+
+- **The `view` page labels the 120 tracked receipts that record no `answered_by` "Not measured".**
+  Whether that label is right is open for the operator (spec 128, Q3).
+
+- **The job summary's cell escaper passes a lone carriage return through.** A receipt file name with
+  a carriage return not followed by a line feed ends the summary row mid-cell, and its tail becomes
+  an extra row. The real row's Decision column holds. This was so before spec 111 (spec 111,
+  finding F-1, carried).
+
+- **The staleness check's summary still splits a row on a receipt path that holds a pipe.** Its
+  `code()` escapes neither `|` nor `\`, and spec 132 did not change it (spec 132, other finding).
+
+- **Nobody has yet checked that the README's in-page links work on npm's package page:** `#install`,
+  `#reports` and the Quickstart link. npm's page could not be read from the build box (spec 126,
+  carried).
+
+- **`/data/profiles.json` names internal working paths and lane numbers in its `source` fields,
+  and the site publishes it** (spec 133, finding F-1, carried).
+
+- **A receipt page's heading still shows the model id, and so do the titles of the homepage's band
+  plots** (spec 133, a follow-up for the operator).
+
+- **Report 009's new opening reads Driftproof's receipts only.** Report 009 compares two eval
+  harnesses, and the other harness's pass counts, which its earlier summary carried, are no longer
+  in the opening. Whether a report that compares instruments opens on one harness's receipts is
+  for the operator to rule (spec 134, finding F-2, carried).
+
+- **Report 013's opening says "differed clearly" and does not say which way.** Today every clear
+  difference it counts is the runner's `improvement`, so nothing is hidden (spec 134, finding F-3,
+  carried).
+
+- **The compare page's Driftproof cells link the `v0.13.0` tag at fixed lines of `README.md` and
+  `spec/RECEIPT.md`.** No gate re-reads those lines after spec 135, so they hold only if the tag is
+  cut on a tree where those lines still say what the cells quote (spec 135, finding F-1, carried).
+  One of them no longer does: spec 137 added 50 lines near the top of `spec/RECEIPT.md`, so the
+  link to its line 150, quoted for *Not enough draws to conclude at this effect floor*, now lands
+  on other text. The quoted line is now line 200.
+
+- **Driftproof's own "What it measures" cell on `/compare/` reads "Not shown".** The README line it
+  was read from was rewritten by spec 126 before this page shipped (spec 135, open).
+
+- **`/what-is-driftproof/` lists four merged upstream fixes, where the paper's defect table has
+  five.** NVIDIA #154 is left out because its item also names issue #153, which the research could
+  not confirm (spec 135, open for the operator).
+
+- **Five NVIDIA SkillEvaluator figures on `/compare/` link their cell's lead source, but the lines
+  quoted from it do not carry them:** 0.0, 1.0, +0.05 and -0.10, and the 3 of "Tier 3" (spec 135,
+  open for the operator).
+
+- **`llms.txt` still says "the six kinds of report".** The site lists seven (spec 135, open).
+
+- **From 1180 pixels wide, Report 013's visual order differs from its markup order.** The count that
+  changed sits beside the headline, above the table, while the markup keeps it after the table. The
+  body is frozen, so the stylesheet alone places it (spec 130, open).
+
+- **Report 011's headline still says "on release day".** Its page title, set by spec 133, names
+  its models instead (spec 125, out of scope, on the controller's follow-ups register).
+
+- **The lost-answer reading loses some answers the judge is shown whole, with a reason that is not
+  true of them.** A commit body or pull request description that lists "Added `src/payments/stripe.js`"
+  reads as pointing at a file, and so does the same text inside a fenced block, or after a fenced
+  code answer. A reply of first-person advice, such as "I'd add an index on user_id before changing
+  the query.", reads as only describing work. No score becomes a wrong score: a draw that should
+  have been measured is lost, and where a skill teaches such a shape the loss falls on one arm. The
+  approval owes an operator ruling on these shapes, or a narrower reading, before a release ships
+  the reading (spec 137, approval finding F-1, carried).
+
+- **Some pointers are not seen.** "I've written the ADR to docs/adr/0001.md." spelled with a
+  typographic apostrophe, and a file name wrapped in bold markers, are graded. In `text` capture
+  the write tools are off, so this is what 0.12.1 did with them (spec 137, approval finding F-2,
+  carried).
+
+- **"File-writing tools off" holds for the six tools named.** The claude CLI on the build box,
+  2.1.285, also lists PowerShell and REPL among its tools that run commands or code, and the list
+  does not name them (spec 137, approval finding F-3, carried).
+
+- **In `files` capture, a working directory of more than 51 files names only the 51st as not
+  included, and a file the collector cannot read is named as over the size limit** (spec 137,
+  approval finding F-4, carried).
+
+- **In `files` capture, an empty reply is lost before the working directory is read**, so a model
+  that leaves its answer in a file and replies nothing is not graded on the file (spec 137, approval
+  finding F-8, carried).
+
+- **A wide-band receipt's badge reads "not enough draws", though more draws do not narrow a spread
+  between cases.** The words are spec 035's, which the spec requires; the operator may rule on them.
+  Of the 121 published multi-case receipts that record a comparison band, 20 record one under the
+  0.05 floor, so for most suites shaped like those a `NO_EFFECT` result is now out of reach (spec
+  137, approval finding F-5, carried).
+
+- **A one-case receipt that reads `NO_EFFECT` forms no band and reads as before.** Reading it
+  `UNDERPOWERED` too would move Report 013's six published receipts, so it is the operator's (spec
+  137, Q1).
+
+- **Two misreadings found before the build stand:** a summary written to a file and given in prose after
+  the pointing line still reads as lost, and a claim and a code name in one clause still read as a
+  pointer (spec 137, open).
+
+- **No receipt from a real run has been read in either capture mode.** Every test of the capture
+  modes, the collectors and `run.harness` ran under a test double; a run on each command-line
+  surface, through the eval user, needs a subscription run (spec 137, open).
+
+- **`driftproof stale` has no capture axis.** A receipt graded in one capture mode, or before v0.10
+  with the harness's default tools, reads current beside a `text` run when its other axes match
+  (spec 137, out of scope, a follow-up).
+
+- **The plugin keeps the last of a repeated flag**, such as `--samples 2 --samples 5`, without a
+  word, though its own rule says a flag is refused, never ignored. The CLI does the same, and this
+  was the plugin's behaviour for its first three flags too (spec 138, approval finding N-3,
+  carried).
+
+- **The README does not yet describe `--capture`, the progress lines, the judge warning or the
+  plugin's three new run flags.** `driftproof --help` describes the first three, the methodology
+  page the capture modes, and the plugin's run command its flags (specs 137 and 138, carried).
+
+- **v0.12.1's known-open `fast-uri` line is closed by this release.**
+- Everything v0.12.1 lists as open, carried, except that line.
+
+### CodeQL alerts
+
+On 1 Oct 2026, code scanning on the public repository listed 17 open alerts.
+
+- **Fixed in this release:** #10, `lib/decision.js:375`, by spec 111; and #17,
+  `stale/run.mjs:164`, #9, `scripts/build-site-pages.js:235`, and #6, #7 and #8,
+  `scripts/build-report-001.js:240`, `252` and `255`, by spec 132 (above). Each alert closes when
+  code scanning reads the pushed fix.
+
+- **The operator dismissed eleven alerts**, each with its reason:
+  - Used in tests: #16, `tests/interop-page.js:31`; #14, `tests/gate.js:6651`; #13,
+    `tests/gate.js:3875`; #5, `tests/assertion-scope.js:106`; #4, `tests/essay-grounding.js:29`.
+
+  - False positive, build-time text extraction from our own HTML, with escaped output: #11,
+    `scripts/build-head-tags.js:131`; #12, `scripts/prepare-report-006.js:506`; #3,
+    `scripts/site-data.mjs:47`.
+
+  - Won't fix, internal and not shipped: #15, `scripts/drive.mjs:408`; #1,
+    `scripts/render-check.mjs:126`; #2, `scripts/render-check.mjs:128`.
+
+- None of the eleven is in the npm package, which ships `bin/`, `lib/`, `spec/`, `config.js` and
+  `config/models.json` only.
+
+## v0.12.1 - 2026-09-29
+
+**`package.json` reads 0.12.1**, and `config.js`'s `RUNNER_VERSION` is held equal to it.
+The Action pins in `README.md` and `docs/index.html` are `@v0.12.1`, the plugin's pin in
+`plugin/driftproof/.claude-plugin/plugin.json` is 0.12.1, and so is the `minimum` in
+`plugin/driftproof/version-guard.json`; `examples/workflows/driftproof-stale.yml` pins `stale@v0.12.1`. `package-lock.json` moves with them, and
+`tests/fixtures/export-summary.snapshot.json`'s `receipt_hash` is re-cut because
+`runner_version` is inside the canonical receipt that hash is taken over. The receipt pages'
+`npx driftproof@<version> validate` command names 0.12.1. **Not yet on npm** at the bump; a
+Published section is added here after the publish.
+
+Receipts written by 0.12.1 are receipt spec v0.9, as 0.12.0's were. This release makes no receipt
+schema change, and every earlier receipt still validates against its own version.
+
+### What changed
+
+- **A verdict holds whatever the lost draws would have scored (spec 119).** A lost draw is one the
+  runner recorded but could not measure, for example a judge timeout. On 0.12.0 a case that lost
+  some of its draws was read from the draws that were measured, so losing the lowest with-skill
+  draws could make a pass, and losing the highest could make a regression. On 0.12.1 each reading
+  that rests on a case with lost draws is checked at every score those draws could have had, from
+  the bottom of the judge's score scale to the top:
+  - A case that separated up counts toward a pass only if it separates up at every such score.
+    Otherwise it reads `inconclusive`.
+  - A case that separated down counts as a regression only if it separates down at every such
+    score. Otherwise it reads `inconclusive`, and that case alone no longer makes `decide --enforce`
+    fail; another case or another requested model can still.
+  - A case with no separation keeps that reading only if it holds at every such score. Otherwise it
+    reads underpowered: *Not enough draws to conclude at this effect floor*. An underpowered case
+    with lost draws carries no draws-needed count.
+  - The receipt as a whole: when a case's pass holds, the receipt reads `PASSED` only if the check
+    finds that no other case's lost draws could, at some score, make that case separate down;
+    otherwise it reads `INCONCLUSIVE`, decision state `inconclusive`. The check errs towards
+    `INCONCLUSIVE`: it can withhold a pass that would in fact hold. A case whose regression holds
+    makes the receipt `REGRESSED` whatever the other cases lost.
+  - Where the verdict is shown, a verdict of `INCONCLUSIVE`, or `UNDERPOWERED` with an
+    underpowered case that lost draws, names the lost draws: `decide` and its `--summary`,
+    `--enforce` and `--github-output` forms, `badge` and its `--github-output` and `--svg` forms,
+    and the receipt page. The full line names the case, each arm's lost and drawn counts, and each
+    reason the lost draws record; the badge message carries the short form, `<k> draw(s) lost`.
+    `--github-output` writes one more key, `lost_draws`, only when there is such a reason.
+
+### What you may see differently
+
+- A receipt with no lost draw is read as on 0.12.0. Every receipt tracked in this repository, and
+  every receipt page the site builds, reads the same verdict as at 0.12.0 (spec 119, AC-5).
+- A pass that relied on lost draws now reads `inconclusive`. A regression that relied on them reads
+  `inconclusive` too, so `decide --enforce` exits 0 where it exited 1. Either way the lines beside
+  the verdict name the lost draws.
+- A new run scores every draw afresh, and a case that loses no draw is read without this check. A
+  new run can lose draws too.
+- A no-effect reading with a lost draw in a kept case now reads `UNDERPOWERED`: with the runner's
+  limit of 10 draws an arm, some score always breaks it (spec 119, A-119-1).
+- If you pin this action, move your pin to `@v0.12.1` to get this rule in CI.
+
+### What this release does not include
+
+- Spec 072, fail on underpowered, is not in this release.
+- Spec 111, the summary cell backslash, is not in this release.
+- Spec 073, keep the answers, is not in this release.
+- Spec 074, the site pass and the related-work page, is not in this release.
+- Spec 108, judge injection, is not in this release.
+
+### Known open
+
+- **Which cases an `INCONCLUSIVE` reason names is stated three ways in spec 119, and the short form
+  can undercount a receipt's lost draws.** The verdict, the decision state and the exit are right;
+  the reason can name a case whose lost draws are not why, and leave out one whose count was
+  withheld (spec 119, finding F-1, carried).
+- **The receipt page's `INCONCLUSIVE` sentence** says a separation is not shown to hold. When the
+  reason is another case's lost draws, the separation does hold, and what is not shown is that the
+  other case cannot separate down. No tracked receipt reads `INCONCLUSIVE`, so no published page
+  carries the sentence today (spec 119, finding F-2, carried).
+- **`decide --github-output` writes `draws_needed` as `none` when the count is withheld for lost
+  draws**, and `action.yml` documents `none` as a different claim. `action.yml` does not declare the
+  `lost_draws` output (spec 119, finding F-3 and Q2, carried).
+- **`README.md` and `spec/RECEIPT.md` do not describe `INCONCLUSIVE` as a verdict for lost draws.**
+  `README.md` names `INCONCLUSIVE` only for a run that did not complete or carries no numeric delta,
+  and `spec/RECEIPT.md` does not name it (spec 119, Q4, proposed as its own item).
+- **`driftproof export` writes the verdict without naming the lost draws** (`lib/export.js`, not
+  changed by spec 119).
+- **`package-lock.json` locks `fast-uri` 3.1.6**, which two High advisories cover
+  (GHSA-qw65-cvwx-89v3 and GHSA-58mr-gqgx-xq4g, fixed in 3.1.7). A fresh `npm install driftproof`
+  resolves 3.1.7, because npm consumers do not get this lockfile. The Action installs with `npm ci`
+  from it, so the Action at `@v0.12.1` installs 3.1.6. Spec 123 moves the lockfile to 3.1.7 for the
+  next release (found after the publish, by Dependabot).
+- Everything v0.12.0 lists as open, carried.
+
+### Published
+
+**`driftproof@0.12.1` is on npm**, published 2026-09-29 at 16:05:33 UTC, `latest`, and its
+`gitHead` is `771b30f`, the published repository's commit that the `v0.12.1` tag points at,
+built from source commit `eb3cd09f`. The registry records its version as `0.12.1`, its publish time
+as `2026-09-29T16:05:33.823Z`, its tarball's shasum as `c35b45394c737aa1371d273077a494edc378ff8f` and its integrity as
+`sha512-zHIHK4blHvLCNGpQDsOQVTbKACvhqe/n+/32HhW9lidiehPf2CwZMqHb+YAv/t441eW670P7Sh6ppuHDwql/dw==`, and `dist-tags` reads `{"latest":"0.12.1"}`. A clean-directory
+`npx -y driftproof@0.12.1 --version` prints `0.12.1`.
+**The GitHub release `v0.12.1`** was published at 16:06:12 UTC as Latest, with this entry's text as its notes.
+**GitHub Pages deployed** the published repository's `main`, `f952e21`: the 0.12.1 build with Report 013
+added, built from source commit `0ec0e0fc`, with the package files, `package.json`, the Action and the plugin
+identical to the tagged commit. Deployment `6739317293` (`github-pages`) reached `success` at 15:58:51 UTC,
+and the live homepage carries the `@v0.12.1` pin. A depth-1 clone of the tag, with `npm ci --omit=dev` and
+then `node tests/gate.js --scan-root .`, reads **641/641 passed, 0 failed, 1 not applicable**. The one not
+applicable is the approval-record rule, which reads a merge range from `main`, and a tag-only clone has no
+`main`. Read after the publish at the source commit `eb3cd09f`, with `main` pinned as the nightly pins it,
+spec 028's gate reads **21/21 pass, 0 fail**, its NFR-7 green against the published tarball, and spec 031's
+reads **9 GREEN**, its AC-1 and AC-2 green through `npx driftproof@0.12.1`. The build's own published-tree
+gate read 642/642 passed, 0 failed.
+Evidence: `specs/000-governance/evidence/post-publish-0.12.1.txt`.
+
+---
+
+## v0.12.0 - 2026-09-28
+
+**`package.json` reads 0.12.0**, and `config.js`'s `RUNNER_VERSION` is held equal to it.
+The Action pins in `README.md` and `docs/index.html` are `@v0.12.0`, the plugin's pin in
+`plugin/driftproof/.claude-plugin/plugin.json` is 0.12.0, and so is the `minimum` in
+`plugin/driftproof/version-guard.json`. `package-lock.json` moves with them, and
+`tests/fixtures/export-summary.snapshot.json`'s `receipt_hash` is re-cut because
+`runner_version` is inside the canonical receipt that hash is taken over. The receipt pages'
+`npx driftproof@<version> validate` command names 0.12.0. **Not yet on npm** at the bump; a
+Published section is added here after the publish.
+
+Receipts written by 0.12.0 are receipt spec v0.9, as 0.11.3's were. Every earlier receipt still
+validates against its own version.
+
+### What changed
+
+- **The deciding path fails closed: six false passes closed (spec 062).** Each was reproduced by the
+  architecture review at `dbad69e` and is a row of spec 062's gate, red at its Base and green after.
+  - A run with one unmeasured case no longer hides a measured regression: for a TESTED receipt
+    answered by a model, `decide` reads `regression` whenever a case separated down, and `--enforce`
+    exits 1. A receipt with no readable
+    case decides `not measured` and its model stays in the set, where before it left the set and
+    `badge <dir>` rendered the other model's state.
+  - A receipt whose `schema_version` is not a known version (`"constructor"` among them, or absent)
+    is invalid, and `validate` exits 1. `badge` and `decide` now validate a receipt as well as check
+    its hash, so such a receipt no longer renders a badge or passes `decide --enforce`.
+  - A second run on the same day keeps both receipts. `run` names a receipt with the first 12
+    characters of its `receipt_hash` after the date, and never writes over an existing file.
+    `decide` and `badge <dir>` read receipts only, and an unreadable receipt for a model whose file
+    name differs from its id is named unreadable, not absent.
+  - A skill directory's `.driftproofrc` no longer sets `max_cases`, `samples` or `judge_model`. A
+    receipt that ran fewer cases than its suite has no verdict: `decide` reads it `inconclusive`, or
+    `regression` if a case separated down, and the single-receipt `badge` does not give it the
+    verdict the full run would carry.
+  - A `SKILL.md`, `evals/evals.json`, `evals` directory or bundled file that is a symbolic link is
+    refused, naming the path, and `run` writes no receipt. `content_hash` covers the `SKILL.md`
+    bytes that were read.
+  - A `.driftproofrc` that does not parse is refused with exit 2, naming the file. A flag given as
+    `--name=value` is read as `--name value` is, for every command, where 0.11.3 ignored it and the
+    run took its spending limit from elsewhere. An empty or misspelt flag makes `run` and `regrade`
+    exit 2, naming it, and they refuse any flag they do not take.
+- **A pull request's rc does not set the run, and a stripped receipt is still refused (spec 069).**
+  The Action starts the run in an empty working directory, so a pull request can no longer narrow the
+  run that measures it, and `max_cases`, `samples` and `judge_model` take their defaults. No
+  `.driftproofrc` at the repository root is read, and one that does not parse no longer refuses the
+  run, except when the skill directory is the repository root (`skill-dir: .`; under Known open
+  below). A sealed receipt with `results` removed is refused by `badge <dir>` and `decide`, exit 4,
+  naming it, as in 0.11.3: a change on the way to this release had dropped it, and spec 069 restored
+  the refusal.
+- **A flag that takes no value is never set by a value, in any spelling (spec 106).**
+  `run <skill> --trusted-skill false` ran in the same-user lane; it is now refused with exit 2, as
+  `--trusted-skill=false` also is from this release (spec 062; 0.11.3 ignored that form). The same holds for every flag that takes no value, on every
+  command, for `true`, `false`, `yes`, `no`, `on`, `off`, `1` and `0`, in lower case, upper case or capitalised.
+  `--keep-transcripts`, `--github-output` and `--enforce` never take the next argument as a value, so
+  `decide <dir> --enforce false` no longer enforces. `run` and `regrade` refuse a positional they do
+  not take, naming it, before any skill, receipt or rc is read.
+- **A summary kept beside its receipt is read as a summary (spec 107).** After spec 069's rule, on the way
+  to this release (0.11.3 was not affected), a summary written by `driftproof export --to summary-json`
+  in a receipt directory made `badge <dir>` and `decide` exit 4 and call it tampered. A file whose name
+  ends in `.summary.json` and that has the summary `format` is now skipped; one under such a name that
+  carries `receipt_hash` or `results` without that shape is refused. `export --out <dir>` writes the
+  summary as `<receipt base>.summary.json`, where it failed on the write before. The
+  interop page and `export`'s usage line (`--out FILE|DIR`) state the rule.
+- **The staleness check as a GitHub Action (spec 057).** `driftproofhq/driftproof/stale@v0.12.0` runs
+  `driftproof stale` on a schedule in your repository and keeps one issue, labelled
+  `driftproof-stale` by default, listing each receipt that needs a rerun or a regrade and the command
+  to run next. It fails the job on an error, or on stale only with `fail-on-stale: 'true'`. It makes
+  no model call. `examples/workflows/driftproof-stale.yml` is a weekly workflow with `contents: read`
+  and `issues: write`. The `v0.11.3` tag carries no `stale/`, so this is the first version it can be
+  pinned at.
+- **The receipt pages' verify block (spec 063)** says that `validate` shows a file is unchanged since
+  it was sealed, and not who made or sealed it. Its command pins the package version.
+- **Report 010, Amendment 2 (spec 063).** Configuration B's published files are renamed from
+  `addy-adr-confirmation--*` to `config-b--*`, and every path to them on the page moves with them.
+  The amendment lists each old and new path, and each renamed file's bytes are unchanged.
+- **The rest is this repository's own tooling** (specs 059, 060, 061, 062b, 064, 065, 066, 067,
+  070, 083 and 116): gates, the nightly sweep and the merge queue. `scripts/build-public.sh` now keeps
+  `docs/reviews/` out of the public tree (spec 064). None of it is in the npm package.
+
+### What you must do
+
+- **If you pin this action, move your pin.** If a Driftproof check has been green on 0.11.3 or
+  earlier, and its run had an unmeasured case, ran fewer cases than its suite, or read a
+  `.driftproofrc` from the checkout, re-run it on this version before relying on it.
+- If a workflow reads a receipt by the name `<skill>-<model>-<date>.json`, read the directory
+  instead: the name now ends with the first 12 characters of the receipt's `receipt_hash`.
+- If your Action run relied on a `.driftproofrc` in the repository or the skill directory for
+  `max_cases`, `samples` or `judge_model`, it now runs with their defaults. On the command line, set
+  them by flag or in the working directory's rc.
+- If a script passes `true`, `false`, `yes`, `no`, `on`, `off`, `1` or `0` after a flag that takes no
+  value (`--trusted-skill false`, `--enforce true`), remove it: 0.12.0 refuses it with exit 2 on every
+  command. `run` and `regrade` also refuse a second positional, with exit 2.
+- If you keep summaries beside receipts, give each a name ending in `.summary.json`, as
+  `export --out <dir>` does (`<receipt base>.summary.json`). Under a name without that ending,
+  `badge <dir>` and `decide` refuse it, since a summary carries its receipt's `receipt_hash`.
+
+### What this release does not include
+
+- Spec 119, verdict bounds for lost draws, is not in this release.
+- Spec 072, fail on underpowered, is not in this release.
+- Spec 111, the summary cell backslash, is not in this release.
+- Spec 073, keep the answers, is not in this release.
+- Spec 074, the site pass and the related-work page, is not in this release.
+- Spec 108, judge injection, is not in this release.
+- **No signing.** The verify block now says what `validate` does not show; receipts stay
+  self-sealed (spec 063, out of scope).
+
+### Known open
+
+- **With `skill-dir: .`, the repository root's rc is the skill directory's rc**, so the Action reads
+  it, and one that does not parse refuses the run, while the README says no root rc key is read
+  (spec 069, finding F-1, carried).
+- **`scripts/build-receipt-pages.js` does not validate the receipts it renders** (spec 062, out of
+  scope, owed).
+- **The interop page states the summary naming rule narrowly**: it names `<receipt base>.summary.json`,
+  while `badge <dir>` and `decide` skip any file whose name ends in `.summary.json` and that has the
+  summary shape (spec 107).
+- Everything the findings page lists as open, carried from v0.11.3.
+
+### Published
+
+**`driftproof@0.12.0` is on npm**, published 2026-09-28 at 16:58:22 UTC, `latest`, and its
+`gitHead` is `cce4ac4`, the published repository's commit that the `v0.12.0` tag points at,
+built from source commit `2b5e1470`. The registry records its version as `0.12.0`, its publish time
+as `2026-09-28T16:58:22.109Z`, its tarball's shasum as `332c17a56e423cd65fe74e9b0b6337a7eebc2ce4` and its integrity as
+`sha512-xhZzeLm4/cGGS1Y8Tby9EJZb2QYsXYootX/JQiS9qlMLcqDQkOEVOvhfdiGIIjDMC1DGQkyQeriffFiRvYS4DQ==`, and `dist-tags` reads `{"latest":"0.12.0"}`. A clean-directory
+`npx -y driftproof@0.12.0 --version` prints `0.12.0`.
+**The GitHub release `v0.12.0`** was published at 17:02:07 UTC as Latest, with this entry's text as its notes.
+**GitHub Pages deployed that commit**: deployment `6715481987` (`github-pages`, sha `cce4ac4`)
+reached `success` at 16:48:14 UTC, and the live homepage carries the `@v0.12.0` pin. A depth-1
+clone of that tag, with `npm ci --omit=dev` and then `node tests/gate.js --scan-root .`, reads
+**641/641 passed, 0 failed, 1 not applicable**. The one not applicable is the approval-record rule, which reads a merge
+range from `main`, and a tag-only clone has no `main`. Read after the publish at the source commit
+`2b5e1470`, with `main` pinned as the nightly pins it, spec 028's gate reads **21/21 pass, 0 fail**, its NFR-7 green
+against the published tarball, and spec 031's reads **9 GREEN**, its AC-1 and AC-2 green through
+`npx driftproof@0.12.0`. The build's own published-tree gate read 642/642 passed, 0 failed.
+Evidence: `specs/000-governance/evidence/post-publish-0.12.0.txt`.
+
+---
+
+## v0.11.3 - 2026-09-25
+
+**`package.json` reads 0.11.3**, and `config.js`'s `RUNNER_VERSION` is held equal to it.
+The Action pins in `README.md` and `docs/index.html` are `@v0.11.3`, the plugin's pin in
+`plugin/driftproof/.claude-plugin/plugin.json` is 0.11.3, and so is the `minimum` in
+`plugin/driftproof/version-guard.json`. `package-lock.json` moves with them, and
+`tests/fixtures/export-summary.snapshot.json`'s `receipt_hash` is re-cut because
+`runner_version` is inside the canonical receipt that hash is taken over. **Not yet on
+npm** at the bump; the Published section below records the publish.
+
+Receipts written by 0.11.3 are receipt spec v0.9. Every earlier receipt still validates against its own
+version.
+
+### What changed
+
+- **Fewer false passes.** A suite with two cases of the same id is refused before any call.
+  A receipt with two rows for one case and arm is refused by `validate`, `badge`, `export` and `decide`.
+  The Action fails a job whose receipts give two answers for one model, naming the files. Each Action
+  invocation now writes and uploads its own receipts, so one job can run it more than once. The
+  artifact is no longer named `driftproof-receipt`: its name is the step output `artifact_name`.
+- **Import Anthropic's eval results.** `driftproof import --from claude-plugin-eval` reads
+  the `aggregate-result.json` that `claude plugin eval` writes. `--from skill-creator` reads
+  skill-creator's `benchmark.json`, which skill-up also writes. The receipts are DECLARED. They record
+  the harness, the source document and its sha256, and whether the skill fired, beside the score and
+  never inside it.
+- **Regrade.** `driftproof regrade <receipt> --skill <dir> --answers <file> --judge-model
+  <id>` grades a receipt's saved answers again with another judge, without generating them again.
+  Because a normal run does not keep the answers yet, it works today only where the answers were kept
+  beside the receipt, as they were for Report 011's Amendment 1.
+- **What's stale.** `driftproof stale receipts/*.json` compares what each receipt recorded
+  (model, harness, skill, suite, judge, grading template, rubrics) with what would run today. For each
+  arm it says whether the result still stands, needs a rerun, or needs only a regrade, and prints the
+  command to run next. Anything a receipt does not record is reported unknown, never current. A patch
+  release of the harness is an advisory. A rubric edit reruns both arms, because receipts do not yet
+  record a hash per case prompt. Exit 0 current, 1 stale, 3 unknown or advisory, 2 error; `--strict`
+  turns 3 into 1. `--json` prints `driftproof.stale/1`, whose schema is served at
+  `/spec/stale.v1.schema.json`. `driftproof run` now records the harness and its version in each
+  receipt.
+- **Import redaction.** Local paths in text an import copies are redacted whole: quoted paths
+  with spaces, paths across line breaks, and names with an apostrophe, though the part of a quoted path
+  after an apostrophe followed by a space can still appear, while the home folder and user name are
+  always redacted. An import that would still name a home folder anywhere in a path (`/var/home`,
+  `/mnt/c/Users`, a network share) is refused and writes nothing.
+- **Model registry.** `claude-opus-5-5` is registered (released 2026-09-22, US$4 and US$20
+  per million input and output tokens), so a run on it is priced as itself, not at the most expensive
+  tier. `claude-opus-5` and `claude-opus-4-8` gain their release dates.
+- **Receipt spec v0.8 and v0.9.** v0.8: a count the source did not record stays
+  absent, never 1; generation and judge-sample counts are kept apart; a re-judge records when it ran.
+  v0.9: an imported receipt says what produced it. Both only add fields.
+- **The interop page** names receipt spec v0.9 and all four import formats.
+- **Report 011, Amendment 1 (the site).** Report 011's answers were graded again with Claude Opus 5.5 as
+  the judge. No verdict changed, and 50 of 51 answers stayed on the same side of the pass line. One
+  crossed: Claude Opus 5's baseline on `code-review-and-quality`, 0.827 to 0.633. The report above the
+  amendment is unchanged.
+
+### What you must do
+
+- If a workflow downloads the Action's artifact by the name `driftproof-receipt`, read the name from the
+  step output `artifact_name` instead.
+- If a suite has two cases with the same id, give them distinct ids. 0.11.3 refuses the suite before
+  any call.
+
+
+### Published
+
+**`driftproof@0.11.3` is on npm**, published 2026-09-25 at 09:14:19 UTC, `latest`, and its
+`gitHead` is `2159f66`, the published repository's commit that the `v0.11.3` tag points at,
+built from source commit `1e10949`. The registry records its version as `0.11.3`, its publish time
+as `2026-09-25T09:14:19.218Z`, its tarball's shasum as `8ef70f9eefc6e47f4a47221a234d38700233db03` and its integrity as
+`sha512-IuwtdiGcsFwf/p9Xt9v12qkuoHvYU/RSvljYgNhiKmLME3A0qNvTX5ic/GmCw3nLm2B/5EAqfzxGxhmT3/mxng==`, and `dist-tags` reads `{"latest":"0.11.3"}`. A clean-directory
+`npx -y driftproof@0.11.3 --version` prints `0.11.3`.
+**GitHub Pages deployed that commit**: deployment `6657416890` (`github-pages`, sha `2159f66`)
+reached `success` at 09:08:51 UTC, and the live homepage carries the `@v0.11.3` pin. A depth-1
+clone of that tag, with `npm ci --omit=dev` and then `node tests/gate.js --scan-root .`, reads
+**631/631 passed, 0 failed, 1 not applicable**. The one not applicable is the approval-record rule, which reads a merge
+range from `main`, and a tag-only clone has no `main`. The tree is left clean. Read after the publish
+at source `dev` `1e10949`, spec 028's gate reads **21/21 pass, 0 fail**, its NFR-7 green against the published
+tarball, and spec 031's reads **9 GREEN**, its AC-1 and AC-2 green through `npx driftproof@0.11.3`. The
+build's own published-tree gate read 632/632 passed, 0 failed over 1,359 tracked files.
+Unlike 0.11.2's, this clean-runner read ran with the network available and this box's `HOME`.
+Evidence: `specs/000-governance/evidence/post-publish-0.11.3.txt`.
+
+---
+
+## Site push: Report 011 - 2026-09-23
+
+Spec 047, merged to the source `dev` at `509b514d`. **The site moved and the package did not.** No
+version change, no npm publish and no tag: `package.json` reads 0.11.2, `config.js`'s
+`RUNNER_VERSION` is held equal to it, and the Action pins stay `@v0.11.2`. Nothing under `lib/`,
+`bin/`, `spec/`, `config.js`, `config/models.json` or `package.json` differs from v0.11.2, so the
+tarball is the one v0.11.2 published. The public tree is built from the source commit that carries
+this line (`DECISIONS.md`, 2026-09-23, the site-only push).
+
+**No verdict, receipt field or published figure changes.** Reports 001 to 010 and the receipt spec
+are as they were. The one report added is the eleventh.
+
+### What shipped
+
+- **Report 011, published.** *Claude Opus 5.5 on release day, three skills* moves out of `-draft`
+  to `/reports/011/`, is indexed on the reports page, the homepage, the sitemap, the feed and
+  `llms.txt`, and gets a receipt page for each of its six receipts. The page's `<main>` is the draft
+  spec 042 approved, with only the draft chrome removed. Read by the runner's own comparison, its
+  release drift table reads 1 with no separation detected and 2 with not enough draws to conclude.
+  Every draw was judged with `claude-opus-5`, which departs from the judge policy.
+- **The launch essay and the README** gain a paragraph and a roll entry on Report 011, with the
+  judge caveat, and their counts move to eleven reports.
+- **The homepage's latest card** names the field its title prints, because Report 011's title is
+  the first latest-report title with a numeral in it.
+
+### What this release does not include
+
+- **No package change.** A bump would have named a change the package does not have.
+- **`claude-opus-5-5` is not added to the model registry.** Nothing on the page or its receipt pages
+  reads it.
+- **No fresh-context QA of the new prose** (Known open).
+
+### Known open
+
+- **The promotion's new text has no fresh-context QA record**: the essay paragraph, the README roll
+  entry and the TL;DR card. The report's own text was read by spec 042's QA, which found no required
+  fixes.
+- Everything the findings page lists as open, carried from v0.11.2.
+
+---
+
+## v0.11.2 - 2026-09-23
+
+**`package.json` reads 0.11.2**, and `config.js`'s `RUNNER_VERSION` is held equal to it.
+The Action pins in `README.md` and `docs/index.html` are `@v0.11.2`, the plugin's pin in
+`plugin/driftproof/.claude-plugin/plugin.json` is 0.11.2, and so is the `minimum` in
+`plugin/driftproof/version-guard.json`. `package-lock.json` moves with them, and
+`tests/fixtures/export-summary.snapshot.json`'s `receipt_hash` is re-cut because
+`runner_version` is inside the canonical receipt that hash is taken over. **Not yet on
+npm** at the bump; the Published section below records the publish.
+
+**No verdict, receipt field or published figure changes.** The receipt spec stays at v0.7.
+The files the npm package carries that differ from 0.11.1 are `package.json` (the ajv floor,
+below, and the version), `config.js` (`RUNNER_VERSION`) and one line of `spec/RECEIPT.md`. No
+file under `lib/` or `bin/` changes. Everything else in this release is the site, or the
+repository's own gates.
+
+### What this release contains
+
+- **The ajv floor moves to `^8.18.0` (spec 046).** This closes the v0.7.0 known-open row
+  "AJV >= 8.18". The lock already resolved 8.20.0, so no installed byte moved in this
+  repository. What moves is the lowest ajv a consumer's install may resolve, from 8.17.1 to
+  8.18.0. Every committed receipt validates under 8.18.0 and 8.20.0 as it does under 8.17.1.
+- **`spec/RECEIPT.md` names the version a producer emits.** Its coexistence rule said v0.6,
+  while its own heading, `config.js`'s `RECEIPT_SCHEMA_VERSION` and the schema's
+  `schema_version` said v0.7. It now says v0.7. The methodology page names the current
+  receipt spec beside the schema's canonical id, in the interop page's words.
+- **Report 009 Amendment 1 (spec 039).** A versioned Amendments section before the evidence
+  list gives one reading rule for the page's description, ties every figure to its file as a
+  `<data>` element, and changes no earlier text.
+- **Report 010 Amendment 1 (spec 041).** It closes O-2 to O-6 of the report's second QA, which
+  were open at its publication, and records the maintainer's answer on issue 591 and PR 598
+  from GET-only check records published beside the page. Its second fresh-context
+  QA reads NO REQUIRED FIXES.
+- **The interop page's schema line** names receipt spec v0.7 where it read v0.4, the interop
+  fields as the v0.3.1 additive revision, and the frozen prior schemas as v0.1 to v0.6.
+
+### What this release does not include
+
+- **No re-run of the example receipt.** The homepage's receipt is the one re-run on the 0.11
+  code (`DECISIONS.md`, 2026-09-16); no receipt-emission semantics changed since.
+- **Report 011 is not published by this release.** Its draft and renderer are in the source
+  tree, and `scripts/build-public.sh` excludes the draft.
+
+### Published
+
+**`driftproof@0.11.2` is on npm**, published 2026-09-23 at 14:30:47 UTC, `latest`, and its
+`gitHead` is `5a9946c`, the published repository's commit that the `v0.11.2` tag points at,
+built from source commit `b514ffd`. The GitHub release `v0.11.2` was published at 14:30:06 UTC.
+**GitHub Pages deployed that commit**: deployment `6615432212` (`github-pages`, sha `5a9946c`)
+reached `success` at 13:41:04 UTC, and the live homepage carries the `@v0.11.2` pin. A depth-1
+clone of that tag, set up as the plugin self-test workflow sets it up (`npm ci --omit=dev`, then
+`node tests/gate.js --scan-root .`, then both manifests parsed), with the network cut, an empty
+`HOME` and the source trees hidden, reads **620/620, 0 failed, 1 not applicable**. The one not
+applicable is the approval-record rule, which reads a merge range from `main`, and a tag-only clone
+has no `main`. Every step exits 0 and the tree is left clean. Read after the publish at source
+`main` `88244f6`, spec 028's gate reads **21/21**, its NFR-7 green against the published tarball,
+and spec 031's reads **9 GREEN**, its AC-1 and AC-2 green through `npx driftproof@0.11.2`. The
+build's own published-tree gate read 621/621 over 1,209 tracked files, and the repository gate at
+the release commit read 636/636 with 4 not applicable.
+Evidence: `specs/000-governance/evidence/post-publish-0.11.2.txt`.
+
+**This release went out with spec 012's AC-7 red, and spec 023's and spec 026's accepted reds.**
+The release sweep at `c50ad3aa` was run in full and its reds each have a recorded cause
+(`specs/000-governance/evidence/sweep-0112-c50ad3a.txt`). Two reds on `dev` that predated the
+release were fixed before `main` moved: the repository gate's probe-copies rule and spec 046's AC-4.
+Spec 012's AC-7 reads Report 011's tracked draft, which its promotion removes (`DECISIONS.md`,
+2026-09-23).
+
+### Known open
+
+- **Spec 028's NFR-7, re-run after the publish, reads green** against the published tarball
+  (Published, above). The pre-publish red it carried while `package.json` was ahead of 0.11.1 is
+  cleared.
+- **Spec 028 still owes the amendment spec 046's entry names:** NFR-7 to read a declared unpublished
+  pin as a state rather than a red. It is owed to spec 028's next loop (`DECISIONS.md`, 2026-09-23).
+- Everything the findings page lists as open, carried from v0.11.1.
+
+---
+
+## Site push: Report 010 - 2026-09-22
+
+Spec 041, merged to the source `dev` at `213cdf65`. **The site moved and the package did not.**
+No version change, no npm publish and no tag: `package.json` reads 0.11.1, `config.js`'s
+`RUNNER_VERSION` is held equal to it, and the Action pins stay `@v0.11.1`. Nothing under `lib/`,
+`bin/`, `spec/`, `config.js`, `config/models.json` or `package.json` differs from v0.11.1, so the
+tarball is the one v0.11.1 published. The public tree is built from the source commit that
+carries this line (`DECISIONS.md`, 2026-09-22, the site-only push).
+
+**No verdict, receipt field or published figure changes.** Reports 001 to 009 and the receipt
+spec are as they were. The one report added is the tenth.
+
+### What shipped
+
+- **Report 010, published.** *Repeated ADR evaluations across two Claude Code configurations*
+  goes live at `/reports/010/`, indexed on the reports page, the homepage, the sitemap, the feed
+  and `llms.txt`, with a report card. It is the first report with **no Driftproof receipts**: its
+  figures are the upstream harness's own output files and the other sources its Limits name, each
+  a `<data>` element naming its file, listed by sha256 in `raw-SHA256SUMS` and published beside the
+  page where the blocking scans pass them unchanged. The page states that it has no verification
+  level, and why. Its TL;DR card reads `no receipts linked`, set as prose.
+- **The launch essay and the README** move to ten reports, and say that Report 010 is read from the
+  upstream harness's output rather than from receipts.
+
+### What this release does not include
+
+- **No package change.** A bump would have named a change the package does not have.
+- **No Driftproof measurement of Report 010's experiment**, and so no receipts and no receipt pages
+  for it.
+
+### Known open
+
+- **Five findings of Report 010's second fresh-context QA are open at publication** (O-2 to O-6):
+  one sentence attributing the definition-of-done wording, and four counts that are right but are not
+  tied to a `<data>` element. The operator deferred them to Report 010 Amendment 1. No QA record for
+  the report reads NO REQUIRED FIXES.
+- Everything the findings page lists as open, carried from v0.11.1.
+
+---
+
+## Site push: Report 009 - 2026-09-20
+
+Spec 039, merged to the source `dev` at `66b61c50`. **The site moved and the package did not.**
+No version change, no npm publish and no tag: `package.json` reads 0.11.1, `config.js`'s
+`RUNNER_VERSION` is held equal to it, and the Action pins stay `@v0.11.1`. Nothing under `lib/`,
+`bin/`, `spec/`, `config.js`, `config/models.json` or `package.json` differs from v0.11.1, so the
+tarball is the one v0.11.1 published. This is the first public push without a version
+(`DECISIONS.md`, 2026-09-20).
+
+**No verdict, receipt field or published figure changes.** Reports 001 to 008 and the receipt
+spec are as they were. The one report added is the ninth.
+
+### What shipped
+
+- **Report 009, published.** *Three skills under two eval harnesses* moves out of `-draft` to
+  `/reports/009/`, is indexed on the reports page, the homepage, the sitemap, the feed and
+  `llms.txt`, and gets a receipt page for each of its three receipts. The page's `<main>` is the
+  approved draft's, with the eyebrow's type the one sentence that changes. On its own table,
+  Driftproof's arms read 3 separated and 0 with no separation detected under the rule.
+- **A seventh report type, Instrument comparison** (`REPORT-STYLE.md`): the same skills measured
+  by two instruments on pinned inputs, stating what each can and cannot establish rather than
+  ranking them. The report does not put the other instrument's results through Driftproof's rule.
+- **The judge policy, stated.** Published reports keep the `claude-haiku-4-5` pin. In the
+  installed tool the judge follows the user's configuration, and the receipt records which judge
+  ran. Report 009 departs from the policy and says so in its own limits; that is unchanged.
+- **The launch essay and the README** gain a paragraph and a roll entry on Report 009, and their
+  counts move to nine reports and seven types. The paragraph carries the report's non-comparability
+  caveat.
+- **One line on How this is built**, naming two pull requests merged into
+  `addyosmani/agent-skills` (`pull/576`, `pull/578`) and one issue raised there (`issues/569`).
+
+### What this release does not include
+
+- **No package change.** A bump would have named a change the package does not have.
+- **No re-run of any measurement.** Report 009's numbers are the ones spec 034 approved.
+- **No fresh-context QA of the new prose** (Known open).
+
+### Known open
+
+- **The promotion's new text has no fresh-context QA record**: the TL;DR card, the essay
+  paragraph, the README roll entry, the type row, the judge-policy sentence and the How this is
+  built line. The report's own numbers and framing were re-derived by spec 034's QA sessions; the
+  text added around it was not. The spec 039 approval carries this as F-3, non-blocking for the
+  merge.
+- Everything the findings page lists as open, carried from v0.11.1.
+
+---
+
+## v0.11.1 - 2026-09-18
+
+**`package.json` reads 0.11.1**, and `config.js`'s `RUNNER_VERSION` is held equal to it.
+The Action pins in `README.md` and `docs/index.html` are `@v0.11.1`, the plugin's pin in
+`plugin/driftproof/.claude-plugin/plugin.json` is 0.11.1, and so is the `minimum` in
+`plugin/driftproof/version-guard.json`. `package-lock.json` moves with them, and
+`tests/fixtures/export-summary.snapshot.json`'s `receipt_hash` is re-cut because
+`runner_version` is inside the canonical receipt that hash is taken over. **Not yet on
+npm** at the bump; the Published section below will record the publish.
+
+**No verdict, receipt field or published figure changes.** The receipt spec stays at v0.7.
+The one file the npm package carries that differs from 0.11.0 is `lib/hygiene.js` (below).
+Everything else in this release is the site, or the repository's own gates.
+
+### What this release contains
+
+- **The site's visual pass (spec 038).** The site keeps its words and changes how it looks.
+  Pages are set on a paper ground with a faint texture, records sit on receipt stock, and the
+  verdict stamp is tilted slightly, with no animation. Headings are set in Newsreader, body text
+  in Alegreya Sans and code in Courier Prime, all self-hosted. The band plot is drawn in ink,
+  with a graticule, tabular numerals and each arm's mean printed on its band. The plots on the
+  homepage receipt card, every receipt page, the report cards and the methodology page's floor
+  figure are inlined into the page instead of loaded as images, so they take the page's fonts.
+  Each one is the generated file's own bytes and keeps the accessible name its image had. The
+  playground draws the same plot, and the share cards follow the new palette. No copy changes,
+  no script is added, and the sitemap's URL set is unchanged. It was approved with findings on
+  `9a11045` (`specs/038-site-visual-pass/evidence/approval-20260918T062500Z.md`), and the two
+  findings on its own gate were closed on `dev` under A-038-8.
+- **Two site fixes from spec 025 (A-025-21).** The homepage hero's Range row prints each value to
+  three decimals, matching the delta display, so it stays on one line. `stats.json` keeps the
+  receipt's full precision. The render check now clicks the playground's own "point" toggle to
+  read the point outline, rather than relying on the default view's data to draw one.
+- **The hygiene scan reads a PNG's text, not its pixels (spec 038 A-038-5, A-038-7).**
+  `lib/hygiene.js` scans a PNG as every chunk except `IDAT`, and reads compressed text chunks in
+  the encoding they carry text in. It fails closed on bytes after `IEND` and on a truncated file.
+  A pattern that appears only in compressed pixel data no longer reads as a disclosure. A name
+  rendered into a screenshot is pixels, and no byte scan sees that, before or after this change.
+  The repository gate and `scripts/merge-check.js` both call it.
+- **The repository's scope checks read a merged spec on `dev` (spec 037 A-037-7).** A shared
+  helper, `specs/037-site-redesign/probes/range.mjs`, resolves a spec's range from the merge that
+  brought its Tip in. Specs 034, 036, 037 and 038 read their NFR-1 through it (A-034-6, A-036-9,
+  A-038-9). This is repository process, and the published tree does not carry it.
+- **Report 009's draft (spec 034 A-034-7).** The draft page is re-rendered from its renderer and
+  picks up spec 038's `<head>`. Its body did not change. The QA-order check reads the Tip's own
+  history. The draft is not published.
+- **The v0.11.0 record.** The v0.11.0 entry's Published section and the Pages deployment it
+  records, written after that publish, are part of this tree.
+
+### Published
+
+**`driftproof@0.11.1` is on npm**, published 2026-09-18 at 07:56:17 UTC, `latest`, and its
+`gitHead` is `8f5879a`, the published repository's commit that the `v0.11.1` tag points at,
+built from source commit `4ef3ad3`. The GitHub release `v0.11.1` was published at 08:01:30 UTC.
+**GitHub Pages deployed that commit**: deployment `6520010097` (`github-pages`, sha `8f5879a`,
+Actions run #39) reached `success` at 07:52:12 UTC, and the live homepage carries the `@v0.11.1`
+pin and spec 038's font preloads. A depth-1 clone of that tag, set up as the plugin self-test
+workflow sets it up (`npm ci --omit=dev`, then `node tests/gate.js --scan-root .`, then both
+manifests parsed), with the network cut, an empty `HOME` and the source trees hidden, reads
+**613/613, 0 failed, 1 not applicable**. The one not applicable is the approval-record rule, which
+reads a merge range from `main`, and a tag-only clone has no `main`. Every step exits 0 and the tree
+is left clean. Read after the publish at source `main` `04a540f`, spec 028's gate reads **21/21**,
+its NFR-7 green against the published tarball, and spec 031's reads **9 GREEN**, its AC-1 and AC-2
+green through `npx driftproof@0.11.1`. The build's own published-tree gate read 614/614 over 1,117
+tracked files, and the repository gate at the release commit read 625/625 with 4 not applicable.
+Evidence: `specs/000-governance/evidence/post-publish-0.11.1.txt`.
+
+**This release went out with three sibling spec gates red, for reasons that predate it.** The
+sibling sweep at the release commit was run in full (`specs/000-governance/evidence/sweep-0111-71a7160.txt`),
+and the two re-freezes the bump forced were made before `main` moved: spec 020 amendment 60 and
+spec 026 A-026-14. Spec 030, spec 026's AC-16 and spec 033 stay red. Each is a gate-side red that
+reads the same at 0.11.0's code, and each is owed as its own fix loop, recorded in `DECISIONS.md`
+on 2026-09-18.
+
+**No community plugin catalog entry was found.** Neither `anthropics/claude-plugins-community`
+(`main` at `a727be1`, last committed 2026-08-24, before the plugin existed) nor
+`anthropics/claude-plugins-official` (`1aa8f02`) lists `driftproof`, and
+`claude.com/plugins/driftproof` returns 404. The plugin installs from this repository's own
+marketplace manifest.
+
+### Known open
+
+- **Spec 028's NFR-7, re-run after the publish, reads green** against the published tarball
+  (Published, above). The pre-publish red it carried while `lib/hygiene.js` was ahead of 0.11.0
+  (A-028-43) is cleared.
+- **The re-freezes the bump forced are done**: spec 020 amendment 60 and spec 026 A-026-14, both
+  before `main` moved. Spec 030, spec 026's AC-16 and spec 033 stay red for reasons that predate
+  this release, each owed as its own fix loop under its own log (`DECISIONS.md`, 2026-09-18).
+- Everything the findings page lists as open, carried from v0.11.0.
+
+---
+
+## v0.11.0 - 2026-09-17
+
+**`package.json` reads 0.11.0**, and `config.js`'s `RUNNER_VERSION` is held equal to it.
+The Action pins in `README.md` and `docs/index.html` are `@v0.11.0`, the plugin's pin in
+`plugin/driftproof/.claude-plugin/plugin.json` is 0.11.0, and so is the `minimum` in
+`plugin/driftproof/version-guard.json`. `package-lock.json` moves with them, and
+`tests/fixtures/export-summary.snapshot.json`'s `receipt_hash` is re-cut because
+`runner_version` is inside the canonical receipt that hash is taken over. **Not yet on
+npm** at the bump; the Published section below records the publish.
+
+The UNDERPOWERED verdict (spec 035). A receipt that could not have resolved the effect
+floor at the draws it took now says so, instead of saying NO_EFFECT, which reads as a
+measured absence. The rule is R-1 to R-6 with a new named constant `POWER_Z` (2) in
+`config.js`, and the **receipt spec bumps to v0.7**, which adds no field: readers derive
+the verdict, and v0.6 is frozen rather than widened.
+
+### Behaviour changes, read these before upgrading
+
+- **A job that used to fail can now pass (the fail-open direction).** `decisionState`
+  no longer reads the aggregate delta. Before this release, `delta <= -0.05` was a
+  `regression` and failed the job. Now the state comes from the receipt verdict, so a
+  receipt whose aggregate delta clears the floor **downward with no case separated**
+  reads `no detected effect`, or `underpowered` where the rule finds it so, and the job
+  no longer fails. If your gate relied on the aggregate delta alone to catch a
+  regression, it no longer does. No archived receipt moves out of `REGRESSED` by this,
+  so the exposure is to receipts generated from here on. (F-2 of spec 035's approval
+  record; spec 035 § *Why `Z = 2` and why the spread enters*.)
+- **A job that used to pass can now fail to report success (the tightening direction).**
+  A workflow that passed on an aggregate lift with **no case separated** now reads
+  `UNDERPOWERED`, which is in `NEVER_SUCCESS` and never renders as success.
+- **All 120 receipts archived before this release now badge `NOT_MEASURED`.** The
+  verdict rule refuses a receipt whose `answered_by` block is **absent**, not only one
+  stating a kind other than `model`. This is the fail-safe reading and is word for word
+  what `decisionState` has applied since spec 030, so the badge and the Action stop
+  answering differently about one receipt. The site's old example receipt (2026-07-27)
+  renders `not measured on claude-haiku-4-5`, lightgrey, where it rendered `passing`,
+  brightgreen, so the site no longer uses it as the example (below).
+- **Published report figures do not move.** The differ's per-case verdict *values* are
+  unchanged and the new state rides beside them, so Reports 006 to 008 rebuild
+  byte-identical.
+
+### What else this release contains
+
+- **The badge and the receipt page (spec 036).** An `UNDERPOWERED` or `NOT_MEASURED`
+  badge prints the draws taken against the draws needed, not a lift. The receipt page
+  says which refusal fired, and a receipt with no readable case reads `NOT_MEASURED`,
+  never `NO_EFFECT`.
+- **The homepage and *How this is built* (spec 037).** The homepage opens on the question
+  a skill's own tests leave open, whether the gap it makes is real or noise and whether it
+  held on the last model release. The Claude Code plugin is the first install path, and
+  `npx` and the GitHub Action sit under a CI heading. The first screen links the findings
+  page and a receipt page, and the receipt card's verdict is read from that receipt. A new
+  *How this is built* page in the Docs menu describes the method, with counts taken at a
+  named commit. The hero plot's accessible title carries the verdict word only, and the
+  receipt page carries the sentence under it (A-037-4).
+- **A fresh example receipt, and the site artefacts that were stale now agree with it.**
+  `receipts/commit-message-conventions-claude-haiku-4-5-20251001-2026-09-17.json` was run
+  on this release after the bump: `runner_version` 0.11.0, `claude-cli` through the
+  isolated eval user, `answered_by.kind` `model`, `TESTED`, receipt schema 0.7, 462 calls,
+  lift +0.389 ± 0.217, verdict `PASSED`. The README badge, the homepage card, its plot,
+  `docs/data/stats.json` and the CI badge's alt text all read from it. Re-cut from this
+  receipt, the badge JSON is byte-identical (`passing on claude-haiku-4-5`, brightgreen),
+  so the site's accent token does not move and no design decision was needed. A pre-build
+  run of the same suite on 2026-09-16, before the bump, recorded `runner_version` 0.10.2
+  and also read `PASSED` (+0.441 ± 0.183); it stays in the archive. This clears the
+  stale-artefacts item that was open on this entry (spec 035 F-3).
+
+### Published
+
+**`driftproof@0.11.0` is on npm**, published 2026-09-17 at 03:29:55 UTC, `latest`, and its
+`gitHead` is `2c6a747`, the published repository's commit that the `v0.11.0` tag points at,
+built from source commit `d8ed364`. The GitHub release `v0.11.0` was published at 03:34:28
+UTC. **GitHub Pages deployed that commit**: deployment `6495160487` (`github-pages`, sha
+`2c6a747`) reached `success` at 03:45:54 UTC, and the live homepage carries the `@v0.11.0` pin and
+the 0.11.0 example receipt, whose page and badge JSON both serve. A depth-1 clone of that tag, set up
+as the plugin self-test workflow sets it up (`npm ci
+--omit=dev`, then `node tests/gate.js --scan-root .`, then both manifests parsed), with the
+network cut, an empty `HOME` and the source trees hidden, reads **613/613, 0 failed, 1 not
+applicable**. The one not applicable is the approval-record rule, which reads a merge range from
+`main`, and a tag-only clone has no `main`. Every step exits 0 and the tree is left clean. Read
+after the publish at `d8ed364`, spec 028's gate reads **21/21**, its NFR-7 green against the
+published tarball, and spec 031's reads **9 GREEN**, its AC-1 and AC-2 green through `npx
+driftproof@0.11.0`. The build's own published-tree gate read 614/614 over 1,111 tracked files, and
+the repository gate at `d8ed364` read 625/625 with 4 not applicable. Evidence:
+`specs/000-governance/evidence/post-publish-0.11.0.txt`.
+
+**This release went out on the repository gate and the published-tree gate alone.** The sibling
+spec gates and the re-freezes the bump forces were not run before `main` moved. That is a deliberate
+deviation, recorded in `DECISIONS.md` on 2026-09-17 with the partial figures and what the
+post-release loop owes.
+
+**No community plugin catalog entry was found.** Neither `anthropics/claude-plugins-community`
+(`main` at `a727be1`, last committed 2026-08-24, before the plugin existed) nor
+`anthropics/claude-plugins-official` (`ea0a38e`) lists `driftproof`, and
+`claude.com/plugins/driftproof` returns 404. So no catalog pin could be read against this release.
+The plugin installs from this repository's own marketplace manifest.
+
+### Known open
+
+- Everything the findings page lists as open, carried from v0.10.2.
+
+---
+
+## v0.10.2 - 2026-09-15
+
+A fix release for the badge, the judge and the differ's wording. **If you render a
+Driftproof badge, or pin the Action or the plugin at 0.10.1, update.** Plugin users
+get the badge fixes only after `claude plugin update`.
+
+Two external audits of 0.10.1, an end-to-end retest and a reliability audit, found
+the badge and judge defects; the site's findings page (`docs/findings/`) records both
+audits, what this release fixes, and what it does not. **`package.json` reads
+0.10.2**, and `config.js`'s `RUNNER_VERSION` is held equal to it. The Action pins in
+`README.md` and `docs/index.html` are `@v0.10.2`, the plugin's pin in
+`plugin/driftproof/.claude-plugin/plugin.json` is 0.10.2, and so is the `minimum` in
+`plugin/driftproof/version-guard.json`, whose `resolved_by` names the commit that set
+it. `package-lock.json` moves with them, and
+`tests/fixtures/export-summary.snapshot.json`'s `receipt_hash` is re-cut, because
+`runner_version` is inside the canonical receipt that hash is taken over. The receipt
+spec is unchanged at **v0.6**.
+
+### What this release contains
+
+- **The badge rechecks retained judge output.** On 0.10.1 `/driftproof:badge`
+  rechecked each retained generation text against its receipt and nothing else, so a
+  receipt whose retained judge output had been edited still rendered a passing badge.
+  It now refuses a receipt when any retained judge text no longer digests to the
+  `judge_sample_hashes` the receipt carries (spec 031).
+- **The badge says what it checked.** Its statement no longer says judge text is not
+  retained when the transcripts beside the receipt hold it (spec 031).
+- **The comparison caveat prints only when it is true.** `driftproof diff` printed
+  that a comparison was not like for like whenever either receipt's band carried a
+  source label, which every v0.4 and v0.5 band does. It now prints only when the two
+  receipts' band sources differ (spec 031).
+- **The band wording.** A band is the mean plus or minus one standard deviation, a
+  descriptive spread and not a confidence interval. `driftproof diff`, the README and
+  the site now state a separation as detected under the rule and a non-separation as
+  none detected at the sample size used. The diff's headline and per-case labels read
+  differently; the verdict values underneath them, and every machine-facing token, are
+  unchanged. Twelve published records carry a versioned amendment for the old wording
+  (spec 031).
+- **A judge score that is not a number is refused.** On 0.10.1 a judge reply that
+  parsed with a score of `null`, `false`, `""` or `[]` was measured as 0, and `true` as
+  1. Such a reply is now refused the way an unparseable reply is, and no score is
+  recorded from it (spec 032).
+- **The badge reads transcripts only from inside the transcripts directory.** It
+  refuses an `index.json` entry, or an `index.json`, that resolves outside it (spec
+  032).
+- **The site** gains the findings page, a platform statement on the homepage and in
+  the README, and a scope sentence on the judge policy: the fixed judge governs the
+  reports Driftproof publishes, and a receipt records its own judge in `run.judge`
+  (spec 033).
+
+### Published
+
+**`driftproof@0.10.2` is on npm**, published 2026-09-15 at 18:12:27 UTC, and its
+`gitHead` is `95ae35e`, the published repository's commit that the `v0.10.2` tag
+points at, built from source commit `a683f5a`. A depth-1 clone of that tag, set up
+as the plugin self-test workflow sets it up (`npm ci --omit=dev`, then
+`node tests/gate.js --scan-root .`, then both manifests parsed), with the network
+cut and an empty `HOME`, reads **611/611, 0 failed, 1 not applicable**. The one not
+applicable is the approval-record rule, which reads a merge range from `main`, and a
+tag-only clone has no `main`. Every step exits 0. Read after the publish, spec 028's
+gate reads 21/21, its NFR-7 green against the published tarball, and spec 031's reads
+9 GREEN, its AC-1 and AC-2 green through `npx driftproof@0.10.2`.
+
+### Known open
+
+Everything the findings page lists as open: the statistical results of the reliability
+audit, the single-receipt badge's use of the effect floor alone, `TESTED` on a receipt
+with `attested` false or an incomplete run, the `--trusted-skill` flag, and Windows,
+which is untested. The underpowered-verdict rule is decided and is the next spec.
+
+---
+
+## v0.10.1 - 2026-09-13
+
+A fix release for the Claude Code plugin. **If you installed the plugin at 0.10.0,
+update it.** No version published before this one carries either fix.
+
+Both defects were found by an external audit of the published v0.10.0 plugin,
+received 2026-09-13. Nothing else in the runner, the receipt or the Action changed:
+since the v0.10.0 tag, the three plugin command files are the only shipped files
+that changed, apart from the version strings this release moves and
+`docs/sitemap.xml`, whose homepage `lastmod` moved from 2026-09-12 to 2026-09-13.
+**`package.json` reads 0.10.1**, and `config.js`'s `RUNNER_VERSION` is held equal
+to it. The Action pins in `README.md` and `docs/index.html` are `@v0.10.1`, and the
+plugin's pin in `plugin/driftproof/.claude-plugin/plugin.json` is 0.10.1. So is the
+`minimum` in `plugin/driftproof/version-guard.json`, whose `resolved_by` names the
+commit that set it. `tests/fixtures/export-summary.snapshot.json`'s `receipt_hash`
+is re-cut, because `runner_version` is inside the canonical receipt that hash is
+taken over. The receipt spec is unchanged at **v0.6**.
+
+### What this release contains
+
+- **The plugin's commands now find their own script reliably.** On 0.10.0 each
+  command told Claude to run the door script at a literal `<plugin-root>`
+  placeholder, and to fill in the plugin's location itself. Claude Code does not
+  substitute that placeholder, so the path a command ran from was whatever the
+  model wrote there. Each command now names the script through
+  `${CLAUDE_PLUGIN_ROOT}`, the path variable Claude Code substitutes into a
+  command's text before the model reads it. The line the model runs already
+  carries the plugin's real directory.
+- **Claude no longer fires a Driftproof command on its own judgement.** On 0.10.0
+  none of the three commands set `disable-model-invocation`, so Claude could
+  invoke any of them when a request looked like a match for its description.
+  `/driftproof:run` spends your Claude Code subscription. All three now carry
+  `disable-model-invocation: true`, and each runs only when you type it. That
+  includes `/driftproof:init`, which writes a new directory, and
+  `/driftproof:badge`. Both fetch and run the pinned CLI from npm, the same as
+  `run`.
+
+Spec 028's gate now holds both properties in every command file (A-028-37), with
+standing arms that go red against the command files as they shipped in 0.10.0.
+
+---
+
+## v0.10.0 - 2026-09-12
+
+The release that carries two merged loops: **spec 028** (the Claude Code plugin)
+and **spec 030** (the Action's decision integrity). **`package.json` reads 0.10.0**,
+`config.js`'s `RUNNER_VERSION` is held equal to it by the repository gate, the
+Action pins in `README.md` and `docs/index.html` are `@v0.10.0` with it, and the
+plugin's own pin — `plugin/driftproof/.claude-plugin/plugin.json` and the
+`minimum` in `plugin/driftproof/version-guard.json` — moves in the same commit.
+A fourth file moves with the version and is not documentation:
+`tests/fixtures/export-summary.snapshot.json` records the `receipt_hash` a built
+receipt has, and `runner_version` is inside the canonical receipt that hash is
+taken over — so the snapshot is re-cut, that one string and nothing else, in its
+own commit before the bump. The v0.7.2 entry below states the same coupling for
+the same reason. The receipt spec is unchanged at **v0.6**. **`driftproof@0.10.0`
+is published to npm**, and it is the version the plugin pin names. **The git tag
+is cut at the source commit whose gates were read green at that commit.** The
+Action pin `@v0.10.0` resolves once the published repository carries the tag,
+which it does not yet as this entry is written.
+
+### What this release contains
+
+- **Spec 030 — the Action decided a multi-model run from one receipt.** On
+  v0.9.0 and earlier, a run given more than one model in `inputs.models`
+  produced one receipt per model and decided the job from exactly one of them:
+  the one whose filename sorted first, which is a property of the model id and
+  not of the run. The decision is now taken over every receipt a run produced, a
+  receipt count below the requested model count fails closed, and `decide`
+  verifies every receipt in the set before anything is written.
+- **Spec 028 — the Claude Code plugin.** Three commands onto the CLI (scaffold a
+  suite, measure a skill, render a badge), each reading the resolved runner
+  version before any invocation that spends and refusing below the shipped
+  minimum. The plugin's version is the npm version its commands invoke.
+- **The publish path stopped shipping a subset.** `scripts/build-public.sh`
+  force-adds exactly what it copied and reads its own copy manifest back against
+  `git ls-files`, refusing at exit 10 rather than publishing a tree that does not
+  carry what the build put in it.
+- **`BACKLOG.md` joins the governance exclusion** (`152bc83`, 2026-09-12): the
+  queue is out of the published tree in `EXCLUDE_RE` and in the blocking by-name
+  assertion, the way `CONSTITUTION.md` and `DECISIONS.md` already were.
+
+### Resolved before the tag
+
+This entry first listed three items as open. Each was resolved before the tag,
+and each is kept here with the commit that resolved it, not deleted.
+
+- **Spec 028's NFR-7 was 20/21 until the publish, and is green.** It compares this
+  checkout's `lib/`, `bin/`, `config/` and `package.json` byte for byte against
+  `npm pack driftproof@<the plugin pin>`, so it could clear only once 0.10.0 was on
+  npm. Run against the published tarball, it read PASS (the run recorded at
+  `2e92389`), and the discharge is recorded at `a1c36aa`.
+- **The version guard's `resolved_by` names `ec6c069`**, the commit that set
+  `RUNNER_VERSION` to the minimum, `0.10.0`. It was set at `a7e0751`. It had named
+  `d19a195`, the merge that moved `RUNNER_VERSION` to 0.9.0. Spec 028's AC-5 could
+  not be satisfied by any value after the bump, and it was amended first, at
+  `b094309`, so that it reads the anchor against the commit under test. At
+  `877e04a` it was amended again, so that it refuses rather than passes when it
+  cannot find the commit that set the version.
+- **Spec 020's `README.md` body freeze was re-cut, by script, at `cbc01b1`.** The
+  bump had edited the README's sample receipt and its Action pin. Spec 021's read
+  of that freeze needed no change of its own: it reads spec 020's recorded digest,
+  and it went green when that digest was re-cut.
+
+### Known open
+
+- **This entry states what the release contains; it is not yet the release
+  note.** The paragraph spec 030's `PACKET.md` § 8 holds ready — the multi-model
+  headline and the sentence telling anyone pinned to v0.9.0 to move their pin —
+  is copied in verbatim at the release-notes step, which has not run.
+
+---
+
+## v0.9.0 - 2026-09-06
+
+The release that carries four merged loops: **spec 026** (receipt integrity),
+**spec 025** (the site design pass), **spec 021** (the gate and tooling carry)
+and **spec 027** (the confidentiality scan's classifier). **`package.json` reads
+0.9.0**, the Action pins in `README.md` and `docs/index.html` are `@v0.9.0` with
+it, and the receipt spec moves to **v0.6** with v0.5 frozen at
+`spec/receipt.v0.5.schema.json`. RUNBOOK precondition 3: receipt-emission
+semantics change, in six places. **The npm publish and the git tag are
+not made here**; they are the operator's steps after approval, in the RUNBOOK's
+order, and the pin above resolves to nothing until the tag exists.
+
+### Read this first: four ways this can break a script that worked on 0.8.1
+
+Each of these used to complete and write a receipt. Each now stops. If you run
+Driftproof in CI, read this section before you bump the pin.
+
+- **A budget or cap flag that is not a number is refused, at exit 2, naming the
+  input and the value.** `--max-calls`, `--max-usd`, `--samples`, `--max-cases`
+  and `--concurrency`, and the same keys in a `.driftproofrc`. On 0.8.1
+  `--max-calls abc` parsed to NaN, both guards were `>` comparisons that are
+  false against NaN, the banner printed the NaN, and the run completed and
+  wrote a receipt that carried no trace of the absent cap. If a pipeline has
+  been passing an empty variable or a templated string that did not expand, the
+  job stopped silently doing what it said; it will now stop loudly.
+- **A model id the registry does not carry is refused before the first call**,
+  at exit 2, naming the id and the absolute path of the registry it consulted
+  (`DRIFTPROOF_REGISTRY` when set, otherwise the packaged `config/models.json`).
+  `--models`, `--judge-model` and the rc, after alias resolution. On 0.8.1
+  `--models 'haiku;id'` ran to completion, recorded `registry: unregistered` as
+  a disclosure, read `TESTED`, and badged as passing on an id that is not a
+  model. `registry: "unregistered"` survives in the schema for **imported**
+  receipts only, where the model field is another tool's word. There is no
+  opt-out flag, deliberately.
+- **A run that measured nothing no longer reads as a run.** A suite with no
+  cases is refused at exit 2 before any call and writes no receipt at all. An
+  empty generation, and a judge reply with no parseable score, are now
+  *unmeasured* draws with a reason rather than a hashed empty string and a
+  zero; an arm whose every draw is unmeasured is `case_status:
+  failed_unmeasured`; a receipt containing one is `incomplete`, and an
+  incomplete receipt carries no verdict — `driftproof badge` renders `not
+  measured` and `driftproof diff` computes nothing across it. On 0.8.1 all
+  three wrote `TESTED` and badged `no effect`.
+- **The receipt schema is v0.6**, and `badge`, `diff` and `export` verify
+  `receipt_hash` before they read a receipt rather than warning and proceeding.
+  A tool that consumes Driftproof receipts should read `spec/RECEIPT.md` again;
+  v0.5 stays readable at `spec/receipt.v0.5.schema.json`. A stub run
+  (`DRIFTPROOF_STUB=1`) is also no longer a pass: it records
+  `verification_level: UNVERIFIED`, `run.surface: stub`,
+  `run.answered_by.kind: stub`, and verdicts `NOT_MEASURED`.
+
+### Spec 026 — a receipt now says what answered it
+
+Six findings, each a way the 0.8.1 runner wrote a receipt that read as more than
+it was. Two of them are in the list above; here is the set.
+
+- **F1** — a stub run recorded the real surface name and `TESTED` while the text
+  was canned. The schema now refuses `TESTED` on a stub receipt, and the
+  Action's self-test asserts exactly that.
+- **F2** — an empty generation was judged and scored, a judge reply with no
+  score became a zero, and a suite with no cases wrote a receipt.
+- **F3** — the summary's band was a different statistic from the row's, and for
+  one case it printed a zero band. `results.aggregates.band_rule` states the
+  formula, and a band the formula cannot form is null, never 0.
+- **F4** — a generation cut at the output cap was judged as complete. Every draw
+  records `stop_reason` and `truncated`; a truncated draw is unmeasured and
+  never judged, and `n_truncated` is counted.
+- **F5** — a non-numeric cap parsed to NaN and the guards compared against it.
+- **F6** — an unregistered model id ran to completion.
+- **F7**, found by the review rather than by the brief — the shipped badge
+  rendered a receipt whose hash does not verify, and `diff` and `export` warned
+  and carried on.
+
+Also: the surface's echo is read on every lane and attested on canonical ids, so
+a different model fails closed; `run.judge.model_id` and `prompt_template_hash`
+say which judge ran, and `diff` verdicts nothing across two of them; the skill
+loader and the post-checks are bounded.
+
+### Spec 025 — the site, measured in a browser instead of read out of a stylesheet
+
+The design pass re-cut every page: two self-hosted subsetted families
+(**19,600 bytes** of font, `specs/025-design-pass/PACKET.md`), one file holding
+every design value, one receipt template, one report card shape, a header that
+collapses to a wordmark and one disclosure, and a description per report.
+
+The part worth reading is why it needed a second pass. A single rule —
+`main { max-width: 720px }` — was clamping every section on the site to 672
+pixels at a desktop viewport, and **every structural assertion was green the
+whole time**, because a rule that exists and a rule that wins are different
+facts and only a layout engine knows which is which. The gate now serves the
+built tree over loopback and opens all 20 sitemap pages in Chromium at two
+viewports (`scripts/render-check.mjs`), and three defects fell out that no
+source scan could see: a receipt card that rendered on the wrong ground while
+its stylesheet said white; two published pages that scrolled sideways on a
+phone, because a sha256 is 64 unbreakable characters and Report 008 carries two
+of them in prose; and the contrast harness reading a translucent background as
+solid. Contrast is now measured over **727** real foreground/background pairs
+the browser produces and nobody curates, worst pair **4.71:1** against a 4.5
+bound (`specs/025-design-pass/evidence/gate-details-final.json`).
+
+Nothing on the site changed what it says. The scope rule of that loop was an
+allowlist of copy changes written before the work, held in both directions:
+every page's rendered text equals its text at the base transformed by exactly
+the recorded passages, and every recorded passage applies
+(`specs/025-design-pass/copy-changes.md`).
+
+### The two you cannot see
+
+**Spec 021 — the carry list, and six controls that were lying about their
+scope.** Six assertions in the site gate measured *what one loop's migration
+did* and were named as *properties of the site*. Each had been red since well
+before this release — on the 019b rebase, on Report 008's promotion, on v0.8.0,
+on v0.8.1 and on `main` itself — and a reader who learns to skip a red is being
+trained to skip a control. Five were re-scoped to the range their own spec
+records; the sixth could not be, because it is the only mechanical enforcement
+of the constitution's report-immutability rule and the design pass was about to
+re-cut every generated file, so it became a **content freeze**: a report's body
+outside its Amendments section must match a tracked digest, Amendments may only
+grow, chrome may change freely. The freeze is itself asserted against the
+manifest at the merge base, so "edit the body, update the digest, commit both"
+is red rather than green. The same loop split the spec 020 carry list into a
+tooling lane and a design lane, **58** items tagged 15 / 31 / 12 (`DECISIONS.md`,
+2026-09-03, *The carry list is partitioned into two lanes*).
+
+**Spec 027 — the confidentiality scan classifies before it scans.** The blocking
+deny-list scan used to read every file in the tree as UTF-8. A lossy decode is
+not a reading of a file, it is a different string: one committed screenshot
+decoded, at one compression offset, into a deny-listed acronym that `grep` does
+not find in the file, and it held the source gate red. Every file is now
+classified first and **no class is a skip** — text is scanned as before; a
+recognised binary is scanned over the regions of its format that can carry text
+(a PNG's text chunks, inflated, and not its pixel data; a woff2's name table,
+and not its outlines); and **a file matching no recognised signature takes the
+gate red**, naming the file and the reason. Skipping binaries by extension, and
+skipping anything that fails a UTF-8 round trip, were both rejected: they are
+the one shape a confidentiality control must never acquire, a file it stops
+looking at. At the 027 merge that walk was 947 files — 925 text, 17 png, 5
+woff2, **0 unrecognised, 0 hits** (`DECISIONS.md`, 2026-09-05, *Spec 027
+merged*).
+
+### What it changes about numbers already published
+
+Nothing. Every archived receipt validates against its own frozen schema and
+re-derives by its own rule; `badge`, `export` and `diff` over the archive are
+identical to 0.8.1's, except that the two incomplete receipts (reports 006 and
+007) now badge `not measured`, which is what they are. No report body moved.
+
+### The gates behind this release
+
+Every figure below is the confirmation run recorded at
+`specs/026-receipt-integrity/evidence/merge-gates-20260906T095315Z.txt`, on
+`dev` = `main`, and each is re-run unchanged at the version bump and preserved
+whole under `specs/026-receipt-integrity/evidence/release-v0.9.0/`.
+
+| gate | result |
+| --- | --- |
+| spec 026 | 81/81 |
+| repo gate, source tree | 616/616 |
+| repo gate, published tree | 602/602, source-only delta 14 |
+| spec 026 nested merged-tree run | 79/79 |
+| spec 020 | 173/173 assertions |
+| spec 021 | 58/58 |
+| spec 025 `--final` | 113/113 |
+| spec 027 | 61/61 |
+| specs 022, 023 and 024 | one, three and one accepted red |
+
+The five accepted reds are version and byte freezes pinned to bases this
+release has spent — spec 022 AC-8, spec 023 AC-6 and AC-7, spec 024 AC-8. They
+are named rather than fixed, and the loop that re-scopes them is in the list
+below.
+
+### Known open
+
+- **The methodology page owes a pass.** Spec 026 moved `lib/diff.js` three
+  times, `spec/RECEIPT.md` twice and `spec/receipt.schema.json` once, and
+  touched neither `docs/methodology/index.html` nor the glossary in
+  `scripts/build-site-pages.js`. The trigger to name in that pass is the receipt
+  schema's move to v0.6; the differ's judge comparison and the band rule moved
+  with it. This is a real documentation gap on work that has already merged, and
+  it is the guard that found it rather than a reader.
+- **Five accepted reds across specs 022, 023 and 024**, each a freeze pinned to
+  a base this release spent. The durable fix is a tooling loop that re-scopes
+  them; it is not scheduled.
+- **Seven non-blocking findings from spec 026's approval**, carried by name and
+  none fixed: one misfiled table row, four assertion scopes narrower than the
+  criteria they serve, one undeclared character-class translation, and one stale
+  version line (`DECISIONS.md`, 2026-09-06, *Spec 026 merged*).
+- **Two merge-base reads that go vacuous rather than red** when `main` equals
+  `HEAD`, at `specs/020-site-relaunch/gate.mjs:1159` and
+  `specs/021-gate-and-tooling-carry/probes/bodyfreeze.mjs:125`. Measured, not
+  fixed.
+- **The lossy-decode class is latent in three other blocking scans** that still
+  read every file as UTF-8 — the rename scan, the hygiene scan, and the
+  credential-format scan. Measured over every non-UTF-8 file in the tree, none
+  produces a hit, so this is exposure and not damage.
+- **The published tree's source-only assertion delta is 14 against a stated
+  allowance of 5.** Inherited from Report 008's promotion, measured on both
+  trees, carried since spec 027.
+- **An approval still cannot see a merge-unstable assertion.** Four times now,
+  an assertion correct on its branch went red the moment `main` absorbed it,
+  because approval runs the spec gate on the branch and nothing runs it on a
+  merged tree. The carried fix is a merge-simulated run inside the approval
+  step.
+- `--keep-transcripts` retains the last measured draw of each case and mode
+  only; earlier draws' hashes are checkable against nothing on disk. Stated,
+  not moved.
+- Consolidating the input contract into one shared module (028's decision 1).
+
+---
+
+## v0.8.1 - 2026-09-03
+
+Spec 023, on the branch `spec/023-action-input-hardening` from `c5e5454`.
+**`package.json` reads 0.8.1**, and the Action pins in `README.md` and
+`docs/index.html` are `@v0.8.1` with it; the pin on the page is derived from
+`package.json` through `stats.json`, not typed. The change that earns a patch
+version is `action.yml`: it hardens a surface published on the Marketplace, so
+the tag adopters are told to use has to move to a commit that carries the fix.
+**The npm publish and the git tag are still a separate human step**, and this
+entry is written before both, after approval.
+
+### What shipped
+
+- **The Action's inputs are data, not shell.** `action.yml` used to substitute
+  `${{ inputs.skill-dir }}`, `${{ inputs.models }}`, `${{ inputs.max-usd }}`
+  and `${{ inputs.max-calls }}` straight into an inline `run:` script, and the
+  enforce step did the same with `${{ steps.run.outputs.verdict }}`,
+  `${{ steps.run.outputs.delta }}`, `${{ inputs.fail-on-regression }}` and
+  `${{ inputs.models }}`. GitHub replaces an expression with its text before
+  bash parses the script, so a value carrying a quote, a semicolon, `$(...)`, a
+  backtick or a newline ran on the runner as a command (audit finding A1,
+  High, confirmed by two external audits and the hand audit of 2026-09-03).
+  Every input now crosses into the shell as an environment variable set by the
+  step's `env:` block, `INPUT_SKILL_DIR` and so on, and the step bodies live in
+  `action/run.sh` and `action/enforce.sh`, which reference those variables only
+  double-quoted. No `run:` line in `action.yml` or the self-test workflow
+  contains an expression. The spec gate executes the real scripts with a
+  payload carrying all five characters in each input and asserts nothing runs;
+  its mutation executes the v0.8.0 step from git with the same payload and
+  watches four marker files appear.
+- **The refusal is proved on a real GitHub runner, in public** (spec 024).
+  Spec 023's payload tests live under `specs/`, which the public build
+  excludes, so the self-test workflow that ships used to prove only that the
+  environment-variable plumbing works end to end. It now passes one hostile
+  value, carrying a double quote, a semicolon, `$(...)`, a backtick and a
+  newline, through each of the five inputs of the real `action.yml` on the
+  runner, and fails the job unless every one is refused before anything ran:
+  no marker file from the payload, no receipts directory, every step outcome
+  `failure`, and the `::error` line naming each input from the shipped script
+  under the same mapping. A control step pastes the payload into a script the
+  way v0.8.0 did and requires four markers to appear first, so the mechanism
+  is shown live before it is relied on. A directory named with the same
+  characters then runs as data (verdict PASSED), and a receipt whose model id
+  carries a newline is shown to add nothing to `$GITHUB_OUTPUT` through
+  `badge --github-output`. The benign run is the run on that hostile-looking
+  directory: the action runs to success exactly once per job, because
+  `action.yml` uploads its receipt under one fixed artifact name and
+  `actions/upload-artifact` v4 refuses a second upload of a name on the run
+  (spec 024 v1.1, after the first approval was rejected for exactly that).
+  Everything runs under `DRIFTPROOF_STUB=1`: no key, no spend. The spec's
+  gate builds the public tree with `build-public.sh`, executes the workflow's
+  own blocks against it under the shell options the runner uses, walks the
+  whole job step by step with the composite's upload modelled on the pinned
+  action's contract, and executes the blocks against the v0.8.0 action from
+  git, where the workflow's assertion goes red on the marker. v0.8.1
+  therefore publishes with real-runner hostile-input proof, not
+  plumbing-only proof. No version bump: nothing about a receipt or the npm
+  artifact moved, and the tag did not exist yet.
+- **Inputs are validated before use.** `models` must be comma-separated model
+  ids over `[A-Za-z0-9._-]`; `max-usd` a positive decimal; `max-calls` a
+  positive integer; `fail-on-regression` exactly `true` or `false`; `skill-dir`
+  an existing directory with no control character. Anything else fails the
+  step with `::error title=Driftproof::<input>: ...` before a directory is
+  created or a model call is projected. A run at the declared defaults is
+  unchanged.
+- **`$GITHUB_OUTPUT` entries are heredocs with a random delimiter, and a line
+  break is refused.** `lib/verdict.js` wrote `message=<word> on <model_id>` as a
+  bare `name=value` line, and `model_id` is any string a receipt carries: a
+  `.driftproofrc` in a skill directory sets it, and a newline in it appended a
+  second, attacker-chosen output entry that the enforce step then interpolated
+  into its shell (A6, High when chained with A1). The writer now emits
+  `name<<ghadelim_<32 hex>` blocks with a delimiter drawn from
+  `crypto.randomBytes` for every entry, and throws before writing anything if a
+  value carries `\r` or `\n`; the shell writes the `receipt` entry the same
+  way. Inside the Action the chain needed the rc to win over `--models`, which
+  it never does because the Action always passes the flag; the writer is fixed
+  regardless, because `driftproof badge --github-output` is also a command an
+  adopter can put in their own workflow.
+- **Full-SHA pins and a fail-closed install** (A9, Low). `actions/checkout`,
+  `actions/setup-node` and `actions/upload-artifact` are pinned to the commits
+  their `v4` tags resolved to on 2026-09-03, with the release in a comment. The
+  install step no longer falls back from `npm ci` to `npm install` when the
+  lockfile disagrees with the manifest.
+- **`RUNNER_VERSION` moves to 0.8.1**, RUNBOOK precondition 3, held by the repo
+  gate. It is stamped into `runner_version` on every receipt written from here
+  on, so it reached the sample receipt in `README.md` and
+  `tests/fixtures/export-summary.snapshot.json`, whose `receipt_hash` is a hash
+  over a receipt that carries the field; only those two fields of the snapshot
+  moved, checked field by field before re-pinning.
+
+### What did not change
+
+What `driftproof run` measures. `bin/driftproof`, every measurement module in
+`lib/`, the receipt schema and the model registry are byte-identical to
+`c5e5454`, `config.js` differs on the `RUNNER_VERSION` line alone, and the
+verdict rule and the badge JSON are compared to base by execution. A receipt
+from 0.8.1 differs from one from 0.8.0 in the version stamp and therefore in
+its hash, and in nothing else.
+
+### The gates, re-run rather than remembered
+
+Spec 023 **24/24**, no live layer, no spend. Repo gate on source: see the
+spec's `tasks.md` for the count at the approved commit; two existing
+assertions were reversed rather than weakened (the one that asserted the
+`${{ inputs.max-usd }}` interpolation reaches the CLI, and the one that matched
+`verdict=PASSED` in the writer's output) and a mirror section was added, so
+the count went up. Spec 020's site gate fires its version-freeze criterion on
+this bump exactly as it fired on v0.8.0; recorded in the spec-021 carry list,
+not fixed here.
+
+### What did not ship
+
+- **The npm publish and the `v0.8.1` tag.** The version is bumped here; nothing
+  is published or tagged. Until the tag is pushed, `@v0.8.1` does not resolve,
+  and `@v0.8.0` on the Marketplace still carries the interpolation.
+- **The push to the public tree.**
+- **The other audit groups.** S3 skill-dir input validation (including the
+  model-id charset at the receipt, N12, which is the root the writer now
+  refuses at the edge), S4 to S9, and the spec-021 carry list, unchanged.
+
+### Known open
+
+The spec-021 carry list in `specs/020-site-relaunch/tasks.md`, plus one more
+firing of its F-R5 shape on this bump, recorded there under spec 023.
+
+---
+
+## v0.8.0 — 2026-09-03
+
+Spec 019b, merged at `dfcd863` on the approval record naming `771df91`, plus the
+Report 008 promotion on top of it. **`package.json` reads 0.8.0**, and the Action
+pins in `README.md` and `docs/index.html` are `@v0.8.0` with it; the pin on the
+page is derived from `package.json` through `stats.json`, not typed. The change
+that earns a minor version is `config/models.json`, which ships inside the
+package. **The npm publish and the git tag are still a separate human step**, and
+this entry is written before both.
+
+### What shipped
+
+- **`claude-fable-5-1` registered, with its price bound to a dated snapshot.**
+  The registry row carries input 10 and output 50, and
+  `specs/019b-fable-5-1-registration/evidence/docs-pricing-snapshot-2026-09-01.json`
+  is the file it is asserted against, field by field, by the spec gate. **The
+  registration moves no projection and the spec says so**: `DEFAULT_PRICE` in
+  `lib/models.js` already priced an unregistered id at the same 10/50, so the
+  projection a cost guard produces is unchanged. What changes is that a receipt
+  now stamps `registry: "registered"` instead of falling back, and that the price
+  has a dated, named source rather than a default. `claude-fable-5` is retained at
+  unchanged prices, annotated `lifecycle: "legacy"`.
+- **Report 008, release drift, `claude-fable-5-1` against `claude-fable-5`.**
+  Two cells, 14 cases, and the tally on the release axis is **0 improved · 0
+  regressed · 14 within noise · 0 not measured**. Both cells came back within
+  noise. The skill `content_hash` and `suite_hash` were asserted identical on
+  both sides before the first call, and it is the first release pair in this
+  project where both sides are generation-sampled receipts, which is what makes
+  the delta attributable to the model rather than to the instrument. One case is
+  held inside the verdict by the effect floor rather than by band overlap, and
+  the page names it rather than leaving it in a table.
+- **Report 007 v1.1, an economics amendment.** Twenty-eight inserted lines, zero
+  deleted: the v1.1 notice, the table re-priced on the fresh-input basis, and the
+  retraction of a mechanism sentence that rested on an uncontrolled basis. No
+  published figure above the block is edited, which is what the block claims and
+  what the diff shows.
+- **`RUNNER_VERSION` moves to 0.8.0**, which is RUNBOOK precondition 3 and which
+  the repo gate asserts rather than the release note claiming it. It is stamped
+  into `runner_version` on every receipt written from here on, so it reached two
+  further places that are checked: the sample receipt in `README.md`, and
+  `tests/fixtures/export-summary.snapshot.json`, whose `receipt_hash` is a hash
+  over a receipt that carries the field. **Only that one field of the snapshot
+  moved**, verified field by field before it was re-pinned; the interchange shape
+  the fixture exists to freeze is untouched. Worth writing down: a fixture
+  described as a frozen v1 contract carries a value that changes on every version
+  bump, so "frozen" is true of its shape and not of its bytes.
+
+### What the promotion changed, which was supposed to change nothing
+
+Three places in this repository asserted that Report 008's draft state lived in
+its path alone, that nothing in the page bytes marked it, and that promotion was
+therefore a rename that re-checked nothing. All three were measured wrong at
+promotion, and the correction is the most useful thing in this release.
+
+- **The head is not path-independent.** `build-head-tags.js` keys report pages on
+  `^reports/(\d+)/index\.html$`, which `008-draft/` does not match. Losing the
+  suffix changed the title from the page's own `<h1>` to the `reports.json` form,
+  dropped `-draft` from canonical and `og:url`, and replaced a bare `WebPage`
+  JSON-LD with a `TechArticle` carrying headline, `datePublished`, publisher,
+  license and a `hasPart` Dataset list. The draft was reviewed without the
+  structured data it now ships. The page is re-rendered from its receipts, not
+  carried across, and the three stale comments are corrected in place.
+- **Report 008 rendered its verdicts as bare text.** Every other report wraps a
+  verdict cell in the styled `.v` pill; 008 did not, so it was the one report
+  whose verdicts rendered unstyled and the one `tests/essay-grounding.js` could
+  derive no tally from, since that oracle reads `span.v`. Both were invisible
+  while the page sat at a path every site-wide check skipped.
+- **The tally the oracle then derived was incoherent**, summing the release-axis
+  table and the within-report lift table into one figure, with a parenthesised
+  label its own regex cannot match in prose. The page now states its release-axis
+  tally in the form the rest of the site uses.
+- **`README.md`'s latest-report link was left on 007** while `stats.json` had
+  moved to 008. Caught by AC-30's derived-opening check, which composes that
+  block rather than pattern-matching it.
+
+### The gates, re-run rather than remembered
+
+Spec 019b **8/8**. Repo gate **566/566** on source. Spec 020 site gate
+**163/168** with `--final` and **160/165** without, the same five failures in
+both: AC-21, AC-30, AC-31, AC-35 and NFR-5. All five are one class, recorded as
+F-R1, F-R4 and F-R5 in the spec-021 carry list: migration-diff assertions written
+to fence spec 020's own loop, evaluated on every later branch as if they were
+evergreen site invariants. Each fires on this release's legitimate changes and on
+nothing else. **AC-31 is the clearest case of the shape**: it asserts "the version
+is unchanged: this loop does not publish", which was true of the loop it was
+written for and is the opposite of what this release does.
+No probe reached a provider in the promotion or in any gate run above.
+
+### What did not ship
+
+- **The npm publish and the `v0.8.0` tag.** The version is bumped here; nothing
+  is published or tagged. A pin that names a tag which does not exist yet is the
+  defect DECISIONS recorded for `v0.6.0`, and the RUNBOOK's precondition is that
+  the tag is pushed first. Until it is, `@v0.8.0` does not resolve.
+- **The push to the public tree.**
+- **Any fix to the findings below.** They are carried, not resolved.
+
+### Known open
+
+**1. From the 019b approval**, `evidence/approval-20260903T023152Z.md`, verdict
+approved-with-findings, none blocking. Its F1 and F6 are resolved; five are not:
+
+- **F2** — `spec.md` declares base `3ce57d3`; the real merge-base is `77816f7`.
+- **F3** — AC-3's receipt-reference clause matches on the filename, not on the
+  receipt body. The clause is decorative; AC-3's stated criteria are genuinely
+  asserted.
+- **F4** — the AC-2 and AC-5 mutation controls re-implement the comparison they
+  plant against instead of driving the asserted one. The planted violations are
+  caught by a copy of the logic, not by the logic.
+- **F5** — AC-4's assertion reads `lib/cost.js` alone while the claim it guards
+  names all of `lib/`. The claim is true today and the gate would not redden if
+  it stopped being.
+- **F7** — AC-2 is a DECLARED-level snapshot recorded in the same session as the
+  registry row, so it proves two files agree, not that either matches the vendor.
+  Mitigated here only because the registered price equals `DEFAULT_PRICE`.
+
+**2. From the supplementary examination**,
+`evidence/examination-20260903T024546Z.md`. Its E3 is closed by the gate receipt
+that pins `4a3115e`; three remain:
+
+- **E1** — the 165/168 site-gate figure is a `--final` figure; a plain run is
+  162/165. Cite the flag wherever the count is cited.
+- **E2** — NFR-5's offender set is five paths, not four: the assertion filters on
+  `^(receipts|reports)/`, so the run record is in scope alongside the receipts.
+- **E4** — `e9feab1` changed `site-chrome.js` and `site-data.mjs`, the data layer
+  for every report page, from a single-feature branch. Verified harmless in fact
+  rather than assumed: every page re-derives identically. The blast radius was
+  the whole site.
+
+**3. The spec-021 carry list**, recorded in
+`specs/020-site-relaunch/tasks.md` under the 019b rebase heading:
+
+- **F-W1** — `scripts/release-watch.js` writes `auto_added` rows into the tracked
+  `config/models.json` of the dev worktree. It has dirtied a gate run once and
+  blocked a rebase once.
+- **F-W2** — the row it wrote priced `claude-fable-5-1` at 5/25 against the docs
+  snapshot's 10/50, and dated the release two days later. The disagreeing source
+  is unidentified, which is why no auto-added row should be trusted until it is.
+- **F-R1** — AC-21, AC-35 and NFR-5 are migration-diff assertions evaluated as
+  evergreen invariants. They will fire on every future report-publishing branch.
+- **F-R2** — the TL;DR card counts every receipt the page links and points that
+  count at one directory. Report 007 ships the mismatch; Report 008 widens it.
+- **F-R3** — `.gitignore` line 42 matches `specs/*/gate-results.json`, so a gate
+  receipt written where the gate writes it cannot be committed, and a run leaves
+  no artifact behind it.
+- **F-R4** — AC-30's second half freezes `README.md` against spec 020's base and
+  is the fourth instance of F-R1, found by this release tripping it. **AC-30's
+  first half is not carried**: it caught a real staleness here and must not be
+  retired alongside the freeze.
+- **F-R5** — AC-31's second assertion, *the version is unchanged: this loop does
+  not publish*, compares `package.json` to spec 020's base. It is a statement
+  about that loop's own scope, frozen as though it were a site invariant, so it
+  reddens on any later release that bumps a version. It fires here because the
+  version bump to 0.8.0 is the point of the release. **Dispositioned, not
+  silenced**: AC-31's first assertion, the mandated keyword list in order, is
+  unaffected and still passes.
+
+**4. One governance limit, recorded on the approval itself.** Finding A1 of
+`evidence/approval-20260903T030227Z.md`: the approval session's own identifier
+appears on the `Claude-Session` trailer of two commits in the merged range,
+`e9feab1` and `4a3115e`. The build context was cleared, so no transcript was
+available to the approval, but identity isolation did not hold for those two.
+Neither rests on that session alone — both sit inside the thirteen examined by a
+different session, and across the whole range every commit touching anything
+outside `specs/*/evidence/` carries an examination or approval written by a
+session other than its author.
+
+### Amendments
+
+**v0.8.0, amendment 1** · 2026-09-14. This amendment corrects how this entry's within-noise wording is read; the entry is left as written, no figure changes, and the release it describes is unchanged. The entry says Report 008's tally was *"0 improved · 0 regressed · 14 within noise · 0 not measured"*, that *"Both cells came back within noise"*, and that *"One case is held inside the verdict by the effect floor"*. The tally counts the with_skill arm's fourteen cases across the release. None of them was separated under the rule at the sample size used: no separation detected, which is not evidence of equivalence and not evidence that nothing changed. The one case the floor keeps in has bands that do not overlap and a move below the 0.05 effect floor, so it is not separated under the rule. Across the same release one baseline case, severity-labeled-findings, separated under the rule, which is not proof that the baseline changed. The entry's *attributable to the model rather than to the instrument* reads past a runner version that also changed, from 0.6.0 to 0.7.2. Filed under the wording rules of the repository's spec 031, amendment A-031-20.
+
+---
+
+## Site relaunch — 2026-09-02
+
+Spec 020, merged at `eeafcc8`. **No version change and no npm publish.** Nothing
+under `lib/`, `bin/` or `config/` moved and `package.json` stays at 0.7.2; the
+two fields of it that did change are the keyword list and `html-validate`, the
+first devDependency this repository has carried.
+
+This finishes the sentence v0.7.2 started. That release stopped maintaining an
+index by hand and derived the sitemap instead. This one does the same thing to
+the pages themselves: the site was a set of hand-written HTML files that each
+restated the project's own numbers, and it is now a template plus a data layer,
+with every number read out of the receipt it comes from.
+
+### What shipped
+
+- **A brand kit.** The glyph in its three states — separated, overlapping,
+  refused — favicons, an apple-touch icon, and `docs/tokens.css` as the single
+  place a colour or a type scale is declared.
+- **A data layer.** `scripts/site-data.mjs` derives `docs/data/reports.json`,
+  `stats.json` and `sources.json` from the receipts, and `scripts/band-plot.mjs`
+  draws one band plot per measured cell — 121 of them, committed. No page states
+  a figure it does not read from this layer.
+- **A rendered site.** `scripts/build-site-pages.js` renders ten pages from that
+  data. `--check` re-renders them and fails if what is on disk differs, so a
+  hand-edit to a generated page is now detectable rather than merely discouraged;
+  that check runs on every gate invocation, not only the final one.
+- **Injected chrome on the report pages.** `scripts/site-chrome.js` adds the
+  TL;DR block, nav, footer and script tags to the seven published reports, with
+  the bodies asserted byte-identical to their base outside the injected fences.
+- **Metadata on all 23 published pages.** Titles, descriptions, canonical links,
+  OG and Twitter card tags, eight content-addressed per-report cards, and JSON-LD
+  — each derived from the page's own content by `scripts/build-head-tags.js`,
+  none hand-written.
+- **Indexability.** A `/reports/` index, `robots.txt` (a 404 on the live site
+  until now), `feed.xml`, a 404 page, clean document paths with redirect stubs
+  the sitemap resolves, and `llms.txt` — deferred by v0.7.2 for being a stale
+  hand-written draft, delivered here as a generated file.
+- **Two new pages**, `/glossary/` and `/report-types/`.
+- **Measurement and subscribe slots driven by config.** Where
+  `docs/site.config.json` sets a token, the template renders the analytics
+  beacon, a verification meta tag or the email form; where a field is unset it
+  renders nothing at all, with no placeholder left behind.
+- **Progressive enhancement.** An island loader and the band playground, with
+  every page's content readable with JavaScript off.
+- **The gate grew with the site.** Spec gate 168/168 (`--final`). Repo gate
+  555/555 on source, re-run on the merged tree, and 550/550 on a published tree
+  of 439 tracked files; source-only delta 5 of an allowed 5, unchanged.
+- **$0.00.** No probe in this loop reached a provider.
+
+### What did not ship
+
+- **Re-punctuation of four documentation pages.** `methodology`, `interop`,
+  `judge-policy` and `authoring` carry about fifty spaced hyphens between them.
+  This loop moved them to clean paths and did not rewrite them; AC-42 defers
+  them, and the deferral is bounded by an assertion rather than by this sentence.
+- **Two `&mdash;` entities** on one line of
+  `docs/writing/three-releases/index.html`, a file this branch never touched.
+- **The body of `README.md` below its opening block**, frozen byte-for-byte
+  against the branch base by AC-30. It still writes `Report #001` through
+  `Report #007`.
+- **The publish.** This entry is written before the publish, not after it, and
+  the loop pushed nothing to the public tree.
+
+### Known open
+
+Four groups, none of them a live violation on this tree. Each is a control that
+protects less than its wording claims, an amendment proposed and not applied, or
+an operational defect recorded rather than fixed.
+
+**1. The spec-021 carry list**, recorded in full under "Carried to spec-021 (gate
+hygiene)" in `specs/020-site-relaunch/tasks.md` and not restated here: F-1, F-2,
+F-3 and F-15 from the third approval; F-D and F-E from the record that rejected
+the fifth-pass packet; F-B from the fourth; the 27 control gaps filed as
+recorded-not-blocking by `evidence/approval-20260902T103530Z.md`, less the three
+the sixth pass closed (AC-36, AC-37's from-scratch clause, and the AC-9 and AC-13
+backstops); and the gate's own header, which claims it was red on every criterion
+when it was committed and was measured green on three.
+
+**2. The five findings from the sixth approval**,
+`evidence/approval-20260902T113400Z.md`, verdict approved-with-findings, none
+blocking:
+
+- **F-020-1** — the repository's traceability tool cannot run on this spec at
+  all. It requires `gate.sh` and `### AC-n` headings; 020 ships `gate.mjs` and
+  writes `**AC-n.**`, and is the only one of nineteen specs without a `gate.sh`.
+  Closure was re-derived by hand: 43 criteria, every one carrying a task and at
+  least one assertion, no orphan on either side.
+- **F-020-2** — AC-39's newest publish-build log was produced before the tree it
+  attests to was pinned, and names no commit, so the assertion cannot see the
+  gap. The substance was re-derived on the pinned tree by the approving session.
+- **F-020-3** — AC-21 states byte-identity outside the injected chrome but
+  windows its comparison to `<main>`. Three of the five fences on a report page —
+  `nav`, `foot`, `scripts` — fall outside that window and are never compared to
+  the base.
+- **F-020-4** — two of AC-23's named `llms.txt` link targets, the methodology
+  page and `spec/RECEIPT.md`, have no assertion. Both are present today.
+- **F-020-5** — the classification's data-sensitivity row reads "no PII" while
+  the shipped subscribe form posts a visitor's email address to a third party,
+  with no privacy line beside the field. The tier is unaffected; the row the tier
+  was read from is wrong.
+
+**3. The `receipt.sh` amendment**, proposed in DECISIONS on 2026-09-02 and
+deliberately not applied from inside a loop running under it: the writer should
+JSON-escape the description it interpolates, and the results line it parses
+should not be delimited by a character an assertion name may legally contain.
+Two receipts committed in this loop report a green gate and are not parseable
+JSON, and nothing noticed, because nothing reads a receipt back.
+
+**4. Release watcher wrote to the shared checkout.** At 2026-09-02 00:14:55 the
+`driftproof-release-watch` timer ran with `WorkingDirectory` `~/driftproof`, the
+main checkout, and appended a `claude-fable-5-1` row to `config/models.json` with
+auto-discovered prices of 5 input and 25 output, half the hand-verified values
+registered by `spec/019b` in `4ecd0a8`. It then failed its cost guard (projected
+840 calls against a cap of 500), recorded the attempt as failed in
+`state/trigger-attempts.json`, and left the tracked file modified and uncommitted
+in a checkout the spec-020 merge was about to use. The write was preserved as
+`~/scratch/models-json-release-watch-20260902T0014.diff` and `config/models.json`
+was restored to the tracked version before merge; nothing from it shipped.
+Carried to spec-021: the watcher runs in its own worktree or writes to a staging
+file, never a tracked file in the main checkout; and its default price for an
+unregistered model must not under-estimate, so it uses the highest known tier or
+refuses to append.
+
+---
+
+## v0.7.2 — 2026-09-01
+
+**Docs-only. Nothing under `lib/` or `bin/` changed**, and the gate asserts that
+rather than the release note claiming it.
+
+One precision, because "docs-only" is a claim about behaviour and not quite about
+the file set. Moving `package.json` to 0.7.2 drags three files with it, each by a
+rule older than this release: `config.js`'s `RUNNER_VERSION` must equal the
+package version, the sample receipt in `README.md` must carry that same
+`runner_version`, and `tests/fixtures/export-summary.snapshot.json` records the
+`receipt_hash` a built receipt has — which moves when `runner_version` moves.
+`config.js` is a runtime constant, not documentation. Nothing else about what the
+runner does changed, and `scripts/prepare-report-007.js` gained one call so that
+its page still renders as a pure function of its receipts.
+
+The instrument has been sound for five weeks and invisible for the same five
+weeks. The site published with no analytics of any kind, no link-preview card,
+and a `docs/sitemap.xml` maintained by hand that had already lost two reports —
+it listed 11 URLs for a 13-page site, Search Console confirmed the 11, and
+nothing failed. That last sentence is the whole argument for this release: an
+index nobody derives is state that drifts with nothing watching it, which is the
+failure this project exists to name.
+
+### What shipped
+
+- **Analytics.** Cloudflare Web Analytics, as the dashboard's own JS beacon,
+  exactly once and last in `<head>` on every published page. **This is the first
+  third-party script on the site.** Until now every page was static HTML plus one
+  stylesheet, and the only third-party request anywhere was the shields.io badge
+  on the home page; from this release every page makes a third-party request on
+  every view. It sets no cookies, so no consent banner is required. The snippet is
+  pasted rather than injected because the origin is GitHub Pages and the zone is
+  not proxied — Cloudflare's automatic injection is a proxy-layer feature and this
+  site's DNS is grey-cloud, so it was never available.
+- **An OG card.** One static `docs/og.png`, 1200×630, opaque, under 22 KB,
+  regenerated by `scripts/build-og-card.py` and committed. No figure is on it:
+  an image cannot be gate-checked, so a count baked into one is a published
+  number with nothing watching it.
+- **Card tags.** `og:title`, `og:description`, `og:image`, `og:url` and
+  `twitter:card` on all fourteen published pages, each derived from that page's
+  own `<title>`, `<h1>` or headline paragraph by
+  `scripts/build-head-tags.js` — never hand-written.
+- **A generated sitemap.** `scripts/build-sitemap.js` derives the URL set from
+  every `.html` under `docs/` that `build-public.sh`'s own `EXCLUDE_RE`
+  publishes, with `lastmod` read from `git log`. The gate asserts **set equality
+  in both directions**: one direction is how #005 and #006 went missing, because
+  a sitemap listing 11 of 13 pages is a subset and a subset check passes.
+
+### What did not ship
+
+- **`llms.txt`.** The request scoped it to a drafted file in an audit note's
+  §C; §C carries no such draft. One exists elsewhere in that document, predates
+  Report #007, names six reports, and would put a stale index on the site — the
+  same defect as the hand-maintained sitemap, one layer out and worse, because a
+  model reading a stale index has no crawler to notice the gap. It is carried
+  forward as a generator plus a bidirectional assertion, which is how the sitemap
+  landed here.
+
+### Known open
+
+`docs/robots.txt` is still a 404 on the live site. `rel="canonical"` tags,
+`schema.org` `Dataset` JSON-LD and per-page `<meta name="description">` for the
+six report pages that lack one are drafted and unshipped. None of them was in
+this release's scope, and none is blocked by anything in it.
+
+The `lastmod` on all fourteen entries reads `2026-09-01`, because the head-tag
+pass touched all fourteen files. That is accurate rather than informative; it
+self-corrects the next time one page changes alone.
+
+---
+
+## v0.7.1 — 2026-09-01
+
+**v0.7.0 was tagged and never published to npm. This is why, and the fix.**
+
+### What happened
+
+The v0.7.0 Action self-test failed on the public tree at `00c4ddd`:
+
+```
+  projected calls: 1200/model × 1 model(s) = 1200   per-model cap: 200
+  projected cost: ~$3.52 (rough upper bound; budget $2.00, hard-stop $2.50)
+  ✗ ABORT (cost guard): projected 1200 calls/model exceeds --max-calls 200.
+```
+
+**The guard worked.** It refused a run whose projection exceeded its cap, before
+spending anything, and said exactly why. Nothing in this release weakens it, and
+nothing in it is surface-conditional or exempt in stub mode.
+
+What was wrong is that two cap literals were calibrated against a **draws = 1**
+projection and were never rescaled when the projection became honest. **The caps
+have been stale since `5e08ba2`** (2026-08-29), where spec 014 made the runner
+draw the generation up to `SAMPLING.max` times per arm; spec 016 then made the
+cost estimator require the draw factor. `REPORT_MAX_USD` was raised 40 → 300 on
+2026-08-31 for exactly this reason. That pass moved the *report* cap and missed
+the *dev* cap and the call cap, which are the two the Action and every `npx` user
+run under.
+
+**It was not only CI.** At the pre-recalibration `DEV_MAX_CALLS` of 200, the
+sampling-era projection admits one case, so the shipped CLI aborted on any suite
+of two or more:
+
+| suite size | projected calls | at the old default |
+|---|---|---|
+| 1 case | 120 | runs |
+| 2 cases | 240 | **ABORT** |
+| 10 cases (bundled example) | 1200 | **ABORT** |
+
+A fresh clone of the public tree at `00c4ddd`, run with no cap flags at all,
+aborted identically. **The package was broken at its own defaults**, which is why
+0.7.0 was tagged on the public repo and not published to the registry. The four
+published quickstart strings printed a command that could not run.
+
+### The recalibration
+
+Derived, not guessed: the headroom the pre-sampling defaults carried is
+preserved rather than widened.
+
+| | draws = 1 (what the caps were set for) | draws = 10 (v0.5) |
+|---|---|---|
+| calls / model, 10-case suite | 120 | 1200 |
+| projected cost | $0.3525 | $3.5250 |
+| headroom at cap 200 / $2.00 | 1.67× / 5.67× | 0.17× / 0.57× |
+
+`1200 × 1.67 = 2000` and `$3.5250 × 5.67 = $20.00`, so `DEV_MAX_CALLS = 2000`
+and `DEV_MAX_USD = 20`. A 2000-call cap under ten draws is exactly as tight as
+200 was under one. Both stay **literals**: a default derived from the suite in
+hand could never fire, which would retire the guard rather than recalibrate it.
+
+- `action.yml` gains a **`max-calls` input**. The old `DEV_MAX_CALLS` of 200 was
+  unreachable from the Action, which declared no such input and passed none, so
+  no workflow could raise it.
+- The **self-test is pinned to the computed ceiling** (1200 calls, $3.53), not to
+  the recalibrated `DEV_MAX_CALLS` / `DEV_MAX_USD`. Under a generous default it
+  would test nothing about the projection; pinned, CI is the first thing that
+  goes red if the projection ever grows again.
+- The four quickstart strings **drop `--max-usd 2`**, which overrode the
+  recalibrated default downward and would have left every one of them broken.
+- The README Action pin moves to **`@v0.7.1`**.
+- **No published prose states a cap default as a bare number** any more (AC-7).
+  The § Cost guard section had gone on publishing the pre-recalibration cap and
+  a per-case call count that omitted the draw factor entirely — in the file npm
+  renders as the front page, through the very loop whose subject was that
+  literal. Every published statement of a cap now names the `config.js` constant
+  it comes from, and the repo gate refuses one that does not.
+
+The spec-018 assertions land in the repo gate, not only in the spec gate:
+`specs/` is excluded from the published tree and no workflow runs a spec gate, so
+a rule that lives only beside its spec is never executed by a build. How many
+there are is recorded in the gate receipt at the tagged commit, and deliberately
+not restated here: a hand-typed count in a release note is a number the thing it
+counts can outgrow, which is the defect this entry is about.
+
+### Unchanged
+
+No published report figure moves. `receipts/` is byte-identical, asserted. Report
+007, the Report 005 v1.2 and Report 006 v1.1 amendments, and every number on
+every page stand exactly as v0.7.0 published them.
+
+---
+
+## v0.7.0 — 2026-09-01
+
+**Report 007 publishes, and the instrument that measured it is the subject.**
+
+### The instrument fix (W-1)
+
+`lib/provider.js` declares a per-surface call timeout, and for a `claude-cli`
+surface it declares **300000 ms**, with a written rationale about
+cold-start-dominated subprocesses. `lib/run.js` set its own default as a numeric
+literal, **120000**, and the provider layer documents that an explicit caller
+value wins. Every run this project has ever made therefore used 120 s on every
+surface, and the declared CLI policy had never executed.
+
+| date | what happened |
+|---|---|
+| **2026-07-27** | the `120000` literals land with the runner skeleton (`3f6b54c`) |
+| **2026-07-31** | `retryPolicyForSurface` declares `300000` for `claude-cli` (`c911ccc`), **four days after** the literals that already shadowed it |
+| **2026-08-31** | the literal is removed and the declared policy runs (`ef82307`, spec 017) |
+
+The literals came first, so there is no regression to bisect: the policy was
+written over call sites that never changed, and nothing failed loudly enough to
+be noticed until Report 007 was prepared. A static assertion now refuses any
+numeric timeout literal under `bin/` or `lib/`, with a planted-literal mutation
+proving the detector can go red.
+
+**Measured cost to the study:** run 1 lost **25 draws**, 24 of them in one cell.
+
+### Both runs published
+
+- **Run 1** is committed at `7468e9e` and is **retained as defect evidence**. Its
+  `writing-plans` @ `claude-fable-5` receipt is *not* part of the published set;
+  the other two cells of run 1 are the published receipts for their skills and
+  were never re-run.
+- **Run 2** is committed at `7050fd8` and is **the published run** for
+  `writing-plans` @ `claude-fable-5`: 55 draws, 55 measured, none lost.
+
+Keeping the broken run is the point rather than a courtesy. The comparison
+between the two is the report's most durable finding: the truncated run drew
+*more* and measured *less*, and reported a maximum variance ratio of **1.55x**
+where the clean run reports **5.88x**. A timeout takes the long generations
+first, and the long generations carry the across-draw spread, so the failure
+truncated the distribution from above and biased the variance estimate
+**downward** — the direction that makes an instrument look more precise than it
+is. It also cost the study its one apparent separation.
+
+### Report 007
+
+`docs/reports/007/` — *Instrument re-measurement report*, the sixth report type,
+declared in `REPORT-STYLE.md`. Three cells Report 005 already published, re-run
+on the same suites and substrates with the generation sampled adaptively instead
+of once.
+
+- **No cell separates.** +0.055 ± 0.111, -0.002 ± 0.167, +0.131 ± 0.157; every
+  lift smaller than its own band. Band is suite dispersion, not standard error.
+- **21 cases: 3 improved, 0 regressed, 18 no effect, 0 not measured.**
+- **Five of six comparisons against the archive refused** on their baseline
+  control, so none of the lower lifts is offered as a correction.
+- Economics recomputed from `draws[].usage` at each receipt's frozen snapshot;
+  subscription surface, metered **$0.00**. Two of three cells are cheaper and
+  faster with the skill than without.
+
+### Amendments to already-published reports
+
+Constitution invariant 4: a published report is amended visibly and never edited
+silently. No figure on either page was changed.
+
+- **Report 005 → v1.2.** The three cells' published lifts are named as what they
+  are: single-draw, judge-spread figures. Report 007 re-measured all three
+  (+0.103 → +0.055, +0.116 → -0.002, +0.177 → +0.131) and none separates at the
+  cell level. **Not corrections:** two of the three comparisons were refused on
+  baseline non-reproduction, and the skill text moved upstream between the runs.
+  v1.1's "no cause is asserted" holds, now with a second instrument change in the
+  way.
+- **Report 006 → v1.1.** The `writing-plans` cell's aggregate was computed over
+  two different case sets. Two different cases each lost one arm to the same
+  120 s timeout; filtering each arm independently left six rows a side over
+  different cases. Under pairwise exclusion the cell reads **+0.031 ± 0.038**
+  rather than **+0.055 ± 0.194**, 5 against 5 rather than 6 against 6. The
+  verdict (**NOT MEASURED**) and the baseline-reproduction control are unchanged;
+  the disclosed `aggregate_baseline_delta` diagnostic moves +0.099 → +0.165.
+
+### Also in this release
+
+- The launch essay revised to read **seven reports** together, with its Report
+  005 claims brought into line with the v1.2 amendment rather than having a
+  paragraph appended to them.
+- Homepage draw-to-draw spread figure replaced with the measured **sd 0.355**,
+  stated with the definition of the band it is.
+- `sitemap.xml` gains reports 005, 006 and 007.
+- Word pass across the site, the npm description, the page title and the CI
+  section heading: **verifiable** is now the word this project uses for a receipt
+  a reader can re-derive, and the marketing adjective the tagline used to lead
+  with is gone from every surface that ships. The adopted line is **"A dated
+  proof that this skill, this hash, this model, still helps."**
+- `RUNNER_VERSION` and the published Action references move to **0.7.0**.
+
+---
+
+### Known open — what v0.7.0 does NOT include
+
+Scheduled for **v0.7.1**. Listed because a release that names only its contents
+is not a record of where the project actually stands.
+
+| item | why it is open |
+|---|---|
+| **GitHub Action input interpolation fix** | `action.yml` splices `${{ inputs.* }}` textually into a `bash` `run:` block rather than passing each value through the step `env:` and quoting it in the script. It works on the defaults; an input carrying quotes or shell metacharacters does not survive the substitution |
+| **AJV ≥ 8.18** | the pinned range is `^8.17.1`; the newer minor is wanted for its validation fixes and has not been taken |
+| **`SECURITY.md`** | the repository publishes no vulnerability-disclosure contact or policy |
+| **Generated sitemap** | `sitemap.xml` is hand-maintained, so a new page is published only if someone remembers to add it. Generating it from the published tree is the fix, and it stays out of this release |
+| **Open Graph / social cards** | no `og:` or `twitter:` metadata on any page, so every shared link renders bare |
+| **Analytics** | no measurement of what anyone reads, so nothing here is informed by which reports are actually used |
+
+Two further items are known and are **not** scheduled here, because they are
+report-authoring debt rather than release scope: Report 007's per-case verdict
+table is computed by a library path with **no shipped command and no assertion
+over that command**, and one **absorbed draw** remains inside the published
+`code-review-and-quality` cell. Both are disclosed on the report page itself.
+
+### Amendments
+
+**v0.7.0, amendment 1** · 2026-09-15. This amendment corrects how this entry's band wording is read; no earlier text is changed, no figure changes, and the release it describes is unchanged. A case is separated under the rule when its two bands do not overlap and its mean moved by at least the 0.05 effect floor. The entry's *18 no effect* counts cases that were not separated under the rule at the sample size used: no separation detected, which is not evidence of equivalence and not evidence that the skill had no effect. Its *No cell separates*, *every lift smaller than its own band*, *none separates at the cell level* and *one apparent separation* compare a lift with its lift band, the two arms' suite dispersions combined in quadrature, which is not the separation rule: at case level 3 of Report 007's 21 cases separated under the rule, which is not proof, and the one apparent separation, run 1's lift outside its band, was not a separation under the rule. The five comparisons *refused on their baseline control* are four refused *on baseline non-reproduction* and one refused on a baseline with no measured draws. The four rest on baseline bands that did not overlap, a test with no floor, and against Report 006 two of the cases counted moved by less than the floor; such a refusal reads a separation detected, or bands that do not overlap, which is not proof that a baseline changed. The *sd 0.355* the entry gives for the homepage is Report 007's baseline band on semver-hidden-breaking-change, the sample standard deviation of that case's draw means. *single-draw, judge-spread figures*, said of Report 005's lifts, reads as lifts whose bands are the same quadrature of suite dispersions, over per-case means that each come from a single generation. Each band is a descriptive spread, not a confidence interval, with no coverage probability. Filed under the wording rules of the repository's spec 031, amendment A-031-20.

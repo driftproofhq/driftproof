@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+# Fire the release train's cutoff once a day at 23:00 Singapore time, which is 15:00 UTC: five hours
+# before the nightly sweeps the candidate at 20:00 UTC. The zone is named so the time does not
+# depend on the box's clock setting. Persistent=true catches up a cutoff missed while the box was
+# down; the train pins at most once per cutoff.
+#
+# BUILT, NOT SWITCHED ON. Not installed by deploy/install-timer.sh.
+[Unit]
+Description=Daily Driftproof release train cutoff (23:00 SGT)
+Documentation=file:%h/driftproof/RUNBOOK.md
+
+[Timer]
+OnCalendar=*-*-* 23:00:00 Asia/Singapore
+Persistent=true
+Unit=driftproof-integrator-train.service
+
+[Install]
+WantedBy=timers.target
