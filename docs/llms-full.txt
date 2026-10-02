@@ -1,0 +1,408 @@
+# Driftproof
+
+> A public instrument and public record measuring whether agent skills still
+> deliver their claimed lift as models, providers and releases move underneath
+> them. Every published number carries a dated, hash-verified receipt.
+
+Driftproof runs a skill's own eval suite twice, with the skill and without it,
+scores each answer several times so every result is a range rather than one
+fragile number, and claims a verdict only when the two ranges do not overlap and
+the move clears the effect floor. When it cannot stand behind a number it
+publishes a refusal instead of a guess.
+
+---
+
+# What is Driftproof?
+
+Canonical: <https://driftproofhq.com/what-is-driftproof/>
+
+Driftproof (driftproofhq): open-source agent skill evaluation and regression testing across model releases. It runs a skill's own tests with the skill and without it, scores every answer several times, and calls a change only when it is clearly bigger than the usual spread. Each result is a dated, hash-verified receipt.
+
+## What it measures
+
+For each task in a skill's own test set, Driftproof asks the model twice: once with the skill's instructions loaded, and once with the task alone. The model answers each way several times. What the skill adds is the average with the skill minus the average without it.
+
+A receipt records what produced its numbers: the model, the tools, the skill and the tasks by their content, and the grader with its instructions. The stale command compares those with what would run today and says what has moved.
+
+## What it does not measure
+
+A clear difference is what these tests saw, not proof that the skill itself changed. Raw scores across companies are background, never a ranking.
+
+Any constant style preference the judge holds toward a provider is present in both the with-skill and the baseline run for that provider, so taking the difference reduces it, though it is not cancelled.
+
+## How it differs from a skill's own tests and from other eval tools
+
+A skill's own tests passing is one answer. Driftproof asks two more: whether the scores with the skill and without it separate beyond their spread, and whether that held when the model changed.
+
+What each other tool measures, and whether it compares a task with the skill and without it, as its own docs say. The full table: [What each evaluation tool measures](https://driftproofhq.com/compare/).
+
+- **claude plugin eval (Claude Code)**. What it measures: How reliably a plugin (including a skill shipped as a plugin) leads Claude to the right outcome on eval cases, and what it contributes against a no-plugin baseline ([source, read 30 September 2026](https://code.claude.com/docs/en/plugin-evals)). With and without the skill: Yes, by default: a with-plugin arm and a no-plugin arm, reported as WITH, W/OUT and delta; --ablation none turns it off ([source, read 30 September 2026](https://code.claude.com/docs/en/plugin-evals)).
+- **alibaba/skill-up**. What it measures: A Skill's behaviour across declarative cases (response, tool calls and workspace changes), optionally compared with and without the Skill; it also evaluates agents and workspaces without a Skill ([source, read 30 September 2026](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/README.md#L54); [source, read 30 September 2026](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/README.md#L52)). With and without the skill: Yes, opt-in: benchmark mode (benchmark.enabled: true or --baseline) runs each case with_skill and without_skill and reports the delta; disabled by default ([source, read 30 September 2026](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/docs/guide/writing-evals.md#L865); [source, read 30 September 2026](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/docs/guide/writing-evals.md#L879)).
+- **NVIDIA SkillEvaluator**. What it measures: Three tiers: static validation (safety, well-formedness), deduplication (repeated or overlapping guidance), and live evaluation of whether the skill helps a real agent, reported on five dimensions (security, correctness, discoverability, effectiveness, efficiency) ([source, read 30 September 2026](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/README.md#L14); [source, read 30 September 2026](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L7)). With and without the skill: Yes, by default in Tier [3](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L17): a with-skill arm and a baseline arm in a sandbox; --skip-baseline removes the baseline and the lift ([source, read 30 September 2026](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L17)).
+- **agent-skills-eval**. What it measures: Whether a SKILL.md makes a model better at the task on the skill's evals/evals.json prompts, judged against declared assertions ([source, read 30 September 2026](https://github.com/darkrishabh/agent-skills-eval/blob/f10ae2b3c93055cadd82c02a3b7fe4cfbd9a4645/README.md#L11)). With and without the skill: Yes, opt-in: --baseline (config baseline: true) runs each eval with_skill and without_skill; the default is false ([source, read 30 September 2026](https://github.com/darkrishabh/agent-skills-eval/blob/f10ae2b3c93055cadd82c02a3b7fe4cfbd9a4645/README.md#L118); [source, read 30 September 2026](https://github.com/darkrishabh/agent-skills-eval/blob/f10ae2b3c93055cadd82c02a3b7fe4cfbd9a4645/README.md#L173)).
+
+## The published evidence
+
+Every published report, newest first.
+
+- [Report 013](https://driftproofhq.com/reports/013/): Claude Sonnet 5.5, the day after its release
+- [Report 011](https://driftproofhq.com/reports/011/): Claude Opus 5.5 on release day, three skills
+- [Report 010](https://driftproofhq.com/reports/010/): repeated ADR evaluations across two Claude Code configurations
+- [Report 009](https://driftproofhq.com/reports/009/): three skills under two eval harnesses
+- [Report 008](https://driftproofhq.com/reports/008/): the skill stabilises the floor, not the ceiling
+- [Report 007](https://driftproofhq.com/reports/007/): the baseline is the noisy arm
+- [Report 006](https://driftproofhq.com/reports/006/): the skill text moves, the substrate holds still
+- [Report 005](https://driftproofhq.com/reports/005/): what does a skill cost to run?
+- [Report 004](https://driftproofhq.com/reports/004/): does encoded expertise still lift output on the frontier tier?
+- [Report 003](https://driftproofhq.com/reports/003/): do skill verdicts hold across a model release?
+- [Report 002](https://driftproofhq.com/reports/002/): does a skill's benefit hold across substrates?
+- [Report 001](https://driftproofhq.com/reports/001/): do skill verdicts hold across a model release?
+
+## The paper
+
+[Reported, Not Measured: An Empirical Study of Measurement Defects in LLM and Agent Evaluation Tools](https://driftproofhq.com/paper/). Preprint, not peer reviewed. DOI [10.5281/zenodo.23050796](https://doi.org/10.5281/zenodo.23050796).
+
+## The software
+
+- [github.com/driftproofhq/driftproof](https://github.com/driftproofhq/driftproof)
+- [www.npmjs.com/package/driftproof](https://www.npmjs.com/package/driftproof)
+
+## Upstream fixes and independent mentions
+
+Fixes merged upstream, each a row of the paper's defect table:
+
+- [addyosmani/agent-skills pull request #576](https://github.com/addyosmani/agent-skills/pull/576). Grader results validated by count and arithmetic, never bound to expectation ids. Merged by the repository owner on [17 September 2026](https://github.com/addyosmani/agent-skills/pull/576).
+- [addyosmani/agent-skills pull request #587](https://github.com/addyosmani/agent-skills/pull/587). Prior run's .grading.json survives a rejected grading; no run identity recorded. Merged by the repository owner on [20 September 2026](https://github.com/addyosmani/agent-skills/pull/587).
+- [addyosmani/agent-skills issue #591](https://github.com/addyosmani/agent-skills/issues/591) and [addyosmani/agent-skills pull request #598](https://github.com/addyosmani/agent-skills/pull/598). ADR eval's third expectation not in SKILL.md; verdict flips at one commit. Merged by the repository owner on [26 September 2026](https://github.com/addyosmani/agent-skills/pull/598).
+- [addyosmani/agent-skills issue #599](https://github.com/addyosmani/agent-skills/issues/599) and [addyosmani/agent-skills pull request #600](https://github.com/addyosmani/agent-skills/pull/600). Floor guard passes on untracked suppressions, deleted tests and raised maximums; [7](https://zenodo.org/records/23050796/files/defects.csv) of [14](https://zenodo.org/records/23050796/files/defects.csv) cases fail. Merged by the repository owner on [26 September 2026](https://github.com/addyosmani/agent-skills/pull/600).
+
+Mentions by people outside the project:
+
+- [JeanJeanLeM/GhostFrame pull request #3](https://github.com/JeanJeanLeM/GhostFrame/pull/3). The repository owner opened it on [28 September 2026](https://github.com/JeanJeanLeM/GhostFrame/pull/3); it cites a Driftproof DEV post as its source.
+- [addyosmani/agent-skills issue #433](https://github.com/addyosmani/agent-skills/issues/433#issuecomment-5443755555). A repository collaborator mentioned Driftproof in a comment on [27 August 2026](https://github.com/addyosmani/agent-skills/issues/433#issuecomment-5443755555).
+- [addyosmani/agent-skills issue #433](https://github.com/addyosmani/agent-skills/issues/433#issuecomment-5454447746). A repository collaborator mentioned Driftproof in a comment on [28 August 2026](https://github.com/addyosmani/agent-skills/issues/433#issuecomment-5454447746).
+
+## The name
+
+This Driftproof, the project at driftproofhq, is unrelated to other projects that use the name.
+
+## More answers
+
+- [How to tell whether a skill improved output](https://driftproofhq.com/agent-skill-evaluation/)
+- [Does a skill still help after a model upgrade?](https://driftproofhq.com/agent-skill-regression-testing/)
+- [What each evaluation tool measures](https://driftproofhq.com/compare/)
+- [The paper](https://driftproofhq.com/paper/)
+
+---
+
+# Agent skill evaluation
+
+Canonical: <https://driftproofhq.com/agent-skill-evaluation/>
+
+## How can I tell whether an agent skill actually improved output?
+
+We run a skill's own test tasks with the skill and without it, score every answer several times, and call a change only when it is clearly bigger than the usual spread of the scores. What the skill adds is the average with the skill minus the average without it.
+
+Each side's spread is its average plus or minus the usual variation of its scores. If the two spreads overlap, we do not call a change. The averages must differ by at least [0.05](https://driftproofhq.com/methodology/#the-drift-verdict-rule-anti-false-positive). The grader scores on a coarse grid of about [0.05](https://driftproofhq.com/methodology/#the-drift-verdict-rule-anti-false-positive) to [0.1](https://driftproofhq.com/methodology/#the-drift-verdict-rule-anti-false-positive), so [0.05](https://driftproofhq.com/methodology/#the-drift-verdict-rule-anti-false-positive) is about one step of it. A smaller gap is not called, even when the spreads are apart.
+
+A skill's own tests passing is one answer. Driftproof asks two more: whether the scores with the skill and without it separate beyond their spread, and whether that held when the model changed. A clear difference is what these tests saw, not proof that the skill itself changed.
+
+A task may also carry plain checks on the answer that simply pass or fail, with no model judging: for example, that a commit message starts with the expected kind of first line. They sit beside the grader's scores as extra evidence. They never decide whether we call a change.
+
+## How should I handle variance in agent evaluations?
+
+A fixed grader, another model, scores every answer several times. So each task gets a spread of scores, not one fragile number. Each arm is generated at least three times, and more until the across-draw spread settles.
+
+Every report published before [Report 007](https://driftproofhq.com/reports/007/) used a single generation per arm, judged several times, so its bands measured the judge and not the model. [Report 006](https://driftproofhq.com/reports/006/)'s probe measured generation noise at [3.2×](https://driftproofhq.com/methodology/#where-a-band-comes-from) and [7.5×](https://driftproofhq.com/methodology/#where-a-band-comes-from) the judge noise on the two cases it probed, ten draws each.
+
+Repeat runs of the same test did not always agree: five of the nine comparisons gave a different result in one run than in another. Claude Opus 5.5’s score on code review without the skill was [0.831](https://driftproofhq.com/reports/013/#what-the-runs-show), [0.857](https://driftproofhq.com/reports/013/#what-the-runs-show) and [0.713](https://driftproofhq.com/reports/013/#what-the-runs-show) across the three runs. One run alone could have told a different story. ([Report 013](https://driftproofhq.com/reports/013/): Claude Opus 5.5, Claude Sonnet 5 and Claude Sonnet 5.5)
+
+When a change is not called, a report says which of two things it saw. If the scores were so spread out that a gap of [0.05](https://driftproofhq.com/methodology/#the-drift-verdict-rule-anti-false-positive) could not show, or a side had only one answer, there were too few answers to tell. Otherwise the spreads overlapped or the gap was too small, and there was no clear difference. Neither means that nothing changed.
+
+A case the rule does not separate is also asked whether it could have been separated. Its resolution is the two arms' spreads added together, plus two standard errors of the difference between their means; when that reaches the [0.05](https://driftproofhq.com/methodology/#the-drift-verdict-rule-anti-false-positive-precise) floor, or when an arm has a single draw, the case is underpowered, and a receipt with no separated case and an underpowered one reads UNDERPOWERED, in words: Not enough draws to conclude at this effect floor. The badge, the Action and the comparison report print the draws per arm that would have been needed with the spreads held, or say that no draw count reaches the floor when the spreads alone do, because more draws narrow the standard error and not the spread.
+
+## More answers
+
+- [What is Driftproof?](https://driftproofhq.com/what-is-driftproof/)
+- [Does a skill still help after a model upgrade?](https://driftproofhq.com/agent-skill-regression-testing/)
+- [What each evaluation tool measures](https://driftproofhq.com/compare/)
+- [The paper](https://driftproofhq.com/paper/)
+
+---
+
+# Agent skill regression testing
+
+Canonical: <https://driftproofhq.com/agent-skill-regression-testing/>
+
+## Does a SKILL.md still help after upgrading Claude?
+
+With the skill loaded, Claude Sonnet 5.5 scored clearly higher than Claude Sonnet 5 on documentation in two of three runs. On code review and git workflow it was never clearly higher or lower: each run gave no clear difference or too few answers to tell. ([Report 013](https://driftproofhq.com/reports/013/): Claude Opus 5.5, Claude Sonnet 5 and Claude Sonnet 5.5)
+
+On code review, the skill moved Claude Sonnet 5.5’s average by [+0.009](https://driftproofhq.com/reports/013/#what-the-runs-show), [+0.051](https://driftproofhq.com/reports/013/#what-the-runs-show) and [+0.034](https://driftproofhq.com/reports/013/#what-the-runs-show) in the three runs; without the skill it averaged [0.878](https://driftproofhq.com/reports/013/#what-the-runs-show), [0.849](https://driftproofhq.com/reports/013/#what-the-runs-show) and [0.861](https://driftproofhq.com/reports/013/#what-the-runs-show). For Claude Sonnet 5 the skill moved it by [+0.302](https://driftproofhq.com/reports/013/#what-the-runs-show), [+0.207](https://driftproofhq.com/reports/013/#what-the-runs-show) and [+0.085](https://driftproofhq.com/reports/013/#what-the-runs-show). These figures are context, not a verdict. Each skill was tested on one task only. Nothing here says how these skills do on other tasks, or how these models do at coding in general. ([Report 013](https://driftproofhq.com/reports/013/): Claude Opus 5.5, Claude Sonnet 5 and Claude Sonnet 5.5)
+
+## How do I compare an agent skill across model releases?
+
+Diffing two receipts yields a per-case verdict. A verdict reads the with-skill arms only. The runner’s comparison of two receipts sets one receipt’s with-skill band against the other’s, per case. ([Report 011](https://driftproofhq.com/reports/011/): Claude Opus 5 and Claude Opus 5.5)
+
+A receipt records what produced its numbers: the model, the tools, the skill and the tasks by their content, and the grader with its instructions. The stale command compares those with what would run today and says what has moved.
+
+Claude Opus 5.5 on the three skills and cases of [Report 009](https://driftproofhq.com/reports/009/), one case each, beside a fresh Claude Opus 5 arm on the same harness. Between the two models, the rule detects no separation on any of the three skills, and on two of them the draws could not have told. None of this is evidence that the two models score these skills alike. On two skills the two models’ baselines sit further apart than their with-skill scores, and no verdict here reads them. ([Report 011](https://driftproofhq.com/reports/011/): Claude Opus 5 and Claude Opus 5.5)
+
+For scale, from our own runs: [Report 009](https://driftproofhq.com/reports/009/) ran on Claude Code [2.1.272](https://driftproofhq.com/methodology/#receipts-are-an-open-format-precise) on [15](https://driftproofhq.com/methodology/#receipts-are-an-open-format-precise) September, and on [23](https://driftproofhq.com/methodology/#receipts-are-an-open-format-precise) September [Report 011](https://driftproofhq.com/reports/011/) needed [2.1.280](https://driftproofhq.com/methodology/#receipts-are-an-open-format-precise) or newer.
+
+This report runs every arm three times, one after another, with the same script and settings, because one run’s figure can move in the next: [Report 011](https://driftproofhq.com/reports/011/)’s Claude Opus 5.5 baseline on code-review-and-quality read [0.68](https://driftproofhq.com/reports/013/#limits), and the same arm in this report’s run [1](https://driftproofhq.com/reports/013/#limits) read [0.83](https://driftproofhq.com/reports/013/#limits). All three models ran on the same Claude Code, version [2.1.284](https://driftproofhq.com/reports/013/#limits-and-what-differs-from-reports-009-and-011); [Report 009](https://driftproofhq.com/reports/009/) used [2.1.272](https://driftproofhq.com/reports/013/#limits-and-what-differs-from-reports-009-and-011) and [Report 011](https://driftproofhq.com/reports/011/) used [2.1.280](https://driftproofhq.com/reports/013/#limits-and-what-differs-from-reports-009-and-011). ([Report 013](https://driftproofhq.com/reports/013/): Claude Opus 5.5, Claude Sonnet 5 and Claude Sonnet 5.5)
+
+## More answers
+
+- [What is Driftproof?](https://driftproofhq.com/what-is-driftproof/)
+- [How to tell whether a skill improved output](https://driftproofhq.com/agent-skill-evaluation/)
+- [What each evaluation tool measures](https://driftproofhq.com/compare/)
+- [The paper](https://driftproofhq.com/paper/)
+
+---
+
+# What each evaluation tool measures
+
+Canonical: <https://driftproofhq.com/compare/>
+
+What each tool measures, cell by cell, read from that tool's own docs or code and linked to where it says so. No tool is placed above another.
+
+| Aspect | [claude plugin eval (Claude Code)](https://code.claude.com/docs/en/plugin-evals) | [alibaba/skill-up](https://github.com/alibaba/skill-up) | [NVIDIA SkillEvaluator](https://github.com/NVIDIA/SkillEvaluator) | [agent-skills-eval](https://github.com/darkrishabh/agent-skills-eval) | [Driftproof](https://github.com/driftproofhq/driftproof) |
+| --- | --- | --- | --- | --- | --- |
+| What it measures | How reliably a plugin (including a skill shipped as a plugin) leads Claude to the right outcome on eval cases, and what it contributes against a no-plugin baseline ([source, read 30 September 2026](https://code.claude.com/docs/en/plugin-evals)) | A Skill's behaviour across declarative cases (response, tool calls and workspace changes), optionally compared with and without the Skill; it also evaluates agents and workspaces without a Skill ([source, read 30 September 2026](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/README.md#L54); [source, read 30 September 2026](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/README.md#L52)) | Three tiers: static validation (safety, well-formedness), deduplication (repeated or overlapping guidance), and live evaluation of whether the skill helps a real agent, reported on five dimensions (security, correctness, discoverability, effectiveness, efficiency) ([source, read 30 September 2026](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/README.md#L14); [source, read 30 September 2026](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L7)) | Whether a SKILL.md makes a model better at the task on the skill's evals/evals.json prompts, judged against declared assertions ([source, read 30 September 2026](https://github.com/darkrishabh/agent-skills-eval/blob/f10ae2b3c93055cadd82c02a3b7fe4cfbd9a4645/README.md#L11)) | Not shown |
+| How it scores | Pass/fail graders (regex, tool_used, tool_order, file_exists, llm judge, baseline judge); a run scores the (optionally weighted) fraction of graders passed; a case scores the mean across runs and passes at --threshold (default [1.0](https://code.claude.com/docs/en/plugin-evals)). An llm grader passes on at least two of three judge votes ([source, read 30 September 2026](https://code.claude.com/docs/en/plugin-evals)) | Per-case assertions graded by rule_based, script or agent_judge (LLM rubric, pass_threshold default [0.7](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/docs/guide/writing-evals.md#L810)); a case is PASS when all assertions pass; results roll up to pass_rate ([source, read 30 September 2026](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/README.md#L69); [source, read 30 September 2026](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/docs/guide/cli-reference.md#L386); [source, read 30 September 2026](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/docs/guide/writing-evals.md#L810)) | Five dimension scores from [0.0](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L460) to [1.0](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L460) with fixed bands (PASS at [0.50](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L460) or above, NEUTRAL [0.40](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L460) to below [0.50](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L460), FAIL below [0.40](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L460)); an agent passes only when every dimension passes. Skill Lift (with-skill minus baseline) has its own bands (PASS at [+0.05](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L460) or above, FAIL at [-0.10](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L460) or below) and is diagnostic, not the verdict ([source, read 30 September 2026](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L460); [source, read 30 September 2026](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L470)) | A judge model grades each output pass/fail against the eval's assertions (expected_output is promoted to an assertion when none are given); deterministic tool_assertions are also available; results roll up to pass_rate ([source, read 30 September 2026](https://github.com/darkrishabh/agent-skills-eval/blob/f10ae2b3c93055cadd82c02a3b7fe4cfbd9a4645/README.md#L65); [source, read 30 September 2026](https://github.com/darkrishabh/agent-skills-eval/blob/f10ae2b3c93055cadd82c02a3b7fe4cfbd9a4645/README.md#L118)) | An LLM judge scores each response against rubrics anchored at [0.80](https://github.com/driftproofhq/driftproof/blob/v0.13.0/README.md#L83); the lift is the with-skill mean minus the baseline mean; the verdict is PASSED, NO_EFFECT, REGRESSED or UNDERPOWERED against a [0.05](https://github.com/driftproofhq/driftproof/blob/v0.13.0/README.md#L103) effect floor, and a case is called improved or regressed only when the bands do not overlap and the move clears the floor ([source, read 1 October 2026](https://github.com/driftproofhq/driftproof/blob/v0.13.0/README.md#L382); [source, read 1 October 2026](https://github.com/driftproofhq/driftproof/blob/v0.13.0/README.md#L83); [source, read 1 October 2026](https://github.com/driftproofhq/driftproof/blob/v0.13.0/README.md#L104); [source, read 30 September 2026](https://driftproofhq.com/methodology/); [source, read 1 October 2026](https://github.com/driftproofhq/driftproof/blob/v0.13.0/README.md#L103)) |
+| With and without the skill | Yes, by default: a with-plugin arm and a no-plugin arm, reported as WITH, W/OUT and delta; --ablation none turns it off ([source, read 30 September 2026](https://code.claude.com/docs/en/plugin-evals)) | Yes, opt-in: benchmark mode (benchmark.enabled: true or --baseline) runs each case with_skill and without_skill and reports the delta; disabled by default ([source, read 30 September 2026](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/docs/guide/writing-evals.md#L865); [source, read 30 September 2026](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/docs/guide/writing-evals.md#L879)) | Yes, by default in Tier [3](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L17): a with-skill arm and a baseline arm in a sandbox; --skip-baseline removes the baseline and the lift ([source, read 30 September 2026](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L17)) | Yes, opt-in: --baseline (config baseline: true) runs each eval with_skill and without_skill; the default is false ([source, read 30 September 2026](https://github.com/darkrishabh/agent-skills-eval/blob/f10ae2b3c93055cadd82c02a3b7fe4cfbd9a4645/README.md#L118); [source, read 30 September 2026](https://github.com/darkrishabh/agent-skills-eval/blob/f10ae2b3c93055cadd82c02a3b7fe4cfbd9a4645/README.md#L173)) | Yes, always: each case is run with the SKILL.md supplied and without it (bare baseline) ([source, read 30 September 2026](https://driftproofhq.com/methodology/)) |
+| Repeats and spread | Not shown | Repeats: yes, --iteration N runs N samples for stability or flakiness sampling. Spread: benchmark.json carries mean and stddev of pass_rate, time and tokens; in the code the pass_rate stddev is taken over the per-case pass/fail values of a run, and the Anthropic-compatible benchmark stamps runs_per_configuration: [1](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/internal/report/benchmark_anthropic.go#L169) ([source, read 30 September 2026](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/docs/guide/cli-reference.md#L31); [source, read 30 September 2026](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/internal/report/benchmark.go#L4); [source, read 30 September 2026](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/internal/report/benchmark.go#L104); [source, read 30 September 2026](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/internal/report/benchmark_anthropic.go#L169)) | Repeats: optional, --n-attempts (default [1](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L417)) runs each case k times per arm and adds pass@k. Spread: each arm records a case-level [95](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/reports.mdx#L295)% Wilson score interval for its pass rate, and paired cases get an exact McNemar diagnostic ([source, read 30 September 2026](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L417); [source, read 30 September 2026](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/reports.mdx#L295)) | Not shown | Yes: since receipt spec v0.5 each arm is generated at least [3](https://github.com/driftproofhq/driftproof/blob/v0.13.0/README.md#L108) and at most [10](https://github.com/driftproofhq/driftproof/blob/v0.13.0/README.md#L108) times and each draw is judged several times; every score carries a band (mean plus or minus one sample standard deviation), and cases that could not be separated at the effect floor are reported as "Not enough draws to conclude at this effect floor" ([source, read 1 October 2026](https://github.com/driftproofhq/driftproof/blob/v0.13.0/README.md#L108); [source, read 1 October 2026](https://github.com/driftproofhq/driftproof/blob/v0.13.0/spec/RECEIPT.md#L6); [source, read 1 October 2026](https://github.com/driftproofhq/driftproof/blob/v0.13.0/spec/RECEIPT.md#L150)) |
+| Across model releases | Not shown | Not shown | Not shown | Not shown | Yes: receipts are bound to one model version, and driftproof diff compares two receipts across a model release into a drift report ([source, read 1 October 2026](https://github.com/driftproofhq/driftproof/blob/v0.13.0/README.md#L161); [source, read 1 October 2026](https://github.com/driftproofhq/driftproof/blob/v0.13.0/spec/RECEIPT.md#L8)) |
+| What it writes | A terminal summary table; results/<timestamp>/aggregate-result.json (schemaVersion [1](https://code.claude.com/docs/en/plugin-evals)) and a self-contained report.html; --json output; optional publication as a private claude.ai artifact; exit codes for CI ([source, read 30 September 2026](https://code.claude.com/docs/en/plugin-evals)) | grading.json, benchmark.json and benchmark.md (Anthropic-compatible), result.json, JUnit XML and HTML reports, in <skill-name>-workspace/iteration-N/ ([source, read 30 September 2026](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/README.md#L70)) | Reports in cli, json, html, markdown and sarif formats (html and json by default); Tier [3](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/reports.mdx#L11) also writes a timestamped results tree (scores, trials, lift data) and BENCHMARK.md cards ([source, read 30 September 2026](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/reports.mdx#L23); [source, read 30 September 2026](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/reports.mdx#L11)) | A workspace per run (iteration-N/) with meta.json, benchmark.json, per-eval with_skill and without_skill outputs, timing and grading.json, a static HTML report, and optional JSONL event logs ([source, read 30 September 2026](https://github.com/darkrishabh/agent-skills-eval/blob/f10ae2b3c93055cadd82c02a3b7fe4cfbd9a4645/README.md#L44); [source, read 30 September 2026](https://github.com/darkrishabh/agent-skills-eval/blob/f10ae2b3c93055cadd82c02a3b7fe4cfbd9a4645/README.md#L377)) | A receipt (JSON, published schema, self-hash) plus a human summary per run; Markdown drift reports; a shields.io badge JSON; GitHub Action outputs (verdict, delta and others) ([source, read 1 October 2026](https://github.com/driftproofhq/driftproof/blob/v0.13.0/README.md#L259); [source, read 1 October 2026](https://github.com/driftproofhq/driftproof/blob/v0.13.0/README.md#L94)) |
+| Licence | Not shown | Apache-2.0 ([source, read 30 September 2026](https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/README.md#L399)) | Apache-2.0 ([source, read 30 September 2026](https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/README.md#L238)) | MIT ([source, read 30 September 2026](https://github.com/darkrishabh/agent-skills-eval/blob/f10ae2b3c93055cadd82c02a3b7fe4cfbd9a4645/LICENSE#L1)) | Apache-2.0 ([source, read 1 October 2026](https://github.com/driftproofhq/driftproof/blob/v0.13.0/README.md#L681)) |
+
+Not shown: this cell could not be confirmed from that tool's own docs or code as they were read for this page, so it is left out. It does not mean the tool lacks it.
+
+## More answers
+
+- [What is Driftproof?](https://driftproofhq.com/what-is-driftproof/)
+- [How to tell whether a skill improved output](https://driftproofhq.com/agent-skill-evaluation/)
+- [Does a skill still help after a model upgrade?](https://driftproofhq.com/agent-skill-regression-testing/)
+- [The paper](https://driftproofhq.com/paper/)
+
+---
+
+# Paper
+
+Canonical: <https://driftproofhq.com/paper/>
+
+Reported, Not Measured: An Empirical Study of Measurement Defects in LLM and Agent Evaluation Tools
+
+driftproofhq
+Version 1, 30 September 2026
+Preprint, not peer reviewed
+
+## Can an LLM evaluator report a score for something it did not measure?
+
+Between [14](https://driftproofhq.com/paper/#abstract) and [26 September 2026](https://driftproofhq.com/paper/#abstract) the author read the scoring and gating code of seven open-source evaluation tools, chosen by the author's judgement rather than sampled (the agent-skills repository's eval harness and a reference gate script, NVIDIA SkillEvaluator, DSPy, LangSmith, DeepEval, Harbor and MLflow), reproduced thirteen defects, twelve of them offline, and filed each upstream with a public reproduction; twelve carried a proposed fix from the author, five are merged, one more is approved, and the rest were open on [30 September 2026](https://driftproofhq.com/paper/#abstract). In each case the tool returned a well-formed result that its evidence did not support.
+
+The distinction the paper draws is between a noisy measurement, which statistics can qualify, and a well-formed number that was never a valid measurement, which statistics cannot repair. The evidence is a catalogue of mechanisms found where the author looked; it is a lower bound on what exists, not a prevalence estimate.
+
+## Abstract
+
+Evaluation tools for language-model applications and agent skills are used as gates: a score decides whether a skill ships, which demonstrations a prompt compiler keeps, or whether a model is promoted. This paper is an exploratory study of the software between evidence that has already been produced and the result an evaluation tool reports. Between 14 and 26 September 2026 the author read the scoring and gating code of seven open-source evaluation tools, chosen by the author's judgement rather than sampled (the agent-skills repository's eval harness and a reference gate script, NVIDIA SkillEvaluator, DSPy, LangSmith, DeepEval, Harbor and MLflow), reproduced thirteen defects, twelve of them offline, and filed each upstream with a public reproduction; twelve carried a proposed fix from the author, five are merged, one more is approved, and the rest were open on 30 September 2026. In each case the tool returned a well-formed result that its evidence did not support. The defects fall into six kinds, derived from the cases: absent evidence scored as a measurement, a result bound to the wrong unit, a proxy credited as the act, stale state read as current, a sign error in a threshold, and a check aimed at a target the artefact never claimed. The same taxonomy is applied to the author's own instrument, Driftproof, using only its public findings: a parser that turned a non-numeric judge reply into a score, a badge that verified generation text but not judge text, and six false passes closed in release 0.12.0. Four published measurements serve as illustrations, not as tests: a pass/fail check and a text-injection evaluation that read the same task differently under different treatments; one eval that returned pass eight times and fail twice at one commit; and two release-day comparisons in which most cells did not separate. From the cases the paper proposes nine record fields, each paired with the check that would read it, and maps each defect to the field and check that could have exposed it; the mapping is a design argument the paper has not yet tested. The distinction the paper draws is between a noisy measurement, which statistics can qualify, and a well-formed number that was never a valid measurement, which statistics cannot repair. The evidence is a catalogue of mechanisms found where the author looked; it is a lower bound on what exists, not a prevalence estimate.
+
+## Read the paper
+
+**The Zenodo record**
+
+[https://zenodo.org/records/23050796](https://zenodo.org/records/23050796)
+
+**The PDF on Zenodo**
+
+[reported-not-measured-v1.pdf](https://zenodo.org/records/23050796/files/reported-not-measured-v1.pdf)
+
+**DOI for this version**
+
+[10.5281/zenodo.23050796](https://doi.org/10.5281/zenodo.23050796)
+
+**DOI for all versions**
+
+[10.5281/zenodo.23050795](https://doi.org/10.5281/zenodo.23050795)
+
+**Licence**
+
+CC BY 4.0
+
+## Data
+
+**The paper's Appendix A.1 as data**
+
+[defects.csv](https://zenodo.org/records/23050796/files/defects.csv)
+
+[defects.json](https://zenodo.org/records/23050796/files/defects.json)
+
+## Cite
+
+### Plain text
+
+driftproofhq (2026). Reported, Not Measured: An Empirical Study of Measurement Defects in LLM and Agent Evaluation Tools. Version 1. Zenodo. https://doi.org/10.5281/zenodo.23050796
+
+### BibTeX
+
+```
+@misc{driftproofhq2026reported,
+  author    = {{driftproofhq}},
+  title     = {Reported, Not Measured: An Empirical Study of Measurement Defects in {LLM} and Agent Evaluation Tools},
+  year      = {2026},
+  month     = sep,
+  version   = {1},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.23050796},
+  url       = {https://doi.org/10.5281/zenodo.23050796},
+  note      = {Preprint}
+}
+```
+
+---
+
+# How Driftproof measures a skill
+
+Canonical: <https://driftproofhq.com/methodology/>
+
+We run a skill's own test tasks with the skill and without it, score every answer several times, and call a change only when it is clearly bigger than the usual spread of the scores.
+
+The full contract is the [receipt specification](https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md). This page is its plain companion; the precise method, in the specification's own terms, is folded at the bottom.
+
+## With and without the skill
+
+For each task in a skill's own test set, Driftproof asks the model twice: once with the skill's instructions loaded, and once with the task alone. The model answers each way several times.
+
+A fixed grader, another model, scores every answer several times. So each task gets a spread of scores, not one fragile number. What the skill adds is the average with the skill minus the average without it.
+
+In short
+
+- One task, asked two ways: with the skill and without it.
+- Several answers each way, each scored several times.
+- What the skill adds: the average with it minus the average without it.
+
+## When we call a change
+
+When two runs of the same skill are compared, a task counts as better or worse only when both of these hold.
+
+First
+
+### The spreads are apart
+
+Each side's spread is its average plus or minus the usual variation of its scores. If the two spreads overlap, we do not call a change.
+
+Second
+
+### The gap is big enough
+
+The averages must differ by at least 0.05. The grader scores on a coarse grid of about 0.05 to 0.1, so 0.05 is about one step of it. A smaller gap is not called, even when the spreads are apart.
+
+When a change is not called, a report says which of two things it saw. If the scores were so spread out that a gap of 0.05 could not show, or a side had only one answer, there were too few answers to tell. Otherwise the spreads overlapped or the gap was too small, and there was no clear difference. Neither means that nothing changed. A clear difference is what these tests saw, not proof that the skill itself changed.
+
+## Extra checks, and what a skill costs
+
+### Simple checks beside the grader
+
+A task may also carry plain checks on the answer that simply pass or fail, with no model judging: for example, that a commit message starts with the expected kind of first line.
+
+They sit beside the grader's scores as extra evidence. They never decide whether we call a change.
+
+### What the skill adds per 1,000 tokens
+
+A skill is not free: its instructions are sent with every answer. Adding 0.10 with 400 tokens of instructions is a different deal from adding 0.10 with 6,000.
+
+So Driftproof gives what the skill adds both as it is and per 1,000 tokens of the skill. The token count is a rough estimate: the length in characters divided by four.
+
+## Other models, and one grader for all
+
+The same tasks and the same grader run for every model we test; only the model answering changes. Every receipt records which model answered, and through which service.
+
+Because one grader from one model family scores every answer, a report comparing model families leads with what the skill adds to each model. That reduces a grader's taste for its own family's writing, but does not remove it, and no report has measured how much is left. Raw scores across families are background, never a ranking. The [neutrality page](https://driftproofhq.com/neutrality/) has the full policy.
+
+## Receipts are an open format
+
+A receipt is the file behind every published number. Its format is public and any tool may write one; Driftproof also converts results from neighbouring test tools (see [interop](https://driftproofhq.com/interop/)).
+
+A receipt records what produced its numbers: the model, the tools, the skill and the tasks by their content, and the grader with its instructions. The `stale` command compares those with what would run today and says what has moved.
+
+The method in one sentence
+
+Score every answer several times, call a change only when it is clearly bigger than the spread and big enough to matter, keep simple checks on the side, count the cost in tokens, and hold everything fixed except the model.
+
+## The precise method
+
+The folded sections are the method as the receipt specification states it, in the terms reports and receipts use. They say what the sections above say, precisely.
+
+**The precise method, in the receipt specification's own terms**
+
+### The core: with vs without, sampled, banded
+
+For each eval case, Driftproof runs the model **with** the skill (SKILL.md supplied) and **without** it (bare baseline). Each response is graded by the fixed judge **several times** (n = 5), so a case carries a *mean ± stddev* band, not one fragile number. The skill's **lift (delta)** is the with-skill mean minus the baseline mean.
+
+### The drift verdict rule (anti-false-positive)
+
+Diffing two receipts yields a per-case verdict. A case counts as **regressed** or **improved** only when **both** conditions hold:
+
+- **Band separation.** The two `with_skill` bands do *not* overlap. A band is a descriptive spread: the mean plus or minus one sample standard deviation of the case's scores, with no coverage probability.
+
+## Where a band comes from
+
+Each arm is generated at least three times, and more until the across-draw spread settles. Each generation is scored by the fixed judge. A band is the mean and the spread of the per-case score across those draws. Every report published before Report 007 used a single generation per arm, judged several times, so its bands measured the judge and not the model. Report 006's probe measured generation noise at 3.2× and 7.5× the judge noise on the two cases it probed, ten draws each. Report 007 re-measured Report 005's cells under the corrected instrument. Every table since Report 007 labels each band's source as legacy or generation.
+
+**Effect floor.** The mean also moves by at least **0.05**, about one judge quantization step. A separated but tiny move is not called a regression or an improvement, and the per-case table labels it *below effect floor*. The comparison's summary line counts those cases apart from the cases with no separation detected, under the same label. Where bands touch or overlap, or a move is below the floor, the report says *no separation detected at this sample size*: never drift, and never that nothing changed. A separation is a separation detected under this rule, not proof that the skill moved. A tool that cries wolf on judge noise is worse than useless, so band separation **plus** a real-sized delta, not either alone, is what triggers a verdict. The judge is deliberately fixed and cheap; see the [judge policy](https://driftproofhq.com/judge-policy/).
+
+**Not enough draws.** A case the rule does not separate is also asked whether it could have been separated. Its resolution is the two arms' spreads added together, plus two standard errors of the difference between their means; when that reaches the 0.05 floor, or when an arm has a single draw, the case is *underpowered*, and a receipt with no separated case and an underpowered one reads `UNDERPOWERED`, in words: *Not enough draws to conclude at this effect floor*. The badge, the Action and the comparison report print the draws per arm that would have been needed with the spreads held, or say that no draw count reaches the floor when the spreads alone do, because more draws narrow the standard error and not the spread. The single-receipt badge reads passing or regressed only when a case separated under the rule. The rule is R-1 to R-6 of the receipt specification.
+
+**A wide band over several cases.** A receipt in which two or more cases read no separation, and none is underpowered on its own, is asked the same question once more, over the receipt as a whole. Its comparison band, each arm's spread of its per-case means added in quadrature, must be under the 0.05 floor. When it reaches the floor the receipt reads `UNDERPOWERED`, *Not enough draws to conclude at this effect floor*, with no draw count, because more draws do not narrow a spread between cases. Where a case lost draws, its band is widened by the most its mean could move at any score those draws could have had. A one-case receipt forms no such band and reads as before. The reader applies this rule to every receipt it reads, whatever its schema version.
+
+**Which answer is graded.** On the two command-line surfaces the model answers as an agent with tools. From receipt v0.10 on, the receipt says which answer the grader saw, in `run.capture`. By default, `text`, the agent runs with its file-writing tools off and its reply is the graded answer. With `--capture files` it may write files in a fresh working directory of its own, and the files it leaves there are graded with its reply, each named with its path and size; each draw lists them in `captured_files`, and a file too large to include is named as not included. When the directory could not be read back, the draw is lost, and a regrade keeps it lost. Before any grading call, a reply that points at a file the answer does not include, or that only describes work it did, is a lost draw with its reason and is never given a score. On these two surfaces the runner also records the harness in `run.harness`: its name and the version its own binary printed when the run began, never a typed value. A regrade keeps the original's mode and harness, because the answers it grades came from that harness, so `driftproof stale` still reads the version the answers were made with.
+
+A comparison report's headline says *no separation detected* when no case separated under the rule, and names the direction of each separation it detected. A comparison report names the band source of each receipt beside its bands, legacy or generation, and its legend describes only the sources that appear on the page. It prints the sentence that the two receipts' bands come from different sources, and that a per-case comparison across them is not like for like, only when the two sources differ. Two receipts whose bands share a source are compared without that sentence.
+
+### Deterministic post-checks (supplementary column)
+
+A suite case may declare optional `checks[]` - structural or regex assertions on the model output that simply hold or don't, with no LLM judgment (e.g. "the output contains a Conventional-Commits subject line", "the output mentions the 429 status the task described"). These run **alongside** the judge and are reported as a **separate column**.
+
+**Post-checks are supplementary evidence only.** They are *not* folded into the case outcome or the band-overlap verdict - they corroborate or contradict the judge with a cheap, unambiguous signal, they do not replace it. Authors add them where they are natural and in-text-groundable; they are never required, and a suite without them is unaffected. Each result is recorded in the receipt as `{ name, kind, pass }` (spec v0.3.1).
+
+### The value-per-token axis
+
+A skill is not free: its SKILL.md is prepended to every generation. A +0.10 lift for 400 skill tokens is a very different proposition from +0.10 for 6,000. So Driftproof reports each skill's lift **both raw and normalized per 1,000 skill tokens**: `delta ÷ (skill_tokens ÷ 1000)`.
+
+**Method.** `skill_tokens` is a coarse `ceil(chars ÷ 4)` estimate of the SKILL.md size - the standard rough proxy for English text, *not* a model tokenizer (no `tiktoken` dependency). It is a consistent yardstick for comparing skills to one another, not a billing figure, and it is recorded in the receipt (`skill.tokens`, spec v0.3.1). Value-per-token surfaces the skills that earn their context budget.
+
+### Providers, surfaces, and neutrality
+
+Driftproof's provider layer is **two-axis**: provider (anthropic / openai) × surface (api / cli), i.e. four concrete lanes. The same suites and the same fixed judge run across providers; only the target model varies. Every receipt records the `provider` and `surface` it ran on, the API surface is preferred for published runs, and a subscription CLI surface is disclosed whenever used.
+
+Because one Claude-family judge grades every provider's output, a cross-provider report leads with the with/without **delta** - which reduces judge style-affinity but does not remove it - and treats absolute cross-provider scores as context, never a ranking. Report #002 additionally holds the surface *type* constant: both substrates run on the vendor's own first-party subscription CLI (`claude -p` and `codex exec`), with each surface's harness overhead disclosed (Codex prepends a fixed ~12–15k-token preamble; `claude -p` a smaller first-party context). The full policy is on the [neutrality page](https://driftproofhq.com/neutrality/).
+
+### Related work
+
+[Skill Drift Is Contract Violation](https://arxiv.org/abs/2605.10990) (Fan et al., arXiv:2605.10990) treats skill decay as a violation of environment contracts - external services and APIs moving under a skill - and repairs against them; that environmental axis is complementary to the substrate axis measured here (the model itself moving under a skill). The verification levels our receipts carry (`UNVERIFIED` / `DECLARED` / `TESTED` / `FORMAL`) follow the lattice introduced in [Skills as Verifiable Artifacts](https://arxiv.org/abs/2605.00424) (Metere, arXiv:2605.00424), whose companion, [Methods for Formal Verification of Agent Skills](https://arxiv.org/abs/2605.23951) (arXiv:2605.23951), works toward the `FORMAL` level our schema still marks reserved.
+
+### Receipts are an open format
+
+The receipt is not proprietary: the JSON Schema is served at its canonical id ([`/spec/receipt.schema.json`](https://driftproofhq.com/spec/receipt.schema.json)), and a receipt validates against the schema its own `schema_version` names; any harness is encouraged to emit receipts, and working converters import results from neighboring eval tools - with the **DECLARED vs TESTED** distinction enforced structurally (imported declarations are recorded faithfully but never earn drift verdicts). The schema, the import mappings, and the minimal `summary-json` interchange are on the [interop page](https://driftproofhq.com/interop/). A receipt at the current schema says what its counts count: generations per arm and judge samples per generation are separate fields, written only at the scope the data establishes, and an imported receipt carries neither unless its source format defines one. Where a count is not established the differ and the export say it is unknown; they do not read it as a single sample. An imported receipt at the current schema also names what produced it: the harness and its version, the document it was converted from with that document's sha256, and each thing the source did not record, which stays unknown rather than taking a default. Where the source ran a skill-fired indicator, as `claude plugin eval` does, the receipt records how often the skill fired beside the score and never inside it, and runs the source recorded an error for are kept out of the figures and listed with the error.
+
+A receipt also records what produced its numbers, as far as its schema version allows: the model, the harness, the skill's and the suite's content hashes, the judge, the judge's prompt template and each case's rubric hash. `driftproof stale` compares those with what would run today and says, for each arm, whether the result still stands, needs the arm run again, or needs only its saved answers graded again. A change to the skill leaves the baseline arm standing, since that arm contains no skill text. A new major or minor version of the harness means running again; a patch release of the same harness is reported as an advisory. For scale, from our own runs: [Report 009](https://driftproofhq.com/reports/009/) ran on Claude Code 2.1.272 on 15 September, and on 23 September [Report 011](https://driftproofhq.com/reports/011/) needed 2.1.280 or newer. Anything a receipt does not record is reported as unknown, never as current.
+
+Sample the judge, band the scores, require separation *and* a real-sized effect, add cheap deterministic checks on the side, normalize lift by the tokens it costs, and hold everything constant except the model. That is the method.
+
+---
+
+# Reports
+
+- [Report 013: Claude Sonnet 5.5, the day after its release](https://driftproofhq.com/reports/013/): With the skill, Sonnet 5.5 was never clearly higher or lower than Opus 5.5 in nine results (three tasks, three repeats); five of the nine had too few answers to tell. Models: Claude Opus 5.5, Claude Sonnet 5, Claude Sonnet 5.5. Its full text: <https://driftproofhq.com/reports/013/index.md>
+- [Report 011: Claude Opus 5.5 on release day, three skills](https://driftproofhq.com/reports/011/): With the skill, the models showed no clear difference on code review, too few answers to tell on git and documentation. Models: Claude Opus 5, Claude Opus 5.5. Its full text: <https://driftproofhq.com/reports/011/index.md>
+- [Report 010: repeated ADR evaluations across two Claude Code configurations](https://driftproofhq.com/reports/010/): Eight passed and two failed, both under the first setup, where one command gave both results. Models: Claude Opus 5. Its full text: <https://driftproofhq.com/reports/010/index.md>
+- [Report 009: three skills under two eval harnesses](https://driftproofhq.com/reports/009/): Driftproof scored answers with the skill clearly higher on all three tasks. Models: Claude Opus 5. Its full text: <https://driftproofhq.com/reports/009/index.md>
+- [Report 008: the skill stabilises the floor, not the ceiling](https://driftproofhq.com/reports/008/): With the skill, none of fourteen tasks scored clearly higher or clearly lower on the new model. Models: Claude Fable 5.1.
+- [Report 007: the baseline is the noisy arm](https://driftproofhq.com/reports/007/): No pair was clearly higher or lower on average. Models: Claude Fable 5, Claude Sonnet 5.
+- [Report 006: the skill text moves, the substrate holds still](https://driftproofhq.com/reports/006/): All three pairs came out not measured: on some tasks, answers without any skill scored clearly higher or clearly lower than in Report 005, so old and new text could not be compared. Models: Claude Fable 5, Claude Sonnet 5.
+- [Report 005: what does a skill cost to run?](https://driftproofhq.com/reports/005/): In twenty of thirty skill and model pairs, at least one task scored clearly higher or lower with the skill. Models: Claude Fable 5, Claude Sonnet 5, GPT-5.6 Sol.
+- [Report 004: does encoded expertise still lift output on the frontier tier?](https://driftproofhq.com/reports/004/): For three skills, each model had at least one task clearly higher with the skill and none clearly lower. Models: Claude Fable 5, Claude Opus 5.
+- [Report 003: do skill verdicts hold across a model release?](https://driftproofhq.com/reports/003/): With the skill, four skills had at least one task clearly higher on the newer model, two had one task clearly lower, and four showed no clear difference. Models: Claude Opus 4.8, Claude Opus 5.
+- [Report 002: does a skill's benefit hold across substrates?](https://driftproofhq.com/reports/002/): On three skills, both models had at least one task clearly higher with the skill, none clearly lower. Models: Claude Sonnet 5, GPT-5.6 Sol.
+- [Report 001: do skill verdicts hold across a model release?](https://driftproofhq.com/reports/001/): With the skill, nine of ten skills had at least one task scoring clearly higher or clearly lower on the newer model. Models: Claude Sonnet 4.6, Claude Sonnet 5.

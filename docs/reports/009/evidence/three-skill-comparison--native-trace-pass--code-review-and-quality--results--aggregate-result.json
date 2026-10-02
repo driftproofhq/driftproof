@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "claudeVersion": "2.1.272",
+  "startedAt": "2026-09-15T16:03:13.804Z",
+  "durationSeconds": 98,
+  "costUsd": 0.451681,
+  "partial": false,
+  "suite": {
+    "root": "/private/tmp/three-skill-eval-BZVlI9/plugins/code-review-and-quality",
+    "ablation": "with-without",
+    "modelOverride": "claude-opus-5",
+    "judgeModel": "claude-opus-5",
+    "threshold": 1,
+    "concurrency": 1,
+    "plugins": [
+      {
+        "name": "code-review-and-quality",
+        "version": "0.6.9",
+        "path": "/private/tmp/three-skill-eval-BZVlI9/plugins/code-review-and-quality"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "severity-labeled-findings",
+      "dir": "evals/severity-labeled-findings",
+      "source": "prose",
+      "promptMarkdown": "Review this JavaScript function and produce a code review. List your findings.\n\n```js\nfunction chargeCustomer(cust, amt) {\n  const apiKey = \"acme_live_9xEXAMPLEFAKE0000\";\n  const data = fetch(\"https://api.pay.com/charge?key=\" + apiKey + \"&amt=\" + amt + \"&id=\" + cust.id);\n  console.log(\"charged customer\", cust);\n  return data;\n}\n```",
+      "runsPerCase": 3,
+      "timeoutSeconds": 180,
+      "maxTurns": 5,
+      "graders": [
+        {
+          "name": "criteria",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "Apply the following rubric to the final answer. PASS if its score is at least 0.7; otherwise FAIL.\n\nGrade ONLY on whether the review labels each finding with an explicit severity level and calibrates those levels correctly. The skill defines the labels: Critical (blocks merge: security vuln, data loss, broken functionality), Required (no prefix / must fix before merge), Optional/Consider (suggestion), Nit (minor, optional). The snippet contains, at minimum: a hardcoded live secret in code (Critical, security), logging the full customer object / PII via console.log (Required or Critical, security), and the variable name `data` being non-descriptive (Nit). Returning the un-awaited fetch promise is a legitimate Required correctness finding but is NOT required for full credit.\n\nSCORING ANCHOR (apply strictly): a fully correct, idiomatic response scores 0.80 — it attaches an explicit severity label to each finding AND marks the hardcoded secret as Critical (or equivalent top severity) while marking a purely cosmetic point (e.g. the `data` name) as a Nit/Optional. Award 0.81-0.90 only if it is ALSO exemplary: findings are ordered by leverage (Critical/security first, nits last) rather than in code order. Award 0.91-1.00 only if flawless AND exceptional in every respect — correct labels, correct ordering, and a concrete fix proposed for each substantive finding (rare).\n\nCAP RULES: If the response does not attach explicit severity labels to its findings at all (just an unlabeled list or prose), cap at 0.3. If it applies labels but marks the hardcoded secret as a Nit/Optional or omits it, cap at 0.4. Subtract ~0.2 for each distinct miscalibration (e.g. flagging the cosmetic `data` name as Critical; treating the PII logging as a mere Nit).",
+          "config": {
+            "criteria": "Apply the following rubric to the final answer. PASS if its score is at least 0.7; otherwise FAIL.\n\nGrade ONLY on whether the review labels each finding with an explicit severity level and calibrates those levels correctly. The skill defines the labels: Critical (blocks merge: security vuln, data loss, broken functionality), Required (no prefix / must fix before merge), Optional/Consider (suggestion), Nit (minor, optional). The snippet contains, at minimum: a hardcoded live secret in code (Critical, security), logging the full customer object / PII via console.log (Required or Critical, security), and the variable name `data` being non-descriptive (Nit). Returning the un-awaited fetch promise is a legitimate Required correctness finding but is NOT required for full credit.\n\nSCORING ANCHOR (apply strictly): a fully correct, idiomatic response scores 0.80 — it attaches an explicit severity label to each finding AND marks the hardcoded secret as Critical (or equivalent top severity) while marking a purely cosmetic point (e.g. the `data` name) as a Nit/Optional. Award 0.81-0.90 only if it is ALSO exemplary: findings are ordered by leverage (Critical/security first, nits last) rather than in code order. Award 0.91-1.00 only if flawless AND exceptional in every respect — correct labels, correct ordering, and a concrete fix proposed for each substantive finding (rare).\n\nCAP RULES: If the response does not attach explicit severity labels to its findings at all (just an unlabeled list or prose), cap at 0.3. If it applies labels but marks the hardcoded secret as a Nit/Optional or omits it, cap at 0.4. Subtract ~0.2 for each distinct miscalibration (e.g. flagging the cosmetic `data` name as Critical; treating the PII logging as a mere Nit).",
+            "focus": "last_message"
+          }
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "code-review-and-quality"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 3,
+            "costUsd": 0.290065,
+            "judgeCostUsd": 0.04389,
+            "durationSeconds": 59,
+            "startedAt": "2026-09-15T16:03:13.814Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-CeRti7/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "# Code Review: `chargeCustomer`\n\n**Verdict: Request changes.** This is money-moving code, and as written it can leak a payment secret, double-charge, and silently swallow failures. Several findings are merge blockers.\n\n## Critical\n\n**1. Live API key hardcoded in source.** `apiKey` is a string literal with a `_live_` prefix. The value here reads as a deliberate placeholder (`EXAMPLEFAKE`), but the shape is a production credential, and if a real key was ever committed in this slot it must be rotated — git history keeps it after you delete the line. Load from a secret manager or `process.env`, and fail fast if unset.\n\n**2. The secret travels in a URL query string.** Even once it comes from an env var, `?key=...` lands in server access logs, proxy/CDN logs, browser history, and the `Referer` header of any subsequent navigation. Move it to an `Authorization: Bearer` header.\n\n**3. Query-parameter injection via unescaped interpolation.** Neither `amt` nor `cust.id` is escaped. A `cust.id` of `\"1&amt=99999\"` rewrites the request. Nothing user-influenced should be concatenated into a URL — send a JSON body, or at minimum `encodeURIComponent` every value.\n\n**4. A state-changing charge sent as GET.** `fetch` defaults to GET. GET is assumed safe and idempotent by the entire HTTP stack: browsers, proxies, and retry middleware may replay or cache it. On a payments endpoint that means duplicate charges. Use POST with a JSON body.\n\n**5. No idempotency key.** Independent of the GET issue: a timeout or connection reset leaves the caller unable to distinguish \"not charged\" from \"charged, response lost.\" Without an `Idempotency-Key` header, the only safe retry is no retry.\n\n**6. The promise is never awaited, and errors are never handled.** `data` is a `Promise<Response>`, not data — the body is never read. The function isn't `async`, so the returned promise's rejection is the caller's problem, and `fetch` does *not* reject on 4xx/5xx. A declined card currently returns a resolved promise indistinguishable from success. Check `res.ok` and parse the body.\n\n**7. The success log fires before the request resolves — and logs PII.** `console.log(\"charged customer\", cust)` runs synchronously while the request is still in flight, so it claims success for charges that fail. It also dumps the entire customer object (name, email, whatever else the record holds) into stdout. Log after resolution, with a redacted field set (`customerId`, `chargeId`, amount, currency).\n\n## Required\n\n**8. No input validation.** `cust` being null throws a raw `TypeError` mid-function; `amt` accepts negatives, `NaN`, `undefined`, and floats. Validate at the boundary with errors that name the bad field.\n\n**9. Amount has no currency and no defined unit.** `amt` as a bare float invites binary floating-point rounding on money (`0.1 + 0.2`). Take an integer in minor units plus an explicit ISO 4217 currency code.\n\n**10. No timeout.** A hung connection to the payment provider holds the request handler open indefinitely. Pass an `AbortSignal.timeout(...)`.\n\n**11. If this runs in a browser, the design is unfixable as-is.** No env var or header hides a key from client-side JavaScript. Charging must originate server-side; the client should only ever hold a short-lived, single-use token.\n\n## Consider\n\n**12. Naming.** `data` holds a promise, not data. `cust`/`amt` abbreviate without benefit. `customer`, `amountMinorUnits`, `response`.\n\n**13. Architecture — extract a payment client.** Base URL, auth, timeout, error mapping, and retry policy are cross-cutting concerns for every call to this provider. Inlining them in one function guarantees the next endpoint copies them, drifts, and reintroduces these bugs. One module owning the transport, with `chargeCustomer` as a thin caller.\n\n**14. No tests.** At minimum: declined card, network timeout, retry with the same idempotency key, and invalid-amount rejection.\n\n## Suggested rewrite\n\n```js\nconst PAY_API_URL = \"https://api.pay.com/charges\";\n\n/**\n * @param {{id: string}} customer\n * @param {number} amountMinorUnits - positive integer, smallest currency unit (e.g. cents)\n * @param {string} currency - ISO 4217 code\n * @param {string} idempotencyKey - stable per logical charge; safe to retry with\n * @returns {Promise<{id: string, status: string}>}\n */\nexport async function chargeCustomer(customer, amountMinorUnits, currency, idempotencyKey) {\n  if (!customer?.id) throw new TypeError(\"customer.id is required\");\n  if (!Number.isInteger(amountMinorUnits) || amountMinorUnits <= 0) {\n    throw new RangeError(`amount must be a positive integer in minor units, got ${amountMinorUnits}`);\n  }\n  if (!idempotencyKey) throw new TypeError(\"idempotencyKey is required\");\n\n  const apiKey = process.env.PAY_API_KEY;\n  if (!apiKey) throw new Error(\"PAY_API_KEY is not configured\");\n\n  const res = await fetch(PAY_API_URL, {\n    method: \"POST\",\n    headers: {\n      Authorization: `Bearer ${apiKey}`,\n      \"Content-Type\": \"application/json\",\n      \"Idempotency-Key\": idempotencyKey,\n    },\n    body: JSON.stringify({ customerId: customer.id, amount: amountMinorUnits, currency }),\n    signal: AbortSignal.timeout(10_000),\n  });\n\n  if (!res.ok) {\n    const detail = await res.text().catch(() => \"\");\n    throw new Error(`charge failed: ${res.status} ${detail.slice(0, 200)}`);\n  }\n\n  const charge = await res.json();\n  logger.info(\"charge succeeded\", {\n    customerId: customer.id,\n    chargeId: charge.id,\n    amountMinorUnits,\n    currency,\n  });\n  return charge;\n}\n```\n\nTwo things I couldn't check without the surrounding code: whether this executes server-side (finding 11), and whether the provider actually supports POST + `Idempotency-Key` at this endpoint — confirm against their API docs before adopting the rewrite verbatim."
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.161616,
+            "judgeCostUsd": 0.039209999999999995,
+            "durationSeconds": 39,
+            "startedAt": "2026-09-15T16:04:12.994Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-yyEyAu/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "## Code review: `chargeCustomer`\n\n### Critical\n\n**1. Hardcoded API key in source (`apiKey`)**\nThe literal looks like a deliberate placeholder (`EXAMPLEFAKE`), but the pattern is the problem: a live payment credential embedded in a function body gets committed, shipped in bundles, and copied into forks. It belongs in a server-side secret store / env var. If a real key ever occupied this line, rotate it — git history keeps it after deletion.\n\n**2. Secret passed as a URL query parameter**\n`?key=...` leaks the credential into access logs, proxy logs, APM traces, browser history, and `Referer` headers. Even over TLS, the URL is logged at both ends. Use an `Authorization` header.\n\n**3. This looks like it runs client-side**\nBare `fetch` with an embedded live key implies browser execution, which hands the key to every user. Charging must happen on a server; the client should only call your own endpoint.\n\n**4. The return value is not the charge result**\n`fetch` returns a `Promise<Response>`. `data` is a pending promise, not data — no `await`, no `.json()`, and the function isn't `async`. Any caller doing `const r = chargeCustomer(...); r.amount` gets `undefined`.\n\n**5. Side-effecting operation over GET**\nCharging money via GET violates HTTP semantics and is actively dangerous: GETs are treated as safe, so browsers, prefetchers, proxies, and retry middleware may re-issue them — duplicate charges. Use POST with a JSON body.\n\n### High\n\n**6. No error handling**\n`fetch` only rejects on network failure; a 402/500 resolves normally. Nothing checks `response.ok`, and a network error becomes an unhandled rejection. A failed charge is currently indistinguishable from a successful one.\n\n**7. No idempotency key**\nWithout one, a client retry after a timeout charges the customer twice. Every payment API supports an idempotency key; this is the standard defense.\n\n**8. PII in logs**\n`console.log(\"charged customer\", cust)` dumps the whole customer object — plausibly email, name, address, possibly card metadata — into log aggregation. Log `cust.id` only.\n\n**9. The log line is a lie**\nIt prints \"charged customer\" before the request has even completed, and regardless of outcome. Log after a confirmed success, with the charge/transaction id.\n\n### Medium\n\n**10. No input validation**\n`cust` null/undefined throws a raw `TypeError` on `cust.id`. `amt` is unvalidated — `NaN`, negative, zero, or a string all serialize into the URL and get sent to the payment processor. Validate before the network call.\n\n**11. No URL encoding**\n`cust.id` and `amt` are concatenated raw. An id containing `&` or `#` silently corrupts the request and can inject or truncate query parameters. Use `encodeURIComponent` (or, better, a JSON body).\n\n**12. Money as a float**\n`amt` with no units is ambiguous and invites `0.1 + 0.2` rounding bugs. Use integer minor units (cents) and state it in the signature/docs.\n\n**13. No currency**\n`amt=50` is meaningless without one. If the API defaults it, that default will eventually be wrong.\n\n**14. No timeout**\nNo `AbortSignal`, so a hung connection hangs the caller indefinitely and pushes you toward blind retries (see #7).\n\n### Low\n\n**15. Naming and documentation**\n`cust`/`amt` save four characters at the cost of clarity; `data` names a promise. No JSDoc on a function that moves real money — document units, currency, throw behavior, and return shape.\n\n### Suggested shape\n\n```js\n/**\n * Charges a customer. Server-side only.\n * @param {{id: string}} customer\n * @param {number} amountInCents - positive integer, minor units\n * @param {string} idempotencyKey - stable per logical charge attempt\n * @returns {Promise<{id: string, status: string}>}\n * @throws {Error} on validation failure, network error, or non-2xx response\n */\nasync function chargeCustomer(customer, amountInCents, idempotencyKey, currency = \"usd\") {\n  if (!customer?.id) throw new Error(\"chargeCustomer: customer.id is required\");\n  if (!Number.isInteger(amountInCents) || amountInCents <= 0) {\n    throw new Error(`chargeCustomer: amountInCents must be a positive integer, got ${amountInCents}`);\n  }\n\n  const response = await fetch(\"https://api.pay.com/charge\", {\n    method: \"POST\",\n    headers: {\n      \"Authorization\": `Bearer ${process.env.PAY_API_KEY}`,\n      \"Content-Type\": \"application/json\",\n      \"Idempotency-Key\": idempotencyKey,\n    },\n    body: JSON.stringify({ customerId: customer.id, amount: amountInCents, currency }),\n    signal: AbortSignal.timeout(10_000),\n  });\n\n  if (!response.ok) {\n    const detail = await response.text().catch(() => \"\");\n    throw new Error(`Charge failed (${response.status}): ${detail}`);\n  }\n\n  const charge = await response.json();\n  console.log(\"charged customer\", { customerId: customer.id, chargeId: charge.id });\n  return charge;\n}\n```\n\nThe two findings I'd fix before anything else are **#3/#1** (credential exposure — determines whether this code can exist in its current location at all) and **#4** (the function doesn't actually return the charge result, so every caller is already broken)."
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 1,
+        "passRateWithout": 1,
+        "delta": 0
+      }
+    }
+  ],
+  "aggregates": {
+    "casesTotal": 1,
+    "casesPassed": 1,
+    "overallScore": 1,
+    "overallPassRate": 1,
+    "meanDelta": 0
+  }
+}

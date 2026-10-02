@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent skill regression testing | Driftproof</title>
+<link rel="stylesheet" href="/style.css">
+<!-- driftproof:card-tags -->
+<link rel="stylesheet" href="/tokens.css">
+<link rel="canonical" href="https://driftproofhq.com/agent-skill-regression-testing/">
+<link rel="alternate" type="application/atom+xml" title="Driftproof reports" href="/feed.xml">
+<link rel="alternate" type="text/markdown" href="/agent-skill-regression-testing/index.md">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-italic.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-medium.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-regular.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/courier-prime-regular.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/newsreader-variable.woff2" crossorigin="anonymous">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png" sizes="180x180">
+<link rel="icon" href="/icon-512.png" sizes="512x512" type="image/png">
+<meta name="description" content="With the skill loaded, Claude Sonnet 5.5 scored clearly higher than Claude Sonnet 5 on documentation in two of three runs. On code review and git…">
+<meta property="og:site_name" content="Driftproof">
+<meta property="og:title" content="Agent skill regression testing | Driftproof">
+<meta property="og:description" content="With the skill loaded, Claude Sonnet 5.5 scored clearly higher than Claude Sonnet 5 on documentation in two of three runs. On code review and git…">
+<meta property="og:image" content="https://driftproofhq.com/og.7a9c3a6e.png">
+<meta property="og:url" content="https://driftproofhq.com/agent-skill-regression-testing/">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Agent skill regression testing | Driftproof",
+  "description": "With the skill loaded, Claude Sonnet 5.5 scored clearly higher than Claude Sonnet 5 on documentation in two of three runs. On code review and git…",
+  "url": "https://driftproofhq.com/agent-skill-regression-testing/",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Driftproof",
+    "url": "https://driftproofhq.com/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does a SKILL.md still help after upgrading Claude?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "With the skill loaded, Claude Sonnet 5.5 scored clearly higher than Claude Sonnet 5 on documentation in two of three runs. On code review and git workflow it was never clearly higher or lower: each run gave no clear difference or too few answers to tell. (Report 013: Claude Opus 5.5, Claude Sonnet 5 and Claude Sonnet 5.5)"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I compare an agent skill across model releases?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Diffing two receipts yields a per-case verdict. A verdict reads the with-skill arms only. The runner’s comparison of two receipts sets one receipt’s with-skill band against the other’s, per case. (Report 011: Claude Opus 5 and Claude Opus 5.5)"
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://driftproofhq.com/#organization",
+  "name": "Driftproof",
+  "alternateName": "driftproofhq",
+  "url": "https://driftproofhq.com/",
+  "logo": "https://driftproofhq.com/icon-512.png",
+  "description": "Driftproof (driftproofhq): open-source agent skill evaluation and regression testing across model releases",
+  "sameAs": [
+    "https://github.com/driftproofhq",
+    "https://dev.to/driftproofhq",
+    "https://www.npmjs.com/package/driftproof",
+    "https://skillsllm.com/skill/driftproof"
+  ]
+}
+</script>
+<!-- /driftproof:card-tags -->
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "d78764dd442f49cb9bb203bd6302e9b4"}'></script><!-- End Cloudflare Web Analytics -->
+</head>
+<body>
+<!--driftproof:nav--><header class="site">
+<a class="brand" href="/"><img class="brand-mark" src="/favicon.svg" alt="" width="28" height="28"><span>Driftproof</span></a>
+<details class="nav-menu"><summary>Menu</summary></details>
+<nav class="site-nav" aria-label="Site">
+<a href="/reports/">Reports</a>
+<a href="/#how-it-works">How it works</a>
+<details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
+<a href="/methodology/">Methodology</a>
+<a href="/neutrality/">Neutrality</a>
+<a href="/interop/">Interop</a>
+<a href="/authoring/">Authoring</a>
+<a href="/judge-policy/">Judge policy</a>
+<a href="/findings/">Findings</a>
+<a href="/how-this-is-built/">How this is built</a>
+<a href="/glossary/">Glossary</a>
+<a href="/report-types/">Report types</a>
+</div></details>
+<a href="/paper/">Paper</a>
+<a href="https://github.com/driftproofhq/driftproof">GitHub</a>
+</nav>
+</header><!--/driftproof:nav-->
+<!--driftproof:layout--><div class="page-grid">
+<nav class="page-toc" aria-label="On this page"><div class="rail-in"><p class="eyebrow">On this page</p><ol>
+<li><a href="#does-a-skill-md-still-help-after-upgrading-claude">Does a SKILL.md still help after upgrading Claude?</a></li>
+<li><a href="#how-do-i-compare-an-agent-skill-across-model-releases">How do I compare an agent skill across model releases?</a></li>
+<li><a href="#more">More answers</a></li>
+</ol></div></nav><!--/driftproof:layout-->
+<main class="prose answers">
+<h1>Agent skill regression testing</h1>
+<section class="qa" id="after-upgrading-claude">
+<!--driftproof:anchor--><span id="does-a-skill-md-still-help-after-upgrading-claude" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Does a SKILL.md still help after upgrading Claude?</h2>
+<p class="answer">With the skill loaded, Claude Sonnet 5.5 scored clearly higher than Claude Sonnet 5 on documentation in two of three runs. On code review and git workflow it was never clearly higher or lower: each run gave no clear difference or too few answers to tell. (<a href="/reports/013/">Report 013</a>: Claude Opus 5.5, Claude Sonnet 5 and Claude Sonnet 5.5)</p>
+<p>On code review, the skill moved Claude Sonnet 5.5’s average by <a href="/reports/013/#what-the-runs-show">+0.009</a>, <a href="/reports/013/#what-the-runs-show">+0.051</a> and <a href="/reports/013/#what-the-runs-show">+0.034</a> in the three runs; without the skill it averaged <a href="/reports/013/#what-the-runs-show">0.878</a>, <a href="/reports/013/#what-the-runs-show">0.849</a> and <a href="/reports/013/#what-the-runs-show">0.861</a>. For Claude Sonnet 5 the skill moved it by <a href="/reports/013/#what-the-runs-show">+0.302</a>, <a href="/reports/013/#what-the-runs-show">+0.207</a> and <a href="/reports/013/#what-the-runs-show">+0.085</a>. These figures are context, not a verdict. Each skill was tested on one task only. Nothing here says how these skills do on other tasks, or how these models do at coding in general. (<a href="/reports/013/">Report 013</a>: Claude Opus 5.5, Claude Sonnet 5 and Claude Sonnet 5.5)</p>
+</section>
+
+<section class="qa" id="across-model-releases">
+<!--driftproof:anchor--><span id="how-do-i-compare-an-agent-skill-across-model-releases" class="toc-anchor"></span><!--/driftproof:anchor--><h2>How do I compare an agent skill across model releases?</h2>
+<p class="answer">Diffing two receipts yields a per-case verdict. A verdict reads the with-skill arms only. The runner’s comparison of two receipts sets one receipt’s with-skill band against the other’s, per case. (<a href="/reports/011/">Report 011</a>: Claude Opus 5 and Claude Opus 5.5)</p>
+<p>A receipt records what produced its numbers: the model, the tools, the skill and the tasks by their content, and the grader with its instructions. The stale command compares those with what would run today and says what has moved.</p>
+<p>Claude Opus 5.5 on the three skills and cases of <a href="/reports/009/">Report 009</a>, one case each, beside a fresh Claude Opus 5 arm on the same harness. Between the two models, the rule detects no separation on any of the three skills, and on two of them the draws could not have told. None of this is evidence that the two models score these skills alike. On two skills the two models’ baselines sit further apart than their with-skill scores, and no verdict here reads them. (<a href="/reports/011/">Report 011</a>: Claude Opus 5 and Claude Opus 5.5)</p>
+<p>For scale, from our own runs: <a href="/reports/009/">Report 009</a> ran on Claude Code <a href="/methodology/#receipts-are-an-open-format-precise">2.1.272</a> on <a href="/methodology/#receipts-are-an-open-format-precise">15</a> September, and on <a href="/methodology/#receipts-are-an-open-format-precise">23</a> September <a href="/reports/011/">Report 011</a> needed <a href="/methodology/#receipts-are-an-open-format-precise">2.1.280</a> or newer.</p>
+<p>This report runs every arm three times, one after another, with the same script and settings, because one run’s figure can move in the next: <a href="/reports/011/">Report 011</a>’s Claude Opus 5.5 baseline on code-review-and-quality read <a href="/reports/013/#limits">0.68</a>, and the same arm in this report’s run <a href="/reports/013/#limits">1</a> read <a href="/reports/013/#limits">0.83</a>. All three models ran on the same Claude Code, version <a href="/reports/013/#limits-and-what-differs-from-reports-009-and-011">2.1.284</a>; <a href="/reports/009/">Report 009</a> used <a href="/reports/013/#limits-and-what-differs-from-reports-009-and-011">2.1.272</a> and <a href="/reports/011/">Report 011</a> used <a href="/reports/013/#limits-and-what-differs-from-reports-009-and-011">2.1.280</a>. (<a href="/reports/013/">Report 013</a>: Claude Opus 5.5, Claude Sonnet 5 and Claude Sonnet 5.5)</p>
+</section>
+<h2 id="more">More answers</h2>
+<ul class="related">
+<li><a href="/what-is-driftproof/">What is Driftproof?</a></li>
+<li><a href="/agent-skill-evaluation/">How to tell whether a skill improved output</a></li>
+<li><a href="/compare/">What each evaluation tool measures</a></li>
+<li><a href="/paper/">The paper</a></li>
+</ul>
+</main>
+<!--driftproof:layout-end--></div><!--/driftproof:layout-end-->
+<!--driftproof:foot--><footer class="site">
+<p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
+<p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+</footer><!--/driftproof:foot-->
+<!--driftproof:scripts--><script src="/copy-button.js" defer></script>
+<script type="module" src="/islands/loader.js"></script><!--/driftproof:scripts-->
+</body>
+</html>

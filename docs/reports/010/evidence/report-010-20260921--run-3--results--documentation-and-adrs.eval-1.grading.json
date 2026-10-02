@@ -1,0 +1,33 @@
+{
+  "expectations": [
+    {
+      "id": 1,
+      "text": "The ADR states context, decision, alternatives, and consequences distinctly",
+      "passed": true,
+      "evidence": "The Write call created docs/decisions/ADR-001-adopt-event-sourcing-for-orders-service.md. It has separate '## Context', '## Decision', '## Alternatives Considered' and '## Consequences' sections, plus Status and Date. Each section has its own content: requirements and constraints under Context, event sourcing scoped to orders under Decision, two alternatives, and eight consequence bullets."
+    },
+    {
+      "id": 2,
+      "text": "Trade-offs and rejected options are recorded, not just the winning choice",
+      "passed": true,
+      "evidence": "The ADR records both rejected options, the append-only audit table and CDC, each with Pros, Cons and a 'Rejected:' reason. The Consequences section lists the costs of the chosen option as well as its benefits: projection rebuilds, event schema versioning, eventual consistency, the reporting service's need for synchronous reads, and higher operational complexity."
+    },
+    {
+      "id": 3,
+      "text": "The document is written in timeless language describing current state",
+      "passed": false,
+      "evidence": "The Decision section is mostly in present tense ('Order state changes are recorded as an append-only stream'). However, the document still uses time-relative wording: 'The orders service currently stores mutable order rows', 'Other services keep their current persistence models', and 'before reporting moves to the new read models'. It also frames the reporting-service issue as future work ('it needs a plan... This must be settled before...'). These are not timeless descriptions of the current state."
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 1,
+    "total": 3,
+    "pass_rate": 0.6666666666666666
+  },
+  "run": {
+    "executor_model": "claude-opus-5",
+    "grader_model": "unknown",
+    "timestamp": "2026-09-21T14:54:43.083Z"
+  }
+}

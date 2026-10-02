@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent skill evaluation | Driftproof</title>
+<link rel="stylesheet" href="/style.css">
+<!-- driftproof:card-tags -->
+<link rel="stylesheet" href="/tokens.css">
+<link rel="canonical" href="https://driftproofhq.com/agent-skill-evaluation/">
+<link rel="alternate" type="application/atom+xml" title="Driftproof reports" href="/feed.xml">
+<link rel="alternate" type="text/markdown" href="/agent-skill-evaluation/index.md">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-italic.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-medium.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-regular.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/courier-prime-regular.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/newsreader-variable.woff2" crossorigin="anonymous">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png" sizes="180x180">
+<link rel="icon" href="/icon-512.png" sizes="512x512" type="image/png">
+<meta name="description" content="We run a skill's own test tasks with the skill and without it, score every answer several times, and call a change only when it is clearly bigger than…">
+<meta property="og:site_name" content="Driftproof">
+<meta property="og:title" content="Agent skill evaluation | Driftproof">
+<meta property="og:description" content="We run a skill's own test tasks with the skill and without it, score every answer several times, and call a change only when it is clearly bigger than…">
+<meta property="og:image" content="https://driftproofhq.com/og.7a9c3a6e.png">
+<meta property="og:url" content="https://driftproofhq.com/agent-skill-evaluation/">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Agent skill evaluation | Driftproof",
+  "description": "We run a skill's own test tasks with the skill and without it, score every answer several times, and call a change only when it is clearly bigger than…",
+  "url": "https://driftproofhq.com/agent-skill-evaluation/",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Driftproof",
+    "url": "https://driftproofhq.com/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How can I tell whether an agent skill actually improved output?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "We run a skill's own test tasks with the skill and without it, score every answer several times, and call a change only when it is clearly bigger than the usual spread of the scores. What the skill adds is the average with the skill minus the average without it."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How should I handle variance in agent evaluations?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A fixed grader, another model, scores every answer several times. So each task gets a spread of scores, not one fragile number. Each arm is generated at least three times, and more until the across-draw spread settles."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://driftproofhq.com/#organization",
+  "name": "Driftproof",
+  "alternateName": "driftproofhq",
+  "url": "https://driftproofhq.com/",
+  "logo": "https://driftproofhq.com/icon-512.png",
+  "description": "Driftproof (driftproofhq): open-source agent skill evaluation and regression testing across model releases",
+  "sameAs": [
+    "https://github.com/driftproofhq",
+    "https://dev.to/driftproofhq",
+    "https://www.npmjs.com/package/driftproof",
+    "https://skillsllm.com/skill/driftproof"
+  ]
+}
+</script>
+<!-- /driftproof:card-tags -->
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "d78764dd442f49cb9bb203bd6302e9b4"}'></script><!-- End Cloudflare Web Analytics -->
+</head>
+<body>
+<!--driftproof:nav--><header class="site">
+<a class="brand" href="/"><img class="brand-mark" src="/favicon.svg" alt="" width="28" height="28"><span>Driftproof</span></a>
+<details class="nav-menu"><summary>Menu</summary></details>
+<nav class="site-nav" aria-label="Site">
+<a href="/reports/">Reports</a>
+<a href="/#how-it-works">How it works</a>
+<details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
+<a href="/methodology/">Methodology</a>
+<a href="/neutrality/">Neutrality</a>
+<a href="/interop/">Interop</a>
+<a href="/authoring/">Authoring</a>
+<a href="/judge-policy/">Judge policy</a>
+<a href="/findings/">Findings</a>
+<a href="/how-this-is-built/">How this is built</a>
+<a href="/glossary/">Glossary</a>
+<a href="/report-types/">Report types</a>
+</div></details>
+<a href="/paper/">Paper</a>
+<a href="https://github.com/driftproofhq/driftproof">GitHub</a>
+</nav>
+</header><!--/driftproof:nav-->
+<!--driftproof:layout--><div class="page-grid">
+<nav class="page-toc" aria-label="On this page"><div class="rail-in"><p class="eyebrow">On this page</p><ol>
+<li><a href="#how-can-i-tell-whether-an-agent-skill-actually-improved-outp">How can I tell whether an agent skill actually improved output?</a></li>
+<li><a href="#how-should-i-handle-variance-in-agent-evaluations">How should I handle variance in agent evaluations?</a></li>
+<li><a href="#more">More answers</a></li>
+</ol></div></nav><!--/driftproof:layout-->
+<main class="prose answers">
+<h1>Agent skill evaluation</h1>
+<section class="qa" id="did-the-skill-improve-output">
+<!--driftproof:anchor--><span id="how-can-i-tell-whether-an-agent-skill-actually-improved-outp" class="toc-anchor"></span><!--/driftproof:anchor--><h2>How can I tell whether an agent skill actually improved output?</h2>
+<p class="answer">We run a skill's own test tasks with the skill and without it, score every answer several times, and call a change only when it is clearly bigger than the usual spread of the scores. What the skill adds is the average with the skill minus the average without it.</p>
+<p>Each side's spread is its average plus or minus the usual variation of its scores. If the two spreads overlap, we do not call a change. The averages must differ by at least <a href="/methodology/#the-drift-verdict-rule-anti-false-positive">0.05</a>. The grader scores on a coarse grid of about <a href="/methodology/#the-drift-verdict-rule-anti-false-positive">0.05</a> to <a href="/methodology/#the-drift-verdict-rule-anti-false-positive">0.1</a>, so <a href="/methodology/#the-drift-verdict-rule-anti-false-positive">0.05</a> is about one step of it. A smaller gap is not called, even when the spreads are apart.</p>
+<p>A skill's own tests passing is one answer. Driftproof asks two more: whether the scores with the skill and without it separate beyond their spread, and whether that held when the model changed. A clear difference is what these tests saw, not proof that the skill itself changed.</p>
+<p>A task may also carry plain checks on the answer that simply pass or fail, with no model judging: for example, that a commit message starts with the expected kind of first line. They sit beside the grader's scores as extra evidence. They never decide whether we call a change.</p>
+</section>
+
+<section class="qa" id="variance">
+<!--driftproof:anchor--><span id="how-should-i-handle-variance-in-agent-evaluations" class="toc-anchor"></span><!--/driftproof:anchor--><h2>How should I handle variance in agent evaluations?</h2>
+<p class="answer">A fixed grader, another model, scores every answer several times. So each task gets a spread of scores, not one fragile number. Each arm is generated at least three times, and more until the across-draw spread settles.</p>
+<p>Every report published before <a href="/reports/007/">Report 007</a> used a single generation per arm, judged several times, so its bands measured the judge and not the model. <a href="/reports/006/">Report 006</a>'s probe measured generation noise at <a href="/methodology/#where-a-band-comes-from">3.2×</a> and <a href="/methodology/#where-a-band-comes-from">7.5×</a> the judge noise on the two cases it probed, ten draws each.</p>
+<p>Repeat runs of the same test did not always agree: five of the nine comparisons gave a different result in one run than in another. Claude Opus 5.5’s score on code review without the skill was <a href="/reports/013/#what-the-runs-show">0.831</a>, <a href="/reports/013/#what-the-runs-show">0.857</a> and <a href="/reports/013/#what-the-runs-show">0.713</a> across the three runs. One run alone could have told a different story. (<a href="/reports/013/">Report 013</a>: Claude Opus 5.5, Claude Sonnet 5 and Claude Sonnet 5.5)</p>
+<p>When a change is not called, a report says which of two things it saw. If the scores were so spread out that a gap of <a href="/methodology/#the-drift-verdict-rule-anti-false-positive">0.05</a> could not show, or a side had only one answer, there were too few answers to tell. Otherwise the spreads overlapped or the gap was too small, and there was no clear difference. Neither means that nothing changed.</p>
+<p>A case the rule does not separate is also asked whether it could have been separated. Its resolution is the two arms' spreads added together, plus two standard errors of the difference between their means; when that reaches the <a href="/methodology/#the-drift-verdict-rule-anti-false-positive-precise">0.05</a> floor, or when an arm has a single draw, the case is underpowered, and a receipt with no separated case and an underpowered one reads UNDERPOWERED, in words: Not enough draws to conclude at this effect floor. The badge, the Action and the comparison report print the draws per arm that would have been needed with the spreads held, or say that no draw count reaches the floor when the spreads alone do, because more draws narrow the standard error and not the spread.</p>
+</section>
+<h2 id="more">More answers</h2>
+<ul class="related">
+<li><a href="/what-is-driftproof/">What is Driftproof?</a></li>
+<li><a href="/agent-skill-regression-testing/">Does a skill still help after a model upgrade?</a></li>
+<li><a href="/compare/">What each evaluation tool measures</a></li>
+<li><a href="/paper/">The paper</a></li>
+</ul>
+</main>
+<!--driftproof:layout-end--></div><!--/driftproof:layout-end-->
+<!--driftproof:foot--><footer class="site">
+<p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
+<p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+</footer><!--/driftproof:foot-->
+<!--driftproof:scripts--><script src="/copy-button.js" defer></script>
+<script type="module" src="/islands/loader.js"></script><!--/driftproof:scripts-->
+</body>
+</html>

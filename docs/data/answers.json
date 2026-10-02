@@ -1,0 +1,198 @@
+{
+ "_what": "The answer pages (spec 135), rendered by scripts/answer-pages.js. A paragraph is either {quotes: [...]}, which renders its quotes in order and nothing else, or {text, href, sources: [...]}, a sentence of the page's own supported by its sources. A source is a public file, a quote found verbatim in that file's visible text, and the link to where the quote is. The build throws when a quote is not in its file. Headings, link labels and the other labels are the only words that are not quotes or facts; spec 135's approval reads each.",
+ "descriptor": "Driftproof (driftproofhq): open-source agent skill evaluation and regression testing across model releases",
+ "links": {
+  "what-is-driftproof": "What is Driftproof?",
+  "agent-skill-evaluation": "How to tell whether a skill improved output",
+  "agent-skill-regression-testing": "Does a skill still help after a model upgrade?",
+  "compare": "What each evaluation tool measures",
+  "paper": "The paper"
+ },
+ "home_heading": "Common questions",
+ "pages": {
+  "what-is-driftproof": {
+   "title": "What is Driftproof?",
+   "h1": "What is Driftproof?",
+   "intro": {
+    "text": "Driftproof (driftproofhq): open-source agent skill evaluation and regression testing across model releases. It runs a skill's own tests with the skill and without it, scores every answer several times, and calls a change only when it is clearly bigger than the usual spread. Each result is a dated, hash-verified receipt.",
+    "href": "/methodology/",
+    "sources": [
+     { "file": "docs/methodology/index.html", "quote": "We run a skill's own test tasks with the skill and without it, score every answer several times, and call a change only when it is clearly bigger than the usual spread of the scores.", "href": "/methodology/" },
+     { "file": "docs/index.html", "quote": "Each answer is a dated, hash-verified receipt, and when there were too few draws to tell, the receipt says so.", "href": "/#hero" }
+    ]
+   },
+   "headings": {
+    "measures": "What it measures",
+    "not": "What it does not measure",
+    "differs": "How it differs from a skill's own tests and from other eval tools",
+    "evidence": "The published evidence",
+    "paper": "The paper",
+    "software": "The software",
+    "upstream": "Upstream fixes and independent mentions",
+    "name": "The name"
+   },
+   "measures": [
+    { "quotes": [
+     { "file": "docs/methodology/index.html", "quote": "For each task in a skill's own test set, Driftproof asks the model twice: once with the skill's instructions loaded, and once with the task alone. The model answers each way several times.", "href": "/methodology/#the-core-with-vs-without-sampled-banded" },
+     { "file": "docs/methodology/index.html", "quote": "What the skill adds is the average with the skill minus the average without it.", "href": "/methodology/#the-core-with-vs-without-sampled-banded" }
+    ] },
+    { "quotes": [
+     { "file": "docs/methodology/index.html", "quote": "A receipt records what produced its numbers: the model, the tools, the skill and the tasks by their content, and the grader with its instructions. The stale command compares those with what would run today and says what has moved.", "href": "/methodology/#receipts-are-an-open-format" }
+    ] }
+   ],
+   "not": [
+    { "quotes": [
+     { "file": "docs/methodology/index.html", "quote": "A clear difference is what these tests saw, not proof that the skill itself changed.", "href": "/methodology/#the-drift-verdict-rule-anti-false-positive" },
+     { "file": "docs/neutrality/index.html", "quote": "Raw scores across companies are background, never a ranking.", "href": "/neutrality/" }
+    ] },
+    { "quotes": [
+     { "file": "docs/neutrality/index.html", "quote": "Any constant style preference the judge holds toward a provider is present in both the with-skill and the baseline run for that provider, so taking the difference reduces it, though it is not cancelled.", "href": "/neutrality/" }
+    ] }
+   ],
+   "differs": [
+    { "quotes": [
+     { "file": "docs/index.html", "quote": "A skill's own tests passing is one answer. Driftproof asks two more: whether the scores with the skill and without it separate beyond their spread, and whether that held when the model changed.", "href": "/#hero" }
+    ] }
+   ],
+   "labels": {
+    "others": "What each other tool measures, and whether it compares a task with the skill and without it, as its own docs say. The full table:",
+    "evidence": "Every published report, newest first.",
+    "upstream": "Fixes merged upstream, each a row of the paper's defect table:",
+    "coverage": "Mentions by people outside the project:",
+    "name": "This Driftproof, the project at driftproofhq, is unrelated to other projects that use the name."
+   }
+  },
+  "agent-skill-evaluation": {
+   "title": "Agent skill evaluation",
+   "h1": "Agent skill evaluation",
+   "questions": [
+    {
+     "id": "did-the-skill-improve-output",
+     "question": "How can I tell whether an agent skill actually improved output?",
+     "answer": [
+      { "quotes": [
+       { "file": "docs/methodology/index.html", "quote": "We run a skill's own test tasks with the skill and without it, score every answer several times, and call a change only when it is clearly bigger than the usual spread of the scores.", "href": "/methodology/" },
+       { "file": "docs/methodology/index.html", "quote": "What the skill adds is the average with the skill minus the average without it.", "href": "/methodology/#the-core-with-vs-without-sampled-banded" }
+      ] },
+      { "quotes": [
+       { "file": "docs/methodology/index.html", "quote": "Each side's spread is its average plus or minus the usual variation of its scores. If the two spreads overlap, we do not call a change.", "href": "/methodology/#the-drift-verdict-rule-anti-false-positive" },
+       { "file": "docs/methodology/index.html", "quote": "The averages must differ by at least 0.05. The grader scores on a coarse grid of about 0.05 to 0.1, so 0.05 is about one step of it. A smaller gap is not called, even when the spreads are apart.", "href": "/methodology/#the-drift-verdict-rule-anti-false-positive" }
+      ] },
+      { "quotes": [
+       { "file": "docs/index.html", "quote": "A skill's own tests passing is one answer. Driftproof asks two more: whether the scores with the skill and without it separate beyond their spread, and whether that held when the model changed.", "href": "/#hero" },
+       { "file": "docs/methodology/index.html", "quote": "A clear difference is what these tests saw, not proof that the skill itself changed.", "href": "/methodology/#the-drift-verdict-rule-anti-false-positive" }
+      ] },
+      { "quotes": [
+       { "file": "docs/methodology/index.html", "quote": "A task may also carry plain checks on the answer that simply pass or fail, with no model judging: for example, that a commit message starts with the expected kind of first line.", "href": "/methodology/#extra-checks-and-cost" },
+       { "file": "docs/methodology/index.html", "quote": "They sit beside the grader's scores as extra evidence. They never decide whether we call a change.", "href": "/methodology/#extra-checks-and-cost" }
+      ] }
+     ]
+    },
+    {
+     "id": "variance",
+     "question": "How should I handle variance in agent evaluations?",
+     "answer": [
+      { "quotes": [
+       { "file": "docs/methodology/index.html", "quote": "A fixed grader, another model, scores every answer several times. So each task gets a spread of scores, not one fragile number.", "href": "/methodology/#the-core-with-vs-without-sampled-banded" },
+       { "file": "docs/methodology/index.html", "quote": "Each arm is generated at least three times, and more until the across-draw spread settles.", "href": "/methodology/#where-a-band-comes-from" }
+      ] },
+      { "quotes": [
+       { "file": "docs/methodology/index.html", "quote": "Every report published before Report 007 used a single generation per arm, judged several times, so its bands measured the judge and not the model. Report 006's probe measured generation noise at 3.2× and 7.5× the judge noise on the two cases it probed, ten draws each.", "href": "/methodology/#where-a-band-comes-from" }
+      ] },
+      { "quotes": [
+       { "file": "docs/reports/013/index.html", "quote": "Repeat runs of the same test did not always agree: five of the nine comparisons gave a different result in one run than in another.", "href": "/reports/013/#what-the-runs-show" },
+       { "file": "docs/reports/013/index.html", "quote": "Claude Opus 5.5’s score on code review without the skill was 0.831, 0.857 and 0.713 across the three runs. One run alone could have told a different story.", "href": "/reports/013/#what-the-runs-show" }
+      ] },
+      { "quotes": [
+       { "file": "docs/methodology/index.html", "quote": "When a change is not called, a report says which of two things it saw. If the scores were so spread out that a gap of 0.05 could not show, or a side had only one answer, there were too few answers to tell. Otherwise the spreads overlapped or the gap was too small, and there was no clear difference. Neither means that nothing changed.", "href": "/methodology/#the-drift-verdict-rule-anti-false-positive" }
+      ] },
+      { "quotes": [
+       { "file": "docs/methodology/index.html", "quote": "A case the rule does not separate is also asked whether it could have been separated.", "href": "/methodology/#underpowered" },
+       { "file": "docs/methodology/index.html", "quote": "Its resolution is the two arms' spreads added together, plus two standard errors of the difference between their means; when that reaches the 0.05 floor, or when an arm has a single draw, the case is underpowered, and a receipt with no separated case and an underpowered one reads UNDERPOWERED, in words: Not enough draws to conclude at this effect floor.", "href": "/methodology/#the-drift-verdict-rule-anti-false-positive-precise" },
+       { "file": "docs/methodology/index.html", "quote": "The badge, the Action and the comparison report print the draws per arm that would have been needed with the spreads held, or say that no draw count reaches the floor when the spreads alone do, because more draws narrow the standard error and not the spread.", "href": "/methodology/#the-drift-verdict-rule-anti-false-positive-precise" }
+      ] }
+     ]
+    }
+   ]
+  },
+  "agent-skill-regression-testing": {
+   "title": "Agent skill regression testing",
+   "h1": "Agent skill regression testing",
+   "questions": [
+    {
+     "id": "after-upgrading-claude",
+     "question": "Does a SKILL.md still help after upgrading Claude?",
+     "answer": [
+      { "quotes": [
+       { "file": "docs/reports/013/index.html", "quote": "With the skill loaded, Claude Sonnet 5.5 scored clearly higher than Claude Sonnet 5 on documentation in two of three runs. On code review and git workflow it was never clearly higher or lower: each run gave no clear difference or too few answers to tell.", "href": "/reports/013/#what-the-runs-show" }
+      ] },
+      { "quotes": [
+       { "file": "docs/reports/013/index.html", "quote": "On code review, the skill moved Claude Sonnet 5.5’s average by +0.009, +0.051 and +0.034 in the three runs; without the skill it averaged 0.878, 0.849 and 0.861. For Claude Sonnet 5 the skill moved it by +0.302, +0.207 and +0.085. These figures are context, not a verdict.", "href": "/reports/013/#what-the-runs-show" },
+       { "file": "docs/reports/013/index.html", "quote": "Each skill was tested on one task only. Nothing here says how these skills do on other tasks, or how these models do at coding in general.", "href": "/reports/013/#limits-and-differences" }
+      ] }
+     ]
+    },
+    {
+     "id": "across-model-releases",
+     "question": "How do I compare an agent skill across model releases?",
+     "answer": [
+      { "quotes": [
+       { "file": "docs/methodology/index.html", "quote": "Diffing two receipts yields a per-case verdict.", "href": "/methodology/#the-drift-verdict-rule-anti-false-positive-precise" },
+       { "file": "docs/reports/011/index.html", "quote": "A verdict reads the with-skill arms only. The runner’s comparison of two receipts sets one receipt’s with-skill band against the other’s, per case.", "href": "/reports/011/#limits" }
+      ] },
+      { "quotes": [
+       { "file": "docs/methodology/index.html", "quote": "A receipt records what produced its numbers: the model, the tools, the skill and the tasks by their content, and the grader with its instructions. The stale command compares those with what would run today and says what has moved.", "href": "/methodology/#receipts-are-an-open-format" }
+      ] },
+      { "quotes": [
+       { "file": "docs/reports/011/index.html", "quote": "Claude Opus 5.5 on the three skills and cases of Report 009, one case each, beside a fresh Claude Opus 5 arm on the same harness.", "href": "/reports/011/" },
+       { "file": "docs/reports/011/index.html", "quote": "Between the two models, the rule detects no separation on any of the three skills, and on two of them the draws could not have told.", "href": "/reports/011/#readings" },
+       { "file": "docs/reports/011/index.html", "quote": "None of this is evidence that the two models score these skills alike.", "href": "/reports/011/#readings" },
+       { "file": "docs/reports/011/index.html", "quote": "On two skills the two models’ baselines sit further apart than their with-skill scores, and no verdict here reads them.", "href": "/reports/011/#readings" }
+      ] },
+      { "quotes": [
+       { "file": "docs/methodology/index.html", "quote": "For scale, from our own runs: Report 009 ran on Claude Code 2.1.272 on 15 September, and on 23 September Report 011 needed 2.1.280 or newer.", "href": "/methodology/#receipts-are-an-open-format-precise" }
+      ] },
+      { "quotes": [
+       { "file": "docs/reports/013/index.html", "quote": "This report runs every arm three times, one after another, with the same script and settings, because one run’s figure can move in the next: Report 011’s Claude Opus 5.5 baseline on code-review-and-quality read 0.68, and the same arm in this report’s run 1 read 0.83.", "href": "/reports/013/#limits" },
+       { "file": "docs/reports/013/index.html", "quote": "All three models ran on the same Claude Code, version 2.1.284; Report 009 used 2.1.272 and Report 011 used 2.1.280.", "href": "/reports/013/#limits-and-what-differs-from-reports-009-and-011" }
+      ] }
+     ]
+    }
+   ]
+  },
+  "compare": {
+   "title": "What agent skill evaluation tools measure",
+   "h1": "What each evaluation tool measures",
+   "intro": "What each tool measures, cell by cell, read from that tool's own docs or code and linked to where it says so. No tool is placed above another.",
+   "labels": {
+    "aspect": "Aspect",
+    "source": "source, read",
+    "not_shown": "Not shown",
+    "not_shown_note": "Not shown: this cell could not be confirmed from that tool's own docs or code as they were read for this page, so it is left out. It does not mean the tool lacks it.",
+    "keys": {
+     "measures": "What it measures",
+     "scoring": "How it scores",
+     "with_without_skill": "With and without the skill",
+     "repeats_or_spread": "Repeats and spread",
+     "across_model_releases": "Across model releases",
+     "outputs": "What it writes",
+     "licence": "Licence"
+    }
+   }
+  },
+  "paper": {
+   "id": "paper-question",
+   "question": "Can an LLM evaluator report a score for something it did not measure?",
+   "answer": [
+    { "quotes": [
+     { "file": "docs/paper/index.html", "quote": "Between 14 and 26 September 2026 the author read the scoring and gating code of seven open-source evaluation tools, chosen by the author's judgement rather than sampled (the agent-skills repository's eval harness and a reference gate script, NVIDIA SkillEvaluator, DSPy, LangSmith, DeepEval, Harbor and MLflow), reproduced thirteen defects, twelve of them offline, and filed each upstream with a public reproduction; twelve carried a proposed fix from the author, five are merged, one more is approved, and the rest were open on 30 September 2026.", "href": "/paper/#abstract" },
+     { "file": "docs/paper/index.html", "quote": "In each case the tool returned a well-formed result that its evidence did not support.", "href": "/paper/#abstract" }
+    ] },
+    { "quotes": [
+     { "file": "docs/paper/index.html", "quote": "The distinction the paper draws is between a noisy measurement, which statistics can qualify, and a well-formed number that was never a valid measurement, which statistics cannot repair.", "href": "/paper/#abstract" },
+     { "file": "docs/paper/index.html", "quote": "The evidence is a catalogue of mechanisms found where the author looked; it is a lower bound on what exists, not a prevalence estimate.", "href": "/paper/#abstract" }
+    ] }
+   ]
+  }
+ }
+}

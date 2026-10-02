@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "claudeVersion": "2.1.272",
+  "startedAt": "2026-09-15T16:04:52.998Z",
+  "durationSeconds": 53,
+  "costUsd": 0.289038,
+  "partial": false,
+  "suite": {
+    "root": "/private/tmp/three-skill-eval-BZVlI9/plugins/git-workflow-and-versioning",
+    "ablation": "with-without",
+    "modelOverride": "claude-opus-5",
+    "judgeModel": "claude-opus-5",
+    "threshold": 1,
+    "concurrency": 1,
+    "plugins": [
+      {
+        "name": "git-workflow-and-versioning",
+        "version": "0.6.9",
+        "path": "/private/tmp/three-skill-eval-BZVlI9/plugins/git-workflow-and-versioning"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "commit-message-conventional-type",
+      "dir": "evals/commit-message-conventional-type",
+      "source": "prose",
+      "promptMarkdown": "You just fixed a bug in a web app. Password-reset links were expiring after about 1 hour instead of the intended 24 hours, because the expiry duration was computed in the wrong time unit. The fix is a one-line change in src/auth/reset.ts that converts the configured 24-hour window to the correct unit before storing it. Write the single git commit message you would use for this change: give the subject line and the body exactly as you would commit them.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 180,
+      "maxTurns": 5,
+      "graders": [
+        {
+          "name": "criteria",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "Apply the following rubric to the final answer. PASS if its score is at least 0.7; otherwise FAIL.\n\nGrade ONLY against the claim that a good commit message uses a conventional type prefix and explains the WHY, not just the what. Checkable criteria: (1) The subject line begins with the conventional type `fix:` (a bug fix). (2) The subject is a short, specific description of the change (not vague like 'update reset.ts'). (3) There is a body that explains intent/impact — e.g. that reset links were expiring too early because the duration used the wrong unit — rather than merely restating the one-line diff. SCORING ANCHOR (apply strictly): a fully correct, idiomatic response scores 0.80. Award 0.81-0.90 only if it is ALSO exemplary — the body concisely conveys the user-facing consequence and the cause in a way a future maintainer could act on. Award 0.91-1.00 only if flawless AND exceptional in every respect (rare). CAP: if the subject line does not use a conventional type prefix, cap at 0.3. CAP: if there is no body, or the body only restates what the diff literally does without explaining why, cap at 0.4. Subtract ~0.2 for each distinct error: wrong type chosen (e.g. `feat:` for a bug fix), a vague/uninformative subject, or a body that adds no intent beyond the subject.",
+          "config": {
+            "criteria": "Apply the following rubric to the final answer. PASS if its score is at least 0.7; otherwise FAIL.\n\nGrade ONLY against the claim that a good commit message uses a conventional type prefix and explains the WHY, not just the what. Checkable criteria: (1) The subject line begins with the conventional type `fix:` (a bug fix). (2) The subject is a short, specific description of the change (not vague like 'update reset.ts'). (3) There is a body that explains intent/impact — e.g. that reset links were expiring too early because the duration used the wrong unit — rather than merely restating the one-line diff. SCORING ANCHOR (apply strictly): a fully correct, idiomatic response scores 0.80. Award 0.81-0.90 only if it is ALSO exemplary — the body concisely conveys the user-facing consequence and the cause in a way a future maintainer could act on. Award 0.91-1.00 only if flawless AND exceptional in every respect (rare). CAP: if the subject line does not use a conventional type prefix, cap at 0.3. CAP: if there is no body, or the body only restates what the diff literally does without explaining why, cap at 0.4. Subtract ~0.2 for each distinct error: wrong type chosen (e.g. `feat:` for a bug fix), a vague/uninformative subject, or a body that adds no intent beyond the subject.",
+            "focus": "last_message"
+          }
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "git-workflow-and-versioning"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 4,
+            "costUsd": 0.1884935,
+            "judgeCostUsd": 0.014624999999999999,
+            "durationSeconds": 36,
+            "startedAt": "2026-09-15T16:04:53.007Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-Gym0pZ/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "The file isn't in this working directory (`src/auth/reset.ts` doesn't exist here), so this is the message as I'd write it from your description:\n\n```\nfix: store password-reset expiry in the correct time unit\n\nReset links were expiring after about an hour instead of the intended\n24 hours. The configured 24-hour window was written to the token's\nexpiry field without being converted to the unit that field expects,\nso the stored deadline landed far short of the policy.\n\nConvert the value where it is stored. The configured window itself is\nunchanged, so no config change or migration is needed; tokens issued\nbefore this fix keep their short expiry and will just be re-requested.\n```\n\nTwo notes:\n\n- I kept the unit mismatch described generically (\"the unit that field expects\") because I don't have the diff. If you want it concrete — and you should, it's the most useful line in the body — replace that clause with the actual pair, e.g. \"was stored in hours where the field holds seconds.\"\n- `fix:` is the right type here, and since this is user-visible behavior it's worth a `### Fixed` changelog entry phrased around impact (\"Password-reset links now remain valid for the full 24 hours\") rather than the unit bug."
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 2,
+            "costUsd": 0.1005445,
+            "judgeCostUsd": 0.012539999999999999,
+            "durationSeconds": 17,
+            "startedAt": "2026-09-15T16:05:29.279Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-wB701r/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "The file isn't in this working tree, so this is written from your description — if the units are specifically seconds vs. milliseconds, swap those words in.\n\n```\nfix(auth): store password-reset expiry in the correct time unit\n\nThe configured 24-hour reset window was written to the token record\nwithout converting it to the unit the expiry field expects, so the\nstored value worked out to roughly one hour. Users following a reset\nlink more than an hour after requesting it hit an \"expired link\" error\nand had to start over.\n\nConvert the configured window before storing it, so tokens now expire\n24 hours after issuance as intended.\n```\n\nIf your repo doesn't use Conventional Commits, `Fix password-reset links expiring after 1 hour instead of 24` works as a drop-in subject."
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 1,
+        "passRateWithout": 1,
+        "delta": 0
+      }
+    }
+  ],
+  "aggregates": {
+    "casesTotal": 1,
+    "casesPassed": 1,
+    "overallScore": 1,
+    "overallPassRate": 1,
+    "meanDelta": 0
+  }
+}
