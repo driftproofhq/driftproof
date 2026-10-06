@@ -13,11 +13,11 @@
 //                            "quotes" form is its quotes and nothing else, so a question
 //                            page is built only from existing report, methodology and
 //                            paper text (spec 135 AC-4).
-//   docs/data/research.json  lane 59's confirmed research, written by
+//   docs/data/research.json  the confirmed research, written by
 //                            specs/135-seo-answer-pages/probes/record.mjs page-data: the
 //                            compare table, the upstream fixes and the coverage, each item
-//                            with its URL, the day read and a quote. What UNCONFIRMED.md
-//                            names is not in it.
+//                            with its URL, the day read and the lines that carry its figures.
+//                            What UNCONFIRMED.md names is not in it.
 //   docs/data/*.json         the reports, the stats and the paper, as every other page
 //                            reads them.
 //
@@ -28,6 +28,7 @@
 const fs = require('fs');
 const path = require('path');
 const { humanModelName } = require('./model-names.js');
+const { tokenize, htmlToText, attrOf, escapeRegExp } = require('./html-text.js');
 
 const ROOT = path.join(__dirname, '..');
 const DOCS = path.join(ROOT, 'docs');
@@ -42,6 +43,7 @@ const NAMED = {
   ldquo: '“', rdquo: '”', times: '×', plusmn: '±', middot: '·',
   hellip: '…', ndash: '–', mdash: '—', minus: '−',
 };
+const BLOCK_TAGS = ['p', 'div', 'li', 'ul', 'ol', 'dl', 'dt', 'dd', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'tr', 'td', 'th', 'table', 'thead', 'tbody', 'br', 'section', 'article', 'figure', 'figcaption', 'details', 'summary', 'pre', 'blockquote', 'header', 'footer', 'nav', 'main', 'hr'];
 function decode(s) {
   return String(s)
     .replace(/&#(\d+);/g, (_m, d) => String.fromCodePoint(Number(d)))
@@ -49,8 +51,9 @@ function decode(s) {
     .replace(/&([a-z]+);/g, (m, n) => (NAMED[n] === undefined ? m : NAMED[n]));
 }
 // The text a reader gets from a page's <main>: scripts, styles and drawings removed,
-// tags removed, references decoded, runs of white space read as one space. A file that
-// is not HTML is read as its raw text, white space collapsed. The paper's question section
+// tags removed (scripts/html-text.js reads them as tags, never as a pattern), references decoded,
+// runs of white space read as one space. A file that is not HTML is read as its raw text, white
+// space collapsed. The paper's question section
 // is this builder's own output, so it is never a source: a quote from the paper page is
 // found in the page without it.
 function visibleText(src, file) {
@@ -58,14 +61,15 @@ function visibleText(src, file) {
   if (/\.html?$/.test(file)) {
     const at = s.indexOf('<main');
     if (at > -1) s = s.slice(at, s.indexOf('</main>', at) > -1 ? s.indexOf('</main>', at) : undefined);
-    s = s.replace(/<section class="paper-question"[\s\S]*?<\/section>/g, ' ')
-      .replace(/<script\b[\s\S]*?<\/script>/g, ' ').replace(/<style\b[\s\S]*?<\/style>/g, ' ')
-      .replace(/<svg\b[\s\S]*?<\/svg>/g, ' ').replace(/<!--[\s\S]*?-->/g, '')
-      // A block boundary is a space; an inline tag (a link, a figure's <data>, <code>) is not,
-      // so "0.05</data>." reads "0.05." as a reader sees it.
-      .replace(/<\/?(?:p|div|li|ul|ol|dl|dt|dd|h[1-6]|tr|td|th|table|thead|tbody|br|section|article|figure|figcaption|details|summary|pre|blockquote|header|footer|nav|main|hr)\b[^>]*>/gi, ' ')
-      .replace(/<[^>]*>/g, '');
-    s = decode(s);
+    // A block boundary is a space; an inline tag (a link, a figure's <data>, <code>) is not,
+    // so "0.05</data>." reads "0.05." as a reader sees it.
+    s = htmlToText(s, {
+      skip: ['script', 'style', 'svg'],
+      skipIf: (t) => t.name === 'section' && attrOf(t, 'class') === 'paper-question',
+      skipText: ' ',
+      blockTags: BLOCK_TAGS,
+      decode,
+    });
   }
   return s.replace(/\s+/g, ' ').trim();
 }
@@ -96,7 +100,7 @@ function checkSource(s, where) {
   }
   const [p, frag] = s.href.split('#');
   if (p !== urlPathOf(s.file)) throw new Error(`${where}: the link ${s.href} is not the page of ${s.file}`);
-  if (frag && !new RegExp(`\\bid="${frag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`).test(fs.readFileSync(path.join(ROOT, s.file), 'utf8'))) {
+  if (frag && !new RegExp(`\\bid="${escapeRegExp(frag)}"`).test(fs.readFileSync(path.join(ROOT, s.file), 'utf8'))) {
     throw new Error(`${where}: ${s.file} carries no id="${frag}"`);
   }
   return s;
@@ -143,7 +147,7 @@ function linkBare(text, href) {
   });
 }
 function linkNumerals(text, href) {
-  const names = modelNames().map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const names = modelNames().map(escapeRegExp);
   const re = new RegExp(`(${names.length ? `(?:${names.join('|')})(?![\\d.])|` : ''}Report (\\d{3})\\b)`, 'g');
   let out = '';
   let at = 0;
@@ -158,7 +162,11 @@ function linkNumerals(text, href) {
 }
 // Numerals inside a string that already carries markup: only the text between tags.
 function linkNumeralsHtml(html, href) {
-  return html.split(/(<[^>]+>)/).map((part, i) => (i % 2 ? part : linkNumerals(decode(part), href))).join('');
+  return tokenize(html).map((t) => (t.type === 'text' ? linkNumerals(decode(t.text), href) : t.raw)).join('');
+}
+// The same escaped text with the links taken back out, for a label that sits inside a link already.
+function plainNumerals(text, href) {
+  return htmlToText(linkNumerals(text, href));
 }
 
 // A quote from a report is followed by whose words they are: the report, linked, and the models
@@ -251,12 +259,49 @@ ${PAGES.filter(([k]) => k !== self).map(([k, href]) => `<li><a href="${href}">${
 // quote carries it (research.json's figures, written by spec 135's record.mjs) or else the cell's
 // lead evidence; then one dated link to each of its evidence URLs, in the research's order.
 function researchCell(c, label) {
-  const lead = c.evidence[0].url;
-  const href = (num) => (c.figures && c.figures[num] !== undefined ? c.evidence[c.figures[num]].url : lead);
+  const url = (e) => sourceUrl(e, `compare cell ${c.key}`);
+  const lead = url(c.evidence[0]);
+  const href = (num) => (c.figures && c.figures[num] !== undefined ? url(c.evidence[c.figures[num]]) : lead);
   const seen = new Set();
-  const sources = c.evidence.filter((e) => !seen.has(e.url) && seen.add(e.url))
-    .map((e) => `<a href="${esc(e.url)}">${esc(label)} ${esc(e.read)}</a>`);
+  const sources = c.evidence.map((e) => [url(e), e]).filter(([u]) => !seen.has(u) && seen.add(u))
+    .map(([u, e]) => `<a href="${esc(u)}">${esc(label)} ${esc(e.read)}</a>`);
   return `${linkNumerals(c.value, href)} (${sources.join('; ')})`;
+}
+
+// The lines of this repository's own files, at the tag the research links, are found again at every
+// build from the text they were recorded by (an evidence entry's line_text: the whole quote, its line
+// breaks read as spaces), in the copy of the file as it was at that tag (the committed copy under
+// REF_COPIES, a published path), never in the tree, which moves on after the tag, and never from a
+// number kept in the data. The citation is the first and last line the text covers. A copy that is
+// missing, and a text that is in no place of it or in two, stop the build (spec 142 AC-2). An entry
+// with no line_text is a link as it stands.
+const REF_COPIES = 'scripts/ref-copies';
+function textRanges(text, needle) {
+  const want = String(needle).replace(/\s+/g, ' ').trim();
+  let flat = '';
+  const lineAt = [];
+  text.split('\n').forEach((l, i) => {
+    const t = l.replace(/\s+/g, ' ').trim();
+    if (!t) return;
+    if (flat) { flat += ' '; lineAt.push(i + 1); }
+    flat += t;
+    for (let k = 0; k < t.length; k += 1) lineAt.push(i + 1);
+  });
+  const out = [];
+  for (let i = want ? flat.indexOf(want) : -1; i > -1; i = flat.indexOf(want, i + 1)) out.push({ from: lineAt[i], to: lineAt[i + want.length - 1] });
+  return out;
+}
+function sourceUrl(e, where) {
+  if (e.line_text === undefined) return e.url;
+  const own = `${research().profiles.repository}/blob/`;
+  if (!e.url.startsWith(own)) throw new Error(`${where}: ${e.url} carries a line text but is not a file of this repository`);
+  const [, tag, rel] = /^([^/]+)\/([^#]+)/.exec(e.url.slice(own.length).replace(/#.*$/, '')) || [];
+  const abs = path.join(ROOT, REF_COPIES, tag || '', rel || '');
+  if (!rel || !fs.existsSync(abs)) throw new Error(`${where}: no copy of ${rel} at ${tag} under ${REF_COPIES}; read the pages' data again (record.mjs page-data) to keep one`);
+  const at = textRanges(fs.readFileSync(abs, 'utf8'), e.line_text);
+  if (at.length !== 1) throw new Error(`${where}: ${JSON.stringify(e.line_text.slice(0, 80))} is in ${at.length} place(s) of ${rel} at ${tag}, not one; read the pages' data again (record.mjs page-data) to record a text that is`);
+  const { from, to } = at[0];
+  return `${e.url.replace(/#.*$/, '')}#L${from}${to > from ? `-L${to}` : ''}`;
 }
 
 // ── /what-is-driftproof/ ───────────────────────────────────────────────────────────────
@@ -283,8 +328,8 @@ function whatIsPage() {
   }).join('\n');
 
   const reportLines = reports.map((r) => `<li><a href="/reports/${esc(r.number.value)}/">Report ${esc(r.number.value)}</a>: ${linkNumerals(r.what_moved.value, `/reports/${r.number.value}/`)}</li>`).join('\n');
-  const fixLines = R.upstream.map((u) => `<li>${u.threads.map((t) => `<a href="${esc(t.url)}">${linkNumerals(t.label, t.url).replace(/<a href="[^"]*">([^<]*)<\/a>/g, '$1')}</a>`).join(' and ')}. ${u.what ? `${linkNumerals(u.what, u.what_source.url)} ` : ''}${linkNumerals(u.happened, u.threads[u.threads.length - 1].url)}</li>`).join('\n');
-  const coverageLines = R.coverage.map((c) => `<li><a href="${esc(c.url)}">${linkNumerals(c.where, c.url).replace(/<a href="[^"]*">([^<]*)<\/a>/g, '$1')}</a>. ${linkNumerals(c.happened, c.url)}</li>`).join('\n');
+  const fixLines = R.upstream.map((u) => `<li>${u.threads.map((t) => `<a href="${esc(t.url)}">${plainNumerals(t.label, t.url)}</a>`).join(' and ')}. ${u.what ? `${linkNumerals(u.what, u.what_source.url)} ` : ''}${linkNumerals(u.happened, u.threads[u.threads.length - 1].url)}</li>`).join('\n');
+  const coverageLines = R.coverage.map((c) => `<li><a href="${esc(c.url)}">${plainNumerals(c.where, c.url)}</a>. ${linkNumerals(c.happened, c.url)}</li>`).join('\n');
 
   const main = `<main class="prose answers">
 <h1>${esc(A.h1)}</h1>
@@ -383,4 +428,4 @@ ${answerList()}
 </div>`;
 }
 
-module.exports = { whatIsPage, questionPage, comparePage, paperQuestion, answerLinks, answerSplit };
+module.exports = { whatIsPage, questionPage, comparePage, paperQuestion, answerLinks, answerSplit, pageVisibleText: visibleText };

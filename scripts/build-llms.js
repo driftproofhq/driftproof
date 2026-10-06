@@ -81,6 +81,15 @@ function reportLines(root) {
   return rows.map((r) => ({ number: r.number.value, line: `- [Report ${r.number.value}: ${r.what_moved.value}](${ORIGIN}/reports/${r.number.value}/): ${finding(summaries, r.number.value)} Models: ${r.model_ids.map((m) => humanModelName(m.value)).join(', ')}.` }));
 }
 
+// How many kinds of report the site lists, said as /report-types/ says it: the distinct report types
+// in docs/data/reports.json, by the same functions scripts/build-site-pages.js renders that page
+// with, never a number typed here (spec 142 AC-5). Required when it is read, not at load: that
+// file loads the answer pages, which read this one's neighbours.
+function reportKinds(root) {
+  const { reportTypes, word } = require('./build-site-pages.js');
+  return word(reportTypes(readJson(root, 'docs/data/reports.json').reports).length);
+}
+
 function renderLlms(root = ROOT) {
   return `${OPENING}
 ## Reports
@@ -93,7 +102,7 @@ ${answerLines(root).join('\n')}
 - [Methodology](${ORIGIN}/methodology/): how a run is scored, what a band is, and what the effect floor does.
 - [Neutrality](${ORIGIN}/neutrality/): what Driftproof will not claim, and the limitations it discloses.
 - [Glossary](${ORIGIN}/glossary/): drift report, receipt, band, effect floor, substrate, surface, refusal, cell, arm, and the verification lattice.
-- [Report types](${ORIGIN}/report-types/): the six kinds of report and what moves underneath the skill in each.
+- [Report types](${ORIGIN}/report-types/): the ${reportKinds(root)} kinds of report and what moves underneath the skill in each.
 - [Receipt specification](https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md): the receipt format, its schema versions, and the UNVERIFIED / DECLARED / TESTED / FORMAL levels.
 
 ## Optional

@@ -15,7 +15,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { EFFECT_FLOOR } = require('../config');
-const { receiptVerdict, verdictFromReceipt, drawsLine, UNDERPOWERED_LINE } = require('../lib/verdict');
+const { receiptVerdict, verdictFromReceipt, drawsLine, CASES_LINE } = require('../lib/verdict');
 const { acrossDraws } = require('../lib/sampling');
 const { sealReceipt } = require('../lib/receipt');
 const { stddev, combineUncertainty, round } = require('../lib/stats');
@@ -52,27 +52,29 @@ function receipt(cases) {
 }
 
 // The operator's shape: 3 cases, 3 draws an arm (the runner's minimum), 2 judge samples a draw. Each
-// case's two arms agree, and the cases sit far apart.
+// case's two arms agree, and the cases sit far apart. Spec 143 (A-137-6): every draw of a case scores
+// the same, so the whole band is the cases sitting apart, and it reads the cases words.
 const WIDE = [[[0.3, 0.3, 0.3], [0.3, 0.3, 0.3]], [[0.6, 0.6, 0.6], [0.6, 0.6, 0.6]], [[0.72, 0.72, 0.72], [0.72, 0.72, 0.72]]];
 
-test('AC-7 a band of plus or minus 0.30 from 3 cases and 2 samples reads not enough draws, not NO_EFFECT', () => {
+test('AC-7 a band of plus or minus 0.30 from 3 cases and 2 samples reads underpowered, more cases needed, not NO_EFFECT', () => {
   const r = receipt(WIDE);
   assert.ok(r.comparison.delta_uncertainty >= 0.3, `the fixture's band is ${r.comparison.delta_uncertainty}`);
   const v = receiptVerdict(r);
   assert.equal(v.verdict, 'UNDERPOWERED');
-  assert.deepEqual({ ...v.drawsNeeded, band: undefined }, { value: null, reason: 'suite_band', band: undefined, cases: 3, widened: false, taken: 3 });
+  assert.deepEqual({ ...v.drawsNeeded, band: undefined }, { value: null, reason: 'suite_band', band: undefined, cases: 3, widened: false, taken: 3, between: v.drawsNeeded.band, driver: 'cases' });
   assert.ok(Math.abs(v.drawsNeeded.band - r.comparison.delta_uncertainty) < 1e-5, 'the band read is not the band the receipt records');
-  assert.equal(drawsLine(v.drawsNeeded), `Draws needed: no draw count at this band (the comparison band over the 3 cases is plus or minus ${r.comparison.delta_uncertainty.toFixed(3)}, at or above the ${EFFECT_FLOOR} floor).`);
+  const b = r.comparison.delta_uncertainty.toFixed(3);
+  assert.equal(drawsLine(v.drawsNeeded), `Draws needed: none is expected to bring this band under the floor (the comparison band over the 3 cases is plus or minus ${b}; with each case's draw-to-draw spread taken out it is plus or minus ${b}, still at or above the ${EFFECT_FLOOR} floor).`);
 });
 
 test('AC-7 every surface says it: the badge, decide, and the plain sentence', () => {
   const r = receipt(WIDE);
-  assert.equal(verdictFromReceipt(r).message, 'not enough draws on fx-model');
+  assert.equal(verdictFromReceipt(r).message, 'more cases needed on fx-model');
   assert.equal(decision.decisionState(r), 'underpowered');
   const p = plain.plainOf(r);
-  assert.equal(p.label, plain.LABELS.UNDERPOWERED);
+  assert.equal(p.label, plain.LABELS.UNDERPOWERED_CASES);
   assert.ok(p.sentence.includes('but the test tasks scored too far apart from each other to call it'), p.sentence);
-  assert.ok(p.detail.startsWith(`${UNDERPOWERED_LINE}.`), p.detail);
+  assert.ok(p.detail.startsWith(`${CASES_LINE}.`), p.detail);
   assert.match(badgeSvg(r), /3 draws, no count at this band/);
 });
 

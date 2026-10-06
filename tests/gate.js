@@ -2786,7 +2786,36 @@ gate.section('codex exec template');
   // captured --json stream; a -o path is a file the eval user can replace with
   // a symlink to an operator-owned file before the parent reads it back.
   const args = prov.buildCodexArgs({ model: 'gpt-5.6-sol' });
-  const expected = ['exec', '--json', '-s', 'read-only', '--skip-git-repo-check', '--ephemeral', '-m', 'gpt-5.6-sol'];
+  // Spec 141 R-1: text capture, the default, turns off every codex feature that writes a file or
+  // runs code, and loads no MCP server, after the sandbox. A literal, as the claude pins are: the 50
+  // features specs/141-lost-answer-narrowing/fixtures/tool-classes.json classes write or exec on
+  // codex-cli 0.146.0 (A-141-1), never read from lib/ at run time.
+  const expected = ['exec', '--json', '-s', 'read-only', '--skip-git-repo-check', '--ephemeral',
+    '-c', 'features.apply_patch_freeform=false', '-c', 'features.apply_patch_streaming_events=false',
+    '-c', 'features.apps=false', '-c', 'features.artifact=false', '-c', 'features.browser_use=false',
+    '-c', 'features.browser_use_external=false', '-c', 'features.browser_use_full_cdp_access=false',
+    '-c', 'features.chronicle=false', '-c', 'features.code_mode=false',
+    '-c', 'features.code_mode_buffered_exec=false', '-c', 'features.code_mode_host=false',
+    '-c', 'features.code_mode_only=false', '-c', 'features.codex_git_commit=false',
+    '-c', 'features.computer_use=false', '-c', 'features.deferred_executor=false',
+    '-c', 'features.deferred_tool_world_state=false', '-c', 'features.enable_fanout=false',
+    '-c', 'features.enable_mcp_apps=false', '-c', 'features.exec_permission_approvals=false',
+    '-c', 'features.executor_capability_discovery=false', '-c', 'features.external_agent_memory_import=false',
+    '-c', 'features.goals=false', '-c', 'features.guardian_approval=false', '-c', 'features.guardianv2=false',
+    '-c', 'features.hooks=false', '-c', 'features.image_generation=false',
+    '-c', 'features.in_app_browser=false', '-c', 'features.js_repl=false',
+    '-c', 'features.js_repl_tools_only=false', '-c', 'features.local_thread_store_compression=false',
+    '-c', 'features.memories=false', '-c', 'features.multi_agent=false',
+    '-c', 'features.multi_agent_mode=false', '-c', 'features.multi_agent_v2=false',
+    '-c', 'features.plugin_hooks=false', '-c', 'features.plugin_sharing=false',
+    '-c', 'features.plugins=false', '-c', 'features.remote_control=false',
+    '-c', 'features.remote_plugin=false', '-c', 'features.request_permissions_tool=false',
+    '-c', 'features.shell_snapshot=false', '-c', 'features.shell_tool=false',
+    '-c', 'features.shell_zsh_fork=false', '-c', 'features.skill_mcp_dependency_install=false',
+    '-c', 'features.skill_search=false', '-c', 'features.tool_suggest=false', '-c', 'features.undo=false',
+    '-c', 'features.unified_exec=false', '-c', 'features.unified_exec_zsh_fork=false',
+    '-c', 'features.workspace_dependencies=false', '-c', 'mcp_servers={}',
+    '-m', 'gpt-5.6-sol'];
   gate.checkEqual('codex exec argv matches the verified recon template', args, expected);
   const flat = [...prov.CODEX_EXEC_ARGS, ...args].join(' ');
   gate.check('codex args NEVER contain -a / --ask-for-approval (invalid on exec)',
@@ -4204,7 +4233,7 @@ gate.section('publish script');
           // step of one. It cannot recurse — the throwaway tree is not a git
           // repository, so the run dies at `git ls-files`, long before the line
           // that would run a gate.
-          execFileSync('bash', [fakeScript, '-m', 'env probe'], {
+          execFileSync('bash', [fakeScript, '-m', 'env probe', '--no-parent'], {
             cwd: tmp, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: T_REFUSE,
             env: scrubbedEnv({ DRIFTPROOF_BUILD_DEPTH: '0', ...extra }),
           });
@@ -4370,7 +4399,8 @@ gate.section('publish script');
       };
       const guardRun = (root, args, extraEnv = {}) => {
         try {
-          const out = execFileSync('bash', [path.join(root, 'src', 'scripts', 'build-public.sh'), ...args], {
+          // `--no-parent` (spec 113): these throwaway trees carry no public remote to parent on; the flag makes a root commit
+          const out = execFileSync('bash', [path.join(root, 'src', 'scripts', 'build-public.sh'), ...args, '--no-parent'], {
             cwd: tmp, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: T_REFUSE,
             env: scrubbedEnv({ DRIFTPROOF_BUILD_DEPTH: '0', ...extraEnv }),
           });
@@ -5222,7 +5252,7 @@ gate.section('publish unblock (generation_sampled, product paths, publish target
     g('remote', 'add', 'origin', `git@${REMOTE_HOST_015}:driftproofhq/driftproof.git`);
     const run = (args) => {
       try {
-        return { rc: 0, out: execFileSync('bash', [path.join(src, 'scripts', 'build-public.sh'), ...args],
+        return { rc: 0, out: execFileSync('bash', [path.join(src, 'scripts', 'build-public.sh'), ...args, '--no-parent'],
           { cwd: box, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: T_REFUSE,
             env: scrubbedEnv({ DRIFTPROOF_BUILD_DEPTH: '0' }) }) };
       } catch (e) { return { rc: e.status == null ? -1 : e.status, out: `${e.stdout || ''}${e.stderr || ''}` }; }
@@ -6857,8 +6887,9 @@ gate.section('eval-user isolation: the hop is the default (spec 022)');
   gate.check('untrusted complete() spawns exactly one process and it is /usr/bin/sudo, never claude',
     !iso.error && iso.calls.length === 1 && c0.file === '/usr/bin/sudo', { error: iso.error, files: (iso.calls || []).map((c) => c.file) });
   const U = 'driftproof-eval';
-  // Spec 137 R-1: text capture, the default, runs claude with its file-writing tools off.
-  const head = ['-n', '-u', U, '/usr/bin/env', '-i', 'HOME=/home/' + U, 'PATH=/home/' + U + '/.local/bin:/usr/bin:/bin', 'bash', '-lc', prov.ISOLATED_WRAPPER, prov.HOP_LABEL, 'claude', '-p', '--output-format', 'json', '--model', 'claude-haiku-4-5-20251001', '--disallowedTools', 'Bash,Edit,MultiEdit,NotebookEdit,Write,Task', '--append-system-prompt'];
+  // Spec 137 R-1: text capture, the default, runs claude with its file-writing tools off; spec 141
+  // R-1: by an allow list of the tools that only read, with no MCP server.
+  const head = ['-n', '-u', U, '/usr/bin/env', '-i', 'HOME=/home/' + U, 'PATH=/home/' + U + '/.local/bin:/usr/bin:/bin', 'bash', '-lc', prov.ISOLATED_WRAPPER, prov.HOP_LABEL, 'claude', '-p', '--output-format', 'json', '--model', 'claude-haiku-4-5-20251001', '--tools', 'Read,WebFetch,WebSearch', '--strict-mcp-config', '--append-system-prompt'];
   gate.check('the hop argv is sudo -n -u <user> /usr/bin/env -i HOME PATH bash -lc <wrapper> <label> claude <args>, one element each, SKILL.md last and whole',
     JSON.stringify(c0.args.slice(0, head.length)) === JSON.stringify(head) && c0.args.length === head.length + 1 && /rm -rf/.test(c0.args[head.length]), { got: c0.args.slice(0, 12) });
   const envSeg = c0.args.slice(c0.args.indexOf('-i') + 1, c0.args.indexOf('bash')).map((kv) => kv.split('=')[0]);
@@ -7031,14 +7062,18 @@ gate.section('claude code plugin self-test (028)');
     !!manifest && manifest.name === 'driftproof' && /^\d+\.\d+\.\d+/.test(String(manifest.version)),
     { version: manifest && manifest.version });
 
-  const cmdShapes = ['init', 'run', 'badge'].map((c) => {
+  // Spec 139: every command file the plugin ships is read, start.md among them, and the three the
+  // plugin has always carried must be there, so a deleted one reads as missing.
+  const cmdDir = path.join(PLUGIN, 'commands');
+  const shipped = fs.existsSync(cmdDir) ? fs.readdirSync(cmdDir).filter((f) => f.endsWith('.md')).map((f) => f.slice(0, -3)) : [];
+  const cmdShapes = [...new Set(['init', 'run', 'badge', ...shipped])].sort().map((c) => {
     const f = path.join(PLUGIN, 'commands', `${c}.md`);
     const t = fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '';
     const fm = /^---\n([\s\S]*?)\n---/.exec(t);
     return { c, ok: /```driftproof-steps\n[\s\S]*?\n```/.test(t) && !!fm && /^description:\s*\S/m.test(fm[1]) };
   });
-  gate.check('each of the three commands carries a description and the steps block the door executes',
-    cmdShapes.every((x) => x.ok), { missing: cmdShapes.filter((x) => !x.ok).map((x) => x.c) });
+  gate.check('each command file carries a description and the steps block the door executes',
+    cmdShapes.every((x) => x.ok), { read: cmdShapes.map((x) => x.c), missing: cmdShapes.filter((x) => !x.ok).map((x) => x.c) });
 
   // The shipped contract is the Action's, in both trees: action/ is published.
   //

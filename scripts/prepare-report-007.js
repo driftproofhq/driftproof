@@ -45,6 +45,9 @@ const { applyHeadTags } = require('./build-head-tags');
 // belt and braces rather than a second pass: it makes the contract visible at
 // the call site, and it is idempotent.
 const { renderReportPage } = require('./site-chrome');
+// Spec 161's dated notes and the three judge cost corrections: inserted into the render, so this page
+// stays a pure function of its receipts and --check holds.
+const corrections = require('./report-corrections');
 
 const ROOT = path.join(__dirname, '..');
 const BLOB = 'https://github.com/driftproofhq/driftproof/blob/main';
@@ -845,7 +848,7 @@ function buildPage(rows, { nowIso }) {
   // writes them everywhere else (spec 019a). Emitted by the switch that renders
   // the page, not patched into the file afterwards, so this page stays a pure
   // function of its receipts and the gate's byte-identity assertion holds.
-  return applyHeadTags(renderReportPage(`<!doctype html>
+  return applyHeadTags(renderReportPage(corrections.applyToPage(`<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -897,7 +900,7 @@ ${receiptsBlock(rows)}
 </main>
 </body>
 </html>
-`, 'reports/007/index.html'), 'reports/007/index.html');
+`, '007', { cells: CELLS, judgeModel: JUDGE_MODEL }), 'reports/007/index.html'), 'reports/007/index.html');
 }
 
 // ── amendments ───────────────────────────────────────────────────────────────

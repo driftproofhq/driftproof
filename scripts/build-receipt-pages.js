@@ -32,7 +32,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { receiptVerdict, drawsLine, lostDrawsLine } = require('../lib/verdict');
+const { receiptVerdict, drawsLine, lostDrawsLine, casesDisagree, CASES_LINE, CASES_WORD } = require('../lib/verdict');
 const { verifyReceiptHash } = require('../lib/receipt');
 const { badgeSvg } = require('../lib/badge-svg');
 const chrome = require('./site-chrome');
@@ -58,6 +58,11 @@ const LABELS = {
   INCONCLUSIVE: ['Inconclusive', 'A case separated on the draws that were measured, and the separation is not shown to hold for every score its lost draws could have had.'],
 };
 
+// Spec 143 (A-036-16): UNDERPOWERED where the cases disagree. Its label and line are lib/verdict.js's
+// cases word and line, read there, so the page and every other surface say the same sentence.
+const CASES_PAGE = [`${CASES_WORD.charAt(0).toUpperCase()}${CASES_WORD.slice(1)}`, `${CASES_LINE}.`];
+const pageLabel = (v) => (casesDisagree(v.drawsNeeded) ? CASES_PAGE[0] : LABELS[v.verdict][0]);
+
 // A-036-4, spec.md § The honest line, the NOT_MEASURED routes. One clause per route, each a
 // statement about THIS receipt that a reader can check against the fields above it on the page.
 // No clause carries a comma, so the list below reads as a list.
@@ -66,6 +71,7 @@ const CLAUSES = {
   no_answered_by: 'it does not record that a model answered the run',
   no_numeric_lift: 'it records no numeric lift',
   incomplete: 'its run is marked incomplete',
+  smoke: 'it is a smoke run and a smoke run cannot produce a verdict',
   no_readable_case: 'no case in it has two readable arms',
 };
 
@@ -79,6 +85,7 @@ const NO_LIFT = new Set(['UNDERPOWERED', 'NOT_MEASURED', 'INCONCLUSIVE']);
 // The sentence under the label, for any state. For NOT_MEASURED it names every route that
 // fired, in the order receiptVerdict tests them; for the other four it is the fixed line.
 function honestLine(v) {
+  if (casesDisagree(v.drawsNeeded)) return CASES_PAGE[1];
   if (v.verdict !== 'NOT_MEASURED') return LABELS[v.verdict][1];
   const parts = (v.notMeasured || []).map((k) => CLAUSES[k]).filter(Boolean);
   if (!parts.length) throw new Error('NOT_MEASURED with no route: the page cannot state a reason the reader cannot check');
@@ -86,6 +93,13 @@ function honestLine(v) {
     : `${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}`;
   return `This receipt carries no verdict: ${list}.`;
 }
+
+// THE ONE-CASE LINE (the operator's ruling of 2 Oct 2026: a one-case NO_EFFECT receipt stays as
+// published, and its page says it is one case). The case count is suite.case_count, which is what a
+// reader of the arms table below sees; results.cases counts arm rows, two for a one-case suite. The
+// verdict's own line above it (the table in spec 036) is not changed.
+const ONE_CASE_LINE = 'This verdict is for one case, on one test task; it does not show how the skill does on other tasks.';
+const isOneCase = (receipt) => (receipt.suite || {}).case_count === 1;
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const n3 = (x) => Number(x).toFixed(3);
@@ -173,7 +187,7 @@ function armRow(receipt, mode, name) {
 
 function page({ rel, receipt: r }) {
   const v = receiptVerdict(r);
-  const label = LABELS[v.verdict][0];
+  const label = pageLabel(v);
   const honest = honestLine(v);
   const run = r.run || {};
   const date = String(run.date_utc || '').slice(0, 10);
@@ -211,7 +225,7 @@ function page({ rel, receipt: r }) {
   <section class="receipt-verdict state-${v.verdict.toLowerCase().replace(/_/g, '-')}">
     <p class="receipt-label" data-field="label">${esc(label)}</p>
     <p class="receipt-honest" data-field="honest">${esc(honest)}</p>
-${v.verdict === 'UNDERPOWERED' ? `    <p class="receipt-draws">${esc(drawsLine(v.drawsNeeded))}</p>\n` : ''}${v.verdict === 'INCONCLUSIVE' && v.lostDraws ? `    <p class="receipt-draws">${esc(lostDrawsLine(v.lostDraws))}</p>\n` : ''}    <p><img class="receipt-badge" src="badge.svg" alt="${esc(`driftproof badge: ${label.toLowerCase()} on ${run.model_id}, ${date}`)}"></p>
+${v.verdict === 'NO_EFFECT' && isOneCase(r) ? `    <p class="receipt-cases" data-field="cases">${esc(ONE_CASE_LINE)}</p>\n` : ''}${v.verdict === 'UNDERPOWERED' ? `    <p class="receipt-draws">${esc(drawsLine(v.drawsNeeded))}</p>\n` : ''}${v.verdict === 'INCONCLUSIVE' && v.lostDraws ? `    <p class="receipt-draws">${esc(lostDrawsLine(v.lostDraws))}</p>\n` : ''}    <p><img class="receipt-badge" src="badge.svg" alt="${esc(`driftproof badge: ${label.toLowerCase()} on ${run.model_id}, ${date}`)}"></p>
   </section>
 
   <section class="receipt-arms">
@@ -321,13 +335,17 @@ ${chrome.FOOTER}
   return applyHeadTags(html, 'r/index.html');
 }
 
+// Each receipt's card label, by its receipt_hash: the page's own label, so a card says what its page
+// says (spec 143, approval F-1).
+const cardLabels = (all) => new Map(all.map((x) => [x.receipt.receipt_hash, pageLabel(receiptVerdict(x.receipt))]));
+
 function main() {
   const check = process.argv.includes('--check');
   const all = receipts();
   const seen = new Set();
   const stale = [];
   // Cards first, so each page's head finds its card by name.
-  const labels = new Map(all.map((x) => [x.receipt.receipt_hash, LABELS[receiptVerdict(x.receipt).verdict][0]]));
+  const labels = cardLabels(all);
   if (!check) for (const x of all) card(x, labels.get(x.receipt.receipt_hash), path.join(DOCS, 'cards'));
   for (const x of all) {
     const h = x.receipt.receipt_hash;
@@ -359,5 +377,5 @@ function main() {
 
 // EXPORTED BEFORE THE BUILD RUNS: the head builder asks this module for the receipt titles while
 // main() is writing pages (spec 133 R-3), so the exports have to exist already.
-module.exports = { receipts, page, indexPage, receiptPlace, receiptTitles, ownTitle, titleRungs, LABELS, CLAUSES, honestLine };
+module.exports = { receipts, page, indexPage, receiptPlace, receiptTitles, ownTitle, titleRungs, LABELS, CLAUSES, honestLine, pageLabel, cardLabels, CASES_PAGE };
 if (require.main === module) main();

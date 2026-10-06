@@ -2,8 +2,9 @@
 # Driftproof staleness check, weekly and on demand (spec 057).
 #
 # Copy this file to .github/workflows/ in the repository that holds your receipts. Each Monday it
-# checks whether each receipt's conclusion still stands under the model, harness, skill, suite and
-# judge that would run today. While any receipt is stale, one issue labelled driftproof-stale says
+# checks whether each receipt's conclusion still stands under the model, harness, capture mode, skill,
+# suite and judge that would run today. The capture mode is `text` unless `capture` in the workspace's
+# .driftproofrc says otherwise. While any receipt is stale, one issue labelled driftproof-stale says
 # which, why, and what to run next. It is updated by later runs and closed when all are current.
 # It makes no model call and needs no API key.
 name: driftproof-stale
@@ -23,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       # For a fixed version, pin this to the commit the tag names.
-      - uses: driftproofhq/driftproof/stale@v0.13.0
+      - uses: driftproofhq/driftproof/stale@v0.14.0
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill

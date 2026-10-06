@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://driftproofhq.com/spec/receipt.schema.json",
   "title": "driftproof receipt",
-  "description": "Receipt spec v0.10: over v0.9, the receipt says which answer was judged (spec 137, spec/RECEIPT.md § What v0.10 adds). `run.capture.mode` is `text` (on a CLI surface the child ran with its file-writing tools off, and its reply is the answer) or `files` (the regular files the child wrote in its own working directory were collected and judged with its reply), and a draw in files capture may list them in `captured_files`, each with its path, its size in bytes and whether it was included. Both are optional: `run.capture` is written by every run and carried by a regrade when the original records it, and a draw's `captured_files` only in files capture. v0.9 is frozen as receipt.v0.9.schema.json. Over v0.8, v0.9 said: imported receipts say what produced them (spec 049, spec/RECEIPT.md § What v0.9 adds). Every field it adds is optional: `run.harness` (the agent harness that produced the answers), `run.import` (the imported document: tool, format, format version, sha256, the import time, any sidecar file read, and a notice for each thing the source did not establish), `skill.unit` (a skill, or a plugin measured whole), and per case `activation` (whether the skill fired, never a score), `excluded_draws` (runs kept out of the band, with their reasons) and `label` (the source's display name). `economics.basis` adds `source-list-price-estimate` and `source-reported`, an arm may carry `mean_total_tokens`, `run.provider` may be `unknown`, and `run.date_utc` may be null on an external receipt whose source records no date. v0.8 is frozen as receipt.v0.8.schema.json. Over v0.7, v0.8 said: counts and clocks (spec 043, spec/RECEIPT.md § What v0.8 adds). `run.judge.samples` is optional, so an absent count stays absent; generation and judge counts are separate optional fields, `generations_per_arm` and `judge_samples_per_generation`, held in a `counts` object at the narrowest honest scope (`run.counts`, `run.arms.<mode>.counts`, `results.cases[].counts`); `run.arms.<mode>` may name an archived arm's own `model_id` and `generated_at`; `run.generated_at` is when generation began, and `run.judged_at` with `run.grader_revision` record a re-judge and appear together or not at all; a case may be `no_observations`. v0.7 is frozen as receipt.v0.7.schema.json. A hash-verified, dated record of running one agent skill eval suite with and without the skill on one model version, with the GENERATION sampled n times per arm and the judge sampled k times inside each draw. Over v0.6, v0.7 said: the fields are unchanged and the verdict a reader derives gains UNDERPOWERED: a case the band rule does not separate whose spreads and measured draws cannot resolve a shift of the effect floor (spec 035, spec/RECEIPT.md § What v0.7 adds). Over v0.5, as v0.6 said, the receipt says what answered it: `run.answered_by` (kind model|stub|external, whether the surface echoed a model id and which, and which spawn path produced it); `run.surface` and `run.judge.surface` may read `stub` (nothing answered; the text was canned) and a TESTED receipt requires answered_by.kind model; `run.judge.model_id` and `run.judge.prompt_template_hash` say which judge ran; every draw records its `stop_reason` and whether it was `truncated` (a truncated draw is unmeasured, never judged) and the case counts `n_truncated`; `case_status` gains `failed_unmeasured` (every draw of the arm was unmeasured for a reason that is not a timeout), recorded without fabricated samples or hashes exactly as a timeout is; `results.aggregates.band_rule` states the formula the aggregate band is derived by; an aggregate `stddev` is null only when its arm has fewer than two cases and `comparison.delta_uncertainty` is null only beside `delta_uncertainty_unavailable`. Every prior receipt still validates against its own frozen schema (v0.1, v0.2, v0.3, v0.3.1, v0.4, v0.5, v0.6).",
+  "description": "Receipt spec v0.11: over v0.10, a smoke run says so (spec 139, spec/RECEIPT.md § What v0.11 adds). `run.preset` is optional and names the preset a run was made under; the one preset is `quick`, a smoke run, which cannot produce a verdict, and a receipt that names a preset cannot read TESTED. v0.10 is frozen as receipt.v0.10.schema.json. Over v0.9, v0.10 said: the receipt says which answer was judged (spec 137, spec/RECEIPT.md § What v0.10 adds). `run.capture.mode` is `text` (on a CLI surface the child ran with its file-writing tools off, and its reply is the answer) or `files` (the regular files the child wrote in its own working directory were collected and judged with its reply), and a draw in files capture may list them in `captured_files`, each with its path, its size in bytes and whether it was included. Both are optional: `run.capture` is written by every run and carried by a regrade when the original records it, and a draw's `captured_files` only in files capture. v0.9 is frozen as receipt.v0.9.schema.json. Over v0.8, v0.9 said: imported receipts say what produced them (spec 049, spec/RECEIPT.md § What v0.9 adds). Every field it adds is optional: `run.harness` (the agent harness that produced the answers), `run.import` (the imported document: tool, format, format version, sha256, the import time, any sidecar file read, and a notice for each thing the source did not establish), `skill.unit` (a skill, or a plugin measured whole), and per case `activation` (whether the skill fired, never a score), `excluded_draws` (runs kept out of the band, with their reasons) and `label` (the source's display name). `economics.basis` adds `source-list-price-estimate` and `source-reported`, an arm may carry `mean_total_tokens`, `run.provider` may be `unknown`, and `run.date_utc` may be null on an external receipt whose source records no date. v0.8 is frozen as receipt.v0.8.schema.json. Over v0.7, v0.8 said: counts and clocks (spec 043, spec/RECEIPT.md § What v0.8 adds). `run.judge.samples` is optional, so an absent count stays absent; generation and judge counts are separate optional fields, `generations_per_arm` and `judge_samples_per_generation`, held in a `counts` object at the narrowest honest scope (`run.counts`, `run.arms.<mode>.counts`, `results.cases[].counts`); `run.arms.<mode>` may name an archived arm's own `model_id` and `generated_at`; `run.generated_at` is when generation began, and `run.judged_at` with `run.grader_revision` record a re-judge and appear together or not at all; a case may be `no_observations`. v0.7 is frozen as receipt.v0.7.schema.json. A hash-verified, dated record of running one agent skill eval suite with and without the skill on one model version, with the GENERATION sampled n times per arm and the judge sampled k times inside each draw. Over v0.6, v0.7 said: the fields are unchanged and the verdict a reader derives gains UNDERPOWERED: a case the band rule does not separate whose spreads and measured draws cannot resolve a shift of the effect floor (spec 035, spec/RECEIPT.md § What v0.7 adds). Over v0.5, as v0.6 said, the receipt says what answered it: `run.answered_by` (kind model|stub|external, whether the surface echoed a model id and which, and which spawn path produced it); `run.surface` and `run.judge.surface` may read `stub` (nothing answered; the text was canned) and a TESTED receipt requires answered_by.kind model; `run.judge.model_id` and `run.judge.prompt_template_hash` say which judge ran; every draw records its `stop_reason` and whether it was `truncated` (a truncated draw is unmeasured, never judged) and the case counts `n_truncated`; `case_status` gains `failed_unmeasured` (every draw of the arm was unmeasured for a reason that is not a timeout), recorded without fabricated samples or hashes exactly as a timeout is; `results.aggregates.band_rule` states the formula the aggregate band is derived by; an aggregate `stddev` is null only when its arm has fewer than two cases and `comparison.delta_uncertainty` is null only beside `delta_uncertainty_unavailable`. Every prior receipt still validates against its own frozen schema (v0.1, v0.2, v0.3, v0.3.1, v0.4, v0.5, v0.6).",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -269,12 +269,36 @@
           }
         }
       }
+    },
+    {
+      "description": "v0.11, spec 139: a receipt that names a preset is a smoke run and cannot read TESTED, whatever answered it. The second, independent control beside the runner, which stamps such a run UNVERIFIED, as spec 026 AC-1 binds a stub run.",
+      "if": {
+        "required": [
+          "run"
+        ],
+        "properties": {
+          "run": {
+            "required": [
+              "preset"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "verification_level": {
+            "not": {
+              "const": "TESTED"
+            }
+          }
+        }
+      }
     }
   ],
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "0.10"
+      "const": "0.11"
     },
     "skill": {
       "type": "object",
@@ -789,6 +813,13 @@
               "description": "text: on a CLI surface the child ran with its file-writing tools off, and its reply is the judged answer (an api surface has no tools). files: the child could write files in its own fresh working directory, and the regular files there were collected, within the runner limits, and judged with its reply."
             }
           }
+        },
+        "preset": {
+          "type": "string",
+          "enum": [
+            "quick"
+          ],
+          "description": "v0.11 (spec 139, optional). The preset the run was made under. `quick` is a smoke run: few judge samples and few cases, run to see that the skill and its suite run at all. A receipt that names a preset is below TESTED (the rule in allOf), so no reader gives it a verdict. Absent on every other run."
         }
       },
       "dependentRequired": {

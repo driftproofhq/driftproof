@@ -568,7 +568,7 @@ ${items.join('\n')}
   </details>`;
 }
 
-// THE VENDOR'S PITCH IS QUOTED ONLY WITH ITS SOURCE (the operator's brief). The quote is rendered
+// THE VENDOR'S PITCH IS QUOTED ONLY WITH ITS SOURCE (a standing rule of the reports). The quote is rendered
 // when a committed record names it: evidence/vendor-pitch.json, {"url", "fetched_at", "quote",
 // "kept_as"}, with the page it was read from kept as the named file beside it; the probe finds the
 // quote in that file. With no record the page quotes nothing and says so.

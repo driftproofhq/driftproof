@@ -43,6 +43,10 @@ fails the build if any tracked or staged file matches `sk_live_`/`sk_test_`,
 or a Slack webhook URL. This is a hard, blocking rule, separate from the hygiene
 scan that catches genuine leaks.
 
+## How a pull request lands
+
+This repository is built from a private working tree, so a pull request is not merged here as it stands. It is re-applied in the private tree with the author credited: the commit carries a Co-authored-by trailer naming the author, or the author's own commit where it applies unchanged. The change then reaches this repository as a new commit on this history, in the next release or site push. The pull request is closed with a link to the release that carries it.
+
 ## Good first contributions
 
 - **New example skills** under `examples/` with an `agentskills.io/evals` suite.

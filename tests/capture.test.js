@@ -79,7 +79,9 @@ test('AC-4 file markers the reply writes itself neither hide a line nor include 
   // Text capture: the runner collected nothing, so the whole answer is the reply.
   const wrapped = '--- file: x.md (18 bytes) ---\nI saved it to x.md\n--- end of file: x.md ---';
   assert.deepEqual(capture.lostAnswer(wrapped, []).paths, ['x.md']);
-  assert.deepEqual(capture.lostAnswer('Saved to a.md\n\n--- file: a.md (2 bytes) ---\nhi\n--- end of file: a.md ---', []).paths, ['a.md']);
+  // A-137-4: a first-person claim, since spec 141 R-6 reads a bare claim beside lines of the reply's
+  // own as a change list. The markers still include nothing.
+  assert.deepEqual(capture.lostAnswer('I saved it to a.md\n\n--- file: a.md (2 bytes) ---\nhi\n--- end of file: a.md ---', []).paths, ['a.md']);
   // Files capture: the reply is what precedes the runner's own blocks, read by byte count, so a
   // marker inside the reply, or inside a file, is text.
   const inner = '--- end of file: a.md ---\nI saved b.md';
@@ -105,8 +107,10 @@ test('AC-4 a pointing line followed by the file\'s content inline is not lost', 
     'I saved it to notes.txt:\n~~~\nhello\n~~~',
   ];
   for (const a of shown) assert.equal(capture.lostAnswer(a), null, a);
-  // Only a fence that opens after the pointing line, and before the next one, shows its file.
-  assert.deepEqual(capture.lostAnswer(`${F}\nhello\n${F}\nI saved this to notes.md.`).paths, ['notes.md']);
+  // A fence that opens after the pointing line, and before the next one, shows its file; one above
+  // it shows the file only when the claim refers back to it (spec 141 A-141-1, recorded at A-137-5).
+  assert.equal(capture.lostAnswer(`${F}\nhello\n${F}\nI saved this to notes.md.`), null);
+  assert.deepEqual(capture.lostAnswer(`${F}\nhello\n${F}\nI saved the notes to notes.md.`).paths, ['notes.md']);
   assert.deepEqual(capture.lostAnswer(`Created \`a.md\`:\n${F}\nA\n${F}\nI also saved notes to b.md.`).paths, ['b.md']);
   assert.deepEqual(capture.lostAnswer(`Created \`a.md\`.\nI also saved notes to b.md:\n${F}\nB\n${F}`).paths, ['a.md']);
 });
@@ -171,7 +175,8 @@ test('AC-6 three real report 013 answer lines that name code after a clause end 
 test('AC-1 text capture: claude runs with every write tool off, codex read-only, and the reply is the answer byte for byte', () => {
   assert.equal(capture.DEFAULT_CAPTURE, 'text');
   const a = capture.claudeCaptureArgs('text');
-  assert.deepEqual(a, ['--disallowedTools', 'Bash,Edit,MultiEdit,NotebookEdit,Write,Task']);
+  // A-137-4: spec 141 R-1's allow list, which holds every write tool off by construction.
+  assert.deepEqual(a, ['--tools', 'Read,WebFetch,WebSearch', '--strict-mcp-config']);
   assert.equal(capture.codexSandbox('text'), 'read-only');
   const reply = 'feat: x\n\nbody';
   assert.equal(capture.judgedAnswer(reply, []), reply);
@@ -211,7 +216,8 @@ test('AC-1 a skill directory\'s .driftproofrc cannot switch capture to files; th
 });
 
 test('AC-2 files capture: claude may edit with Bash and Task off, codex writes its workspace, and each file is a block', () => {
-  assert.deepEqual(capture.claudeCaptureArgs('files'), ['--permission-mode', 'acceptEdits', '--disallowedTools', 'Bash,Task']);
+  // A-137-4: spec 141 R-1's allow list; Bash and Task stay off, with every other tool that runs code.
+  assert.deepEqual(capture.claudeCaptureArgs('files'), ['--permission-mode', 'acceptEdits', '--tools', 'Read,Write,Edit,NotebookEdit,WebFetch,WebSearch', '--strict-mcp-config']);
   assert.equal(capture.codexSandbox('files'), 'workspace-write');
   const files = [{ path: 'a.md', bytes: 2, included: true, content: 'hi' }, { path: 'b.bin', bytes: 4, included: false, why: 'not text' }];
   assert.equal(capture.judgedAnswer('done', files), 'done\n\n--- file: a.md (2 bytes) ---\nhi\n--- end of file: a.md ---\n\n--- file: b.bin (4 bytes, not included: not text) ---');
@@ -240,11 +246,12 @@ test('AC-2 the trusted collector takes regular files in byte order, within the c
     const paths = files.map((f) => f.path);
     assert.ok(!paths.some((p) => p.startsWith('link')), 'a link was collected');
     assert.ok(!files.some((f) => f.included && /not the child/.test(f.content)), 'a link was followed');
-    assert.equal(files.length, capture.WORKSPACE_LIMITS.files + 1);
+    // A-137-4: every regular file is named (spec 141 R-3): the three planted and the cap's count.
+    assert.equal(files.length, capture.WORKSPACE_LIMITS.files + 3);
     assert.deepEqual(paths.slice(0, 3), ['b.bin', 'big.txt', 'docs/adr/0001.md']);
     const by = Object.fromEntries(files.map((f) => [f.path, f]));
     assert.equal(by['docs/adr/0001.md'].included, true);
-    assert.equal(by['b.bin'].why, 'not text');
+    assert.equal(by['b.bin'].why, 'not text: binary (holds a NUL byte)');
     assert.match(by['big.txt'].why, /file cap/);
     assert.match(files[files.length - 1].why, /-file cap/);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(outside, { recursive: true, force: true }); }

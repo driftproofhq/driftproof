@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Driftproof receipt, spec v0.10
+# Driftproof receipt, spec v0.11
 
 A **receipt** is a **hash-verified**, dated record of running one agent skill's eval suite
 **with** and **without** the skill on one model version, with the judge **sampled**
@@ -12,8 +12,9 @@ The machine-readable contract is [`receipt.schema.json`](./receipt.schema.json)
 (JSON Schema, draft 2020-12). This document is the human companion. Where they
 disagree, the schema wins.
 
-**Versioning.** The current schema is v0.10
+**Versioning.** The current schema is v0.11
 ([`receipt.schema.json`](./receipt.schema.json)). Prior schemas are kept frozen as
+[`receipt.v0.10.schema.json`](./receipt.v0.10.schema.json),
 [`receipt.v0.9.schema.json`](./receipt.v0.9.schema.json),
 [`receipt.v0.8.schema.json`](./receipt.v0.8.schema.json),
 [`receipt.v0.7.schema.json`](./receipt.v0.7.schema.json),
@@ -26,13 +27,28 @@ disagree, the schema wins.
 [`receipt.v0.1.schema.json`](./receipt.v0.1.schema.json); the validator picks the
 schema by the receipt's own `schema_version`, so every earlier receipt still loads and
 validates against its own frozen schema, including every receipt behind the published
-reports, which the gate asserts on each run. v0.10 is additive for a reader: it adds two
-optional fields, so a v0.9 receipt restamped `"0.10"` validates; v0.9 is frozen because its
-version constant refuses anything else (see *What v0.10 adds*). v0.9 was additive in the same
-way: it adds
-optional fields and widens three values, so a v0.8 receipt restamped `"0.9"` validates;
+reports, which the gate asserts on each run. v0.11 is additive for a reader: it adds one
+optional field, so a v0.10 receipt restamped `"0.11"` validates; v0.10 is frozen because its
+version constant refuses anything else (see *What v0.11 adds*). v0.10 was additive over v0.9
+in the same way: it adds two optional fields (see *What v0.10 adds*). v0.9 was additive in the
+same way: it adds optional fields and widens three values, so a v0.8 receipt restamped `"0.9"` validates;
 v0.8 is frozen because its version constant refuses anything else (see *What v0.9 adds*).
 v0.8 was additive over v0.7 in the same way (see *What v0.8 adds*).
+
+## What v0.11 adds: a smoke run says so
+
+Spec 139, the first run. `driftproof run --quick` is a smoke run: two judge samples, four
+calls at once, at most five cases, run to see that a skill and its suite run at all. It takes
+too few answers to give a verdict, and its receipt says so.
+
+- **`run.preset`**: `"quick"` on a smoke run's receipt; absent on every other run. The one
+  value is `"quick"`.
+- **A receipt that names a preset is below `TESTED`.** The runner stamps it `UNVERIFIED`
+  whatever answered it, and the schema refuses one that reads `TESTED` (the second control,
+  as a stub run is held to `UNVERIFIED` since v0.6). Every reader of a verdict already
+  refuses a receipt below `TESTED`: the badge reads *not measured*, `decide` reads the model
+  `not measured`, a drift report computes no verdict, and the plain words say *Smoke run, no
+  verdict*. A smoke run cannot produce a verdict.
 
 ## What v0.10 adds: the receipt says which answer was judged
 
@@ -65,10 +81,22 @@ the judged answer, which in `text` is the reply byte for byte.
 **The band rung.** The reader that ships with v0.10 adds one rule to R-5 (*What v0.7 adds*):
 where R-5 reads `NO_EFFECT` over two or more cases, the comparison band over those cases, each
 arm's sample sd of the per-case means summed in quadrature (the band rule every receipt states),
-must be under `F`. A band at or above it reads `UNDERPOWERED`, with no draw count, because more
-draws do not narrow a spread between cases. Where a case lost draws, the band is widened by the
-most its arm's mean could move at any score of those draws. A one-case receipt forms no band and
-reads as before.
+must be under `F`. A band at or above it reads `UNDERPOWERED`, with no draw count. Where a case lost
+draws, the band is widened by the most its arm's mean could move at any score of those draws. A
+one-case receipt forms no band and reads as before.
+
+**Cases or draws (spec 143).** The reader then says what makes the band wide, from the receipt's own
+numbers. Per arm, the sample variance of the per-case means holds the cases sitting apart and each
+case's mean moving from draw to draw; the second is expected to be the mean over the cases of
+`s^2 / n` (a case's sample sd across its draws, squared, over its measured draws), and more draws
+shrink it. Taken out of each arm (never below zero) and summed in quadrature, what is left is the
+band no number of draws narrows. At or above `F`, the cases disagree, and the state reads **More
+cases, not more draws, are needed to conclude at this effect floor**, its badge word *more cases
+needed*. Under `F`, more draws are expected to narrow the band, and the state reads the plain line below. The split
+is read only when every kept arm measured two or more draws, lost none and records its
+`generation.sd`; otherwise the plain line stands. An arm with no recorded `generation.sd` has no
+draw share on the receipt to take out, so a reader does not take one from its draws. The verdict is
+`UNDERPOWERED` either way.
 
 **The harness a run used.** `run.harness` `{name, version}` keeps its v0.9 shape, and v0.10 adds no
 field for it. *What v0.9 adds* says no Driftproof run writes it; since spec 053 the runner does.
@@ -197,8 +225,9 @@ own fields, by six rules. For one case, arm `w` is with_skill and arm `b` is bas
 --github-output`, the Action's `verdict` output, and `lib/verdict.js` `VERDICTS`; its
 decision state is `underpowered`, ordered after `not measured` and before `no detected
 effect`, and it never renders as success. Every surface that renders it in words
-carries the plain line: **Not enough draws to conclude at this effect floor.** The
-Action also publishes `draws_needed`. UNDERPOWERED is a statement about the instrument
+carries the plain line: **Not enough draws to conclude at this effect floor.** Where
+the band rung reads the cases disagreeing (*What v0.10 adds*, cases or draws), it
+carries the cases line in its place. The Action also publishes `draws_needed`. UNDERPOWERED is a statement about the instrument
 at this receipt's spreads and draws; it is not evidence that the skill has an effect.
 
 ## What v0.6 adds: the receipt says what answered it
@@ -317,7 +346,7 @@ carry a numeric `mean`.
 ## Which schema validates which receipt (the coexistence rule)
 
 - **A producer emits the current version.** `config.js` `RECEIPT_SCHEMA_VERSION`
-  decides it, and at this revision that is **v0.10**.
+  decides it, and at this revision that is **v0.11**.
 - **A reader validates against the receipt's own `schema_version`**, never
   against the newest schema it happens to have. `validateReceipt()` selects the
   schema by that field, which is why a v0.1 receipt from the first report still
@@ -489,7 +518,7 @@ The v0.3.1 schema gained an **additive interop revision** so receipts can be
 
 ## Fields
 
-### `schema_version` (string, required): `"0.10"`.
+### `schema_version` (string, required): `"0.11"`.
 
 ### `skill` (object, required)
 | field | type | notes |
@@ -525,6 +554,7 @@ The v0.3.1 schema gained an **additive interop revision** so receipts can be
 | `counts`, `arms` | object | **v0.8**, optional. See *What v0.8 adds*. |
 | `harness`, `import` | object | **v0.9**, optional, imported receipts. See *What v0.9 adds*. `harness` is also written by every run on a CLI or api surface and carried by a regrade; see *What v0.10 adds*. |
 | `capture` | object | **v0.10**, optional, written by every run and carried by a regrade when the original records it: `{mode}`, `text` or `files`, which answer was judged. See *What v0.10 adds*. |
+| `preset` | `"quick"` | **v0.11**, optional. A smoke run (`--quick`); such a receipt is below `TESTED`. See *What v0.11 adds*. |
 
 **`run.judge`** records how grading was done: `samples` (judge calls per case),
 `temperature` (a number when the surface lets us set it — the `api` surface pins
@@ -572,7 +602,8 @@ receipt says so.
 ### `verification_level` (string, required)
 Community lattice: **UNVERIFIED** (bare claim) · **DECLARED** (author asserts, no
 run) · **TESTED** (a suite was executed and judged — what Driftproof emits) ·
-**FORMAL** *(reserved / unimplemented; the schema rejects it)*.
+**FORMAL** *(reserved / unimplemented; the schema rejects it)*. **v0.11:** a smoke run's receipt
+(`run.preset` present) is **UNVERIFIED**, and the schema refuses it at **TESTED**.
 
 ### `editorial_reviews` (array, optional)
 Pointers to external one-shot reviews of the skill, each `{ url, source, date }`.
