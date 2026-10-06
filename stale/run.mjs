@@ -26,10 +26,13 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import decision from '../lib/decision.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BIN = path.join(ROOT, 'bin', 'driftproof');
 const env = process.env;
+// Spec 144 A-144-1: the one escaper for text a receipt supplied, the same the deciding Action's summary and comment use.
+const { markdownText, markdownCode } = decision;
 const WS = env.GITHUB_WORKSPACE || process.cwd();
 const RESULT_OF_EXIT = { 0: 'current', 1: 'stale', 2: 'error', 3: 'advisory' };
 const VERSION_RE = /^\d+\.\d+\.\d+[0-9A-Za-z.+-]*$/;
@@ -160,8 +163,13 @@ function runStale(inputs, files, harnessArgs, out) {
 }
 
 // ── markdown ─────────────────────────────────────────────────────────────────
+// A case id, a skill name, a model id, a file name and the CLI's error text come from the receipts and the
+// repository, and the summary and the issue are markdown posted with the repository's token, where an @mention
+// notifies. `cell` is for text in a table cell or a line; `codeCell` is for a code span in a table cell, where a
+// pipe would end the cell and leave the text after it live; `code` is for a code span outside a table.
 const code = (s) => `\`${String(s == null ? '' : s).replace(/`/g, "'").replace(/[\r\n]+/g, ' ')}\``;
-const cell = (s) => String(s == null ? '' : s).replace(/[\r\n]+/g, ' ').replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
+const codeCell = (s) => `\`${markdownCode(String(s == null ? '' : s).replace(/[\r\n]+/g, ' '))}\``;
+const cell = (s) => markdownText(String(s == null ? '' : s).replace(/[\r\n]+/g, ' '));
 function effectWords(e) {
   if (e.effect === 'unknown') return `unknown: ${e.reason}`;
   if (e.effect === 'advisory') return `advisory: ${e.reason}`;
@@ -185,7 +193,7 @@ function summaryOf(ctx, receipts, result) {
     `**Result: ${result}.** ${receipts.length} receipt(s): ${n('current')} current, ${n('stale')} stale, ${n('unknown')} unknown, ${n('error')} error(s); ${adv} with an advisory.`,
     `driftproof ${ctx.version}; harness ${ctx.harnessText}${ctx.strict ? '; --strict' : ''}.`, '',
     '| Receipt | Skill | Model | Status | Not current | Next |', '| --- | --- | --- | --- | --- | --- |',
-    ...receipts.map((x) => `| ${code(x.path)} | ${x.error ? '' : code(x.skill)} | ${x.error ? '' : code(x.model_id)} | ${x.error ? 'error' : x.status} | ${notCurrent(x)} | ${x.next ? code(x.next) : ''} |`),
+    ...receipts.map((x) => `| ${codeCell(x.path)} | ${x.error ? '' : codeCell(x.skill)} | ${x.error ? '' : codeCell(x.model_id)} | ${x.error ? 'error' : x.status} | ${notCurrent(x)} | ${x.next ? codeCell(x.next) : ''} |`),
     '',
   ];
   return L.join('\n') + '\n';
@@ -196,8 +204,8 @@ function issueBody(ctx, marker, listed) {
   for (const x of listed) {
     L.push(`### ${code(x.path)}`, '', `${code(x.skill)} on ${code(x.model_id)}, run ${x.date_utc ? String(x.date_utc).slice(0, 10) : 'on an unrecorded date'}: **${x.status}**. With-skill arm: ${x.arms.with_skill.decision}. Baseline arm: ${x.arms.baseline.decision}.`, '');
     L.push('| Axis | Recorded | Now | Effect | Why |', '| --- | --- | --- | --- | --- |');
-    for (const e of moved(x)) L.push(`| ${cell(e.axis)} | ${e.recorded == null ? 'unrecorded' : code(e.recorded)} | ${e.current == null ? 'not known' : code(e.current)} | ${cell(effectWords(e))} | ${cell(e.reason)} |`);
-    for (const a of newer(x)) L.push(`| newer model | | ${code(a)} | advisory | |`);
+    for (const e of moved(x)) L.push(`| ${cell(e.axis)} | ${e.recorded == null ? 'unrecorded' : codeCell(e.recorded)} | ${e.current == null ? 'not known' : codeCell(e.current)} | ${cell(effectWords(e))} | ${cell(e.reason)} |`);
+    for (const a of newer(x)) L.push(`| newer model | | ${codeCell(a)} | advisory | |`);
     L.push('', x.next ? `Next: ${code(x.next)}` : 'Next: nothing can be decided until the unknown axes are known.', '');
   }
   L.push('---', `Checked by ${ctx.runLink} with driftproof ${ctx.version}. Each run of the check updates this issue, and closes it when every receipt is current again.`, '');

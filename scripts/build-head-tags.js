@@ -23,6 +23,7 @@ const fs = require('fs');
 const path = require('path');
 const chrome = require('./site-chrome.js');
 const { humanModelName } = require('./model-names.js');
+const { escapeRegExp, escapeAttr } = require('./html-text.js');
 
 const ROOT = path.join(__dirname, '..');
 const ORIGIN = 'https://driftproofhq.com';
@@ -129,8 +130,15 @@ const decode = (s) => String(s)
   .replace(/&#(\d+);/g, (_m, d) => String.fromCodePoint(Number(d)))
   .replace(/&#x([0-9a-fA-F]+);/g, (_m, d) => String.fromCodePoint(parseInt(d, 16)))
   .replace(/&(amp|lt|gt|quot|apos|nbsp);/g, (_m, n) => ENT[n]);
+// One pass over the string: a reference's own result is never read again, so `&#38;lt;` is the
+// text `&lt;` and not `<`. A reference with no code point behind it stays as written.
+const decodeOnce = (s) => String(s).replace(/&(?:#(\d+)|#x([0-9a-fA-F]+)|(amp|lt|gt|quot|apos|nbsp));/g, (m, d, x, n) => {
+  if (n) return ENT[n];
+  const cp = d !== undefined ? Number(d) : parseInt(x, 16);
+  return cp <= 0x10FFFF ? String.fromCodePoint(cp) : m;
+});
 const strip = (html) => decode(String(html).replace(/<[^>]*>/g, '')).replace(/\s+/g, ' ').trim();
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const esc = escapeAttr;
 
 // One cap for every description, so a long page and a short one produce the
 // same shape of card.
@@ -315,7 +323,7 @@ const listOf = (xs) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(',
 function modelsDescription(row) {
   if (reportRungs(row).some((t) => t.length <= TITLE_MAX)) return null;
   const moved = row.what_moved.value;
-  const rest = row.model_ids.map((x) => humanModelName(x.value)).filter((m) => !new RegExp(`${m.replace(/[.]/g, '\\.')}(?!\\.?\\d)`).test(moved));
+  const rest = row.model_ids.map((x) => humanModelName(x.value)).filter((m) => !new RegExp(`${escapeRegExp(m)}(?!\\.?\\d)`).test(moved));
   if (!rest.length) return null;
   const out = `${row.type.value}: ${moved}, beside ${listOf([...new Set(rest)])}.`;
   if (out.length > DESC_MAX) throw new Error(`report ${row.number.value}: the models description is ${out.length} characters, past ${DESC_MAX}`);
@@ -392,10 +400,12 @@ function pageDescription(html) {
 // A REDIRECT STUB'S CANONICAL NAMES ITS TARGET. The stub exists only to hand a
 // crawler and a reader on to the page that moved; a canonical pointing back at
 // the stub would ask the index to keep the address being retired. og:url stays
-// the stub's own URL, because that is the URL being shared.
+// the stub's own URL, because that is the URL being shared. The target is the stub's attribute text,
+// so it is read as the URL it spells (decodeOnce) and escaped where it is placed (escapeAttr): a stub
+// whose target has no ampersand, quote or angle bracket comes out byte for byte as it went in.
 function canonicalOf(html, rel) {
   const m = html.match(/<meta\s+http-equiv="refresh"\s+content="0;\s*url=([^"]+)"/i);
-  return m ? `${ORIGIN}${m[1]}` : urlOf(rel);
+  return m ? `${ORIGIN}${decodeOnce(m[1])}` : urlOf(rel);
 }
 
 // ── structured data ─────────────────────────────────────────────────────────
@@ -408,7 +418,7 @@ const ld = (obj) => `<script type="application/ld+json">\n${JSON.stringify(obj, 
 // "description" (spec 125's summaries row on Report 013) means the page's own.
 //
 // sameAs IS WHAT THE RESEARCH CONFIRMED, NOTHING ELSE. docs/data/profiles.json carries each profile
-// with its URL, the day lane 59 read it, a quote and the research file; an entry missing any of the
+// with its URL, the day it was read, a quote and its source; an entry missing any of the
 // four is not published, and while the file is the placeholder the list is empty and sameAs is left
 // out rather than published empty.
 const ORG_ID = `${ORIGIN}/#organization`;
@@ -540,7 +550,7 @@ function faqLd(html) {
 }
 
 // The paper page's ScholarlyArticle and the Dataset of its defect table, from
-// docs/data/paper.json, which spec 127's recorder writes from the brief and the Zenodo record:
+// docs/data/paper.json, which spec 127's recorder writes from the project's own record and the Zenodo record:
 // nothing here is typed but the schema's own words, the licence's URL and the Dataset's name,
 // which is the page's own label for the data (spec 127 § Page labels).
 const LICENCE_URL = { 'CC BY 4.0': 'https://creativecommons.org/licenses/by/4.0/' };
@@ -603,7 +613,7 @@ function block(html, rel, title, description, rows, cfg) {
   return [
     OPEN,
     '<link rel="stylesheet" href="/tokens.css">',
-    `<link rel="canonical" href="${canonicalOf(html, rel)}">`,
+    `<link rel="canonical" href="${escapeAttr(canonicalOf(html, rel))}">`,
     '<link rel="alternate" type="application/atom+xml" title="Driftproof reports" href="/feed.xml">',
     markdownAlternate(rel),
     ...fontPreloads(),
@@ -688,7 +698,7 @@ const render = (html, rel, cfg) => applyHeadTags(html, rel, cfg);
 // description derived by site-data.mjs, which loads prepare-report-007.js, which
 // takes applyHeadTags from this file; run as a script, this file is mid-load at that
 // moment, so the exports have to exist already (spec 031 A-031-24).
-module.exports = { PRIVACY_LINE, ogDescriptionOf, rowFor, pageFiles, render, applyHeadTags, defaultCardName, titleOf, descriptionOf, pageTitle, pageDescription, cardFor, canonicalOf, siteConfig, beaconFor, subscribeForm, verificationTags, BEACON, ORIGIN, CARD, HOME_TITLE, TITLE_MAX, DESC_MAX, reportTitle, modelsDescription, organization, ORG_ID, confirmedProfiles, pageDates };
+module.exports = { esc, escapeRegExp, escapeAttr, PRIVACY_LINE, ogDescriptionOf, rowFor, pageFiles, render, applyHeadTags, defaultCardName, titleOf, descriptionOf, pageTitle, pageDescription, cardFor, canonicalOf, siteConfig, beaconFor, subscribeForm, verificationTags, BEACON, ORIGIN, CARD, HOME_TITLE, TITLE_MAX, DESC_MAX, reportTitle, modelsDescription, organization, ORG_ID, confirmedProfiles, pageDates };
 
 if (require.main === module) {
   const check = process.argv.includes('--check');

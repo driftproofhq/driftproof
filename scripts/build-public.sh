@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
 #
-# Build the clean single-commit publish tree for Driftproof and run all scans.
-# Does NOT push. The push is a separate, explicit human act, and it stays that way.
+# Build the clean publish tree for Driftproof and run all scans. The tree is one new
+# commit, parented on the public repository's main tip (spec 113): the public history
+# is kept, and scripts/push-public.mjs makes the push as a plain fast-forward.
+# Does NOT push. The push is a separate, explicit act, and it stays that way.
 #
 # TRACKED, as of DECISIONS #25. This file lived untracked in a home directory for
 # the project's whole life, with no history beyond hand-named `.bak-` copies —
@@ -41,6 +43,17 @@ usage: scripts/build-public.sh -m "<what this publish ships>" [-m "<paragraph>".
             build somewhere other than the default sibling. For tests and
             sandboxes. Must be typed on the invocation; there is no environment
             override, and a path inside your home directory is refused.
+  --remote URL-OR-PATH
+            with --public-dir only: the stand-in for the public remote (a scratch
+            bare repository). With --public-dir and no --remote the build reads no
+            remote and makes a root commit, which scripts/push-public.mjs refuses.
+            The default target parents on the public remote, which cannot be
+            redirected, unless --no-parent is typed.
+  --no-parent
+            build a root commit and read no remote. For tests of this script's own
+            guards in a throwaway source tree. The commit is never pushable:
+            scripts/push-public.mjs refuses a commit with no parent. Not accepted
+            with --remote.
   --waiver ID
             run against the publish target even though a NEXT-PUBLISH BLOCKER is
             open in DECISIONS.md. Permitted ONLY when that file records a
@@ -55,7 +68,9 @@ The message is REQUIRED. It is not stored in this script and is never inherited
 from the last publish: it describes THIS build, and nothing else can.
 
 The default target is a `driftproof-public` directory beside the source tree.
-This script DELETES its target with `rm -rf` before rebuilding it.
+This script DELETES its target with `rm -rf` before rebuilding it. The new commit's
+parent is the public main tip as `git ls-remote` reads it at build time, and the
+message must carry no private marker (scripts/public-message-check.mjs).
 USAGE
 }
 
@@ -64,6 +79,8 @@ MSG_FILE=""
 PRINT_ONLY=0
 PUB_ARG=""
 PUB_EXPLICIT=0
+REMOTE_ARG=""
+NO_PARENT=0
 WAIVER=""
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -76,6 +93,9 @@ $2"; else MSG="$2"; fi
         MSG_FILE="$2"; shift 2 ;;
     --public-dir) [ $# -ge 2 ] || { echo "build-public.sh: --public-dir needs a path" >&2; exit 2; }
         PUB_ARG="$2"; PUB_EXPLICIT=1; shift 2 ;;
+    --remote) [ $# -ge 2 ] || { echo "build-public.sh: --remote needs a url or path" >&2; exit 2; }
+        REMOTE_ARG="$2"; shift 2 ;;
+    --no-parent) NO_PARENT=1; shift ;;
     --waiver) [ $# -ge 2 ] || { echo "build-public.sh: --waiver needs a decision-entry id" >&2; exit 2; }
         WAIVER="$2"; shift 2 ;;
     --print-message) PRINT_ONLY=1; shift ;;
@@ -83,6 +103,14 @@ $2"; else MSG="$2"; fi
     *) echo "build-public.sh: unknown argument: $1" >&2; usage; exit 2 ;;
   esac
 done
+
+if [ -n "$REMOTE_ARG" ] && [ "$PUB_EXPLICIT" -eq 0 ]; then
+  echo "build-public.sh: --remote is accepted only together with --public-dir." >&2
+  echo "  The default target always parents on the public remote this script names." >&2
+  exit 2
+fi
+
+if [ -n "$REMOTE_ARG" ] && [ "$NO_PARENT" -eq 1 ]; then echo "build-public.sh: --no-parent and --remote contradict each other." >&2; exit 2; fi # spec113:no-parent-remote
 
 if [ -n "$MSG_FILE" ]; then
   if [ -n "$MSG" ]; then echo "build-public.sh: use -m or -F, not both" >&2; exit 2; fi
@@ -182,6 +210,10 @@ fi
 # target has to carry THIS remote to be recognisable as a tree this script built.
 REMOTE_HOST="github.com"
 REMOTE="git@${REMOTE_HOST}:driftproofhq/driftproof.git"
+# The remote this run reads the public tip from and records as the tree's origin: the
+# public one, or, in a sandbox, the stand-in --remote names. A sandbox with no --remote
+# reads none and makes a root commit, which is never pushable (scripts/push-public.mjs).
+if [ -n "$REMOTE_ARG" ]; then REMOTE_USE="$REMOTE_ARG"; else REMOTE_USE="$REMOTE"; fi
 
 # Paths are derived, never hard-coded: this file is tracked now, and an absolute
 # home path in a tracked file fails the blocking hygiene scan — as it should, since
@@ -290,7 +322,7 @@ looks_like_ours() {
   if [ -e "$PUB/DECISIONS.md" ] || [ -d "$PUB/specs" ]; then return 1; fi
   local origin
   origin="$(git -C "$PUB" remote get-url origin 2>/dev/null)" || return 1
-  [ "$origin" = "$REMOTE" ] || return 1
+  [ "$origin" = "$REMOTE" ] || [ "$origin" = "$REMOTE_USE" ] || return 1
   return 0
 }
 if [ -d "$PUB" ] && [ -n "$(ls -A "$PUB" 2>/dev/null)" ]; then
@@ -429,7 +461,7 @@ fi
 # and the commit succeeds. That is worse than the failure it hides: the build
 # host and its internal hostname are exactly what this project's own blocking
 # hygiene scan bans, and they would be stamped into the author field of a commit
-# that is force-pushed to the public repository. So the rule is not "some
+# that is pushed to the public repository. So the rule is not "some
 # identity resolves" but "an identity was CONFIGURED" — env vars or git config,
 # never guessed from the hostname.
 #
@@ -595,6 +627,42 @@ if [ -L "$SRC/node_modules" ] || [ ! -d "$SRC/node_modules" ]; then
   exit 8
 fi
 
+# ── THE PARENT AND THE MESSAGE, read before anything is destroyed (spec 113) ──
+#
+# The public repository keeps its history: this build makes ONE new commit whose parent
+# is the public main tip, and scripts/push-public.mjs pushes it as a plain fast-forward.
+# The tip is read here with ls-remote, at build time, and never remembered or typed. It
+# is read BEFORE `rm -rf` because a failed read is not the same fact as an empty remote,
+# and a build that cannot tell them apart must not have destroyed the previous tree. An
+# empty remote is refused too: the public repository has a main, and there is no way to
+# make a root commit for it. A sandbox with no --remote, or any build typed with --no-parent,
+# reads no remote and makes a root commit, which the push refuses (A-113-1); the message
+# check runs where the build parents.
+PARENTED=0
+if [ "$NO_PARENT" -eq 0 ] && { [ "$PUB_EXPLICIT" -eq 0 ] || [ -n "$REMOTE_ARG" ]; }; then
+  PARENTED=1
+  MSG_RC=0
+  MSG_OUT="$(printf '%s\n' "$MSG" | node "$SRC/scripts/public-message-check.mjs" --repo "$SRC" 2>&1)" || MSG_RC=$? # spec113:check-message
+  if [ "$MSG_RC" -ne 0 ]; then
+    echo "build-public.sh: REFUSING: the commit message is not fit to publish." >&2
+    printf '%s\n' "$MSG_OUT" | sed 's/^/  /' >&2
+    exit 11
+  fi
+  LS_RC=0
+  LS_OUT="$(git -C "$SRC" ls-remote "$REMOTE_USE" refs/heads/main 2>&1)" || LS_RC=$?
+  PARENT_TIP="$(printf '%s\n' "$LS_OUT" | awk '$2=="refs/heads/main" {print $1; exit}')" # spec113:read-tip
+  if [ "$LS_RC" -ne 0 ]; then
+    echo "build-public.sh: REFUSING: cannot read the public main tip." >&2
+    printf '%s\n' "$LS_OUT" | sed 's/^/  /' >&2
+    exit 12
+  fi
+  if ! [[ "$PARENT_TIP" =~ ^[0-9a-f]{40}$ ]]; then
+    echo "build-public.sh: REFUSING: the public remote lists no main, so there is nothing already public to parent on." >&2
+    echo "  remote: $REMOTE_USE" >&2
+    exit 12
+  fi
+fi
+
 rm -rf "$PUB"
 mkdir -p "$PUB"
 # The manifest of what this build copied. Written outside the target so it is
@@ -616,6 +684,24 @@ cp -r "$SRC/node_modules" "$PUB/node_modules"
 
 cd "$PUB"
 git init -q -b main
+if [ "$PARENTED" -eq 1 ]; then
+  # The tip as the remote holds it, fetched into the new tree: no tags, one branch. The
+  # tree is empty and its index stays empty until `git add -A` below, so the commit has
+  # this one parent and the built tree, whatever the previous public tree held.
+  git fetch -q --no-tags "$REMOTE_USE" refs/heads/main || {
+    echo "build-public.sh: REFUSING: cannot fetch the public main. The target was rebuilt empty; run again." >&2
+    exit 12
+  }
+  FETCHED_TIP="$(git rev-parse FETCH_HEAD)"
+  if [ "$FETCHED_TIP" != "$PARENT_TIP" ]; then # spec113:tip-moved
+    echo "build-public.sh: REFUSING: the public main moved while this build ran." >&2
+    echo "  listed:  $PARENT_TIP" >&2
+    echo "  fetched: $FETCHED_TIP" >&2
+    echo "  Run the build again; it parents on the tip as the remote then holds it." >&2
+    exit 12
+  fi
+  git update-ref refs/heads/main "$PARENT_TIP" # spec113:parent
+fi
 # SPEC 030 AC-5. `git add -A` alone commits a SUBSET of what was copied above.
 # The publish target is a fresh repository, and the `add` re-applies the
 # .gitignore this build just copied into it: `/receipts/*.json` dropped
@@ -635,7 +721,7 @@ git init -q -b main
 # assertion below fails the build rather than shipping a subset again.
 git add -A
 xargs -a "$PUB_FILELIST" -d '\n' -r git add -f --
-printf '%s\n' "$MSG" | git commit -q -F -
+printf '%s\n' "$MSG" | git commit -q --allow-empty -F -
 
 # SPEC 030 AC-5. The tree must CARRY what the build copied. A regex-only guard
 # fails silently, which is precisely how the receipt got out - so this compares
@@ -655,9 +741,10 @@ if [ -n "$MISSING" ]; then
   exit 10
 fi
 
-git remote add origin "$REMOTE"
+git remote add origin "$REMOTE_USE"
 
 echo "=== publish tree built at $PUB ==="
+if [ "$PARENTED" -eq 1 ]; then echo "parent: the public main tip, read at build time"; else echo "parent: none (a root commit, which scripts/push-public.mjs never pushes)"; fi
 echo "tracked files:"; git ls-files | wc -l
 echo
 echo "=== commit message (as given, not as remembered) ==="

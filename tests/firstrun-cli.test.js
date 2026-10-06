@@ -101,3 +101,25 @@ test('the judge is the target: a loud warning on stderr before the first progres
   const dated = cli(['run', dir, '--models', MODEL, '--judge-model', 'claude-haiku-4-5-20251001', '--max-cases', '1', '--samples', '1', '--out', path.join(root, 'o2')], root, { DRIFTPROOF_STUB: '1' });
   assert.match(dated.stderr, /WARNING: the judge is the target model, claude-haiku-4-5\./);
 });
+
+// Spec 140 (R-3): a missing isolation account is one plain line, before the skill is read.
+test('a run that needs the isolation account refuses in one line when there is none, writing nothing; a stub run and a trusted run never ask', () => {
+  const NOUSER = 'driftproof-nouser-140';
+  assert.notEqual(spawnSync('id', ['-u', NOUSER]).status, 0, 'the test needs an account id does not know');
+  const root = tmp();
+  const out = path.join(root, 'o');
+  const none = cli(['run', path.join(root, 'no-such-skill'), '--models', MODEL, '--out', out], root, { DRIFTPROOF_EVAL_USER: NOUSER });
+  assert.equal(none.status, 2, none.stderr);
+  const lines = none.stderr.split('\n').filter((l) => l.trim());
+  assert.equal(lines.length, 1, none.stderr);
+  assert.match(lines[0], /REFUSED \(isolation\): /);
+  assert.ok(lines[0].includes(NOUSER) && lines[0].includes('--trusted-skill'));
+  assert.equal(none.stdout, '');
+  assert.equal(fs.existsSync(out), false, 'no receipts folder made');
+  const dir = skill(root, 1);
+  const stub = cli(['run', dir, '--models', MODEL, '--max-cases', '1', '--samples', '1', '--out', path.join(root, 'o2')], root, { DRIFTPROOF_STUB: '1', DRIFTPROOF_EVAL_USER: NOUSER });
+  assert.equal(stub.status, 0, stub.stderr);
+  assert.doesNotMatch(stub.stderr, /REFUSED \(isolation\)/);
+  const trusted = cli(['run', dir, '--trusted-skill', '--models', MODEL, '--max-cases', '1', '--samples', '1', '--out', path.join(root, 'o3')], root, { DRIFTPROOF_EVAL_USER: NOUSER });
+  assert.doesNotMatch(trusted.stderr, /REFUSED \(isolation\)/);
+});

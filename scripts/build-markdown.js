@@ -18,6 +18,7 @@
 //   node scripts/build-markdown.js --check    fail if any copy is stale or missing
 const fs = require('fs');
 const path = require('path');
+const { tokenize, VOID } = require('./html-text.js');
 
 const ROOT = path.join(__dirname, '..');
 const DOCS = path.join(ROOT, 'docs');
@@ -39,7 +40,6 @@ const urlOf = (rel) => `${ORIGIN}/${rel.replace(/(^|\/)index\.html$/, '$1')}`;
 const mdOf = (rel) => rel.replace(/index\.html$/, 'index.md');
 
 // ── a small, forgiving HTML reader ──────────────────────────────────────────────────────
-const VOID = new Set(['br', 'img', 'hr', 'meta', 'link', 'input', 'source', 'wbr', 'col', 'area', 'base', 'embed', 'track']);
 const NAMED = {
   amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', rsquo: '’', lsquo: '‘',
   ldquo: '“', rdquo: '”', times: '×', plusmn: '±', middot: '·',
@@ -50,25 +50,25 @@ const decode = (s) => String(s)
   .replace(/&#x([0-9a-fA-F]+);/g, (_m, d) => String.fromCodePoint(parseInt(d, 16)))
   .replace(/&([a-z]+);/g, (m, n) => (NAMED[n] === undefined ? m : NAMED[n]));
 
+// The tree comes from scripts/html-text.js's tokenizer, a single scan of the page. It was one regex
+// for a whole tag, whose attribute list backtracked without bound on a tag such as `<a !=""!=""...`
+// (CodeQL js/redos); the scan reads each character once.
 function parse(html) {
   const root = { tag: '#root', attrs: {}, children: [] };
   const stack = [root];
-  const re = /<!--[\s\S]*?-->|<(\/?)([a-zA-Z][a-zA-Z0-9-]*)((?:\s+[^\s=>/]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?)*)\s*(\/?)>|([^<]+)|</g;
-  let m;
-  while ((m = re.exec(html))) {
-    if (m[0].startsWith('<!--')) continue;
-    if (m[5] !== undefined || m[0] === '<') { stack[stack.length - 1].children.push({ text: m[5] !== undefined ? m[5] : '<' }); continue; }
-    const tag = m[2].toLowerCase();
-    if (m[1]) {
-      const at = stack.map((n) => n.tag).lastIndexOf(tag);
+  for (const t of tokenize(html)) {
+    if (t.type === 'comment') continue;
+    if (t.type === 'text') { stack[stack.length - 1].children.push({ text: t.text }); continue; }
+    if (t.type === 'end') {
+      const at = stack.map((n) => n.tag).lastIndexOf(t.name);
       if (at > 0) stack.length = at;
       continue;
     }
     const attrs = {};
-    for (const a of m[3].matchAll(/([^\s=>/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g)) attrs[a[1].toLowerCase()] = decode(a[2] ?? a[3] ?? a[4] ?? '');
-    const node = { tag, attrs, children: [] };
+    for (const [k, v] of t.attrs) attrs[k] = decode(v ?? '');
+    const node = { tag: t.name, attrs, children: [] };
     stack[stack.length - 1].children.push(node);
-    if (!VOID.has(tag) && !m[4]) stack.push(node);
+    if (!VOID.has(t.name) && !t.selfClosing) stack.push(node);
   }
   return root;
 }
@@ -126,7 +126,7 @@ function makeCtx(pageUrl) {
     const rows = [];
     (function walk(x) {
       for (const c of x.children || []) {
-        if (c.tag === 'tr') rows.push(c.children.filter((d) => d.tag === 'td' || d.tag === 'th').map((d) => clean(d.children.map((k) => inline(k, true)).join('')).replace(/\s+/g, ' ').replace(/\|/g, '\\|').trim()));
+        if (c.tag === 'tr') rows.push(c.children.filter((d) => d.tag === 'td' || d.tag === 'th').map((d) => clean(d.children.map((k) => inline(k, true)).join('')).replace(/\s+/g, ' ').replace(/\\/g, '\\\\').replace(/\|/g, '\\|').trim()));
         else if (c.tag && !DROP.has(c.tag)) walk(c);
       }
     })(n);

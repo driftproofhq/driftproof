@@ -66,7 +66,7 @@ export function facts(at) {
       rejected: F(rejected, 'approval records whose verdict is rejected'),
       amendments: F(amendments, 'headings "### A-<spec>-<n>" across the spec.md files'),
       decisions: F(decisions, 'second-level headings in DECISIONS.md'),
-      audits: F(audits, 'files under specs/000-governance/external-audits/'),
+      audits: F(audits, 'files in the folder the external audits are kept in'),
     },
   };
 }

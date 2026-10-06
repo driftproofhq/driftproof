@@ -22,7 +22,15 @@
 //      edits nothing, and proposes nothing about the contents of a skill.
 //
 // SPEC 138 adds three flags `run` passes through to the CLI (--samples, --concurrency,
-// --max-cases), each checked by the contract first. The two rules above hold for them.
+// --max-cases), each checked by the contract first. SPEC 139 adds --quick on `run` and the
+// guided first run (`start`). The two rules above hold for all of it: `start` lists, checks and
+// spawns the pinned CLI, and opens the page the CLI wrote with the platform's opener. SPEC 140
+// adds the trusted lane where there is no git repository, behind --trust-outside-repo, and init
+// into a skill that exists, behind --confirm-write. Neither is ever a default, and this file
+// never reads stdin, so a yes typed to it does nothing: the command files have Claude ask.
+// SPEC 165 leads a skill that exists into the guided run: `init` given a draft takes the steps of
+// `start`, and `run` on a skill with no test cases says it can draft them. Neither writes anything
+// of its own; the one new file is still the CLI's, after --confirm-write.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -34,6 +42,10 @@ const PLUGIN_ROOT = path.resolve(HERE, '..');
 const MARK = '[driftproof-plugin]';
 // The plain line for the UNDERPOWERED state, as lib/verdict.js carries it (spec 035 AC-9).
 const UNDERPOWERED_LINE = 'Not enough draws to conclude at this effect floor';
+// Spec 143 (A-035-9): the cases line and word, as lib/verdict.js carries them, for the state where the
+// cases disagree. tests/cases-not-draws.test.js holds both copies to lib/verdict.js's exports.
+const CASES_LINE = 'More cases, not more draws, are needed to conclude at this effect floor';
+const CASES_WORD = 'more cases needed';
 
 const readJson = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
 const MANIFEST = readJson(path.join(PLUGIN_ROOT, '.claude-plugin', 'plugin.json'));
@@ -82,7 +94,7 @@ function validateInputs(inputs, opts) {
     // INPUT_CONTRACT.flags), checked with it here, before anything is spawned.
     if (name === 'samples' || name === 'concurrency' || name === 'max-cases') checkRule(name, value, 'max_calls');
     if (name === 'max-usd') { checkRule(name, value, 'max_usd'); checkRule(name, value, 'max_usd_zero'); }
-    if (name === 'skill-dir' || name === 'receipt') {
+    if (name === 'skill-dir' || name === 'receipt' || name === 'cases') {
       checkRule(name, value, 'skill_dir_control');
       checkRule(name, value, 'skill_dir_shell_metachar');
       // action/lib.sh's validate_skill_dir is three parts: non-empty, no control
@@ -106,8 +118,9 @@ function validateInputs(inputs, opts) {
       // quietly work.
       if (targetMustExist) {
         const resolved = path.resolve(process.cwd(), value);
-        const ok = fs.existsSync(resolved) && (name === 'receipt' ? fs.statSync(resolved).isFile() : fs.statSync(resolved).isDirectory());
-        if (!ok) refuse(name + ': ' + (name === 'receipt' ? 'not a file' : 'not a directory') + ': ' + JSON.stringify(value));
+        const file = name === 'receipt' || name === 'cases';
+        const ok = fs.existsSync(resolved) && (file ? fs.statSync(resolved).isFile() : fs.statSync(resolved).isDirectory());
+        if (!ok) refuse(name + ': ' + (name === 'receipt' || name === 'cases' ? 'not a file' : 'not a directory') + ': ' + JSON.stringify(value));
       }
     }
   }
@@ -141,7 +154,7 @@ function semverGte(a, b) {
   }
   return true;
 }
-function versionGuard() {
+function versionGuard(step) {
   const min = GUARD.minimum;
   const probe = runCli(['--version'], { capture: true });
   const found = String(probe.out || '').trim().split('\n').pop().trim();
@@ -151,6 +164,23 @@ function versionGuard() {
   if (min && !semverGte(found, min)) {
     refuse('this plugin requires driftproof ' + min + ' or later and the pinned runner reported ' + found
       + '. Update the plugin (claude plugin update driftproof@driftproofhq), which moves the pin.');
+  }
+  // Spec 139 (Q8, the pre-review's F-2): a command's guard step may name a minimum of its own,
+  // a field of version-guard.json beside the plugin's. `start` writes the drafted cases through
+  // `init --cases`, and a runner from before the release that ships it reads no flags in init: it
+  // would write its example cases into the skill folder and drop the draft. So start's minimum is
+  // that release, written by the release bump with the others and null until then, and start
+  // refuses below it, or while it is null, before init is spawned.
+  const own = step && step.minimum ? step.minimum : null;
+  // Spec 140: `init` names it with only_adding, so a new folder is as it was and only an init that adds
+  // to a skill that exists meets the runner that takes that (its older init also writes the rc).
+  if (own && (!step.only_adding || state.adding)) {
+    const need = GUARD[own];
+    if (typeof need !== 'string' || !/^[0-9]+\.[0-9]+\.[0-9]+$/.test(need) || !semverGte(found, need)) {
+      refuse(command + ' needs ' + (typeof need === 'string' ? 'driftproof ' + need + ' or later' : 'a runner release that version-guard.json records as ' + own + ', and none is recorded yet')
+        + ', and the pinned runner reported ' + found + '. Update the plugin (claude plugin update driftproof@driftproofhq), which moves the pin. Nothing was written.');
+    }
+    say('runner ' + found + ' meets ' + command + '\'s own minimum ' + need + ' (' + own + ' in version-guard.json)');
   }
   say('runner ' + found + ' meets the minimum ' + String(min) + ' recorded in version-guard.json');
   return found;
@@ -162,20 +192,82 @@ function versionGuard() {
 // looked at the skill and owns it, and that claim is only available for a skill
 // inside the repository the operator is sitting in. Outside it, the command
 // refuses and prints the isolated invocation instead of quietly weakening it.
-function repoRoot() {
-  const r = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: process.cwd(), encoding: 'utf8', shell: false });
-  if (r.status !== 0) return null;
-  return String(r.stdout || '').trim() || null;
+//
+// SPEC 140: THREE ANSWERS, NEVER TWO. A root; no repository, read only when git ran and said so
+// (exit 128 and "not a git repository", the test spec 028's harness uses); or unknown. Git missing,
+// a repository git will not read (dubious ownership), or any other failure is unknown, and the door
+// refuses on it, flag or not: it cannot tell which side of the boundary it is on. LC_ALL=C keeps
+// git's words the ones read here.
+function repoState() {
+  const r = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: process.cwd(), encoding: 'utf8', shell: false, env: { ...process.env, LC_ALL: 'C' } });
+  if (r.error) return { unknown: 'git could not be run: ' + (r.error.code || r.error.message) };
+  const root = String(r.stdout || '').trim();
+  if (r.status === 0 && root) return { root };
+  if (r.status === 128 && /not a git repository/.test(String(r.stderr || ''))) return { none: true };
+  const said = String(r.stderr || '').split('\n').map((l) => l.trim()).find(Boolean);
+  return { unknown: 'git rev-parse exited ' + r.status + (said ? ': ' + said : '') };
 }
-function requireInsideRepo(value) {
-  const root = repoRoot();
+// SPEC 140: WHERE THERE IS NO GIT REPOSITORY, THE PERSON CONFIRMS, BY A FLAG. The claim the trusted
+// lane rests on is that a person looked at the skill and owns it; inside a repository the boundary
+// stands in for that, and outside one nothing does, so the person says it: --trust-outside-repo.
+// It is never a default and never an interactive yes. This file never reads stdin, and Claude Code
+// runs it with no terminal, so the command files tell Claude to ask the person first and pass the
+// flag only on a yes. Without it the door refuses with one message: the isolated invocation, the
+// isolation account's state, and the flag. Inside a repository the flag is refused, and a skill
+// outside the repository is refused flag or not, as before.
+const EVAL_USER_RE = /^[a-z_][a-z0-9_-]{0,31}$/;
+// Spec 022's default account, the CLI's own (lib/provider.js). Written in two parts because spec 028
+// AC-4's shell scan reads the bare word as a command, and this file composes none.
+// The plugin imports nothing from lib/, so this and the pattern above are copies; tests/door.test.js
+// reads both against lib/provider.js and fails when either moves.
+const DEFAULT_ACCOUNT = 'driftproof-' + 'ev' + 'al';
+function evalAccount() {
+  const raw = process.env.DRIFTPROOF_EVAL_USER;
+  const user = raw === undefined || raw === '' ? DEFAULT_ACCOUNT : raw;
+  if (!EVAL_USER_RE.test(user)) return { user, exists: false };
+  const r = spawnSync('id', ['-u', user], { encoding: 'utf8', shell: false });
+  return { user, exists: !r.error && r.status === 0 };
+}
+// A command that does not take --trust-outside-repo never offers it to itself: it names
+// /driftproof:run with the flag instead.
+function requireInsideRepo(value, command) {
+  const repo = repoState();
+  const confirmed = INPUTS['trust-outside-repo'] === true;
   const resolved = fs.realpathSync(path.resolve(process.cwd(), value));
   const isolated = 'npx driftproof@' + PINNED + ' run ' + resolved + ' --models <model>';
-  if (!root) {
-    refuse('this is not a git repository, so there is no repository boundary to place the skill inside, and the'
-      + ' trusted-skill claim would rest on nothing. Run it with the isolation account instead, on the lane spec 022'
-      + ' built for a skill you did not write:\n    ' + isolated);
+  if (repo.unknown) refuse('git could not say whether there is a git repository here (' + repo.unknown + '), so this command cannot tell which side of a repository boundary the skill at ' + resolved + ' is on. It runs nothing on that, with --trust-outside-repo or without it. Nothing was spawned. Fix what git says, then run this command again.');
+  if (repo.none && confirmed) {
+    // SPEC 140 (the pre-review's F-2): with no repository the place the person says is theirs is the
+    // folder they run from, and the skill must sit inside it on its real path, as DR-17 holds a skill
+    // inside the repository. A skill elsewhere on the machine, and a link in this folder that points
+    // out of it, are refused with the flag as without it.
+    const here = fs.realpathSync(process.cwd());
+    if (!(resolved === here || resolved.startsWith(here + path.sep))) {
+      refuse('the skill at ' + resolved + ' resolves outside the folder you run from (' + here + '). There is no git repository here, so that folder'
+        + ' stands where the repository would, and the trusted lane claims the skill is the author\'s own, which is not available for a path'
+        + ' outside it, or for a link out of it, flag or not. Nothing was spawned. Run it with the isolation account instead, on the lane spec 022'
+        + ' built for exactly this:\n    ' + isolated);
+    }
+    state.outsideRepo = true;
+    return resolved;
   }
+  if (repo.none) {
+    const acct = evalAccount();
+    const offersFlag = ACCEPTS[command].includes('trust-outside-repo');
+    const route = acct.exists
+      ? 'Run it with the isolation account instead, on the lane spec 022 built for a skill you did not write:'
+      : 'This machine has no isolation account (' + acct.user + '), which a skill you did not write needs: a dedicated unprivileged user with its own logged-in claude, and a passwordless sudo rule that lets you run commands as it (the Isolation section of the Driftproof README on npm says what it needs). With that in place it runs on the lane spec 022 built for one:';
+    // The yes the flag stands for is about a path the person has seen: the skill's real path and the folder it runs from.
+    const here = fs.realpathSync(process.cwd());
+    const asYou = 'the skill at ' + resolved + ' then runs from ' + here + ', as you, with your files and your Claude Code login.';
+    const trust = offersFlag
+      ? 'If you wrote the skill yourself, run this command again with --trust-outside-repo: ' + asYou
+      : 'If you wrote the skill yourself, run /driftproof:run ' + resolved + ' --trust-outside-repo instead (' + command + ' does not take that flag): ' + asYou;
+    refuse('this is not a git repository, so there is no repository boundary to place the skill inside, and the'
+      + ' trusted-skill claim would rest on nothing. ' + route + '\n    ' + isolated + '\n' + trust);
+  }
+  const root = repo.root;
+  if (confirmed) refuse('--trust-outside-repo is for a folder with no git repository, and this is one (' + fs.realpathSync(root) + '). A skill inside it runs on the trusted lane without the flag; a skill outside it does not, flag or not.');
   const realRoot = fs.realpathSync(root);
   const inside = resolved === realRoot || resolved.startsWith(realRoot + path.sep);
   if (!inside) {
@@ -478,6 +570,208 @@ function recheckTranscripts(receiptPath) {
   return out;
 }
 
+// ── the guided first run (spec 139) ──────────────────────────────────────────
+// `start` with no folder lists the skills under the working directory, each with
+// whether it has test cases, and spawns nothing. Four levels down, past
+// node_modules and dot folders, and at most fifty, so a large tree is not walked
+// whole. Read only.
+const LIST_DEPTH = 4;
+const LIST_MAX = 50;
+function listSkills() {
+  const root = process.cwd();
+  const found = [];
+  let here = false;
+  (function walk(d, depth) {
+    if (found.length >= LIST_MAX) return;
+    let entries;
+    try { entries = fs.readdirSync(d, { withFileTypes: true }); } catch (e) { return; }
+    if (entries.some((e) => e.isFile() && e.name === 'SKILL.md')) {
+      // The working directory itself is not listed: start refuses to run from inside a skill
+      // folder (outsideSkill), so the person is told to move up instead.
+      if (depth === 0) here = true; else found.push(d);
+    }
+    if (depth >= LIST_DEPTH) return;
+    for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+      if (!e.isDirectory() || e.name === 'node_modules' || e.name.startsWith('.')) continue;
+      walk(path.join(d, e.name), depth + 1);
+    }
+  })(root, 0);
+  if (here) say('this folder holds a SKILL.md, so it is a skill folder: run start from the folder above it, so the receipts and the page are not written into the skill.');
+  if (!found.length) {
+    say('no SKILL.md found under ' + root + ' (looked ' + LIST_DEPTH + ' folders down, past node_modules and dot folders).');
+    return;
+  }
+  say('skills under ' + root + ':');
+  for (const d of found) {
+    const rel = path.relative(root, d) || '.';
+    const has = fs.existsSync(path.join(d, 'evals', 'evals.json'));
+    process.stdout.write('  ' + rel + '  (' + (has ? 'has test cases' : 'no test cases yet') + ')\n');
+  }
+}
+
+// Where start writes its own outputs (spec 139, the pre-review's F-3). The run writes receipts/
+// and the page into the working directory, and the draft is saved where the person works. From
+// inside the skill folder all of them would land in it, become bundled skill content and move the
+// skill's content hash for the next run. So start refuses when the working directory is the skill
+// folder or inside it, and when the draft is inside it, before anything is spawned.
+function outsideSkill() {
+  const dir = state.resolvedTarget;
+  const inside = (p) => p === dir || p.startsWith(dir + path.sep);
+  if (inside(fs.realpathSync(process.cwd()))) {
+    refuse('this folder is ' + (fs.realpathSync(process.cwd()) === dir ? 'the skill folder ' : 'inside the skill folder ') + dir + '. Run ' + command + ' from the folder above the skill,'
+      + ' so the receipts and the page are not written into it. Nothing was spawned.');
+  }
+  if (INPUTS['cases'] === undefined) return;
+  let draft = path.resolve(process.cwd(), INPUTS['cases']);
+  try { draft = fs.realpathSync(draft); } catch (e) { /* validate has refused a draft that is not there */ }
+  if (inside(draft)) {
+    refuse('the draft ' + draft + ' is inside the skill folder ' + dir + ', and ' + command + ' adds no file there but the test cases.'
+      + ' Move the draft to the folder you run ' + command + ' from and give that path. Nothing was spawned.');
+  }
+}
+
+// The suite a start runs on, or the cases it will be written from: one of the
+// two, never both, and never neither. Read before anything is spawned. When cases
+// are to be written the folder must take them as one new file and nothing else
+// (the operator's ruling on the guided run's write, spec 139 R-13): a skill that
+// exists, with no suite of any kind (a link included), and an `evals` that is
+// absent or a plain folder, so init adds evals/evals.json and touches no other file.
+function requireSuite() {
+  const dir = state.resolvedTarget;
+  const suite = path.join(dir, 'evals', 'evals.json');
+  let there = false;
+  try { fs.lstatSync(suite); there = true; } catch (e) { there = false; }
+  if (!there && INPUTS['cases'] === undefined) {
+    refuse(dir + ' has no evals/evals.json yet, so there is nothing to run. Draft test cases with the person first,'
+      + ' save them to a file outside the skill folder, and run ' + command + ' again with --cases <file>. Nothing was spawned.');
+  }
+  if (there && INPUTS['cases'] !== undefined) {
+    refuse(dir + ' already has evals/evals.json, and init never writes over a suite, so --cases would be dropped.'
+      + ' ' + (command === 'init' ? 'Run /driftproof:start ' + dir + ' to run the suite it has.' : 'Run ' + command + ' without --cases to run the suite it has.') + ' Nothing was spawned.');
+  }
+  if (INPUTS['cases'] === undefined) return;
+  let evals = null;
+  try { evals = fs.lstatSync(path.join(dir, 'evals')); } catch (e) { evals = null; }
+  if (evals && !evals.isDirectory()) {
+    refuse(dir + '/evals is not a plain folder (it is a link or a file), so ' + command + ' will not add test cases there. Nothing was spawned.');
+  }
+  let md = null;
+  try { md = fs.lstatSync(path.join(dir, 'SKILL.md')); } catch (e) { md = null; }
+  if (!md || !md.isFile()) {
+    refuse(dir + ' has no SKILL.md that is a regular file, so there is no skill here to add test cases to, and ' + command + ' never creates one. Nothing was spawned.');
+  }
+}
+
+// The person's yes (spec 139 R-13). start adds one new file to a skill folder only
+// after the person has said yes in the run: the command's steps have the model show
+// the path and the cases and ask, and give --confirm-write once they agree. No
+// default, no other command takes it, and a script that gives no flag is refused.
+function confirmWrite() {
+  const cases = INPUTS['cases'] !== undefined;
+  const yes = INPUTS['confirm-write'] === true;
+  if (yes && !cases) {
+    refuse('--confirm-write confirms writing a draft, and was given with no --cases, so there is nothing to confirm. Nothing was spawned.');
+  }
+  if (!cases) return;
+  if (!yes) {
+    refuse(command + ' would add evals/evals.json to ' + state.resolvedTarget + ' from ' + INPUTS['cases'] + ', as the one new file ' + path.join(state.resolvedTarget, 'evals', 'evals.json') + ', and adds a file to a skill folder only with the person\'s yes.'
+      + ' Show the person the skill\'s folder, the file\'s path and the cases, and when they say yes run ' + command + ' again with --confirm-write. Nothing was written and nothing was spawned.');
+  }
+  say('adding one new file, ' + path.join(state.resolvedTarget, 'evals', 'evals.json') + ', from ' + path.resolve(process.cwd(), INPUTS['cases'])
+    + ' (confirmed with --confirm-write). No other file in the folder is written.');
+}
+
+// The person's yes for init into a skill that exists (spec 140 R-1, the operator's three conditions
+// on adding a file to a skill folder). init on a folder that holds a SKILL.md adds one new file,
+// evals/evals.json, and only after the person has said yes: init.md has Claude show the path and
+// ask, and give --confirm-write once they agree. No default, and a script that gives no flag is
+// refused. A folder with no SKILL.md is a scaffold of a new skill, as it was, and has nothing to
+// confirm: the flag there is refused, so it never reads as a yes to something else.
+function confirmAdd() {
+  const dir = state.resolvedTarget;
+  const yes = INPUTS['confirm-write'] === true;
+  let md = null;
+  try { md = fs.lstatSync(path.join(dir, 'SKILL.md')); } catch (e) { md = null; }
+  if (!md) {
+    if (yes) refuse('--confirm-write confirms adding test cases to a skill that exists, and ' + dir + ' holds no SKILL.md, so there is nothing to confirm. Nothing was spawned.');
+    return;
+  }
+  if (!yes) refuse('init would put evals/evals.json into the skill at ' + dir + ', as the one new file ' + path.join(dir, 'evals', 'evals.json') + ', and adds a file to a skill folder only with the person\'s yes.'
+    + ' Show the person the skill\'s folder, the file\'s path and the cases it will hold, and when they say yes run init again with --confirm-write. Nothing was written and nothing was spawned.');
+  state.adding = true;
+  let there = false;
+  try { fs.lstatSync(path.join(dir, 'evals', 'evals.json')); there = true; } catch (e) { there = false; }
+  state.hadSuite = there;
+  // Said before the CLI runs, so it is the intent and nothing more: reportAdd says what happened.
+  if (there) say(dir + ' already has evals/evals.json; init will add nothing and leave it, SKILL.md and every other file as they are.');
+  else say('will add one new file, ' + path.join(dir, 'evals', 'evals.json') + ', if none is there, only because you said yes (--confirm-write). SKILL.md and every other file in the folder are left as they are.');
+}
+// What the CLI did, read from the folder after it ran: one new file, or nothing (the file was there, or
+// something stands in its way, as a link where the evals folder would be, which the CLI will not write
+// through). Said by lstat and not assumed, so the door never reports an addition that did not happen.
+function reportAdd() {
+  if (!state.adding) return;
+  const file = path.join(state.resolvedTarget, 'evals', 'evals.json');
+  let now = false;
+  try { fs.lstatSync(file); now = true; } catch (e) { now = false; }
+  if (now && !state.hadSuite) say('added one new file, ' + file + ', because you said yes (--confirm-write). SKILL.md and every other file are as they were.');
+  else say('nothing was added: ' + (state.hadSuite ? file + ' was already there' : 'the CLI found nothing it could create at ' + file + ' (something stands in its way, such as a link where the evals folder would be)') + '. SKILL.md and every other file are as they were.');
+}
+
+// SPEC 165: init on a skill that exists leads into the guided first run. The folder holds a SKILL.md and
+// the call carries a draft (--cases): it is the run `start` makes, so the rest of init's steps are
+// replaced with start's (its listing left out, since the folder is named). A call with no draft is
+// not taken, whether or not the skill has a suite: with no --confirm-write it is refused (DR-62, as at
+// the Base, a skill that has a suite included). The placeholder route is --confirm-write alone, and a
+// folder with no SKILL.md is a scaffold; neither takes a draft or a model, and they are refused here
+// when given one, never dropped. This writes nothing: the one new file is the CLI's, after --confirm-write.
+function guidedExisting(steps, at) {
+  const given = INPUTS['skill-dir'];
+  if (given === undefined) return;
+  const dir = path.resolve(process.cwd(), given);
+  const lacks = (rel) => { try { fs.lstatSync(path.join(dir, rel)); return false; } catch (e) { return true; } };
+  const isSkill = !lacks('SKILL.md');
+  const drafted = INPUTS['cases'] !== undefined;
+  const guided = isSkill && drafted;
+  if (!guided && (drafted || INPUTS['models'] !== undefined)) {
+    refuse('--cases and --models are for the guided first run, which takes a skill that exists: ' + dir
+      + (isSkill ? ' holds a SKILL.md, but --confirm-write alone is the placeholder route, which takes neither.' : ' holds no SKILL.md, so ' + command + ' scaffolds a new skill there and takes neither.')
+      + ' Give --cases and --confirm-write only for a folder that holds a SKILL.md, or leave both out. Nothing was spawned.');
+  }
+  if (!guided) return;
+  const lead = stepsFor('start').filter((x) => x.op !== 'list-skills');
+  steps.splice(at + 1, steps.length, ...lead);
+  say(command + ' on a skill that exists leads into the guided first run: it takes the steps of start (the approved draft, then the quick run and the results page).');
+}
+
+// SPEC 165: run on a skill that holds a SKILL.md and no suite says it can draft one, before the runner
+// is spawned, and then goes on: the runner ends with its own message, as it did, and the folder is as
+// it was. This line is all it writes. The draft is the guided run's, taken only after the person's yes.
+function offerDraft() {
+  const dir = state.resolvedTarget;
+  let md = null;
+  try { md = fs.lstatSync(path.join(dir, 'SKILL.md')); } catch (e) { md = null; }
+  if (!md) return;
+  let suite = false;
+  try { fs.lstatSync(path.join(dir, 'evals', 'evals.json')); suite = true; } catch (e) { suite = false; }
+  if (suite) return;
+  say(dir + ' has no test cases yet (no evals/evals.json), so the runner has nothing to measure. Offer the person a draft:'
+    + ' /driftproof:start ' + dir + ' drafts test cases from the skill with them, adds evals/evals.json only after their yes, and runs a quick check.'
+    + ' Nothing is written by run. If they decline, the runner ends with its own message below.');
+}
+
+// The page the CLI wrote, opened from disk with the platform's opener, given its
+// absolute path and nothing else. The page loads nothing (spec 128). With no
+// opener, or one that fails, the path is printed to open by hand.
+function openView(file) {
+  const abs = path.resolve(process.cwd(), file);
+  say('the results page is ' + abs + ' (file://' + abs + '); it opens from disk and loads nothing.');
+  const opener = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? null : 'xdg-open';
+  if (!opener) { say('open that file in a browser.'); return; }
+  const r = spawnSync(opener, [abs], { stdio: 'ignore', shell: false, timeout: 15000 });
+  if (r.error || r.status !== 0) say('could not open it with ' + opener + '; open that file in a browser.');
+}
+
 // ── the step interpreter ─────────────────────────────────────────────────────
 function stepsFor(command) {
   const md = fs.readFileSync(path.join(PLUGIN_ROOT, 'commands', command + '.md'), 'utf8');
@@ -493,12 +787,18 @@ const INPUTS = {};
 // saying their argument had been discarded.
 //
 // Spec 138: run passes --samples, --concurrency and --max-cases through, each checked
-// by the contract.
+// by the contract. Spec 139: run takes --quick, and start takes a model and the drafted
+// cases. Spec 140: run takes --trust-outside-repo and init takes --confirm-write. Spec 165: init takes
+// the draft and a model too, for the guided run it leads a skill that exists into, and refuses them elsewhere. A flag in
+// NO_VALUE is set by its name alone, as the CLI's are.
 const ACCEPTS = {
-  init: [],
-  run: ['models', 'max-calls', 'max-usd', 'samples', 'concurrency', 'max-cases'],
+  init: ['confirm-write', 'cases', 'models'],
+  run: ['models', 'max-calls', 'max-usd', 'samples', 'concurrency', 'max-cases', 'quick', 'trust-outside-repo'],
   badge: [],
+  start: ['models', 'cases', 'confirm-write'],
 };
+const NO_VALUE = new Set(['quick', 'confirm-write', 'trust-outside-repo']);
+const QUICK_SETS = ['samples', 'concurrency', 'max-cases'];
 function parseArgv(argv) {
   const command = argv[0];
   if (!Object.prototype.hasOwnProperty.call(ACCEPTS, command)) {
@@ -529,6 +829,7 @@ function parseArgv(argv) {
       // Only the TRAILING case is undefined. `--max-calls --max-usd 3` stores
       // the literal "--max-usd" and is refused by the max_calls contract rule,
       // as intended; nothing here changes that path.
+      if (NO_VALUE.has(name)) { INPUTS[name] = true; continue; }
       if (i + 1 >= rest.length) {
         refuse(a + ' was given with no value. ' + command + ' takes ' + a + ' <value>.'
           + ' A flag with nothing behind it is refused rather than dropped, because dropping it'
@@ -543,7 +844,14 @@ function parseArgv(argv) {
   // dropped: the door read the first and ran on it, saying nothing of the rest.
   if (positional.length > 1) {
     refuse(command + ' takes one ' + (command === 'badge' ? 'receipt' : 'folder') + ' and was given ' + positional.length + ': '
-      + positional.map((p) => JSON.stringify(p)).join(', ') + '. Nothing was spawned.');
+      + positional.map((p) => JSON.stringify(p)).join(', ') + '.'
+      + (ACCEPTS[command].some((f) => NO_VALUE.has(f)) ? ' A flag that takes no value is given alone.' : '') + ' Nothing was spawned.');
+  }
+  // Spec 139 (R-2): --quick sets the three itself, as the CLI does; refused here first.
+  const clash = INPUTS['quick'] === true ? QUICK_SETS.filter((k) => INPUTS[k] !== undefined) : [];
+  if (clash.length) {
+    refuse('--quick sets ' + clash.map((k) => '--' + k).join(', ') + ' itself, and was given ' + (clash.length === 1 ? 'it' : 'them')
+      + ' too. Give --quick alone, or leave it out and set them. Nothing was spawned.');
   }
   if (command === 'badge') INPUTS['receipt'] = positional[0];
   else INPUTS['skill-dir'] = positional[0];
@@ -556,6 +864,7 @@ function resolveArg(token, state) {
   if (key === 'skill-dir' && state.resolvedTarget) return state.resolvedTarget;
   if (key === 'receipt' && state.resolvedTarget) return state.resolvedTarget;
   if (key === 'models' && !INPUTS['models']) return state.defaultModel;
+  if (key === 'cases' && typeof INPUTS['cases'] === 'string') return path.resolve(process.cwd(), INPUTS['cases']);
   return INPUTS[key];
 }
 
@@ -601,23 +910,46 @@ function buildVector(args, state) {
 
 const command = parseArgv(process.argv.slice(2));
 const steps = stepsFor(command);
-const state = { resolvedTarget: null, defaultModel: null, rendered: null };
+const state = { resolvedTarget: null, defaultModel: null, rendered: null, outsideRepo: false, adding: false, hadSuite: false };
 
-for (const step of steps) {
+for (let at = 0; at < steps.length; at++) {
+  const step = steps[at];
+  // Spec 139: `start` with no folder lists the skills and stops there. Given a flag and no folder,
+  // it refuses, naming the flag: a flag is refused, never dropped (DR-41's rule for a word).
+  if (step.op === 'list-skills') {
+    if (INPUTS['skill-dir'] !== undefined) continue;
+    const given = Object.keys(INPUTS).filter((k) => INPUTS[k] !== undefined);
+    if (given.length) refuse(command + ' was given ' + given.map((k) => '--' + k).join(', ') + ' and no skill folder, and lists the skills only when given nothing. Name the folder first (' + command + ' <dir> ...), or give ' + command + ' alone to list the skills. Nothing was spawned.');
+    listSkills();
+    process.exit(0);
+  }
+  if (step.op === 'guided-existing') { guidedExisting(steps, at); continue; }
+  if (step.op === 'offer-draft') { offerDraft(); continue; }
+  if (step.op === 'outside-skill') { outsideSkill(); continue; }
+  if (step.op === 'require-suite') { requireSuite(); continue; }
+  if (step.op === 'confirm-write') { confirmWrite(); continue; }
+  if (step.op === 'confirm-add') { confirmAdd(); continue; }
+  if (step.op === 'report-add') { reportAdd(); continue; }
+  if (step.op === 'open-view') { openView(step.file); continue; }
   if (step.op === 'validate') { validateInputs(step.inputs, step); continue; }
   if (step.op === 'resolve-target') {
     const given = INPUTS[step.input];
     if (given === undefined) refuse(step.input + ': expected a value');
-    state.resolvedTarget = step.inside_repo ? requireInsideRepo(given) : path.resolve(process.cwd(), given);
+    state.resolvedTarget = step.inside_repo ? requireInsideRepo(given, command) : path.resolve(process.cwd(), given);
     say('resolved ' + step.input + '=' + state.resolvedTarget);
     continue;
   }
   if (step.op === 'state-trusted') {
-    say('treating this skill as the author\'s own, because it resolves inside this repository.'
-      + ' That is why the run passes --trusted-skill: it runs as you, in your checkout, with no isolation hop.');
+    if (state.outsideRepo) {
+      say('treating this skill as the author\'s own, because you confirmed it with --trust-outside-repo where there is no git repository.'
+        + ' That is why the run passes --trusted-skill: it runs as you, in ' + process.cwd() + ', with your files and your Claude Code login, and no isolation hop.');
+    } else {
+      say('treating this skill as the author\'s own, because it resolves inside this repository.'
+        + ' That is why the run passes --trusted-skill: it runs as you, in your checkout, with no isolation hop.');
+    }
     continue;
   }
-  if (step.op === 'version-guard') { versionGuard(); continue; }
+  if (step.op === 'version-guard') { versionGuard(step); continue; }
   if (step.op === 'resolve-model') {
     if (!INPUTS['models']) {
       // cheapestRegisteredModel() either returns a model or refuses. It cannot
@@ -631,6 +963,8 @@ for (const step of steps) {
     continue;
   }
   if (step.op === 'cli') {
+    // Spec 139: a step guarded by an input runs only when that input was given.
+    if (step.when && INPUTS[step.when] === undefined) continue;
     const vector = buildVector(step.args, state);
     const r = runCli(vector, { capture: !!step.capture });
     if (step.capture) {
@@ -643,8 +977,10 @@ for (const step of steps) {
         process.stdout.write(MARK + ' begin-render\n');
         process.stdout.write(r.out);
         process.stdout.write(MARK + ' end-render\n');
-        // Spec 035 AC-9: the UNDERPOWERED state in words, when the runner's badge carries it.
+        // Spec 035 AC-9: the UNDERPOWERED state in words, when the runner's badge carries it; the cases
+        // line where its word is the cases word (A-035-9).
         if (/"message":\s*"not enough draws on /.test(r.out)) say(UNDERPOWERED_LINE + '.');
+        else if (new RegExp('"message":\\s*"' + CASES_WORD + ' on ').test(r.out)) say(CASES_LINE + '.');
       } else if (r.out) process.stdout.write(r.out);
     } else if (r.code !== 0) process.exit(r.code);
     continue;
@@ -652,7 +988,7 @@ for (const step of steps) {
   if (step.op === 'recheck-transcripts') { state.checked = recheckTranscripts(state.resolvedTarget); continue; }
   if (step.op === 'readme-snippet') { process.stdout.write(readmeSnippetFrom(state.rendered)); continue; }
   if (step.op === 'not-checked') { process.stdout.write(notCheckedStatement(state.checked) + '\n'); continue; }
-  if (step.op === 'say') { say(step.text); continue; }
+  if (step.op === 'say') { if (!(step.only_new && state.adding)) say(step.text); continue; }
   process.stderr.write(MARK + ' unknown step op ' + JSON.stringify(step.op) + '\n');
   process.exit(2);
 }

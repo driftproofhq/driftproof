@@ -10,7 +10,7 @@
 // pushes nothing. A merge runs merge-check (or, for T3, the driver's T3 path guard), the --no-ff
 // merge, the item's gate and its figure against the approval's, the core set, the gates reading what
 // it touches and those of the items above dev, the DECISIONS entry and the repository gate, each
-// gate under the chain's lock and re-run once on a red; then `staging` is pushed with a lease read just before. `nightly` reads a sweep's record and
+// gate under the lock the config names and re-run once on a red; then `staging` is pushed with a lease read just before. `nightly` reads a sweep's record and
 // finds the culprit of a red. Staging is not the record: dev, after the train (spec 067), is.
 //
 // The train (spec 067): `train` runs at the cutoff, 23:00 SGT (15:00 UTC), and pins the staging tip
@@ -26,13 +26,25 @@
 //   node scripts/integrate.mjs nightly <config.json> --result <sweep-run.json> [--now <iso>]
 //   node scripts/integrate.mjs train <config.json> [--now <iso>]
 //   node scripts/integrate.mjs serve <config.json> [--now <iso>] [--passes <n>] [--interval-seconds <s>]
+//   node scripts/integrate.mjs digest <config.json> [--release] [--now <iso>]
 //   node scripts/integrate.mjs pin-policy <config.json>
 //   node scripts/integrate.mjs status <config.json>
+//
+// Intake, the digest and the budget guard (spec 068): `tick` reads each request on inbox
+// (features/queue/<n>.md), has a brief session write its brief, commits the brief to inbox, and
+// queues it for a builder at once for T3, or once the operator's approval file follows it for T1 and
+// T2; a builder's diff that touches the T1 table or leaves T3's paths raises its tier. Every
+// session's cost goes to a ledger; at the daily cap or on a usage-limit hit no session starts, and
+// under the box-health thresholds no builder starts. `digest` commits the daily or the release
+// digest to status/digest and runs retention over the manifest of what the integrator made. Every
+// number lives in the settings file (specs/000-governance/integrator-settings.json), and the
+// integrator refuses to start while its daily cap is empty.
 //
 // BUILT, NOT SWITCHED ON. Nothing here runs on a timer until the operator installs the units in
 // deploy/ (spec 067). State is files under the config's state_dir (~/.driftproof-integrator by
 // default): items/, merges/, ticks/, nightly/, agreements/, train/, serve/, flakes.jsonl and
-// report.jsonl, which spec 068's digest reads.
+// report.jsonl, which the digest reads; intake/, briefs/, budget/, health/, digest/, retention/ and
+// manifest.jsonl (spec 068).
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -40,14 +52,14 @@ import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { readPolicy, repoGateFigure, REPO_GATE_DEFAULT, STAGE_DEFAULTS, copyPaths, t3PathGuard, gateFigureAt, approvalFigure, receiptNamed } from './drive.mjs';
+import { readPolicy, repoGateFigure, REPO_GATE_DEFAULT, STAGE_DEFAULTS, copyPaths, t3PathGuard, outsideT3, gateFigureAt, approvalFigure, receiptNamed } from './drive.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
 const DRIVE = path.join(HERE, 'drive.mjs');
 const POLICY_REL = 'specs/000-governance/integrator-policy.md';
 const SETTINGS_REL = 'specs/000-governance/integrator-settings.json';
-// the release bump's fixed brief, until spec 068's intake writes briefs (spec 067 R-2)
+// the release bump's fixed brief (spec 067 R-2); intake writes the briefs of requests (spec 068)
 const BUMP_BRIEF_REL = 'specs/000-governance/release-bump-brief.md';
 // the train's cutoff, 23:00 SGT, in UTC (the brief's section on the nightly's time)
 const CUTOFF = '15:00';
@@ -58,11 +70,12 @@ const INTEGRATOR_REFS = ['staging', 'inbox', 'status/digest'];
 const QUIET = /^driftproof-.*quiet/;
 // runners and builders stop 20 minutes before the nightly (the brief's section on the nightly's time)
 const WINDOW_FROM = '19:40';
-// the brief's limits, until spec 068's settings file names them; the driver keeps fix loops at or
-// under the constitution's three, so the lower applies
-const DEFAULT_LIMITS = { fix_loops: 2, reruns_per_gate: 1, session_minutes: 150, flake_days: 7, flake_count: 2 };
+// the three paths on inbox that intake reads and writes (spec 068 R-1)
+const INTAKE = { queue: 'features/queue/', briefs: 'features/briefs/', approved: 'features/approved/' };
 // R-7: Opus for briefs, fix loops and approvals, and the build; Sonnet for the mechanical triage
 const STAGE_MODELS = { build: 'opus', approve: 'opus', triage: 'sonnet', fix: 'opus' };
+const BRIEF_MODEL = 'opus';
+const GB = 1024 ** 3;
 const DAY = 86400000;
 
 // ── small utilities ─────────────────────────────────────────────────────────────────────────────
@@ -107,7 +120,10 @@ function loadConfig(file) {
   // AC-1: a builders value that is not a positive integer stops the integrator, never unlimited
   if ('builders' in c && !(Number.isInteger(c.builders) && c.builders >= 1)) throw new Error(`config: builders is ${JSON.stringify(c.builders)}, not a positive integer; the integrator stops rather than guess a limit`);
   const state = abs(c.state_dir || '~/.driftproof-integrator');
-  const settings = readJson(path.join(ROOT, SETTINGS_REL), {}) || {};
+  // spec 068 R-5: the numbers are the settings file's; a config names another only for a scratch world
+  const settingsFile = c.settings ? abs(c.settings) : path.join(ROOT, SETTINGS_REL);
+  const settings = readJson(settingsFile, null);
+  const s = settings || {};
   return {
     file: path.resolve(file), remote_url: c.remote_url, remote: c.remote || 'private', source: c.source ? abs(c.source) : null,
     state, base_ref: c.base_ref || 'dev', staging: c.staging || 'staging',
@@ -115,13 +131,15 @@ function loadConfig(file) {
     marker_dir: abs(c.marker_dir || '/var/tmp'), lock: c.lock ? abs(c.lock) : null, builders: c.builders,
     approve_cwd: abs(c.approve_cwd || '~/.driftproof-approve'), agree_cwd: abs(c.agree_cwd || '~/.driftproof-agree'),
     policy: c.policy ? abs(c.policy) : path.join(ROOT, POLICY_REL),
-    limits: { ...DEFAULT_LIMITS, ...(settings.limits || {}), ...(c.limits || {}) },
+    limits: { ...(s.limits || {}), ...(c.limits || {}) },
+    settings: { file: settingsFile, data: settings },
+    health_readings: c.health_readings ? abs(c.health_readings) : null,
     builder_stages: c.builder_stages || {},
     train: {
       stage_root: abs((c.train || {}).stage_root || '/var/tmp'),
       nightly_state: abs((c.train || {}).nightly_state || '~/.driftproof-nightly'),
       checkout: abs((c.train || {}).checkout || '~/driftproof'),
-      interval_seconds: Number((c.train || {}).interval_seconds || 600),
+      interval_seconds: Number((c.train || {}).interval_seconds || (Number(s.poll_minutes) * 60)),
       stage_minutes: Number((c.train || {}).stage_minutes || 120),
     },
     merge: {
@@ -275,6 +293,7 @@ function runCmd(ctx, cmd, cwd, { minutes = 90, tag = 'cmd' } = {}) {
   const logDir = path.join(ctx.cfg.state, 'logs');
   fs.mkdirSync(logDir, { recursive: true });
   const log = path.join(logDir, `${stampOf(new Date())}-${process.pid}-${tag}.log`);
+  if (!fs.existsSync(log)) created(ctx, log, 'log');
   fs.appendFileSync(log, `$ ${cmd.join(' ')}\n${out}`);
   const summary = out.split('\n').map((l) => l.trim()).filter(Boolean).reverse().find((l) => /row\(s\)|passed|failed|GREEN|MERGE (OK|REFUSED)/.test(l)) || '';
   return { cmd, exit: r.status == null ? -1 : r.status, timed_out: !!(r.error && /ETIMEDOUT/.test(r.error.code || '')), wall_ms: Date.now() - t, summary: summary.slice(0, 300), log };
@@ -493,8 +512,12 @@ async function agreementSession(ctx, it, tip, amended, diff) {
   for (const line of (r.stdout || '').split('\n')) {
     seen.memory += (line.match(/\.claude\/projects\/[^"\s]*\/memory|MEMORY\.md/g) || []).length;
     seen.gitstatus += (line.match(/gitStatus/g) || []).length;
-    try { const j = JSON.parse(line); if (j.type === 'system' && j.subtype === 'init') Object.assign(seen, { model: j.model || null, session_id: j.session_id || null, cwd: j.cwd || null }); } catch {}
+    try { const j = JSON.parse(line); if (j.type === 'system' && j.subtype === 'init') Object.assign(seen, { model: j.model || null, session_id: j.session_id || null, cwd: j.cwd || null }); if (j.type === 'result') seen.cost = j.total_cost_usd; } catch {}
   }
+  // spec 068 R-4: the agreement's cost, or its cap when the stream names none, and any usage-limit hit
+  const hit = usageLimitIn(r.stdout);
+  book(ctx, { key: `agreement:${it.id}:${tip}:${path.basename(scratch)}`, kind: 'agreement', item: it.id, cost_usd: typeof seen.cost === 'number' ? seen.cost : 1, usage_limit: !!hit });
+  if (hit) usageLimitHit(ctx, hit, `agreement:${it.id}:${tip}:${path.basename(scratch)}`, it.id);
   const ans = readJson(answer, null);
   const findings = ans && Array.isArray(ans.findings) ? ans.findings : [];
   const fresh = seen.memory === 0 && seen.gitstatus === 0;
@@ -578,6 +601,9 @@ async function mergeItem(ctx, it, { push = true } = {}) {
           }
           // AC-8: every halt is read again here, because the amended gate above may have run into one
           if (fs.existsSync(cfg.stop_file) || ctx.gatesHalted()) throw new Halt('a halt began before the separate agreement session could start');
+          // spec 068: the agreement is a session, and the budget guard holds every session
+          const bs = budgetState(ctx).stop;
+          if (bs) throw new Halt(`the budget guard holds sessions (${bs.kind}) before the separate agreement session could start`);
           const diff = git(repo, 'diff', mb, tip, '--', ...amended.map((a) => a.path)).out;
           const agreement = await agreementSession(ctx, it, tip, amended, diff);
           step.agreement = { agrees: agreement.agrees, record: agreement.file || null, why: agreement.why || null };
@@ -700,10 +726,12 @@ async function mergeItem(ctx, it, { push = true } = {}) {
 // ── builders ────────────────────────────────────────────────────────────────────────────────────
 function startBuilder(ctx, it) {
   const { cfg } = ctx;
-  const dir = path.join(cfg.state, 'clones', it.id);
+  // an item raised to a higher tier builds again in a clone of its own (spec 068 R-3)
+  const dir = path.join(cfg.state, 'clones', it.rebuild ? `${it.id}-${it.rebuild}` : it.id);
   const repo = path.join(dir, 'repo');
   if (!fs.existsSync(path.join(repo, '.git'))) {
     fs.mkdirSync(dir, { recursive: true });
+    created(ctx, dir, 'clone');
     gitOk(dir, 'clone', '-q', '-o', cfg.remote, cfg.remote_url, repo);
   }
   for (const r of [cfg.base_ref, 'main']) {
@@ -748,8 +776,19 @@ function collect(ctx) {
       const checks = (p.stages || []).filter((s) => s.stage === 'checks' && s.status === 'done').pop();
       Object.assign(it, { state: 'approved', from: it.clone, branch: p.branch || `spec/${it.id}`, checks_green_at: checks ? checks.ended : null, approved_at: ctx.clock().toISOString() });
       delete it.pid;
-      ctx.save(it);
-      ctx.report('approved', it, {});
+      // spec 068 R-3: the builder's diff may raise the tier, and a raised item waits for the operator
+      const raise = tierRaise(ctx, it);
+      if (raise) {
+        // a raise whose brief cannot be committed leaves the item as it was on disk, building and
+        // ended, so the next pass reads the raise again; it is never merged un-raised
+        try { applyRaise(ctx, it, raise); } catch (e) {
+          ctx.report('intake-error', it, { error: `the raise to ${raise.to} could not be committed to inbox: ${String(e.message).slice(0, 250)}` });
+          continue;
+        }
+      } else {
+        ctx.save(it);
+        ctx.report('approved', it, {});
+      }
     } else if (p && p.state === 'stopped' && p.stop) {
       delete it.pid;
       park(ctx, it, null, p.stop.class, `the builder stopped at ${p.stop.stage} (${p.stop.class}): ${String(p.stop.detail || '').slice(0, 400)}`, { question: p.stop.question_file });
@@ -782,11 +821,624 @@ async function stopBuilders(ctx, why) {
   return stopped;
 }
 
+// ── the settings file (spec 068 R-5) ────────────────────────────────────────────────────────────
+// Every value the integrator reads from it, each named when it is missing or not what it must be.
+// The cap first: it is the one the operator fills in at switch-on.
+const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+const pos = (x) => typeof x === 'number' && Number.isFinite(x) && x > 0;
+function settingsProblems(cfg) {
+  const s = cfg.settings.data;
+  const f = cfg.settings.file;
+  if (!s) return [`the settings file ${f} is not readable JSON`];
+  const out = [];
+  const need = (ok, what) => { if (!ok) out.push(what); };
+  const b = s.budget || {};
+  need(pos(b.daily_usd), `budget.daily_usd is ${JSON.stringify(b.daily_usd ?? null)} in ${f}: the daily cap is required and has no default; the operator fills it in at switch-on, and the integrator refuses to start until then`);
+  need(HHMM.test(String(b.day_starts)), 'budget.day_starts is not a time HH:MM');
+  need(/^[+-]\d{2}:\d{2}$/.test(String(b.zone)), 'budget.zone is not an offset such as +08:00');
+  const h = s.health || {};
+  need(pos(h.disk_free_gb) && pos(h.memory_available_gb), 'health.disk_free_gb and health.memory_available_gb are not both positive numbers');
+  need(typeof h.disk_path === 'string' && h.disk_path !== '', 'health.disk_path is not a path: the disk read has no default');
+  need(pos(s.retention_days), 'retention_days is not a positive number');
+  need(pos(s.poll_minutes), 'poll_minutes is not a positive number');
+  const d = s.digest || {};
+  need(d.daily_at === null || HHMM.test(String(d.daily_at)), 'digest.daily_at is neither null nor a time HH:MM');
+  need(typeof d.on_release === 'boolean', 'digest.on_release is not true or false');
+  const l = s.limits || {};
+  need(['fix_loops', 'reruns_per_gate', 'session_minutes', 'flake_days', 'flake_count'].every((k) => typeof l[k] === 'number' && l[k] >= 0), 'limits does not carry fix_loops, reruns_per_gate, session_minutes, flake_days and flake_count');
+  const bs = s.brief_session || {};
+  need(pos(bs.max_turns) && pos(bs.minutes) && pos(bs.usd), 'brief_session does not carry max_turns, minutes and usd');
+  for (const k of ['t1_paths', 'public_text_paths']) {
+    const ok = Array.isArray(s[k]) && s[k].length > 0 && s[k].every((e) => { try { return e && typeof e.re === 'string' && new RegExp(e.re) && !!e.source; } catch { return false; } });
+    need(ok, `${k} is not a list of entries each with a pattern (re) and its source`);
+  }
+  return out;
+}
+function refusedBySettings(cfg, cmd) {
+  const probs = settingsProblems(cfg);
+  if (!probs.length) return null;
+  process.stderr.write(`integrate: ${cmd} refused (settings): ${probs.join('; ')}\n`);
+  return probs;
+}
+const tableOf = (ctx, k) => (ctx.cfg.settings.data[k] || []).map((e) => new RegExp(e.re));
+
+// ── the manifest of what the integrator made (R-6) ─────────────────────────────────────────────
+const manifestFile = (cfg) => path.join(cfg.state, 'manifest.jsonl');
+function created(ctx, p, kind) {
+  appendJsonl(manifestFile(ctx.cfg), { path: p, kind, created: ctx.clock().toISOString(), by: 'scripts/integrate.mjs' });
+}
+
+// ── the budget guard (R-4) ──────────────────────────────────────────────────────────────────────
+const budgetDir = (cfg) => path.join(cfg.state, 'budget');
+const ledgerFile = (cfg) => path.join(budgetDir(cfg), 'sessions.jsonl');
+function zoneMinutes(z) {
+  const m = /^([+-])(\d{2}):(\d{2})$/.exec(String(z));
+  return m ? (m[1] === '-' ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3])) : NaN;
+}
+// The budget day a time belongs to: the date of the latest day start at or before it, in the zone.
+function dayOf(ctx, t) {
+  const b = ctx.cfg.settings.data.budget;
+  const offset = zoneMinutes(b.zone);
+  const [h, m] = b.day_starts.split(':').map(Number);
+  return new Date(Date.parse(t) + (offset - h * 60 - m) * 60000).toISOString().slice(0, 10);
+}
+// A date in the settings zone, for a digest's name.
+const localDate = (ctx, t) => new Date(Date.parse(t) + zoneMinutes(ctx.cfg.settings.data.budget.zone) * 60000).toISOString().slice(0, 10);
+const localTime = (ctx, t) => new Date(Date.parse(t) + zoneMinutes(ctx.cfg.settings.data.budget.zone) * 60000).toISOString().slice(11, 16);
+// A time a builder's driver wrote on the wall clock, on this run's clock (the same, without --now).
+const onClock = (ctx, t) => new Date(ctx.clock().getTime() - (Date.now() - Date.parse(t))).toISOString();
+
+// The first usage-limit hit in a session's stream: a rate_limit_event whose status is rejected.
+function usageLimitIn(text) {
+  for (const l of String(text || '').split('\n')) {
+    if (!l.includes('rate_limit_event')) continue;
+    let j; try { j = JSON.parse(l); } catch { continue; }
+    if (j.type === 'rate_limit_event' && j.rate_limit_info && j.rate_limit_info.status === 'rejected') {
+      const i = j.rate_limit_info;
+      return { resets_at: Number.isFinite(i.resetsAt) ? new Date(i.resetsAt * 1000).toISOString() : null, type: i.rateLimitType || null, overage: !!i.isUsingOverage };
+    }
+  }
+  return null;
+}
+function book(ctx, entry) {
+  const f = ledgerFile(ctx.cfg);
+  ctx.ledgerKeys ||= new Set(jsonl(f).map((x) => x.key));
+  if (ctx.ledgerKeys.has(entry.key)) return false;
+  ctx.ledgerKeys.add(entry.key);
+  const t = entry.t || ctx.clock().toISOString();
+  appendJsonl(f, { ...entry, t, day: dayOf(ctx, t) });
+  return true;
+}
+function usageLimitHit(ctx, hit, where, item) {
+  const f = path.join(budgetDir(ctx.cfg), 'usage-limit.json');
+  const seen = path.join(budgetDir(ctx.cfg), 'usage-limit-hits.jsonl');
+  if (jsonl(seen).some((x) => x.where === where)) return;
+  const at = ctx.clock().toISOString();
+  appendJsonl(seen, { where, at, ...hit });
+  writeJson(f, { at, where, item: item || null, resets_at: hit.resets_at, rate_limit_type: hit.type, overage_in_use: hit.overage });
+  ctx.report('usage-limit', item ? { id: item } : null, { resets_at: hit.resets_at, rate_limit_type: hit.type, overage_in_use: hit.overage, where });
+}
+// Each builder's finished sessions into the ledger, on the day each ended; each stream read for a
+// usage-limit hit, a running session's too.
+function syncLedger(ctx) {
+  for (const it of ctx.items().filter((i) => i.clone_dir && i.worktree)) {
+    const p = progressOf(it);
+    const recDir = path.join(it.worktree, 'specs', it.id, 'evidence', 'driver');
+    for (const st of (p && p.stages) || []) {
+      if (st.kind !== 'session' || st.cost_usd == null || !st.ended) continue;
+      const rec = st.record ? readJson(path.join(recDir, st.record), null) : null;
+      let hit = null;
+      if (rec && rec.raw_stream && rec.raw_stream.path) { try { hit = usageLimitIn(fs.readFileSync(rec.raw_stream.path, 'utf8')); } catch {} }
+      book(ctx, { key: `builder:${it.clone_dir}:${st.n}`, t: onClock(ctx, st.ended), kind: 'builder', item: it.id, stage: st.stage, cost_usd: st.cost_usd, usage_limit: !!hit });
+      if (hit) usageLimitHit(ctx, hit, rec.raw_stream.path, it.id);
+    }
+    const raw = path.join(it.clone_dir, 'drive-state', 'raw', it.id);
+    if (it.state === 'building' && fs.existsSync(raw)) {
+      for (const n of fs.readdirSync(raw).filter((x) => x.endsWith('.jsonl'))) {
+        let hit = null;
+        try { hit = usageLimitIn(fs.readFileSync(path.join(raw, n), 'utf8')); } catch {}
+        if (hit) usageLimitHit(ctx, hit, path.join(raw, n), it.id);
+      }
+    }
+  }
+}
+// The day's spend against the cap, and whether a stop holds: a usage-limit hit until its reset, then
+// the cap until the next day starts.
+function budgetState(ctx) {
+  const { cfg } = ctx;
+  const now = ctx.clock().toISOString();
+  const day = dayOf(ctx, now);
+  const entries = jsonl(ledgerFile(cfg)).filter((x) => x.day === day);
+  const spent = entries.reduce((t, x) => t + (Number(x.cost_usd) || 0), 0);
+  const cap = cfg.settings.data.budget.daily_usd;
+  const lim = readJson(path.join(budgetDir(cfg), 'usage-limit.json'), null);
+  let stop = null;
+  if (lim && (!lim.resets_at || Date.parse(lim.resets_at) > Date.parse(now))) stop = { kind: 'usage-limit', why: `a session met the usage limit at ${lim.at}; no session starts until ${lim.resets_at || 'the operator removes budget/usage-limit.json'}`, until: lim.resets_at || null };
+  else if (pos(cap) && spent >= cap) stop = { kind: 'cap', why: `the spend of the budget day ${day} is ${spent.toFixed(2)} USD, at or over the daily cap of ${cap} USD`, until: null };
+  if (stop) {
+    const f = path.join(budgetDir(cfg), 'stops.jsonl');
+    if (!jsonl(f).some((x) => x.day === day && x.kind === stop.kind)) { appendJsonl(f, { day, kind: stop.kind, at: now, why: stop.why }); ctx.report('budget-stop', null, { kind: stop.kind, day, why: stop.why }); }
+  }
+  return { day, spent: Number(spent.toFixed(6)), cap, sessions: entries.length, stop };
+}
+
+// ── box health (R-7) ────────────────────────────────────────────────────────────────────────────
+function healthNow(ctx) {
+  const { cfg } = ctx;
+  const h = cfg.settings.data.health;
+  let disk = null; let mem = null;
+  if (cfg.health_readings) {
+    const r = readJson(cfg.health_readings, {}) || {};
+    disk = Number.isFinite(r.disk_free_bytes) ? r.disk_free_bytes : null;
+    mem = Number.isFinite(r.mem_available_bytes) ? r.mem_available_bytes : null;
+  } else {
+    try { const st = fs.statfsSync(h.disk_path); disk = st.bavail * st.bsize; } catch {}
+    try { mem = Number(/^MemAvailable:\s+(\d+) kB/m.exec(fs.readFileSync('/proc/meminfo', 'utf8'))[1]) * 1024; } catch {}
+  }
+  // a reading that cannot be taken counts as low: a check that did not run is never a pass
+  const one = (bytes, gb) => ({ bytes, gb: bytes == null ? null : bytes / GB, threshold_gb: gb, low: bytes == null || bytes < gb * GB });
+  const out = { disk: one(disk, h.disk_free_gb), memory: one(mem, h.memory_available_gb) };
+  out.low = [
+    ...(out.disk.low ? [out.disk.bytes == null ? 'disk not readable' : `disk ${out.disk.gb.toFixed(1)} GB free, under ${h.disk_free_gb} GB`] : []),
+    ...(out.memory.low ? [out.memory.bytes == null ? 'memory not readable' : `memory ${out.memory.gb.toFixed(1)} GB available, under ${h.memory_available_gb} GB`] : []),
+  ];
+  return out;
+}
+// One CPU sample per service pass while the nightly's window is open: the share of time busy since
+// the last sample.
+function sampleCpu(ctx) {
+  const w = readJson(path.join(ctx.cfg.state, 'window.json'), {}) || {};
+  if (!w.open) return null;
+  const now = os.cpus().reduce((t, c) => { for (const [k, v] of Object.entries(c.times)) t[k === 'idle' ? 'idle' : 'busy'] += v; return t; }, { idle: 0, busy: 0 });
+  const f = path.join(ctx.cfg.state, 'health', 'cpu-last.json');
+  const prev = readJson(f, null);
+  writeJson(f, now);
+  if (!prev) return null;
+  const busy = now.busy - prev.busy; const idle = now.idle - prev.idle;
+  if (busy + idle <= 0) return null;
+  const s = { t: ctx.clock().toISOString(), night: w.opened_for || null, busy_pct: Math.round((100 * busy) / (busy + idle)) };
+  appendJsonl(path.join(ctx.cfg.state, 'health', 'cpu.jsonl'), s);
+  return s;
+}
+
+// ── committing to inbox and status/digest ───────────────────────────────────────────────────────
+// One file written onto the remote's branch, on top of what it holds, by plumbing in the
+// integrator's clone, and pushed as a fast-forward (spec 067's pushFastForward). Returns the commit.
+function commitFile(ctx, ref, rel, text, message) {
+  if (!ctx.repo) ensureClone(ctx);
+  if (!INTEGRATOR_REFS.includes(ref) || ref === ctx.cfg.staging) throw new Error(`${ref} is not a branch the integrator writes files to`);
+  // a push refused because the branch moved between the fetch and the push is fetched and tried once more
+  try { return commitFileOnce(ctx, ref, rel, text, message); } catch { return commitFileOnce(ctx, ref, rel, text, message); }
+}
+function commitFileOnce(ctx, ref, rel, text, message) {
+  const { cfg, repo } = ctx;
+  git(repo, 'fetch', '-q', cfg.remote, `+refs/heads/${ref}:refs/remotes/${cfg.remote}/${ref}`);
+  const parent = git(repo, 'rev-parse', '--verify', '-q', `refs/remotes/${cfg.remote}/${ref}`).out;
+  const idx = path.join(cfg.state, 'work', `index-${process.pid}-${Date.now()}`);
+  fs.mkdirSync(path.dirname(idx), { recursive: true });
+  // the integrator's own identity on what it writes to inbox and status/digest, whatever the box's is
+  const who = { GIT_AUTHOR_NAME: 'scripts/integrate.mjs', GIT_AUTHOR_EMAIL: 'integrator@localhost', GIT_COMMITTER_NAME: 'scripts/integrate.mjs', GIT_COMMITTER_EMAIL: 'integrator@localhost' };
+  const env = { ...baseEnv(), ...who, GIT_INDEX_FILE: idx };
+  const run = (args, input) => {
+    const r = spawnSync('git', ['-C', repo, ...args], { env, encoding: 'utf8', input });
+    if (r.status !== 0) throw new Error(`git ${args[0]}: ${(r.stderr || '').trim().slice(0, 200)}`);
+    return (r.stdout || '').trim();
+  };
+  try {
+    run(parent ? ['read-tree', parent] : ['read-tree', '--empty']);
+    const blob = run(['hash-object', '-w', '--stdin'], text);
+    run(['update-index', '--add', '--cacheinfo', `100644,${blob},${rel}`]);
+    const tree = run(['write-tree']);
+    const commit = run(['commit-tree', tree, ...(parent ? ['-p', parent] : []), '-m', message]);
+    const r = pushFastForward(ctx, ref, commit, message);
+    if (r.exit !== 0) throw new Error(`the push of ${ref} failed: ${r.err}`);
+    git(repo, 'update-ref', `refs/remotes/${cfg.remote}/${ref}`, commit);
+    return commit;
+  } finally { fs.rmSync(idx, { force: true }); }
+}
+
+// ── intake (R-1) ────────────────────────────────────────────────────────────────────────────────
+const intakeFile = (cfg, key) => path.join(cfg.state, 'intake', `${key}.json`);
+const inboxRef = (ctx) => `refs/remotes/${ctx.cfg.remote}/${INBOX.ref}`;
+const inboxShow = (ctx, rel) => { const r = spawnSync('git', ['-C', ctx.repo, 'show', `${inboxRef(ctx)}:${rel}`], { encoding: 'utf8' }); return r.status === 0 ? r.stdout : null; };
+const inboxLast = (ctx, rel) => git(ctx.repo, 'log', '-1', '--format=%H', inboxRef(ctx), '--', rel).out || null;
+function parseBrief(text) {
+  return {
+    id: (/^# Brief: ([0-9a-z][0-9a-z.-]*)/m.exec(text) || [])[1] || null,
+    tier: (/\*\*Classification: (T[123])\*\*/.exec(text) || [])[1] || null,
+    question: (/^\*\*Question for the operator:\*\*\s*(.+)$/m.exec(text) || [])[1] || null,
+    changes_verdict: /changes a verdict: yes/i.test(text),
+    ships_publicly: !/ships publicly: no/i.test(text),
+  };
+}
+// The next spec number: one above every number dev's specs/, the items and the intake records use.
+function nextNumber(ctx) {
+  const nums = [];
+  const dev = `refs/remotes/${ctx.cfg.remote}/${ctx.cfg.base_ref}`;
+  for (const n of git(ctx.repo, 'ls-tree', '--name-only', dev, 'specs/').out.split('\n')) { const m = /^specs\/(\d{3})/.exec(n); if (m) nums.push(Number(m[1])); }
+  for (const it of ctx.items()) { const m = /^(\d{3})-/.exec(it.id); if (m) nums.push(Number(m[1])); }
+  return String(Math.max(0, ...nums) + 1).padStart(3, '0');
+}
+
+// A brief session: a fresh context outside every repository, auto memory off, reading the request
+// and writing one file; its cost and any usage-limit hit go to the ledger.
+function briefSession(ctx, key, requestText) {
+  const { cfg } = ctx;
+  const lim = cfg.settings.data.brief_session;
+  const dir = path.join(cfg.state, 'intake', `session-${key}-${stampOf(new Date())}`);
+  fs.mkdirSync(dir, { recursive: true });
+  created(ctx, dir, 'brief-session');
+  const request = path.join(dir, 'request.md');
+  fs.writeFileSync(request, requestText);
+  const out = path.join(dir, 'brief.md');
+  const prompt = [
+    'DRIVER-STAGE: brief', `REQUEST-KEY: ${key}`, `REQUEST: ${request}`, `WRITE: ${out}`, `NEXT-NUMBER: ${nextNumber(ctx)}`, `CONSTITUTION: ${path.join(ROOT, 'CONSTITUTION.md')}`, '',
+    'You are the integrator\'s brief writer, a fresh context. Read the request at REQUEST and the constitution\'s § Proportional oversight, and write the brief for the request to the WRITE path, and nothing else.',
+    'The brief\'s first line is `# Brief: <NEXT-NUMBER>-<a short slug>`. Its next line is `**Classification: T<k>**; changes a verdict: yes|no; ships publicly: yes|no.`, by the tier table; when unsure, the higher tier. Then the request\'s goal and its acceptance lines, in plain words.',
+    'When the request would change what Driftproof means, add one line `**Question for the operator:** <the question>`.',
+  ].join('\n');
+  const model = modelFor(BRIEF_MODEL);
+  const args = ['-p', prompt, '--output-format', 'stream-json', '--verbose', '--max-turns', String(lim.max_turns), '--max-budget-usd', String(lim.usd),
+    '--settings', JSON.stringify({ autoMemoryEnabled: false }), ...(model ? ['--model', model] : []), '--add-dir', dir, '--allowedTools', 'Read,Grep,Glob,Write'];
+  const env = {};
+  for (const [k, v] of Object.entries(baseEnv())) if (!/^CLAUDE/.test(k) && !/^GIT_CONFIG_(COUNT|KEY_|VALUE_)/.test(k) && k !== 'SSH_AUTH_SOCK') env[k] = v;
+  env.CLAUDE_CODE_DISABLE_AUTO_MEMORY = '1';
+  env.GIT_CEILING_DIRECTORIES = path.dirname(dir);
+  const r = spawnSync(process.env.DRIVE_CLAUDE_BIN || 'claude', args, { cwd: dir, env, encoding: 'utf8', timeout: lim.minutes * 60000, maxBuffer: 64 * 1024 * 1024 });
+  fs.writeFileSync(path.join(dir, 'stream.jsonl'), r.stdout || '');
+  let result = null;
+  for (const l of (r.stdout || '').split('\n')) { try { const j = JSON.parse(l); if (j.type === 'result') result = j; } catch {} }
+  const cost = result && typeof result.total_cost_usd === 'number' ? result.total_cost_usd : lim.usd;
+  const hit = usageLimitIn(r.stdout);
+  book(ctx, { key: `brief:${key}:${path.basename(dir)}`, kind: 'brief', item: null, request: key, cost_usd: cost, usage_limit: !!hit });
+  if (hit) usageLimitHit(ctx, hit, path.join(dir, 'stream.jsonl'), null);
+  const ok = r.status === 0 && result && result.subtype === 'success' && !result.is_error;
+  let text = null;
+  try { text = fs.readFileSync(out, 'utf8'); } catch {}
+  return { ok, text, hit, exit: r.status, dir };
+}
+
+// One pass of intake: the operator's approvals for the briefs that wait, then each new request.
+function intake(ctx, rec, { sessions }) {
+  const { cfg } = ctx;
+  if (!ctx.repo) ensureClone(ctx);
+  rec.intake = { briefed: [], queued: [], waiting: [], parked: [], held: [] };
+  if (!git(ctx.repo, 'rev-parse', '--verify', '-q', inboxRef(ctx)).out) return rec.intake;
+  const now = () => ctx.clock().toISOString();
+  for (const it of ctx.items().filter((i) => i.state === 'awaiting-brief-approval')) {
+    const rel = `${INTAKE.approved}${it.intake_key}`;
+    const at = inboxLast(ctx, rel);
+    const text = at ? String(inboxShow(ctx, rel) || '') : '';
+    const oneLine = text.trim() !== '' && text.replace(/\n$/, '').split('\n').length === 1;
+    // an approval counts only when it was committed after the brief as the integrator last wrote it
+    const after = !!(at && it.brief_commit && at !== it.brief_commit && git(ctx.repo, 'merge-base', '--is-ancestor', it.brief_commit, at).code === 0);
+    if (!oneLine || !after) { rec.intake.waiting.push(it.id); continue; }
+    Object.assign(it, { state: 'queued', queued_at: now(), operator_approval: { commit: at, read: now() } });
+    delete it.class; delete it.reason; delete it.policy;
+    ctx.save(it);
+    ctx.report('intake-queued', it, { approval: at, tier: it.tier });
+    rec.intake.queued.push(it.id);
+  }
+  const names = git(ctx.repo, 'ls-tree', '-r', '--name-only', inboxRef(ctx), '--', INTAKE.queue).out.split('\n').filter((n) => n.endsWith('.md'));
+  for (const rel of names) {
+    const key = path.basename(rel, '.md');
+    if (!/^[0-9A-Za-z][0-9A-Za-z_-]*$/.test(key)) continue;
+    const prior = readJson(intakeFile(cfg, key), null);
+    // a brief written whose push was refused is pushed again with no new session; a session that
+    // failed for a reason other than the usage limit is tried once more
+    const resume = !!prior && prior.state === 'brief-written';
+    const attempts = prior && prior.state === 'brief-failed' ? (prior.attempts || 1) : 0;
+    if (prior && !resume && !(attempts && attempts < 2)) continue;
+    const requestCommit = resume ? prior.request_commit : inboxLast(ctx, rel);
+    let text; let brief;
+    if (resume) {
+      try { text = fs.readFileSync(prior.brief_file, 'utf8'); } catch { rec.intake.held.push(key); continue; }
+      brief = parseBrief(text);
+    } else {
+      if (!sessions) { rec.intake.held.push(key); continue; }
+      // every halt is read again before each session: a stop file or a quiet marker that began during
+      // an earlier brief session holds the rest
+      if (fs.existsSync(cfg.stop_file) || ctx.gatesHalted()) { rec.intake.held.push(key); continue; }
+      const b = budgetState(ctx);
+      if (b.stop) { rec.intake.held.push(key); continue; }
+      const s = briefSession(ctx, key, inboxShow(ctx, rel) || '');
+      brief = s.text ? parseBrief(s.text) : {};
+      const taken = brief.id && (ctx.item(brief.id) || jsonl(path.join(cfg.state, 'intake', 'ids.jsonl')).some((x) => x.id === brief.id));
+      if (!s.ok || !brief.id || !brief.tier || taken) {
+        // a session that met the usage limit leaves the request for the next pass after the reset
+        if (s.hit) { rec.intake.held.push(key); continue; }
+        const why = !s.ok ? `the brief session ended with exit ${s.exit}` : !brief.id || !brief.tier ? 'the brief names no id or no tier' : `the brief's id ${brief.id} is taken`;
+        const again = attempts + 1 < 2;
+        writeJson(intakeFile(cfg, key), { key, state: 'brief-failed', attempts: attempts + 1, why, request_commit: requestCommit, at: now() });
+        ctx.report('intake-failed', null, { request: key, why: again ? `${why}; it is tried once more on the next pass` : `${why}; to try again, commit the request under a new number` });
+        rec.intake.parked.push(key);
+        continue;
+      }
+      text = s.text;
+      // the brief and its intake record are written before the push: a push refused leaves them, and
+      // the next pass pushes the same brief again instead of running another session
+      const file = path.join(cfg.state, 'briefs', `${brief.id}.md`);
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, text);
+      appendJsonl(path.join(cfg.state, 'intake', 'ids.jsonl'), { id: brief.id, key });
+      writeJson(intakeFile(cfg, key), { key, id: brief.id, state: 'brief-written', brief_file: file, request_commit: requestCommit, at: now() });
+    }
+    const file = path.join(cfg.state, 'briefs', `${brief.id}.md`);
+    let briefCommit;
+    try { briefCommit = commitFile(ctx, INBOX.ref, `${INTAKE.briefs}${key}.md`, text, `intake(${brief.id}): the brief of request ${key} (scripts/integrate.mjs)`); } catch (e) {
+      ctx.report('intake-error', null, { request: key, error: String(e.message).slice(0, 300) });
+      rec.intake.held.push(key);
+      continue;
+    }
+    const it = { id: brief.id, tier: brief.tier, changes_verdict: brief.changes_verdict, ships_publicly: brief.ships_publicly, brief: file, origin: 'intake', request: key, intake_key: key, request_commit: requestCommit, brief_commit: briefCommit, briefed_at: now() };
+    const waits = brief.tier !== 'T3';
+    if (brief.question) {
+      ctx.save(it);
+      park(ctx, it, null, 'question', `the brief asks the operator: ${brief.question}`, { question: brief.question });
+      rec.intake.parked.push(it.id);
+    } else if (waits) {
+      Object.assign(it, { state: 'awaiting-brief-approval', reason: `a ${brief.tier} brief waits for the operator's approval file ${INTAKE.approved}${key} on inbox` });
+      ctx.save(it);
+      ctx.report('intake-waiting', it, { tier: brief.tier, approval_file: `${INTAKE.approved}${key}` });
+      rec.intake.waiting.push(it.id);
+    } else {
+      Object.assign(it, { state: 'queued', queued_at: now() });
+      ctx.save(it);
+      ctx.report('intake-queued', it, { tier: brief.tier });
+      rec.intake.queued.push(it.id);
+    }
+    writeJson(intakeFile(cfg, key), { key, id: it.id, tier: it.tier, state: it.state, request_commit: requestCommit, brief_commit: briefCommit, at: now() });
+    rec.intake.briefed.push(it.id);
+  }
+  return rec.intake;
+}
+
+// ── the tier raise (R-3, ruling 1) ─────────────────────────────────────────────────────────────
+const RANK = { T3: 0, T2: 1, T1: 2 };
+// When a builder ends ready: its branch's diff from where it left dev, against the T1 table and,
+// for a T3 item, the driver's T3 allowance. Returns the raise, or null when the tier stands.
+function tierRaise(ctx, it) {
+  const { cfg } = ctx;
+  const repo = it.clone;
+  const tip = git(repo, 'rev-parse', '--verify', '-q', `refs/heads/${it.branch}`).out;
+  const dev = git(repo, 'rev-parse', '--verify', '-q', `refs/remotes/${cfg.remote}/${cfg.base_ref}`).out || git(repo, 'rev-parse', '--verify', '-q', `refs/heads/${cfg.base_ref}`).out;
+  if (!tip || !dev) return null;
+  const mb = git(repo, 'merge-base', dev, tip).out;
+  const paths = git(repo, 'diff', '--name-only', mb, tip).out.split('\n').filter(Boolean);
+  const t1Table = tableOf(ctx, 't1_paths');
+  const t1 = paths.filter((p) => t1Table.some((re) => re.test(p)));
+  const outside = it.tier === 'T3' ? outsideT3(it.id, paths) : [];
+  const to = t1.length ? 'T1' : outside.length ? 'T2' : null;
+  if (!to || RANK[to] <= RANK[it.tier]) return null;
+  return { from: it.tier, to, paths: (t1.length ? t1 : outside).slice(0, 20), why: t1.length ? 'its diff touches the T1 table' : "its diff changes paths outside T3's", at: ctx.clock().toISOString() };
+}
+// A raise re-tiers the brief, commits it to inbox again, and waits for the operator; approved, the
+// item is built again at its new tier in a clone of its own.
+function applyRaise(ctx, it, r) {
+  const { cfg } = ctx;
+  const key = it.intake_key || it.id;
+  let text = '';
+  try { text = fs.readFileSync(it.brief, 'utf8'); } catch {}
+  const line = `**Classification: ${r.to}**`;
+  text = /\*\*Classification: T[123]\*\*/.test(text) ? text.replace(/\*\*Classification: T[123]\*\*/, line) : `${line}\n\n${text}`;
+  text += `\n**Raised by the integrator** from ${r.from} to ${r.to}: ${r.why} (${r.paths.join(', ')}).\n`;
+  const file = path.join(cfg.state, 'briefs', `${it.id}.md`);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, text);
+  const briefCommit = commitFile(ctx, INBOX.ref, `${INTAKE.briefs}${key}.md`, text, `intake(${it.id}): the brief of ${key} raised to ${r.to} (scripts/integrate.mjs)`);
+  Object.assign(it, {
+    tier: r.to, tier_from: it.tier_from || r.from, raised: [...(it.raised || []), r], brief: file, intake_key: key, brief_commit: briefCommit,
+    state: 'awaiting-brief-approval', class: 'tier-raised', rebuild: (it.rebuild || 0) + 1,
+    reason: `raised from ${r.from} to ${r.to}: ${r.why} (${r.paths.slice(0, 3).join(', ')}); it waits for the operator's approval file ${INTAKE.approved}${key} on inbox, then builds again at ${r.to}`,
+  });
+  delete it.from; delete it.branch; delete it.checks_green_at; delete it.approved_at;
+  ctx.save(it);
+  ctx.report('tier-raised', it, { from: r.from, to: r.to, paths: r.paths });
+}
+
+// ── retention (R-6, ruling 3) ───────────────────────────────────────────────────────────────────
+function holdsEvidence(p) {
+  if (p.split(path.sep).includes('evidence')) return true;
+  const walk = (d, depth) => {
+    let ents = [];
+    try { ents = fs.readdirSync(d, { withFileTypes: true }); } catch { return false; }
+    for (const e of ents) {
+      if (!e.isDirectory() || e.name === '.git' || e.name === 'node_modules') continue;
+      if (e.name === 'evidence') return true;
+      if (depth < 12 && walk(path.join(d, e.name), depth + 1)) return true;
+    }
+    return false;
+  };
+  try { return fs.statSync(p).isDirectory() && walk(p, 0); } catch { return false; }
+}
+// The branch heads of the git repositories at or just inside a path that the remote does not carry.
+function unpushedBranches(ctx, p) {
+  const out = [];
+  let dirs = [p];
+  try { if (fs.statSync(p).isDirectory()) dirs = [p, ...fs.readdirSync(p).map((n) => path.join(p, n))]; } catch { return out; }
+  for (const d of dirs) {
+    if (!fs.existsSync(path.join(d, '.git')) && !fs.existsSync(path.join(d, 'HEAD'))) continue;
+    const top = git(d, 'rev-parse', '--absolute-git-dir').out;
+    if (!top || !path.resolve(top).startsWith(path.resolve(p))) continue;
+    for (const l of git(d, 'for-each-ref', '--format=%(refname:short) %(objectname)', 'refs/heads').out.split('\n').filter(Boolean)) {
+      const [name, sha] = l.split(' ');
+      const onRemote = git(ctx.repo, 'cat-file', '-e', `${sha}^{commit}`).code === 0 && git(ctx.repo, 'for-each-ref', '--contains', sha, '--count=1', `refs/remotes/${ctx.cfg.remote}`).out !== '';
+      if (!onRemote) out.push(name);
+    }
+  }
+  return out;
+}
+function retain(ctx) {
+  const { cfg } = ctx;
+  const s = cfg.settings.data;
+  const days = s.retention_days;
+  const now = ctx.clock().getTime();
+  const entries = jsonl(manifestFile(cfg));
+  const next = []; const candidates = []; const deleted = [];
+  const keep = (e, why) => { next.push(e); if (!/^younger/.test(why)) candidates.push({ path: e.path, kind: e.kind, why }); };
+  const guarded = [cfg.state, ROOT, HOME, '/', cfg.train.checkout].map((x) => path.resolve(x));
+  if (!ctx.repo) ensureClone(ctx);
+  for (const e of entries) {
+    if (!e || !e.path || !path.isAbsolute(e.path) || !fs.existsSync(e.path)) continue;
+    const ageDays = (now - Date.parse(e.created)) / DAY;
+    if (ageDays < days) { keep(e, `younger than ${days} days`); continue; }
+    if (guarded.some((g) => g === path.resolve(e.path) || g.startsWith(path.resolve(e.path) + path.sep))) { keep(e, 'it is or holds a directory the integrator never deletes'); continue; }
+    if (holdsEvidence(e.path)) { keep(e, 'it holds an evidence directory'); continue; }
+    const unpushed = unpushedBranches(ctx, e.path);
+    if (unpushed.length) { keep(e, `its branch ${unpushed[0]} is not on ${cfg.remote}`); continue; }
+    fs.rmSync(e.path, { recursive: true, force: true });
+    deleted.push(e.path);
+  }
+  const tmp = `${manifestFile(cfg)}.tmp-${process.pid}`;
+  fs.writeFileSync(tmp, next.map((e) => JSON.stringify(e) + '\n').join(''));
+  fs.renameSync(tmp, manifestFile(cfg));
+  const rec = { at: ctx.clock().toISOString(), retention_days: days, deleted, kept_past_retention: candidates, listed: next.length };
+  writeJson(path.join(cfg.state, 'retention', `${stampOf(new Date())}-${process.pid}.json`), rec);
+  return rec;
+}
+
+// ── the digest (R-8) ────────────────────────────────────────────────────────────────────────────
+const digestDir = (cfg) => path.join(cfg.state, 'digest');
+const between = (t, from, to) => { const x = Date.parse(t); return Number.isFinite(x) && x > Date.parse(from) && x <= Date.parse(to); };
+const gb = (b) => (b == null ? 'not read' : `${(b / GB).toFixed(1)} GB`);
+const when = (t) => (t && Number.isFinite(Date.parse(t)) ? `${new Date(t).toISOString().slice(0, 16).replace('T', ' ')} UTC` : 'a time not recorded');
+function mergePaths(ctx, sha) {
+  if (!sha) return [];
+  return git(ctx.repo, 'diff', '--name-only', `${sha}^1`, sha).out.split('\n').filter(Boolean);
+}
+function composeDigest(ctx, kind, { from, to, candidate, retention }) {
+  const { cfg } = ctx;
+  const s = cfg.settings.data;
+  const report = jsonl(path.join(cfg.state, 'report.jsonl')).filter((r) => between(r.t, from, to));
+  const L = [];
+  const date = localDate(ctx, to);
+  L.push(kind === 'release' ? `# Integrator release digest, ${date}: the candidate ${short(candidate)}` : `# Integrator digest, ${date}`, '');
+  const health = healthNow(ctx);
+  if (health.disk.low || health.memory.low) {
+    if (health.disk.low) L.push(health.disk.bytes == null ? '**Warning:** free disk could not be read. No new builder starts until it can be.' : `**Warning:** free disk is ${gb(health.disk.bytes)}, under the ${s.health.disk_free_gb} GB threshold. No new builder starts until it is above it.`);
+    if (health.memory.low) L.push(health.memory.bytes == null ? '**Warning:** available memory could not be read. No new builder starts until it can be.' : `**Warning:** available memory is ${gb(health.memory.bytes)}, under the ${s.health.memory_available_gb} GB threshold. No new builder starts until it is above it.`);
+    L.push('');
+  }
+  L.push(Date.parse(from) > 0 ? `This covers ${when(from)} to ${when(to)}.` : `This covers everything the integrator recorded up to ${when(to)}.`, '');
+  const merged = report.filter((r) => r.kind === 'merged');
+  if (kind === 'release') {
+    const t1 = tableOf(ctx, 't1_paths'); const pub = tableOf(ctx, 'public_text_paths');
+    const merges = fs.existsSync(path.join(cfg.state, 'merges')) ? fs.readdirSync(path.join(cfg.state, 'merges')).filter((n) => n.endsWith('.json')).map((n) => readJson(path.join(cfg.state, 'merges', n))).filter((m) => m && m.status === 'merged' && between(m.ended || m.started, from, to)) : [];
+    const amended = merges.flatMap((m) => (m.steps || []).filter((x) => x.step === 'amendment').map((x) => `- ${m.item}: ${(x.amended || []).join('; ')}; the separate agreement ${x.agreement && x.agreement.agrees ? 'agreed' : 'did not agree'}${x.agreement && x.agreement.record ? ` (${x.agreement.record})` : ''}.`));
+    const touched = merged.map((r) => ({ r, paths: mergePaths(ctx, r.merge_commit) }));
+    const lines = (re) => touched.map(({ r, paths }) => ({ r, hit: paths.filter((p) => re.some((x) => x.test(p))) })).filter((x) => x.hit.length).map(({ r, hit }) => `- ${r.item} (merge ${short(r.merge_commit)}): ${hit.join(', ')}.`);
+    const flakes = jsonl(path.join(cfg.state, 'flakes.jsonl')).filter((f) => between(f.t, from, to)).map((f) => `- the gate ${f.gate} at ${when(f.t)}${f.item ? `, merging ${f.item}` : ''}${f.nightly ? ', in the nightly' : ''}: red, then green on its rerun.`);
+    const none = (a) => (a.length ? a : ['- None recorded.']);
+    L.push("## For the operator's review at the go", '');
+    L.push('### Gate amendments and re-baselines', '', ...none(amended), '');
+    L.push('### Changes that can alter a receipt, verdict, badge or decide', '', ...none(lines(t1)), '');
+    L.push('### Flakes', '', ...none(flakes), '');
+    L.push('### Public text changes', '', ...none(lines(pub)), '');
+  }
+  L.push('## Merged', '', ...(merged.length ? merged.map((r) => `- ${r.item} onto ${cfg.staging} at ${short(r.merge_commit)}, ${when(r.t)}.`) : ['- Nothing merged.']), '');
+  const parkedBy = new Map();
+  for (const r of report.filter((x) => ['parked', 'sent-back', 'intake-failed'].includes(x.kind))) parkedBy.set(r.item || `request ${r.request}`, r);
+  L.push('## Parked, and why', '', ...(parkedBy.size ? [...parkedBy].map(([id, r]) => `- ${id} (${r.class || r.kind}): ${String(r.reason || r.why || '').slice(0, 400)}`) : ['- Nothing parked.']), '');
+  const questions = [
+    ...ctx.items().filter((i) => i.state === 'parked' && ['question', 'operator-ruling'].includes(i.class)).map((i) => `- ${i.id}: ${i.question || i.reason}`),
+    ...report.filter((r) => r.kind === 'nightly-stop').map((r) => `- The nightly's culprit search stopped on ${r.gate}: ${r.why}. Nothing moved.`),
+  ];
+  L.push('## Questions for the operator', '', ...(questions.length ? questions : ['- None.']), '');
+  const ledger = jsonl(ledgerFile(cfg));
+  const period = ledger.filter((x) => between(x.t, from, to));
+  const b = budgetState(ctx);
+  const stops = report.filter((r) => ['budget-stop', 'usage-limit'].includes(r.kind)).map((r) => (r.kind === 'usage-limit' ? `a session met the usage limit at ${when(r.t)}; no session starts until ${r.resets_at ? when(r.resets_at) : 'the operator clears it'}` : `the daily cap was reached on the budget day ${r.day}`));
+  L.push('## Cost', '',
+    `- This period: ${period.reduce((t, x) => t + (Number(x.cost_usd) || 0), 0).toFixed(2)} USD over ${period.length} session(s) (${['builder', 'brief', 'agreement'].map((k) => `${period.filter((x) => x.kind === k).length} ${k}`).join(', ')}).`,
+    `- The budget day ${b.day} (from ${s.budget.day_starts} at ${s.budget.zone}): ${b.spent.toFixed(2)} USD of the daily cap of ${pos(b.cap) ? `${b.cap.toFixed(2)} USD` : 'no cap (not filled in)'}.`,
+    ...(stops.length ? stops.map((x) => `- Budget stop: ${x}.`) : ['- No budget stop in this period.']), '');
+  const items = ctx.items();
+  const ids = (st) => items.filter((i) => i.state === st).map((i) => i.id);
+  const c = readJson(candidateFile(cfg), null);
+  L.push('## What runs next', '',
+    `- Queued for a builder: ${ids('queued').join(', ') || 'none'}.`,
+    `- Building: ${ids('building').join(', ') || 'none'}.`,
+    `- Waiting for the operator's approval on inbox: ${items.filter((i) => i.state === 'awaiting-brief-approval').map((i) => `${i.id} (${INTAKE.approved}${i.intake_key})`).join(', ') || 'none'}.`,
+    `- Approved, waiting to merge onto ${cfg.staging}: ${ids('approved').join(', ') || 'none'}.`,
+    `- The train: ${c ? `the candidate ${short(c.sha)} for ${c.cutoff_for}, ${c.phase}` : 'no candidate yet'}; the next cutoff is ${CUTOFF} UTC (${String((Number(CUTOFF.slice(0, 2)) + 8) % 24).padStart(2, '0')}${CUTOFF.slice(2)} SGT).`,
+    `- The next daily digest: ${s.digest.daily_at ? `${s.digest.daily_at} at ${s.budget.zone}` : 'none, the daily digest is off'}.`, '');
+  const cpu = jsonl(path.join(cfg.state, 'health', 'cpu.jsonl'));
+  const night = cpu.length ? cpu[cpu.length - 1].night : null;
+  const samples = cpu.filter((x) => x.night === night).map((x) => x.busy_pct);
+  const cand = (retention && retention.kept_past_retention) || [];
+  L.push('## Box health', '',
+    `- Free disk: ${gb(health.disk.bytes)} (threshold ${s.health.disk_free_gb} GB).`,
+    `- Available memory: ${gb(health.memory.bytes)} (threshold ${s.health.memory_available_gb} GB).`,
+    samples.length ? `- CPU during the nightly of ${night}: average ${Math.round(samples.reduce((t, x) => t + x, 0) / samples.length)}%, peak ${Math.max(...samples)}%, from ${samples.length} sample(s).` : '- CPU during the nightly: not recorded.',
+    `- Cleanup candidates: ${cand.length} artefact(s) kept past the ${s.retention_days}-day retention, for the operator${cand.length ? ':' : '.'}`,
+    ...cand.map((x) => `  - ${x.path} (${x.kind}): ${x.why}.`),
+    `- Retention deleted ${retention ? retention.deleted.length : 0} artefact(s) the integrator made${retention && retention.deleted.length ? `: ${retention.deleted.slice(0, 10).join(', ')}` : ''}.`, '');
+  return L.join('\n');
+}
+// The digest as it is committed: home paths as ~, no em dash, and any line the hygiene scan finds a
+// hit in withheld, naming the hit. A scan that cannot be loaded refuses the digest: it is never
+// committed unscanned (NFR-5).
+function cleanDigest(text) {
+  let t = String(text).split(HOME).join('~').replace(/\u2014/g, ',');
+  let scan = null;
+  try { scan = createRequire(import.meta.url)(path.join(ROOT, 'lib', 'hygiene.js')).scanContent; } catch {}
+  if (typeof scan !== 'function') throw new Error('lib/hygiene.js could not be loaded, so the digest is not committed unscanned');
+  return t.split('\n').map((l) => { const h = scan('digest.md', l); return h.length ? `- [a line is withheld: the hygiene scan found ${[...new Set(h.map((x) => x.kind))].join(', ')} in it]` : l; }).join('\n');
+}
+function writeDigest(ctx, kind, sha = null) {
+  const { cfg } = ctx;
+  if (!ctx.repo) ensureClone(ctx);
+  syncLedger(ctx);
+  const to = ctx.clock().toISOString();
+  const lastFile = path.join(digestDir(cfg), `last-${kind}.json`);
+  const last = readJson(lastFile, null);
+  const from = last ? last.at : kind === 'daily' ? new Date(Date.parse(to) - DAY).toISOString() : new Date(0).toISOString();
+  const candidate = kind === 'release' ? (sha || (readJson(candidateFile(cfg), {}) || {}).sha || gitOk(ctx.repo, 'rev-parse', `refs/remotes/${cfg.remote}/${cfg.staging}`)) : null;
+  const retention = kind === 'daily' ? retain(ctx) : null;
+  const text = cleanDigest(composeDigest(ctx, kind, { from, to, candidate, retention }));
+  const date = localDate(ctx, to);
+  const rel = kind === 'daily' ? `digests/${date}-daily.md` : `digests/${date}-release-${short(candidate)}.md`;
+  const commit = commitFile(ctx, 'status/digest', rel, `${text}\n`, `digest(${date}): the ${kind} digest (scripts/integrate.mjs)`);
+  writeJson(lastFile, { at: to, date, rel, commit, candidate });
+  ctx.report('digest', null, { kind, rel, commit });
+  return { kind, rel, commit };
+}
+// The service's digests: the daily one at the first pass at or after its time on a day that has
+// none, and the release one once the train has staged a candidate that has none.
+function digestsDue(ctx) {
+  const { cfg } = ctx;
+  const d = cfg.settings.data.digest;
+  const now = ctx.clock().toISOString();
+  const out = [];
+  const lastDaily = readJson(path.join(digestDir(cfg), 'last-daily.json'), null);
+  if (d.daily_at && localTime(ctx, now) >= d.daily_at && (!lastDaily || lastDaily.date !== localDate(ctx, now))) out.push(writeDigest(ctx, 'daily'));
+  const c = readJson(candidateFile(cfg), null);
+  const lastRelease = readJson(path.join(digestDir(cfg), 'last-release.json'), null);
+  if (d.on_release && c && ['staged', 'go-held', 'released'].includes(c.phase) && (!lastRelease || lastRelease.candidate !== c.sha)) out.push(writeDigest(ctx, 'release', c.sha));
+  return out;
+}
+async function digestCmd(cfg, opts) {
+  const probs = settingsProblems(cfg).filter((p) => !p.startsWith('budget.daily_usd'));
+  if (probs.length) { process.stderr.write(`integrate: digest refused (settings): ${probs.join('; ')}\n`); return 5; }
+  const ctx = context(cfg, opts);
+  const r = writeDigest(ctx, opts.release ? 'release' : 'daily');
+  process.stdout.write(`integrate: digest ${r.kind}: ${r.rel} at ${short(r.commit)} on status/digest\n`);
+  return 0;
+}
+
 // ── the commands ────────────────────────────────────────────────────────────────────────────────
 async function tick(cfg, opts) {
   const ctx = context(cfg, opts);
   const rec = ctx.record;
   const recFile = path.join(cfg.state, 'ticks', `${stampOf(new Date())}-${process.pid}.json`);
+  // spec 068 R-5: no settings, or no daily cap, and the integrator does not start
+  const unset = refusedBySettings(cfg, 'tick');
+  if (unset) {
+    rec.refused = { kind: 'settings', detail: unset.join('; ') };
+    writeJson(recFile, rec);
+    return 5;
+  }
+  created(ctx, recFile, 'record');
   const policy = readIntegratorPolicy(cfg);
   if (!policy.ok) {
     rec.refused = { kind: policy.kind, detail: policy.detail };
@@ -804,6 +1456,13 @@ async function tick(cfg, opts) {
   const noGates = quiet.length > 0 || halts.window;
   const noSessions = halts.stop || noGates || hold;
   if (noGates) rec.stopped_builders = await stopBuilders(ctx, quiet.length ? `quiet marker ${quiet.join(', ')}` : 'the nightly window');
+  // spec 068 R-4 and R-7: the ledger, the day's spend and any usage-limit stop, and box health. A
+  // budget stop ends running builders for the same resume the quiet marker uses.
+  syncLedger(ctx);
+  rec.budget = budgetState(ctx);
+  const health = healthNow(ctx);
+  rec.health = { disk_free_bytes: health.disk.bytes, mem_available_bytes: health.memory.bytes, low: health.low };
+  if (rec.budget.stop && !noGates) rec.stopped_builders = await stopBuilders(ctx, `the budget guard: ${rec.budget.stop.why}`);
   rec.collected = collect(ctx);
   if (!halts.pause && !noGates && !hold) {
     ensureClone(ctx);
@@ -817,8 +1476,21 @@ async function tick(cfg, opts) {
       rec.merge = { item: it.id, outcome: await mergeItem(ctx, it) };
     }
   }
+  // spec 068 R-1: intake reads approvals whenever gates may run, and starts brief sessions only when
+  // sessions may start
+  if (!noGates && !hold) {
+    try { intake(ctx, rec, { sessions: !noSessions && !budgetState(ctx).stop }); } catch (e) { rec.intake_error = e.message; ctx.report('intake-error', null, { error: e.message.slice(0, 300) }); }
+  }
   rec.started_builders = [];
-  if (!noSessions) {
+  const held = budgetState(ctx).stop;
+  if (held) rec.budget.stop = held;
+  if (!noSessions && !held && health.low.length) {
+    rec.health_held = health.low;
+    const f = path.join(cfg.state, 'health', 'held.jsonl');
+    const day = ctx.clock().toISOString().slice(0, 10);
+    if (!jsonl(f).some((x) => x.day === day)) { appendJsonl(f, { day, low: health.low }); ctx.report('health-low', null, { low: health.low }); }
+  }
+  if (!noSessions && !held && !health.low.length) {
     // at most two build sessions on the box (CONSTITUTION § Proportional oversight, item 7)
     const limit = Math.min(2, Math.max(1, Number(cfg.builders ?? 2)));
     const running = () => ctx.items().filter((i) => i.state === 'building' && i.pid && alive(i.pid)).length;
@@ -831,7 +1503,7 @@ async function tick(cfg, opts) {
   }
   rec.ended = iso();
   writeJson(recFile, rec);
-  process.stdout.write(`integrate: tick at ${rec.now}: halts ${JSON.stringify(halts)}; collected ${rec.collected.length}; ${rec.merge ? `merge ${rec.merge.item} ${rec.merge.outcome}` : 'no merge'}; started ${rec.started_builders.join(', ') || 'none'}\n`);
+  process.stdout.write(`integrate: tick at ${rec.now}: halts ${JSON.stringify(halts)}; collected ${rec.collected.length}; ${rec.merge ? `merge ${rec.merge.item} ${rec.merge.outcome}` : 'no merge'}; started ${rec.started_builders.join(', ') || 'none'}${rec.intake ? `; intake briefed ${rec.intake.briefed.length}, queued ${rec.intake.queued.length}` : ''}${rec.budget.stop ? `; budget stop (${rec.budget.stop.kind})` : ''}${health.low.length ? `; box health low: ${health.low.join(', ')}` : ''}\n`);
   if (opts.wait) {
     // waits on the pids the state recorded when each builder started, never on a pattern
     for (;;) {
@@ -973,6 +1645,7 @@ function pinned(ctx, sha, fields) {
 // `train`: at the cutoff, pin the staging tip, or on a requested night queue the bump item. Once
 // per cutoff: a second run for the same cutoff leaves the candidate. The train makes no commit.
 async function trainCmd(cfg, opts) {
+  if (refusedBySettings(cfg, 'train')) return 5;
   const ctx = context(cfg, opts);
   const policy = readIntegratorPolicy(cfg);
   if (!policy.ok) { process.stderr.write(`integrate: refused (${policy.kind}): ${policy.detail}\n`); return 5; }
@@ -1079,8 +1752,9 @@ function stageRelease(ctx, c, save) {
   const { cfg, repo } = ctx;
   if (ctx.gatesHalted()) return { did: 'stage-waits', why: 'a quiet marker or the pre-nightly window holds' };
   const dir = path.join(cfg.train.stage_root, c.sha);
+  if (!fs.existsSync(dir)) created(ctx, dir, 'staged-build');
   const version = c.version || 'unversioned';
-  const message = `Driftproof ${version}: the release candidate ${c.sha}, staged by the train and held for the operator's go.`;
+  const message = `Driftproof ${version}: the release candidate, staged by the train and held for the operator's go.`; // no private SHA: a public message is read for one (spec 113)
   const wt = addWorktree(repo, path.join(cfg.state, 'work', `stage-${short(c.sha)}`), c.sha);
   try {
     copyPaths(cfg.source || repo, wt, ['node_modules']);
@@ -1133,7 +1807,7 @@ function readGo(ctx, c, save) {
   c.phase = 'released';
   // Q-2 (a): the go moves main only; the rest stays the RUNBOOK's
   c.owed = [
-    `the public push of the staged build, by RUNBOOK § Publish to npm, with --force-with-lease=main:<the SHA ls-remote reads just before>`,
+    `the public push, by RUNBOOK § Publish to npm: rebuild into the default target with build-public.sh (-F the release notes), then node scripts/push-public.mjs (a plain fast-forward; the staged tree is a root commit kept for its checks and is never pushed)`,
     `the tag push, by RUNBOOK § Publish to npm`,
     'npm publish, by a human: this box holds no npm credential',
   ];
@@ -1230,9 +1904,14 @@ async function servePass(cfg, opts, n) {
   const pass = { n, now: ctx.record.now, started: iso(), halted: null, quiet: [], train: null, nightly: null, tick: null, checkout: null };
   const file = path.join(cfg.state, 'serve', `${new Date().toISOString().replace(/[-:]/g, '')}-${process.pid}-${String(n).padStart(4, '0')}.json`);
   const done = () => { pass.ended = iso(); writeJson(file, pass); process.stdout.write(`integrate: serve pass ${n}: ${pass.halted ? `halted (${pass.halted})` : `train ${pass.train ? pass.train.did : 'idle'}; checkout ${pass.checkout ? (pass.checkout.moved ? 'moved' : pass.checkout.why) : 'current'}`}\n`); };
+  const unset = settingsProblems(cfg);
+  if (unset.length) { pass.halted = `refused (settings): ${unset.join('; ')}`; done(); return; }
+  created(ctx, file, 'record');
   const policy = readIntegratorPolicy(cfg);
   if (!policy.ok) { pass.halted = `refused (${policy.kind})`; done(); return; }
   ctx.policy = policy;
+  // spec 068 R-7: CPU while the nightly's window is open
+  pass.cpu = sampleCpu(ctx);
   const quiet = ctx.quiet();
   pass.quiet = quiet;
   if (quiet.length || fs.existsSync(cfg.stop_file)) {
@@ -1247,11 +1926,14 @@ async function servePass(cfg, opts, n) {
   pass.tick = await tick(cfg, opts);
   ensureClone(ctx);
   pass.checkout = fastForwardCheckout(ctx);
+  // spec 068 R-8: the daily digest at its time, and the release digest once a candidate is staged
+  try { pass.digests = digestsDue(ctx); } catch (e) { pass.digest_error = e.message; ctx.report('digest-error', null, { error: e.message.slice(0, 300) }); }
   done();
 }
 
 // `serve`: the service's loop. SIGTERM ends it after the current pass.
 async function serve(cfg, opts) {
+  if (refusedBySettings(cfg, 'serve')) return 5;
   let stopping = false;
   process.on('SIGTERM', () => { stopping = true; });
   const t0 = Date.now();
@@ -1267,6 +1949,8 @@ async function serve(cfg, opts) {
 }
 
 function pinPolicy(cfg) {
+  // spec 068 ruling 2: the integrator refuses to switch on until the operator fills in the cap
+  if (refusedBySettings(cfg, 'pin-policy')) return 5;
   const text = fs.readFileSync(cfg.policy, 'utf8');
   fs.mkdirSync(cfg.state, { recursive: true });
   fs.writeFileSync(path.join(cfg.state, 'policy.sha256'), `${sha256(text)}\n`);
@@ -1283,8 +1967,8 @@ function status(cfg) {
 async function main(argv) {
   const [cmd, file, ...rest] = argv;
   const opt = (k) => { const i = rest.indexOf(k); return i >= 0 ? rest[i + 1] : null; };
-  if (!['tick', 'nightly', 'train', 'serve', 'pin-policy', 'status'].includes(cmd) || !file) {
-    process.stderr.write('usage: node scripts/integrate.mjs tick <config.json> [--now <iso>] [--wait]\n       node scripts/integrate.mjs nightly <config.json> --result <sweep-run.json> [--now <iso>]\n       node scripts/integrate.mjs train <config.json> [--now <iso>]\n       node scripts/integrate.mjs serve <config.json> [--now <iso>] [--passes <n>] [--interval-seconds <s>]\n       node scripts/integrate.mjs pin-policy <config.json>\n       node scripts/integrate.mjs status <config.json>\n');
+  if (!['tick', 'nightly', 'train', 'serve', 'digest', 'pin-policy', 'status'].includes(cmd) || !file) {
+    process.stderr.write('usage: node scripts/integrate.mjs tick <config.json> [--now <iso>] [--wait]\n       node scripts/integrate.mjs nightly <config.json> --result <sweep-run.json> [--now <iso>]\n       node scripts/integrate.mjs train <config.json> [--now <iso>]\n       node scripts/integrate.mjs serve <config.json> [--now <iso>] [--passes <n>] [--interval-seconds <s>]\n       node scripts/integrate.mjs digest <config.json> [--release] [--now <iso>]\n       node scripts/integrate.mjs pin-policy <config.json>\n       node scripts/integrate.mjs status <config.json>\n');
     return 2;
   }
   const cfg = loadConfig(file);
@@ -1295,6 +1979,7 @@ async function main(argv) {
     return nightly(cfg, { now: opt('--now'), result: path.resolve(opt('--result')) });
   }
   if (cmd === 'train') return trainCmd(cfg, { now: opt('--now') });
+  if (cmd === 'digest') return digestCmd(cfg, { now: opt('--now'), release: rest.includes('--release') });
   if (cmd === 'serve') return serve(cfg, { now: opt('--now'), passes: opt('--passes'), interval: opt('--interval-seconds') });
   return tick(cfg, { now: opt('--now'), wait: rest.includes('--wait') });
 }

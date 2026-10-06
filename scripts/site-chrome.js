@@ -21,6 +21,7 @@
 // byte for byte, so a chrome injector that edited a sentence takes the gate red.
 const fs = require('fs');
 const path = require('path');
+const { htmlToText, escapeAttr } = require('./html-text.js');
 
 const ROOT = path.join(__dirname, '..');
 const ORIGIN = 'https://driftproofhq.com';
@@ -43,7 +44,7 @@ const RECEIPTS_ANCHOR = 'receipts';
 const SUB_OPEN = '<!--driftproof:subscribe-->';
 const SUB_CLOSE = '<!--/driftproof:subscribe-->';
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const esc = escapeAttr;
 
 // WHAT THE SITE FOOTER IS, DEFINED ONCE (spec 025 AC-1).
 //
@@ -289,8 +290,12 @@ function answersSummary(r, html) {
   const li = (x, cls) => (x.across
     ? `<li class="${cls} across" data-receipts="${esc(x.rels.join(' '))}">${x.html}</li>`
     : `<li class="${cls}" data-receipt="${esc(x.rel)}">${x.html}</li>`);
+  // The native harness's results, on a report that compares two harnesses (the operator's ruling of
+  // 2 Oct 2026): not an answer read from a receipt, so it names the evidence files it reads, and it
+  // stands before the limit sentence, which stays last.
+  const harness = got.harness ? [`<li class="harness" data-sources="${esc(got.harness.files.join(' '))}">${got.harness.html}</li>`] : [];
   return `<section class="plain-summary" aria-labelledby="${summaryId(r.number.value)}">${summaryHeading(r.number.value)}<ul>
-${[...got.answers.map((x) => li(x, 'answer')), li(got.limit, 'answer limit')].join('\n')}
+${[...got.answers.map((x) => li(x, 'answer')), ...harness, li(got.limit, 'answer limit')].join('\n')}
 </ul></section>`;
 }
 
@@ -441,7 +446,7 @@ const LAYOUT_CLOSE = '<!--/driftproof:layout-->';
 const LAYOUT_END_OPEN = '<!--driftproof:layout-end-->';
 const LAYOUT_END_CLOSE = '<!--/driftproof:layout-end-->';
 const TOC_ANCHOR_RE = new RegExp(`${ANCHOR_OPEN}<span id="[^"]*" class="toc-anchor"></span>${ANCHOR_CLOSE}`, 'g');
-const textOfHtml = (s) => String(s).replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+const textOfHtml = (s) => htmlToText(s, { collapse: true });
 // A heading repeated in a rail reads as a label: a spaced dash in it becomes a colon, so the rail
 // carries no em dash and no spaced hyphen (spec 020 AC-35 and AC-42 read text outside <main>).
 const railText = (s) => textOfHtml(s).replace(/\s+(?:—|&mdash;|–|&ndash;|-)\s+/g, ': ').replace(/—|&mdash;/g, ', ');
@@ -468,7 +473,7 @@ function tocFor(html) {
       id = base;
       for (let k = 2; ids.has(id); k++) id = `${base}-${k}`;
       ids.add(id);
-      insert = `${ANCHOR_OPEN}<span id="${id}" class="toc-anchor"></span>${ANCHOR_CLOSE}`;
+      insert = `${ANCHOR_OPEN}<span id="${escapeAttr(id)}" class="toc-anchor"></span>${ANCHOR_CLOSE}`;
     }
     heads.push({ at, id, text: textOfHtml(m[2]), insert });
   }
@@ -498,7 +503,7 @@ function reportsFor(html) {
     let id = `on-report-${l[1]}`;
     for (let k = 2; ids.has(id); k++) id = `on-report-${l[1]}-${k}`;
     ids.add(id);
-    out.push({ at: a + m.index, id, text: textOfHtml(l[2]), insert: `${ANCHOR_OPEN}<span id="${id}" class="toc-anchor"></span>${ANCHOR_CLOSE}` });
+    out.push({ at: a + m.index, id, text: textOfHtml(l[2]), insert: `${ANCHOR_OPEN}<span id="${escapeAttr(id)}" class="toc-anchor"></span>${ANCHOR_CLOSE}` });
   }
   return out;
 }

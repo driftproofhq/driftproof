@@ -18,10 +18,11 @@ claude plugin marketplace add driftproofhq/driftproof
 claude plugin install driftproof@driftproofhq
 ```
 
-`/driftproof:init` sets up a skill with example tests, and `/driftproof:run`
+`/driftproof:init` on a skill you already have drafts its test cases with you,
+adds them after you say yes, and makes a first receipt. `/driftproof:run`
 measures a skill in your repository and writes its receipt. It runs on your
 Claude Code subscription. You need Node.js 22 or later.
-[Other ways to install](#install) · [Measure your own skill](#quickstart--receipt-for-your-own-skill-in-10-minutes)
+[Other ways to install](#install) · [Measure your own skill](#quickstart-receipt-for-your-own-skill)
 
 **Latest finding** · [Report 013](https://driftproofhq.com/reports/013/), 29 Sep
 2026: with the skill, Sonnet 5.5 was never clearly higher or lower than Opus 5.5
@@ -71,9 +72,33 @@ extra input. Identical token deltas also price very differently across substrate
 the same skill at near-identical deltas costs 3.3× more on `claude-fable-5` than on
 `claude-sonnet-5`, which is exactly their input-rate ratio in the frozen snapshot.
 
-## Quickstart — receipt for your own skill in ~10 minutes
+## Quickstart: receipt for your own skill
 
-You need Node ≥ 22 and an `ANTHROPIC_API_KEY`.
+You need Node ≥ 22. The first path runs on your Claude Code subscription. The second
+uses the command line and an `ANTHROPIC_API_KEY`.
+
+### A skill you already have
+
+Start with a skill you already have. Install the plugin (see [Install](#install)), then,
+in Claude Code, from the folder above your skill, in a git repository:
+
+~~~text
+/driftproof:init path/to/your-skill
+~~~
+
+Claude reads your `SKILL.md` and drafts three to five test cases with you, each aimed
+at an outcome you would check in the answer. You approve them. Only after you say yes is
+one new file added to the skill's folder, `evals/evals.json`, labelled as drafted from
+the skill and approved by you. `SKILL.md` and every other file are left as they were.
+Then it runs a quick check and opens a results page: your first receipt. A quick check
+is a first look and cannot produce a verdict. `/driftproof:run path/to/your-skill` on a
+skill with no test cases offers the same draft, and `/driftproof:run` without `--quick`
+measures the skill for a verdict.
+
+Without Claude Code, write `evals/evals.json` by hand ([AUTHORING.md](AUTHORING.md)) and
+go on from step 3 below.
+
+### A new skill
 
 ```bash
 # 1. Scaffold a skill skeleton: SKILL.md + evals/evals.json (3 example cases) + .driftproofrc
@@ -135,13 +160,16 @@ claude plugin marketplace add driftproofhq/driftproof
 claude plugin install driftproof@driftproofhq
 ```
 
-That installs `/driftproof:init`, `/driftproof:run` and `/driftproof:badge`.
+That installs `/driftproof:start`, `/driftproof:init`, `/driftproof:run` and
+`/driftproof:badge`.
 The CLI is the product and it runs on every surface Driftproof measures, while
 the plugin is one install path for Claude Code users: it builds one argument
 vector, hands it to the pinned runner, and writes the receipt that runner would
 have written from the same arguments. The plugin's version is the runner version
 it pins, and `/driftproof:run` spends your Claude Code subscription rather than
-an API key. It measures; it never edits a skill.
+an API key. It measures and never changes a skill's instructions. The one file it
+adds is a new `evals/evals.json`, from `/driftproof:start` or
+`/driftproof:init`, to a skill that has none, after you say yes in the run.
 
 The only runtime dependency is `ajv` (schema validation); `@anthropic-ai/sdk` is
 optional and pulled in only for `CLAUDE_PROVIDER=api`. The CLI resolves its spec,
@@ -254,6 +282,100 @@ per-model call cap (`DEV_MAX_CALLS`) or the dollar budget (`DEV_MAX_USD`) — bo
 declared with their derivation in [`config.js`](config.js), both overridable with
 `--max-calls` / `--max-usd`. The default model list is `haiku` only.
 
+<!-- spec 145: begin. Run options, progress lines, the judge warning and --capture. Every fact below is read from the code by specs/145-user-docs-and-view-label; edit it there. -->
+### Run options
+
+`driftproof run <skill-dir>` takes three options that set how much it measures.
+`/driftproof:run` passes `--models`, `--max-calls`, `--max-usd`,
+`--quick` and these three on to `run`, and refuses any other option.
+`--quick` sets these three itself, so it is refused beside any of them, in the
+command and in the plugin.
+
+| option | what it sets | default |
+|---|---|---|
+| `--samples N` | how many times the judge scores each answer | 5 |
+| `--concurrency N` | how many case and arm pairs run at once | 1 |
+| `--max-cases N` | run only the first N cases of the suite | every case |
+
+Each takes a positive whole number with no leading zero. A value that is not
+one is refused before a call is made, in the command and in the plugin. The
+working directory's `.driftproofrc` can set the same three as `samples`,
+`concurrency` and `max_cases`.
+The GitHub Action reads no working-directory `.driftproofrc`.
+A skill directory's `.driftproofrc` may not set
+`samples` or `max_cases`; they are ignored there, with a note. When the working
+directory is the skill directory, its `.driftproofrc` is the skill's, so
+`samples` and `max_cases` are ignored there too.
+
+### What a run prints
+
+While a run works it prints one line to stderr when a draw's answer has been
+generated, and one when all of that draw's judge calls have finished together.
+A line says how many calls have
+been made, the fewest and the most the run can make, the time so far, the time
+left as a range, and the case, arm and draw it has just finished:
+
+```
+  progress: call 1 of 18 to 60 · 4s elapsed · about 1m 08s to 3m 56s left · commit-format / with_skill draw 1: generation done
+  progress: call 3 of 18 to 60 · 8s elapsed · about 40s to 2m 32s left · commit-format / with_skill draw 1: 2 judge calls done
+```
+
+These are example lines for a suite of one case judged twice (`--samples 2`);
+the times are an example, not a measurement. The calls and the time left are
+ranges because each arm is drawn between a fewest and a most number of times,
+and the runner does not know which until the arm stops.
+
+When the model that is being measured is also the judge, `run` and `regrade`
+print a warning to stderr before any call:
+
+```
+  ! WARNING: the judge is the target model, claude-haiku-4-5.
+  !   The model that wrote each answer also grades it.
+  !   To grade with another model, pass --judge-model <id>, or set judge_model in the working directory's .driftproofrc.
+```
+
+The GitHub Action reads no working-directory `.driftproofrc`.
+The warning does not stop the run. With no `--judge-model` and no `judge_model`
+in the working directory's `.driftproofrc`, the target is the judge, so the
+warning appears. `/driftproof:run` has no `--judge-model` option, so there the
+`.driftproofrc` is how you name another judge. A skill directory's cannot name
+one, and neither can the working directory's when it is the skill directory.
+
+### What is judged: `--capture`
+
+`--capture text|files` says which answer the judge sees. It can also be set as
+`capture` in the working directory's `.driftproofrc`; a skill directory's is
+ignored, and so is the working directory's when it is the skill directory.
+The GitHub Action reads no working-directory `.driftproofrc`.
+The default is `text`. `/driftproof:run` has no `--capture` option. The receipt
+records the mode, and `run` prints it:
+
+```
+  answer capture: text (file-writing tools off; the reply is the answer)
+  answer capture: files (the files the child wrote in its working directory are judged with its reply)
+```
+
+- **`text`** grades the reply. On a cli surface the child runs with no tool
+  that writes a file or runs code. Claude is given only the tools `Read`,
+  `WebFetch` and `WebSearch`, so every other tool is off, and it loads no MCP
+  server. `codex` runs in its `read-only` sandbox with the features in
+  `CODEX_TEXT_OFF` (`lib/capture.js`, a list of the ones that write a file or
+  run code in one codex release) switched off, and no MCP server. A feature a
+  newer codex adds is not switched off by name.
+- **`files`** grades the reply together with the files the child wrote in its
+  own fresh working directory, for both arms. Claude is given `Read`, `Write`,
+  `Edit`, `NotebookEdit`, `WebFetch` and `WebSearch`, with edits accepted and
+  no tool that runs code. `codex` runs in its `workspace-write` sandbox with no
+  feature switched off, so it may run code there. After the child exits, every regular file there is named in path order. The
+  first 50 are read, each whole when it is UTF-8 text of at most 65536 bytes,
+  and at most 262144 bytes together. Every file not shown is named in the
+  judged answer with its reason. Files capture needs a cli surface: on the api
+  surface the run is refused before any call.
+
+In either mode, an answer that points at a file the judge is not shown, or only
+describes work, is a lost draw and is never scored.
+<!-- spec 145: end -->
+
 ## Receipt anatomy
 
 A receipt is the unit of evidence — one JSON document conforming to
@@ -262,7 +384,7 @@ A receipt is the unit of evidence — one JSON document conforming to
 
 ```jsonc
 {
-  "schema_version": "0.10",
+  "schema_version": "0.11",
   "skill":  { "name": "commit-message-conventions", "version": "0.2.0",
               "content_hash": "…sha256 over SKILL.md + bundled files…" },
   "suite":  { "format": "agentskills.io/evals", "suite_hash": "…", "case_count": 10 },
@@ -271,7 +393,7 @@ A receipt is the unit of evidence — one JSON document conforming to
     "model_release_date": "2025-10-01",
     "provider": "anthropic",
     "surface": "claude-cli",
-    "runner_version": "0.13.0",
+    "runner_version": "0.14.0",
     "date_utc": "2026-07-27T…Z",
     "registry": "registered",
     "transcripts": "hashes-only",
@@ -350,7 +472,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: driftproofhq/driftproof@v0.13.0
+      - uses: driftproofhq/driftproof@v0.14.0
         with:
           skill-dir: skills/my-skill
           models: claude-haiku-4-5
@@ -461,7 +583,11 @@ Neither statement covers the other. Said of the Action, of CI, or of the runner,
 ### Scheduled stale check
 
 `driftproof stale` says whether each receipt's conclusion still stands under the model, harness,
-skill, suite and judge that would run today. The staleness check runs it on a schedule in your
+capture mode, skill, suite and judge that would run today. The capture mode that would run is
+`--capture`, else `capture` in the working directory's `.driftproofrc`, else `text`.
+The GitHub Action that runs a suite reads no working-directory `.driftproofrc`.
+The stale Action runs `driftproof stale` in the workspace, so it reads that workspace's `.driftproofrc`.
+The staleness check runs `driftproof stale` on a schedule in your
 repository. While any receipt needs a rerun or a regrade, one issue labelled `driftproof-stale` lists
 each one, what moved, and the command to run next. Later runs update that issue, and the first run
 that finds everything current closes it. It makes no model call and needs no API key.
@@ -474,7 +600,7 @@ permissions:
   contents: read
   issues: write
 # ...
-      - uses: driftproofhq/driftproof/stale@v0.13.0
+      - uses: driftproofhq/driftproof/stale@v0.14.0
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill

@@ -12,6 +12,8 @@
 
 A verdict is claimed for a case **only** when BOTH conditions hold: (1) the two `with_skill` confidence bands (mean ± stddev over the judge samples) do not overlap, AND (2) the mean moved by at least the **effect floor of 0.05** (one judge-quantization step). Overlapping bands — or separated bands whose move is below the floor — are reported as *within noise* — never as drift. This is the whole point: the number is allowed to say "nothing moved."
 
+**Note, 2026-10-03.** The headline counts in this report include receipts whose receipt pages mark them Not measured. Corrected counts follow in spec 159.
+
 ## Per-skill summary
 
 | skill | source | with_skill (old → new) | baseline (old → new) | verdict |
@@ -301,3 +303,4 @@ _Provider: `CLAUDE_PROVIDER=cli` (subscription) or `=api` (metered; needs `ANTHR
 - **The bands.** Each band in this report is a mean plus or minus one sample standard deviation, of two kinds: a case's band, over its five judge samples, and a skill's with_skill and baseline bands, over its seven per-case means, which is suite dispersion. Each band is a descriptive spread, not a confidence interval, with no coverage probability. The Headline section's *"confidence bands (mean ± stddev over the judge samples)"* names the first kind.
 - Filed under the wording rules of the repository's spec 031, amendment A-031-20.
 
+**v1.4** · 2026-10-03. This entry adds a dated note under the headline; no earlier text is changed, and no figure, verdict token, table value or receipt reference changes. The note says the headline counts in this report include receipts whose receipt pages mark them Not measured, and that corrected counts follow in spec 159.

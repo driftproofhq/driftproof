@@ -1,7 +1,7 @@
 {
   "_comment": [
     "SHIPPED WITH THE PLUGIN, AND THE ONLY COPY. The minimum runner version the",
-    "three commands accept.",
+    "commands accept.",
     "",
     "Resolved, and not typed: minimum is the repository's RUNNER_VERSION, and",
     "resolved_by is the commit that set RUNNER_VERSION to that value, found by",
@@ -18,10 +18,22 @@
     "Until A-028-17 this header claimed to be `Held identical to",
     "specs/028-claude-code-plugin/fixtures/version-guard.json by spec 028 AC-5`. No",
     "line of AC-5 held that. The criterion read the fixture and the door read this",
-    "file. That fixture is deleted and the claim is gone with it."
+    "file. That fixture is deleted and the claim is gone with it.",
+    "",
+    "start_minimum is the guided run's own minimum, named by the version-guard step",
+    "of commands/start.md and checked before init. start writes the drafted cases",
+    "through init --cases, which a runner before the release that ships it does not",
+    "take. It is null until that release, and the door refuses start while it is",
+    "null. The release bump that ships it writes it as the new RUNNER_VERSION, in",
+    "the same commit as minimum and resolved_by, and it is never lowered after.",
+    "",
+    "Spec 140: commands/init.md names it too, with only_adding, for init into a skill folder that",
+    "exists (a runner from before that release also writes the rc there). A new folder is as it was."
   ],
-  "minimum": "0.13.0",
-  "resolved_by": "14272f35",
+  "minimum": "0.14.0",
+  "resolved_by": "b0c11fa3",
   "resolves_at": "the commit that sets RUNNER_VERSION to minimum",
-  "compare": "semver-gte"
+  "compare": "semver-gte",
+  "start_minimum": "0.14.0",
+  "start_resolves_at": "the release bump whose RUNNER_VERSION first takes init --cases"
 }

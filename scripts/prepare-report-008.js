@@ -51,6 +51,8 @@ const { applyHeadTags } = require('./build-head-tags');
 // docs/data/reports.json: that file is a published surface and this report is
 // unapproved. So the card is applied last, with the row handed in.
 const { renderReportPage } = require('./site-chrome');
+// Spec 161's dated note, inserted into the render so this page stays a pure function of its receipts.
+const corrections = require('./report-corrections');
 // The data layer derives the row, rather than a second derivation living here.
 // Node 22 resolves require() of an ESM module with no top-level await.
 const { reportRow } = require('./site-data.mjs');
@@ -568,7 +570,7 @@ function amendmentsSection(rows) {
 }
 
 function buildPage(rows, rec) {
-  const base = applyHeadTags(`<!doctype html>
+  const base = applyHeadTags(corrections.applyToPage(`<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -606,7 +608,7 @@ ${receiptsBlock(rows)}
 </main>
 </body>
 </html>
-`, PAGE_REL);
+`, '008'), PAGE_REL);
   // The row is derived from the page just rendered, by the same function that
   // will derive it from the file after promotion, so the card reviewed now is
   // the card that ships. The page stays a pure function of its receipts: nothing

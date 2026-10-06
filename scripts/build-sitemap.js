@@ -37,6 +37,7 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const chrome = require('./site-chrome.js');
+const { htmlToText } = require('./html-text.js');
 
 const ROOT = path.join(__dirname, '..');
 const ORIGIN = 'https://driftproofhq.com';
@@ -109,6 +110,9 @@ const isReceipt = (rel) => /^r\/[0-9a-f]{64}\/index\.html$/.test(rel);
 // wrote the page a new entry in page-dates.json, no later than itself, is dated by that entry: the
 // generator wrote `today` before the commit, and a commit made the next day keeps the build's date.
 const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+const decodeWords = (t) => t
+  .replace(/&#(\d+);/g, (_m, d) => String.fromCodePoint(Number(d)))
+  .replace(/&(amp|lt|gt|quot|apos|nbsp);/g, (_m, n) => ENT[n]);
 function mainWords(html) {
   const s = String(html || '');
   const a = s.indexOf('<main');
@@ -118,11 +122,7 @@ function mainWords(html) {
   for (const [open, close] of [[chrome.TLDR_OPEN, chrome.TLDR_CLOSE], [chrome.ANCHOR_OPEN, chrome.ANCHOR_CLOSE], [chrome.SUB_OPEN, chrome.SUB_CLOSE], [chrome.LAYOUT_OPEN, chrome.LAYOUT_CLOSE], [chrome.LAYOUT_END_OPEN, chrome.LAYOUT_END_CLOSE]]) {
     m = m.split(open).map((part, i) => (i === 0 ? part : part.slice(part.indexOf(close) < 0 ? part.length : part.indexOf(close) + close.length))).join('');
   }
-  m = chrome.stripSiteFooter(m).replace(/<script\b[\s\S]*?<\/script>/g, '').replace(/<style\b[\s\S]*?<\/style>/g, '');
-  return m.replace(/<[^>]*>/g, ' ')
-    .replace(/&#(\d+);/g, (_m, d) => String.fromCodePoint(Number(d)))
-    .replace(/&(amp|lt|gt|quot|apos|nbsp);/g, (_m, n) => ENT[n])
-    .replace(/\s+/g, ' ').trim();
+  return htmlToText(chrome.stripSiteFooter(m), { skip: ['script', 'style'], tagText: ' ', commentText: ' ', decode: decodeWords, collapse: true });
 }
 // Every version of each file under docs/ on the first-parent line from `rev`, less what `stop`
 // reaches, newest first: path -> [{ sha, date, parents }].

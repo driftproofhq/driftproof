@@ -29,12 +29,20 @@
 // by the runner's own comparison of each pair, and each sentence links every receipt it counts.
 //
 // A REPORT WHOSE BODY COMPARES TWO RECEIPTS WITHIN ONE RUN gives no sentence read from one receipt
-// (the controller's overnight decision 2 of 1 Oct 2026, spec 134 R-10, Report 011): its verdicts read
+// (spec 134 R-10, Report 011): its verdicts read
 // two receipts' with-skill arms, so a sentence setting one receipt against its own baseline would say
 // other than the report shows. It is read from the body's verdict elements, never from a list.
 //
 // A REPORT WITH NO ELIGIBLE RECEIPT (Report 010 links none) gets no answers here, and the caller
 // keeps spec 125's summary for it (spec 134 R-4).
+//
+// A REPORT THAT COMPARES TWO HARNESSES SHOWS BOTH IN ITS OPENING (the operator's ruling of 2 Oct 2026,
+// "Report 009's opening shows both harnesses' results, since the report compares them"). A report the
+// data types as an instrument comparison report, and whose evidence holds the native harness's
+// aggregate-result files, gains one item before the limit sentence: per skill, the runs that passed
+// with the plugin and without it, each figure read from that file and inside a link to it. It is not
+// an answer sentence read from a receipt, so it carries no receipt link and no verdict word; the
+// opening's Driftproof answers are as they were. The report's body is not touched.
 //
 // THIS RENDERS, IT DOES NOT RUN: no model call and no network call.
 
@@ -75,15 +83,19 @@ const dayMonYear = (iso) => {
 // What a receipt's state means, in lib/plain.js's words for it. An UNDERPOWERED result reads as spec
 // 128's plain label alone, "there were too few answers to tell", as Report 013's amendment one reads
 // it (the operator's ruling of 1 Oct 2026, "plain label only"); spec 035's line is met by the receipt
-// page the sentence links, which prints it.
+// page the sentence links, which prints it. The label is the result's own, so where spec 143 reads
+// the cases disagreeing it is "too few test tasks to tell".
 function meaningOf(receipt) {
   const p = plainOf(receipt);
   switch (p.state) {
     case 'PASSED': case 'REGRESSED': return `the skill ${LABELS[p.state].toLowerCase()}`;
     case 'NO_EFFECT': return `there was ${LABELS.NO_EFFECT.toLowerCase()}`;
-    case 'UNDERPOWERED': return `there were ${LABELS.UNDERPOWERED.toLowerCase()}`;
+    case 'UNDERPOWERED': return `there were ${p.label.toLowerCase()}`;
     case 'INCONCLUSIVE': return `the result was ${LABELS.INCONCLUSIVE.toLowerCase()}, because some answers were lost`;
     case 'REPORTED': return 'its numbers were reported, not measured by Driftproof, so it carries no verdict';
+    // Spec 145: a receipt recorded before answered_by existed is NOT_MEASURED here, in the site's words,
+    // as the receipt pages say it (the view page's label is its own).
+    case 'PRE_ANSWERED_BY':
     case 'NOT_MEASURED': return `its receipt carries no verdict, because ${joined((receiptVerdict(receipt).notMeasured || []).map((k) => CLAUSES[k] || k))}`;
     default: return null;
   }
@@ -326,14 +338,55 @@ function acrossFor(row, body, { esc, root }) {
   if (!restates({ html: limit.html, names: [modelHtml(x.model, esc).name].filter(Boolean) }, bodyNums)) throw new Error(`Report ${own}: the limit sentence prints a numeral the body does not`);
   return { answers: answers.map(({ across, rels, html }) => ({ across, rels, html })), limit };
 }
+// ── the native harness (the operator's ruling of 2 Oct 2026) ────────────────────────────────────
+const INSTRUMENT_COMPARISON = 'Instrument comparison report';
+const NATIVE_FILE = /--native--(.+?)--results--aggregate-result\.json$/;
+function nativeOf(row, bodyNums, { esc, root }) {
+  if (!row.type || row.type.value !== INSTRUMENT_COMPARISON) return null;
+  const own = row.number.value;
+  const dir = path.join(root, 'docs', 'reports', own, 'evidence');
+  let names;
+  try { names = fs.readdirSync(dir); } catch { return null; }
+  const found = names.map((f) => ({ f, m: NATIVE_FILE.exec(f) })).filter((x) => x.m).map((x) => ({ file: x.f, skill: x.m[1] })).sort((a, b) => (a.skill < b.skill ? -1 : 1));
+  if (!found.length) return null;
+  for (const x of found) {
+    let d;
+    try { d = JSON.parse(fs.readFileSync(path.join(dir, x.file), 'utf8')); } catch { throw new Error(`Report ${own}: ${x.file} does not read as JSON`); }
+    const c = d.cases || [];
+    if (c.length !== 1) throw new Error(`Report ${own}: ${x.file} holds ${c.length} cases, and the opening reads one case per skill`);
+    const arm = (k) => { const a = (c[0].arms || {})[k]; if (!Array.isArray(a) || !a.length) throw new Error(`Report ${own}: ${x.file} records no runs for the ${k} arm`); return { runs: a.length, passed: a.filter((r) => r.passed === true).length }; };
+    Object.assign(x, { day: String(d.startedAt || '').slice(0, 10), model: (d.suite || {}).modelOverride, cases: c.length, with: arm('with'), without: arm('without') });
+  }
+  const days = [...new Set(found.map((x) => x.day))];
+  const models = [...new Set(found.map((x) => x.model))];
+  if (days.length !== 1 || !dayMonYear(days[0])) throw new Error(`Report ${own}: the native files are dated ${JSON.stringify(days)}, not one day`);
+  if (models.length !== 1 || typeof models[0] !== 'string') throw new Error(`Report ${own}: the native files name ${JSON.stringify(models)}, not one model`);
+  const m = modelHtml(models[0], esc);
+  const fig = (at, n, text) => `<data class="figure" data-at="${at}" value="${esc(n)}">${esc(text)}</data>`;
+  const clause = (x) => `<a class="evidence-link" href="/reports/${esc(own)}/evidence/${esc(x.file)}"><code class="skill">${esc(x.skill)}</code> passed `
+    + `${fig('native-with', x.with.passed, x.with.passed)} of ${fig('native-with-runs', x.with.runs, x.with.runs)} runs with the plugin and `
+    + `${fig('native-without', x.without.passed, x.without.passed)} of ${fig('native-without-runs', x.without.runs, x.without.runs)} without it, `
+    + `on ${fig('native-cases', x.cases, count(x.cases))} test task</a>`;
+  const html = `On <time datetime="${esc(days[0])}">${esc(dayMonYear(days[0]))}</time>, in the plugin eval built into Claude Code, with ${m.html}, ${found.length === 1 ? clause(found[0]) : `${found.slice(0, -1).map(clause).join('; ')}; and ${clause(found[found.length - 1])}`}.`;
+  if (!restates({ html, names: [m.name].filter(Boolean) }, bodyNums)) throw new Error(`Report ${own}: the native harness's item prints a numeral the body does not`);
+  return { html, files: found.map((x) => `docs/reports/${own}/evidence/${x.file}`) };
+}
 const decodeAttr = (s) => String(s).replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
 
 // The report's answers: { answers: [{ rel, html } | { across, rels, html }], limit: { rel, html } },
 // or null. `row` is the report's docs/data/reports.json row; `body` its body, as splitReportBody
 // gives it.
 function answersFor(row, body, { esc, root = ROOT } = {}) {
+  const got = driftproofAnswers(row, body, { esc, root });
+  if (!got) return got;
+  if (got.across) { const { across, ...rest } = got; return rest; }
+  // an instrument comparison report shows the native harness's results too (not for a run-across report)
+  const harness = nativeOf(row, new Set(numeralsIn(textOf(body))), { esc, root });
+  return harness ? { ...got, harness } : got;
+}
+function driftproofAnswers(row, body, { esc, root = ROOT } = {}) {
   const across = acrossFor(row, body, { esc, root });
-  if (across) return across;
+  if (across) return { ...across, across: true };
   // a body that compares two receipts within one run: no sentence read from one receipt (R-10)
   if (new RegExp(VERDICT_EL.source).test(String(body))) return null;
   const bodyNums = new Set(numeralsIn(textOf(body)));
@@ -371,4 +424,4 @@ function answersFor(row, body, { esc, root = ROOT } = {}) {
   return { answers: picked.map((x) => ({ rel: x.rel, html: x.answer.html })), limit };
 }
 
-module.exports = { answersFor, pairVerdict, MAX_ANSWERS };
+module.exports = { answersFor, pairVerdict, meaningOf, MAX_ANSWERS };

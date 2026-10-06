@@ -107,7 +107,8 @@ test('AC-1 text capture through the hop: the wrapper is unchanged and claude run
   assert.equal(calls.length, 1);
   assert.equal(calls[0].file, '/usr/bin/sudo');
   assert.equal(calls[0].args[calls[0].args.indexOf(provider.HOP_LABEL) - 1], provider.ISOLATED_WRAPPER);
-  assert.deepEqual(afterLabel(calls[0]), ['claude', '-p', '--output-format', 'json', '--model', 'claude-haiku-4-5-20251001', '--disallowedTools', 'Bash,Edit,MultiEdit,NotebookEdit,Write,Task', '--append-system-prompt', SYS]);
+  // A-137-4: spec 141 R-1's allow list and no MCP server, still before the SKILL.md.
+  assert.deepEqual(afterLabel(calls[0]), ['claude', '-p', '--output-format', 'json', '--model', 'claude-haiku-4-5-20251001', '--tools', 'Read,WebFetch,WebSearch', '--strict-mcp-config', '--append-system-prompt', SYS]);
   assert.equal(r.text, 'ok');
   assert.ok(!('workspace' in r));
 });
@@ -117,7 +118,7 @@ test('AC-1 text capture on the trusted path and on codex: the same tools off, co
   await provider.complete({ prompt: 'p', model: 'haiku', timeoutMs: 5000, trusted: true });
   assert.equal(calls[0].file, 'claude');
   assert.equal(calls[0].cwd, null);
-  assert.deepEqual(calls[0].args, ['-p', '--output-format', 'json', '--model', 'claude-haiku-4-5-20251001', '--disallowedTools', 'Bash,Edit,MultiEdit,NotebookEdit,Write,Task']);
+  assert.deepEqual(calls[0].args, ['-p', '--output-format', 'json', '--model', 'claude-haiku-4-5-20251001', '--tools', 'Read,WebFetch,WebSearch', '--strict-mcp-config']);
   reset();
   await provider.complete({ prompt: 'p', model: 'gpt-5.6-sol', timeoutMs: 5000 });
   const a = afterLabel(calls[0]);
@@ -133,7 +134,7 @@ test('AC-2 files capture through the hop: the wrapper collects, claude may edit 
   const wrapper = calls[0].args[calls[0].args.indexOf(provider.HOP_LABEL) - 1];
   assert.notEqual(wrapper, provider.ISOLATED_WRAPPER);
   assert.ok(wrapper.endsWith('cd /; rm -rf "$d"; exit $r') && / WORKSPACE/.test(wrapper));
-  assert.deepEqual(afterLabel(calls[0]).slice(5, 10), ['claude-haiku-4-5-20251001', '--permission-mode', 'acceptEdits', '--disallowedTools', 'Bash,Task']);
+  assert.deepEqual(afterLabel(calls[0]).slice(5, 11), ['claude-haiku-4-5-20251001', '--permission-mode', 'acceptEdits', '--tools', 'Read,Write,Edit,NotebookEdit,WebFetch,WebSearch', '--strict-mcp-config']);
   assert.equal(r.text, 'ok');
   assert.deepEqual(r.workspace, [{ path: 'docs/adr/0001.md', bytes: 8, included: true, content: '# ADR 1\n' }]);
 });
@@ -234,7 +235,9 @@ test('AC-3 the frozen v0.9 schema is the Base\'s but for $id, and every tracked 
   // Every tracked receipt: its validity here, and at the Base's own package files.
   const dir = fs.mkdtempSync(path.join(process.env.TMPDIR || os.tmpdir(), 'spec137-base-'));
   try {
-    cp.execFileSync('bash', ['-c', 'git -C "$1" archive --format=tar "$2" lib spec config config.js package.json | tar -x -C "$3"', '_', ARTIFACT_ROOT, base, dir]);
+    // No shell: git writes the archive, tar reads it from stdin, and no path or sha is part of a command string.
+    const archive = cp.execFileSync('git', ['-C', ARTIFACT_ROOT, 'archive', '--format=tar', base, 'lib', 'spec', 'config', 'config.js', 'package.json'], { maxBuffer: 256 * 1024 * 1024 });
+    cp.execFileSync('tar', ['-x', '-C', dir], { input: archive });
     let modules = null;
     try { modules = path.dirname(path.dirname(require.resolve('ajv/package.json'))); } catch { /* NODE_PATH serves both */ }
     if (modules) fs.symlinkSync(modules, path.join(dir, 'node_modules'));

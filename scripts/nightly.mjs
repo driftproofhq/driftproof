@@ -20,10 +20,16 @@
 //      since the last green, and writes a one-screen report.md, morning-report.md, last.json and,
 //      when green, last-green.json. A partial run (--only) writes its report and last-partial.json
 //      only: it is never the reference a later check reads.
+//   7. runs the local CodeQL scan over the tree the public build publishes (spec 148) and sets its
+//      results against config/codeql-baseline.json. A result off the baseline makes the sweep RED,
+//      so the release stops before the public push; a scan that cannot be read makes it ERROR, never
+//      green. A full sweep always scans. A partial sweep (--only) scans only when asked with --codeql,
+//      and says so in its report when it did not.
 // Exit 0 green, 1 red, 2 when it could not sweep.
 //
 //   node scripts/nightly.mjs [--repo <path|url>] [--ref dev] [--state <dir>] [--inputs-from <checkout>]
 //                            [--only <spec,spec>] [--candidate <candidate.json>]
+//                            [--codeql] [--codeql-only] [--codeql-script <file>] [--codeql-out <dir>]
 //
 // Defaults: --repo is the `private` remote of the checkout this script sits in; --state is
 // $DP_NIGHTLY_DIR or ~/.driftproof-nightly; --inputs-from is that checkout. `--only` makes a
@@ -31,11 +37,19 @@
 // `--candidate` (spec 067) names the integrator's train/candidate.json: the sweep checks out the
 // candidate's SHA, which must be on a branch of the clone, instead of the tip of --ref, and the result
 // names the file. Without it nothing here changes.
+// `--codeql` (spec 148) makes a partial sweep run the CodeQL scan too. `--codeql-only` runs the scan
+// alone, on the same clone, and writes its report: exit 0 nothing new, 1 a result off the baseline, 2
+// the scan could not be read; it moves no state file. `--codeql-script` names the script that makes the
+// scan, in place of scripts/codeql-local.sh in the clone (a proof run's stand-in); the report names the
+// script it ran. The scan's SARIF and summary go under --codeql-out, /var/tmp/codeql-scan by default.
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { createRequire } from 'node:module';
+
+const codeql = createRequire(import.meta.url)('./codeql-read.js');
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -60,6 +74,11 @@ const state = path.resolve(opt('--state') || process.env.DP_NIGHTLY_DIR || path.
 const inputsFrom = path.resolve(opt('--inputs-from') || ROOT);
 const only = opt('--only') ? opt('--only').split(',').filter(Boolean) : null;
 const candidateFile = opt('--candidate') ? path.resolve(opt('--candidate')) : null;
+const flag = (k) => argv.includes(k);
+const wantCodeql = flag('--codeql');
+const codeqlOnly = flag('--codeql-only');
+const codeqlScript = opt('--codeql-script') ? path.resolve(opt('--codeql-script')) : null;
+const codeqlOut = path.resolve(opt('--codeql-out') || '/var/tmp/codeql-scan');
 
 // ── the lock and the box ─────────────────────────────────────────────────────────────────────
 function takeLock(file) {
@@ -100,6 +119,23 @@ function ignoredInputs(from) {
   return ['node_modules', ...specs];
 }
 
+// ── the local CodeQL scan (spec 148) ─────────────────────────────────────────────────────────
+// scripts/codeql-local.sh scan exits 0 (nothing off the baseline), 1 (a result off it) or 2 (not
+// made or not read), and writes summary.json beside the SARIF. It scans --rev <sha>, the committed
+// bytes the public push publishes, and not the working copy a gate may have rewritten. Anything else, or an exit 0 or 1
+// with no readable summary, is a scan that was not read.
+function runCodeql(tree, sha) {
+  const script = codeqlScript || path.join(tree, 'scripts', 'codeql-local.sh');
+  const base = { script: codeqlScript ? tilde(codeqlScript) : 'scripts/codeql-local.sh in the swept tree' };
+  if (!fs.existsSync(script)) return { ...base, state: 'unreadable', why: `${base.script} does not exist` };
+  const out = path.join(codeqlOut, `${stamp()}-${sha.slice(0, 8)}`);
+  const r = run('bash', [script, 'scan', '--tree', tree, '--rev', sha, '--out', out], { timeout: 60 * 60 * 1000 });
+  const summary = readJson(path.join(out, 'summary.json'));
+  const tail = tilde(`${r.stderr || ''}${r.stdout || ''}`.trim().split('\n').slice(-2).join(' / ')).slice(0, 200);
+  if (r.status === 0 && summary && summary.state === 'clean') return { ...base, out: tilde(out), state: 'clean', summary };
+  if (r.status === 1 && summary && summary.state === 'new' && summary.new.length) return { ...base, out: tilde(out), state: 'new', summary };
+  return { ...base, out: tilde(out), state: 'unreadable', why: `the scan exited ${r.status === null ? 'with a signal' : r.status} and left ${summary ? `a ${summary.state} summary` : 'no summary'}: ${tail}` };
+}
 async function main() {
   fs.mkdirSync(path.join(state, 'runs'), { recursive: true });
   const lockFile = path.join(state, 'nightly.lock');
@@ -127,6 +163,7 @@ async function sweep() {
   git(tree, 'checkout', '-q', '-B', ref, sha);
   const main = gitTry(tree, 'rev-parse', '--verify', '-q', 'origin/main');
   if (main && ref !== 'main') git(tree, 'branch', '-f', 'main', main);
+  if (codeqlOnly) return reportCodeqlOnly({ startedAt, runDir, tree, sha, candidate, codeql: runCodeql(tree, sha) });
   const copied = [];
   for (const rel of ignoredInputs(inputsFrom)) {
     const src = path.join(inputsFrom, rel);
@@ -160,11 +197,14 @@ async function sweep() {
   fs.writeFileSync(path.join(runDir, 'emit.log'), tilde(`# node ${emitArgs.join(' ')}\n# exit ${em.status}\n${em.stdout || ''}${em.stderr || ''}`));
   const emission = readJson(path.join(tree, EMISSION));
   const fresh = emission && emission.emission && emission.emission.commit === sha;
+  // The scan runs after the gates, so it never shares the box with a measurement.
+  const codeqlWhy = !fresh ? 'the emitter wrote no emission' : (only && !wantCodeql) ? 'a partial sweep (--only) scans only when asked with --codeql' : null;
+  const cq = codeqlWhy ? { state: 'not-run', why: codeqlWhy } : runCodeql(tree, sha);
   if (fresh) {
     fs.copyFileSync(path.join(tree, EMISSION), path.join(runDir, 'sweep-run.json'));
     if (fs.existsSync(path.join(tree, RAW))) run('cp', ['-a', path.join(tree, RAW), path.join(runDir, 'sweep-raw')]);
   }
-  return report({ startedAt, atStart, runDir, tree, sha, candidate, emission: fresh ? emission : null, em, reference, refSource, greenCommit, copied, wall: Date.now() - t0 });
+  return report({ startedAt, atStart, runDir, tree, sha, candidate, emission: fresh ? emission : null, codeql: cq, em, reference, refSource, greenCommit, copied, wall: Date.now() - t0 });
 }
 
 // ── the reading and the report ───────────────────────────────────────────────────────────────
@@ -195,7 +235,8 @@ async function report(r) {
   const newRed = rows.filter((x) => x.verdict === 'new-red');
   const c = r.emission && r.emission.conduct;
   const conductClean = !!(c && c.nfr2.refs_clean && !c.nfr2.unexcused.length && !c.nfr2.survived_restore.length && !c.nfr3.left.length);
-  const verdict = !r.emission ? 'ERROR' : (newRed.length === 0 && conductClean ? 'GREEN' : 'RED');
+  const cqVerdict = codeql.sweepVerdict(r.codeql);
+  const verdict = !r.emission ? 'ERROR' : (newRed.length === 0 && conductClean && cqVerdict !== 'RED' ? (cqVerdict === 'ERROR' ? 'ERROR' : 'GREEN') : 'RED');
   const alone = r.atStart.found.length === 0 && atEnd.found.length === 0;
   const lines = [
     `# Driftproof nightly ${r.startedAt.toISOString().slice(0, 16)}Z: ${verdict}`,
@@ -205,6 +246,7 @@ async function report(r) {
     r.emission ? `Swept ${r.emission.runs.length} gates in ${(r.wall / 60000).toFixed(1)} min${only ? ` (PARTIAL: --only ${only.join(',')})` : ' (full)'}; emitter exit ${r.em.status}.` : `The emitter wrote no emission for ${r.sha.slice(0, 8)} (exit ${r.em.status}); see emit.log.`,
     `Alone on the box: ${alone ? 'yes' : `no: ${r.atStart.found.length} other gate, sweep or driver process(es) at start, ${atEnd.found.length} at the end`}.`,
     c ? `Conduct: refs ${c.nfr2.refs_clean ? 'unmoved' : 'MOVED'}, ${c.nfr2.unexcused.length} unexcused write(s), ${c.nfr2.survived_restore.length} unrestored, ${c.nfr3.left.length} sandbox(es) left.` : 'Conduct: not recorded.',
+    ...codeql.sweepLines(r.codeql),
     '',
     `New reds (${newRed.length}):`,
   ];
@@ -220,7 +262,7 @@ async function report(r) {
   const text = lines.slice(0, MAX_LINES).join('\n') + '\n';
 
   const rel = path.relative(state, r.runDir);
-  const result = { verdict, commit: r.sha, subject, ref, repo: tilde(repo), started: r.startedAt.toISOString(), wall_ms: r.wall, partial: only, reference: { source: r.refSource, commit: r.greenCommit }, new_red: newRed, rows, merges, alone, others_at_start: r.atStart, others_at_end: atEnd, inputs_copied: r.copied, emitter_exit: r.em.status, ...(candidate ? { candidate } : {}) };
+  const result = { verdict, commit: r.sha, subject, ref, repo: tilde(repo), started: r.startedAt.toISOString(), wall_ms: r.wall, partial: only, codeql: r.codeql, reference: { source: r.refSource, commit: r.greenCommit }, new_red: newRed, rows, merges, alone, others_at_start: r.atStart, others_at_end: atEnd, inputs_copied: r.copied, emitter_exit: r.em.status, ...(candidate ? { candidate } : {}) };
   fs.writeFileSync(path.join(r.runDir, 'report.md'), text);
   fs.writeFileSync(path.join(r.runDir, 'result.json'), JSON.stringify(result, null, 2) + '\n');
   // A partial run (--only) is never a reference: it writes last-partial.json and nothing that
@@ -234,6 +276,28 @@ async function report(r) {
   } else if (r.emission) {
     fs.writeFileSync(path.join(state, 'last-partial.json'), JSON.stringify(last, null, 2) + '\n');
   }
+  fs.rmSync(r.tree, { recursive: true, force: true });
+  process.stdout.write(text);
+  return verdict === 'GREEN' ? 0 : verdict === 'RED' ? 1 : 2;
+}
+
+// --codeql-only: the scan's own report. It moves no state file (last.json, last-green.json, the
+// morning report): it is a reading of one commit, not a sweep.
+function reportCodeqlOnly(r) {
+  const verdict = codeql.sweepVerdict(r.codeql) || 'GREEN';
+  const subject = gitTry(r.tree, 'log', '-1', '--format=%s', r.sha) || '';
+  const lines = [
+    `# Driftproof CodeQL scan ${r.startedAt.toISOString().slice(0, 16)}Z: ${verdict}`,
+    '',
+    `${ref} at ${r.sha.slice(0, 8)} "${subject.slice(0, 90)}"`,
+    ...codeql.sweepLines(r.codeql),
+    `Script: ${r.codeql.script}.`,
+    r.codeql.out ? `Record: ${r.codeql.out}` : 'Record: none.',
+    ...(verdict === 'GREEN' ? [] : ['Next: the next change fixes the result or a recorded decision adds it to config/codeql-baseline.json.']),
+  ];
+  const text = `${lines.join('\n')}\n`;
+  fs.writeFileSync(path.join(r.runDir, 'report.md'), text);
+  fs.writeFileSync(path.join(r.runDir, 'result.json'), `${JSON.stringify({ verdict, commit: r.sha, subject, ref, repo: tilde(repo), started: r.startedAt.toISOString(), codeql: r.codeql, ...(r.candidate ? { candidate: r.candidate } : {}) }, null, 2)}\n`);
   fs.rmSync(r.tree, { recursive: true, force: true });
   process.stdout.write(text);
   return verdict === 'GREEN' ? 0 : verdict === 'RED' ? 1 : 2;

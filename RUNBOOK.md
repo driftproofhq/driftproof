@@ -77,7 +77,7 @@ never creates that user, edits sudoers, or logs a CLI in; the operator does, onc
    files then live in that user's home, unreadable to yours and vice versa.
 3. Grant the operator account `NOPASSWD` as that user only, in
    `/etc/sudoers.d/driftproof-eval`:
-   `ec2-user ALL=(driftproof-eval) NOPASSWD: ALL` (substitute the operator name).
+   `<operator> ALL=(driftproof-eval) NOPASSWD: ALL` (substitute the operator name).
 4. Verify the boundary by hand before the first run:
    `H=/home/driftproof-eval; sudo -n -u driftproof-eval /usr/bin/env -i HOME=$H PATH=$H/.local/bin:/usr/bin:/bin bash -lc 'env; claude --version; codex --version'`
    must list no variable from your shell, and a probe such as
@@ -288,6 +288,14 @@ is not substance, and an `approved-with-findings` verdict with something blockin
 still outstanding is not a mergeable approval. It has no `--force`: if it
 refuses, the fix is another approval run naming the current tip, not a flag.
 
+An approval record also carries `rulings_owed:`, each question the operator must answer before
+the merge, separated by `;`, or `none`. The driver does not start a merge while the record names
+a question no ruling has answered: it stops with class `ruling-needed` at the merge stage, and a
+`ruling:` answer resumes it with no fix loop (spec 109). Every record is also read for a finding
+that says a ruling is owed, needed or required before merge, clause by clause, and one that does stops
+the merge too, even when the record says `rulings_owed: none`. A record whose approval file cannot be
+read stops the same way. A record with neither merges.
+
 Post-approval fixes are the trap. Resolving findings moves the tip, and the
 approval that cleared the old tip does **not** cover the new one — this is how
 DECISIONS #12 happened, with a blocking finding's fix merging on the strength of
@@ -314,7 +322,7 @@ cut only from a `dev` commit whose nightly is green.
 
 ### Install / operate the nightly timer
 
-The box has no cron, so the nightly is a `systemctl --user` timer running as `ec2-user` (linger is
+The box has no cron, so the nightly is a `systemctl --user` timer running as the operator's user (linger is
 on). The service runs `nightly.mjs` from its own clone of `private`, checked out at `dev`, so the
 nightly is always the one `dev` carries. It never depends on the branch a working checkout is on.
 The unit puts `~/.local/bin` first in `PATH`, because a user service's default `PATH` does not carry
@@ -466,13 +474,26 @@ Run this **by hand** after reviewing a queued draft in
    ```sh
    bash scripts/build-public.sh -m "<message>" --print-message   # resolve only, build nothing
    ```
+   The build makes **one new commit** whose parent is the public `main` tip as
+   `git ls-remote` reads it at that moment (the public history is kept, never
+   replaced), and it refuses before it alters anything when the tip cannot be read
+   or the message carries a private marker (`scripts/public-message-check.mjs`): a
+   spec number, a SHA of the private repository, a path under the home directory
+   or `/var/tmp`, or the private remote's name. The message says what ships, in
+   the release notes' words (a release) or in a summary you type (a site-only push).
    The gate (confidentiality + credential-format + hygiene scans, all blocking)
    must be **green on the published tree** before pushing.
 
 7. **Push the public tree.**
    ```sh
-   cd ~/driftproof-public && git push -u origin main --force
+   node scripts/push-public.mjs            # from the source checkout; --dry-run runs every check and pushes nothing
    ```
+   `scripts/push-public.mjs` is the one place a public push is made: a plain
+   fast-forward onto the remote's `main` as it reads at that moment. It refuses,
+   naming the remote's tip and the commit's parent in full, when the remote moved
+   since the build or the commit is not a child of the tip, and it reads the
+   message once more. It has no force option, and nothing in this runbook pushes
+   with one. A refusal means build again; it never means force.
    Then **confirm a Pages deployment exists for the pushed commit** and that it
    reached `success`. A push that Pages never deployed leaves the live site on the
    previous tree, and step 8 can still read `200` from the old one.
@@ -683,7 +704,7 @@ publish, not the shipped content:
 
 ```sh
 git -C ~/driftproof-public ls-tree -r --full-tree HEAD > /tmp/before.txt   # the tree already live, before the rebuild
-bash scripts/build-public.sh -m "docs vX.Y.Z: RELEASES.md records the publish; no code, site or package content changes, built from source commit $(git rev-parse HEAD)"
+bash scripts/build-public.sh -m "docs vX.Y.Z: RELEASES.md records the publish; no code, site or package content changes"
 git -C ~/driftproof-public ls-tree -r --full-tree HEAD > /tmp/after.txt
 diff /tmp/before.txt /tmp/after.txt   # expect exactly one line: RELEASES.md's blob
 ```
@@ -699,8 +720,13 @@ worth stopping on before the push.
 build in step 7), never on this documentation-only rebuild.
 
 ```sh
-cd ~/driftproof-public && git push origin main --force-with-lease=main:<the sha ls-tree read before the rebuild>
+node scripts/push-public.mjs            # from the source checkout: a fast-forward of the commit the release pushed
 ```
+
+The source commit this rebuild was made from is not named in its message: a SHA of
+the private repository is a private marker and the build refuses it. The record of
+which commit it was built from is `RELEASES.md`'s `### Published` section, in the
+private tree.
 
 ### Tell IndexNow what changed (the release evening, after the live check)
 
@@ -723,9 +749,11 @@ node scripts/indexnow.mjs --since <previous publish's source sha> --send   # exp
   and remove the `reports/pending-publish.md` entry. Nothing was published, so
   there is nothing to revert on the public tree.
 - **Bad publish:** revert the promotion commit on `main`, re-run
-  `bash scripts/build-public.sh -m "revert <what went wrong>"`, and force-push the
-  public tree again. Say in the message that this build is a revert — a rollback
-  that ships under a message describing the thing it is rolling back is how the
-  public history stops matching what happened.
+  `bash scripts/build-public.sh -m "revert <what went wrong>"`, and push it with
+  `node scripts/push-public.mjs`. The rollback is a new commit on the public
+  history, a plain fast-forward: a public commit is never taken back. Say in the
+  message that this build is a revert: a rollback that ships under a message
+  describing the thing it is rolling back is how the public history stops
+  matching what happened.
 - **Bad registry auto-add:** remove the `auto_added` entry from
   `config/models.json` and its id from `state/seen-models.json`.

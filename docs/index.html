@@ -47,7 +47,7 @@
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Node.js 22+",
   "url": "https://driftproofhq.com/",
-  "softwareVersion": "0.13.0",
+  "softwareVersion": "0.14.0",
   "downloadUrl": "https://www.npmjs.com/package/driftproof",
   "author": {
     "@id": "https://driftproofhq.com/#organization"
@@ -196,6 +196,7 @@ svg {
 <li><strong>Regressed.</strong> A case separated downward under the same rule.</li>
 <li><strong>No separation detected.</strong> The ranges overlap at this sample size, which is not evidence that nothing changed.</li>
 <li><strong>Not enough draws.</strong> Not enough draws to conclude at this effect floor. The receipt prints how many draws per arm would have been needed, or that no number of draws reaches the floor at the spreads it measured.</li>
+<li><strong>More cases needed.</strong> More cases, not more draws, are needed to conclude at this effect floor. The cases score too far apart from each other for more draws to be expected to bring the comparison band under the floor, and the receipt prints the band with each case's draw-to-draw spread taken out.</li>
 <li><strong>Not measured.</strong> The receipt carries no verdict, and its page names every reason, such as a run that does not record that a model answered it.</li>
 </ul>
 <p>Every receipt has its own page, with its verdict, its two arms and a way to verify it yourself. <a href="/how-this-is-built/">How this is built</a> describes how the tool itself is checked.</p>
@@ -260,20 +261,21 @@ svg {
 <h2>Install in Claude Code</h2>
 <p><span class="copy-cta"><code>claude plugin marketplace add driftproofhq/driftproof</code><button type="button" data-copy="claude plugin marketplace add driftproofhq/driftproof">Copy</button></span></p>
 <p><span class="copy-cta"><code>claude plugin install driftproof@driftproofhq</code><button type="button" data-copy="claude plugin install driftproof@driftproofhq">Copy</button></span></p>
-<p>That installs <code>/driftproof:init</code>, <code>/driftproof:run</code> and <code>/driftproof:badge</code>. The plugin hands your arguments to the pinned runner and writes the receipt that runner would have written; <code>/driftproof:run</code> spends your Claude Code subscription rather than an API key, and it never edits a skill.</p>
+<p>That installs <code>/driftproof:start</code>, <code>/driftproof:init</code>, <code>/driftproof:run</code> and <code>/driftproof:badge</code>. The plugin hands your arguments to the pinned runner and writes the receipt that runner would have written; <code>/driftproof:run</code> spends your Claude Code subscription rather than an API key. It measures and never changes a skill's instructions. The one file it adds is a new <code>evals/evals.json</code>, from <code>/driftproof:start</code> or <code>/driftproof:init</code>, to a skill that has none, after you say yes in the run.</p>
+<p>Start with a skill you already have. In Claude Code, from the folder above it, in a git repository, run <code>/driftproof:init path/to/your-skill</code>. Claude reads your <code>SKILL.md</code> and drafts test cases with you, aimed at outcomes you would check. It adds them only after you say yes, labelled as drafted from the skill and approved by you, then runs a quick check and opens a results page: your first receipt. A quick check is a first look and cannot produce a verdict. <code>/driftproof:run</code> on a skill with no test cases offers the same draft. For a new skill, scaffold one with <code>npx driftproof init my-skill</code>, as the next section shows.</p>
 <p>Driftproof is tested on Linux and macOS. In an outside retest on macOS the shipped gate failed only in the publishing helper, which needs GNU <code>realpath -m</code>. Windows is untested: from Node's source the plugin would not find <code>npx</code> there, but that failure has never been observed. A CI matrix across Linux, macOS and Windows is planned, and <a href="/findings/">the findings page</a> has the figures.</p>
 </section>
 
 <section id="ci" class="screen is-text">
 <h2>In CI: npx and the GitHub Action</h2>
-<p>You need <code>Node 22</code> or newer and an <code>ANTHROPIC_API_KEY</code>. From a clean checkout to a receipt for your own skill:</p>
+<p>You need <code>Node 22</code> or newer and an <code>ANTHROPIC_API_KEY</code>. From a clean checkout to a receipt for a new skill, on the command line:</p>
 <pre><code>npx driftproof init my-skill          # scaffold SKILL.md + evals/evals.json + .driftproofrc
 # edit the 3 example cases so each is grounded in a claim your SKILL.md makes
 export CLAUDE_PROVIDER=api
 read -rsp "Anthropic API key: " ANTHROPIC_API_KEY &amp;&amp; export ANTHROPIC_API_KEY
 npx driftproof run my-skill --models claude-haiku-4-5
 cat receipts/*.summary.md              # read the receipt + human summary</code></pre>
-<p>Wire it into a repository with the <a href="https://github.com/driftproofhq/driftproof#verification-in-ci-github-action--badge">GitHub Action</a> (<code>uses: driftproofhq/driftproof@v0.13.0</code>): it re-runs the suite on every push, uploads the receipts, and fails the job when a case separated downward. <code>driftproof badge</code> turns a receipt into a badge that carries the model and the date it was measured.</p>
+<p>Wire it into a repository with the <a href="https://github.com/driftproofhq/driftproof#verification-in-ci-github-action--badge">GitHub Action</a> (<code>uses: driftproofhq/driftproof@v0.14.0</code>): it re-runs the suite on every push, uploads the receipts, and fails the job when a case separated downward. <code>driftproof badge</code> turns a receipt into a badge that carries the model and the date it was measured.</p>
 <p><img alt="driftproof badge: passing on claude-haiku-4-5" src="https://img.shields.io/endpoint?url=https://driftproofhq.com/badges/commit-message-conventions.json"></p>
 </section>
 

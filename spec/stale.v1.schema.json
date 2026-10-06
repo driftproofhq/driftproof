@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://driftproofhq.com/spec/stale.v1.schema.json",
   "title": "driftproof stale, output v1",
-  "description": "What `driftproof stale --json` prints (spec 053): for each receipt, what it recorded against what would run today, per axis, the decision per arm (rerun, then regrade, then unknown, then reuse), the status, any newer-model advisory and the command to run next; or the reason the receipt could not be read. An axis nobody records or gives is unknown, never current. Fields are only ever added, never renamed or removed; a consumer ignores fields it does not know. An axis effect of advisory is a patch release of the same harness (spec 053 A-053-1): it reruns and regrades nothing and counts in summary.advisories with any newer-model advisory. exit_code is the process exit: 0 every receipt current with no advisory, 1 any stale, 3 none stale but something unknown or advised, 2 any error; with strict, 3 becomes 1.",
+  "description": "What `driftproof stale --json` prints (spec 053): for each receipt, what it recorded against what would run today, per axis, the decision per arm (rerun, then regrade, then unknown, then reuse), the status, any newer-model advisory and the command to run next; or the reason the receipt could not be read. An axis nobody records or gives is unknown, never current. Fields are only ever added, never renamed or removed; a consumer ignores fields it does not know. An axis effect of advisory is a patch release of the same harness (spec 053 A-053-1): it reruns and regrades nothing and counts in summary.advisories with any newer-model advisory. The axis capture (spec 146) is the capture mode, text or files, that the receipt recorded in run.capture.mode against the mode today (the --capture flag, else capture in .driftproofrc, else text): a different mode reruns both arms, and a receipt that records none reads unknown. exit_code is the process exit: 0 every receipt current with no advisory, 1 any stale, 3 none stale but something unknown or advised, 2 any error; with strict, 3 becomes 1.",
   "type": "object",
   "additionalProperties": true,
   "required": [
@@ -173,6 +173,7 @@
                       "enum": [
                         "model",
                         "harness",
+                        "capture",
                         "skill",
                         "suite",
                         "judge_model",

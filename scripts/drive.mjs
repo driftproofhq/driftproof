@@ -11,7 +11,7 @@
 // each finding, with a fix loop in a fresh context where the class asks for one (at most three per
 // spec); then `ready` (pushed to the private remote, stopped for the operator's approval) or the
 // merge sequence of RUNBOOK § Merge a spec branch to dev, and, when the brief asks for it, the site
-// or release push under the lease rule. Every session is its own `claude -p` process with auto
+// or release push as a plain fast-forward (spec 113). Every session is its own `claude -p` process with auto
 // memory off, a turn cap, a cost cap and a wall-clock limit. Heavy gates, sweeps, the emission and
 // the repository gate run as shell commands of this process, never inside a session.
 //
@@ -35,6 +35,15 @@
 // worktree step copies node_modules from (`copy_from`), and `push_branch: false` (the ready stage
 // pushes nothing). None of them set, the driver runs as spec 048 left it.
 //
+// A LAYOUT OR VISUAL SPEC OWES ITS BROWSER CHECKS BEFORE ITS APPROVAL (spec 129, CONSTITUTION § Fix
+// loop checklist item 5). Whether a spec is one is read from its diff against the Base the driver
+// recorded, by merge-check.js's LAYOUT_PATHS; no queue entry can say otherwise. The checks stage,
+// which every build, fix round and rebase passes through, runs the spec's own capture taker, its
+// checks, and then each browser gate the change reaches as `gate.sh --final`, one at a time, and
+// writes a visual receipt beside the other evidence. The approval stage starts no session for a
+// layout spec without a receipt good for the exact commit it would approve (stop class
+// `visual-checks-missing`), and the merge retakes the captures on the merge result.
+//
 // Environment: DRIVE_CLAUDE_BIN (default `claude`), DRIVE_NOTIFY_URL, DRIVE_GH_TOKEN (or GH_TOKEN)
 // and NPM_TOKEN for public actions. Tokens are never passed to a session, never written to a file
 // except as the `${NPM_TOKEN}` reference npm expands, and scrubbed from every record.
@@ -47,6 +56,15 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const HOME = os.homedir();
+const requireHere = createRequire(import.meta.url);
+// merge-check.js holds the layout decision, the visual receipt and its reading (spec 129), so that the
+// driver and the merge check read one definition; it is the one file the specs' scratch repositories copy.
+const mergeCheck = requireHere('./merge-check.js');
+const vc = mergeCheck;
+// Spec 115: git's SSH command for an approval session, read-only access to the driven remote.
+const SSH_WRAPPER = path.join(path.dirname(fileURLToPath(import.meta.url)), 'git-ssh-readonly.mjs');
+// the ref the proof before an approval names in its dry-run push; nothing is ever created under it
+const PROOF_REF = 'drive-proof-refused';
 const STAGES = ['worktree', 'build', 'checks', 'approve', 'triage', 'fix', 'rebase', 'ready', 'merge', 'publish'];
 export const STAGE_DEFAULTS = {
   build: { max_turns: 250, minutes: 150, usd: 10 },
@@ -61,6 +79,36 @@ const RULE_REFS = 'DRIVER-RULE: push nothing, merge nothing, move no ref but thi
 // Spec 051: T1 and T2 are approved in a fresh context; T3 is not (CONSTITUTION § Proportional oversight).
 const TIERS = ['T1', 'T2', 'T3'];
 const needsApproval = (tier) => tier !== 'T3';
+
+// The rulings an approval record leaves for the operator before the merge (spec 109). Two readings,
+// both run on every record, and a question either names stops the merge. (1) The field
+// `rulings_owed:`, one question or several split on `;`, or `none`; a field present and empty is
+// a question, and a line that opens with the field name behind an indent, a bullet, a quote mark,
+// bold or backticks is the field. (2) The text check, for records written before the field: a
+// finding that says a ruling is owed, needed or required before merge, in the `findings:` field or
+// in a finding bullet's sentences, read clause by clause (split on `,`, `;`, `but` and `however`):
+// a clause that holds the ruling and an owed word and is not itself negated (`no ruling`, `not
+// owed`) is a question, whatever the other clauses say. A record that says `none` and carries such
+// a finding stops as a contradiction.
+const owedKey = (t) => String(t).replace(/\s+/g, ' ').trim().toLowerCase();
+const NEG_OWED = /\b(no|not|none|never)\s+(\w+\s+)?(ruling|owed|needed|required)\b/i;
+const owesRuling = (u) => /\bbefore (the )?merg/i.test(u)
+  && u.split(/[,;]|\b(?:but|however)\b/i).some((c) => /\brulings?\b/i.test(c) && /\b(owed|needed|required)\b/i.test(c) && !NEG_OWED.test(c));
+function rulingsOwedIn(text) {
+  const items = [];
+  for (const f of text.matchAll(/^[\s*_>`-]*rulings_owed\W*:[ \t]*(.*)$/gmi)) {
+    const v = f[1].replace(/^[\s*_`]+/, '').trim();
+    if (!v) items.push({ via: 'rulings_owed', text: '(the field is present and names nothing; write `none` or each question)' });
+    else if (!/^none\.?$/i.test(v)) for (const q of v.split(/;\s*/).filter(Boolean)) items.push({ via: 'rulings_owed', text: q });
+  }
+  const fl = /^findings:[ \t]*(.*)$/mi.exec(text);
+  const units = [
+    ...(fl && !/^none\.?$/i.test(fl[1].trim()) ? fl[1].split(/;\s*/) : []),
+    ...text.split('\n').filter((l) => /^\s*[-*]\s+\**F-\d+/.test(l)).flatMap((l) => l.split(/(?<=[.:])\s+/)),
+  ];
+  for (const u of units) if (owesRuling(u) && !items.some((i) => owedKey(i.text) === owedKey(u))) items.push({ via: 'finding text', text: u.trim() });
+  return items;
+}
 // The paths a T3 branch may change besides its own spec directory: internal only (spec 051 R-10,
 // narrowed by A-051-1 for F-2). The scripts are named one by one: most of scripts/ builds a public
 // surface (site pages, receipt pages, reports) or guards the merge (merge-check.js), and a path
@@ -73,6 +121,22 @@ export const REPO_GATE_DEFAULT = Object.freeze({ cmd: ['node', 'tests/gate.js'],
 
 // ── small utilities ─────────────────────────────────────────────────────────────────────────────
 const expand = (p) => (typeof p === 'string' && (p === '~' || p.startsWith('~/')) ? path.join(HOME, p.slice(1)) : p);
+// The file an approval object names. `clean()` stores it in the ~ form, so a run resumed from progress.json
+// holds `~/...`, which existsSync, readFileSync and path.relative do not expand (spec 164).
+const recordFile = (a) => (a && a.file ? expand(a.file) : null);
+const shq = (t) => `'${String(t).replace(/'/g, `'\\''`)}'`;
+// an SSH URL: ssh://, or scp-like host:path (a colon before any slash). Git runs no ssh for a path or file://, and
+// `ext::cmd`, `fd::3` and `foo::bar` are remote helpers, not hosts; `c:/x` is a drive path (spec 115).
+const isSshUrl = (u) => /^(?:git\+|ssh\+)?ssh(?:\+git)?:\/\//.test(u)
+  || (/^(?:[\w.-]+@)?[\w.-]+:(?!\/\/)/.test(u) && !/^[./]/.test(u) && !/^[\w.-]+::/.test(u) && !/^[A-Za-z]:[\\/]/.test(u));
+// The host and path git hands the ssh command for an SSH URL (`[user@]host`, and the path as the remote command quotes it):
+// ssh://h/p passes `/p`, ssh://h/~u/p passes `~u/p`, scp-like h:p passes `p`. The read-only wrapper is pinned to these (spec 115).
+const sshTarget = (u) => {
+  const url = /^(?:git\+|ssh\+)?ssh(?:\+git)?:\/\/([^/]+)(\/.*)?$/.exec(u);
+  if (url) return { host: url[1].replace(/:\d+$/, ''), path: (url[2] || '/').replace(/^\/(?=~)/, '') };
+  const scp = /^((?:[\w.-]+@)?[\w.-]+):(.*)$/.exec(u);
+  return scp ? { host: scp[1], path: scp[2] } : null;
+};
 const tilde = (p) => (typeof p === 'string' && (p === HOME || p.startsWith(HOME + path.sep)) ? '~' + p.slice(HOME.length) : p);
 // The home directory anywhere in a text, followed by a separator or by the end of a path, the bare
 // form included (approval F-1: a git_ceiling of exactly HOME stayed absolute).
@@ -208,6 +272,14 @@ function resolveTier(s) {
   return tier;
 }
 
+// Spec 129: whether a spec changes layout is read from its diff, never from its entry. An entry that
+// names a switch for the browser checks is refused, whatever it sets the switch to.
+const VISUAL_OPT_OUT = ['layout', 'visual', 'visual_checks', 'skip_visual', 'skip_visual_checks', 'skip_browser_checks'];
+function refuseVisualOptOut(s) {
+  const key = VISUAL_OPT_OUT.find((k) => Object.prototype.hasOwnProperty.call(s, k));
+  if (key) throw new Error(`queue: ${s.id} sets ${key}; whether a spec changes layout is read from its diff and no entry may switch the browser checks off (CONSTITUTION § Fix loop checklist, item 5); refused`);
+}
+
 function loadQueue(file, opts) {
   const qfile = path.resolve(expand(file));
   const q = JSON.parse(fs.readFileSync(qfile, 'utf8'));
@@ -219,6 +291,7 @@ function loadQueue(file, opts) {
   const specs = (q.specs || []).map((s) => {
     const id = s.id;
     if (!/^[0-9a-z][0-9a-z-]*$/.test(id || '')) throw new Error(`queue: bad spec id ${JSON.stringify(id)}`);
+    refuseVisualOptOut(s);
     const stages = {};
     for (const k of Object.keys(STAGE_DEFAULTS)) stages[k] = { ...STAGE_DEFAULTS[k], ...((s.stages || {})[k] || {}) };
     return {
@@ -276,8 +349,12 @@ class SpecRun {
 
   save() {
     this.p.updated = iso();
-    if (fs.existsSync(this.s.worktree)) writeJson(path.join(this.recDir, 'progress.json'), this.p);
-    else writeJson(path.join(this.q.state, 'pending', `${this.s.id}.json`), this.p);
+    if (fs.existsSync(this.s.worktree)) {
+      writeJson(path.join(this.recDir, 'progress.json'), this.p);
+      // progress.json is ignored by git, so it goes when the worktree does, as it did when spec 133 was
+      // rebuilt. This copy, outside the worktree, is written every time and read by no stage (spec 129).
+      writeJson(path.join(this.q.state, 'progress', `${this.s.id}.json`), this.p);
+    } else writeJson(path.join(this.q.state, 'pending', `${this.s.id}.json`), this.p);
   }
   // Records are committed on the branch as evidence-only commits, so a real approval sees a clean
   // tree and merge-check walks back over them to the subject. After the merge starts they stay on
@@ -370,10 +447,10 @@ class SpecRun {
   }
 
   // ── stops, questions, answers ─────────────────────────────────────────────────────────────────
-  async stop(cls, stage, detail, evidence = []) {
+  async stop(cls, stage, detail, evidence = [], extra = {}) {
     const qfile = path.join(this.q.state, `QUESTION-${this.s.id}.md`);
     this.p.state = 'stopped';
-    this.p.stop = { class: cls, stage, asked: iso(), question_file: qfile, detail };
+    this.p.stop = { class: cls, stage, asked: iso(), question_file: qfile, detail, ...extra };
     this.save();
     try { this.commitRecords(`stop (${cls})`); } catch {}
     const text = [
@@ -428,13 +505,14 @@ class SpecRun {
     if (kind === 'budget') this.p.budget_extra = (this.p.budget_extra || 0) + (Number(rest.replace(/^\+/, '')) || 0);
     if (kind === 'ruling') {
       const rulings = readJson(path.join(this.recDir, 'rulings.json'), []);
-      rulings.push({ date: iso().slice(0, 10), recorded: iso(), for_class: stop.class, stage: stop.stage, ruling: rest, question_sha256: entry.question_sha256 });
+      rulings.push({ date: iso().slice(0, 10), recorded: iso(), for_class: stop.class, stage: stop.stage, ruling: rest, question_sha256: entry.question_sha256, ...(stop.owed ? { owed: stop.owed } : {}) });
       writeJson(path.join(this.recDir, 'rulings.json'), rulings);
       this.p.rulings = rulings;
       if (stop.class === 'loops-spent') this.p.loops_granted = (this.p.loops_granted || 0) + 1;
     }
     this.p.resume = { from: stop.class, stage: stop.stage, kind, ruling: kind === 'ruling' ? rest : null };
-    let resume = stop.stage;
+    // The receipt a refused approval waits for is made by the checks stage, not by the approval's.
+    let resume = stop.class === 'visual-checks-missing' ? 'checks' : stop.stage;
     // A ruling on an approval's finding goes through a fix loop, which writes the ruling into the
     // packet: merge-check refuses a subject any record names with a blocking finding, so the same
     // subject can never be approved again, and the loop's commit is the new subject.
@@ -462,7 +540,7 @@ class SpecRun {
   }
 
   // ── the sessions ──────────────────────────────────────────────────────────────────────────────
-  sessionEnv(addDir, extra = {}, ownBranch = null) {
+  sessionEnv(addDir, extra = {}, ownBranch = null, access = 'build') {
     const env = {};
     for (const [k, v] of Object.entries(process.env)) {
       if (/^CLAUDE/.test(k)) continue;              // CLAUDECODE, CLAUDE_CODE_*, CLAUDE_PID, CLAUDE_EFFORT...
@@ -472,9 +550,9 @@ class SpecRun {
     }
     env.CLAUDE_CODE_DISABLE_AUTO_MEMORY = '1';
     if (addDir) env.CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD = '1';
-    return { ...env, ...this.driver.pushGuardEnv(this.s.worktree, ownBranch), ...extra };
+    return { ...env, ...this.driver.pushGuardEnv(this.s.worktree, ownBranch, access), ...extra };
   }
-  async session(stage, { prompt, cwd, addDirs = [], tools, permissionMode, extra = {}, env: envExtra = {} }) {
+  async session(stage, { prompt, cwd, addDirs = [], tools, permissionMode, extra = {}, env: envExtra = {}, access = 'build' }) {
     const cap = this.s.stages[stage];
     this.commitRecords(`before ${stage}`);
     if (!(await this.fits(stage, cap.usd))) return { stopped: true };
@@ -492,7 +570,7 @@ class SpecRun {
     const seen = { model: null, cwd: null, session_id: null, result: null, memory_mentions: 0, memory_index_mentions: 0, gitstatus_mentions: 0 };
     const memRe = /\.claude\/projects\/[^"\s]*\/memory/g;
     const r = await runChild(bin, args, {
-      cwd, env: this.sessionEnv(addDirs.length > 0, envExtra, stage === 'triage' ? null : `refs/heads/${this.s.branch}`), rawFile, seconds: cap.seconds || cap.minutes * 60,
+      cwd, env: this.sessionEnv(addDirs.length > 0, envExtra, stage === 'triage' ? null : `refs/heads/${this.s.branch}`, access), rawFile, seconds: cap.seconds || cap.minutes * 60,
       onSpawn: (pid) => { rec.pgid = pid; this.save(); },
       onLine: (line) => {
         seen.memory_mentions += (line.match(memRe) || []).length;
@@ -615,22 +693,63 @@ class SpecRun {
     return [{ name: 'final', cmd: ['bash', `specs/${this.s.id}/gate.sh`, '--final'], minutes: 90, usd: 0 }];
   }
 
+  // ── the browser checks of a layout or visual spec (spec 129) ────────────────────────────────────
+  // The spec's scope, read from its diff against the Base this driver recorded (`layout` is false for a
+  // spec that changes no layout path). A diff that cannot be read stops the stage: it is not "no layout change".
+  visualScope() { return vc.visualScope(this.s.worktree, { spec: this.s.id, ref: 'HEAD', base: this.p.base }); }
+  subjectOf(ref = 'HEAD') { return mergeCheck.resolveSubject(ref, this.s.worktree).subject; }
+  // Where the spec stands for the commit an approval would name: the receipts committed at HEAD.
+  visualStatus() { return vc.visualStatus(this.s.worktree, { spec: this.s.id, ref: 'HEAD', subject: this.subjectOf(), base: this.p.base }); }
+
+  // The spec's own taker: the command that retakes captures its gate reads but does not take. It runs
+  // before every check, because a check that reads a stale capture reads red (the second case, 133).
+  async runTaker(rec, cwd, scope, tag) {
+    if (!scope.taker) return [];
+    return [await this.runShell(rec, { name: `visual-take:${this.s.id}`, cmd: scope.taker, minutes: 30 }, cwd, null, tag)];
+  }
+  // Each browser gate of the scope as `gate.sh --final`, one after the other (a browser gate takes the
+  // browser lock itself, and there is one lock). `reuse` holds a run already made, by gate id.
+  async runVisualGates(rec, cwd, scope, tag, reuse = {}) {
+    const commands = []; const ran = [];
+    for (const g of scope.gates) {
+      const x = reuse[g.spec] || await this.runShell(rec, { name: `visual:${g.spec}`, cmd: ['bash', `specs/${g.spec}/gate.sh`, '--final'], minutes: 90 }, cwd, null, tag);
+      if (!reuse[g.spec]) commands.push(x);
+      ran.push({ ...g, cmd: x.cmd, exit: x.exit, rows: gateRowsAt(cwd, g.spec), gate_sha: git(cwd, 'rev-parse', `HEAD:specs/${g.spec}/gate.sh`).out || null, taker: g.role === 'own' && scope.taker ? { cmd: scope.taker } : null });
+    }
+    return { commands, ran };
+  }
+  writeVisualReceipt(scope, ran, head) {
+    let at = Date.now();
+    let file;
+    do { file = path.join(this.dir, 'evidence', `visual-${new Date(at).toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z')}.json`); at += 1000; } while (fs.existsSync(file));
+    writeJson(file, vc.buildReceipt({ spec: this.s.id, scope, ran, commit: head, subject: this.subjectOf(), timestamp: iso() }));
+    return file;
+  }
+
   async stChecks() {
     const checks = this.checks();
     for (const c of checks) if (c.usd && !(await this.fits('checks', c.usd))) return 'stopped';
+    let scope;
+    try { scope = this.visualScope(); } catch (e) { return this.stop('visual-checks-missing', 'checks', `Whether ${this.s.id} changes layout could not be read from its diff against ${this.p.base}: ${e.message}. The browser checks are owed until that is read.`); }
     const reserved = checks.reduce((t, c) => t + (c.usd || 0), 0);
     const rec = this.begin('checks', { reserved_usd: reserved });
-    const commands = [];
+    const commands = scope.layout ? await this.runTaker(rec, this.s.worktree, scope, 'checks') : [];
     for (const c of checks) {
       const x = await this.runShell(rec, c, this.s.worktree, null, 'checks');
       if (/gate\.sh$/.test(c.cmd[1] || '') || c.cmd.some((a) => a.endsWith('/gate.sh')) || (c.cmd.includes('--core') && c.cmd.includes(this.s.id))) x.figure = this.gateFigure(this.s.worktree);
       commands.push(x);
     }
+    let visual = null;
+    if (scope.layout) {
+      visual = await this.runVisualGates(rec, this.s.worktree, scope, 'checks');
+      commands.push(...visual.commands);
+    }
     const green = commands.every((c) => c.exit === 0);
     // A check may write evidence; anything else it writes is a fault, not a result.
     const dirty = git(this.s.worktree, 'status', '--porcelain', '--untracked-files=all').out.split('\n').filter((l) => l && !/ specs\/[^/]+\/evidence\//.test(l));
     const head = gitOk(this.s.worktree, 'rev-parse', 'HEAD');
-    this.finish(rec, 'done', { commands, green, head }, { cost_usd: reserved, result: { green } });
+    const receipt = visual ? this.writeVisualReceipt(scope, visual.ran, head) : null;
+    this.finish(rec, 'done', { commands, green, head, ...(scope.layout ? { visual: { receipt: path.basename(receipt), layout_paths: scope.changed.length, gates: visual.ran.map((g) => g.spec) } } : {}) }, { cost_usd: reserved, result: { green } });
     if (dirty.length) return this.stop('check-wrote-tree', 'checks', `The checks wrote outside specs/*/evidence/: ${dirty.slice(0, 5).join('; ')}. Commit or discard, then answer retry.`);
     gitOk(this.s.worktree, 'add', '-A', '--', path.relative(this.s.worktree, path.join(this.dir, 'evidence')));
     this.commitRecords(`checks ${green ? 'green' : 'red'}`);
@@ -640,6 +759,11 @@ class SpecRun {
       writeJson(findings, { source: 'driver', stage: 'checks', red: commands.filter((c) => c.exit !== 0).map((c) => ({ name: c.name, cmd: c.cmd, exit: c.exit, summary: c.summary, failing: c.figure && c.figure.failing })) });
       this.commitRecords('checks red findings');
       return this.loopOr('checks', { kind: 'checks', findings });
+    }
+    if (scope.layout) {
+      // The stage does not pass a layout spec whose receipt lacks a browser gate's rows or names another commit.
+      const st = this.visualStatus();
+      if (st.problems.length) return this.stop('visual-checks-missing', 'checks', `${st.problems.join(' ')} The checks ran green and the receipt they wrote does not stand for this commit.`);
     }
     const own = commands.find((c) => c.figure);
     this.p.checks_figure = own ? { ...own.figure, head, check: own.name } : null;
@@ -661,7 +785,39 @@ class SpecRun {
     return fix.kind === 'unread-figures' ? 'approve' : 'fix';
   }
 
+  // The approval of a layout or visual spec reads the browser checks' current results: it is not started
+  // without a receipt good for the exact commit it would approve (spec 129).
+  visualPrecondition() {
+    let st;
+    try { st = this.visualStatus(); } catch (e) { return { message: `Whether ${this.s.id} changes layout could not be read: ${e.message}. No approval is started on an unread question.` }; }
+    if (!st.layout) return null;
+    if (st.problems.length) return { message: `No approval is started. ${st.problems.join(' ')} Answer retry to run the checks stage again, which takes the browser checks and writes the receipt.` };
+    return { receipt: st.valid[st.valid.length - 1], valid: st.valid };
+  }
+
+  // Spec 115 R-4: what an approval session's git may do to the remote, read as that session will meet it.
+  // `git push --dry-run` connects to the remote's receive-pack, so over an SSH remote it is refused by the
+  // read-only wrapper, which a network failure does not look like (the wrapper's own line is required).
+  proveApprovalAccess() {
+    const wt = this.s.worktree;
+    const ro = this.driver.approvalAccess();
+    const env = this.sessionEnv(true, {}, `refs/heads/${this.s.branch}`, 'approval');
+    const run = (...a) => spawnSync('git', ['-C', wt, ...a], { env, encoding: 'utf8', timeout: 60000 });
+    const dry = run('push', '--dry-run', this.q.remote, `HEAD:refs/heads/${PROOF_REF}`);
+    const err = scrub(dry.stderr || '');
+    const wrapper = /git-ssh-readonly: refused/.test(err);
+    const refused = dry.status !== null && dry.status !== 0 && (ro.mode === 'blocked' || wrapper);
+    let read = { exit: null, heads: null };
+    if (ro.mode === 'read-only') {
+      const ls = run('ls-remote', '--heads', this.q.remote);
+      read = { exit: ls.status, heads: ls.status === 0 ? (ls.stdout || '').split('\n').filter(Boolean).length : null };
+    }
+    return { mode: ro.mode, why: ro.why, remote: this.q.remote, at: iso(), push_dry_run: { exit: dry.status, refused, by: wrapper ? 'git-ssh-readonly' : 'push guard', stderr: tildeText(err).trim().slice(0, 200) }, read_probe: read };
+  }
+
   async stApprove() {
+    const visual = needsApproval(this.s.tier) ? this.visualPrecondition() : null;
+    if (visual && visual.message) return this.stop('visual-checks-missing', 'approve', visual.message);
     const evDir = path.join(this.dir, 'evidence');
     const beforeFiles = new Set(fs.existsSync(evDir) ? fs.readdirSync(evDir) : []);
     if (this.p.pending_fix && this.p.pending_fix.kind === 'unread-figures') { this.p.loops += 1; this.p.pending_fix = null; this.save(); }
@@ -674,12 +830,18 @@ class SpecRun {
     const ceiling = { GIT_CEILING_DIRECTORIES: path.dirname(launch) };
     const probe = spawnSync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: launch, env: { ...shellEnv(), ...ceiling }, encoding: 'utf8' });
     if (probe.status === 0) return this.stop('operator-ruling', 'approve', `The approval launch directory ${tilde(launch)} is inside a git repository even with discovery stopped at ${tilde(path.dirname(launch))}. Name another in the queue's approve_cwd, then answer retry.`);
+    // Spec 115: a push is proved refused, through the environment the session gets, before it starts.
+    const proof = this.proveApprovalAccess();
+    if (!proof.push_dry_run.refused) return this.stop('operator-ruling', 'approve', `No approval is started: a dry-run push to ${this.q.remote} through the approval environment (access ${proof.mode}) exited ${proof.push_dry_run.exit} and was not refused by ${proof.mode === 'read-only' ? 'the read-only ssh wrapper' : 'the push guard'}: ${proof.push_dry_run.stderr}. Answer retry once the remote reads as refused.`);
     const out = await this.session('approve', {
       cwd: launch, addDirs: [this.s.worktree], prompt: `/spec-approve ${specPath}`, env: ceiling,
+      access: 'approval',
       tools: { allow: ['Bash', 'Read', 'Grep', 'Glob', 'Write'] },
       extra: {
         claude_md_changed_on_branch: git(this.s.worktree, 'diff', '--quiet', this.p.base, 'HEAD', '--', 'CLAUDE.md').code !== 0,
         launch_dir: launch, launch_dir_in_git_repository: false, git_ceiling: ceiling.GIT_CEILING_DIRECTORIES,
+        approval_access: proof,
+        ...(visual ? { visual_receipt: visual.receipt } : {}),
       },
     });
     if (out.stopped) return 'stopped';
@@ -691,13 +853,17 @@ class SpecRun {
     if (why.length) return this.afterSession('approve', out, why, 'approve');
     const file = newRecs[newRecs.length - 1];
     const text = fs.readFileSync(path.join(evDir, file), 'utf8');
+    // An approval record that does not cite the receipt does not count (merge-check refuses it too).
+    if (visual && !vc.citesReceipt(text, visual.valid)) return this.afterSession('approve', out, [`the approval record does not cite the visual receipt ${visual.receipt}, so it does not count`], 'approve');
     const field = (k) => { const m = new RegExp(`^${k}:\\s*(.+)$`, 'mi').exec(text); return m ? m[1].trim() : null; };
-    const a = { at: out.rec.started, file: path.join(evDir, file), commit: field('commit'), verdict: field('verdict'), tree: field('tree'), blocking: Number(field('blocking_findings')), findings: field('findings') || 'none', receipt: receiptNamed(text) };
+    // the receipt the record cites as its own: of the several it may name, the one gated at the approved commit (merge-check reads the same way)
+    const ownReceipt = vc.receiptsNamed(text).find((n) => { const r = readJson(path.join(evDir, n)); return r && (r.subject || r.commit) === field('commit'); }) || receiptNamed(text);
+    const a = { at: out.rec.started, file: path.join(evDir, file), commit: field('commit'), verdict: field('verdict'), tree: field('tree'), blocking: Number(field('blocking_findings')), findings: field('findings') || 'none', receipt: ownReceipt };
     const tracked = git(this.s.worktree, 'ls-files', '--error-unmatch', path.relative(this.s.worktree, a.file)).code === 0;
     const dry = await this.runShell(out.rec, { name: 'merge-check-dry-run', cmd: ['node', 'scripts/merge-check.js', `specs/${this.s.id}`, '--dry-run'], minutes: 5 }, this.s.worktree, null, 'approve');
     const channel = out.record.context_checks.memory_path_mentions + out.record.context_checks.memory_index_mentions;
     const mergeable = Number.isFinite(a.blocking) && a.blocking === 0 && !/^(rejected|changes-requested)/i.test(a.verdict || '') && dry.exit === 0 && tracked;
-    const result = { approval: { ...a, tracked }, merge_check_dry_run: { exit: dry.exit, summary: dry.summary }, mergeable, channel_mentions: channel };
+    const result = { approval: { ...a, tracked, rulings_owed: rulingsOwedIn(text).map((i) => i.text) }, merge_check_dry_run: { exit: dry.exit, summary: dry.summary }, mergeable, channel_mentions: channel };
     writeJson(path.join(this.recDir, out.rec.record), { ...readJson(path.join(this.recDir, out.rec.record)), result, commands: [dry] });
     out.rec.result = result; this.save();
     this.commitRecords(`approve (${a.verdict}, blocking ${a.blocking})`);
@@ -726,7 +892,7 @@ class SpecRun {
     const out = path.join(scratch, 'triage.json');
     const res = await this.session('triage', {
       cwd: scratch, addDirs: [this.s.worktree],
-      prompt: this.prompt('triage', [`APPROVAL-RECORD: ${a.file}`, `POLICY: ${path.join(scratch, 'decision-policy.md')}`, `WRITE: ${out}`], [
+      prompt: this.prompt('triage', [`APPROVAL-RECORD: ${recordFile(a)}`, `POLICY: ${path.join(scratch, 'decision-policy.md')}`, `WRITE: ${out}`], [
         'You are the triage context of CONSTITUTION § Decision policy. Read the approval record and the policy file named above, and nothing about how the work was built.',
         'For every finding in the record answer exactly one class that is a row of the policy table, and whether the record counts it as blocking.',
         `Write only this JSON to the WRITE path: {"findings":[{"id":"F-1","blocking":true,"class":"<a class id from the table>","reason":"<one sentence>"}]}`,
@@ -741,7 +907,7 @@ class SpecRun {
     if (!t || !Array.isArray(t.findings)) why.push('no triage.json with a findings list');
     if (why.length) return this.afterSession('triage', res, why, 'triage');
     const tri = path.join(this.recDir, `triage-${pad(res.rec.n)}-answer.json`);
-    writeJson(tri, { approval: path.relative(this.s.worktree, a.file), policy_classes: policy.classes, ...t });
+    writeJson(tri, { approval: path.relative(this.s.worktree, recordFile(a)), policy_classes: policy.classes, ...t });
     fs.rmSync(scratch, { recursive: true, force: true });
     const blocking = t.findings.filter((f) => f.blocking !== false);
     const unknown = t.findings.filter((f) => !policy.classes[f.class]);
@@ -764,7 +930,7 @@ class SpecRun {
     const isRebase = fx.kind === 'rebase';
     const lines = [`LOOP-KIND: ${fx.kind}`];
     if (!isRebase) lines.unshift(`LOOP: ${this.p.loops + 1} of ${this.s.max_loops + (this.p.loops_granted || 0)}`);
-    if (fx.record) lines.push(`APPROVAL-RECORD: ${fx.record}`);
+    if (fx.record) lines.push(`APPROVAL-RECORD: ${expand(fx.record)}`);
     if (fx.triage) lines.push(`TRIAGE: ${fx.triage}`);
     if (fx.findings) lines.push(`FINDINGS-FILE: ${fx.findings}`);
     if (isRebase) lines.push(`OLD-BASE: ${fx.old_base}`, `NEW-BASE: ${fx.new_base}`);
@@ -833,7 +999,27 @@ class SpecRun {
 
   // ── the merge sequence ────────────────────────────────────────────────────────────────────────
   async stMerge() {
+    const owed = this.openRulings();
+    if (owed.length) {
+      const a = this.p.last_approval;
+      const rec = a && a.file ? `The approval \`${path.relative(this.s.worktree, recordFile(a))}\`` : 'The approval';
+      return this.stop('ruling-needed', 'merge', `${rec} leaves ${owed.length === 1 ? 'a ruling' : `${owed.length} rulings`} for the operator before the merge: ${owed.map((i) => `${i.text} (${i.via})`).join(' | ')}. No merge is started while one is open. Answer \`ruling: <text>\` to let the merge go ahead on it.`, a && a.file ? [a.file] : [], { owed: owed.map((i) => i.text) });
+    }
     return this.driver.withMergeLock(() => this.mergeLocked());
+  }
+  // The questions the last approval's record leaves open: those it names that no ruling answered at
+  // the merge stage covers (a ruling carries the questions it was asked for, so a re-approval after a
+  // rebase does not ask the same question twice). A T1 or T2 spec whose approval record is not there
+  // to read leaves one question, that it cannot be read: a merge never runs on a record nobody read.
+  openRulings() {
+    if (!needsApproval(this.s.tier)) return [];
+    const a = this.p.last_approval;
+    const ruled = new Set((this.p.rulings || []).filter((r) => r.stage === 'merge' && r.for_class === 'ruling-needed').flatMap((r) => (r.owed || []).map(owedKey)));
+    const file = recordFile(a);
+    const items = !file || !fs.existsSync(file)
+      ? [{ via: 'approval record', text: 'the approval record the merge runs on cannot be read' }]
+      : rulingsOwedIn(fs.readFileSync(file, 'utf8'));
+    return items.filter((i) => !ruled.has(owedKey(i.text)));
   }
   async mergeLocked() {
     const repo = this.q.repo;
@@ -877,9 +1063,29 @@ class SpecRun {
         if (m.code !== 0) { git(work, 'merge', '--abort'); return fail('merge-conflict', 'merge', `The merge of ${tip.slice(0, 8)} onto ${base} conflicts: ${m.err.slice(0, 300)}`); }
         mergeSha = gitOk(work, 'rev-parse', 'HEAD');
         steps.push({ step: 'merge', merge_commit: mergeSha });
-        // 3. the spec's gate on the merge result, against the figure the approval's receipt records
+        // 3. the spec's gate on the merge result, against the figure the approval's receipt records. A
+        // layout spec's captures are retaken here, on the merge result, never read from a record taken
+        // at the branch tip (the controller's note on spec 130): its own taker first, then its gate,
+        // then each sibling browser gate its change reaches (spec 129).
+        let vscope;
+        try { vscope = vc.visualScope(work, { spec: this.s.id, ref: 'HEAD', base: this.p.base }); } catch (e) { return fail('visual-checks-missing', 'merge', `Whether ${this.s.id} changes layout could not be read on the merge result: ${e.message}`); }
+        if (vscope.layout) {
+          const tk = await this.runTaker(rec, work, vscope, 'merge');
+          commands.push(...tk);
+          if (tk.some((x) => x.exit !== 0)) { steps.push({ step: 'visual-take-on-merge', exit: tk[0].exit }); return fail('visual-checks-red', 'merge', `The capture taker ${tk[0].cmd.join(' ')} exited ${tk[0].exit} on the merge result of ${this.s.id}: ${tk[0].summary}`); }
+        }
         const g = await this.runShell(rec, { name: 'gate-final-on-merge', cmd: ['bash', `specs/${this.s.id}/gate.sh`, '--final'], minutes: 90 }, work, null, 'merge');
         g.figure = this.gateFigure(work); commands.push(g);
+        if (vscope.layout) {
+          const v = await this.runVisualGates(rec, work, vscope, 'merge', vscope.gates.some((x) => x.spec === this.s.id) ? { [this.s.id]: g } : {});
+          commands.push(...v.commands);
+          const bad = v.ran.filter((x) => x.exit !== 0 || !x.rows.length || x.rows.some((r) => r.result !== 'pass'));
+          steps.push({ step: 'visual-on-merge', at: mergeSha, layout_paths: vscope.changed.length, gates: v.ran.map((x) => ({ spec: x.spec, role: x.role, exit: x.exit, rows: x.rows.length })), ok: !bad.length });
+          this.p.visual_merge = { gates: v.ran.map((x) => x.spec), ok: !bad.length }; this.save();
+          // what the browser gates and the taker wrote on the merge result is not part of the merge
+          git(work, 'reset', '-q', '--hard', 'HEAD'); git(work, 'clean', '-fdq');
+          if (bad.length) return fail('visual-checks-red', 'merge', `On the merge result of ${this.s.id} the browser checks read red: ${bad.map((x) => `${x.spec} (exit ${x.exit})`).join(', ')}. The captures were retaken there, not read from the branch tip.`);
+        }
         // T1 and T2 against the figure the approval read; T3 against the one the checks read
         const approved = needsApproval(this.s.tier) ? this.approvedFigure() : this.p.checks_figure;
         const same = approved && g.figure && approved.passed === g.figure.passed && approved.failed === g.figure.failed;
@@ -947,11 +1153,23 @@ class SpecRun {
   removeWork(work) { git(this.q.repo, 'worktree', 'remove', '--force', work); fs.rmSync(work, { recursive: true, force: true }); git(this.q.repo, 'worktree', 'prune'); }
   // A ruling answered at the merge stage, after the approval the merge runs on, lets the merge go
   // ahead on the red it was asked about; it is quoted in the DECISIONS entry.
-  mergeRuling() { const at = (this.p.last_approval || {}).at || ''; return (this.p.rulings || []).some((r) => r.stage === 'merge' && r.recorded > at); }
+  mergeRuling() { const at = (this.p.last_approval || {}).at || ''; return (this.p.rulings || []).some((r) => r.stage === 'merge' && !r.owed && r.recorded > at); }
+  // The visual receipt the last approval's record cites, by file name, or null.
+  citedVisual() {
+    const a = this.p.last_approval;
+    const m = a && fs.existsSync(recordFile(a)) ? /visual-\d{8}T\d{6}Z\.json/.exec(fs.readFileSync(recordFile(a), 'utf8')) : null;
+    return m ? m[0] : null;
+  }
   approvedFigure() {
     const a = this.p.last_approval;
     if (!a) return null;
     const ev = path.join(this.dir, 'evidence');
+    // A layout spec's approval read the `--final` figure, in the visual receipt it cites: the gate
+    // receipt beside it is a plain run, which has no capture rows (spec 125's approvals read 34
+    // passed, and the merge result read 40 passed and 2 failed, the capture rows).
+    const cited = this.citedVisual();
+    const own = cited && ((readJson(path.join(ev, cited)) || {}).gates || []).find((g) => g.spec === this.s.id);
+    if (own && Number.isFinite(own.passed) && Number.isFinite(own.failed)) return { passed: own.passed, failed: own.failed, receipt: cited };
     return approvalFigure(a.receipt, fs.readdirSync(ev), (n) => readJson(path.join(ev, n)), a.commit);
   }
   // Moves a ref by compare-and-swap. A checkout that holds the ref is fast-forwarded in place, so
@@ -1034,7 +1252,7 @@ class SpecRun {
   decisionsEntry({ mergeSha, tip, subject, title, emit, figure }) {
     const a = this.p.last_approval || null;
     const approvalText = a
-      ? `approval \`${path.relative(this.s.worktree, a.file)}\`, ${a.verdict}, blocking_findings ${a.blocking})`
+      ? `approval \`${path.relative(this.s.worktree, recordFile(a))}\`, ${a.verdict}, blocking_findings ${a.blocking})`
       : `${this.s.tier}, no approval session by CONSTITUTION § Proportional oversight)`;
     const owed = readJson(path.join(this.recDir, 'owed.json'), []);
     const rulings = this.p.rulings || [];
@@ -1047,6 +1265,7 @@ class SpecRun {
       `${approvalText}. Run by \`scripts/drive.mjs\` under the queue`,
       `\`${path.basename(this.q.file)}\`, after ${this.p.loops} fix loop(s) and ${this.p.approvals || 0} approval(s). The spec's gate \`--final\` on the merge`,
       `result reads ${figure.passed} passed, ${figure.failed} failed, equal to ${a ? 'the approval\'s receipt' : 'the checks stage\'s reading'}.`,
+      this.p.visual_merge ? `\n**Browser checks (spec 129).** The approval cited \`${this.citedVisual() || 'no visual receipt'}\`. On the merge result the captures were retaken, ${this.s.id}'s taker first where it has one, then \`--final\` of ${this.p.visual_merge.gates.map((g) => `\`${g}\``).join(', ')}: ${this.p.visual_merge.ok ? 'all green' : 'red'}.\n` : '',
       pending ? `\n**Pending entries from the packet.**\n\n${pending}\n` : '',
       emit
         ? `**Merge-time command.** \`${emit.cmd.join(' ')}\` at \`${subject.slice(0, 8)}\`${emit.in_clone ? ` in a clone with \`${this.q.base_ref}\` pinned to \`${this.p.base.slice(0, 8)}\`` : ''}, exit ${emit.exit}: ${emit.summary || 'no summary line'}.`
@@ -1065,6 +1284,7 @@ class SpecRun {
     const gh = process.env.DRIVE_GH_TOKEN || process.env.GH_TOKEN;
     const missing = [!gh && 'DRIVE_GH_TOKEN', rel && !process.env.NPM_TOKEN && 'NPM_TOKEN'].filter(Boolean);
     if (missing.length) return this.stop('credential-absent', 'publish', `The ${this.s.until} push needs ${missing.join(' and ')} in the environment and it is not set. Set it and answer retry, or push by hand.`);
+    if (!pub.build && !pub.message) return this.stop('operator-ruling', 'publish', 'The public push needs publish.message (the site summary, or the release notes text) or publish.build with its own -F notes file. A commit message made from the spec number would carry a private marker, and the build refuses one (spec 113).');
     const rec = this.begin('publish');
     const commands = []; const result = { built: false };
     const scratch = fs.mkdtempSync(path.join(os.tmpdir(), `drive-publish-${this.s.id}-`));
@@ -1079,7 +1299,7 @@ class SpecRun {
       const pubDir = path.resolve(expand(pub.dir || path.join(path.dirname(this.q.repo), 'driftproof-public')));
       const src = this.driver.checkoutOf(this.q.base_ref) || this.q.repo;
       if (git(src, 'status', '--porcelain').out) { this.finish(rec, 'failed', { commands }); return this.stop('checkout-dirty', 'publish', `${tilde(src)} is not clean; the public build reads it.`); }
-      const build = pub.build || { cmd: ['bash', 'scripts/build-public.sh', '-m', pub.message || `spec ${this.s.id}`], minutes: 60 };
+      const build = pub.build || { cmd: ['bash', 'scripts/build-public.sh', '-m', pub.message], minutes: 60 };
       const b = await this.runShell(rec, { name: 'build-public', minutes: 60, ...build }, src, null, 'publish');
       commands.push(b); result.built = b.exit === 0;
       // the build commits in the public tree: a write of this driver's, not a session's
@@ -1095,16 +1315,11 @@ class SpecRun {
       const askpass = path.join(scratch, 'askpass.sh');
       fs.writeFileSync(askpass, '#!/bin/sh\ncase "$1" in *sername*) echo x-access-token ;; *) printf \'%s\\n\' "$DRIVE_GH_TOKEN" ;; esac\n', { mode: 0o700 });
       const env = { ...shellEnv(), GIT_ASKPASS: askpass, GIT_TERMINAL_PROMPT: '0', DRIVE_GH_TOKEN: gh };
-      // the lease: the remote's main as ls-remote reads it just before the push, never remembered
-      const ls = spawnSync('git', ['-C', pubDir, 'ls-remote', remote, 'refs/heads/main'], { env, encoding: 'utf8' });
-      const lease = (ls.stdout || '').split(/\s/)[0];
-      commands.push({ runner: 'shell', cmd: ['git', 'ls-remote', remote, 'refs/heads/main'], exit: ls.status });
-      if (ls.status !== 0 || !/^[0-9a-f]{40}$/.test(lease)) { this.finish(rec, 'failed', { commands, ...result }); return this.stop('operator-ruling', 'publish', `ls-remote could not read the public main: ${scrub(ls.stderr || '').slice(0, 200)}`); }
-      result.lease = lease;
-      const pushArgs = ['-C', pubDir, 'push', remote, 'main', `--force-with-lease=main:${lease}`];
-      const push = spawnSync('git', pushArgs, { env, encoding: 'utf8' });
-      commands.push({ runner: 'shell', cmd: ['git', ...pushArgs.slice(2)], exit: push.status, summary: scrub(push.stderr || '').slice(0, 200) });
-      if (push.status !== 0) { this.finish(rec, 'failed', { commands, ...result }); return this.stop('push-failed', 'publish', `The public push was refused: ${scrub(push.stderr || '').slice(0, 300)}`); }
+      // the push is scripts/push-public.mjs: a plain fast-forward onto the remote's main as it reads at push time, or a refusal naming both tips (spec 113)
+      const pushCmd = publicPushCommand(pubDir, remote, src);
+      const push = spawnSync(pushCmd[0], pushCmd.slice(1), { env, encoding: 'utf8', cwd: pubDir });
+      commands.push({ runner: 'shell', cmd: pushCmd.map(tilde), exit: push.status, summary: scrub((push.stderr || '') + (push.stdout || '')).slice(0, 200) });
+      if (push.status !== 0) { this.finish(rec, 'failed', { commands, ...result }); return this.stop('push-failed', 'publish', `The public push was refused: ${scrub((push.stderr || '') + (push.stdout || '')).slice(0, 400)}`); }
       result.pushed = gitOk(pubDir, 'rev-parse', 'HEAD');
       if (rel) {
         const version = readJson(path.join(pubDir, 'package.json'), {}).version;
@@ -1248,6 +1463,10 @@ function shellEnv() {
   for (const [k, v] of Object.entries(process.env)) if (!['DRIVE_GH_TOKEN', 'GH_TOKEN', 'NPM_TOKEN', 'GITHUB_TOKEN'].includes(k) && !/^CLAUDE/.test(k)) env[k] = v;
   return env;
 }
+// The public push (spec 113): the one script that makes it, run in the public tree against the source checkout that built it.
+export function publicPushCommand(pubDir, remote, src) {
+  return ['node', path.join(src, 'scripts', 'push-public.mjs'), '--public-dir', pubDir, '--remote', remote, '--src', src];
+}
 export function repoGateFigure(root, cfg, run) {
   if (cfg.figure_file) {
     const j = readJson(path.join(root, cfg.figure_file));
@@ -1264,8 +1483,15 @@ export function gateFigureAt(root, id) {
   const rows = fs.readFileSync(f, 'utf8').split('\n').filter(Boolean).map((l) => l.split('|'));
   return { passed: rows.filter((r) => r[1] === 'pass').length, failed: rows.filter((r) => r[1] !== 'pass').length, failing: rows.filter((r) => r[1] !== 'pass').map((r) => r[0]) };
 }
+// Every row a gate's run left in .gate-results, as the receipt records them: the row id, `pass` or
+// the state it was not, and the description. [] when the file is not there (a run that wrote none).
+export function gateRowsAt(root, id) {
+  const f = path.join(root, 'specs', id, '.gate-results');
+  if (!fs.existsSync(f)) return [];
+  return fs.readFileSync(f, 'utf8').split('\n').filter(Boolean).map((l) => l.split('|')).map(([ac, result, ...d]) => ({ ac, result, description: d.join('|') }));
+}
 // The receipt an approval record names in its text.
-export const receiptNamed = (text) => (/gate-\d{8}T\d{6}Z\.json/.exec(text) || [])[0] || null;
+export const receiptNamed = vc.receiptNamed;
 // The figure an approval read: the receipt its record names, or else the newest receipt among
 // `names` whose subject or commit is the approved one. `read` parses one receipt by name, so the
 // integrator (spec 066) reads a branch's objects where the driver reads its worktree.
@@ -1274,12 +1500,15 @@ export function approvalFigure(receipt, names, read, commit) {
   if (!r) r = names.filter((n) => /^gate-.*\.json$/.test(n)).sort().reverse().map(read).find((j) => j && (j.subject === commit || j.commit === commit)) || null;
   return r && Number.isFinite(r.passed) ? { passed: r.passed, failed: r.failed, receipt } : null;
 }
+// The paths a T3 item may not change: those outside its own spec directory and T3_PATHS. Spec 068's
+// tier raise reads it from here, so the list stays the driver's own.
+export const outsideT3 = (id, paths) => paths.filter((f) => !f.startsWith(`specs/${id}/`) && !T3_PATHS.some((re) => re.test(f)));
 // A T3 merge's precondition in place of merge-check's approval test (spec 051): merge-check.js's own
 // hygiene scan over the tip's tree, and every path `from...tip` changes inside the spec's directory
 // or T3_PATHS. Spec 066's integrator runs it at a T3 item's merge onto staging, from here.
 export function t3PathGuard(repo, id, from, tip, base = from) {
   const changed = gitOk(repo, 'diff', '--name-only', `${from}...${tip}`).split('\n').filter(Boolean);
-  const outside = changed.filter((f) => !f.startsWith(`specs/${id}/`) && !T3_PATHS.some((re) => re.test(f)));
+  const outside = outsideT3(id, changed);
   // the scanner as the BASE carries it, never the branch's own copy: a branch that edited
   // hygieneScan would otherwise pass a check it wrote itself (A-051-1, F-2)
   let hits = []; let scanError = null;
@@ -1381,6 +1610,12 @@ class Driver {
   // environment, or pushes with --no-verify through a pushurl into some other local repository; the
   // ref and remote guards after every stage are what see the first, and the public tree's refs are
   // among those the guard reads.
+  // AN APPROVAL SESSION OVER AN SSH REMOTE (spec 115) differs in one place: git's ssh command is
+  // scripts/git-ssh-readonly.mjs, which lets `git-upload-pack` through and refuses `git-receive-pack` and
+  // everything else, and that remote's own URLs are left out of the dead-URL rewrite. A gate row that reads real
+  // refs on the remote then reads in the approval what it reads at merge (067 and 068, 27 Sep 2026). The hooks, the
+  // other remotes' rewrite and the missing credentials stay. A remote that is a path or file:// URL stays blocked,
+  // and a push is proved refused through this environment before each approval starts (proveApprovalAccess).
   hooksDir() {
     if (this._hooks) return this._hooks;
     const dir = path.join(this.q.state, 'hooks');
@@ -1410,7 +1645,17 @@ class Driver {
     this._hooks = dir;
     return dir;
   }
-  guardedTargets() {
+  // Spec 115: whether an approval session may reach the driven remote, and by what. Read-only only when every
+  // URL and pushurl of `q.remote` is an SSH URL, where git's ssh command can be the wrapper. A path or file://
+  // URL stays blocked: git runs no ssh for it, so there is nothing to put the wrapper in front of.
+  approvalAccess() {
+    const key = (k) => git(this.q.repo, 'config', '--get-all', `remote.${this.q.remote}.${k}`).out.split('\n').filter(Boolean);
+    const urls = [...key('url'), ...key('pushurl')];
+    if (!urls.length) return { mode: 'blocked', urls: [], why: `the remote ${this.q.remote} has no URL` };
+    if (urls.some((u) => !isSshUrl(u))) return { mode: 'blocked', urls: [], why: `the remote ${this.q.remote} has a URL that is not an SSH URL, which git reaches without ssh` };
+    return { mode: 'read-only', urls, why: null };
+  }
+  guardedTargets(open = []) {
     const repo = this.q.repo;
     const urls = new Set();
     for (const l of git(repo, 'config', '--get-regexp', '^remote\\..*\\.(url|pushurl)$').out.split('\n').filter(Boolean)) urls.add(l.split(' ').slice(1).join(' '));
@@ -1420,6 +1665,7 @@ class Driver {
     const pub = this.publicDir();
     if (pub) paths.push(pub);
     for (const p of paths) { urls.add(p); urls.add(`file://${p}`); try { const r = fs.realpathSync(p); urls.add(r); urls.add(`file://${r}`); } catch {} }
+    for (const u of open) urls.delete(u);
     return [...urls].filter(Boolean);
   }
   publicDir() {
@@ -1427,7 +1673,7 @@ class Driver {
     const d = path.resolve(expand(specPub || path.join(path.dirname(this.q.repo), 'driftproof-public')));
     return fs.existsSync(path.join(d, '.git')) ? d : null;
   }
-  pushGuardEnv(worktree, ownBranch) {
+  pushGuardEnv(worktree, ownBranch, access = 'build') {
     const common = fs.realpathSync(path.resolve(this.q.repo, git(this.q.repo, 'rev-parse', '--git-common-dir').out));
     // the repository's own hooks path: a command-scope value is another driver's guard (a driver run
     // inside a driven session), and chaining to it would chain that hook to itself (spec 066)
@@ -1435,9 +1681,14 @@ class Driver {
     const configured = scoped.length ? scoped[scoped.length - 1].split('\t').slice(1).join('\t') : '';
     const orig = configured ? path.resolve(fs.existsSync(worktree) ? worktree : this.q.repo, configured) : path.join(common, 'hooks');
     const dead = `${path.join(this.q.state, 'no-push')}/`;
-    const cfg = [['core.hooksPath', this.hooksDir()], ['core.sshCommand', '/bin/false'], ['credential.helper', '']];
-    for (const t of this.guardedTargets()) cfg.push([`url.${dead}.insteadOf`, t]);
-    const env = { GIT_CONFIG_COUNT: String(cfg.length), GIT_SSH_COMMAND: '/bin/false', GIT_ASKPASS: '/bin/false', SSH_ASKPASS: '/bin/false', GIT_TERMINAL_PROMPT: '0',
+    // an approval session over an SSH remote (spec 115): git's ssh is the read-only wrapper, pinned (DRIVE_SSH_ALLOW) to
+    // the host and path of that remote's URLs, which are the one thing the dead-URL rewrite leaves alone; every other
+    // session, and every other URL, as before
+    const ro = access === 'approval' ? this.approvalAccess() : { mode: 'blocked', urls: [] };
+    const ssh = ro.mode === 'read-only' ? `${shq(process.execPath)} ${shq(SSH_WRAPPER)}` : '/bin/false';
+    const cfg = [['core.hooksPath', this.hooksDir()], ['core.sshCommand', ssh], ['credential.helper', '']];
+    for (const t of this.guardedTargets(ro.urls)) cfg.push([`url.${dead}.insteadOf`, t]);
+    const env = { GIT_CONFIG_COUNT: String(cfg.length), GIT_SSH_COMMAND: ssh, ...(ro.mode === 'read-only' ? { GIT_SSH_VARIANT: 'ssh', DRIVE_SSH_ALLOW: JSON.stringify(ro.urls.map(sshTarget).filter(Boolean)) } : {}), GIT_ASKPASS: '/bin/false', SSH_ASKPASS: '/bin/false', GIT_TERMINAL_PROMPT: '0',
       DRIVE_REPO_COMMON: common, DRIVE_OWN_BRANCH: ownBranch || 'none', DRIVE_ORIG_HOOKS: orig };
     cfg.forEach(([k, v], i) => { env[`GIT_CONFIG_KEY_${i}`] = k; env[`GIT_CONFIG_VALUE_${i}`] = v; });
     return env;

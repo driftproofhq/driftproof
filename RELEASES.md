@@ -8,6 +8,230 @@ makes this one a record.
 
 ---
 
+## v0.14.0 - 2026-10-06
+
+### What's new
+
+- **Start from a skill you already have.** In Claude Code, `/driftproof:init` or `/driftproof:run` on a
+  skill that already exists now offers the first-run path: Claude drafts test cases from the skill with
+  you, adds them to the skill's folder only after you say yes, runs a quick first look, and opens a
+  results page from disk. `/driftproof:start` is the same path under its own name: with no folder it
+  lists the skills it finds and whether each has test cases. The README's Quickstart now leads with
+  this path, and the scaffold for a new skill is the second path.
+- **A quick first run.** `driftproof run <skill> --quick` runs a short smoke test: 2 judge samples, 4
+  calls at a time and at most 5 test cases. Its receipt says it cannot produce a verdict, and its output
+  prints no lift and no result word. Use it to see that the setup works; run without `--quick` for a
+  result you can rely on.
+- **Add test cases to a skill that exists.** `/driftproof:init` can add one new file, `evals/evals.json`,
+  to a skill folder, only after you say yes. It never changes your `SKILL.md` or any other file in the
+  folder.
+- **Run a skill you wrote outside a git repository.** `/driftproof:run` takes `--trust-outside-repo`,
+  which you give once you confirm you wrote the skill. A missing isolation account now gets one plain
+  message that names this route.
+- **Fewer real answers are thrown out as lost.** A draw is now counted as lost only when its reply
+  points at a file the judge was not shown. File lists in commit or pull request text, answers inside a
+  fenced block and first-person advice are no longer read as lost answers. In `--capture files` mode, a
+  model that writes its answer to a file and replies with nothing is graded on the file, and in text
+  mode the tools that can write files or run code are off.
+- **Clearer words when the cases disagree.** When the test cases disagree so much that more draws
+  would not settle the result, the result now says "More cases, not more draws, are needed to conclude
+  at this effect floor". "Not enough draws" is kept for the case where more draws would help.
+- **Safer pull request comments and job summaries.** The Action's comment and summary, and the stale
+  Action's summary and issue, now escape HTML, Markdown links and URLs in every string that comes from a
+  receipt or a folder, so a case id or file name that holds them reads as the characters it is. Mentions
+  and issue references are not covered yet: see Known issues.
+- **The stale check reads the capture mode.** `driftproof stale` treats the capture mode (text or
+  files) as one more thing that can make a receipt out of date, beside the model, the skill and the
+  harness.
+- **Better docs.** The README now explains how to read what a run prints, what `--capture` changes and
+  what `/driftproof:run` takes. `driftproof view` labels a receipt from before the `answered_by` field
+  existed as "Recorded before answered_by existed", where it said "Not measured".
+- **Dependency and code scanning fixes.** The lockfile's `fast-uri` is 3.1.8, and the CodeQL alerts
+  open at the cut are fixed in code.
+- **Published reports gain dated notes.** Reports 001 to 005, 007 and 008 each gain a dated note, and
+  Report 007 gains three dated corrections to its judge cost figures. No published number is changed.
+
+### What may change for you
+
+- **`/driftproof:init` on a skill that already exists, with no flags, now refuses and writes
+  nothing.** It exits with 2 and says it would add `evals/evals.json` to the skill, and that it adds a
+  file to a skill folder only with your yes. To add drafted test cases to a skill that exists, give the
+  drafted cases with `--cases <file>` and your yes with `--confirm-write`:
+  `/driftproof:init <skill folder> --cases <file> --confirm-write`. `--confirm-write` alone adds
+  placeholder example cases, and `--cases` without it is refused. A skill that already has test cases
+  gets its quick run through `/driftproof:start <skill folder>`, which runs them and adds nothing.
+  The command line's `driftproof init <folder>` on a folder that holds a `SKILL.md` adds
+  `evals/evals.json` only, never your `SKILL.md`, and no longer writes a `.driftproofrc` there.
+- **The stale check now says "advisory" for a receipt with no capture field.** Every receipt made
+  before receipt spec 0.10 has none. A scheduled stale Action on such a receipt now reads advisory
+  (exit 3) where it read current, and with `strict` it reads stale and opens an issue. To clear it, run
+  again: a receipt from this release records its capture mode.
+- **The README's Quickstart link has a new anchor.** The heading is now "Quickstart: receipt for your
+  own skill", so a link that ends `#quickstart--receipt-for-your-own-skill-in-10-minutes` needs
+  `#quickstart-receipt-for-your-own-skill`. The published 0.13.0 page keeps the old anchor.
+- **Some words on the view page, the pull request comment and the job summary change.** For a receipt
+  from before `answered_by` existed, the label moves from "Not measured" to "Recorded before
+  answered_by existed". 129 of the 262 receipts in this repository are in that state, and no verdict
+  moves. The site's receipt pages still say "Not measured" for them. Three receipt pages that show a
+  one-case verdict now say it is for one case, on one test task.
+- **Receipts written by this release are receipt spec v0.11.** v0.11 adds an optional `run.preset`,
+  `"quick"` on a smoke run's receipt, and such a receipt cannot read as a measured result. v0.10 is
+  frozen as `spec/receipt.v0.10.schema.json`, and every earlier receipt still validates against its
+  own version.
+- **No published receipt, number or verdict changes.** Reports 001 to 005, 007 and 008 gain a dated note,
+  Report 009's opening gains one line, and Report 007's three judge cost figures are left as published,
+  with a dated correction under each. No receipt file changes.
+
+### Known issues
+
+- **Cases from a skill that does not exist.** On the command line, `driftproof init <new folder>
+  --cases <file> --drafted-from-skill` creates a stub `SKILL.md` and labels the suite and each case as
+  drafted from the skill and approved by the user, though there was no skill to draft from. The
+  plugin never takes this route.
+- **A lost-answer reading still has edges.** A bare "Created `report.md`." beside a pleasantry, a
+  reply that opens with a title, and some code names that end in a file extension can still be read the
+  wrong way. They are named in the engineering log below.
+- **Mentions and issue references still fire.** Measured on GitHub on 6 Oct 2026: in a comment, an
+  escaped `@name` still renders as a user mention, and an escaped `#1` or `GH-1` still renders as an issue
+  link. HTML, Markdown links, bare URLs and character references render as plain text. The fix is planned
+  for the next release.
+- **Backslashes in the stale summary.** A path or model id that holds a backslash shows it doubled in
+  the stale summary's code cells.
+- **`driftproof view` and a bad `capture` value.** A `.driftproofrc` in the working directory with
+  `"capture": "both"` makes `view` list the receipt as not read, where `stale` and `run` exit 2.
+- **One check clears at the publish.** The plugin's check that its package matches the published npm
+  package can read only after 0.14.0 is on npm.
+
+### Upgrade
+
+- npm: `npx driftproof@0.14.0`. The Action: `driftproofhq/driftproof@v0.14.0`, and the stale Action
+  `driftproofhq/driftproof/stale@v0.14.0`.
+- Claude Code plugin: `claude plugin update driftproof@driftproofhq`. The plugin runs `npx
+  driftproof@0.14.0`, and `/driftproof:start` needs a runner at that version or later.
+- Receipts from earlier versions still validate. A workflow that does not set the new options behaves
+  as on 0.13.0, except for the changes listed under What may change for you.
+
+### Engineering log
+
+**`package.json` reads 0.14.0**, and `config.js`'s `RUNNER_VERSION` is held equal to it, and is the
+only place the version is typed. The Action pins in `README.md` and `docs/index.html` are `@v0.14.0`,
+`README.md` and `examples/workflows/driftproof-stale.yml` pin `stale@v0.14.0`, the plugin's pin in
+`plugin/driftproof/.claude-plugin/plugin.json` is 0.14.0, and so is the npx pin in
+`plugin/driftproof/README.md`. `plugin/driftproof/version-guard.json` carries `minimum` 0.14.0,
+`start_minimum` 0.14.0 (null before this release; `/driftproof:start` refuses on a runner below it),
+and `resolved_by` b0c11fa3, derived with `git log -1 -S "RUNNER_VERSION = '0.14.0'" -- config.js`.
+`package-lock.json` moves with them by `npm version` offline, only its two version fields.
+`tests/fixtures/export-summary.snapshot.json`'s `receipt_hash` is re-cut by script before the bump,
+because `runner_version` is inside the canonical receipt that hash is taken over. The receipt pages'
+`npx driftproof@<version> validate` command names 0.14.0 (158 pages, `scripts/build-receipt-pages.js`).
+`docs/data/stats.json`, `docs/index.html` and `docs/sitemap.xml` are regenerated by their generators.
+**Not yet on npm** at the bump; a Published section is added here after the publish.
+
+The re-freezes the bump forced, each by the sibling's next amendment, none checking less: spec 139's
+A-139-9 (AC-8, AC-11, DR-43f and `tests/start.test.js` read the set `start_minimum`, and the null and
+above-runner states still read as refusals), spec 020's amendment 98 (the README body baseline, by
+script), spec 026's A-026-35 (AC-17's RUNNER_VERSION) and the captures of specs 025 and 037 re-taken under
+the browser lock. The gate figures are in the `evidence(0.14.0)` commit that follows.
+
+#### The 0.14.0 spec list
+
+Twenty merges, read from `git log --first-parent --format=%s main..97cd6fc0 | grep '^merge(spec '`, oldest first:
+
+- 141-lost-answer-narrowing: a draw counts as lost only when its reply truly points at a file the judge was not shown, and a model that writes its answer to a file is graded on that file.
+- 142-public-claims-patch: the site's public claims name where they come from, and the published site carries no internal path or name.
+- 143-cases-not-draws: when the cases disagree, the words say more cases are needed, not more draws.
+- 144-pr-comment-escaping: the pull request comment and the job summary escape every string a receipt supplies.
+- 148-codeql-zero-and-local-scan: the CodeQL alerts are fixed in code, and a local scan in the release sweep stops the release on the next new one.
+- 147-fast-uri-3-1-8: the lockfile's fast-uri moves to 3.1.8.
+- 145-user-docs-and-view-label: the README explains the run options, and the view page labels a receipt recorded before answered_by existed.
+- 139-quick-and-guided-first-run: a quick smoke run (`--quick`) and a guided first run in the plugin (`/driftproof:start`).
+- 146-stale-capture-axis: stale reads the capture mode as an axis beside model, skill and harness.
+- 140-init-existing-and-trusted-outside-git: init adds test cases to a skill that exists after a yes, and the trusted lane runs outside a git repository after a confirmation.
+- 161-report-corrections-interim: dated notes on Reports 001 to 005, 007 and 008, and three corrected judge cost lines on Report 007.
+- 162-nightly-reds-3-oct: four reds of the 3 Oct nightly are fixed by their specs' next amendments.
+- 129-visual-checks-before-approval: a layout or visual spec runs its browser checks in the build and every fix round, and its approval reads their current results.
+
+- 068-integrator-intake-digest-budget: the integrator's intake, digest and budget guard.
+
+- 109-driver-refuses-owed-rulings: the driver refuses to merge on a ruling the approval leaves owed.
+- 163-codeql-four-new-alerts: the four new CodeQL alerts of the 3 Oct 2026 scan are fixed in code.
+- 164-approval-path-tilde: the driver reads the approval record it stored in its ~ form.
+- 115-approval-cites-own-commit-receipt: approval sessions read `private`, and an approval cites the receipt of its own commit.
+- 113-public-history-fast-forward: the public repository keeps its history, and each public push is one fast-forward commit.
+- 165-first-receipt-from-existing-skill: a first receipt from an existing skill, led from `/driftproof:init` and `/driftproof:run`.
+
+**Out of 0.14.0.** Spec 120 and every later spec go to the next release. Spec 114 (the integrator
+inherits chain rules) stays parked, with its open defects. Spec 136 (release automation) is not built.
+
+#### What each change reads from
+
+- **The first-run path (165, 139, 140).** `plugin/driftproof/lib/door.mjs` and
+  `plugin/driftproof/commands/{init,start,run}.md`. The door's refusal on a skill that exists with no
+  flags reads *init would put evals/evals.json into the skill at <dir>, as the one new file <dir>/evals/evals.json,
+  and adds a file to a skill folder only with the person's yes ... Nothing was written and nothing was
+  spawned.* The flags are `--cases`, `--confirm-write` and, for the CLI, `--drafted-from-skill`
+  (`bin/driftproof`, `lib/init.js`). The `--quick` preset is `lib/firstrun.js` `QUICK`: samples 2,
+  concurrency 4, max cases 5.
+- **Lost answers and capture (141).** `lib/capture.js`; spec 141's R-1 to R-12.
+- **Words (143).** `lib/verdict.js` `CASES_LINE`. The one published-receipt census read 206
+  published receipts with 0 state moves and 0 wording moves
+  (`specs/143-cases-not-draws/evidence/wording-moves.json`). `action.yml`'s `fail-on-underpowered`
+  description names both lines.
+- **Escaping (144).** `lib/decision.js` and `lib/plain.js`; the stale Action's summary and issue.
+- **Stale (146).** `lib/stale.js`, `spec/stale.v1.schema.json` (the axis `capture`), `stale/run.mjs`.
+- **View label (145).** `lib/plain.js` `LABELS.PRE_ANSWERED_BY`. The words-that-change table is
+  `specs/145-user-docs-and-view-label/PACKET.md` § Words that change: 129 of 262 receipts move
+  `NOT_MEASURED -> PRE_ANSWERED_BY`, 0 verdicts or routes move.
+- **Public claims (142).** The builders and data files; three receipt pages gain one line, "This verdict
+  is for one case, on one test task; it does not show how the skill does on other tasks."; Report 009's
+  opening gains one line naming the plugin eval's results.
+- **Reports (161).** `docs/reports/001`, `002`, `003`, `004`, `005`, `007` and `008` each gain a dated note under the
+  headline ("Note, 2026-10-03") and a dated entry under Amendments; Report 007 gains three dated
+  corrections under its judge cost figures ($8.047195, $7.634930 and $13.737220, against the published
+  $2.601445, $2.313420 and $3.253265); the published figures are unchanged. The `git diff main..97cd6fc0
+  -- docs/reports receipts docs/r` shows no changed receipt file, and its only removed lines are the
+  `dateModified` fields.
+- **Dependency and scanning (147, 148, 163).** `package-lock.json`'s `fast-uri` is 3.1.8. The release
+  sweep runs the local CodeQL scan, and a new alert stops the release.
+- **Receipt spec v0.11 (139).** `spec/RECEIPT.md`, `spec/receipt.schema.json`,
+  `spec/receipt.v0.10.schema.json` (new, the freeze).
+
+#### The real run of the first-receipt path
+
+Spec 165's probe ran for real on 2026-10-05: start 19:34:37Z, end 19:53:22Z, elapsed 1125 seconds,
+exit 0, receipt `commit-message-conventions-claude-haiku-4-5-quick-2026-10-05-6e79249ef0ec.json`
+(log `/var/tmp/driftproof-165-real.log`, 159 calls, a smoke run that printed no verdict). It makes no new
+public claim beyond what spec 165 ships.
+
+#### Known open
+
+- Spec 165, from its approval of `1bb5e9c8`: F-1 AC-6's element is read from a comment; F-2 AC-5 and
+  NFR-4 have subjects with no plant; F-3 the label is written on a new scaffold (the user section's
+  first known issue); F-4 `spectrace` reads two orphan ids.
+- Spec 141's F-1 to F-6, each non-blocking (approval of `db299e41`): F-1 a bare claim or a Changes list
+  beside one status or pleasantry line reads judged; F-2 a code name whose last segment is a document
+  extension or `env` still reads as a file pointer; F-3 a reply that opens with an ADR title reads as a
+  commit subject; F-4 and F-5 test scope; F-6 the wording of a long first file name in a reason.
+- Spec 144's F-1 to F-4 (approval of `b7dc95f2`): F-1 measured on GitHub on 6 Oct 2026 (a scratch
+  comment, rendered through the API, then deleted): a backslash-escaped `@name` still renders as a
+  mention and escaped `#1` and `GH-1` still render as issue links (fail); HTML, Markdown links, bare URLs
+  and character references render as plain text (pass). The next release's 144 amendment wraps
+  mention-like and reference-like strings in code spans and is measured on GitHub before it is claimed; F-2 and F-3
+  traceability and plan text; F-4 the stale summary's code cells double a backslash.
+- Spec 146's F-1 to F-8 (approval of `8edc0d82`), each non-blocking; F-8 is that `driftproof view` lists
+  a receipt as not read under a working-directory `.driftproofrc` with `"capture": "both"`, where `stale`
+  and `run` exit 2.
+- Spec 136's F-1 to F-4 are not in this release, because 136 is not.
+- Spec 028 NFR-7 reads red until 0.14.0 is on npm, because it compares this checkout with
+  `npm pack driftproof@0.14.0`. It is re-run after the publish, never before.
+
+#### Not in this release
+
+Specs 120 onward, spec 114 (parked) and spec 136 (not built), as listed above. A Published section is
+added after the publish.
+
+---
+
 ## v0.13.0 - 2026-10-02
 
 **`package.json` reads 0.13.0**, and `config.js`'s `RUNNER_VERSION` is held equal to it.
@@ -520,7 +744,7 @@ against its own version.
   body is frozen, so the stylesheet alone places it (spec 130, open).
 
 - **Report 011's headline still says "on release day".** Its page title, set by spec 133, names
-  its models instead (spec 125, out of scope, on the controller's follow-ups register).
+  its models instead (spec 125, out of scope, on the list of follow-ups).
 
 - **The lost-answer reading loses some answers the judge is shown whole, with a reason that is not
   true of them.** A commit body or pull request description that lists "Added `src/payments/stripe.js`"
@@ -604,6 +828,27 @@ On 1 Oct 2026, code scanning on the public repository listed 17 open alerts.
 
 - None of the eleven is in the npm package, which ships `bin/`, `lib/`, `spec/`, `config.js` and
   `config/models.json` only.
+
+### Published
+
+**`driftproof@0.13.0` is on npm**, published 2026-10-02 at 01:53:00 UTC, `latest`, and its
+`gitHead` is `b88f391`, the published repository's commit that the `v0.13.0` tag points at,
+built from source commit `3c3ef0d1`. The registry records its version as `0.13.0`, its publish time
+as `2026-10-02T01:53:00.602Z`, its tarball's shasum as `19336c07f04800d0c355ae596b2683744af45140` and its integrity as
+`sha512-neyysVdd+FUVEjU4Uo/+xAoWWQ3/yTWTU1oOlI5SGcqNA5nqsjOLkbhfUupfgaIqq/1YoBr/NCMiU9DrhShhEw==`, and `dist-tags` reads `{"latest":"0.13.0"}`. A clean-directory
+`npx -y driftproof@0.13.0 --version` prints `0.13.0`.
+**The published repository's `main` and `release` branches** are at `b88f391`, and the `v0.13.0` tag (object `7b25564`) points at it.
+The `release` branch is the one the plugin directory tracks, and the directory now serves v0.13.0.
+**The GitHub release `v0.13.0`** was published at 02:13:24 UTC with a short user-facing body written by the operator.
+**GitHub Pages deployed** `b88f391`: deployment `6799446234` (`github-pages`) reached `success` at 01:56:05 UTC,
+and the live homepage carries the `@v0.13.0` pin.
+Read after the publish at the source commit `3c3ef0d1`, spec 028's gate reads **21/21 pass, 0 fail**, its NFR-7
+green against the published tarball, and spec 031's reads **9 GREEN**, its AC-1 and AC-2 green through
+`npx driftproof@0.13.0`. The build's own published-tree gate read 647/647 passed, 0 failed.
+Google indexing was requested and the Bing URL submission made for eight key URLs, and `sitemap.xml` was resubmitted, by the operator.
+Evidence: `specs/000-governance/evidence/post-publish-0.13.0.txt`.
+
+---
 
 ## v0.12.1 - 2026-09-29
 
