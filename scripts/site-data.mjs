@@ -196,7 +196,7 @@ const { verdictFromReceipt } = require('../lib/verdict.js');
 // taken from the SAME derivation the repo gate checks it against rather than
 // from a second one that could be right about a different number.
 const prep007 = require('./prepare-report-007.js');
-const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen'];
 const exampleVerdict = verdictFromReceipt(EXAMPLE);
 
 const reportDirs = () => fs.readdirSync(path.join(DOCS, 'reports'), { withFileTypes: true })

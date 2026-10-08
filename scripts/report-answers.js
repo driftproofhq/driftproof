@@ -389,6 +389,9 @@ function driftproofAnswers(row, body, { esc, root = ROOT } = {}) {
   if (across) return { ...across, across: true };
   // a body that compares two receipts within one run: no sentence read from one receipt (R-10)
   if (new RegExp(VERDICT_EL.source).test(String(body))) return null;
+  // a body that counts each model's own result across the runs (data-fn="lift-verdict", Report 014): a sentence
+  // read from one receipt would lead with the latest run alone, so it keeps spec 125's summary (spec 134 A-134-6)
+  if (/data-fn="lift-verdict"/.test(String(body))) return null;
   const bodyNums = new Set(numeralsIn(textOf(body)));
   const rels = (row.receipt_paths || []).map((p) => (typeof p === 'string' ? p : p.value));
   const eligible = [];
