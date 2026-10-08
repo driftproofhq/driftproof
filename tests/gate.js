@@ -1946,7 +1946,11 @@ gate.section('budget guards');
   try {
     execFileSync('node', [
       path.join(ROOT, 'bin', 'driftproof'), 'run', EXAMPLE,
-      '--models', 'haiku', '--max-cases', '1', '--samples', '3', '--max-usd', '0.0001', '--out', outDir,
+      // --trusted-skill (issue 56): the isolation preflight refuses with exit 2 before the cost guard
+      // wherever the eval account does not exist (every GitHub-hosted runner, so the published tree's
+      // self-test read red since v0.14.0). That refusal has its own checks; this one is the cost guard,
+      // read on the real, non-stub path, on any machine.
+      '--models', 'haiku', '--max-cases', '1', '--samples', '3', '--max-usd', '0.0001', '--trusted-skill', '--out', outDir,
     ], { cwd: ROOT, stdio: 'pipe' });
   } catch (e) {
     exitCode = e.status;

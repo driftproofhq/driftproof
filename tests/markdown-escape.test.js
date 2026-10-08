@@ -10,7 +10,9 @@
 // posted by action/comment.js, run as the Action runs it, to a local double on 127.0.0.1 that records
 // the body; no network and no credential are used, and the one token value the script insists on is an
 // inert placeholder. The check that nothing live is left is written here and shares no code with the
-// escaper: it removes each backslash pair, as CommonMark reads one, and looks for what remains.
+// escaper: it removes each backslash pair and each code span, as CommonMark reads them, and looks for
+// what remains. Issue 41 adds a second check, also written here: what GitHub links in the text a
+// document renders to, once the escapes are gone (spec 144 A-144-3).
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -27,9 +29,9 @@ const plain = require('../lib/plain');
 
 const { markdownText, markdownLost, markdownDraws } = decision;
 
-// What a reader acts on once each escaped pair is gone. A backslash pair is text; a code span is
-// handled by the callers that place text in one.
-const stripPairs = (s) => s.replace(/\\[\s\S]/g, '');
+// What a reader acts on once each escaped pair and each code span is gone (live(), below). From issue 41
+// the escaper writes a code span around a word that holds a mention or a reference, so a code span is read
+// as the text it is.
 const LIVE_CHARS = /[`*~[\]<>&#@]/;
 const AUTOLINK = /:\/\/|(^|[\s*_~(])www\./i;
 
@@ -49,7 +51,7 @@ test('every character a reader acts on is escaped, and what is left is text', ()
   ];
   for (const [what, input] of cases) {
     const out = markdownText(input);
-    const left = stripPairs(out);
+    const left = live(out);
     assert.ok(!LIVE_CHARS.test(left), `${what}: ${JSON.stringify(out)} leaves ${JSON.stringify(left)}`);
     assert.ok(!AUTOLINK.test(left), `${what}: ${JSON.stringify(out)} leaves an autolink`);
     assert.ok(!/(^|[^A-Za-z0-9])_|_([^A-Za-z0-9]|$)/.test(left), `${what}: ${JSON.stringify(out)} leaves a flanking underscore`);
@@ -61,9 +63,9 @@ test('cell() is the first half: a pipe, a backslash and a line break are as spec
   assert.equal(markdownText('a\nb'), 'a b');
   assert.equal(markdownText('a\r\nb'), 'a b');
   assert.equal(markdownText('end\\'), 'end\\\\');
-  // A backslash before an at sign is one escaped backslash and one escaped at sign, never an escape
-  // that leaves the at sign live.
-  assert.equal(markdownText('\\@x'), '\\\\\\@x');
+  // A backslash before an at sign is one escaped backslash and a code span holding the mention, never an
+  // escape that leaves the at sign live (issue 41: GitHub reads a mention after a backslash escape).
+  assert.equal(markdownText('\\@x'), '\\\\`@x`');
   assert.equal(markdownText(null), '');
   assert.equal(markdownText(undefined), '');
   assert.equal(markdownText(12), '12');
@@ -96,9 +98,9 @@ test('text this repository wrote passes through byte for byte', () => {
   for (const s of same) assert.equal(markdownText(s), s);
 });
 
-test('a GH- reference is escaped, and a hyphen elsewhere is not', () => {
-  assert.equal(markdownText('GH-12'), 'GH\\-12');
-  assert.equal(markdownText('see gh-3, GH-45.'), 'see gh\\-3, GH\\-45.');
+test('a GH- reference is put in a code span, and a hyphen elsewhere is not escaped', () => {
+  assert.equal(markdownText('GH-12'), '`GH-12`');
+  assert.equal(markdownText('see gh-3, GH-45.'), 'see `gh-3`, `GH-45.`');
   assert.equal(markdownText('aGH-4 GH-x gh- 5 GH_12'), 'aGH-4 GH-x gh- 5 GH_12');
   assert.equal(markdownText('case-1 and a-b-2'), 'case-1 and a-b-2');
 });
@@ -379,4 +381,132 @@ test('action/comment.js posts the escaped body to the API it is given', async (t
   assertNoneLive(body.split('\n').slice(0, -1).join('\n'), 'the posted body');
   const d = decision.decideSet(dir, 'fx-lost');
   assert.ok(body.includes(`Why: ${lostDrawsLine(markdownLost(d.rows[0].lostDraws))}`), body);
+});
+
+// ── issue 41: what GitHub links once the escapes are gone ────────────────────────────────────────
+// GitHub finds a mention, an issue reference and a GH- reference in the text a document renders to, so a
+// backslash before `@`, `#` or the hyphen does not stop one (measured on 6 Oct 2026). This checker shares
+// no code with the escaper. It renders each line: a backslash before ASCII punctuation is that character,
+// an unescaped character reference is decoded, a code span is its content. `outside` is the same with
+// each code span made a space, where GitHub sees a text node end.
+const ENTITY = { amp: '&', lt: '<', gt: '>', quot: '"', commat: '@', num: '#', hyphen: '-', sol: '/' };
+function renderedOf(md) {
+  const text = []; const outside = [];
+  for (const line of String(md).split(/\r\n|\r|\n/)) {
+    let t = ''; let o = '';
+    for (let i = 0; i < line.length;) {
+      const rest = line.slice(i);
+      const esc = /^\\([!-/:-@[-`{-~])/.exec(rest);
+      if (esc) { t += esc[1]; o += esc[1]; i += 2; continue; }
+      const ent = /^&(?:#(\d+)|#x([0-9a-f]+)|(\w+));/i.exec(rest);
+      const ch = ent && (ent[1] ? String.fromCodePoint(Number(ent[1])) : ent[2] ? String.fromCodePoint(parseInt(ent[2], 16)) : ENTITY[ent[3]]);
+      if (ch) { t += ch; o += ch; i += ent[0].length; continue; }
+      const ticks = /^`+/.exec(rest);
+      if (ticks) {
+        const fence = ticks[0];
+        const end = new RegExp(`(?<!\`)${fence}(?!\`)`).exec(rest.slice(fence.length));
+        if (!end) { t += fence; o += fence; i += fence.length; continue; }
+        t += rest.slice(fence.length, fence.length + end.index); o += ' ';
+        i += fence.length + end.index + fence.length; continue;
+      }
+      t += line[i]; o += line[i]; i += 1;
+    }
+    text.push(t); outside.push(o);
+  }
+  return { text: text.join('\n'), outside: outside.join('\n') };
+}
+// What GitHub links: an `@` and a handle (a team after a slash) after anything but a letter, a digit or an
+// underscore; any `#` before a digit, with an owner/repo or not; a `GH-` before a digit after anything but
+// a letter or a digit. More than GitHub links, never less.
+function githubLinks(md) {
+  const { outside } = renderedOf(md);
+  return [
+    ...[...outside.matchAll(/(?:^|[^A-Za-z0-9_])(@[A-Za-z0-9][\w-]*(?:\/[A-Za-z0-9][\w.-]*)?)/g)].map((m) => m[1]),
+    ...[...outside.matchAll(/(?:[\w.-]+\/[\w.-]+)?#\d+/g)].map((m) => m[0]),
+    ...[...outside.matchAll(/(?:^|[^A-Za-z0-9])(gh-\d+)/gi)].map((m) => m[1]),
+  ];
+}
+const timesTyped = (md, name) => renderedOf(md).text.split(name).length - 1;
+const EMAIL_LIKE = ['a', 'b.co'].join('@');
+const HOSTILE_BARE = ['@octocat', '@org/team', '#1', 'GH-1', 'owner/repo#2', 'x @octocat y', '(#3)', EMAIL_LIKE];
+const HOSTILE = [...HOSTILE_BARE, ...HOSTILE_BARE.map((n) => `\\${n}`)];
+const PLAIN_NAME = 'zqplainname41';
+
+test('issue 41: the checker reads a mention or a reference after a backslash as linked, and not in a code span', () => {
+  for (const n of ['@octocat', '@org/team', '#1', 'GH-1', 'owner/repo#2', '(#3)']) {
+    assert.ok(githubLinks(`x ${n} y`).length, n);
+    assert.ok(githubLinks(`x ${n.replace(/[@#-]/g, '\\$&')} y`).length, `${n} after a backslash`);
+    assert.deepEqual(githubLinks(`x \`${n}\` y`), [], `${n} in a code span`);
+  }
+  assert.deepEqual(githubLinks(`x ${EMAIL_LIKE} y`), []);
+  assert.ok(githubLinks('x &#64;octocat y').length, 'a character reference is decoded');
+  assert.equal(timesTyped('x \\\\`@octocat` y', '\\@octocat'), 1);
+  assert.equal(timesTyped('x @​octocat y', '@octocat'), 0);
+});
+
+test('issue 41: markdownText leaves nothing GitHub links, and each hostile name renders as typed', () => {
+  for (const n of HOSTILE) {
+    const out = markdownText(n);
+    assert.deepEqual(githubLinks(out), [], `${JSON.stringify(n)} wrote ${JSON.stringify(out)}`);
+    assert.equal(renderedOf(out).text, n, `${JSON.stringify(n)} wrote ${JSON.stringify(out)}`);
+  }
+  // A word with two references in it is one code span, so no backtick run joins two spans.
+  assert.deepEqual(githubLinks(markdownText('@a@b #1#2 GH-1GH-2')), []);
+  assert.equal(renderedOf(markdownText('@a@b #1#2 GH-1GH-2')).text, '@a@b #1#2 GH-1GH-2');
+  // A backslash before a hyphen is a doubled backslash, never read as the escape of the hyphen.
+  assert.deepEqual(githubLinks(markdownText('\\-#1')), []);
+  assert.equal(renderedOf(markdownText('\\-#1')).text, '\\-#1');
+});
+
+// The comment as action/comment.js posts it, to a local double on 127.0.0.1.
+async function postedBody(t, dir, models) {
+  const ev = path.join(dir, 'event.json');
+  fs.writeFileSync(ev, JSON.stringify({ pull_request: { number: 7 } }));
+  const seen = [];
+  const server = http.createServer((req, res) => {
+    let raw = '';
+    req.on('data', (c) => { raw += c; });
+    req.on('end', () => {
+      res.writeHead(req.method === 'GET' ? 200 : 201, { 'content-type': 'application/json' });
+      if (req.method !== 'GET') seen.push(JSON.parse(raw).body);
+      res.end(req.method === 'GET' ? '[]' : '{"id":1}');
+    });
+  });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  t.after(() => server.close());
+  const r = await postTo({
+    PATH: process.env.PATH, GITHUB_REPOSITORY: 'fx-owner/fx-repo', GITHUB_EVENT_PATH: ev, GITHUB_API_URL: `http://127.0.0.1:${server.address().port}`,
+    GITHUB_TOKEN: 'placeholder-for-the-local-double', DRIFTPROOF_RECEIPTS: dir, INPUT_MODELS: models, INPUT_SKILL_DIR: 'skills/fx',
+    INPUT_FAIL_ON_REGRESSION: 'true', INPUT_FAIL_ON_UNDERPOWERED: 'false',
+  });
+  assert.equal(r.code, 0, r.out);
+  assert.equal(seen.length, 1, r.out);
+  return seen[0];
+}
+
+test('issue 41: the job summary and the posted comment carry each hostile case id, draw reason and skill name unlinked and as typed', async (t) => {
+  const surfaces = async (name) => {
+    const out = [];
+    const sets = [
+      ['fx-lost', 'inconclusive', receipt(name, [0.85, 0.84, 0.86, LOST], [0.57, 0.58, 0.56], { model: 'fx-lost', skill: name, reason: name })],
+      ['fx-under', 'underpowered', receipt(name, [0.80], [0.79], { model: 'fx-under', skill: name })],
+    ];
+    for (const [model, state, r] of sets) {
+      const dir = dirOf({ [`${model}-2026-09-29.json`]: r });
+      t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+      const d = decision.decideSet(dir, model);
+      assert.equal(d.rows[0].state, state, `${JSON.stringify(name)} ${model}`);
+      out.push([`${model} summary`, decision.summaryMarkdown(d, { lead: plain.summaryLead(d, dir, {}) })]);
+      out.push([`${model} comment`, await postedBody(t, dir, model)]);
+    }
+    return out;
+  };
+  const plainCounts = new Map((await surfaces(PLAIN_NAME)).map(([where, md]) => [where, timesTyped(md, PLAIN_NAME)]));
+  for (const where of plainCounts.keys()) assert.ok(plainCounts.get(where) > 0, `the plain name reaches the ${where}`);
+  for (const name of HOSTILE) {
+    for (const [where, md] of await surfaces(name)) {
+      assert.deepEqual(githubLinks(md), [], `${JSON.stringify(name)}: the ${where} leaves a link GitHub makes`);
+      assert.equal(timesTyped(md, name), plainCounts.get(where), `${JSON.stringify(name)}: the ${where} renders the name as typed ${timesTyped(md, name)} time(s), the plain name ${plainCounts.get(where)}`);
+    }
+  }
 });

@@ -73,6 +73,19 @@ function answerLines(root) {
     `- [${A.links.compare}](${ORIGIN}/compare/): ${firstSentence(P.compare.intro)}`,
     `- [${A.links.paper}](${ORIGIN}/paper/): ${paper.title}. ${paper.version_line}. ${paper.preprint_line}.`,
     `- [${A.links['benchmark-gap']}](${ORIGIN}/benchmark-gap/): type two benchmark scores and the question count, and see whether the gap clears the benchmark's own sampling noise.`,
+    ...phraseLines(),
+  ];
+}
+
+// ONE LINE PER PHRASE A PAGE OWNS, then the maintainer and the upstream fixes (spec 169, issue 60).
+// The link text is the phrase the page's title leads with.
+function phraseLines() {
+  return [
+    `- [Skill evaluation across model releases](${ORIGIN}/agent-skill-regression-testing/): whether an agent skill still helps after the model under it changes, answered from the published reports.`,
+    `- [Evaluation receipts](${ORIGIN}/r/): every published receipt, dated and hash-verified, listed by the report it belongs to.`,
+    `- [LLM eval measurement defects](${ORIGIN}/paper/): the paper on measurement defects in LLM and agent evaluation tools, with its data and its citation.`,
+    `- [Maintainer](${ORIGIN}/maintainer/): who maintains Driftproof: Maverick (mavericksea-ai on GitHub), who also writes its reports and the paper.`,
+    `- [Fixes merged into other evaluation tools](${ORIGIN}/what-is-driftproof/#fixes-merged-upstream): the fixes the maintainer contributed upstream, each credited in its project's own release notes.`,
   ];
 }
 

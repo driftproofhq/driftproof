@@ -198,6 +198,10 @@ driftproof import my-skill-workspace/iteration-1/ --from skill-creator
 | `analyzer_model` | not used | It is not the grader. `run.judge.model_id` is `unknown`, with a notice: no cited format records the grader's model, and skill-up's `grading.json` carries expectations and a summary only. |
 | `result.json` | `run.import.sidecars`, `run.harness` | Its sha256 is recorded; skill-up's `engine_name` and observed CLI version are the harness. |
 
+The comparison is paired by eval: an eval scored in one arm only, or whose runs carry different
+`result.total` counts of expectations, keeps its rows but is left out of both arms' aggregates and
+the delta, listed in `excluded_cases` and named in a notice.
+
 ## The lightweight interchange: `driftproof export --to summary-json`
 
 Full receipts carry the whole evidence chain. Most consumers only want the
