@@ -56,12 +56,15 @@ Every published report, newest first.
 
 ## Upstream fixes and independent mentions
 
-Fixes merged upstream, each a row of the paper's defect table:
+### Fixes merged into other evaluation tools
 
-- [addyosmani/agent-skills pull request #576](https://github.com/addyosmani/agent-skills/pull/576). Grader results validated by count and arithmetic, never bound to expectation ids. Merged by the repository owner on [17 September 2026](https://github.com/addyosmani/agent-skills/pull/576).
-- [addyosmani/agent-skills pull request #587](https://github.com/addyosmani/agent-skills/pull/587). Prior run's .grading.json survives a rejected grading; no run identity recorded. Merged by the repository owner on [20 September 2026](https://github.com/addyosmani/agent-skills/pull/587).
-- [addyosmani/agent-skills issue #591](https://github.com/addyosmani/agent-skills/issues/591) and [addyosmani/agent-skills pull request #598](https://github.com/addyosmani/agent-skills/pull/598). ADR eval's third expectation not in SKILL.md; verdict flips at one commit. Merged by the repository owner on [26 September 2026](https://github.com/addyosmani/agent-skills/pull/598).
-- [addyosmani/agent-skills issue #599](https://github.com/addyosmani/agent-skills/issues/599) and [addyosmani/agent-skills pull request #600](https://github.com/addyosmani/agent-skills/pull/600). Floor guard passes on untracked suppressions, deleted tests and raised maximums; [7](https://zenodo.org/records/23050796/files/defects.csv) of [14](https://zenodo.org/records/23050796/files/defects.csv) cases fail. Merged by the repository owner on [26 September 2026](https://github.com/addyosmani/agent-skills/pull/600).
+Driftproof's maintainer, Maverick ([mavericksea-ai](https://github.com/mavericksea-ai) on GitHub), reads the scoring and gating code of other evaluation tools and sends fixes upstream. Nine are merged, and each project credits them in its own release notes:
+
+- **[MLflow 3.17.0](https://github.com/mlflow/mlflow/releases/tag/v3.17.0):** relative-change gates now use the baseline's magnitude, so a negative baseline no longer passes a worse model and fails a better one ([#26252](https://github.com/mlflow/mlflow/pull/26252)).
+- **[NVIDIA SkillEvaluator v0.4.0](https://github.com/NVIDIA/SkillEvaluator/releases/tag/v0.4.0):** a script earns execution credit only with evidence that it was run, not just read or searched ([#154](https://github.com/NVIDIA/SkillEvaluator/pull/154)).
+- **[Agent Skills 0.6.10 to 0.6.12](https://github.com/addyosmani/agent-skills/releases):** grader results are bound to the expectations they answer ([#576](https://github.com/addyosmani/agent-skills/pull/576)); stale grading is cleared and each run records its identity ([#587](https://github.com/addyosmani/agent-skills/pull/587)); the ADR eval grades what the skill asks for ([#598](https://github.com/addyosmani/agent-skills/pull/598)); the floor-guard reference catches untracked files, deleted tests and raised limits ([#600](https://github.com/addyosmani/agent-skills/pull/600), [#614](https://github.com/addyosmani/agent-skills/pull/614)). Two more fixes there are not about evaluation ([#578](https://github.com/addyosmani/agent-skills/pull/578), [#615](https://github.com/addyosmani/agent-skills/pull/615)).
+
+Nine more are open, in DeepEval, DSPy, Harbor, LangSmith, lm-evaluation-harness, Anthropic's skills repository and Superpowers. Six of the defects behind them are written up in the [paper](https://driftproofhq.com/paper/). More on who maintains Driftproof: [Maintainer](https://driftproofhq.com/maintainer/).
 
 Mentions by people outside the project:
 

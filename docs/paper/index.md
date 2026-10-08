@@ -40,6 +40,16 @@ Evaluation tools for language-model applications and agent skills are used as ga
 
 CC BY 4.0
 
+## Since publication (updated 8 October 2026)
+
+The paper reports upstream status as of 30 September 2026: of the thirteen counted defects, five fixes were merged and one more was approved. Since then:
+
+- **MLflow, relative change with a negative baseline** (Appendix A.1, row 14): merged on 6 October as [#26252](https://github.com/mlflow/mlflow/pull/26252) and shipped in [MLflow 3.17.0](https://github.com/mlflow/mlflow/releases/tag/v3.17.0). Six of the thirteen are now merged.
+- **Agent Skills floor-guard follow-up** (row 5, listed but not counted): merged as [#614](https://github.com/addyosmani/agent-skills/pull/614) and shipped in Agent Skills 0.6.12.
+- **alibaba/skill-up** (not in the paper): a failed expect pre-check shrinks the benchmark denominator, so a placeholder answer can outscore a judged one. Reported on [#246](https://github.com/alibaba/skill-up/issues/246#issuecomment-6050718340); the maintainers opened [#300](https://github.com/alibaba/skill-up/issues/300) to fix it.
+
+The other open fixes are unchanged. This note will be updated as they move; the paper's own numbers will change only in a new version.
+
 ## Data
 
 **The paper's Appendix A.1 as data**

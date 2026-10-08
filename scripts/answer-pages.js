@@ -5,8 +5,9 @@
 // /agent-skill-evaluation/, /agent-skill-regression-testing/ and /compare/, and the
 // question that leads the paper page.
 //
-// NOTHING ON THESE PAGES IS TYPED HERE BUT A HEADING OR A LABEL. The words come from
-// three places, each read at build:
+// NOTHING ON THESE PAGES IS TYPED HERE BUT A HEADING OR A LABEL, with one exception: the fixes
+// merged into other evaluation tools (spec 169), whose words are issue 60's as the operator approved
+// them. The words come from three places, each read at build:
 //   docs/data/answers.json   every paragraph, with its sources. A source is a public file
 //                            and a quote found verbatim in that file's visible text; the
 //                            build throws when a quote is not there. A paragraph in the
@@ -305,6 +306,37 @@ function sourceUrl(e, where) {
   return `${e.url.replace(/#.*$/, '')}#L${from}${to > from ? `-L${to}` : ''}`;
 }
 
+// ── the fixes merged into other evaluation tools (spec 169, issue 60) ──────────────────
+// The one place the site types prose of its own about upstream work. The words are issue 60's, approved
+// by the operator on 8 Oct 2026, who checked each merge and release note live that day; spec 169 §
+// The credits lists the URLs, and its gate reads the section against them. Each credit is the
+// maintainer's contribution, never a Driftproof run. /what-is-driftproof/ renders the section and
+// /maintainer/ the table, both from this list, so the two cannot name different releases.
+const MAINTAINER_PROFILE = 'https://github.com/mavericksea-ai';
+const UPSTREAM_CREDITS = [
+  { project: 'MLflow', release: '3.17.0', release_url: 'https://github.com/mlflow/mlflow/releases/tag/v3.17.0', repo: 'mlflow/mlflow', pulls: [26252], linked: true },
+  { project: 'NVIDIA SkillEvaluator', release: 'v0.4.0', release_url: 'https://github.com/NVIDIA/SkillEvaluator/releases/tag/v0.4.0', repo: 'NVIDIA/SkillEvaluator', pulls: [154], linked: true },
+  { project: 'Agent Skills', release: '0.6.10 to 0.6.12', release_url: 'https://github.com/addyosmani/agent-skills/releases', repo: 'addyosmani/agent-skills', pulls: [576, 578, 587, 598, 600, 614, 615], linked: false },
+];
+const pullUrl = (repo, n) => `https://github.com/${repo}/pull/${n}`;
+const pullLink = (repo, n) => `<a href="${esc(pullUrl(repo, n))}">#${n}</a>`;
+// The project label links its release note, which also links every numeral in it (spec 135 AC-6).
+const creditLabel = (c) => `<strong><a href="${esc(c.release_url)}">${esc(`${c.project} ${c.release}`)}</a>:</strong>`;
+function fixesMergedUpstream() {
+  const [mlflow, nvidia, skills] = UPSTREAM_CREDITS;
+  const p = (n) => pullLink(skills.repo, n);
+  return `<section id="fixes-merged-upstream">
+<h3>Fixes merged into other evaluation tools</h3>
+<p>Driftproof's maintainer, Maverick (<a href="${MAINTAINER_PROFILE}">mavericksea-ai</a> on GitHub), reads the scoring and gating code of other evaluation tools and sends fixes upstream. Nine are merged, and each project credits them in its own release notes:</p>
+<ul>
+<li>${creditLabel(mlflow)} relative-change gates now use the baseline's magnitude, so a negative baseline no longer passes a worse model and fails a better one (${pullLink(mlflow.repo, 26252)}).</li>
+<li>${creditLabel(nvidia)} a script earns execution credit only with evidence that it was run, not just read or searched (${pullLink(nvidia.repo, 154)}).</li>
+<li>${creditLabel(skills)} grader results are bound to the expectations they answer (${p(576)}); stale grading is cleared and each run records its identity (${p(587)}); the ADR eval grades what the skill asks for (${p(598)}); the floor-guard reference catches untracked files, deleted tests and raised limits (${p(600)}, ${p(614)}). Two more fixes there are not about evaluation (${p(578)}, ${p(615)}).</li>
+</ul>
+<p>Nine more are open, in DeepEval, DSPy, Harbor, LangSmith, lm-evaluation-harness, Anthropic's skills repository and Superpowers. Six of the defects behind them are written up in the <a href="/paper/">paper</a>. More on who maintains Driftproof: <a href="/maintainer/">Maintainer</a>.</p>
+</section>`;
+}
+
 // ── /what-is-driftproof/ ───────────────────────────────────────────────────────────────
 function whatIsPage() {
   const all = answers();
@@ -329,7 +361,6 @@ function whatIsPage() {
   }).join('\n');
 
   const reportLines = reports.map((r) => `<li><a href="/reports/${esc(r.number.value)}/">Report ${esc(r.number.value)}</a>: ${linkNumerals(r.what_moved.value, `/reports/${r.number.value}/`)}</li>`).join('\n');
-  const fixLines = R.upstream.map((u) => `<li>${u.threads.map((t) => `<a href="${esc(t.url)}">${plainNumerals(t.label, t.url)}</a>`).join(' and ')}. ${u.what ? `${linkNumerals(u.what, u.what_source.url)} ` : ''}${linkNumerals(u.happened, u.threads[u.threads.length - 1].url)}</li>`).join('\n');
   const coverageLines = R.coverage.map((c) => `<li><a href="${esc(c.url)}">${plainNumerals(c.where, c.url)}</a>. ${linkNumerals(c.happened, c.url)}</li>`).join('\n');
 
   const main = `<main class="prose answers">
@@ -351,10 +382,7 @@ ${sec('the-software', A.headings.software, `<ul>
 <li><a href="${esc(R.profiles.repository)}">${bare(R.profiles.repository)}</a></li>
 <li><a href="${esc(R.profiles.npm)}">${bare(R.profiles.npm)}</a></li>
 </ul>`)}
-${sec('upstream-and-coverage', A.headings.upstream, `<p>${esc(A.labels.upstream)}</p>
-<ul>
-${fixLines}
-</ul>
+${sec('upstream-and-coverage', A.headings.upstream, `${fixesMergedUpstream()}
 <p>${esc(A.labels.coverage)}</p>
 <ul>
 ${coverageLines}
@@ -429,4 +457,4 @@ ${answerList()}
 </div>`;
 }
 
-module.exports = { whatIsPage, questionPage, comparePage, paperQuestion, answerLinks, answerSplit, pageVisibleText: visibleText };
+module.exports = { whatIsPage, questionPage, comparePage, paperQuestion, answerLinks, answerSplit, pageVisibleText: visibleText, UPSTREAM_CREDITS, MAINTAINER_PROFILE, pullUrl };

@@ -56,7 +56,10 @@
     "https://dev.to/driftproofhq",
     "https://www.npmjs.com/package/driftproof",
     "https://skillsllm.com/skill/driftproof"
-  ]
+  ],
+  "founder": {
+    "@id": "https://driftproofhq.com/maintainer/#maverick"
+  }
 }
 </script>
 <!-- /driftproof:card-tags -->
@@ -154,13 +157,16 @@
 </section>
 <section id="upstream-and-coverage">
 <!--driftproof:anchor--><span id="upstream-fixes-and-independent-mentions" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Upstream fixes and independent mentions</h2>
-<p>Fixes merged upstream, each a row of the paper's defect table:</p>
+<section id="fixes-merged-upstream">
+<h3>Fixes merged into other evaluation tools</h3>
+<p>Driftproof's maintainer, Maverick (<a href="https://github.com/mavericksea-ai">mavericksea-ai</a> on GitHub), reads the scoring and gating code of other evaluation tools and sends fixes upstream. Nine are merged, and each project credits them in its own release notes:</p>
 <ul>
-<li><a href="https://github.com/addyosmani/agent-skills/pull/576">addyosmani/agent-skills pull request #576</a>. Grader results validated by count and arithmetic, never bound to expectation ids. Merged by the repository owner on <a href="https://github.com/addyosmani/agent-skills/pull/576">17 September 2026</a>.</li>
-<li><a href="https://github.com/addyosmani/agent-skills/pull/587">addyosmani/agent-skills pull request #587</a>. Prior run's .grading.json survives a rejected grading; no run identity recorded. Merged by the repository owner on <a href="https://github.com/addyosmani/agent-skills/pull/587">20 September 2026</a>.</li>
-<li><a href="https://github.com/addyosmani/agent-skills/issues/591">addyosmani/agent-skills issue #591</a> and <a href="https://github.com/addyosmani/agent-skills/pull/598">addyosmani/agent-skills pull request #598</a>. ADR eval's third expectation not in SKILL.md; verdict flips at one commit. Merged by the repository owner on <a href="https://github.com/addyosmani/agent-skills/pull/598">26 September 2026</a>.</li>
-<li><a href="https://github.com/addyosmani/agent-skills/issues/599">addyosmani/agent-skills issue #599</a> and <a href="https://github.com/addyosmani/agent-skills/pull/600">addyosmani/agent-skills pull request #600</a>. Floor guard passes on untracked suppressions, deleted tests and raised maximums; <a href="https://zenodo.org/records/23050796/files/defects.csv">7</a> of <a href="https://zenodo.org/records/23050796/files/defects.csv">14</a> cases fail. Merged by the repository owner on <a href="https://github.com/addyosmani/agent-skills/pull/600">26 September 2026</a>.</li>
+<li><strong><a href="https://github.com/mlflow/mlflow/releases/tag/v3.17.0">MLflow 3.17.0</a>:</strong> relative-change gates now use the baseline's magnitude, so a negative baseline no longer passes a worse model and fails a better one (<a href="https://github.com/mlflow/mlflow/pull/26252">#26252</a>).</li>
+<li><strong><a href="https://github.com/NVIDIA/SkillEvaluator/releases/tag/v0.4.0">NVIDIA SkillEvaluator v0.4.0</a>:</strong> a script earns execution credit only with evidence that it was run, not just read or searched (<a href="https://github.com/NVIDIA/SkillEvaluator/pull/154">#154</a>).</li>
+<li><strong><a href="https://github.com/addyosmani/agent-skills/releases">Agent Skills 0.6.10 to 0.6.12</a>:</strong> grader results are bound to the expectations they answer (<a href="https://github.com/addyosmani/agent-skills/pull/576">#576</a>); stale grading is cleared and each run records its identity (<a href="https://github.com/addyosmani/agent-skills/pull/587">#587</a>); the ADR eval grades what the skill asks for (<a href="https://github.com/addyosmani/agent-skills/pull/598">#598</a>); the floor-guard reference catches untracked files, deleted tests and raised limits (<a href="https://github.com/addyosmani/agent-skills/pull/600">#600</a>, <a href="https://github.com/addyosmani/agent-skills/pull/614">#614</a>). Two more fixes there are not about evaluation (<a href="https://github.com/addyosmani/agent-skills/pull/578">#578</a>, <a href="https://github.com/addyosmani/agent-skills/pull/615">#615</a>).</li>
 </ul>
+<p>Nine more are open, in DeepEval, DSPy, Harbor, LangSmith, lm-evaluation-harness, Anthropic's skills repository and Superpowers. Six of the defects behind them are written up in the <a href="/paper/">paper</a>. More on who maintains Driftproof: <a href="/maintainer/">Maintainer</a>.</p>
+</section>
 <p>Mentions by people outside the project:</p>
 <ul>
 <li><a href="https://github.com/JeanJeanLeM/GhostFrame/pull/3">JeanJeanLeM/GhostFrame pull request #3</a>. The repository owner opened it on <a href="https://github.com/JeanJeanLeM/GhostFrame/pull/3">28 September 2026</a>; it cites a Driftproof DEV post as its source.</li>
@@ -184,7 +190,7 @@
 <!--driftproof:layout-end--></div><!--/driftproof:layout-end-->
 <!--driftproof:foot--><footer class="site">
 <p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
-<p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+<p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/maintainer/">Maintainer</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
 </footer><!--/driftproof:foot-->
 <!--driftproof:scripts--><script src="/copy-button.js" defer></script>
 <script type="module" src="/islands/loader.js"></script><!--/driftproof:scripts-->

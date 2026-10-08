@@ -1022,6 +1022,49 @@ function howBuiltPage() {
   });
 }
 
+// ── /maintainer/ (spec 169) ─────────────────────────────────────────────────
+// Who maintains Driftproof, in issue 60's words as the operator approved them on 8 Oct 2026. The
+// paper's title, its concept DOI and its record are read from docs/data/paper.json; the releases and
+// pull requests from scripts/answer-pages.js's UPSTREAM_CREDITS, the list /what-is-driftproof/ also
+// renders. The Person node in the head is scripts/build-head-tags.js's.
+function maintainerPage() {
+  const P = JSON.parse(fs.readFileSync(path.join(DOCS, 'data', 'paper.json'), 'utf8'));
+  const me = answers.MAINTAINER_PROFILE;
+  const a = (href, text) => `<a href="${esc(href)}">${esc(text)}</a>`;
+  const rows = answers.UPSTREAM_CREDITS.map((c) => `<tr><td>${esc(c.project)}</td><td>${a(c.release_url, c.release)}</td><td>${c.pulls.map((n) => (c.linked ? a(answers.pullUrl(c.repo, n), `#${n}`) : `#${n}`)).join(', ')}</td></tr>`).join('\n');
+  const main = `<main class="prose maintainer">
+<h1>Maintainer</h1>
+<p class="lede">Driftproof is maintained by Maverick (${a(me, 'mavericksea-ai')} on GitHub), who also writes its reports and the paper, and does the upstream research on other evaluation tools. Maverick works under this name. Contact: <a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a>.</p>
+
+<h2 id="research">Research</h2>
+<ul>
+<li>Paper: ${a('/paper/', P.title)} (preprint, Zenodo, ${a(P.concept_doi_url, P.concept_doi_url.replace(/^https:\/\//, ''))}), written by ${a(me, 'Maverick')} and published under the project name ${esc(P.author)}.</li>
+<li>${a('/reports/', 'Reports')}: dated measurements of whether agent skills still help after each model release.</li>
+</ul>
+
+<h2 id="merged-upstream">Merged upstream, credited in release notes</h2>
+<table>
+<thead>
+<tr><th scope="col">Project</th><th scope="col">Release</th><th scope="col">PRs</th></tr>
+</thead>
+<tbody>
+${rows}
+</tbody>
+</table>
+<p>Open and in review: ${a('https://github.com/pulls?q=is%3Apr+author%3Amavericksea-ai', 'all pull requests by mavericksea-ai')}.</p>
+
+<h2 id="how-the-upstream-work-is-done">How the upstream work is done</h2>
+<p>Findings come from reading a tool's scoring code and reproducing the defect, sometimes starting from an outside audit. They are not Driftproof runs, and the project does not claim them as such. Every issue filed on another project ends with a line saying the author maintains Driftproof.</p>
+
+<p><strong>Elsewhere:</strong> ${a(me, 'GitHub')} · ${a('https://dev.to/driftproofhq', 'DEV')} · ${a('https://www.npmjs.com/package/driftproof', 'npm')} · ${a(P.record_url, 'Zenodo')}</p>
+</main>`;
+  return shell({
+    title: 'Maintainer: Maverick (mavericksea-ai)',
+    description: 'Driftproof is maintained by Maverick (mavericksea-ai on GitHub), who also writes its reports and the paper.',
+    main,
+  });
+}
+
 // ── /paper/ (spec 127) ──────────────────────────────────────────────────────
 // The paper "Reported, Not Measured", as its Zenodo record publishes it. The PDF is
 // Zenodo's: the site serves no copy (spec 127 A-127-5). Every fact
@@ -1031,6 +1074,26 @@ function howBuiltPage() {
 // against the paper. The abstract is the record's HTML as sent. The first paragraph
 // is the title, so the head builder's description is a fact and never a shortened
 // abstract (spec 127 AC-11, spec 020 AC-14).
+// THE PAPER'S STATUS NOTE (spec 169, issue 60): what moved upstream since the paper's counts of 30
+// September, dated, in the issue's words as the operator approved them on 8 Oct 2026. It is the one
+// part of the page that is not a fact or a label of the paper, and spec 169's gate holds its words;
+// the paper's text, its counts and its data files do not move, and the rest of <main> is spec 127's. The MLflow and Agent Skills links are
+// answer-pages.js's credits, the list /what-is-driftproof/ and /maintainer/ render.
+function paperStatus() {
+  const [mlflow, , skills] = answers.UPSTREAM_CREDITS;
+  const a = (href, text) => `<a href="${esc(href)}">${esc(text)}</a>`;
+  return `<section class="paper-status" id="since-publication">
+<h2 id="paper-status">Since publication (updated 8 October 2026)</h2>
+<p>The paper reports upstream status as of 30 September 2026: of the thirteen counted defects, five fixes were merged and one more was approved. Since then:</p>
+<ul>
+<li><strong>MLflow, relative change with a negative baseline</strong> (Appendix A.1, row 14): merged on 6 October as ${a(answers.pullUrl(mlflow.repo, 26252), '#26252')} and shipped in ${a(mlflow.release_url, `${mlflow.project} ${mlflow.release}`)}. Six of the thirteen are now merged.</li>
+<li><strong>Agent Skills floor-guard follow-up</strong> (row 5, listed but not counted): merged as ${a(answers.pullUrl(skills.repo, 614), '#614')} and shipped in Agent Skills 0.6.12.</li>
+<li><strong>alibaba/skill-up</strong> (not in the paper): a failed expect pre-check shrinks the benchmark denominator, so a placeholder answer can outscore a judged one. Reported on ${a('https://github.com/alibaba/skill-up/issues/246#issuecomment-6050718340', '#246')}; the maintainers opened ${a('https://github.com/alibaba/skill-up/issues/300', '#300')} to fix it.</li>
+</ul>
+<p>The other open fixes are unchanged. This note will be updated as they move; the paper's own numbers will change only in a new version.</p>
+</section>`;
+}
+
 function paperPage() {
   const P = JSON.parse(fs.readFileSync(path.join(DOCS, 'data', 'paper.json'), 'utf8'));
   const a = (href, text) => `<a href="${esc(href)}">${esc(text)}</a>`;
@@ -1062,6 +1125,8 @@ ${P.abstract_html}
 <dt>DOI for all versions</dt><dd>${a(P.concept_doi_url, P.concept_doi)}</dd>
 <dt>Licence</dt><dd>CC BY 4.0</dd>
 </dl>
+
+${paperStatus()}
 
 <h2 id="paper-data">Data</h2>
 <dl>
@@ -1228,6 +1293,7 @@ const TARGETS = {
   'reports/index.html': reportsIndex,
   'subscribed/index.html': subscribedPage,
   'how-this-is-built/index.html': howBuiltPage,
+  'maintainer/index.html': maintainerPage,
   'paper/index.html': paperPage,
   'what-is-driftproof/index.html': answerPage(answers.whatIsPage),
   'agent-skill-evaluation/index.html': answerPage(() => answers.questionPage('agent-skill-evaluation')),
@@ -1272,4 +1338,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { BENCHMARK_GAP_PRESETS, BENCHMARK_GAP_FAMOUS, paperPage, shell, heroReceipt, receiptWords, casesItem, reportCard, HOME_CARD_STAT, statePlot, plotState, subscribedPage, reportTypes, typeNote, word, bandFacts, bandsSection, floorFigure, checksSchemaVersion, tokensSchemaVersion, patchMethodology, receiptSchemaVersion, patchInteropMd, PATCHES, homepage, reportsIndex, glossaryPage, reportTypesPage, notFoundPage, redirectStub, STUBS, TERMS, TARGETS, reader, stats, reports, buildCards };
+module.exports = { BENCHMARK_GAP_PRESETS, BENCHMARK_GAP_FAMOUS, paperPage, maintainerPage, shell, heroReceipt, receiptWords, casesItem, reportCard, HOME_CARD_STAT, statePlot, plotState, subscribedPage, reportTypes, typeNote, word, bandFacts, bandsSection, floorFigure, checksSchemaVersion, tokensSchemaVersion, patchMethodology, receiptSchemaVersion, patchInteropMd, PATCHES, homepage, reportsIndex, glossaryPage, reportTypesPage, notFoundPage, redirectStub, STUBS, TERMS, TARGETS, reader, stats, reports, buildCards };

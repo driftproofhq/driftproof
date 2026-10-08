@@ -341,8 +341,22 @@ function receiptTitle(hash, own) {
   if (own && own.receipt && own.receipt.receipt_hash === hash) return require('./build-receipt-pages.js').ownTitle(own);
   throw new Error(`r/${hash}: no receipt under receipts/ carries this hash`);
 }
+// A PAGE THAT OWNS A PHRASE leads its title with it (spec 169, issue 60, the operator's ruling of
+// 8 Oct 2026): one narrow phrase per page, the suffix inside the 60. From issue 60 on, the paper's
+// phrase takes the place of its cited title (spec 133 R-9); the homepage's and the reports' titles do
+// not move.
+const PHRASE_TITLES = {
+  'agent-skill-regression-testing/index.html': 'Skill evaluation across model releases',
+  'r/index.html': 'Evaluation receipts: dated, hash-verified',
+  'paper/index.html': 'LLM eval measurement defects: the paper',
+};
 function pageTitle(html, rel, rows, own) {
   if (rel === 'index.html') return HOME_TITLE;
+  if (PHRASE_TITLES[rel]) {
+    const t = `${PHRASE_TITLES[rel]}${BRAND_SUFFIX}`;
+    if (t.length > TITLE_MAX) throw new Error(`${rel}: the phrase title is ${t.length} characters, past ${TITLE_MAX}`);
+    return t;
+  }
   const m = /^reports\/(\d+)\/index\.html$/.exec(rel);
   if (m) {
     const row = rows.find((r) => String(r.number.value) === m[1]);
@@ -423,6 +437,23 @@ const ld = (obj) => `<script type="application/ld+json">\n${JSON.stringify(obj, 
 // out rather than published empty.
 const ORG_ID = `${ORIGIN}/#organization`;
 const ORG_REF = { '@id': ORG_ID };
+// THE MAINTAINER (spec 169, issue 60): the Person /maintainer/ describes, issue 60's node as the
+// operator approved it. The Organization names it as founder on every page, so the one Organization
+// block stays the same everywhere; the Person itself is on the maintainer page alone.
+const MAINTAINER_ID = `${ORIGIN}/maintainer/#maverick`;
+function maintainerLd(rel) {
+  if (rel !== 'maintainer/index.html') return [];
+  return [ld({
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    '@id': MAINTAINER_ID,
+    name: 'Maverick',
+    alternateName: 'mavericksea-ai',
+    url: `${ORIGIN}/maintainer/`,
+    sameAs: ['https://github.com/mavericksea-ai'],
+    knowsAbout: ['agent skill evaluation', 'LLM evaluation measurement defects', 'skill regression testing across model releases'],
+  })];
+}
 function confirmedProfiles(root = ROOT) {
   const p = path.join(root, 'docs', 'data', 'profiles.json');
   if (!fs.existsSync(p)) return [];
@@ -443,6 +474,7 @@ function organization() {
     logo: `${ORIGIN}/icon-512.png`,
     description: d,
     ...(sameAs.length ? { sameAs } : {}),
+    founder: { '@id': MAINTAINER_ID },
   };
 }
 
@@ -532,7 +564,7 @@ function jsonLd(html, rel, rows, title, description) {
     description,
     url,
     isPartOf: { '@type': 'WebSite', name: 'Driftproof', url: `${ORIGIN}/` },
-  }), ...faqLd(html), ...paperLd(rel)].join('\n');
+  }), ...faqLd(html), ...paperLd(rel), ...maintainerLd(rel)].join('\n');
 }
 
 // ── spec 135: the question pages and the paper ──────────────────────────────────────────
