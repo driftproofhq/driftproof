@@ -40,17 +40,20 @@ main.screens {
 }
 
 /* ── a published report body ──────────────────────────────────────────────── */
-.report .pair, .report .src { color: var(--muted); font-size: var(--t-mono-sm); }
+/* On the desk a note is the shell's muted text; inside a table or a card, tokens.css sets it in the
+   ink's second pass (spec 170). */
+.report .pair, .report .src { color: var(--shell-muted); font-size: var(--t-mono-sm); }
 .headline { padding: 1.1rem 1.35rem; margin: 1.6rem 0; }
 .headline .big { font-family: var(--sans); font-weight: 500; font-size: var(--t-h3); line-height: 1.4; margin: 0 0 0.5rem; }
 .card { padding: 1.1rem 1.35rem; margin: 1.2rem 0; }
 .lede { font-size: var(--t-body); }
 
 /* A TABLE OF FIGURES IS SET, NOT TYPED: sentences and counts in the body face with tabular
-   numerals, so a column of them lines up; the identifiers inside it are <code> and typed. */
-table { border-collapse: collapse; margin: 1.2rem 0; font-size: var(--t-mono); width: 100%; background: var(--paper-2); }
-th, td { text-align: left; padding: 0.45rem 0.75rem; border-bottom: 1px dotted var(--line); white-space: nowrap; }
-th { color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--muted); }
+   numerals, so a column of them lines up; the identifiers inside it are <code> and typed. A table is
+   a paper card (spec 170): ink on the card stock, a row rule in the table's own rule colour. */
+table { border-collapse: collapse; margin: 1.2rem 0; font-size: var(--t-mono); width: 100%; background: var(--sheet); color: var(--ink); }
+th, td { text-align: left; padding: 0.45rem 0.75rem; border-bottom: 1px solid var(--sheet-rule); white-space: nowrap; }
+th { color: var(--ink-muted); font-weight: 500; border-bottom: 1px solid var(--ink-muted); }
 td { font-family: var(--sans); font-variant-numeric: tabular-nums lining-nums; }
 table.summary td:first-child, table.cases td:first-child { white-space: normal; font-family: var(--sans); }
 
@@ -65,9 +68,9 @@ table.summary td:first-child, table.cases td:first-child { white-space: normal; 
 .v-noise { color: var(--noise); }
 .v-mixed { color: var(--mixed); }
 
-section.skill { margin-top: 2.5rem; padding-top: 1rem; border-top: var(--perforation) dotted var(--line); }
+section.skill { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
 ul.method li { margin: 0.5rem 0; }
-.foot { color: var(--muted); font-size: var(--t-mono-sm); margin-top: 2rem; }
+.foot { color: var(--shell-muted); font-size: var(--t-mono-sm); margin-top: 2rem; }
 
 /* ── receipt pages (spec 036) ───────────────────────────────────────────────
    One page per receipt, laid on the desk as one sheet of stock (tokens.css gives it its torn
@@ -76,10 +79,10 @@ ul.method li { margin: 0.5rem 0; }
    and hashes wrap rather than widen the page. */
 main.receipt-page { margin: 2.6rem auto 3.4rem; padding: 2.4rem 2.2rem 2.2rem; }
 .receipt-page code { overflow-wrap: anywhere; }
-.receipt-page section { border-top: var(--perforation) dotted var(--line); padding-top: 1.2rem; margin-top: 1.6rem; }
-.receipt-meta { color: var(--muted); }
+.receipt-page section { border-top: 1px dashed var(--rule); padding-top: 1.2rem; margin-top: 1.6rem; }
+.receipt-meta { color: var(--ink-muted); }
 .receipt-verdict { padding: 1.2rem 0 0.4rem; margin: 1.4rem 0; }
-.receipt-page section.receipt-verdict { border-top: var(--perforation) dotted var(--line); }
+.receipt-page section.receipt-verdict { border-top: 1px dashed var(--rule); }
 .receipt-verdict.state-underpowered { outline: 2px dashed var(--mixed); outline-offset: 0.6rem; }
 .receipt-verdict .receipt-label { margin: 0 0 0.9rem; }
 .receipt-verdict.state-passed .receipt-label { border-color: var(--state-separated); color: var(--state-separated); }
@@ -88,10 +91,10 @@ main.receipt-page { margin: 2.6rem auto 3.4rem; padding: 2.4rem 2.2rem 2.2rem; }
 .receipt-verdict.state-no-effect .receipt-label { border-color: var(--state-overlapping); color: var(--state-overlapping); }
 .receipt-verdict.state-not-measured .receipt-label { border-color: var(--state-refused); color: var(--state-refused); }
 .receipt-honest { margin: 0 0 0.5rem; }
-.receipt-draws { margin: 0 0 0.5rem; color: var(--muted); }
+.receipt-draws { margin: 0 0 0.5rem; color: var(--ink-muted); }
 .receipt-badge { display: block; max-width: 100%; height: auto; }
 .receipt-verify details.verify p { margin: 0.5rem 0; }
-.receipt-lede { color: var(--muted); margin-bottom: 0.25rem; }
+.receipt-lede { color: var(--ink-muted); margin-bottom: 0.25rem; }
 .receipt-arms .bandplot { margin-top: 1rem; max-width: var(--w-plot); }
 @media (max-width: 720px) {
   main.receipt-page { margin: 1.8rem 0.6rem 2.6rem; padding: 1.8rem 1.1rem 1.6rem; }

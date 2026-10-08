@@ -84,16 +84,23 @@ const DOCS_LINKS = [
 // browser is worse than a nav that is always there. So the disclosure is a
 // sibling and the collapse is one CSS rule on `[open] ~ nav`. No script, one copy
 // of every link, and with CSS off the nav is simply visible.
+//
+// THE TOP LEVEL (spec 170): Reports, Gap calculator, Findings, Paper, Docs, GitHub. How it works
+// moves into the Docs menu, where spec 020 AC-12 still finds its href. The current page is marked
+// by docs/tokens.css from the page's own canonical link, so this stays one set of bytes on every page
+// (spec 127 AC-13).
 const NAV = `${NAV_OPEN}<header class="site">
 <a class="brand" href="/"><img class="brand-mark" src="/favicon.svg" alt="" width="28" height="28"><span>Driftproof</span></a>
 <details class="nav-menu"><summary>Menu</summary></details>
 <nav class="site-nav" aria-label="Site">
 <a href="/reports/">Reports</a>
-<a href="/#how-it-works">How it works</a>
+<a href="/benchmark-gap/">Gap calculator</a>
+<a href="/findings/">Findings</a>
+<a href="/paper/">Paper</a>
 <details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
+<a href="/#how-it-works">How it works</a>
 ${DOCS_LINKS.map(([h, t]) => `<a href="${h}">${t}</a>`).join('\n')}
 </div></details>
-<a href="/paper/">Paper</a>
 <a href="https://github.com/driftproofhq/driftproof">GitHub</a>
 </nav>
 </header>${NAV_CLOSE}`;
@@ -192,6 +199,8 @@ function receiptCard({ variant, heading, rows, tail = '', label = '' }) {
     : `<h2 class="receipt-heading">${heading}</h2>`;
   const body = rows.map((r) => {
     if (r.plot) return r.plot;
+    // A line the card states under its drawing, not a label and a value (spec 170).
+    if (r.note) return `<p class="receipt-note">${r.note}</p>`;
     const cls = ['receipt-row', r.rowClass].filter(Boolean).join(' ');
     const vcls = [r.valueClass || 'receipt-value', r.stamp ? `receipt-stamp is-${r.stamp}` : ''].filter(Boolean).join(' ');
     return `<p class="${cls}"><span class="receipt-key">${esc(r.key)}</span> <span class="${vcls}">${r.value}</span></p>`;
@@ -526,10 +535,20 @@ function factsRail(row) {
     ['Receipts', rpaths.length ? esc(String(rpaths.length)) : 'none linked'],
     ['Date', `<code>${esc(row.date.value)}</code>`],
   ];
+  // THE CITATION IN THE RAIL (spec 170), on deep dark: the TL;DR card's own BibTeX, from the same
+  // function and the same escaping, so the two cannot differ. The card keeps its fold (spec 020 AC-19).
   return `<aside class="facts-rail" aria-label="Report facts"><div class="rail-in"><p class="eyebrow">This report</p><dl>
 ${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('\n')}
-</dl></div></aside>`;
+</dl>
+<p class="eyebrow rail-cite-label">Cite this</p>
+<pre class="rail-cite"><code>${esc(bibtex(row))}</code></pre></div></aside>`;
 }
+
+// THE LONG READINGS ON ONE PAPER SHEET (spec 170): these pages' body text is set on one wide sheet of
+// card stock at the reading measure, with the dark contents rail beside it. The class is on the grid,
+// outside <main>, so no page's words move.
+const SHEET_PAGES = new Set(['methodology/index.html', 'what-is-driftproof/index.html', 'maintainer/index.html',
+  'glossary/index.html', 'authoring/index.html', 'paper/index.html']);
 
 function applyLayout(html, rel, data) {
   let out = stripBetween(html, LAYOUT_OPEN, LAYOUT_CLOSE);
@@ -544,7 +563,7 @@ function applyLayout(html, rel, data) {
   const mainTag = /<main\b([^>]*)>/.exec(out)[1];
   const cls = (/\bclass="([^"]*)"/.exec(mainTag) || [null, ''])[1].split(/\s+/);
   const reading = (cls.includes('report') && !cls.includes('shaped')) || /^writing\//.test(rel);
-  const gridCls = ['page-grid', reading ? 'is-reading' : '', cls.includes('screens') ? 'is-screens' : '', row ? 'has-facts' : ''].filter(Boolean).join(' ');
+  const gridCls = ['page-grid', reading ? 'is-reading' : '', cls.includes('screens') ? 'is-screens' : '', row ? 'has-facts' : '', SHEET_PAGES.has(rel) ? 'is-sheet' : ''].filter(Boolean).join(' ');
   const terms = heads.length >= 2 ? [] : termsFor(out);
   const reports = heads.length >= 2 || terms.length >= 2 || !/^writing\//.test(rel) ? [] : reportsFor(out);
   if (reports.length >= 2) for (const h of [...reports].reverse()) out = out.slice(0, h.at) + h.insert + out.slice(h.at);

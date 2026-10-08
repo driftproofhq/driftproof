@@ -23,18 +23,28 @@ permissions:
 
 jobs:
   selftest:
-    runs-on: ubuntu-latest
+    # This file ships in the public tree. On driftproof-source it runs on the box's self-hosted runners
+    # (issue 48: hosted minutes); everywhere else, the public repository and its forks among them, on
+    # GitHub-hosted ubuntu-latest, so no public repository ever reaches a self-hosted runner.
+    runs-on: ${{ github.repository == 'driftproofhq/driftproof-source' && fromJSON('["self-hosted", "light"]') || 'ubuntu-latest' }}
     env:
       DRIFTPROOF_STUB: '1'
     steps:
       - uses: actions/checkout@v4
+        with:
+          # On driftproof-source the gate tells the source tree from a published one by its history reaching
+          # the source's root commit, so the checkout there is full; a shallow one read as published (issue 56).
+          fetch-depth: ${{ github.repository != 'driftproofhq/driftproof-source' && 1 || 0 }}
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
       - name: install (the runner's own deps; the plugin has none)
         run: npm ci --omit=dev
       - name: the published tree's own gate (offline, stubbed)
-        run: node tests/gate.js --scan-root .
+        # On driftproof-source the tree is the source, not a published tree: naming it on argv as a
+        # published scan root turned the published-tree guards red on its own specs/ and CLAUDE.md
+        # (issue 20). There the gate runs as the repository gate does; everywhere else, unchanged.
+        run: node tests/gate.js ${{ github.repository != 'driftproofhq/driftproof-source' && '--scan-root .' || '' }}
       - name: the manifests validate as manifests
         run: |
           node -e "JSON.parse(require('fs').readFileSync('.claude-plugin/marketplace.json','utf8'))"

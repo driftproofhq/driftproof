@@ -4181,7 +4181,12 @@ gate.section('publish script');
         } catch (e) { head = `<git failed: ${e.message}>`; }
         gate.check('the publish commit carries exactly the message the invocation passed',
           b.rc === 0 && head.trim() === nonce,
-          { rc: b.rc, head: head.slice(0, 120), out: b.rc === 0 ? '' : b.out.slice(0, 200) });
+          // Issue 56: the build's exit is the nested gate's own status, so a failure is named by its
+          // [FAIL] lines and the output's end, not its first 200 characters (the public tree's red since
+          // v0.14.0 hid its cause there). What is asserted is unchanged.
+          { rc: b.rc, head: head.slice(0, 120),
+            fails: b.rc === 0 ? '' : b.out.split('\n').filter((l) => /\[FAIL\]|REFUSING|rror/.test(l)).join('\n').slice(0, 1500),
+            tail: b.rc === 0 ? '' : b.out.slice(-1500) });
       }
 
       // ── THE ARCHITECTURE REVIEWS STAY OUT (spec 064 AC-5) ────────────────

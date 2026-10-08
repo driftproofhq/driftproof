@@ -13,9 +13,12 @@
 # file the private release job commits in the release commit), and a registry integrity that differs
 # after the publish.
 #
-# release-record.json, at the repository root, is a tracked file. Its schema is one JSON object with exactly
-# two keys:
+# release-record.json, at the repository root, is a tracked file. Its schema is one JSON object with these
+# three keys:
 #   version            string, the package version this record is for, equal to package.json's "version"
+#   source_commit      string, 40 hex, the dev commit this release was cut from (the commit before the
+#                      release pull request's version bump); the next release lists what merged to dev
+#                      after it. No step here reads it.
 #   tarball_integrity  string, "sha512-" and the base64 sha512 of the tarball `npm pack` makes from the
 #                      release commit, as npm reports it in dist.integrity
 # The release pull request rewrites it as its last edit, from package.json and the pack of the tree it
@@ -138,13 +141,19 @@ jobs:
         run: |
           set -euo pipefail
           LIVE=""
-          for i in 1 2 3 4 5 6 7 8 9 10; do
+          for ((i = 1; i <= 20; i++)); do
             LIVE="$(npx -y "npm@$NPM_VERSION" view "$PKG_NAME@$VERSION" dist.integrity 2>/dev/null || true)"
             [ -n "$LIVE" ] && break
-            echo "not visible yet (try $i of 10)"; sleep 15
+            echo "not visible yet (try $i of 20)"
+            if [ "$i" -lt 20 ]; then sleep 30; fi
           done
           echo "registry: $LIVE"
           echo "recorded: $RECORDED"
+          # A registry slow to list the version does not turn a published release red; a different integrity does.
+          if [ -z "$LIVE" ]; then
+            echo "::warning::npm lists no integrity for $PKG_NAME@$VERSION after 20 tries 30 s apart; the job goes on. Check it by hand: npm view $PKG_NAME@$VERSION dist.integrity"
+            exit 0
+          fi
           if [ "$LIVE" != "$RECORDED" ]; then
             echo "::error::the registry integrity for $PKG_NAME@$VERSION differs from the recorded one"; exit 1
           fi
@@ -156,13 +165,22 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/release-body.mjs "$TAG" > "$RUNNER_TEMP/release-body.md"
-          if gh release view "$TAG" > /dev/null 2>&1; then
-            echo "the GitHub release $TAG exists; it is left as it is"
+          # An existing release is compared, never edited, deleted or re-created: releases are immutable.
+          # Trailing newlines do not count (--jq adds one, and GitHub may drop the notes file's last one).
+          if gh release view "$TAG" --json body --jq .body > "$RUNNER_TEMP/release-existing.md" 2> /dev/null; then
+            if [ "$(cat "$RUNNER_TEMP/release-existing.md")" = "$(cat "$RUNNER_TEMP/release-body.md")" ]; then
+              echo "the GitHub release $TAG exists and its notes match RELEASES.md"
+            else
+              diff -u "$RUNNER_TEMP/release-existing.md" "$RUNNER_TEMP/release-body.md" || true
+              echo "::error::the existing notes of the GitHub release $TAG differ from RELEASES.md; the release was not changed"
+              exit 1
+            fi
           else
             gh release create "$TAG" --verify-tag --title "$TAG" --notes-file "$RUNNER_TEMP/release-body.md"
           fi
 
       - name: Tell IndexNow what changed
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail

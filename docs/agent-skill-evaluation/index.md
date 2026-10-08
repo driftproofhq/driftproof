@@ -29,4 +29,5 @@ A case the rule does not separate is also asked whether it could have been separ
 - [What is Driftproof?](https://driftproofhq.com/what-is-driftproof/)
 - [Does a skill still help after a model upgrade?](https://driftproofhq.com/agent-skill-regression-testing/)
 - [What each evaluation tool measures](https://driftproofhq.com/compare/)
+- [Is this benchmark gap bigger than sampling noise?](https://driftproofhq.com/benchmark-gap/)
 - [The paper](https://driftproofhq.com/paper/)
