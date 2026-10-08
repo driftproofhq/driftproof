@@ -8,6 +8,183 @@ makes this one a record.
 
 ---
 
+## v0.16.0 - 2026-10-08
+
+### What's new
+
+- **A new look across the whole site.** Reports, the methodology pages and the new benchmark gap
+  calculator (below) now sit on a dark page shell, with their evidence shown on paper-colored cards.
+  Navigation and the footer move to the same look. No report's published wording, data or plots
+  changed. The page `driftproof view` writes takes the same look's heading size, page width and card
+  shadow.
+- **A calculator for benchmark gaps.** A new page lets you enter two benchmark scores and a question
+  count and see whether the gap between them is bigger than the benchmark's own sampling noise, using
+  the same formula the site's reports already use. A second tab reads a set of repeated runs the way
+  Driftproof itself judges a lift: a mean plus or minus one standard deviation.
+- **A new report: Claude Haiku 5.5 on release day.** Same test suite and method as the previous Haiku
+  report, run against Claude Haiku 4.5, with Claude Sonnet 5.5 and Claude Opus 5.5 as comparison rows.
+  On Claude Haiku 5.5, no skill clearly helped in most runs; the opening and the full tables are on the
+  site.
+- **A maintainer page, and smaller site updates.** The site names its maintainer on a new page, its
+  list of fixes contributed to other evaluation tools is rewritten, the paper page carries a dated note
+  on what has happened since publication, and four long page titles are shortened.
+
+### What may change for you
+
+- **Importing from skill-creator's benchmark format no longer reports a skewed lift.** When the
+  source file scores an eval in one arm only, or with a different number of expectations between its
+  two arms, the import now leaves that eval out of both arms' figures and the delta. Its rows stay in
+  the receipt, listed as excluded with the reason. Earlier imports could report a delta pulled off by
+  exactly this kind of mismatch.
+- **A name, issue number or GH-reference inside a receipt no longer pings anyone or links an issue on
+  GitHub.** The Action's pull request comment and job summary now put this text in a code span, so
+  GitHub renders it as plain text instead of a mention or a link. See Known issues: this was measured
+  against a model of how GitHub renders, not against GitHub itself.
+
+### Known issues
+
+- **Unpaired evals from `claude plugin eval` still pool into the aggregate.** Only the skill-creator
+  importer excludes an eval scored in one arm only, or with mismatched expectation counts between
+  arms, from the aggregates this release. The same mismatch in a `claude plugin eval` import can still
+  skew the reported delta.
+- **Cases from a skill that does not exist.** On the command line, `driftproof init <new folder>
+  --cases <file> --drafted-from-skill` creates a stub `SKILL.md` and labels the suite and each case as
+  drafted from the skill and approved by the user, though there was no skill to draft from. The
+  plugin never takes this route.
+- **A lost-answer reading still has edges.** A bare "Created `report.md`." beside a pleasantry, a
+  reply that opens with a title, and some code names that end in a file extension can still be read the
+  wrong way. They are named in the engineering log below.
+- **Backslashes in the stale summary.** A path or model id that holds a backslash shows it doubled in
+  the stale summary's code cells.
+- **`driftproof view` and a bad `capture` value.** A `.driftproofrc` in the working directory with
+  `"capture": "both"` makes `view` list the receipt as not read, where `stale` and `run` exit 2.
+- **One check clears at the publish.** The plugin's check that its package matches the published npm
+  package can read only after 0.16.0 is on npm.
+
+### Upgrade
+
+- npm: `npx driftproof@0.16.0`. The Action: `driftproofhq/driftproof@v0.16.0`, and the stale Action
+  `driftproofhq/driftproof/stale@v0.16.0`.
+- Claude Code plugin: `claude plugin update driftproof@driftproofhq`. The plugin runs `npx
+  driftproof@0.16.0`, and `/driftproof:start` needs a runner at 0.14.0 or later.
+- Receipt spec is unchanged at v0.11. Receipts from earlier versions still validate. A workflow that
+  does not set any new option behaves as on 0.15.0, except for the two changes listed under What may
+  change for you.
+
+### Engineering log
+
+**`package.json` reads 0.16.0**, and `config.js`'s `RUNNER_VERSION` is held equal to it, the only
+place the version is typed. The Action pins in `README.md` are `@v0.16.0`, and so is
+`examples/workflows/driftproof-stale.yml`'s `stale@v0.16.0` pin. The plugin's pin in
+`plugin/driftproof/.claude-plugin/plugin.json` is 0.16.0, and so is the npx pin in
+`plugin/driftproof/README.md`. `plugin/driftproof/version-guard.json` carries `minimum` 0.16.0 and
+`resolved_by` 203c91d7, the version bump commit; `start_minimum` stays 0.14.0, unmoved since the
+release that first shipped `init --cases` (DECISIONS C-278). `package-lock.json` moves with them, and
+`tests/fixtures/export-summary.snapshot.json`'s `receipt_hash` is re-cut, because `runner_version` is
+inside the canonical receipt that hash is taken over. `docs/data/stats.json`, `docs/index.html`,
+`docs/data/page-dates.json` and `docs/sitemap-receipts.xml` are regenerated by their generators.
+**Not yet on npm** at the bump; a Published section is added here after the publish. No published
+receipt, number or verdict changes in this release; the importer-pairing fix below changes how a
+future `driftproof import --from skill-creator` run computes its own delta, not anything already on
+the site.
+
+**The site (specs 169, 170, 167, 166, PRs 67, 61, 46, 42).** Spec 170 is the restyle: the dark shell
+and paper-colored evidence cards, folded in with spec 167's benchmark gap calculator (a page that
+reads two scores and a question count against the benchmark's own sampling noise, and reads a set of
+repeated runs by Driftproof's own band rule). Spec 169 replaces the upstream-fixes list with the
+"Fixes merged into other evaluation tools" list, adds the `/maintainer/` page and the paper's
+"Since publication" note, and shortens four page titles. Spec 166 is Report 014 (Claude Haiku 5.5),
+run with the same suite and method as Report 013, Claude Sonnet 5.5 and Claude Opus 5.5 as comparison
+rows, and a fresh-context claims review that found and fixed three blocking wordings before publish.
+None of these four touch the runner, the CLI or a published report's existing numbers; the report
+spend was about USD 41.5 estimated API-equivalent against the operator's USD 15 figure, because the
+judge needed more draws on Haiku (PR 42).
+
+**Two bug fixes, each closing a Known issue from 0.15.0 (specs 049, 144, PRs 64, 65).** Spec 049's
+amendment pairs evals by (eval id) at import for the skill-creator format: an eval scored in one arm
+only, or whose two arms disagree on their expectation count, is excluded from both arms' aggregates
+and the delta, listed in `excluded_cases` with a notice. `claude plugin eval` imports are not covered
+(see Known issues). Spec 144's amendment A-144-3 adds a pass after the existing markdown escaper that
+puts any `@handle`, or a `#` or `GH-` before a digit, into a code span; `@org/team`, `owner/repo#2` and
+email addresses are left whole. The fix is checked against spec 144's own model of GitHub's rendering,
+over 16 hostile names, not against GitHub itself; a scratch comment to confirm it against GitHub is
+still open for the operator (PR 65).
+
+**The plugin self-test, red since 0.14.0 (issue 56 and its follow-ups, issue 20, PRs 57, 58, 66).** The
+public repository's self-test calls `node tests/gate.js` without the source tree's `--scan-root .`,
+which read the published-tree guards as failing rather than not applicable (PR 57, closes #56 and
+#20); on driftproof-source, a depth-1 checkout hid the same guards' own read of the source tree's
+history, fixed by fetching full history there only (PR 58). The public self-test's nested gate then
+surfaced a real failure the probe's truncated output had hidden: the budget-guard check calling a
+non-stub run without `--trusted-skill`, which the CLI's isolation preflight refused (exit 2, not the
+expected exit 3) when the eval account does not exist on a GitHub-hosted runner. The probe now reports
+the nested gate's failing lines, and the check passes `--trusted-skill` (PR 66).
+
+**Gate reliability (specs 139, 029, and the shared `grep -q` fix, PRs 32, 38, 33).** Spec 139's AC-8
+reads `start_minimum` as a bound against `RUNNER_VERSION`, not an equality, so a runner above the
+recorded minimum no longer reads unreadable outside the one release that sets it (issue 30). Spec
+029's sharded sweep now excuses a gate's nested write into any swept gate's own `evidence/` directory,
+not only the shard that happened to run both gates together (issue 37). Across specs 005, 006, 007,
+008, 009, 011, 012, 013, 023 and 024, a `printf "%s" "$out" | grep -q PATTERN` pipeline under
+`pipefail` could read red on a SIGPIPE race under sweep load though the pattern was present; the fix
+drops `-q` and pipes to `/dev/null`, and the repository gate now fails the idiom on sight (issue 31).
+None of these three loosen an assertion, a pattern or a criterion.
+
+**Pipeline and workflow changes, none of them shipped in the npm package (specs 168, and issues 43,
+48, 52, PRs 59, 44, 49, 53).** `release.yml`'s header comment is corrected, its registry-wait retries
+up to 20 times at 30 seconds and warns rather than fails when a version has not yet propagated, and it
+compares rather than overwrites an existing GitHub release (spec 168, issue 40). The build, review and
+fix-on-red workflows' turn cap for product and T1/T2 work moves from 40 to 120, by the operator's
+ruling of 8 Oct 2026; class:internal builds stay at 60 (issue 43, Decision C-32 updated). The build and
+release-train workflows use the repository's `ANTHROPIC_API_KEY` secret when it is set and the
+subscription token otherwise, with the credential used named in the run log, never its value (issue
+52). Most of driftproof-source's GitHub-hosted jobs move to the box's self-hosted runners, except the
+action self-test (hostile inputs by design) and the public-push job (holds the push token); about 576
+of 612 measured Actions minutes move off the hosted quota (issue 48).
+
+**The release sweep's reds (issue 69, PR 70).** The first sweep on the release branch read eight gates
+red, all from merges in this release. `CLAUDE.md` went over spec 048's word limit and off spec 162's
+pin after spec 170's one added line; five filler words are trimmed and A-162-4 moves the pin. Spec
+119's page record predated Report 014's pages and the restyle; it is re-recorded by its own probe
+(A-119-7), and no verdict, state or badge moved. `lib/view-tokens.js` takes the restyle's three changed
+tokens, as spec 128 requires. Spec 169's scope check read later merges as its own and now reads its
+own range (A-169-1). `scripts/nightly.mjs` copied a later spec's ignored inputs into a sweep of an
+older commit, where they read as untracked and the emitter refused; it now copies an input only where
+the swept tree ignores it too, and spec 148's M-29 plants the nightly under test (A-148-5). The second
+sweep read no gate red and one new CodeQL result, in a test line of issue 41's that built a hostile
+name's escaped form with a regex replace; the test now builds the same strings character by character
+(issue 71, PR 72). None of these loosens a criterion, and the CodeQL baseline is unchanged.
+
+#### The 0.16.0 merge list
+
+Eighteen merges since v0.15.0's source commit `dc2008fd`, oldest first (the nineteenth, `4ab6f0d5`,
+is the `release/v0.15.0` branch merged back into `dev` and carries no change of its own):
+
+- 139 (amendment, issue 30): AC-8 reads `start_minimum` as a bound, not an equality.
+- 005/006/007/008/009/011/012/013/023/024 (gate fix, issue 31): the `pipefail`/`grep -q` race.
+- 029-scanner-loop (amendment, issue 37): the sharded sweep's nested-write join.
+- 166-report-014-haiku-5-5 (issue 34): Report 014, Claude Haiku 5.5 on release day.
+- turn caps (issue 43): 40 becomes 120 for builds, reviews and fixes.
+- 167-benchmark-gap-calculator (issue 39): the benchmark gap calculator page.
+- self-hosted runners (issue 48): hosted Actions jobs move to the box, except two.
+- build credential fallback (issue 52): `ANTHROPIC_API_KEY` when set, the subscription token otherwise.
+- plugin self-test fix (issue 56, 20): the public self-test's gate call matches the repository gate's.
+- plugin self-test fix, follow-up (issue 56): full-history checkout on driftproof-source.
+- 168-release-yml-cleanup (issue 40): the header comment, the registry-wait retries, the release compare.
+- 170-site-restyle (issue 50): the dark shell and paper evidence cards, with the benchmark calculator folded in.
+- 049-anthropic-formats-importer (amendment, issue 11): unpaired or unequally graded evals excluded from the aggregates.
+- 144-pr-comment-escaping (amendment, issue 41): mentions and issue references put into code spans.
+- plugin self-test fix (issue 56): the published tree's own gate no longer needs the box's eval account.
+- 169-site-update (issue 60): upstream credits, the maintainer page, the paper's status note, four shortened titles.
+- release sweep fixes (issue 69): `CLAUDE.md` re-pinned, spec 119's page record, the view's tokens, spec 169's range, the nightly's input copy.
+- release sweep fix (issue 71): issue 41's test line rewritten so CodeQL reads no incomplete escaper.
+
+**Out of 0.16.0.** The `claude plugin eval` import format's own unpaired-eval pooling (named but not
+fixed alongside spec 049, see Known issues). The scratch-comment confirmation of spec 144's fix against
+GitHub itself, left open for the operator.
+
+---
+
 ## v0.15.0 - 2026-10-07
 
 ### What's new

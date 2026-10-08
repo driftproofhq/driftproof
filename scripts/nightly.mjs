@@ -191,6 +191,9 @@ async function sweep() {
   for (const rel of ignoredInputs(inputsFrom)) {
     const src = path.join(inputsFrom, rel);
     if (!fs.existsSync(src) || fs.existsSync(path.join(tree, rel))) continue;
+    // An input the swept tree has no ignore rule for would read there as untracked, and the emitter
+    // refuses an unclean tree: a nested sweep of an older commit skips inputs a later spec added.
+    if (rel !== 'node_modules' && run('git', ['-C', tree, 'check-ignore', '-q', `${rel}${fs.statSync(src).isDirectory() ? '/' : ''}`]).status !== 0) continue;
     fs.mkdirSync(path.dirname(path.join(tree, rel)), { recursive: true });
     if (run('cp', ['-a', src, path.join(tree, rel)]).status === 0) copied.push(rel);
   }

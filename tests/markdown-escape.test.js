@@ -435,7 +435,8 @@ const PLAIN_NAME = 'zqplainname41';
 test('issue 41: the checker reads a mention or a reference after a backslash as linked, and not in a code span', () => {
   for (const n of ['@octocat', '@org/team', '#1', 'GH-1', 'owner/repo#2', '(#3)']) {
     assert.ok(githubLinks(`x ${n} y`).length, n);
-    assert.ok(githubLinks(`x ${n.replace(/[@#-]/g, '\\$&')} y`).length, `${n} after a backslash`);
+    const escaped = [...n].map((c) => ('@#-'.includes(c) ? `\\${c}` : c)).join('');
+    assert.ok(githubLinks(`x ${escaped} y`).length, `${n} after a backslash`);
     assert.deepEqual(githubLinks(`x \`${n}\` y`), [], `${n} in a code span`);
   }
   assert.deepEqual(githubLinks(`x ${EMAIL_LIKE} y`), []);
