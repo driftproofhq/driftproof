@@ -78,4 +78,5 @@ This Driftproof, the project at driftproofhq, is unrelated to other projects tha
 - [How to tell whether a skill improved output](https://driftproofhq.com/agent-skill-evaluation/)
 - [Does a skill still help after a model upgrade?](https://driftproofhq.com/agent-skill-regression-testing/)
 - [What each evaluation tool measures](https://driftproofhq.com/compare/)
+- [Is this benchmark gap bigger than sampling noise?](https://driftproofhq.com/benchmark-gap/)
 - [The paper](https://driftproofhq.com/paper/)

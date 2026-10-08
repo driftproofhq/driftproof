@@ -25,4 +25,5 @@ This report runs every arm three times, one after another, with the same script 
 - [What is Driftproof?](https://driftproofhq.com/what-is-driftproof/)
 - [How to tell whether a skill improved output](https://driftproofhq.com/agent-skill-evaluation/)
 - [What each evaluation tool measures](https://driftproofhq.com/compare/)
+- [Is this benchmark gap bigger than sampling noise?](https://driftproofhq.com/benchmark-gap/)
 - [The paper](https://driftproofhq.com/paper/)

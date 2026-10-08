@@ -112,155 +112,127 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = CALC;
 }
 
-// ── the page's own wiring, browser only ─────────────────────────────────────────────────────────
-if (typeof document !== 'undefined') {
-  (function benchmarkGapPage() {
-    const Q = (sel, root) => (root || document).querySelector(sel);
-    const QA = (sel, root) => [...(root || document).querySelectorAll(sel)];
-    const tok = (name) => (getComputedStyle(document.documentElement).getPropertyValue(name).trim() || `var(${name})`);
+// ── the page's own wiring is the island docs/islands/benchmark-gap.js (spec 170, issue 50) ───────
+// Below the frozen core, two things the page needs and the numeric test never reads. First, the
+// result's markup, as pure functions of the typed values: the build writes the page's opening
+// example with this code, and the island renders every later result with it, so the first paint is
+// the final one. An empty field is missing, never 0: no verdict and no chart until every field a tab
+// needs is typed, and a field typed out of range gets a short message in place of the result. The
+// result is one paper receipt card: the stamp and one sentence, three band rows (A, B, and A minus B
+// against a zero line) on an axis zoomed to the scores, then the interval numbers. Second, the
+// hand-off: the island imports this file as a module, where module.exports does not exist.
+(function renderers() {
+  // A typed field: null when it is empty (missing, not zero), NaN when it is not a number.
+  function fieldValue(raw) {
+    const v = String(raw == null ? '' : raw).trim();
+    if (v === '') return null;
+    return Number(v);
+  }
+  const isScore = (x) => Number.isFinite(x) && x >= 0 && x <= 100;
+  const isCount = (x) => Number.isInteger(x) && x >= 1;
+  const pct = (x) => (x * 100).toFixed(1);
 
-    const PAD = 32, SPAN = 576, BAND = 20, AXIS = 150, TICK_Y = 168, GRAT_TOP = 44, TICKS_PCT = [0, 25, 50, 75, 100];
-    const X = (v) => PAD + Math.max(0, Math.min(1, v)) * SPAN;
+  // An axis zoomed to the range around the values it carries, with round ticks.
+  function axisFor(lo, hi, floor, ceil) {
+    const pad = Math.max((hi - lo) * 0.15, 0.5);
+    let a = Math.max(floor, lo - pad), b = Math.min(ceil, hi + pad);
+    if (b - a < 2) { const m = (a + b) / 2; a = Math.max(floor, m - 1); b = Math.min(ceil, m + 1); }
+    const step = [0.5, 1, 2, 2.5, 5, 10, 20, 25].find((s) => (b - a) / s <= 5) || 25;
+    a = Math.floor(a / step) * step; b = Math.ceil(b / step) * step;
+    const ticks = [];
+    for (let t = a; t <= b + step / 1000; t += step) ticks.push(Number(t.toFixed(4)));
+    return { lo: a, hi: b, ticks };
+  }
 
-    function bandPlot({ a, b, labelA = 'A', labelB = 'B' }) {
-      const c = { ink: tok('--arm-baseline'), skill: tok('--arm-skill'), rule: tok('--rule'), muted: tok('--ink-muted'), text: tok('--ink'), stock: tok('--paper-2') };
-      const bar = (band, y, fill, label) => {
-        const lo = X(band.lo), hiX = X(band.hi), at = X(band.point);
-        const w = Math.max(3, hiX - lo);
-        const cy = y + BAND / 2 + 4;
-        return `<text class="arm-label" x="${X(0)}" y="${y - 6}" font-size="12" font-style="italic" fill="${c.muted}">${label}</text>`
-          + `<rect class="band" x="${lo.toFixed(1)}" y="${y}" width="${w.toFixed(1)}" height="${BAND}" rx="1.5" fill="${fill}"/>`
-          + `<circle cx="${at.toFixed(1)}" cy="${(y + BAND / 2).toFixed(1)}" r="3" fill="${c.text}"/>`
-          + `<text x="${(hiX + 6).toFixed(1)}" y="${cy.toFixed(1)}" font-size="12" font-weight="500" fill="${c.text}">${(band.point * 100).toFixed(1)}%</text>`;
-      };
-      const at = (t, i) => `<text class="tick" x="${X(t / 100).toFixed(1)}" y="${TICK_Y}" font-size="12" fill="${c.muted}"${i === 0 ? '' : i === TICKS_PCT.length - 1 ? ' text-anchor="end"' : ' text-anchor="middle"'}>${t}%</text>`;
-      return `<svg viewBox="0 0 640 200" role="img" width="100%" class="bandplot">`
-        + `<title>${labelA} ${(a.point * 100).toFixed(1)}%, interval ${(a.lo * 100).toFixed(1)} to ${(a.hi * 100).toFixed(1)}; `
-        + `${labelB} ${(b.point * 100).toFixed(1)}%, interval ${(b.lo * 100).toFixed(1)} to ${(b.hi * 100).toFixed(1)}. Result: ${a.verdict}.</title>`
-        + TICKS_PCT.map((t) => `<line x1="${X(t / 100).toFixed(1)}" y1="${GRAT_TOP}" x2="${X(t / 100).toFixed(1)}" y2="${AXIS}" stroke="${c.rule}" stroke-width="1"/>`).join('')
-        + `<line x1="${X(0)}" y1="${AXIS}" x2="${X(1)}" y2="${AXIS}" stroke="${c.text}" stroke-width="1"/>`
-        + TICKS_PCT.map(at).join('')
-        + bar(a, 58, c.ink, labelA)
-        + bar(b, 104, c.skill, labelB)
-        + `</svg>`;
+  // The plot paints by the site's own tokens, written as var() so the same markup serves the build
+  // and the page; its faces and sizes are the stylesheet's (`.gap-plot` in docs/tokens.css).
+  const W = 520, L = 112, R = 16, BAND = 18;
+  function bandPlot({ a, b, d = null, labelA = 'A', labelB = 'B', labelD = 'A minus B' }) {
+    const span = W - L - R;
+    const top = axisFor(Math.min(a.lo, b.lo) * 100, Math.max(a.hi, b.hi) * 100, 0, 100);
+    const X = (v, ax) => L + ((v - ax.lo) / (ax.hi - ax.lo)) * span;
+    const row = (band, y, fill, label, ax, scale, grey) => {
+      const lo = X(band.lo * scale, ax), hiX = X(band.hi * scale, ax), at = X(band.point * scale, ax);
+      return `<text class="arm-label" x="0" y="${y + BAND / 2 + 5}">${label}</text>`
+        + `<rect class="band" x="${lo.toFixed(1)}" y="${y}" width="${Math.max(3, hiX - lo).toFixed(1)}" height="${BAND}" rx="1.5" fill="var(${fill})"${grey ? ' stroke="var(--ink)" stroke-width="1"' : ''}/>`
+        + `<line class="point" x1="${at.toFixed(1)}" y1="${y - 3}" x2="${at.toFixed(1)}" y2="${y + BAND + 3}" stroke="var(${grey ? '--ink' : '--accent-ink'})" stroke-width="2"/>`;
+    };
+    const grid = (ax, y1, y2, ty, unit) => ax.ticks.map((t) => `<line class="grat" x1="${X(t, ax).toFixed(1)}" y1="${y1}" x2="${X(t, ax).toFixed(1)}" y2="${y2}" stroke="var(--rule)" stroke-width="1"/>`).join('')
+      + `<line class="axis" x1="${L}" y1="${y2}" x2="${W - R}" y2="${y2}" stroke="var(--ink)" stroke-width="1"/>`
+      + ax.ticks.map((t) => `<text class="tick" x="${X(t, ax).toFixed(1)}" y="${ty}" text-anchor="middle">${t}${unit}</text>`).join('');
+    let body = grid(top, 6, 96, 114, '%') + row(a, 18, '--arm-skill', labelA, top, 100) + row(b, 58, '--arm-baseline', labelB, top, 100);
+    let H = 124;
+    if (d) {
+      const diff = axisFor(Math.min(d.lo, 0) * 100, Math.max(d.hi, 0) * 100, -100, 100);
+      body += grid(diff, 140, 190, 208, '')
+        + `<line class="zero" x1="${X(0, diff).toFixed(1)}" y1="136" x2="${X(0, diff).toFixed(1)}" y2="190" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="4 3"/>`
+        + row(d, 154, '--grey-band', labelD, diff, 100, true);
+      H = 218;
     }
+    // `gap-plot`, not `bandplot`: a bandplot is a generated plot file's bytes (spec 038 AC-6), and this
+    // drawing is computed from the typed values, never a file.
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" width="100%" class="gap-plot">`
+      + `<title>${labelA} ${(a.point * 100).toFixed(1)}%, interval ${(a.lo * 100).toFixed(1)} to ${(a.hi * 100).toFixed(1)}; `
+      + `${labelB} ${(b.point * 100).toFixed(1)}%, interval ${(b.lo * 100).toFixed(1)} to ${(b.hi * 100).toFixed(1)}. Result: ${a.verdict}.</title>`
+      + body
+      + `</svg>`;
+  }
 
-    function stampHtml(word) {
-      const cls = word === CALC.SEPARATED ? 'is-passed' : word === CALC.NOT_ENOUGH_DRAWS ? 'is-below-floor' : 'is-no-effect';
-      return `<span class="receipt-stamp ${cls}">${word}</span>`;
+  function stampHtml(word) {
+    const cls = word === CALC.SEPARATED ? 'is-passed' : word === CALC.NOT_ENOUGH_DRAWS ? 'is-below-floor' : 'is-no-effect';
+    return `<span class="receipt-stamp ${cls}">${word}</span>`;
+  }
+  const message = (lines) => `<div class="gap-message" role="status">${lines.map((l) => `<p>${l}</p>`).join('')}</div>`;
+  const numbers = (rows) => `<dl class="gap-numbers">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd><code>${v}</code></dd></div>`).join('')}</dl>`;
+
+  // Tab 1: two scores, item noise. Each argument is a field's raw text.
+  function items(rawA, rawB, rawN) {
+    const pA = fieldValue(rawA), pB = fieldValue(rawB), n = fieldValue(rawN);
+    const wrong = [];
+    if (pA !== null && !isScore(pA)) wrong.push('Score A is a percentage from 0 to 100.');
+    if (pB !== null && !isScore(pB)) wrong.push('Score B is a percentage from 0 to 100.');
+    if (n !== null && !isCount(n)) wrong.push('N is a whole number of questions, at least 1.');
+    if (wrong.length) return message(wrong);
+    if (pA === null || pB === null || n === null) return '';
+    const fA = pA / 100, fB = pB / 100;
+    const [loA, hiA] = CALC.wilsonInterval(fA, n);
+    const [loB, hiB] = CALC.wilsonInterval(fB, n);
+    const [dLo, dHi] = CALC.newcombeDiff(fA, n, fB, n);
+    const verdict = CALC.verdictOf(dLo, dHi);
+    const lead = Math.round(Math.abs(fA - fB) * n);
+    const minGapQ = CALC.minimumGapQuestions(n);
+    const span = minGapQ === null ? `all ${n} question${n === 1 ? '' : 's'}` : `${minGapQ - 1} question${minGapQ - 1 === 1 ? '' : 's'}`;
+    return `<article class="gap-result" aria-label="Result">
+<div class="gap-head"><p class="gap-stamp">${stampHtml(verdict)}</p>
+<p class="gap-sentence">${pct(fA)}% vs ${pct(fB)}% on ${n} questions is a lead of ${lead} question${lead === 1 ? '' : 's'}; at this size, noise alone can span ${span}.</p></div>
+${bandPlot({ a: { point: fA, lo: loA, hi: hiA, verdict }, b: { point: fB, lo: loB, hi: hiB, verdict }, d: { point: fA - fB, lo: dLo, hi: dHi }, labelA: 'Score A', labelB: 'Score B' })}
+${numbers([['Score A, Wilson 95%', `${pct(loA)} to ${pct(hiA)}`], ['Score B, Wilson 95%', `${pct(loB)} to ${pct(hiB)}`], ['A minus B, Newcombe', `${pct(dLo)} to ${pct(dHi)} points`]])}
+</article>`;
+  }
+
+  // Tab 2: repeated runs, Driftproof's band rule. Means and SDs are typed in percent, as tab 1's
+  // scores are, and read as fractions for the plot; the overlap test gives the same verdict either way.
+  function runs(f) {
+    const v = Object.fromEntries(Object.entries(f).map(([k, raw]) => [k, fieldValue(raw)]));
+    const wrong = [];
+    for (const [k, arm] of [['a', 'A'], ['b', 'B']]) {
+      if (v[`${k}Mean`] !== null && !isScore(v[`${k}Mean`])) wrong.push(`Arm ${arm} mean is a percentage from 0 to 100.`);
+      if (v[`${k}Sd`] !== null && !(Number.isFinite(v[`${k}Sd`]) && v[`${k}Sd`] >= 0)) wrong.push(`Arm ${arm} standard deviation is a number of points, 0 or more.`);
+      if (v[`${k}N`] !== null && !isCount(v[`${k}N`])) wrong.push(`Arm ${arm} runs is a whole number, at least 1.`);
     }
-
-    function pct(x) { return (x * 100).toFixed(1); }
-
-    // ── URL state ──────────────────────────────────────────────────────────────────────────────
-    function readState() {
-      const p = new URLSearchParams(location.search);
-      return { mode: p.get('mode') === 'runs' ? 'runs' : 'items', a: p.get('a') || '', b: p.get('b') || '', n: p.get('n') || '' };
-    }
-    function writeState(s) {
-      const p = new URLSearchParams();
-      if (s.mode === 'runs') p.set('mode', 'runs');
-      if (s.a !== '') p.set('a', s.a);
-      if (s.b !== '') p.set('b', s.b);
-      if (s.n !== '') p.set('n', s.n);
-      const url = `${location.pathname}${p.toString() ? `?${p}` : ''}`;
-      history.replaceState(null, '', url);
-      return url;
-    }
-
-    // ── tab 1: two scores, item noise ─────────────────────────────────────────────────────────
-    function wireItemsTab(root) {
-      const scoreA = Q('#gap-score-a', root), scoreB = Q('#gap-score-b', root), nInput = Q('#gap-n', root);
-      const preset = Q('#gap-preset', root);
-      const out = Q('#gap-items-out', root);
-
-      preset.addEventListener('change', () => {
-        if (preset.value) nInput.value = preset.value;
-        render();
-      });
-
-      function render() {
-        const pA = Number(scoreA.value), pB = Number(scoreB.value), n = Number(nInput.value);
-        if (!(pA >= 0 && pA <= 100 && pB >= 0 && pB <= 100 && n > 0)) { out.innerHTML = ''; return; }
-        const fA = pA / 100, fB = pB / 100;
-        const [loA, hiA] = CALC.wilsonInterval(fA, n);
-        const [loB, hiB] = CALC.wilsonInterval(fB, n);
-        const [dLo, dHi] = CALC.newcombeDiff(fA, n, fB, n);
-        const verdict = CALC.verdictOf(dLo, dHi);
-        const gapFrac = Math.abs(fA - fB);
-        const gapQuestions = Math.round(gapFrac * n);
-        const minGapQ = CALC.minimumGapQuestions(n);
-        const neededN = CALC.requiredQuestionsForGap(gapFrac);
-        out.innerHTML = `
-${bandPlot({ a: { point: fA, lo: loA, hi: hiA, verdict }, b: { point: fB, lo: loB, hi: hiB, verdict }, labelA: 'Score A', labelB: 'Score B' })}
-<p>${stampHtml(verdict)}</p>
-<p>${pct(fA)}% and ${pct(fB)}% on ${n} questions are ${gapQuestions} question${gapQuestions === 1 ? '' : 's'} apart (${pct(gapFrac)} points); this benchmark needs about ${minGapQ === null ? 'more than ' + n : minGapQ} question${minGapQ === 1 ? '' : 's'}, ${minGapQ === null ? '' : pct(minGapQ / n) + ' points, '}to tell two models apart at this N.</p>
-<p>At this gap size, ${neededN === null ? 'no benchmark size this page searched' : `a benchmark of about ${neededN} questions`} would be the smallest where that gap just clears noise.</p>
-<p>Newcombe difference interval: [${pct(dLo)}, ${pct(dHi)}] points. Wilson 95% intervals: A [${pct(loA)}, ${pct(hiA)}], B [${pct(loB)}, ${pct(hiB)}].</p>`;
-      }
-      [scoreA, scoreB, nInput].forEach((el) => el.addEventListener('input', () => { render(); sync(); }));
-      return render;
-    }
-
-    // ── tab 2: repeated runs, Driftproof's band rule ──────────────────────────────────────────
-    function wireRunsTab(root) {
-      const out = Q('#gap-runs-out', root);
-      const fields = {
-        aMean: Q('#gap-runs-a-mean', root), aSd: Q('#gap-runs-a-sd', root), aN: Q('#gap-runs-a-n', root),
-        bMean: Q('#gap-runs-b-mean', root), bSd: Q('#gap-runs-b-sd', root), bN: Q('#gap-runs-b-n', root),
-      };
-      // Means and SDs are typed in percent, as tab 1's scores are, and read here as fractions for the
-      // plot; the band rule's overlap test gives the same verdict at either scale.
-      function render() {
-        const aMean = Number(fields.aMean.value) / 100, aSd = (Number(fields.aSd.value) || 0) / 100, aN = Number(fields.aN.value) || 0;
-        const bMean = Number(fields.bMean.value) / 100, bSd = (Number(fields.bSd.value) || 0) / 100, bN = Number(fields.bN.value) || 0;
-        if (!(aN > 0 && bN > 0) || Number.isNaN(aMean) || Number.isNaN(bMean)) { out.innerHTML = ''; return; }
-        const verdict = CALC.runsVerdict({ mean: aMean, sd: aSd, runs: aN }, { mean: bMean, sd: bSd, runs: bN });
-        out.innerHTML = `
+    if (wrong.length) return message(wrong);
+    if (Object.values(v).some((x) => x === null)) return '';
+    const aMean = v.aMean / 100, aSd = v.aSd / 100, bMean = v.bMean / 100, bSd = v.bSd / 100;
+    const verdict = CALC.runsVerdict({ mean: aMean, sd: aSd, runs: v.aN }, { mean: bMean, sd: bSd, runs: v.bN });
+    return `<article class="gap-result" aria-label="Result">
+<div class="gap-head"><p class="gap-stamp">${stampHtml(verdict)}</p>
+<p>This is the band rule the published reports use: mean plus or minus one standard deviation, bands overlapping or not. See the <a href="/methodology/">methodology page</a>.</p></div>
 ${bandPlot({ a: { point: aMean, lo: aMean - aSd, hi: aMean + aSd, verdict }, b: { point: bMean, lo: bMean - bSd, hi: bMean + bSd, verdict }, labelA: 'Arm A', labelB: 'Arm B' })}
-<p>${stampHtml(verdict)}</p>
-<p>This is the band rule the published reports use: mean plus or minus one standard deviation, bands overlapping or not. See the <a href="/methodology/">methodology page</a>.</p>`;
-      }
-      Object.values(fields).forEach((el) => el.addEventListener('input', render));
-      return render;
-    }
+${numbers([['Arm A, mean plus or minus one SD', `${pct(aMean - aSd)} to ${pct(aMean + aSd)}`], ['Arm B, mean plus or minus one SD', `${pct(bMean - bSd)} to ${pct(bMean + bSd)}`]])}
+</article>`;
+  }
 
-    function sync() {
-      const mode = Q('.gap-tab[aria-selected="true"]').dataset.tab;
-      writeState({ mode, a: Q('#gap-score-a').value, b: Q('#gap-score-b').value, n: Q('#gap-n').value });
-    }
+  CALC.render = { items, runs };
+})();
 
-    function init() {
-      const root = document;
-      const renderItems = wireItemsTab(root);
-      wireRunsTab(root);
-
-      const tabs = QA('.gap-tab');
-      const panels = { items: Q('#gap-panel-items'), runs: Q('#gap-panel-runs') };
-      function selectTab(name) {
-        tabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
-        Object.entries(panels).forEach(([k, el]) => { el.hidden = k !== name; });
-      }
-      tabs.forEach((t) => t.addEventListener('click', () => { selectTab(t.dataset.tab); sync(); }));
-
-      const state = readState();
-      selectTab(state.mode === 'runs' ? 'runs' : 'items');
-      if (state.a) Q('#gap-score-a').value = state.a;
-      if (state.b) Q('#gap-score-b').value = state.b;
-      if (state.n) Q('#gap-n').value = state.n;
-      renderItems();
-
-      const copyBtn = Q('#gap-copy-link');
-      if (copyBtn) {
-        copyBtn.addEventListener('click', () => {
-          const mode = Q('.gap-tab[aria-selected="true"]').dataset.tab;
-          const url = writeState({ mode, a: Q('#gap-score-a').value, b: Q('#gap-score-b').value, n: Q('#gap-n').value });
-          navigator.clipboard?.writeText(location.origin + url);
-        });
-      }
-    }
-
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-    else init();
-  })();
-}
+if (typeof document !== 'undefined' && typeof globalThis !== 'undefined') globalThis.driftproofGap = CALC;

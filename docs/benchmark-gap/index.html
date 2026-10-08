@@ -67,8 +67,11 @@
 <details class="nav-menu"><summary>Menu</summary></details>
 <nav class="site-nav" aria-label="Site">
 <a href="/reports/">Reports</a>
-<a href="/#how-it-works">How it works</a>
+<a href="/benchmark-gap/">Gap calculator</a>
+<a href="/findings/">Findings</a>
+<a href="/paper/">Paper</a>
 <details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
+<a href="/#how-it-works">How it works</a>
 <a href="/methodology/">Methodology</a>
 <a href="/neutrality/">Neutrality</a>
 <a href="/interop/">Interop</a>
@@ -79,33 +82,34 @@
 <a href="/glossary/">Glossary</a>
 <a href="/report-types/">Report types</a>
 </div></details>
-<a href="/paper/">Paper</a>
 <a href="https://github.com/driftproofhq/driftproof">GitHub</a>
 </nav>
 </header><!--/driftproof:nav-->
-<!--driftproof:layout--><div class="page-grid is-screens">
+<!--driftproof:layout--><div class="page-grid">
 <nav class="page-toc" aria-label="On this page"><div class="rail-in"><p class="eyebrow">On this page</p><ol>
-<li><a href="#two-scores-item-noise">Two scores (item noise)</a></li>
-<li><a href="#repeated-runs-driftproof-s-band-rule">Repeated runs (Driftproof's band rule)</a></li>
+<li><a href="#gap-presets">Three presets, at the edge of noise</a></li>
 <li><a href="#what-this-does-not-tell-you">What this does not tell you</a></li>
+<li><a href="#how-this-works">How this works</a></li>
 <li><a href="#presets-and-their-sources">Presets and their sources</a></li>
 </ol></div></nav><!--/driftproof:layout-->
-<main class="screens">
-<section class="screen is-text">
+<main class="calc">
 <h1>Benchmark gap calculator</h1>
 <p class="lede">Type two benchmark scores and the number of questions, and see whether the gap is bigger than the benchmark's own sampling noise.</p>
-<p>Method frozen 7 Oct 2026: Wilson 95% intervals and Newcombe's hybrid difference, written out in <a href="/benchmark-gap/gap.js">gap.js</a>; the verdict words are the <a href="/methodology/">methodology page</a>'s.</p>
+<p class="gap-how"><a href="#how-this-works">How this works</a></p>
 
+<div class="gap-tool">
 <div class="gap-tabs" role="tablist" aria-label="Calculator mode">
-<button type="button" class="gap-tab" role="tab" data-tab="items" aria-selected="true">Two scores (item noise)</button>
-<button type="button" class="gap-tab" role="tab" data-tab="runs" aria-selected="false">Repeated runs (band rule)</button>
+<button type="button" class="gap-tab" role="tab" id="gap-tab-items" aria-controls="gap-panel-items" data-tab="items" aria-selected="true">Two scores (item noise)</button>
+<button type="button" class="gap-tab" role="tab" id="gap-tab-runs" aria-controls="gap-panel-runs" data-tab="runs" aria-selected="false" tabindex="-1">Repeated runs (band rule)</button>
 </div>
 
-<section id="gap-panel-items" class="gap-panel">
-<!--driftproof:anchor--><span id="two-scores-item-noise" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Two scores (item noise)</h2>
-<label for="gap-preset">Preset</label>
+<section id="gap-panel-items" class="gap-panel" role="tabpanel" aria-labelledby="gap-tab-items">
+<div class="gap-inputs">
+<h3>Two scores (item noise)</h3>
+<div class="gap-fields">
+<div class="gap-field is-wide"><label for="gap-preset">Preset</label>
 <select id="gap-preset"><option value="">Choose a benchmark&hellip;</option>
-<option value="500" title="N = 500, source: https://www.swebench.com/">SWE-bench Verified (500)</option>
+<option value="500" title="N = 500, source: https://www.swebench.com/" selected>SWE-bench Verified (500)</option>
 <option value="642" title="N = 642, source: https://scale.com/leaderboard/swe_bench_pro_public_v2">SWE-bench Pro V2 Full (642)</option>
 <option value="300" title="N = 300, source: https://www.swebench.com/">SWE-bench Lite (300)</option>
 <option value="300" title="N = 300, source: https://www.swebench.com/">SWE-bench Multilingual (300)</option>
@@ -121,35 +125,66 @@
 <option value="100" title="N = 100, source: https://www.tbench.ai/">Chartography (100)</option>
 <option value="113" title="N = 113, source: https://github.com/agentica-project/deepswe">DeepSWE v1.1 (113)</option>
 <option value="25" title="N = 25, source: https://github.com/epoch-research/riemannbench">RiemannBench (25)</option>
-</select>
-<label for="gap-score-a">Score A (%)</label>
-<input id="gap-score-a" type="number" min="0" max="100" step="0.01" inputmode="decimal">
-<label for="gap-score-b">Score B (%)</label>
-<input id="gap-score-b" type="number" min="0" max="100" step="0.01" inputmode="decimal">
-<label for="gap-n">Questions (N)</label>
-<input id="gap-n" type="number" min="1" step="1" inputmode="numeric">
-<div id="gap-items-out" aria-live="polite"></div>
+</select></div>
+<div class="gap-field"><label for="gap-score-a">Score A (%)</label>
+<input id="gap-score-a" type="number" min="0" max="100" step="0.01" inputmode="decimal" value="72"></div>
+<div class="gap-field"><label for="gap-score-b">Score B (%)</label>
+<input id="gap-score-b" type="number" min="0" max="100" step="0.01" inputmode="decimal" value="70"></div>
+<div class="gap-field"><label for="gap-n">Questions (N)</label>
+<input id="gap-n" type="number" min="1" step="1" inputmode="numeric" value="500"></div>
+</div>
+</div>
+<div id="gap-items-out" class="gap-out" aria-live="polite" data-island="benchmark-gap"><article class="gap-result" aria-label="Result">
+<div class="gap-head"><p class="gap-stamp"><span class="receipt-stamp is-no-effect">no separation detected at this sample size</span></p>
+<p class="gap-sentence">72.0% vs 70.0% on 500 questions is a lead of 10 questions; at this size, noise alone can span 30 questions.</p></div>
+<svg viewBox="0 0 520 218" role="img" width="100%" class="gap-plot"><title>Score A 72.0%, interval 67.9 to 75.8; Score B 70.0%, interval 65.8 to 73.9. Result: no separation detected at this sample size.</title><line class="grat" x1="112.0" y1="6" x2="112.0" y2="96" stroke="var(--rule)" stroke-width="1"/><line class="grat" x1="210.0" y1="6" x2="210.0" y2="96" stroke="var(--rule)" stroke-width="1"/><line class="grat" x1="308.0" y1="6" x2="308.0" y2="96" stroke="var(--rule)" stroke-width="1"/><line class="grat" x1="406.0" y1="6" x2="406.0" y2="96" stroke="var(--rule)" stroke-width="1"/><line class="grat" x1="504.0" y1="6" x2="504.0" y2="96" stroke="var(--rule)" stroke-width="1"/><line class="axis" x1="112" y1="96" x2="504" y2="96" stroke="var(--ink)" stroke-width="1"/><text class="tick" x="112.0" y="114" text-anchor="middle">60%</text><text class="tick" x="210.0" y="114" text-anchor="middle">65%</text><text class="tick" x="308.0" y="114" text-anchor="middle">70%</text><text class="tick" x="406.0" y="114" text-anchor="middle">75%</text><text class="tick" x="504.0" y="114" text-anchor="middle">80%</text><text class="arm-label" x="0" y="32">Score A</text><rect class="band" x="267.0" y="18" width="153.8" height="18" rx="1.5" fill="var(--arm-skill)"/><line class="point" x1="347.2" y1="15" x2="347.2" y2="39" stroke="var(--accent-ink)" stroke-width="2"/><text class="arm-label" x="0" y="72">Score B</text><rect class="band" x="226.5" y="58" width="157.0" height="18" rx="1.5" fill="var(--arm-baseline)"/><line class="point" x1="308.0" y1="55" x2="308.0" y2="79" stroke="var(--accent-ink)" stroke-width="2"/><line class="grat" x1="112.0" y1="140" x2="112.0" y2="190" stroke="var(--rule)" stroke-width="1"/><line class="grat" x1="210.0" y1="140" x2="210.0" y2="190" stroke="var(--rule)" stroke-width="1"/><line class="grat" x1="308.0" y1="140" x2="308.0" y2="190" stroke="var(--rule)" stroke-width="1"/><line class="grat" x1="406.0" y1="140" x2="406.0" y2="190" stroke="var(--rule)" stroke-width="1"/><line class="grat" x1="504.0" y1="140" x2="504.0" y2="190" stroke="var(--rule)" stroke-width="1"/><line class="axis" x1="112" y1="190" x2="504" y2="190" stroke="var(--ink)" stroke-width="1"/><text class="tick" x="112.0" y="208" text-anchor="middle">-10</text><text class="tick" x="210.0" y="208" text-anchor="middle">-5</text><text class="tick" x="308.0" y="208" text-anchor="middle">0</text><text class="tick" x="406.0" y="208" text-anchor="middle">5</text><text class="tick" x="504.0" y="208" text-anchor="middle">10</text><line class="zero" x1="308.0" y1="136" x2="308.0" y2="190" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="4 3"/><text class="arm-label" x="0" y="168">A minus B</text><rect class="band" x="237.1" y="154" width="220.0" height="18" rx="1.5" fill="var(--grey-band)" stroke="var(--ink)" stroke-width="1"/><line class="point" x1="347.2" y1="151" x2="347.2" y2="175" stroke="var(--ink)" stroke-width="2"/></svg>
+<dl class="gap-numbers"><div><dt>Score A, Wilson 95%</dt><dd><code>67.9 to 75.8</code></dd></div><div><dt>Score B, Wilson 95%</dt><dd><code>65.8 to 73.9</code></dd></div><div><dt>A minus B, Newcombe</dt><dd><code>-3.6 to 7.6 points</code></dd></div></dl>
+</article></div>
 </section>
 
-<section id="gap-panel-runs" class="gap-panel" hidden>
-<!--driftproof:anchor--><span id="repeated-runs-driftproof-s-band-rule" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Repeated runs (Driftproof's band rule)</h2>
+<section id="gap-panel-runs" class="gap-panel" role="tabpanel" aria-labelledby="gap-tab-runs" hidden>
+<div class="gap-inputs">
+<h3>Repeated runs (Driftproof's band rule)</h3>
 <p>Mean and standard deviation in percent, and the run count, per arm. This is the rule the published reports use: bands that do not overlap read separated. <a href="/methodology/">Methodology</a>.</p>
-<label for="gap-runs-a-mean">Arm A mean (%)</label>
-<input id="gap-runs-a-mean" type="number" step="any">
-<label for="gap-runs-a-sd">Arm A standard deviation (points)</label>
-<input id="gap-runs-a-sd" type="number" step="any" min="0">
-<label for="gap-runs-a-n">Arm A runs</label>
-<input id="gap-runs-a-n" type="number" step="1" min="0">
-<label for="gap-runs-b-mean">Arm B mean (%)</label>
-<input id="gap-runs-b-mean" type="number" step="any">
-<label for="gap-runs-b-sd">Arm B standard deviation (points)</label>
-<input id="gap-runs-b-sd" type="number" step="any" min="0">
-<label for="gap-runs-b-n">Arm B runs</label>
-<input id="gap-runs-b-n" type="number" step="1" min="0">
-<div id="gap-runs-out" aria-live="polite"></div>
+<div class="gap-fields">
+<div class="gap-field"><label for="gap-runs-a-mean">Arm A mean (%)</label>
+<input id="gap-runs-a-mean" type="number" step="any"></div>
+<div class="gap-field"><label for="gap-runs-a-sd">Arm A standard deviation (points)</label>
+<input id="gap-runs-a-sd" type="number" step="any" min="0"></div>
+<div class="gap-field"><label for="gap-runs-a-n">Arm A runs</label>
+<input id="gap-runs-a-n" type="number" step="1" min="0"></div>
+<div class="gap-field"><label for="gap-runs-b-mean">Arm B mean (%)</label>
+<input id="gap-runs-b-mean" type="number" step="any"></div>
+<div class="gap-field"><label for="gap-runs-b-sd">Arm B standard deviation (points)</label>
+<input id="gap-runs-b-sd" type="number" step="any" min="0"></div>
+<div class="gap-field"><label for="gap-runs-b-n">Arm B runs</label>
+<input id="gap-runs-b-n" type="number" step="1" min="0"></div>
+</div>
+</div>
+<div id="gap-runs-out" class="gap-out" aria-live="polite"></div>
 </section>
 
-<p><button type="button" id="gap-copy-link">Copy link</button></p>
+<p class="gap-copy"><button type="button" id="gap-copy-link">Copy link</button></p>
+</div>
+
+<h2 id="gap-presets">Three presets, at the edge of noise</h2>
+<div class="gap-famous-list">
+<article class="gap-famous">
+<h3>AIME 2025</h3>
+<p><code>30</code> questions (<a href="https://matharena.ai/">source</a>). A lead needs at least <code>8</code> questions, <code>26.7</code> points, before it clears this benchmark's sampling noise.</p>
+<p><button type="button" class="gap-load" data-a="63.34" data-b="36.66" data-n="30">Load 63.34% vs 36.66%</button></p>
+</article>
+<article class="gap-famous">
+<h3>SWE-bench Verified</h3>
+<p><code>500</code> questions (<a href="https://www.swebench.com/">source</a>). A lead needs at least <code>31</code> questions, <code>6.2</code> points, before it clears this benchmark's sampling noise.</p>
+<p><button type="button" class="gap-load" data-a="53.00" data-b="46.80" data-n="500">Load 53.00% vs 46.80%</button></p>
+</article>
+<article class="gap-famous">
+<h3>MMLU-Pro</h3>
+<p><code>12032</code> questions (<a href="https://huggingface.co/datasets/TIGER-Lab/MMLU-Pro">source</a>). A lead needs at least <code>153</code> questions, <code>1.3</code> points, before it clears this benchmark's sampling noise.</p>
+<p><button type="button" class="gap-load" data-a="50.64" data-b="49.36" data-n="12032">Load 50.64% vs 49.36%</button></p>
+</article>
+</div>
 
 <!--driftproof:anchor--><span id="what-this-does-not-tell-you" class="toc-anchor"></span><!--/driftproof:anchor--><h2>What this does not tell you</h2>
 <ul>
@@ -157,6 +192,9 @@
 <li>No separation detected is not equal ability: it means this sample size could not tell them apart.</li>
 <li>Both intervals assume independent questions.</li>
 </ul>
+
+<h2 id="how-this-works">How this works</h2>
+<p>Method frozen 7 Oct 2026: Wilson 95% intervals and Newcombe's hybrid difference, written out in <a href="/benchmark-gap/gap.js">gap.js</a>; the verdict words are the <a href="/methodology/">methodology page</a>'s.</p>
 
 <!--driftproof:anchor--><span id="presets-and-their-sources" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Presets and their sources</h2>
 <ul class="gap-sources">
@@ -179,10 +217,8 @@
 </ul>
 
 <p>Method per the Driftproof paper (<a href="https://driftproofhq.com/paper">driftproofhq.com/paper</a>): the band rule and the verdict words.</p>
-</section>
 </main>
 <!--driftproof:layout-end--></div><!--/driftproof:layout-end-->
-<script src="/benchmark-gap/gap.js" defer></script>
 <!--driftproof:foot--><footer class="site">
 <p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
 <p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>

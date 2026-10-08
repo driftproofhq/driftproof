@@ -21,4 +21,5 @@ Not shown: this cell could not be confirmed from that tool's own docs or code as
 - [What is Driftproof?](https://driftproofhq.com/what-is-driftproof/)
 - [How to tell whether a skill improved output](https://driftproofhq.com/agent-skill-evaluation/)
 - [Does a skill still help after a model upgrade?](https://driftproofhq.com/agent-skill-regression-testing/)
+- [Is this benchmark gap bigger than sampling noise?](https://driftproofhq.com/benchmark-gap/)
 - [The paper](https://driftproofhq.com/paper/)

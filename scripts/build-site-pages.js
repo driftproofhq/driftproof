@@ -163,6 +163,9 @@ function heroReceipt(V, receipt) {
       // lines (spec 026 A-026-13 gave the bundled example real per-case samples).
       { key: 'Range', value: mono(`${Number(V('example_receipt_baseline')).toFixed(3)} without, ${Number(V('example_receipt_with_skill')).toFixed(3)} with`) },
       { plot },
+      // THE DRAWING SAID IN WORDS (spec 170), where the card's verdict is the band rule's own
+      // separation: a Passing receipt's two ranges are drawn apart above this line.
+      ...(verdict === 'PASSED' ? [{ note: 'the two ranges do not overlap: separated' }] : []),
       { key: 'Receipt hash', rowClass: 'receipt-row-hash', value: mono(V('example_receipt_hash')) },
     ],
   });
@@ -198,6 +201,13 @@ function homepage() {
     ['refusals_published', 'refusals published'],
     ['cells_within_noise', 'runs with no separation detected at their sample size'],
   ].map(([k, label]) => `<div class="strip-item"><span class="strip-value" data-stat="${k}">${esc(V(k))}</span><span class="strip-label">${label}</span></div>`).join('\n');
+  // THE STATS BAND UNDER THE HERO (spec 170): the first three of the strip's figures, the same fields
+  // and labels, on the shell's surface. Its own classes, so the strip stays the six spec 025 reads.
+  const statBand = [
+    ['reports_published', 'reports published'],
+    ['receipts_published', 'receipts published'],
+    ['substrates_measured', 'models measured on'],
+  ].map(([k, label]) => `<p class="stat"><span class="stat-value" data-stat="${k}">${esc(V(k))}</span> <span class="stat-label">${label}</span></p>`).join('\n');
 
   // THE PROMISE FIRST, THE EVIDENCE UNDER IT (spec 037). The first screen asks the
   // question, gives the Claude Code plugin as the first install, and links a receipt
@@ -218,6 +228,13 @@ ${plugin.map(copy).join('\n')}
 <p class="hero-links"><a class="cta" href="/r/${esc(exampleHash)}/">See a receipt</a> <a href="/findings/">Read the findings</a> <a href="/reports/${esc(V('latest_report_number'))}/">Read the latest report</a></p>
 </div>
 ${heroReceipt(V, example)}
+</section>
+
+<section id="stats" class="screen is-wide">
+<div class="stat-band">
+${statBand}
+</div>
+<p class="gap-line">Comparing two benchmark scores? The <a href="/benchmark-gap/">gap calculator</a> says whether the gap is bigger than the benchmark's own sampling noise.</p>
 </section>
 
 <section id="states" class="screen is-text">
@@ -1093,54 +1110,92 @@ const BENCHMARK_GAP_PRESETS = [
   ['DeepSWE v1.1', 113, 'https://github.com/agentica-project/deepswe'],
   ['RiemannBench', 25, 'https://github.com/epoch-research/riemannbench'],
 ];
+// THREE PRESETS, AT THE EDGE OF NOISE (spec 170): a small, a middling and a large benchmark from the
+// table above, each with the smallest lead the frozen rule calls separated at its N, read from gap.js
+// at build. Each card's button loads the rule's own boundary pair, B = floor((N - k) / 2) and A = B + k,
+// as percentages rounded outward, so the calculator computes the same reading. A button and not a link:
+// a link with a query string is an internal href that spec 020 AC-37 and spec 125 AC-12 resolve as a
+// file, and there is none.
+const BENCHMARK_GAP_FAMOUS = ['AIME 2025', 'SWE-bench Verified', 'MMLU-Pro'];
+function famousGapCards() {
+  const CALC = require('../docs/benchmark-gap/gap.js');
+  const pc = (x) => (x * 100).toFixed(1);
+  return BENCHMARK_GAP_FAMOUS.map((label) => {
+    const [, n, source] = BENCHMARK_GAP_PRESETS.find(([l]) => l === label);
+    const k = CALC.minimumGapQuestions(n);
+    const B = Math.floor((n - k) / 2);
+    const a = (Math.ceil(((B + k) / n) * 10000) / 100).toFixed(2);
+    const b = (Math.floor((B / n) * 10000) / 100).toFixed(2);
+    const [lo, hi] = CALC.newcombeDiff(Number(a) / 100, n, Number(b) / 100, n);
+    if (CALC.verdictOf(lo, hi) !== CALC.SEPARATED) throw new Error(`${label}: the rounded boundary pair does not read separated`);
+    return `<article class="gap-famous">
+<h3>${esc(label)}</h3>
+<p><code>${n}</code> questions (<a href="${esc(source)}">source</a>). A lead needs at least <code>${k}</code> questions, <code>${pc(k / n)}</code> points, before it clears this benchmark's sampling noise.</p>
+<p><button type="button" class="gap-load" data-a="${a}" data-b="${b}" data-n="${n}">Load ${a}% vs ${b}%</button></p>
+</article>`;
+  }).join('\n');
+}
+// THE PAGE OPENS WITH AN EXAMPLE ALREADY COMPUTED (spec 170): a preset and two scores, written into the
+// fields and rendered into the result by gap.js's own CALC.render at build. The island
+// (docs/islands/benchmark-gap.js) renders with the same function, so it has nothing to change on mount
+// and the first paint is the final one; a query string replaces the example.
+const BENCHMARK_GAP_EXAMPLE = { preset: 'SWE-bench Verified', a: '72', b: '70' };
 function benchmarkGapPage() {
-  const options = BENCHMARK_GAP_PRESETS.map(([label, n, source]) => `<option value="${n}" title="N = ${n}, source: ${esc(source)}">${esc(label)} (${n})</option>`).join('\n');
+  const CALC = require('../docs/benchmark-gap/gap.js');
+  const ex = { ...BENCHMARK_GAP_EXAMPLE, n: String(BENCHMARK_GAP_PRESETS.find(([l]) => l === BENCHMARK_GAP_EXAMPLE.preset)[1]) };
+  const options = BENCHMARK_GAP_PRESETS.map(([label, n, source]) => `<option value="${n}" title="N = ${n}, source: ${esc(source)}"${label === ex.preset ? ' selected' : ''}>${esc(label)} (${n})</option>`).join('\n');
   const sources = BENCHMARK_GAP_PRESETS.map(([label, n, source]) => `<li>${esc(label)}: N = ${n}. <a href="${esc(source)}">${esc(source)}</a></li>`).join('\n');
-  const main = `<main class="screens">
-<section class="screen is-text">
+  const field = (id, label, attrs) => `<div class="gap-field"><label for="${id}">${label}</label>\n<input id="${id}" ${attrs}></div>`;
+  const main = `<main class="calc">
 <h1>Benchmark gap calculator</h1>
 <p class="lede">Type two benchmark scores and the number of questions, and see whether the gap is bigger than the benchmark's own sampling noise.</p>
-<p>Method frozen 7 Oct 2026: Wilson 95% intervals and Newcombe's hybrid difference, written out in <a href="/benchmark-gap/gap.js">gap.js</a>; the verdict words are the <a href="/methodology/">methodology page</a>'s.</p>
+<p class="gap-how"><a href="#how-this-works">How this works</a></p>
 
+<div class="gap-tool">
 <div class="gap-tabs" role="tablist" aria-label="Calculator mode">
-<button type="button" class="gap-tab" role="tab" data-tab="items" aria-selected="true">Two scores (item noise)</button>
-<button type="button" class="gap-tab" role="tab" data-tab="runs" aria-selected="false">Repeated runs (band rule)</button>
+<button type="button" class="gap-tab" role="tab" id="gap-tab-items" aria-controls="gap-panel-items" data-tab="items" aria-selected="true">Two scores (item noise)</button>
+<button type="button" class="gap-tab" role="tab" id="gap-tab-runs" aria-controls="gap-panel-runs" data-tab="runs" aria-selected="false" tabindex="-1">Repeated runs (band rule)</button>
 </div>
 
-<section id="gap-panel-items" class="gap-panel">
-<h2>Two scores (item noise)</h2>
-<label for="gap-preset">Preset</label>
+<section id="gap-panel-items" class="gap-panel" role="tabpanel" aria-labelledby="gap-tab-items">
+<div class="gap-inputs">
+<h3>Two scores (item noise)</h3>
+<div class="gap-fields">
+<div class="gap-field is-wide"><label for="gap-preset">Preset</label>
 <select id="gap-preset"><option value="">Choose a benchmark&hellip;</option>
 ${options}
-</select>
-<label for="gap-score-a">Score A (%)</label>
-<input id="gap-score-a" type="number" min="0" max="100" step="0.01" inputmode="decimal">
-<label for="gap-score-b">Score B (%)</label>
-<input id="gap-score-b" type="number" min="0" max="100" step="0.01" inputmode="decimal">
-<label for="gap-n">Questions (N)</label>
-<input id="gap-n" type="number" min="1" step="1" inputmode="numeric">
-<div id="gap-items-out" aria-live="polite"></div>
+</select></div>
+${field('gap-score-a', 'Score A (%)', `type="number" min="0" max="100" step="0.01" inputmode="decimal" value="${ex.a}"`)}
+${field('gap-score-b', 'Score B (%)', `type="number" min="0" max="100" step="0.01" inputmode="decimal" value="${ex.b}"`)}
+${field('gap-n', 'Questions (N)', `type="number" min="1" step="1" inputmode="numeric" value="${ex.n}"`)}
+</div>
+</div>
+<div id="gap-items-out" class="gap-out" aria-live="polite" data-island="benchmark-gap">${CALC.render.items(ex.a, ex.b, ex.n)}</div>
 </section>
 
-<section id="gap-panel-runs" class="gap-panel" hidden>
-<h2>Repeated runs (Driftproof's band rule)</h2>
+<section id="gap-panel-runs" class="gap-panel" role="tabpanel" aria-labelledby="gap-tab-runs" hidden>
+<div class="gap-inputs">
+<h3>Repeated runs (Driftproof's band rule)</h3>
 <p>Mean and standard deviation in percent, and the run count, per arm. This is the rule the published reports use: bands that do not overlap read separated. <a href="/methodology/">Methodology</a>.</p>
-<label for="gap-runs-a-mean">Arm A mean (%)</label>
-<input id="gap-runs-a-mean" type="number" step="any">
-<label for="gap-runs-a-sd">Arm A standard deviation (points)</label>
-<input id="gap-runs-a-sd" type="number" step="any" min="0">
-<label for="gap-runs-a-n">Arm A runs</label>
-<input id="gap-runs-a-n" type="number" step="1" min="0">
-<label for="gap-runs-b-mean">Arm B mean (%)</label>
-<input id="gap-runs-b-mean" type="number" step="any">
-<label for="gap-runs-b-sd">Arm B standard deviation (points)</label>
-<input id="gap-runs-b-sd" type="number" step="any" min="0">
-<label for="gap-runs-b-n">Arm B runs</label>
-<input id="gap-runs-b-n" type="number" step="1" min="0">
-<div id="gap-runs-out" aria-live="polite"></div>
+<div class="gap-fields">
+${field('gap-runs-a-mean', 'Arm A mean (%)', 'type="number" step="any"')}
+${field('gap-runs-a-sd', 'Arm A standard deviation (points)', 'type="number" step="any" min="0"')}
+${field('gap-runs-a-n', 'Arm A runs', 'type="number" step="1" min="0"')}
+${field('gap-runs-b-mean', 'Arm B mean (%)', 'type="number" step="any"')}
+${field('gap-runs-b-sd', 'Arm B standard deviation (points)', 'type="number" step="any" min="0"')}
+${field('gap-runs-b-n', 'Arm B runs', 'type="number" step="1" min="0"')}
+</div>
+</div>
+<div id="gap-runs-out" class="gap-out" aria-live="polite"></div>
 </section>
 
-<p><button type="button" id="gap-copy-link">Copy link</button></p>
+<p class="gap-copy"><button type="button" id="gap-copy-link">Copy link</button></p>
+</div>
+
+<h2 id="gap-presets">Three presets, at the edge of noise</h2>
+<div class="gap-famous-list">
+${famousGapCards()}
+</div>
 
 <h2>What this does not tell you</h2>
 <ul>
@@ -1149,15 +1204,16 @@ ${options}
 <li>Both intervals assume independent questions.</li>
 </ul>
 
+<h2 id="how-this-works">How this works</h2>
+<p>Method frozen 7 Oct 2026: Wilson 95% intervals and Newcombe's hybrid difference, written out in <a href="/benchmark-gap/gap.js">gap.js</a>; the verdict words are the <a href="/methodology/">methodology page</a>'s.</p>
+
 <h2>Presets and their sources</h2>
 <ul class="gap-sources">
 ${sources}
 </ul>
 
 <p>Method per the Driftproof paper (<a href="https://driftproofhq.com/paper">driftproofhq.com/paper</a>): the band rule and the verdict words.</p>
-</section>
-</main>
-<script src="/benchmark-gap/gap.js" defer></script>`;
+</main>`;
   return shell({
     title: 'Benchmark gap calculator | Driftproof',
     description: "Type two benchmark scores and the number of questions, and see whether the gap clears the benchmark's own sampling noise, by Wilson and Newcombe intervals.",
@@ -1216,4 +1272,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { paperPage, shell, heroReceipt, receiptWords, casesItem, reportCard, HOME_CARD_STAT, statePlot, plotState, subscribedPage, reportTypes, typeNote, word, bandFacts, bandsSection, floorFigure, checksSchemaVersion, tokensSchemaVersion, patchMethodology, receiptSchemaVersion, patchInteropMd, PATCHES, homepage, reportsIndex, glossaryPage, reportTypesPage, notFoundPage, redirectStub, STUBS, TERMS, TARGETS, reader, stats, reports, buildCards };
+module.exports = { BENCHMARK_GAP_PRESETS, BENCHMARK_GAP_FAMOUS, paperPage, shell, heroReceipt, receiptWords, casesItem, reportCard, HOME_CARD_STAT, statePlot, plotState, subscribedPage, reportTypes, typeNote, word, bandFacts, bandsSection, floorFigure, checksSchemaVersion, tokensSchemaVersion, patchMethodology, receiptSchemaVersion, patchInteropMd, PATCHES, homepage, reportsIndex, glossaryPage, reportTypesPage, notFoundPage, redirectStub, STUBS, TERMS, TARGETS, reader, stats, reports, buildCards };

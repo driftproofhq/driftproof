@@ -1,11 +1,12 @@
 /* SPDX-License-Identifier: Apache-2.0
    Driftproof brand tokens and the site's one stylesheet. No framework.
 
-   THE LOOK IS A RECEIPT ON A DESK (spec 038). The page is desk paper under a faint grain; a
-   record - a receipt, a receipt page, a report's summary, a block of code - is receipt stock
-   laid on it; a dotted perforation is where one record ends; the ink is a ribbon's two passes
-   and one stamp pad. plan.md § Design plan is the reasoning, and this file is the only place
-   its values are written.
+   THE SITE IS A DARK DESK, AND EVERY PIECE OF EVIDENCE STAYS ON PAPER (spec 170, DESIGN.md). The
+   page ground, the nav, the explainer cards, the inputs and the footer are dark graphite; a
+   receipt, a chart, a score table, a calculator result and a long reading are cream paper cards
+   in ink, as spec 038 drew a receipt: a dotted perforation is where one record ends, the ink is a
+   ribbon's two passes and one stamp pad. The plots are not redrawn: they were ink on paper and
+   now sit on paper cards. This file is the only place the values are written.
 
    ONE FILE HOLDS EVERY VALUE. Spec 025 D2: no stylesheet uses a raw colour, radius, font size
    or content width that a token covers, and the one place a raw value is legal is a token
@@ -16,7 +17,8 @@
    THE ACCENT IS THE BADGE COLOUR, AND IT PAINTS NOTHING. docs/badges/commit-message-conventions.json
    carries "color": "brightgreen", which resolves to #44CC11, and spec 020 AC-3 asserts --accent
    equals it. Since spec 038 the site is drawn in ink and no rule reads --accent (I-11); links,
-   focus and the passing stamp take --accent-ink, the stamp pad.
+   focus and the passing stamp take --accent-ink, the stamp pad, on paper, and --shell-accent on
+   the desk (spec 170).
 
    THE PAIRS ARE DECLARED, so the palette is measured rather than eyeballed. The block below is
    read by spec 020 AC-40, which resolves each token to a hex out of this file and computes the
@@ -56,6 +58,34 @@
    noise on paper
    mixed on paper
    mixed on paper-2
+   shell-text on desk
+   shell-muted on desk
+   shell-accent on desk
+   shell-text on surface
+   shell-muted on surface
+   shell-accent on surface
+   shell-text on surface-2
+   shell-muted on surface-2
+   shell-accent on surface-2
+   shell-text on deep
+   shell-muted on deep
+   shell-accent on deep
+   desk on shell-accent
+   ink on sheet
+   ink-muted on sheet
+   accent-ink on sheet
+   sheet on accent-ink
+   sheet on ink
+   arm-baseline on sheet
+   state-separated on sheet
+   state-overlapping on sheet
+   state-refused on sheet
+   reg on sheet
+   imp on sheet
+   noise on sheet
+   mixed on sheet
+   ink on sheet-rule
+   ink on grey-band
    driftproof:/contrast */
 
 /* driftproof:tokens */
@@ -85,6 +115,29 @@
   --state-overlapping: var(--ink-muted);
   --state-refused: #6F5500;
 
+  /* THE DARK SHELL (spec 170): the desk, the explainer cards and inputs on it, the deep well a
+     command or a citation sits in, and the shell's own text, muted text and accent. --shell-faint
+     is a rule colour only: it does not clear 4.5:1 on the desk, so no rule sets text in it. */
+  --desk: #191A1C;
+  --surface: #222427;
+  --surface-2: #1E1F22;
+  --deep: #101113;
+  --border: #35373B;
+  --border-strong: #55575C;
+  --shell-text: #F0EEE6;
+  --shell-muted: #A6A299;
+  --shell-faint: #76787D;
+  --shell-accent: #93A8FF;
+  /* THE PAPER OBJECTS (spec 170): the card stock every piece of evidence is laid on, a table's row
+     rule, and the grey band. The ink, its second pass, the rule and the stamp pad above are the
+     paper's as they were. */
+  --sheet: #F3EDDC;
+  --sheet-rule: #E4DCC8;
+  --grey-band: #B9B1A0;
+  /* a receipt-type card (the hero receipt, a calculator result, a preset card, the report teaser's
+     chart) lies a half degree off square; a table or a reading sheet never tilts */
+  --card-tilt: -0.5deg;
+
   /* type (spec 038): Newsreader names things, Alegreya Sans sets sentences, Courier Prime
      types what a reader compares character by character */
   --sans: "Alegreya Sans", "Gill Sans", "Segoe UI", system-ui, sans-serif;
@@ -92,12 +145,13 @@
   --display: "Newsreader", "Iowan Old Style", Georgia, serif;
   --values: var(--mono);
 
-  /* the scale, desktop */
-  --t-h1: 52px;
-  --t-h1-page: 46px;
+  /* the scale, desktop (spec 170: Newsreader at 56 for the hero, 44 for a page title, 36 for a
+     section and 30 for a report's own section title) */
+  --t-h1: 56px;
+  --t-h1-page: 44px;
   --t-h2: 36px;
   --t-h3: 22px;
-  --t-report-title: 28px;
+  --t-report-title: 30px;
   --t-receipt-heading: 26px;
   --t-receipt-date: 20px;
   --t-stat: 38px;
@@ -114,13 +168,31 @@
      takes the larger step. The rule is scoped to .is-hero: an inline plot's <style> reaches every
      SVG on its page, the playground island's among them. */
   --t-plot-lg: 19px;
+  /* the gap calculator's plot (spec 170), in its 520-unit viewBox: tick values and row labels */
+  --t-gap-tick: 13px;
+  --t-gap-label: 15px;
+  /* the calculator's stamp: the verdict size, or less where the result card is too narrow for the
+     longest verdict on one line; cqi is the card's own inline size (it is a size container) */
+  --t-gap-stamp: min(var(--t-verdict), 4.2cqi);
   --lh-h1: 1.04;
   --lh-h2: 1.12;
   --lh-body: 1.6;
 
-  /* shape and rhythm */
+  /* shape and rhythm. The spacing scale is 8px (spec 170): every gap, padding and section spacing
+     the restyle adds is one of these steps. Content is capped at 1200px with 32px side padding,
+     20px under 640, and sections stand 64px apart on a desktop and 36px on a phone. */
+  --s-1: 8px;
+  --s-2: 16px;
+  --s-3: 24px;
+  --s-4: 32px;
+  --s-5: 40px;
+  --s-6: 48px;
+  --s-8: 64px;
+  --pad-x: 32px;
+  --section-y: 64px;
+  --touch: 44px;
   --radius: 3px;
-  --w-wide: 1100px;
+  --w-wide: 1200px;
   --w-text: 720px;
   --w-receipt-label: 6rem;
   --w-plot: 560px;
@@ -136,18 +208,22 @@
      (A-125-9). It was 50ch: the capture browser resolved a ch to about 0.6em at 14 and 15px, wider
      than the body face's "0", so small text ran to 73 and 79 characters a line (spec 130). */
   --w-track: 1320px;
-  --w-rail: 210px;
+  --w-rail: 240px;
   --g-rail: 48px;
   --w-read: 26.5em;
   --w-read-track: var(--w-read);
   --w-card-min: 300px;
   --w-col-min: 420px;
   --w-label: 8rem;
-  /* the grid's own widths: the track and one rail, or both rails where a page carries facts */
-  --w-grid: calc(var(--w-track) + var(--w-rail) + var(--g-rail) + 3rem);
-  --w-grid-facts: calc(var(--w-track) + 2 * (var(--w-rail) + var(--g-rail)) + 3rem);
-  --w-grid-read: calc(var(--w-read-track) + var(--w-rail) + var(--g-rail) + 3rem);
-  --w-grid-read-facts: calc(var(--w-read-track) + 2 * (var(--w-rail) + var(--g-rail)) + 3rem);
+  /* the grid's own widths (spec 170): the 1200px cap holds the content column, its side padding inside
+     it as a section's is, and the one rail stands beside it, outside the cap, so the track is wide
+     enough for the columns spec 125 fills it with (A-125-9); a
+     frozen report body's reading track and the one rail. A page with facts carries one rail, as a
+     page without does, so the two widths are the same. */
+  --w-grid: calc(var(--w-wide) + var(--w-rail) + var(--g-rail));
+  --w-grid-facts: var(--w-grid);
+  --w-grid-read: calc(var(--w-read-track) + var(--w-rail) + var(--g-rail) + 2 * var(--pad-x));
+  --w-grid-read-facts: var(--w-grid-read);
   /* the smallest text a figure may set on a phone: a caption's size (spec 125 C-5). A chart panel is
      drawn 380 units wide and set as narrow as about 300px on a phone, so its text is 20 units: at
      that width it renders just above the caption's 15px. A panel is never set narrower than
@@ -155,10 +231,11 @@
   --t-caption: var(--t-fine);
   --t-chart: 20px;
   --w-chart-min: 300px;
+  --w-chart-stack: 520px;
   --perforation: 2px;
   --tooth: 12px;
   --stamp-tilt: -2.5deg;
-  --sheet-shadow: 0 1px 1px rgba(70, 52, 20, 0.10), 0 14px 22px -14px rgba(70, 52, 20, 0.35);
+  --sheet-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   --texture: url("/textures/paper-grain.svg");
 
   /* the legacy names, pinned. docs/style.css dresses eight published report bodies and reads
@@ -191,17 +268,20 @@
   --code: var(--paper-2);
 }
 
-/* The scale under 720px. It is a token override and therefore inside the fence: the rest of
-   the file names sizes and never states them. */
-@media (max-width: 720px) {
+/* The scale and the padding under 640px (spec 170: 36 for the hero, 32 for a page title, 26 for a
+   section). It is a token override and therefore inside the fence: the rest of the file names
+   sizes and never states them. */
+@media (max-width: 640px) {
   :root {
-    --t-h1: 40px;
-    --t-h1-page: 34px;
-    --t-h2: 30px;
+    --t-h1: 36px;
+    --t-h1-page: 32px;
+    --t-h2: 26px;
+    --t-report-title: 24px;
     --t-receipt-heading: 22px;
     --t-verdict: 21px;
     --t-stat: 30px;
-    --t-body: 17px;
+    --pad-x: 20px;
+    --section-y: 36px;
   }
 }
 /* driftproof:/tokens */
@@ -250,14 +330,13 @@
 
 /* ── the page ─────────────────────────────────────────────────────────────── */
 * { box-sizing: border-box; }
-/* THE GRAIN LIES ON THE DESK, NEVER ON A RECORD. It is one tile under the paper colour, faint
-   enough that spec 038 AC-4 measures no pixel of it more than 8 of 255 from --paper, and every
-   receipt sheet, table and code block paints solid stock over it (I-8). */
+/* THE DESK IS SOLID GRAPHITE (spec 170). The grain spec 038 laid under the paper colour is gone
+   with the paper ground: on the desk it would read as noise, and every record is a card of solid
+   stock (I-8). */
 body {
   margin: 0;
-  background-color: var(--paper);
-  background-image: var(--texture);
-  color: var(--ink);
+  background-color: var(--desk);
+  color: var(--shell-text);
   font-family: var(--sans);
   font-size: var(--t-body);
   line-height: var(--lh-body);
@@ -265,12 +344,12 @@ body {
   text-rendering: optimizeLegibility;
 }
 img, svg, video { max-width: 100%; }
-a { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.18em; text-decoration-color: var(--rule); }
-a:hover { color: var(--accent-ink); text-decoration-color: var(--accent-ink); }
-:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 3px; }
+a { color: var(--shell-accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.18em; text-decoration-color: var(--border-strong); }
+a:hover { color: var(--shell-text); text-decoration-color: var(--shell-accent); }
+:focus-visible { outline: 2px solid var(--shell-accent); outline-offset: 3px; }
 p, li, dd { max-width: var(--w-measure); }
 
-h1, h2, h3, dt { font-family: var(--display); font-weight: 400; font-optical-sizing: auto; color: var(--ink); }
+h1, h2, h3, dt { font-family: var(--display); font-weight: 400; font-optical-sizing: auto; color: var(--shell-text); }
 h1 { font-size: var(--t-h1); line-height: var(--lh-h1); letter-spacing: -0.015em; margin: 0 0 1.2rem; }
 h2 { font-size: var(--t-h2); line-height: var(--lh-h2); letter-spacing: -0.01em; margin: 0 0 1.2rem; }
 h3 { font-size: var(--t-h3); line-height: var(--lh-h2); margin: 0 0 0.5rem; }
@@ -290,9 +369,9 @@ code, pre, kbd, .hash {
    characters; one in prose used to push a phone's page sideways. The receipt's own value rows
    are the exception (below): a value there is compared whole. */
 code {
-  background: var(--code);
-  color: var(--ink);
-  border: 1px solid var(--rule);
+  background: var(--deep);
+  color: var(--shell-text);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 0.02em 0.28em;
   font-size: var(--t-mono);
@@ -301,58 +380,87 @@ code {
 pre code { overflow-wrap: normal; }
 .receipt-row > span:last-child code { overflow-wrap: normal; }
 .receipt-row-hash > span:last-child code { overflow-wrap: anywhere; }
+/* A COMMAND OR A CITATION ON THE DESK SITS IN THE DEEP WELL (spec 170); on paper it is stock. */
 pre {
-  background: var(--paper-2);
-  color: var(--ink);
-  border: 1px solid var(--rule);
-  border-left: 3px solid var(--ink-muted);
+  background: var(--deep);
+  color: var(--shell-text);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1rem 1.2rem;
+  padding: var(--s-2) var(--s-3);
   overflow-x: auto;
   font-size: var(--t-mono-sm);
   line-height: 1.6;
 }
-pre code { background: none; border: 0; padding: 0; font-size: var(--t-mono-sm); }
+pre code { background: none; border: 0; padding: 0; font-size: var(--t-mono-sm); color: inherit; }
 
-/* ── the page grid (spec 125) ─────────────────────────────────────────────────
+/* ── paper, laid on the desk (spec 170) ───────────────────────────────────────
+   EVERY PIECE OF EVIDENCE IS A CARD OF STOCK. Inside one, the ink is the ink spec 038 drew: text
+   in --ink, its second pass in --ink-muted, a link in ink with the stamp pad on hover, a code chip
+   in receipt stock. A rule here names its own pair; nothing on paper reads a shell colour. */
+.card, main.receipt-page, table, .chart-panels, .page-grid.is-sheet > main, .gap-result, .gap-famous, .panel {
+  background: var(--sheet); color: var(--ink); box-shadow: var(--sheet-shadow);
+}
+/* `:where`, so each of these weighs what the base rule it answers weighs and a rule naming a class
+   (a receipt value's bare code, a card's title link) still wins on paper as it did. */
+:where(.card, main.receipt-page, table, .chart-panels, .page-grid.is-sheet > main, .gap-result, .gap-famous, .panel) :is(h1, h2, h3, h4, dt) { color: var(--ink); }
+:where(.card, main.receipt-page, table, .chart-panels, .page-grid.is-sheet > main, .gap-result, .gap-famous, .panel) a { color: var(--ink); text-decoration-color: var(--rule); }
+:where(.card, main.receipt-page, table, .chart-panels, .page-grid.is-sheet > main, .gap-result, .gap-famous, .panel) a:hover { color: var(--accent-ink); text-decoration-color: var(--accent-ink); }
+:where(.card, main.receipt-page, table, .chart-panels, .page-grid.is-sheet > main, .gap-result, .gap-famous, .panel) :focus-visible { outline-color: var(--accent-ink); }
+:where(.card, main.receipt-page, table, .chart-panels, .page-grid.is-sheet > main, .gap-result, .gap-famous, .panel) code { background: var(--paper-2); color: var(--ink); border-color: var(--rule); }
+:where(.card, main.receipt-page, table, .chart-panels, .page-grid.is-sheet > main, .gap-result, .gap-famous, .panel) pre { background: var(--paper-2); color: var(--ink); border-color: var(--rule); border-left: 3px solid var(--ink-muted); }
+:is(.card, main.receipt-page, table, .chart-panels, .page-grid.is-sheet > main, .gap-result, .gap-famous, .panel) :is(.muted, .lede, .caption, .eyebrow, .pair, .src, .foot, .report-type) { color: var(--ink-muted); }
+
+/* ── the dark shell's own cards (spec 170) ────────────────────────────────────
+   An explainer card, an input card, a rail: graphite one step above the desk, with a hairline. */
+.surface { background: var(--surface); color: var(--shell-text); border: 1px solid var(--border); border-radius: var(--radius); }
+
+/* ── the page grid (spec 125, restyled by spec 170) ───────────────────────────
    EVERY PAGE BUT THE HOMEPAGE sits in one wrapper the chrome writes around <main>, outside it, so
-   no report body moves: the contents rail on the left from 1180px, the content track, and on a
-   report page the facts rail on the right from 1600px. Below 1180px it is one column and the rails
-   are not drawn. The homepage carries no wrapper and takes none of this. */
+   no report body moves. From 1024px the content track has one rail on its right, on surface: on a
+   report page the facts rail first (its facts and its BibTeX) and the contents rail under it, which
+   stays in view as the page scrolls; elsewhere the contents rail alone. The contents rail still comes
+   before <main> in the markup and the facts rail after it (spec 125 AC-3, AC-4): the grid places
+   them. Below 1024px it is one column and the rails are not drawn. The homepage takes none of this. */
 .page-grid {
   max-width: var(--w-grid);
-  margin: 0 auto; padding: 0 1.5rem;
+  margin: 0 auto; padding: 0 var(--pad-x);
   display: grid; grid-template-columns: minmax(0, 1fr);
 }
 .page-grid.is-reading { max-width: var(--w-grid-read); }
-.page-grid > main { grid-column: 1; width: 100%; max-width: var(--w-track); margin: 0 auto; padding: 2.5rem 0 4rem; }
+.page-grid > main { grid-column: 1; width: 100%; max-width: var(--w-track); margin: 0 auto; padding: var(--s-6) 0 var(--s-8); }
 .page-grid.is-reading > main { max-width: var(--w-read-track); }
 .page-grid > main.screens { max-width: none; padding: 0; }
 /* RUNNING TEXT KEEPS A READING MEASURE on every wrapped page; a wider track is filled by columns. */
 .page-grid p, .page-grid li, .page-grid dd { max-width: var(--w-read); }
 .page-toc, .facts-rail { display: none; }
-.rail-in { position: sticky; top: 1.5rem; padding-top: 2.5rem; max-height: calc(100vh - 1.5rem); overflow-y: auto; }
+.rail-in { position: sticky; top: var(--s-3); max-height: calc(100vh - var(--s-6)); overflow-y: auto; }
 .rail-in .eyebrow { font-family: var(--sans); }
-.page-toc ol { list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--rule); }
+.page-toc .rail-in, .facts-rail .rail-in { background: var(--surface); color: var(--shell-text); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--s-2) var(--s-3); }
+.page-toc ol { list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--border); }
 .page-toc li { margin: 0; }
 .page-toc a {
   display: block; padding: 0.25rem 0 0.25rem 0.9rem; margin-left: -1px; border-left: 2px solid transparent;
-  color: var(--ink-muted); text-decoration: none; font-size: var(--t-fine); line-height: 1.35;
+  color: var(--shell-muted); text-decoration: none; font-size: var(--t-fine); line-height: 1.35;
 }
-.page-toc a:hover { color: var(--ink); border-left-color: var(--ink); }
+.page-toc a:hover { color: var(--shell-text); border-left-color: var(--shell-accent); }
 .facts-rail dl { margin: 0; display: grid; gap: 0.8rem; font-size: var(--t-fine); }
-.facts-rail dt { font-family: var(--sans); font-size: var(--t-eyebrow); color: var(--ink-muted); }
+/* A term is a heading in role (spec 038 AC-1), so the rail's labels are set in the heading face. */
+.facts-rail dt { font-family: var(--display); font-size: var(--t-eyebrow); color: var(--shell-muted); }
 .facts-rail dd { margin: 0; }
 .facts-rail code { font-size: var(--t-mono-sm); }
-@media (min-width: 1180px) {
-  .page-grid { grid-template-columns: var(--w-rail) minmax(0, 1fr); column-gap: var(--g-rail); }
-  .page-grid > .page-toc { display: block; grid-column: 1; grid-row: 1; }
-  .page-grid > main { grid-column: 2; grid-row: 1; margin: 0; }
-}
-@media (min-width: 1600px) {
-  .page-grid.has-facts { grid-template-columns: var(--w-rail) minmax(0, 1fr) var(--w-rail); max-width: var(--w-grid-facts); }
-  .page-grid.is-reading.has-facts { max-width: var(--w-grid-read-facts); }
-  .page-grid.has-facts > .facts-rail { display: block; grid-column: 3; grid-row: 1; }
+/* THE CITATION ON DEEP DARK (spec 170): the report's BibTeX, the TL;DR card's own text. */
+.rail-cite-label { margin: var(--s-3) 0 var(--s-1); }
+.rail-cite { background: var(--deep); color: var(--shell-text); margin: 0; padding: var(--s-1) var(--s-2); font-size: var(--t-mono-sm); line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.rail-cite code { font-size: var(--t-mono-sm); white-space: inherit; overflow-wrap: inherit; }
+@media (min-width: 1024px) {
+  .page-grid { grid-template-columns: minmax(0, 1fr) var(--w-rail); column-gap: var(--g-rail); }
+  .page-grid > main { grid-column: 1; grid-row: 1; margin: 0; }
+  .page-grid > .page-toc { display: block; grid-column: 2; grid-row: 1; padding-top: var(--s-6); }
+  .page-grid.has-facts { grid-template-rows: auto 1fr; }
+  .page-grid.has-facts > main { grid-row: 1 / span 2; }
+  .page-grid.has-facts > .facts-rail { display: block; grid-column: 2; grid-row: 1; padding-top: var(--s-6); }
+  .page-grid.has-facts > .facts-rail .rail-in { position: static; max-height: none; }
+  .page-grid.has-facts > .page-toc { grid-row: 2; padding-top: var(--s-3); }
 }
 
 /* TEXT GRIDS: a track wider than the reading measure is filled by columns, each column's text held
@@ -369,20 +477,23 @@ pre code { background: none; border: 0; padding: 0; font-size: var(--t-mono-sm);
   .split.conditions > p { grid-column: 1; }
   .split.conditions > .stack { grid-column: 2; grid-row: 1 / span 2; }
 }
-.tile { background: var(--paper-2); border: 1px solid var(--rule); border-radius: var(--radius); padding: 1.1rem 1.25rem; }
+/* A reading in a report is an explainer card on the desk, not evidence: surface (spec 170). */
+.tile { background: var(--surface); color: var(--shell-text); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--s-2) var(--s-3); }
 .tile > :last-child { margin-bottom: 0; }
-.tile-label { font-size: var(--t-eyebrow); color: var(--ink-muted); margin: 0 0 0.4rem; }
+.tile-label { font-size: var(--t-eyebrow); color: var(--shell-muted); margin: 0 0 0.4rem; }
 .tile h3 { margin-bottom: 0.5rem; }
 main.shaped section, main.docs section { margin: 0 0 3rem; }
 main.shaped h2, main.docs h2 { font-size: var(--t-h3); line-height: var(--lh-h2); margin: 0 0 0.9rem; }
 main.shaped h2 { font-size: var(--t-report-title); }
-main.docs .lede, main.shaped h1 + .lede { font-size: var(--t-h3); line-height: 1.4; color: var(--ink); max-width: var(--w-read); }
-.caption { font-size: var(--t-fine); color: var(--ink-muted); margin: 0.6rem 0 0; }
+main.docs .lede, main.shaped h1 + .lede { font-size: var(--t-h3); line-height: 1.4; color: inherit; max-width: var(--w-read); }
+.caption { font-size: var(--t-fine); color: var(--shell-muted); margin: 0.6rem 0 0; }
 
 /* THE PLAIN SUMMARY (spec 125): a report's first screen, under its title, in the TL;DR fence. The
    first point takes the whole track; the rest share it in columns. On a wide track from 1180px the
-   label stands beside the points and the points take two columns (A-125-9, below). */
-.plain-summary { background: var(--paper-2); box-shadow: var(--sheet-shadow); border-radius: var(--radius); padding: 1.2rem 1.4rem; margin: 1.2rem 0 1.6rem; }
+   label stands beside the points and the points take two columns (A-125-9, below). Spec 170 sets it
+   on surface with an accent rule down its left edge: the report's minute, in the shell's own card. */
+.plain-summary { background: var(--surface); color: var(--shell-text); border: 1px solid var(--border); border-left: 3px solid var(--shell-accent); border-radius: var(--radius); padding: var(--s-3); margin: var(--s-3) 0 var(--s-4); }
+.plain-summary .eyebrow { color: var(--shell-muted); }
 .plain-summary .eyebrow { margin: 0 0 0.4rem; }
 /* The summary's label is a heading that states its question (spec 134), at the label's size, in the
    heading face every heading takes (spec 038 AC-1). */
@@ -396,9 +507,8 @@ main.docs .lede, main.shaped h1 + .lede { font-size: var(--t-h3); line-height: 1
 /* REPORT 013, RESHAPED (spec 125): the result table with its three chips, the chart as one panel per
    task (three side by side where each gets --w-chart-min, stacked one per row below that, C-5), the readings as
    tiles, the folds. */
-main.shaped .headline { background: none; box-shadow: none; border-left: 0; padding: 0; margin: 0 0 1rem; }
+main.shaped .headline { background: none; box-shadow: none; border: 0; padding: 0; margin: 0 0 1rem; }
 main.shaped .headline .big { font-family: var(--display); font-weight: 400; font-size: var(--t-h3); max-width: var(--w-read); }
-table.comparisons { background: var(--paper-2); box-shadow: var(--sheet-shadow); }
 table.comparisons th[scope="row"] { font-family: var(--sans); font-weight: 500; color: var(--ink); white-space: normal; }
 table.comparisons td, table.comparisons th { vertical-align: top; }
 .chip { display: inline-block; font-size: var(--t-mono-sm); padding: 0.05em 0.5em; border: 1px solid currentColor; border-radius: var(--radius); white-space: nowrap; }
@@ -408,14 +518,17 @@ table.comparisons td, table.comparisons th { vertical-align: top; }
 .chip.is-few { color: var(--ink-muted); border-style: dashed; }
 p.changed { margin: 1rem 0; }
 .key { margin: 1rem 0 0; }
-.key p { font-size: var(--t-fine); color: var(--ink-muted); margin: 0; }
-.key strong { color: var(--ink); }
+.key p { font-size: var(--t-fine); color: var(--shell-muted); margin: 0; }
+.key strong { color: var(--shell-text); }
 /* three in a row where each panel gets --w-chart-min beside two gaps, else one per row: never two and
    one (A-125-4). Below that width the clamp's middle term is huge and a column takes the whole row;
    at or above it the term is zero or less and a column takes a third of the row. */
-.chart-panels { display: grid; gap: 1.5rem 2rem; grid-template-columns: repeat(auto-fit, minmax(clamp((100% - 4rem) / 3, (3 * var(--w-chart-min) + 4rem - 100%) * 999, 100%), 1fr)); background: var(--paper-2); box-shadow: var(--sheet-shadow); border-radius: var(--radius); padding: 1rem; }
+.chart-panels { display: grid; gap: 1.5rem 2rem; grid-template-columns: repeat(auto-fit, minmax(clamp((100% - 4rem) / 3, (3 * var(--w-chart-min) + 4rem - 100%) * 999, 100%), 1fr)); background: var(--sheet); border-radius: var(--radius); padding: 1rem; }
 @media (min-width: 900px) { .chart-panels { padding: 1.2rem 1.4rem; } }
-.chart-cell { margin: 0; }
+/* Stacked one per row inside the 1200px cap (spec 170), a panel is held near the width it is drawn
+   at and centred on its card, so its text stays near the size the panel was drawn for. */
+.chart-panels { justify-items: center; }
+.chart-cell { margin: 0; width: 100%; max-width: var(--w-chart-stack); }
 .chart-panel { display: block; width: 100%; height: auto; }
 .chart-panel text { font-family: var(--sans); font-size: var(--t-chart); fill: var(--ink); }
 .chart-panel .panel-title { font-weight: 500; }
@@ -425,7 +538,7 @@ p.changed { margin: 1rem 0; }
 .chart-panel .loss { stroke: var(--reg); stroke-width: 2; }
 .chart-panel .with { fill: var(--ink); }
 .chart-panel .without { fill: var(--paper-2); stroke: var(--ink-muted); stroke-width: 1.5; }
-details.fold, details.as-published { border-top: 1px dotted var(--rule); padding: 0.7rem 0; margin: 0; }
+details.fold, details.as-published { border-top: 1px dotted var(--border-strong); padding: 0.7rem 0; margin: 0; }
 details.fold > summary, details.as-published > summary { cursor: pointer; font-weight: 500; }
 main.shaped > h2 { margin-top: 2.5rem; }
 
@@ -489,7 +602,6 @@ main.shaped > h2 { margin-top: 2.5rem; }
    sections stretched to its row, so the shorter one still stands beside the longer (A-125-9). */
 .page-grid > main.receipt-page { margin: 2.6rem 0 3.4rem; padding: 2.4rem 2.2rem 2.2rem; }
 @media (max-width: 720px) {
-  .page-grid { padding: 0 1.1rem; }
   .page-grid > main.receipt-page { margin: 1.8rem 0 2.6rem; padding: 1.8rem 1.1rem 1.6rem; }
 }
 @media (min-width: 1180px) {
@@ -500,23 +612,63 @@ main.shaped > h2 { margin-top: 2.5rem; }
   .page-grid > main.receipt-page > .receipt-meta { grid-column: 2; grid-row: 2; }
 }
 
-/* ── chrome ───────────────────────────────────────────────────────────────── */
+/* THE READING SHEET (spec 170): a long reading (methodology, what Driftproof is, the glossary,
+   authoring, the paper) is one wide sheet of card stock on the desk. Its text keeps the reading
+   measure; the sheet never tilts. A card the shell would draw on the desk is an inset of receipt
+   stock on the sheet, and a figure or card that is paper already lies flat on it. */
+.page-grid.is-sheet > main { background: var(--sheet); color: var(--ink); border-radius: var(--radius); padding: var(--s-6) var(--s-6) var(--s-8); margin: var(--s-5) 0 var(--s-8); }
+.page-grid.is-sheet > main.screens { padding: var(--s-2) 0 var(--s-6); }
+.page-grid.is-sheet > main.screens > .screen { border-bottom-color: var(--rule); }
+.page-grid.is-sheet > main :is(.tile, .surface) { background: var(--paper-2); color: var(--ink); border-color: var(--rule); }
+.page-grid.is-sheet > main .tile-label { color: var(--ink-muted); }
+.page-grid.is-sheet > main :is(.card, .panel, .table-wrap) { box-shadow: none; }
+.page-grid.is-sheet > main :is(details.fold, details.as-published) { border-top-color: var(--rule); }
+.page-grid.is-sheet.is-screens { padding: 0 var(--pad-x); }
+@media (max-width: 640px) {
+  .page-grid.is-sheet > main { padding: var(--s-4) var(--s-2) var(--s-6); margin: var(--s-3) 0 var(--s-6); }
+  .page-grid.is-sheet > main.screens > .screen { padding-left: var(--s-2); padding-right: var(--s-2); }
+}
+
+/* THE RECEIPT PAGE IS ONE CARD AT PAGE SCALE (spec 170): the stamp, the run's facts, the arms' table
+   and their drawing, and the way to verify it, all on one sheet, a dashed rule between each. It does
+   not tilt: it is the page. The hash is typed whole on its own line, wrapping inside the sheet. */
+main.receipt-page section, main.receipt-page section.receipt-verdict { border-top: 1px dashed var(--rule); }
+main.receipt-page .receipt-hash { display: inline-block; background: none; border: 0; padding: 0; font-size: var(--t-mono-sm); overflow-wrap: anywhere; word-break: break-all; }
+main.receipt-page .receipt-meta code, main.receipt-page h1 code { background: none; border: 0; padding: 0; }
+
+/* ── chrome ─────────────────────────────────────────────────────────────────
+   THE NAV AND THE FOOTER ARE THE DESK'S OWN (spec 170): full-width dark bands, their content held
+   to the 1200px column by padding, so the band reaches the edges and the links line up with the
+   page under them. Every link is at least a touch target tall. */
 header.site {
-  display: flex; justify-content: space-between; align-items: center; gap: 1rem;
-  padding: 1.1rem 1.5rem; flex-wrap: wrap;
-  max-width: var(--w-wide); margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: center; gap: var(--s-1) var(--s-3);
+  padding: var(--s-1) max(var(--pad-x), calc((100% - var(--w-wide)) / 2 + var(--pad-x))); flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
 }
 header.site .brand {
-  display: inline-flex; align-items: center; gap: 0.55rem;
-  font-family: var(--display); font-size: var(--t-report-title); letter-spacing: -0.01em;
-  color: var(--ink); text-decoration: none;
+  display: inline-flex; align-items: center; gap: var(--s-1); min-height: var(--touch);
+  font-family: var(--display); font-size: var(--t-receipt-heading); letter-spacing: -0.01em;
+  color: var(--shell-text); text-decoration: none;
 }
-.brand-mark { display: block; }
-nav.site-nav { display: flex; align-items: center; gap: 1.6rem; flex-wrap: wrap; font-size: var(--t-body); }
-nav.site-nav a { color: var(--ink); text-decoration: none; }
-nav.site-nav a:hover { color: var(--accent-ink); text-decoration: underline; }
+/* The mark is a small square of the card stock, lying at a receipt's half degree. */
+.brand-mark { display: block; background: var(--sheet); padding: 2px; border-radius: var(--radius); box-shadow: var(--sheet-shadow); transform: rotate(var(--card-tilt)); }
+nav.site-nav { display: flex; align-items: center; gap: 0 var(--s-3); flex-wrap: wrap; font-size: var(--t-body); }
+nav.site-nav a { color: var(--shell-muted); text-decoration: none; display: inline-flex; align-items: center; min-height: var(--touch); }
+nav.site-nav a:hover { color: var(--shell-text); text-decoration: underline; text-decoration-color: var(--shell-accent); }
+/* THE CURRENT PAGE, read from the page's own canonical link, so the nav's bytes are one set on every
+   page (spec 127 AC-13): its top-level link, or Docs for a page the Docs menu lists, in the shell's
+   text with an accent underline. */
+html:has(link[rel="canonical"][href^="https://driftproofhq.com/reports/"]) nav.site-nav > a[href="/reports/"],
+html:has(link[rel="canonical"][href^="https://driftproofhq.com/benchmark-gap/"]) nav.site-nav > a[href="/benchmark-gap/"],
+html:has(link[rel="canonical"][href^="https://driftproofhq.com/findings/"]) nav.site-nav > a[href="/findings/"],
+html:has(link[rel="canonical"][href^="https://driftproofhq.com/paper/"]) nav.site-nav > a[href="/paper/"],
+html:has(link[rel="canonical"]:is([href$="/methodology/"], [href$="/neutrality/"], [href$="/interop/"], [href$="/authoring/"], [href$="/judge-policy/"], [href$="/how-this-is-built/"], [href$="/glossary/"], [href$="/report-types/"])) nav.site-nav .docs-menu > summary {
+  color: var(--shell-text); text-decoration: underline; text-decoration-color: var(--shell-accent);
+  text-decoration-thickness: 2px; text-underline-offset: 0.45em;
+}
 .docs-menu { position: relative; }
-.docs-menu summary { cursor: pointer; color: var(--ink); list-style: none; }
+.docs-menu summary { cursor: pointer; color: var(--shell-muted); list-style: none; display: flex; align-items: center; min-height: var(--touch); }
+.docs-menu summary:hover { color: var(--shell-text); }
 .docs-menu summary::-webkit-details-marker { display: none; }
 /* The disclosure's chevron is drawn, not typed: the body face carries no triangle. */
 .docs-menu summary::after {
@@ -525,79 +677,96 @@ nav.site-nav a:hover { color: var(--accent-ink); text-decoration: underline; }
   transform: translateY(-0.22em) rotate(45deg);
 }
 .docs-menu-list {
-  display: flex; flex-direction: column; gap: 0; padding: 0.5rem 1.1rem;
-  background: var(--paper-2); box-shadow: var(--sheet-shadow);
+  display: flex; flex-direction: column; gap: 0; padding: var(--s-1) var(--s-2);
+  background: var(--surface); color: var(--shell-text); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--sheet-shadow);
 }
-.docs-menu-list a { padding: 0.35rem 0; border-bottom: 1px dotted var(--rule); }
+.docs-menu-list a { border-bottom: 1px solid var(--border); }
 .docs-menu-list a:last-child { border-bottom: 0; }
-@media (min-width: 720px) {
-  .docs-menu-list { position: absolute; z-index: 5; top: 2rem; right: -1.1rem; min-width: 14rem; }
+nav.site-nav .docs-menu-list a { color: var(--shell-text); }
+nav.site-nav .docs-menu-list a:hover { color: var(--shell-accent); }
+@media (min-width: 641px) {
+  .docs-menu-list { position: absolute; z-index: 5; top: var(--touch); right: calc(-1 * var(--s-2)); min-width: 14rem; }
 }
 .nav-menu { display: none; }
 .nav-menu summary {
-  cursor: pointer; color: var(--ink); list-style: none;
-  padding: 0.3rem 0.8rem; border: 1px solid var(--ink-muted); border-radius: var(--radius);
+  cursor: pointer; color: var(--shell-text); list-style: none; display: flex; align-items: center;
+  min-height: var(--touch); padding: 0 var(--s-2); border: 1px solid var(--border-strong); border-radius: var(--radius);
 }
+.nav-menu[open] summary { border-color: var(--shell-accent); }
 .nav-menu summary::-webkit-details-marker { display: none; }
+/* ONE ROW (spec 170): the brand line and the links line side by side, wrapping as a phone needs.
+   Both paragraphs stay: spec 037 AC-6 and spec 021 read them. */
 footer.site {
-  max-width: var(--w-wide); margin: 0 auto;
-  border-top: var(--perforation) dotted var(--rule); padding: 2rem 1.5rem 3.5rem;
-  color: var(--ink-muted); font-size: var(--t-fine);
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-1) var(--s-4);
+  background: var(--surface-2); color: var(--shell-muted); border-top: 1px solid var(--border);
+  padding: var(--s-3) max(var(--pad-x), calc((100% - var(--w-wide)) / 2 + var(--pad-x))) var(--s-4);
+  font-size: var(--t-fine);
 }
-footer.site p { margin: 0.35rem 0; max-width: none; }
-footer.site a, .foot-links a { color: var(--ink-muted); }
+footer.site p { margin: 0; max-width: none; }
+footer.site .foot-links { flex: 1 1 30rem; }
+footer.site a, .foot-links a { color: var(--shell-muted); }
+footer.site a:hover { color: var(--shell-text); }
+/* On a page with the content column and its rail, the nav and the footer line up with that grid. */
+html:has(.page-grid:not(.is-reading)) :is(header.site, footer.site) { padding-left: max(var(--pad-x), calc((100% - var(--w-grid)) / 2 + var(--pad-x))); padding-right: max(var(--pad-x), calc((100% - var(--w-grid)) / 2 + var(--pad-x))); }
 
 /* ── section rhythm ───────────────────────────────────────────────────────────
-   A dotted perforation between sections: this is where one record ends. */
-.screen { margin: 0 auto; padding: 4.5rem 1.5rem; border-bottom: var(--perforation) dotted var(--rule); }
+   Sections stand 64px apart on a desktop and 36px on a phone (spec 170), with a hairline between
+   them: the desk has no perforation, only paper does. */
+.screen { margin: 0 auto; padding: var(--section-y) var(--pad-x); border-bottom: 1px solid var(--border); }
 .screen:last-of-type { border-bottom: none; }
 .is-wide { max-width: var(--w-wide); }
 /* A section that names no width takes the wide measure, so it lines up with the header above it. */
 .screen:not(.is-wide):not(.is-text):not(.is-bleed) { max-width: var(--w-wide); }
 .is-text { max-width: var(--w-text); }
-/* A full-bleed band spans the viewport, with its content held at the wide measure. On this
-   site it is still desk paper: the band is a width, not a second ground. */
+/* A full-bleed band spans the viewport, with its content held at the wide measure. */
 .is-bleed { max-width: none; }
 .is-bleed > .bleed-inner { max-width: var(--w-wide); margin: 0 auto; }
-.eyebrow { font-size: var(--t-eyebrow); color: var(--ink-muted); margin: 0 0 0.5rem; }
+.eyebrow { font-size: var(--t-eyebrow); color: var(--shell-muted); margin: 0 0 0.5rem; }
 
 /* ── the hero ─────────────────────────────────────────────────────────────────
    THE HEADLINE GETS THE ROOM AND THE RECEIPT GETS A FLOOR. The minimums are what keep the
    headline in three lines (spec 025 AC-11, spec 038 AC-9) and the receipt's model id on one. */
-#hero { display: grid; gap: 3rem; grid-template-columns: 1fr; }
-@media (min-width: 900px) {
-  #hero { grid-template-columns: minmax(560px, 3fr) minmax(420px, 2fr); align-items: start; }
+#hero { display: grid; gap: var(--s-6); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1024px) {
+  #hero { grid-template-columns: minmax(0, 7fr) minmax(400px, 5fr); align-items: start; }
 }
-.hero-sub { font-size: var(--t-body); line-height: var(--lh-body); color: var(--ink); margin: 0 0 1.8rem; }
+.hero-sub { font-size: var(--t-body); line-height: var(--lh-body); color: var(--shell-text); margin: 0 0 var(--s-4); }
 .cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+/* A COMMAND ON THE DESK is typed in the deep well, with its Copy button beside it (spec 170). */
 .copy-cta {
-  display: inline-flex; align-items: center; gap: 0.7rem; padding: 0.45rem 0.5rem 0.45rem 0.8rem;
-  background: var(--paper-2); border-left: 3px solid var(--ink-muted);
+  display: inline-flex; align-items: center; justify-content: space-between; gap: var(--s-2); padding: var(--s-1) var(--s-1) var(--s-1) var(--s-2);
+  background: var(--deep); color: var(--shell-text); border: 1px solid var(--border); border-radius: var(--radius);
   font-family: var(--values); font-size: var(--t-mono-sm); max-width: 100%;
 }
-.copy-cta code { background: none; border: 0; padding: 0; font-size: var(--t-mono-sm); }
+.copy-cta code { background: none; border: 0; padding: 0; font-size: var(--t-mono-sm); color: inherit; min-width: 0; }
+/* The button keeps its width beside a long command; the command wraps instead. */
+.copy-cta > button { flex: none; }
 .copy-cta button {
   font: inherit; font-family: var(--sans); font-weight: 500; font-size: var(--t-mono-sm); cursor: pointer;
-  border: 1px solid var(--ink-muted); background: var(--paper-2); color: var(--ink);
-  border-radius: var(--radius); padding: 0.2rem 0.65rem;
+  border: 1px solid var(--border-strong); background: var(--surface); color: var(--shell-text);
+  border-radius: var(--radius); padding: 0 var(--s-2); min-height: var(--touch); min-width: var(--touch);
 }
-.copy-cta button:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
+.copy-cta button:hover { border-color: var(--shell-accent); color: var(--shell-accent); }
+/* On paper (a receipt page's verify block), the command is receipt stock, as spec 038 set it. */
+:is(.card, main.receipt-page) .copy-cta { background: var(--paper-2); color: var(--ink); border-color: var(--rule); border-left: 3px solid var(--ink-muted); }
+:is(.card, main.receipt-page) .copy-cta button { background: var(--paper-2); color: var(--ink); border-color: var(--ink-muted); }
+:is(.card, main.receipt-page) .copy-cta button:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
 a.cta {
-  display: inline-block; padding: 0.6rem 1.1rem; border-radius: var(--radius);
-  background: var(--accent-ink); color: var(--paper-2); font-weight: 500; text-decoration: none;
+  display: inline-flex; align-items: center; min-height: var(--touch); padding: 0 var(--s-3); border-radius: var(--radius);
+  background: var(--shell-accent); color: var(--desk); font-weight: 500; text-decoration: none;
 }
-a.cta:hover { color: var(--paper-2); text-decoration: underline; }
-a.cta.secondary { background: transparent; color: var(--accent-ink); border: 1px solid var(--accent-ink); }
+a.cta:hover { color: var(--desk); text-decoration: underline; }
+a.cta.secondary { background: transparent; color: var(--shell-accent); border: 1px solid var(--shell-accent); }
 
 /* ── a record laid on the desk ────────────────────────────────────────────────
    A receipt sheet has torn edges: a row of teeth above and below, cut by a mask on two
    pseudo-elements so the sheet itself paints solid stock and nothing else (AC-4). */
 .card.receipt, main.receipt-page {
-  position: relative; background: var(--paper-2); box-shadow: var(--sheet-shadow);
+  position: relative; background: var(--sheet); box-shadow: var(--sheet-shadow);
 }
 .card.receipt::before, .card.receipt::after, main.receipt-page::before, main.receipt-page::after {
   content: ""; position: absolute; left: 0; right: 0; height: var(--tooth);
-  background-color: var(--paper-2);
+  background-color: var(--sheet);
   -webkit-mask: conic-gradient(from -45deg at bottom, black 90deg, transparent 0) bottom / calc(2 * var(--tooth)) var(--tooth) repeat-x;
           mask: conic-gradient(from -45deg at bottom, black 90deg, transparent 0) bottom / calc(2 * var(--tooth)) var(--tooth) repeat-x;
 }
@@ -679,18 +848,22 @@ a.cta.secondary { background: transparent; color: var(--accent-ink); border: 1px
 .tldr-cite pre { overflow-x: auto; }
 
 /* ── plots ───────────────────────────────────────────────────────────────── */
-.bandplot { display: block; width: 100%; height: auto; max-width: 100%; }
+.bandplot, .gap-plot { display: block; width: 100%; height: auto; max-width: 100%; }
 /* THE hidden ATTRIBUTE WINS over the display rule above (spec 025 A-025-9). */
 [hidden] { display: none !important; }
+/* A PLOT IS EVIDENCE, SO IT IS NEVER LEFT ON THE DESK (spec 170). The files are ink on a clear
+   ground; wherever one is placed outside a paper card it carries its own stock behind it. */
+img.bandplot, .report-type-card img, .report-type-card svg { background-color: var(--sheet); border-radius: var(--radius); padding: var(--s-1); }
 .plot-figure { margin: 0; }
-.plot-figure figcaption { color: var(--ink-muted); font-size: var(--t-mono-sm); margin-top: 0.5rem; }
-.plot-figure.is-prose figcaption, .panel.plot-figure.is-prose figcaption { color: var(--ink); font-size: var(--t-body); line-height: var(--lh-body); margin-top: 0.8rem; }
+.plot-figure figcaption { color: var(--shell-muted); font-size: var(--t-mono-sm); margin-top: 0.5rem; }
+:is(.card, main.receipt-page, .page-grid.is-sheet > main, .panel) .plot-figure figcaption, .panel.plot-figure figcaption { color: var(--ink-muted); }
+.plot-figure.is-prose figcaption, .panel.plot-figure.is-prose figcaption { color: inherit; font-size: var(--t-body); line-height: var(--lh-body); margin-top: 0.8rem; }
 .plot-figure.is-prose figcaption p { margin: 0 0 0.8rem; }
 
 /* ── the three cards, and only three ──────────────────────────────────────────
    The receipt, a report entry on the index, and the playground: each a sheet of stock. */
 .card.report-card {
-  background: var(--paper-2); box-shadow: var(--sheet-shadow); border-radius: var(--radius);
+  background: var(--sheet); box-shadow: var(--sheet-shadow); border-radius: var(--radius);
   padding: 1.4rem 1.5rem; margin: 0 0 1.25rem;
   display: grid; gap: 1.2rem; grid-template-columns: 1fr;
 }
@@ -716,40 +889,67 @@ a.cta.secondary { background: transparent; color: var(--accent-ink); border: 1px
 .card-counts { font-family: var(--sans); font-size: var(--t-body); }
 .card-plot { width: 100%; height: auto; }
 
-/* ── how it works ─────────────────────────────────────────────────────────── */
-.steps { counter-reset: step; list-style: none; padding: 0; margin: 0 0 1.8rem; display: grid; gap: 1rem; }
-.steps li { counter-increment: step; padding-left: 2.8rem; position: relative; }
+/* ── how it works ───────────────────────────────────────────────────────────
+   HOW A RECEIPT IS MADE, in three explainer cards on surface (spec 170), side by side from 1024px. */
+.steps { counter-reset: step; list-style: none; padding: 0; margin: 0 0 var(--s-4); display: grid; gap: var(--s-3); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1024px) { .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.steps li {
+  counter-increment: step; position: relative; max-width: none;
+  background: var(--surface); color: var(--shell-text); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: var(--s-6) var(--s-3) var(--s-3);
+}
 .steps li::before {
-  content: counter(step); position: absolute; left: 0; top: -0.1em;
-  font-family: var(--display); font-size: var(--t-h3); color: var(--accent-ink);
+  content: counter(step); position: absolute; left: var(--s-3); top: var(--s-2);
+  font-family: var(--display); font-size: var(--t-h3); color: var(--shell-accent);
   font-variant-numeric: tabular-nums;
 }
-.naming { font-size: var(--t-h3); line-height: 1.45; margin: 1.8rem 0 2.2rem; }
-/* THREE, EXPLICITLY: the criterion is three states in one row, so the grid says three. */
-.panels { display: grid; gap: 1.5rem; grid-template-columns: repeat(3, 1fr); }
+.naming { font-size: var(--t-h3); line-height: 1.45; margin: var(--s-4) 0 var(--s-5); }
+/* THREE, EXPLICITLY: the criterion is three states in one row, so the grid says three. Each state is
+   a plot of a published cell, so each is a paper card. */
+.panels { display: grid; gap: var(--s-3); grid-template-columns: repeat(3, 1fr); }
 @media (max-width: 720px) { .panels { grid-template-columns: 1fr; } }
-.panel { border: 0; padding: 0; background: transparent; }
+.panel { border: 0; padding: var(--s-2); background: var(--sheet); color: var(--ink); border-radius: var(--radius); box-shadow: var(--sheet-shadow); }
 .panel img, .panel svg { display: block; width: 100%; height: auto; max-width: 100%; }
+.panel img.bandplot { padding: 0; }
 .panel figcaption { margin: 0.7rem 0 0; color: var(--ink-muted); font-size: var(--t-fine); }
 .panel-title { display: block; color: var(--ink); font-family: var(--sans); font-weight: 500; font-size: var(--t-body); }
 
 /* ── the skeptic strip ────────────────────────────────────────────────────────
-   One ruled row, the figure over its label, a dotted rule between items. The sixth label is the
+   One ruled row, the figure over its label, a hairline between items. The sixth label is the
    longest by far, so its column takes two shares (spec 025 AC-11). */
-.strip { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(0, 2fr); margin: 0 0 1.8rem; }
-.strip-item { padding: 0 1rem; }
-.strip-item + .strip-item { border-left: 1px dotted var(--ink-muted); }
+.strip { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(0, 2fr); margin: 0 0 var(--s-4); }
+.strip-item { padding: 0 var(--s-2); }
+.strip-item + .strip-item { border-left: 1px solid var(--border-strong); }
 .strip-value {
   display: block; font-family: var(--sans); font-size: var(--t-stat);
-  font-variant-numeric: tabular-nums lining-nums; color: var(--ink); line-height: var(--lh-h2);
+  font-variant-numeric: tabular-nums lining-nums; color: var(--shell-text); line-height: var(--lh-h2);
 }
-.strip-label { display: block; color: var(--ink-muted); font-size: var(--t-mono-sm); line-height: 1.35; }
-.cols { display: grid; gap: 1.6rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
-.cols p { margin: 0; color: var(--ink-muted); }
+.strip-label { display: block; color: var(--shell-muted); font-size: var(--t-mono-sm); line-height: 1.35; }
+/* THE STATS BAND under the hero (spec 170): three figures on the shell's surface, then one line
+   pointing at the gap calculator. */
+#stats { padding-top: 0; }
+.stat-band {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-2);
+  background: var(--surface); color: var(--shell-text); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--s-3);
+}
+.stat { margin: 0; display: flex; flex-direction: column; }
+.stat + .stat { border-left: 1px solid var(--border); padding-left: var(--s-3); }
+.stat-value { font-family: var(--sans); font-size: var(--t-stat); font-variant-numeric: tabular-nums lining-nums; line-height: var(--lh-h2); }
+.stat-label { color: var(--shell-muted); font-size: var(--t-mono-sm); }
+.gap-line { margin: var(--s-3) 0 0; }
+@media (max-width: 640px) {
+  .stat-band { padding: var(--s-2); }
+  .stat + .stat { padding-left: var(--s-2); }
+}
+/* A receipt-type card lies half a degree off square: the hero receipt and the report teaser. */
+#hero .card.receipt, #latest .card.report-card { transform: rotate(var(--card-tilt)); }
+.receipt-note { margin: 0.4rem 0 0.2rem; font-size: var(--t-fine); font-style: italic; color: var(--ink-muted); text-align: right; }
+.cols { display: grid; gap: var(--s-3); grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.cols p { margin: 0; color: var(--shell-muted); }
 
 /* ── the playground ───────────────────────────────────────────────────────── */
 .card.playground {
-  background: var(--paper-2); box-shadow: var(--sheet-shadow); border-radius: var(--radius);
+  background: var(--sheet); box-shadow: var(--sheet-shadow); border-radius: var(--radius);
   padding: 1.4rem; margin-top: 1.8rem;
 }
 .playground label { display: block; font-size: var(--t-mono-sm); color: var(--ink-muted); margin: 0.9rem 0 0.3rem; }
@@ -781,18 +981,19 @@ a.cta.secondary { background: transparent; color: var(--accent-ink); border: 1px
 .playground .receipt-stamp { font-size: var(--t-h3); }
 
 /* ── subscribe ────────────────────────────────────────────────────────────── */
-.subscribe { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; align-items: center; }
-.subscribe label { font-size: var(--t-mono-sm); color: var(--ink-muted); }
+.subscribe { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-2); align-items: center; }
+.subscribe label { font-size: var(--t-mono-sm); color: var(--shell-muted); }
+/* AN INPUT IS A DARK FIELD on the desk (spec 170), at least a touch target tall. */
 .subscribe input[type="email"] {
-  font: inherit; font-size: var(--t-body); padding: 0.45rem 0.1rem;
-  border: 0; border-bottom: 1.5px solid var(--ink); min-width: 16rem;
-  background: transparent; color: var(--ink);
+  font: inherit; font-size: var(--t-body); padding: 0 var(--s-2); min-height: var(--touch);
+  border: 1px solid var(--border-strong); border-radius: var(--radius); min-width: 16rem;
+  background: var(--surface); color: var(--shell-text);
 }
 .subscribe button {
-  font: inherit; font-weight: 500; font-size: var(--t-body); padding: 0.55rem 1.1rem; border-radius: var(--radius);
-  border: 0; background: var(--accent-ink); color: var(--paper-2); cursor: pointer;
+  font: inherit; font-weight: 500; font-size: var(--t-body); padding: 0 var(--s-3); min-height: var(--touch); border-radius: var(--radius);
+  border: 0; background: var(--shell-accent); color: var(--desk); cursor: pointer;
 }
-.privacy-line { font-size: var(--t-fine); color: var(--ink-muted); margin: 0.8rem 0 0; }
+.privacy-line { font-size: var(--t-fine); color: var(--shell-muted); margin: 0.8rem 0 0; }
 
 /* ── documentation pages ──────────────────────────────────────────────────── */
 /* The glossary's terms take two columns from 900px, each term and its definition one cell, so a
@@ -800,33 +1001,114 @@ a.cta.secondary { background: transparent; color: var(--accent-ink); border: 1px
 .glossary { display: grid; gap: 0 2.5rem; grid-template-columns: minmax(0, 1fr); margin: 0; }
 @media (min-width: 900px) { .glossary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .glossary dt { font-size: var(--t-h3); margin-top: 1.6rem; }
-.glossary dd { margin: 0.3rem 0 0; color: var(--ink); }
-.report-type-card { border-top: var(--perforation) dotted var(--rule); padding: 1.6rem 0; display: grid; gap: 1rem; grid-template-columns: 1fr; }
+.glossary dd { margin: 0.3rem 0 0; color: inherit; }
+.report-type-card { border-top: 1px solid var(--border); padding: var(--s-3) 0; display: grid; gap: var(--s-2); grid-template-columns: 1fr; }
 @media (min-width: 700px) { .report-type-card { grid-template-columns: 160px 1fr; } }
 .report-type-card img, .report-type-card svg { width: 100%; height: auto; max-width: 100%; }
-.table-wrap { width: 100%; overflow-x: auto; }
+/* A WIDE TABLE SCROLLS INSIDE ITS PAPER CARD (spec 170): the wrapper the chrome puts round every
+   table is the card, so the shadow stays put while the table moves under it. */
+.table-wrap { width: 100%; overflow-x: auto; background: var(--sheet); box-shadow: var(--sheet-shadow); border-radius: var(--radius); margin: var(--s-3) 0; }
+.table-wrap > table { margin: 0; }
+table { box-shadow: none; }
+:is(.card, main.receipt-page, .page-grid.is-sheet > main) .table-wrap { box-shadow: none; }
 /* The benchmark gap calculator's preset sources are bare URLs, one unbroken token each: the same
    phone-width hazard code's overflow-wrap guards against above, for a link rather than a code span. */
 .gap-sources a { overflow-wrap: anywhere; }
 /* The calculator's own verdict word is a full sentence ("no separation detected at this sample
-   size"), the only stamp this long: the stamp's own nowrap (above, "pressed, not thrown") is for a
-   single word and would push a phone's page sideways here, so this panel alone allows it to wrap. */
-.gap-panel .receipt-stamp { white-space: normal; }
+   size"), the only stamp this long. A stamp sets on one line (spec 038 AC-5), so this one keeps the
+   stamp's nowrap and takes its size from the result card it is pressed on (--t-gap-stamp, read
+   against the card's own width), which keeps it inside the card from a phone's 375 up (spec 170). */
+.gap-panel .receipt-stamp { white-space: nowrap; font-size: var(--t-gap-stamp); }
+
+/* ── the benchmark gap calculator (spec 170) ──────────────────────────────────
+   The tabs are tabs, the active one underlined in the accent. The inputs are a labelled grid on a
+   surface card, two to a row and one under 640px; the result beside them from 1024px is a paper
+   receipt card, as are the three preset cards. */
+main.calc .gap-how { margin: 0 0 var(--s-4); }
+.gap-tool { margin: 0 0 var(--s-6); }
+.gap-tabs { display: flex; flex-wrap: wrap; gap: 0 var(--s-1); border-bottom: 1px solid var(--border); margin: 0 0 var(--s-3); }
+.gap-tab {
+  font: inherit; font-size: var(--t-body); cursor: pointer; background: none; border: 0; border-bottom: 2px solid transparent;
+  margin-bottom: -1px; color: var(--shell-muted); min-height: var(--touch); padding: 0 var(--s-2);
+}
+.gap-tab:hover { color: var(--shell-text); }
+.gap-tab[aria-selected="true"] { color: var(--shell-text); border-bottom-color: var(--shell-accent); }
+.gap-panel { display: grid; gap: var(--s-4); grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 1024px) { .gap-panel { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); } }
+.gap-inputs { background: var(--surface); color: var(--shell-text); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--s-3); }
+.gap-inputs h3 { margin: 0 0 var(--s-2); }
+.gap-inputs p { font-size: var(--t-fine); color: var(--shell-muted); }
+.gap-fields { display: grid; gap: var(--s-2); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.gap-field.is-wide { grid-column: 1 / -1; }
+@media (max-width: 640px) { .gap-fields { grid-template-columns: minmax(0, 1fr); } }
+.gap-field label { display: block; font-size: var(--t-fine); color: var(--shell-muted); margin: 0 0 var(--s-1); }
+.gap-field input, .gap-field select {
+  width: 100%; font: inherit; font-family: var(--mono); font-size: var(--t-mono); min-height: var(--touch); padding: 0 var(--s-1);
+  background: var(--deep); color: var(--shell-text); border: 1px solid var(--border-strong); border-radius: var(--radius);
+}
+.gap-field select { font-family: var(--sans); font-size: var(--t-body); }
+.gap-out:empty { display: none; }
+.gap-message { background: var(--surface-2); color: var(--shell-text); border: 1px solid var(--border-strong); border-left: 3px solid var(--shell-accent); border-radius: var(--radius); padding: var(--s-2) var(--s-3); }
+.gap-message p { margin: 0; }
+.gap-result { padding: var(--s-3); border-radius: var(--radius); transform: rotate(var(--card-tilt)); container-type: inline-size; }
+.gap-result p { margin: 0 0 var(--s-2); }
+.gap-plot { margin: var(--s-2) 0; }
+.gap-plot text { font-variant-numeric: tabular-nums lining-nums; }
+.gap-plot .tick { font-family: var(--mono); font-size: var(--t-gap-tick); fill: var(--ink-muted); }
+.gap-plot .arm-label { font-family: var(--sans); font-size: var(--t-gap-label); font-style: italic; fill: var(--ink-muted); }
+.gap-numbers { display: grid; gap: var(--s-1); margin: var(--s-2) 0 0; padding-top: var(--s-2); border-top: 1px dashed var(--rule); }
+.gap-numbers div { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0 var(--s-2); }
+.gap-numbers dt { font-family: var(--display); font-size: var(--t-fine); color: var(--ink-muted); margin: 0; }
+.gap-numbers dd { margin: 0; }
+.gap-numbers code { background: none; border: 0; padding: 0; font-size: var(--t-mono); }
+.gap-copy { margin: var(--s-3) 0 0; }
+.gap-copy button {
+  font: inherit; font-weight: 500; cursor: pointer; min-height: var(--touch); padding: 0 var(--s-3);
+  background: var(--surface); color: var(--shell-text); border: 1px solid var(--border-strong); border-radius: var(--radius);
+}
+.gap-copy button:hover { border-color: var(--shell-accent); }
+.gap-famous-list { display: grid; gap: var(--s-3); grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); margin: 0 0 var(--s-6); }
+.gap-famous { padding: var(--s-3); border-radius: var(--radius); transform: rotate(var(--card-tilt)); }
+.gap-famous:nth-child(2) { transform: rotate(calc(-1 * var(--card-tilt))); }
+.gap-famous h3 { margin: 0 0 var(--s-1); }
+.gap-famous p { font-size: var(--t-fine); margin: 0 0 var(--s-1); }
+.gap-load {
+  font: inherit; font-size: var(--t-fine); font-weight: 500; cursor: pointer; min-height: var(--touch); padding: 0 var(--s-2); margin-top: var(--s-1);
+  background: var(--paper-2); color: var(--ink); border: 1px solid var(--ink-muted); border-radius: var(--radius);
+}
+.gap-load:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
 
 /* ── the published report bodies ──────────────────────────────────────────────
    Pages this pass may restyle and may not edit. docs/style.css carries their structure; these
    are the colour and type rules, here so the palette has one home. */
-.card { background: var(--paper-2); color: var(--ink); border-radius: var(--radius); box-shadow: var(--sheet-shadow); }
-.headline { background: var(--paper-2); color: var(--ink); border-left: 3px solid var(--ink); border-radius: var(--radius); box-shadow: var(--sheet-shadow); }
-.muted, .lede { color: var(--ink-muted); }
-.report-type { color: var(--ink-muted); font-size: var(--t-fine); }
+.card { background: var(--sheet); color: var(--ink); border-radius: var(--radius); box-shadow: var(--sheet-shadow); }
+/* A report's headline is its claim in a sentence, set on the shell's card with the accent rule; a
+   headline quoted inside a paper card (an amendment's "as published") is an inset of receipt stock. */
+.headline { background: var(--surface); color: var(--shell-text); border: 1px solid var(--border); border-left: 3px solid var(--shell-accent); border-radius: var(--radius); }
+:is(.card, main.receipt-page, .page-grid.is-sheet > main, .panel) .headline { background: var(--paper-2); color: var(--ink); border-color: var(--rule); border-left-color: var(--ink); }
+/* A per-case verdict chip in a report body is a small paper label wherever it sits, so its state's
+   ink reads on the desk as it does in a table (spec 170). */
+.v { background: var(--sheet); }
+.muted, .lede { color: var(--shell-muted); }
+.report-type { color: var(--shell-muted); font-size: var(--t-fine); }
 main.report h1, main.receipt-page h1 { font-size: var(--t-h1-page); }
 h1 code { font-size: var(--t-h3); vertical-align: 0.2em; }
 
 /* ── under 720px ──────────────────────────────────────────────────────────── */
+/* ── under 640px: the nav collapses (spec 170) ────────────────────────────────
+   The wordmark and one disclosure. The nav is the disclosure's sibling, so it reappears on
+   `[open]` without a script and without a second copy of the links. */
+@media (max-width: 640px) {
+  nav.site-nav { display: none; }
+  .nav-menu { display: block; }
+  .nav-menu[open] ~ nav.site-nav {
+    display: flex; flex-direction: column; align-items: stretch; gap: 0;
+    width: 100%; margin: 0 0 var(--s-1); padding: 0 var(--s-2); background: var(--surface); color: var(--shell-text); border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .nav-menu[open] ~ nav.site-nav > a, .nav-menu[open] ~ nav.site-nav summary { display: flex; border-bottom: 1px solid var(--border); }
+  .docs-menu-list { box-shadow: none; border: 0; padding: 0 0 0 var(--s-2); }
+}
 @media (max-width: 720px) {
-  .screen { padding: 2.75rem 1.1rem; }
-  header.site { padding: 0.9rem 1.1rem; }
   /* The value drops below its label, because two columns inside 390px leave a hash nowhere to go. */
   .receipt-row { grid-template-columns: 1fr; gap: 0.15rem 0; }
   .card.receipt { padding: 1.5rem 1.1rem 1.25rem; }
@@ -834,16 +1116,6 @@ h1 code { font-size: var(--t-h3); vertical-align: 0.2em; }
   .strip { grid-template-columns: repeat(3, 1fr); row-gap: 1.2rem; }
   .strip-item:nth-child(3n + 1) { border-left: 0; }
   .strip-item { padding: 0 0.6rem; }
-  /* The wordmark and one disclosure. The nav is the disclosure's sibling, so it reappears on
-     `[open]` without a script and without a second copy of the links. */
-  nav.site-nav { display: none; }
-  .nav-menu { display: block; }
-  .nav-menu[open] ~ nav.site-nav {
-    display: flex; flex-direction: column; align-items: stretch; gap: 0;
-    width: 100%; margin-top: 0.8rem; padding: 0.4rem 1rem; background: var(--paper-2); box-shadow: var(--sheet-shadow);
-  }
-  .nav-menu[open] ~ nav.site-nav > a, .nav-menu[open] ~ nav.site-nav summary { display: block; padding: 0.5rem 0; border-bottom: 1px dotted var(--rule); }
-  .docs-menu-list { box-shadow: none; padding: 0 0 0 1rem; }
   .card.report-card { grid-template-columns: 1fr; }
   .subscribe input[type="email"] { min-width: 0; width: 100%; }
   .copy-cta { flex-wrap: wrap; }
