@@ -351,7 +351,9 @@ carry a numeric `mean`.
   against the newest schema it happens to have. `validateReceipt()` selects the
   schema by that field, which is why a v0.1 receipt from the first report still
   validates today.
-- **v0.4 receipts remain producible and readable.** v0.4 moved from the
+- **The producer emits the current version only. Older receipts remain
+  readable.** A v0.4 receipt can no longer be produced, and `validateReceipt()`
+  still validates one against the v0.4 schema. v0.4 moved from the
   unversioned filename to `spec/receipt.v0.4.schema.json` when v0.5 took the
   current pointer; the number still resolves to the schema it meant. Nothing in
   the archive is retroactively invalidated, and the frozen v0.1, v0.2, v0.3 and

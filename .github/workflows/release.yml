@@ -1,0 +1,177 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Release: runs when a tag v* is pushed to this repository, publishes that tag to npm with
+# provenance, creates the GitHub release, and tells IndexNow what changed.
+#
+# Runs on a GitHub-hosted runner only, never a self-hosted one. The job is in the `release`
+# environment, which holds a required reviewer, so nothing publishes until a person approves it.
+# No npm token exists anywhere: npm trusted publishing (OIDC, the id-token permission) signs the
+# publish, and the registry must have this workflow registered as the package's trusted publisher.
+#
+# What it refuses: a tag that is not vMAJOR.MINOR.PATCH, a tag that does not match package.json, a
+# packed tarball whose sha512 integrity differs from `tarball_integrity` in release-record.json (the
+# file the private release job commits in the release commit), and a registry integrity that differs
+# after the publish.
+#
+# release-record.json, at the repository root, is a tracked file. Its schema is one JSON object with exactly
+# two keys:
+#   version            string, the package version this record is for, equal to package.json's "version"
+#   tarball_integrity  string, "sha512-" and the base64 sha512 of the tarball `npm pack` makes from the
+#                      release commit, as npm reports it in dist.integrity
+# The release pull request rewrites it as its last edit, from package.json and the pack of the tree it
+# commits (.github/prompts/release.md). It is not in package.json's "files", so the record is not in the
+# tarball it describes. Between releases it holds the record of the last published version.
+#
+# npm choice: trusted publishing needs npm 11.5.1 or later and the npm bundled with Node 22.22.2 is
+# older, so every npm pack and publish step here runs `npx -y npm@11.21.0`. Pack bytes were measured
+# identical on npm 10.9.7 and 11.21.0, so the integrity recorded privately holds for either.
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: release
+    runs-on: ubuntu-latest
+    environment: release
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      TAG: ${{ github.ref_name }}
+      NPM_VERSION: 11.21.0
+    steps:
+      - name: Print PATH
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "$PATH"
+
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 22.22.2
+          registry-url: https://registry.npmjs.org
+
+      - name: Check the tag against the tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::the tag $TAG is not vMAJOR.MINOR.PATCH; nothing was published"; exit 1
+          fi
+          VERSION="${TAG#v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          PKG_NAME="$(node -p "require('./package.json').name")"
+          if [ "$PKG_VERSION" != "$VERSION" ]; then
+            echo "::error::the tag is $TAG but package.json says $PKG_VERSION; nothing was published"; exit 1
+          fi
+          test -f release-record.json || { echo "::error::release-record.json is not in the release commit; nothing was published"; exit 1; }
+          RECORDED_VERSION="$(node -p "require('./release-record.json').version || ''")"
+          if [ "$RECORDED_VERSION" != "$VERSION" ]; then
+            echo "::error::release-record.json is the record of '$RECORDED_VERSION', not of $VERSION; nothing was published"; exit 1
+          fi
+          RECORDED="$(node -p "require('./release-record.json').tarball_integrity || ''")"
+          case "$RECORDED" in
+            sha512-*) ;;
+            *) echo "::error::release-record.json has no tarball_integrity of the form sha512-...; nothing was published"; exit 1 ;;
+          esac
+          {
+            echo "VERSION=$VERSION"
+            echo "PKG_NAME=$PKG_NAME"
+            echo "RECORDED=$RECORDED"
+          } >> "$GITHUB_ENV"
+          node --version
+
+      - name: Install
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+
+      - name: Pack and compare the integrity with the private release job's record
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pack"
+          npx -y "npm@$NPM_VERSION" --version
+          npx -y "npm@$NPM_VERSION" pack --json --pack-destination "$RUNNER_TEMP/pack" > "$RUNNER_TEMP/pack.json"
+          PACKED="$(node -p "JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP + '/pack.json', 'utf8'))[0].integrity")"
+          FILE="$(node -p "JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP + '/pack.json', 'utf8'))[0].filename")"
+          echo "recorded: $RECORDED"
+          echo "packed:   $PACKED"
+          if [ "$PACKED" != "$RECORDED" ]; then
+            echo "::error::the tarball packed here has integrity $PACKED but release-record.json records $RECORDED; nothing was published"
+            exit 1
+          fi
+          echo "TARBALL=$RUNNER_TEMP/pack/$FILE" >> "$GITHUB_ENV"
+
+      - name: Publish to npm with provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          if npx -y "npm@$NPM_VERSION" view "$PKG_NAME@$VERSION" dist.integrity > "$RUNNER_TEMP/view.txt" 2>/dev/null && [ -s "$RUNNER_TEMP/view.txt" ]; then
+            LIVE="$(cat "$RUNNER_TEMP/view.txt")"
+            if [ "$LIVE" = "$RECORDED" ]; then
+              echo "$PKG_NAME@$VERSION is already on npm with the recorded integrity; the publish is skipped"
+              exit 0
+            fi
+            echo "::error::$PKG_NAME@$VERSION is already on npm with integrity $LIVE, not the recorded $RECORDED"; exit 1
+          fi
+          npx -y "npm@$NPM_VERSION" publish "$TARBALL" --provenance --access public
+
+      - name: Verify the registry holds the recorded integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          LIVE=""
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            LIVE="$(npx -y "npm@$NPM_VERSION" view "$PKG_NAME@$VERSION" dist.integrity 2>/dev/null || true)"
+            [ -n "$LIVE" ] && break
+            echo "not visible yet (try $i of 10)"; sleep 15
+          done
+          echo "registry: $LIVE"
+          echo "recorded: $RECORDED"
+          if [ "$LIVE" != "$RECORDED" ]; then
+            echo "::error::the registry integrity for $PKG_NAME@$VERSION differs from the recorded one"; exit 1
+          fi
+
+      - name: Create the GitHub release from RELEASES.md
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node scripts/release-body.mjs "$TAG" > "$RUNNER_TEMP/release-body.md"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "the GitHub release $TAG exists; it is left as it is"
+          else
+            gh release create "$TAG" --verify-tag --title "$TAG" --notes-file "$RUNNER_TEMP/release-body.md"
+          fi
+
+      - name: Tell IndexNow what changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          PREV="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | awk -v t="$TAG" 'f { print; exit } $0 == t { f = 1 }')"
+          if [ -z "$PREV" ]; then
+            echo "::warning::no earlier release tag was found, so IndexNow was skipped"; exit 0
+          fi
+          if ! ls docs/ | grep -Eq '^[0-9a-f]{32}\.txt$'; then
+            echo "::warning::no IndexNow key file docs/<32 hex>.txt is in the tree, so IndexNow was skipped"; exit 0
+          fi
+          echo "IndexNow range: $PREV to $TAG"
+          node scripts/indexnow.mjs --since "$PREV" --until "$TAG" --send

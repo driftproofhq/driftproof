@@ -383,25 +383,55 @@ Run this **by hand** after reviewing a queued draft in
    The receipts path on the page is *rendered*, not hand-edited, and it defaults
    to the directory actually read, so a draft truthfully says `-draft`. Promotion
    moves the receipts, so the page has to be re-rendered with the published path
-   first. This is the pinned command for Report #005; run it from the repo root
-   while the receipts are **still** under `-draft`:
+   first, with the report's own script and `--render-only --published`. Report
+   #005 promoted that way on 19 Aug 2026. Its page has since taken layers in place
+   (amendment entries, the site's chrome and head block, a dated note), so that
+   render alone no longer reproduces it. The page that ships is the source of
+   truth. This is the pinned command for Report #005; run it from the repo root:
 
    ```sh
-   node scripts/prepare-report-005.js --render-only --published \
+   node scripts/rebuild-report-005.js --render-only --published \
         --receipts-label 'receipts/report-005/' \
-        --run-concurrency 2
+        --run-concurrency 2 --max-usd 40
    ```
 
-   `--run-concurrency 2` is the concurrency the run was launched at. It is a
-   launch parameter, not receipt evidence, and the page's *derived* finish time is
-   computed from it — so omitting it silently drops that sentence and the promoted
-   page stops matching the approved one. The gate asserts byte-for-byte
-   reproduction in both states, but not of the same artifact: once the report is
-   **published** it asserts that this command reproduces the published page that
-   ships; while it is still a **draft** — the state you are in while reading this
-   — it asserts that the same command *minus* `--published` reproduces the
-   approved draft, and checks this published form for chrome, the moved receipts
-   label and the frozen figures instead (approval finding F-F9).
+   It runs the render with these flags, then each later layer in the order it
+   reached the page, all in one process and into a sandbox: `--out-root <dir>`,
+   or a new directory under `$TMPDIR` that it prints. It refuses the repository
+   as its out-root, so the published page is never re-rendered in place. Its
+   result, `<out-root>/docs/reports/005/index.html`, is byte for byte the page
+   that ships. `LAYERS` in the script names each layer with the commit that
+   first applied it:
+
+   - the record wording: spec 031 changed the cost-per-benefit string the
+     renderer writes (lib/value.js `NOISE_CELL`) and left the page as published;
+     the v1.3 entry quotes both strings, and the rebuild reads them from it and
+     refuses if `NOISE_CELL` is not the one the entry names;
+   - v1.1 (spec 012) and v1.2 (Report 007), their builders' amendment functions,
+     with the date each commit wrote (checked against that commit's diff where
+     the history is present);
+   - v1.3 (spec 031), `applyWordingAmendment005`;
+   - the site's head block and chrome, `scripts/build-head-tags.js` at its
+     current version, one pass that stands for every site-wide builder since
+     spec 019a, because each replaces its own fenced block;
+   - v1.4 (spec 161), `scripts/report-corrections.js`, then the head block again
+     for the page dates.
+
+   No step makes a model call. `--run-concurrency 2` is the concurrency the run
+   was launched at. `--max-usd 40` is the guard it was launched under: the value
+   of `REPORT_MAX_USD` in config.js on that day, which config.js records was
+   raised on 2026-08-31. Each is a
+   launch parameter, not receipt evidence; the page's *derived* finish time and
+   its guard disclosure are computed from them, so omitting either changes the
+   page. Which page the byte-for-byte claim holds depends on whether the
+   report is published or a draft. Report #005 is
+   **published**: spec 002's AC-8 and spec 007's AC-1 parse this command from
+   this file, run it under a poisoned provider, and require its result to match
+   the published page byte-for-byte by sha256. While a report is still a
+   **draft**, spec 002's AC-8 runs the same pinned command without `--published`
+   and without `--receipts-label`, and that is what reproduces the approved
+   draft; the published form is checked for chrome, the moved receipts label
+   and the frozen figures instead (approval finding F-F9).
 
    `--render-only` re-renders from the receipts that already exist. It **makes no
    model calls**: it does not fetch skills, does not run the smoke preflight, and
@@ -757,3 +787,33 @@ node scripts/indexnow.mjs --since <previous publish's source sha> --send   # exp
   matching what happened.
 - **Bad registry auto-add:** remove the `auto_added` entry from
   `config/models.json` and its id from `state/seen-models.json`.
+
+## Repository layout (moved from CLAUDE.md)
+
+Moved from CLAUDE.md on 6 Oct 2026 to keep that file under two pages. Nothing was dropped.
+
+- `specs/NNN-slug/`: `spec.md` (classification, EARS criteria, amendments, Base and Tip lines), `plan.md`, `tasks.md`, `gate.sh`, `probes/`, `fixtures/`, `PACKET.md` and `evidence/` (receipts, approval records, driver records; generated, never hand-written).
+- `lib/`, `bin/`, `spec/`, `config.js`, `config/models.json`: the npm package. `action/`, `action.yml`, `plugin/`: the Action and the plugin.
+- `docs/`: the site, reports under `docs/reports/NNN/`. `receipts/`: published receipts. `reports/`: drafts, QA.
+- `scripts/`: builders, `merge-check.js`, `build-public.sh`, `drive.mjs`. `tests/gate.js`: the repository gate.
+
+## Session economy (moved from CLAUDE.md)
+
+Moved from CLAUDE.md on 6 Oct 2026. These five rules bind every session. Rule 1 stays in CLAUDE.md.
+
+2. Read a file once per session; read line ranges when the location is known.
+3. Report with `git diff --stat` and a gate's summary line, not full diffs or logs, unless a finding needs them.
+4. Cite the constitution, checklist or spec by section; do not restate them.
+5. Mechanical passes (evidence commits, pushes, re-baselines) need no extended thinking.
+6. No background subagents for approvals; they run in their own session.
+
+## The loop, items 6 and 7 (moved from CLAUDE.md)
+
+Moved from CLAUDE.md on 6 Oct 2026. Nothing was dropped.
+
+6. Releases follow [RUNBOOK § Publish to npm](RUNBOOK.md#publish-to-npm) and BACKLOG.md § 2 (the release evening).
+7. `node scripts/drive.mjs run <queue.json>` runs this chain per brief (spec 048), each stage reading this file first.
+
+## Publish to npm: the credential rule (moved from CLAUDE.md)
+
+Moved from CLAUDE.md on 6 Oct 2026. The box holds no npm credential, and a token may only come from a secrets store at publish time, never from disk. So on this box a driven release stops for a human at the npm step. The rule is stated in full under [Publish to npm](#publish-to-npm).

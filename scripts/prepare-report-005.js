@@ -823,8 +823,11 @@ function parseArgs(argv) {
   return flags;
 }
 
-async function main() {
-  const f = parseArgs(process.argv.slice(2));
+// `argv` is a parameter so scripts/rebuild-report-005.js can run this command in its
+// own process, under the same poisoned provider the gates load (RUNBOOK § Approve and
+// publish, step 2). From the command line it reads process.argv as before.
+async function main(argv = process.argv.slice(2)) {
+  const f = parseArgs(argv);
   const execute = !!f.execute;
   const smokeOnly = !!f.smoke;
   // D-F1. The promotion re-render is its OWN invocation, and it is the one the
@@ -925,4 +928,4 @@ function applyWordingAmendment005(root = ROOT) {
   return true;
 }
 
-module.exports = { applyWordingAmendment005, prepareReport005, skillDirection, draftHtml, smokeTest, REPORT_NUMBER, ACKNOWLEDGMENT };
+module.exports = { WORDING_ENTRY_005, applyWordingAmendment005, main, prepareReport005, skillDirection, draftHtml, smokeTest, REPORT_NUMBER, ACKNOWLEDGMENT };

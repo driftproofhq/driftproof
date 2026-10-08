@@ -4909,6 +4909,74 @@ gate.section('receipt integrity (spec 026)');
     pc.excProblems.length === 0 || pc.probesRead === 0, { excProblems: pc.excProblems.slice(0, 10) });
 }
 
+// ── release version literal scope (DECISIONS C-276) ──────────────────────────
+//
+// release-prepare --stage freeze moves a version literal only where
+// FREEZE_LITERALS (scripts/pipeline.mjs) names it. A gate or probe that types
+// the release version anywhere else goes stale at the next bump, found only
+// by a release sweep an hour later. Runs HERE, not only beside a spec: specs/
+// is excluded from the published tree and no workflow runs a spec gate.
+gate.section('release version literal scope (C-276)');
+{
+  const scope = require('./assertion-scope');
+  const rv = scope.releaseVersionLiteralCheck(ROOT);
+  gate.check('no gate or probe under specs/ carries the current RUNNER_VERSION on a non-comment line, except the files FREEZE_LITERALS names',
+    rv.pass, { version: rv.version, filesRead: rv.filesRead, violations: rv.violations.slice(0, 10), exempt: rv.exempt });
+  // The two arms: a planted tree carries the real freeze table and one probe. A check that cannot go red proves nothing.
+  const plant = (body) => {
+    const dir = fs.mkdtempSync(path.join(process.env.TMPDIR || require('node:os').tmpdir(), 'release-literal-'));
+    try {
+      // a stub of the freeze table, so the arms run alike in the source tree and in the published one
+      fs.mkdirSync(path.join(dir, 'scripts'), { recursive: true });
+      fs.writeFileSync(path.join(dir, 'scripts', 'pipeline.mjs'), "export const FREEZE_LITERALS = [\n  { file: 'specs/902-named/gate.sh', find: 'x {V}', count: 1 },\n];\n");
+      fs.mkdirSync(path.join(dir, 'specs', '901-plant', 'probes'), { recursive: true });
+      fs.writeFileSync(path.join(dir, 'specs', '901-plant', 'probes', 'p.mjs'), body);
+      return scope.releaseVersionLiteralCheck(dir);
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  };
+  const planted = 'specs/901-plant/probes/p.mjs';
+  const onCode = plant(`export const expected = '${rv.version}';\n`);
+  gate.check('MUTATION: the current version planted on a code line of a probe the freeze does not name reads RED, naming the file',
+    !onCode.pass && onCode.violations.length === 1 && onCode.violations[0].file === planted, { violations: onCode.violations });
+  const onComment = plant(`// the ${rv.version} release bump moved this\n`);
+  gate.check('the current version on a comment line of the same probe reads GREEN', onComment.pass && onComment.filesRead === 1, { violations: onComment.violations });
+}
+
+// ── a pipe into grep -q under pipefail (issue 31) ────────────────────────────
+//
+// A gate that tests a captured text with `printf "%s" "$out" | grep -q PATTERN` under `set -o pipefail` fails by
+// chance when the box is loaded (the printf is left writing to a pipe grep -q has closed). The sweep runs four
+// shards at once. The fix is `grep PATTERN >/dev/null`: the same exit status, and grep reads the whole text.
+gate.section('a pipe into grep -q under pipefail (issue 31)');
+{
+  const scope = require('./assertion-scope');
+  const pg = scope.pipefailQuietGrepCheck(ROOT);
+  gate.check('no shell gate or probe under specs/, and no script, pipes into grep -q or --quiet under pipefail',
+    pg.pass, { filesRead: pg.filesRead, violations: pg.violations.slice(0, 10) });
+  // The arms: a planted tree with one gate. A check that cannot go red proves nothing.
+  const plantSh = (body) => {
+    const dir = fs.mkdtempSync(path.join(process.env.TMPDIR || require('node:os').tmpdir(), 'pipefail-grep-'));
+    try {
+      fs.mkdirSync(path.join(dir, 'specs', '901-plant'), { recursive: true });
+      fs.writeFileSync(path.join(dir, 'specs', '901-plant', 'gate.sh'), body);
+      return scope.pipefailQuietGrepCheck(dir);
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  };
+  const head = '#!/usr/bin/env bash\nset -uo pipefail\nout=$(printf "a\\nb\\n")\n';
+  const planted = 'specs/901-plant/gate.sh';
+  const racy = plantSh(`${head}printf "%s" "$out" | grep -qi "b" || exit 1\n`);
+  gate.check('MUTATION: printf piped into grep -qi in a gate under pipefail reads RED, naming the file and line',
+    !racy.pass && racy.violations.length === 1 && racy.violations[0].file === planted && racy.violations[0].line === 4, { violations: racy.violations });
+  const long = plantSh(`${head}printf "%s" "$out" | grep -E --quiet "b" || exit 1\n`);
+  gate.check('MUTATION: the long option --quiet reads RED too', !long.pass && long.violations.length === 1, { violations: long.violations });
+  const fixed = plantSh(`${head}printf "%s" "$out" | grep -i "b" >/dev/null || exit 1\n`);
+  gate.check('the same pipe without -q reads GREEN, with the file read', fixed.pass && fixed.filesRead === 1, { violations: fixed.violations });
+  const noPipefail = plantSh('#!/usr/bin/env bash\nout=$(printf "a\\nb\\n")\nprintf "%s" "$out" | grep -qi "b" || exit 1\n');
+  gate.check('a pipe into grep -q in a file that sets no pipefail reads GREEN (the pipe status is grep\'s alone)', noPipefail.pass && noPipefail.filesRead === 1, { violations: noPipefail.violations });
+  const inComment = plantSh(`${head}# printf "%s" "$out" | grep -qi "b" was the old form\n`);
+  gate.check('the idiom on a comment line reads GREEN', inComment.pass && inComment.filesRead === 1, { violations: inComment.violations });
+}
+
 // ── generation sampling (receipt spec v0.5) ─────────────────────────────────
 //
 // Spec 014. These run HERE, not only in specs/014's gate: `specs/` is excluded
@@ -5934,7 +6002,11 @@ if (SCAN_ROOT_ARG) {
   gate.check('report 008: the promoted page ships in the published tree',
     fs.existsSync(path.join(SCAN_ROOT, 'docs', 'reports', '008', 'index.html')),
     { scanRoot: SCAN_ROOT });
-} else {
+}
+// A-016-5 (Part 1 row 12): these rows read files the published tree carries, so
+// they run in BOTH trees. As an else branch they did not register in the
+// build's verification run at all: a silent drop-out a count could not see.
+{
   const prep8 = require(path.join(ROOT, 'scripts', 'prepare-report-008.js'));
   const rows8 = prep8.readCells();
   const rec8 = JSON.parse(fs.readFileSync(path.join(ROOT, prep8.RUN_RECORD), 'utf8'));
@@ -6176,7 +6248,11 @@ gate.section('report 009 (published path)');
       fs.existsSync(path.join(SCAN_ROOT, 'docs', 'reports', '009', 'index.html'))
         && fs.existsSync(ev9) && fs.readdirSync(ev9).length > 0,
       { scanRoot: SCAN_ROOT });
-  } else {
+  }
+  // A-016-5 (Part 1 row 12): these rows read files the published tree carries, so
+  // they run in BOTH trees. As an else branch they did not register in the
+  // build's verification run at all: a silent drop-out a count could not see.
+  {
     const prep9 = require(path.join(ROOT, 'scripts', 'prepare-report-009.js'));
     const onDisk9Path = path.join(ROOT, 'docs', prep9.PAGE_REL);
     const onDisk9 = fs.existsSync(onDisk9Path) ? fs.readFileSync(onDisk9Path, 'utf8') : null;
@@ -6255,7 +6331,11 @@ gate.section('report 010 (published path)');
     copies10.length > 0 && !vouch10(copies10[0], Buffer.concat([fs.readFileSync(path.join(ev10, copies10[0])), Buffer.from(' ')])));
   if (SCAN_ROOT_ARG) {
     gate.check('report 010: the page and its evidence ship in the published tree', page10 != null && copies10.length > 0, { scanRoot: SCAN_ROOT });
-  } else {
+  }
+  // A-016-5 (Part 1 row 12): these rows read files the published tree carries, so
+  // they run in BOTH trees. As an else branch they did not register in the
+  // build's verification run at all: a silent drop-out a count could not see.
+  {
     // The twins are this spec's own evidence, published beside the page; one record
     // in two places is one record only while it is the same bytes.
     const spec10 = path.join(ROOT, 'specs', '041-report-010', 'evidence');
@@ -6303,7 +6383,11 @@ gate.section('report 011 (published path)');
       fs.existsSync(path.join(SCAN_ROOT, 'docs', 'reports', '011', 'index.html'))
         && fs.existsSync(ev11) && fs.readdirSync(ev11).length > 0,
       { scanRoot: SCAN_ROOT });
-  } else {
+  }
+  // A-016-5 (Part 1 row 12): these rows read files the published tree carries, so
+  // they run in BOTH trees. As an else branch they did not register in the
+  // build's verification run at all: a silent drop-out a count could not see.
+  {
     const prep11 = require(path.join(ROOT, 'scripts', 'prepare-report-011.js'));
     const onDisk11Path = path.join(ROOT, 'docs', prep11.PAGE_REL);
     const onDisk11 = fs.existsSync(onDisk11Path) ? fs.readFileSync(onDisk11Path, 'utf8') : null;
@@ -6359,7 +6443,11 @@ gate.section('report 013 (published path)');
       fs.existsSync(path.join(SCAN_ROOT, 'docs', 'reports', '013', 'index.html'))
         && fs.existsSync(ev13) && fs.readdirSync(ev13).length > 0,
       { scanRoot: SCAN_ROOT });
-  } else {
+  }
+  // A-016-5 (Part 1 row 12): these rows read files the published tree carries, so
+  // they run in BOTH trees. As an else branch they did not register in the
+  // build's verification run at all: a silent drop-out a count could not see.
+  {
     const prep13 = require(path.join(ROOT, 'scripts', 'prepare-report-013.js'));
     const onDisk13Path = path.join(ROOT, 'docs', prep13.PAGE_REL);
     const onDisk13 = fs.existsSync(onDisk13Path) ? fs.readFileSync(onDisk13Path, 'utf8') : null;
@@ -7178,6 +7266,75 @@ gate.section('claude code plugin self-test (028)');
     const r = wfScope.workflowRunSubjects('/planted-empty', { readDir: () => { throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' }); } });
     gate.check('MUTATION: a tree whose workflows cannot be read reports that, and does not pass',
       r.problems.length > 0 && /no workflow/.test(r.problems[0]), { problems: r.problems });
+  }
+
+  // MUTATIONS 4 to 8 (A-028-55): the reader is more precise, and each new rule
+  // is held by a plant that must read RED beside a control that must read clean,
+  // in a planted tree with one callable and one plain reusable workflow.
+  {
+    const tree = new Set(['tests/gate.js', '.github/workflows/callable.yml', '.github/workflows/plain.yml']);
+    const other = {
+      '.github/workflows/callable.yml': 'name: callable\non:\n  workflow_call:\n    inputs: {}\njobs:\n  a:\n    runs-on: ubuntu-latest\n    steps:\n      - run: node tests/gate.js\n',
+      '.github/workflows/plain.yml': 'name: plain\non:\n  workflow_dispatch:\njobs:\n  a:\n    runs-on: ubuntu-latest\n    steps:\n      - run: node tests/gate.js\n',
+    };
+    const scan = (jobs) => {
+      const main = `name: main\non:\n  push:\njobs:\n${jobs}`;
+      return wfScope.workflowRunSubjects('/planted', {
+        readDir: () => ['callable.yml', 'main.yml', 'plain.yml'],
+        readFile: (f) => {
+          const rel = path.relative('/planted', f);
+          if (rel === '.github/workflows/main.yml') return main;
+          if (other[rel] !== undefined) return other[rel];
+          throw Object.assign(new Error(`ENOENT ${rel}`), { code: 'ENOENT' });
+        },
+        exists: (f) => tree.has(path.relative('/planted', f)),
+      });
+    };
+    const job = (id, steps) => `  ${id}:\n    runs-on: ubuntu-latest\n    steps:\n${steps.join('')}`;
+    const run = (text, cond = '') => `      - ${cond ? `if: ${cond}\n        ` : ''}run: |\n${text.split('\n').map((l) => `          ${l}`).join('\n')}\n`;
+    const pull = (p, action = 'actions/download-artifact', cond = '') => `      - ${cond ? `if: ${cond}\n        ` : ''}uses: ${action}@0000000000000000000000000000000000000000 # v0\n        with:\n          path: ${p}\n`;
+    const call = (id, p) => `  ${id}:\n    uses: ${p}\n`;
+    const names = (r, needle) => r.problems.some((x) => x.includes(needle));
+    const clean = (r) => r.problems.length === 0 && r.subjects.length > 0;
+
+    const m4 = { red: scan(job('a', [run('node out/x.mjs')])), control: scan(job('a', [run('mkdir -p out\nnode out/x.mjs')])) };
+    gate.check('MUTATION: a step that runs a file no step of its job produced and this tree lacks reads RED; the same read after `mkdir` in the step is clean',
+      names(m4.red, 'out/x.mjs') && clean(m4.control), { red: m4.red.problems, control: m4.control.problems });
+
+    const ok = scan(call('b', './.github/workflows/callable.yml'));
+    const m5 = scan(call('b', './.github/workflows/missing.yml'));
+    gate.check('MUTATION: a job that calls ./.github/workflows/missing.yml reads RED; a call to a callable workflow the tree carries is clean',
+      names(m5, 'missing.yml, which this tree does not carry') && clean(ok), { red: m5.problems, control: ok.problems });
+
+    const m6 = scan(call('c', './.github/workflows/plain.yml'));
+    const m6b = scan(call('c', './scripts'));
+    gate.check('MUTATION: a reusable-workflow call to a workflow that declares no workflow_call reads RED, and a job-level call to a path that is not a workflow reads RED',
+      names(m6, 'declares no workflow_call') && names(m6b, 'not a workflow file') && clean(ok), { red: m6.problems, not_workflow: m6b.problems });
+
+    const m7 = {
+      laterStep: scan(job('d', [run('node art/x.mjs'), pull('art')])),
+      laterLine: scan(job('d', [run('node out/x.mjs\nmkdir -p out')])),
+      otherJob: scan(job('d1', [pull('art')]) + job('d2', [run('node art/x.mjs')])),
+      control: scan(job('d', [pull('art'), run('node art/x.mjs')])),
+    };
+    gate.check('MUTATION: a path produced later than it is read reads RED (a later step, a later line of the same step), and so does one produced only by another job; produced earlier it is clean',
+      names(m7.laterStep, 'produces it only later') && names(m7.laterLine, 'produces it only later') && names(m7.otherJob, 'only job d1 produces it') && clean(m7.control),
+      { later_step: m7.laterStep.problems, later_line: m7.laterLine.problems, other_job: m7.otherJob.problems, control: m7.control.problems });
+
+    const m8 = {
+      cd: scan(job('e', [run('cd sub\nnode tests/gate.js')])),
+      cdControl: scan(job('e', [run('(cd sub && true)\nnode tests/gate.js')])),
+      thisRepo: scan(job('e', [pull('src', 'actions/checkout'), run('node src/missing.mjs')])),
+      thisRepoControl: scan(job('e', [pull('src', 'actions/checkout'), run('node src/tests/gate.js')])),
+      orElse: scan(job('e', [run('test -d out || mkdir out\nnode out/x.mjs')])),
+      inIf: scan(job('e', [run('if [ -n "$A" ]; then mkdir out; fi\nnode out/x.mjs')])),
+      otherIf: scan(job('e', [pull('art', 'actions/download-artifact', "env.A == 'a'"), run('node art/x.mjs', "env.A == 'b'")])),
+      sameIf: scan(job('e', [pull('art', 'actions/download-artifact', "env.A == 'a'"), run('node art/x.mjs', "env.A == 'a'")])),
+    };
+    gate.check('MUTATION: a path after `cd` is read from that directory, a checkout of this repository is read as this tree, and a production that may not happen (beside ||, inside if, under another step if:) covers nothing; each reads RED beside its clean control',
+      names(m8.cd, 'read as sub/tests/gate.js') && clean(m8.cdControl) && names(m8.thisRepo, 'src/missing.mjs') && clean(m8.thisRepoControl)
+        && names(m8.orElse, 'out/x.mjs') && names(m8.inIf, 'out/x.mjs') && names(m8.otherIf, 'art/x.mjs') && clean(m8.sameIf),
+      Object.fromEntries(Object.entries(m8).map(([k, v]) => [k, v.problems])));
   }
 }
 

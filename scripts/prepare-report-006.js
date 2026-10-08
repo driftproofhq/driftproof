@@ -491,13 +491,15 @@ function amend005(rows, { nowIso, write = true }) {
 // at a directory that does not.
 const STAGED_005 = path.join(ROOT, 'specs', '009-revision-drift', 'evidence', 'amendment-005-v1.1.html');
 
-function applyStagedAmendment005({ nowIso, write = true } = {}) {
+// `file` is the page to amend; it defaults to the published page. scripts/rebuild-report-005.js
+// passes a sandbox copy, so the replay never writes the tree.
+function applyStagedAmendment005({ nowIso, write = true, file = P005 } = {}) {
   const published006 = path.join(ROOT, 'docs', 'reports', '006', 'index.html');
   if (!fs.existsSync(published006)) {
     return { applied: false, reason: `#006 is not published yet — ${path.relative(ROOT, published006)} does not exist, so the amendment's two forward links to ../006/index.html would 404. Rename the draft first: that is step one of the guarded publish` };
   }
   if (!fs.existsSync(STAGED_005)) return { applied: false, reason: `no staged amendment at ${path.relative(ROOT, STAGED_005)}` };
-  let html = fs.readFileSync(P005, 'utf8');
+  let html = fs.readFileSync(file, 'utf8');
   // Already applied is SUCCESS, not refusal: a promote sequence that is re-run,
   // or resumed after a later step failed, must not fail on the step that is done.
   if (html.includes('<strong>v1.1 &middot;')) return { applied: false, already: true, reason: 'already applied' };
@@ -515,7 +517,7 @@ function applyStagedAmendment005({ nowIso, write = true } = {}) {
     html = html.replace(P005_ANCHOR_NEEDLE, `<li id="${P005_ANCHOR}"><strong>Skill versions are pinned, not current.</strong>`);
   }
   html = html.replace('  <h2>Amendments</h2>\n  <div class="card">\n', `  <h2>Amendments</h2>\n  <div class="card">\n${fragment}\n`);
-  if (write) fs.writeFileSync(P005, html);
+  if (write) fs.writeFileSync(file, html);
   return { applied: true };
 }
 

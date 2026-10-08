@@ -101,11 +101,16 @@ function attributeText(src) {
   return out;
 }
 
+// A tag is a `<` followed by a letter, `/` or `!`, as in HTML's own tokenizer.
+// A bare `<` is text: "n < 2" in spec/RECEIPT.md once opened a fake tag that
+// ran to the next `>`, and 283 lines vanished from every reader of this text.
+const REAL_TAG = /<[A-Za-z\/!][^>]*>/g;
+
 function visibleText(src) {
   return src
     .replace(/<script[\s\S]*?<\/script>/g, ' ')
     .replace(/<style[\s\S]*?<\/style>/g, ' ')
-    .replace(/<[^>]*>/g, ' ')
+    .replace(REAL_TAG, ' ')
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
     .replace(/&[a-z]+;/g, ' ')
@@ -1007,6 +1012,105 @@ function probeCopyExceptionProblems(root, exceptions = PROBE_COPY_EXCEPTIONS) {
   return problems;
 }
 
+// ── release version literal scope (DECISIONS C-276) ──────────────────────────
+//
+// release-prepare --stage freeze moves a version literal only where
+// FREEZE_LITERALS (scripts/pipeline.mjs) names it. A gate or probe that types
+// the release version anywhere else goes stale at the next bump, and only a
+// release sweep an hour later finds it. Runs HERE, not only beside a spec,
+// for the usual reason: `specs/` is excluded from the published tree and no
+// workflow runs a spec gate.
+//
+// The allowed-file set is read from FREEZE_LITERALS itself — not retyped here
+// — so a new literal is allowed only by adding it to that table.
+function freezeLiteralFiles(root) {
+  const src = fs.readFileSync(path.join(root, 'scripts', 'pipeline.mjs'), 'utf8');
+  const m = src.match(/export const FREEZE_LITERALS = \[([\s\S]*?)\n\];/);
+  const files = new Set();
+  if (m) for (const f of m[1].matchAll(/\bfile:\s*'([^']+)'/g)) files.add(f[1]);
+  return files;
+}
+function isCommentLine(line) {
+  const t = line.replace(/^[ \t]+/, '');
+  return t.startsWith('//') || t.startsWith('#') || t.startsWith('*');
+}
+// gate.sh, gate.mjs and every file under a spec's probes/ — the gate-or-probe
+// set the issue defines, one level under each specs/<slug>.
+function specGateAndProbeFiles(root) {
+  const specsDir = path.join(root, 'specs');
+  const out = [];
+  if (!fs.existsSync(specsDir)) return out;
+  for (const name of fs.readdirSync(specsDir)) {
+    const specDir = path.join(specsDir, name);
+    if (!fs.statSync(specDir).isDirectory()) continue;
+    for (const base of ['gate.sh', 'gate.mjs']) {
+      const p = path.join(specDir, base);
+      if (fs.existsSync(p)) out.push(p);
+    }
+    const probesDir = path.join(specDir, 'probes');
+    if (!fs.existsSync(probesDir)) continue;
+    const walk = (d) => {
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        const p = path.join(d, e.name);
+        if (e.isDirectory()) walk(p); else out.push(p);
+      }
+    };
+    walk(probesDir);
+  }
+  return out;
+}
+// THE PREDICATE: no gate-or-probe file outside FREEZE_LITERALS carries the
+// current RUNNER_VERSION on a non-comment line. Exercised by the two arms
+// beside it in tests/gate.js, on a planted tree (a code-line plant reads red
+// naming the file; a comment-line plant reads green).
+function releaseVersionLiteralCheck(root) {
+  const { RUNNER_VERSION } = require('../config');
+  // The published tree ships neither the freeze table (scripts/pipeline.mjs is a pipeline file) nor specs/: there is
+  // nothing to read, so the check passes with no file read, as the neighbouring source-only checks do.
+  if (!fs.existsSync(path.join(root, 'scripts', 'pipeline.mjs')) || !fs.existsSync(path.join(root, 'specs'))) {
+    return { pass: true, filesRead: 0, violations: [], version: RUNNER_VERSION, exempt: [] };
+  }
+  const exempt = freezeLiteralFiles(root);
+  const files = specGateAndProbeFiles(root);
+  const violations = [];
+  for (const f of files) {
+    const rel = path.relative(root, f).split(path.sep).join('/');
+    if (exempt.has(rel)) continue;
+    const lines = fs.readFileSync(f, 'utf8').split('\n');
+    lines.forEach((line, i) => {
+      if (!line.includes(RUNNER_VERSION) || isCommentLine(line)) return;
+      violations.push({ file: rel, line: i + 1 });
+    });
+  }
+  return { pass: violations.length === 0, filesRead: files.length, violations, version: RUNNER_VERSION, exempt: [...exempt] };
+}
+
+// ── a pipe into grep -q, in a shell file under pipefail (issue 31) ───────────
+//
+// Bash's printf builtin writes a multi-line text to a pipe one line at a time, and grep -q exits at the first
+// line that matches. When the match is not on the last line, the producer can be left writing to a closed pipe,
+// gets SIGPIPE, and the pipe reads 141: under `set -o pipefail` the check fails although the text holds the
+// pattern. On an idle box this did not happen in 3000 runs; with six busy loops it happened in 9 of 3000, and a
+// sharded sweep is that load. Dropping the -q and sending grep's output to /dev/null keeps the exit status and
+// makes grep read the whole text. Runs HERE, not only beside a spec, for the usual reason: `specs/` is excluded
+// from the published tree and no workflow runs a spec gate.
+const PIPE_INTO_QUIET_GREP = /(?<!\|)\|(?!\|)\s*e?grep\s+(?:(?:-[A-Za-z]+|--[a-z-]+)\s+)*(?:-[A-Za-z]*q[A-Za-z]*|--quiet|--silent)(?=\s|$)/;
+function pipefailQuietGrepCheck(root) {
+  const specsDir = path.join(root, 'specs');
+  if (!fs.existsSync(specsDir)) return { pass: true, filesRead: 0, violations: [] };
+  const files = specGateAndProbeFiles(root).filter((f) => f.endsWith('.sh'));
+  const scriptsDir = path.join(root, 'scripts');
+  if (fs.existsSync(scriptsDir)) for (const e of fs.readdirSync(scriptsDir)) if (e.endsWith('.sh')) files.push(path.join(scriptsDir, e));
+  const violations = [];
+  for (const f of files) {
+    const lines = fs.readFileSync(f, 'utf8').split('\n');
+    if (!lines.some((l) => !isCommentLine(l) && /\bpipefail\b/.test(l))) continue;
+    const rel = path.relative(root, f).split(path.sep).join('/');
+    lines.forEach((line, i) => { if (!isCommentLine(line) && PIPE_INTO_QUIET_GREP.test(line)) violations.push({ file: rel, line: i + 1 }); });
+  }
+  return { pass: violations.length === 0, filesRead: files.length, violations };
+}
+
 // ── the published tree's exclusion checks, and whether they apply ────────────
 //
 // Spec 028 A-028-35. Four checks keep governance files, state/, the pending-publish
@@ -1102,9 +1206,376 @@ function publishExclusionHits(files) {
 // tests/gate.js` and the manifest-parse steps both count. A file name inside an
 // echo or error message does not count. A path carrying `$`, `*`, `{` or a URL
 // scheme is not a path in this tree and is skipped. A local action, `uses:
-// ./dir`, needs `dir/action.yml` or `dir/action.yaml`. ABSENCE IS NEVER A PASS: a tree whose workflows yield no
-// subject at all reports that as a problem of its own, so an unreadable workflow
-// or a parser that stopped matching goes red rather than green.
+// ./dir` on a step, needs `dir/action.yml` or `dir/action.yaml`. ABSENCE IS NEVER
+// A PASS: a tree whose workflows yield no subject at all reports that as a
+// problem of its own, so an unreadable workflow or a parser that stopped matching
+// goes red rather than green.
+//
+// A-028-55 (the pipeline program, 6 Oct 2026) makes the reader more precise, in
+// three ways, and exempts nothing by path:
+//
+// 1. A job-level `uses: ./...` is a reusable-workflow call, not an action. It
+//    must name `./.github/workflows/<name>.yml` (or `.yaml`), that file must be
+//    in this tree, and its `on:` must declare `workflow_call`. Anything else at
+//    job level is RED. Step-level `uses: ./dir` keeps the action rule above.
+// 2. A step's path is resolved from the step's working directory: a plain `cd
+//    <literal>` command moves it, a subshell restores it, and anything the shell
+//    reader below cannot follow (a `cd` to a variable, `pushd`, a function that
+//    changes directory, `working-directory:`, a shell that is not bash or sh)
+//    makes it UNKNOWN. An unknown directory resolves the path as written, which
+//    is the rule before A-028-55, and no production can cover it.
+// 3. A path is not a file of this tree ONLY IF an earlier step of the SAME job,
+//    or an earlier command of the same step, produces it: an `actions/checkout`
+//    step with `path:`, an `actions/download-artifact` step with `path:`, or a
+//    command that writes it (a `>` or `>>` redirect, `mkdir`, `tar -x ... -C`,
+//    `cp ... <dest>`, `npm pack --pack-destination`, `git clone <src> <dest>`).
+//    A path under a produced directory is covered. A checkout of THIS repository
+//    (no `repository:` input) at `path: P` is not a production: `P/x` is read as
+//    this tree's `x`, which must exist. Production in another job, production
+//    after the read, and anything the reader cannot parse leave the path RED.
+//    A production that may not happen does not count: a command inside if,
+//    while, until, for or case, or beside `||`, or inside a function body; and a
+//    step under `if:` covers only reads in steps under the same `if:` text.
+
+const SHELL_OK = /^(?:bash|sh)\b/;
+
+// The `on:` block of a workflow, read for one trigger name. Inline scalar, inline
+// list and block mapping or list forms; anything else reads as not declared.
+function declaresTrigger(text, trigger) {
+  const lines = String(text).split('\n');
+  const i = lines.findIndex((l) => /^(?:on|"on"|'on')\s*:/.test(l));
+  if (i < 0) return false;
+  const unq = (s) => s.trim().replace(/^['"]|['"]$/g, '');
+  const rest = lines[i].replace(/^[^:]*:/, '').replace(/\s+#.*$/, '').trim();
+  if (rest) {
+    if (/^\[.*\]$/.test(rest)) return rest.slice(1, -1).split(',').map(unq).includes(trigger);
+    return unq(rest) === trigger;
+  }
+  let ind = null;
+  for (let j = i + 1; j < lines.length; j += 1) {
+    const l = lines[j];
+    if (!l.trim() || /^\s*#/.test(l)) continue;
+    const d = l.length - l.trimStart().length;
+    if (d === 0) break;
+    if (ind === null) ind = d;
+    if (d !== ind) continue;
+    const m = /^\s*(?:-\s+)?(['"]?)([A-Za-z_][\w-]*)\1\s*(?::|$)/.exec(l);
+    if (m && m[2] === trigger) return true;
+  }
+  return false;
+}
+
+// The jobs and steps of a workflow, by indentation. Each line index maps to the
+// job and step it sits in; `jobKey` marks a key of the job itself. A line the
+// structure does not place maps to nothing and keeps the rule before A-028-55.
+function workflowStructure(lines) {
+  const ind = (l) => l.length - l.trimStart().length;
+  const content = (l) => l.trim() !== '' && !/^\s*#/.test(l);
+  const info = new Array(lines.length).fill(null);
+  const jobs = [];
+  let fileUnknown = false;
+  const jobsAt = lines.findIndex((l) => /^jobs:\s*(?:#.*)?$/.test(l));
+  for (let i = 0; i < lines.length; i += 1) {
+    if (/^\s*working-directory\s*:/.test(lines[i]) && (jobsAt < 0 || i < jobsAt)) fileUnknown = true;
+    if (/^\s*shell\s*:/.test(lines[i]) && (jobsAt < 0 || i < jobsAt) && !SHELL_OK.test(lines[i].replace(/^\s*shell\s*:\s*/, ''))) fileUnknown = true;
+  }
+  if (jobsAt < 0) return { info, jobs, fileUnknown };
+  let end = lines.length;
+  for (let i = jobsAt + 1; i < lines.length; i += 1) if (content(lines[i]) && ind(lines[i]) === 0) { end = i; break; }
+  const first = lines.findIndex((l, i) => i > jobsAt && i < end && content(l));
+  if (first < 0) return { info, jobs, fileUnknown };
+  const jobIndent = ind(lines[first]);
+  const heads = [];
+  for (let i = first; i < end; i += 1) {
+    if (!content(lines[i])) continue;
+    if (ind(lines[i]) < jobIndent) return { info, jobs, fileUnknown };
+    const h = ind(lines[i]) === jobIndent && /^\s*([A-Za-z_][\w-]*)\s*:\s*(?:#.*)?$/.exec(lines[i]);
+    if (h) heads.push({ id: h[1], start: i });
+  }
+  heads.forEach((h, n) => {
+    const job = { id: h.id, line: h.start, end: n + 1 < heads.length ? heads[n + 1].start : end, steps: [], unknown: false };
+    jobs.push(job);
+    const k0 = lines.findIndex((l, i) => i > h.start && i < job.end && content(l));
+    if (k0 < 0) return;
+    const keyIndent = ind(lines[k0]);
+    let i = k0;
+    while (i < job.end) {
+      const l = lines[i];
+      if (!content(l)) { i += 1; continue; }
+      if (ind(l) === keyIndent) {
+        info[i] = { job: jobs.length - 1, step: null, jobKey: true };
+        if (/^\s*steps\s*:\s*(?:#.*)?$/.test(l)) {
+          i += 1;
+          let stepIndent = null;
+          while (i < job.end) {
+            const s = lines[i];
+            if (!content(s)) { i += 1; continue; }
+            if (ind(s) < keyIndent || (ind(s) === keyIndent && !/^\s*-(?:\s|$)/.test(s))) break;
+            if (stepIndent === null && /^\s*-(?:\s|$)/.test(s)) stepIndent = ind(s);
+            if (stepIndent !== null && ind(s) === stepIndent && /^\s*-(?:\s|$)/.test(s)) {
+              const keyCol = stepIndent + (/^\s*-(\s*)/.exec(s)[1].length || 1) + 1;
+              job.steps.push({ line: i, keyCol, uses: null, with: {}, unknown: false });
+            }
+            if (job.steps.length) {
+              const st = job.steps[job.steps.length - 1];
+              info[i] = { job: jobs.length - 1, step: job.steps.length - 1, jobKey: false };
+              const body = s.replace(/^\s*-\s*/, (m) => ' '.repeat(m.length));
+              const kv = /^(\s*)([\w-]+)\s*:\s*(.*?)\s*$/.exec(body);
+              if (kv && kv[1].length === st.keyCol) {
+                const v = kv[3].replace(/\s+#.*$/, '').replace(/^(['"])(.*)\1$/, '$2');
+                st.cur = kv[2];
+                if (kv[2] === 'uses') st.uses = v;
+                if (kv[2] === 'if') st.cond = v;
+                if (kv[2] === 'working-directory') st.unknown = true;
+                if (kv[2] === 'shell' && !SHELL_OK.test(v)) st.unknown = true;
+              } else if (st.cur === 'if' && ind(s) > st.keyCol) {
+                st.cond = `${st.cond}\n${s.trim()}`;
+              } else if (kv && st.cur === 'with' && kv[1].length > st.keyCol) {
+                st.with[kv[2]] = kv[3].replace(/\s+#.*$/, '').replace(/^(['"])(.*)\1$/, '$2');
+              }
+            }
+            i += 1;
+          }
+          continue;
+        }
+      } else if (ind(l) > keyIndent) {
+        info[i] = { job: jobs.length - 1, step: null, jobKey: false };
+      }
+      i += 1;
+    }
+    for (let j = h.start; j < job.end; j += 1) {
+      if (info[j] && info[j].step !== null) continue;
+      if (/^\s*working-directory\s*:/.test(lines[j])) job.unknown = true;
+      if (/^\s*shell\s*:/.test(lines[j]) && !SHELL_OK.test(lines[j].replace(/^\s*shell\s*:\s*/, ''))) job.unknown = true;
+    }
+  });
+  return { info, jobs, fileUnknown };
+}
+
+// A conservative reader of one `run:` block as bash. It follows quoting,
+// `$(...)`, backquotes, comments, heredocs and line continuations, and yields the
+// directory every offset runs in (`null` when it cannot follow) and the paths
+// the block's own commands produce, each at the offset where its command ends.
+// It never reads inside a command substitution: what that runs is opaque here.
+// When the text cannot be read (an unclosed quote or substitution) it returns
+// `ok: false` and the step is held to the rule before A-028-55.
+function readShell(S, startCwd) {
+  const N = S.length;
+  const fail = { ok: false, cwdAt: () => null, produced: [] };
+  const skipDouble = (j) => {
+    for (let k = j + 1; k < N; k += 1) {
+      const c = S[k];
+      if (c === '\\') { k += 1; continue; }
+      if (c === '$' && S[k + 1] === '(') { k = skipSubst(k) - 1; if (k < 0) return -1; continue; }
+      if (c === '`') { k = S.indexOf('`', k + 1); if (k < 0) return -1; continue; }
+      if (c === '"') return k + 1;
+    }
+    return -1;
+  };
+  const skipSubst = (j) => {
+    let depth = 0;
+    for (let k = j + 1; k < N; k += 1) {
+      const c = S[k];
+      if (c === '(') depth += 1;
+      else if (c === ')') { depth -= 1; if (depth === 0) return k + 1; }
+      else if (c === "'") { k = S.indexOf("'", k + 1); if (k < 0) return -1; }
+      else if (c === '"') { k = skipDouble(k) - 1; if (k < 0) return -1; }
+      else if (c === '\\') k += 1;
+      else if (c === '`') { k = S.indexOf('`', k + 1); if (k < 0) return -1; }
+    }
+    return -1;
+  };
+  // tokens: w (word: raw, lit or null), op, r (redirect: op, fd), nl
+  const toks = [];
+  let i = 0;
+  let word = null;
+  let heredocs = [];
+  const endWord = () => { if (word) { toks.push(word); word = null; } };
+  const startWord = (at) => { if (!word) word = { t: 'w', raw: '', lit: '', pos: at, end: at }; };
+  while (i < N) {
+    const c = S[i];
+    if (c === '\n') {
+      endWord(); toks.push({ t: 'op', op: ';', pos: i });
+      i += 1;
+      for (const d of heredocs) {
+        while (i < N) {
+          const e = S.indexOf('\n', i); const line = S.slice(i, e < 0 ? N : e);
+          i = e < 0 ? N : e + 1;
+          if ((d.strip ? line.replace(/^\t+/, '') : line) === d.delim || line.trim() === d.delim) break;
+        }
+      }
+      heredocs = [];
+      continue;
+    }
+    if (c === ' ' || c === '\t') { endWord(); i += 1; continue; }
+    if (c === '#' && !word) { const e = S.indexOf('\n', i); i = e < 0 ? N : e; continue; }
+    if (c === '\\') {
+      if (S[i + 1] === '\n') { i += 2; continue; }
+      startWord(i); word.raw += S.slice(i, i + 2); if (word.lit !== null) word.lit += S[i + 1] || ''; i += 2; word.end = i; continue;
+    }
+    if (c === "'") {
+      const e = S.indexOf("'", i + 1); if (e < 0) return fail;
+      startWord(i); word.raw += S.slice(i, e + 1); if (word.lit !== null) word.lit += S.slice(i + 1, e); i = e + 1; word.end = i; continue;
+    }
+    if (c === '"') {
+      const e = skipDouble(i); if (e < 0) return fail;
+      startWord(i); const inner = S.slice(i + 1, e - 1);
+      word.raw += S.slice(i, e); if (word.lit !== null) word.lit = /[$`\\]/.test(inner) ? null : word.lit + inner; i = e; word.end = i; continue;
+    }
+    if (c === '$' && S[i + 1] === '(') {
+      const e = skipSubst(i); if (e < 0) return fail;
+      startWord(i); word.raw += S.slice(i, e); word.lit = null; i = e; word.end = i; continue;
+    }
+    if (c === '`') {
+      const e = S.indexOf('`', i + 1); if (e < 0) return fail;
+      startWord(i); word.raw += S.slice(i, e + 1); word.lit = null; i = e + 1; word.end = i; continue;
+    }
+    const two = S.slice(i, i + 2);
+    if (two === '&&' || two === '||' || two === ';;') { endWord(); toks.push({ t: 'op', op: two, pos: i }); i += 2; continue; }
+    if (c === '>' || c === '<' || (c === '&' && S[i + 1] === '>')) {
+      let fd = null;
+      if (word && /^\d+$/.test(word.raw)) { fd = word.raw; word = null; }
+      endWord();
+      const m = /^(?:&>>|&>|>>|>\||>&|>|<<<|<<-|<<|<&|<>|<)/.exec(S.slice(i));
+      const op = m[0];
+      i += op.length;
+      if (op === '<<' || op === '<<-') {
+        while (S[i] === ' ' || S[i] === '\t') i += 1;
+        const dm = /^(['"]?)([A-Za-z0-9_]+)\1/.exec(S.slice(i));
+        if (!dm) return fail;
+        heredocs.push({ delim: dm[2], strip: op === '<<-' });
+        i += dm[0].length;
+        continue;
+      }
+      toks.push({ t: 'r', op, fd, pos: i - op.length });
+      continue;
+    }
+    if (c === ';' || c === '|' || c === '&' || c === '(' || c === ')') { endWord(); toks.push({ t: 'op', op: c, pos: i }); i += 1; continue; }
+    startWord(i);
+    word.raw += c; if (word.lit !== null) word.lit += c; i += 1; word.end = i;
+  }
+  endWord();
+  for (const t of toks) if (t.t === 'w' && t.lit !== null && /[*?[\]{}~]/.test(t.lit)) t.lit = null;
+
+  const norm = (p) => path.posix.normalize(p).replace(/\/+$/, '') || '.';
+  const join = (cwd, p) => (cwd === null || p === null || p.startsWith('/') ? null : norm(path.posix.join(cwd, p)));
+  const events = [{ pos: -1, cwd: startCwd }];
+  const produced = [];
+  const stack = [];
+  const cases = [];
+  let cwd = startCwd;
+  let fnDepth = 0;
+  let fnCd = false;
+  let cmd = [];
+  const set = (pos, v) => { cwd = v; events.push({ pos, cwd: v }); };
+  const KEYWORDS = new Set(['if', 'then', 'else', 'elif', 'do', 'while', 'until', '!', '{', 'time']);
+  // A command inside if, while, until, for or case, or on either side of `||`,
+  // may not run: its `cd` makes the directory unknown and it produces nothing.
+  let nest = 0;
+  let lastSep = ';';
+  const finish = (endPos, sep = ';') => {
+    try { command(endPos, sep); } finally { lastSep = sep; }
+  };
+  const command = (endPos, sep) => {
+    const words = cmd.filter((t) => t.t === 'w');
+    const redirs = [];
+    for (let n = 0; n < cmd.length; n += 1) if (cmd[n].t === 'r') redirs.push({ r: cmd[n], target: cmd[n + 1] && cmd[n + 1].t === 'w' ? cmd[n + 1] : null });
+    const targets = new Set(redirs.map((x) => x.target).filter(Boolean));
+    let argv = words.filter((w) => !targets.has(w));
+    while (argv.length && (KEYWORDS.has(argv[0].raw) || /^[A-Za-z_]\w*=/.test(argv[0].raw))) {
+      if (['if', 'while', 'until'].includes(argv[0].raw)) nest += 1;
+      argv = argv.slice(1);
+    }
+    cmd = [];
+    const name = argv.length ? argv[0].raw : '';
+    if (name === 'case') { cases.push(stack.length); nest += 1; return; }
+    if (name === 'esac') { cases.pop(); nest = Math.max(0, nest - 1); return; }
+    if (name === 'fi' || name === 'done') { nest = Math.max(0, nest - 1); return; }
+    if (name === 'for' || name === 'select') { nest += 1; return; }
+    const sure = nest === 0 && lastSep !== '||' && sep !== '||';
+    const rec = (w, dir, via) => {
+      if (fnDepth || !sure || !w || w.lit === null) return;
+      const p = join(cwd, w.lit);
+      if (p !== null) produced.push({ pos: endPos, path: p, dir, via });
+    };
+    for (const { r, target } of redirs) {
+      if (['>', '>>', '>|', '&>', '&>>'].includes(r.op) && (r.fd === null || r.fd === '1')) rec(target, false, `a ${r.op} redirect`);
+    }
+    const args = argv.slice(1);
+    if (name === 'cd' || name === 'pushd' || name === 'popd') {
+      if (fnDepth) { fnCd = true; return; }
+      const a = args.filter((w) => w.raw !== '--');
+      if (name === 'cd' && sure && a.length === 1 && a[0].lit !== null && !a[0].lit.startsWith('-')) set(endPos, join(cwd, a[0].lit));
+      else set(endPos, null);
+      return;
+    }
+    const pos = args.filter((w) => !w.raw.startsWith('-'));
+    if (name === 'mkdir') { for (const w of args) if (!w.raw.startsWith('-')) rec(w, true, 'mkdir'); return; }
+    if (name === 'cp' && pos.length >= 2 && !args.some((w) => /^-(?:t|-target-directory)/.test(w.raw))) { rec(pos[pos.length - 1], true, 'cp'); return; }
+    if (name === 'tar' && args.length && /^-?[A-Za-z]*x|^--extract$/.test(args[0].raw)) {
+      for (let n = 0; n < args.length; n += 1) {
+        if (args[n].raw === '-C' || args[n].raw === '--directory') rec(args[n + 1], true, 'tar -x -C');
+        else if (args[n].raw.startsWith('--directory=') && args[n].lit !== null) rec({ lit: args[n].lit.slice(12) }, true, 'tar -x --directory');
+      }
+      return;
+    }
+    if (name === 'npm' && args.length && args[0].raw === 'pack') {
+      for (let n = 1; n < args.length; n += 1) {
+        if (args[n].raw === '--pack-destination') rec(args[n + 1], true, 'npm pack --pack-destination');
+        else if (args[n].raw.startsWith('--pack-destination=') && args[n].lit !== null) rec({ lit: args[n].lit.slice(19) }, true, 'npm pack --pack-destination');
+      }
+      return;
+    }
+    if (name === 'git') {
+      const VAL = new Set(['-b', '--branch', '--depth', '-o', '--origin', '-c', '--config', '-u', '--upload-pack', '--reference', '--template', '--separate-git-dir', '-j', '--jobs', '--filter', '--shallow-since', '--shallow-exclude', '--server-option']);
+      const n0 = args.findIndex((w) => w.raw === 'clone');
+      if (n0 < 0 || args.slice(0, n0).some((w) => !w.raw.startsWith('-'))) return;
+      const posn = [];
+      for (let n = n0 + 1; n < args.length; n += 1) {
+        if (VAL.has(args[n].raw)) { n += 1; continue; }
+        if (args[n].raw.startsWith('-')) continue;
+        posn.push(args[n]);
+      }
+      if (posn.length === 2) rec(posn[1], true, 'git clone');
+    }
+  };
+  for (let n = 0; n < toks.length; n += 1) {
+    const t = toks[n];
+    if (t.t === 'op' && [';', '&&', '||', '|', '&', ';;'].includes(t.op)) { finish(t.pos, t.op); continue; }
+    if (t.t === 'op' && t.op === '(') {
+      const prev = toks[n - 1];
+      const brace = toks.slice(n + 2).find((x) => !(x.t === 'op' && x.op === ';'));
+      if (prev && prev.t === 'w' && /^[A-Za-z_][\w-]*$/.test(prev.raw) && prev.pos + prev.raw.length === t.pos
+        && toks[n + 1] && toks[n + 1].op === ')' && brace && brace.t === 'w' && brace.raw === '{') {
+        // `name() {`: a function body runs where it is called, not here.
+        cmd = []; n += 1; fnDepth += 1;
+        let depth = 0;
+        for (let k = n + 1; k < toks.length; k += 1) {
+          if (toks[k].t === 'w' && toks[k].raw === '{') depth += 1;
+          if (toks[k].t === 'w' && toks[k].raw === '}') { depth -= 1; if (depth === 0) { toks[k].fnEnd = true; break; } }
+        }
+        continue;
+      }
+      finish(t.pos); stack.push(cwd); continue;
+    }
+    if (t.t === 'op' && t.op === ')') {
+      const head = cmd.find((x) => x.t === 'w');
+      if (head && head.raw === 'case') { cases.push(stack.length); nest += 1; cmd = []; continue; }
+      if (cases.length && cases[cases.length - 1] === stack.length) { cmd = []; continue; }
+      finish(t.pos);
+      if (!stack.length) return fail;
+      set(t.pos + 1, stack.pop());
+      continue;
+    }
+    if (t.fnEnd) { finish(t.pos); fnDepth -= 1; if (!fnDepth && fnCd) { set(t.pos + 1, null); fnCd = false; } continue; }
+    cmd.push(t);
+  }
+  finish(N);
+  if (stack.length || fnDepth) return fail;
+  const cwdAt = (pos) => { let v = startCwd; for (const e of events) if (e.pos <= pos) v = e.cwd; return v; };
+  return { ok: true, cwdAt, produced };
+}
+
 function workflowRunSubjects(root, { readDir = fs.readdirSync, readFile = (f) => fs.readFileSync(f, 'utf8'), exists = fs.existsSync } = {}) {
   const dir = path.join(root, '.github', 'workflows');
   let names = [];
@@ -1116,48 +1587,136 @@ function workflowRunSubjects(root, { readDir = fs.readdirSync, readFile = (f) =>
     new RegExp(`readFileSync\\(\\s*['"]${P}['"]`, 'g'),
     new RegExp(`require\\(\\s*['"](\\.\\.?\\/[A-Za-z0-9_./-]+)['"]`, 'g'),
   ];
+  const norm = (p) => path.posix.normalize(p).replace(/\/+$/, '') || '.';
+  const variants = (p, isModule) => (isModule ? [p, `${p}.js`, `${p}.mjs`, `${p}.cjs`, path.posix.join(p, 'index.js')] : [p]);
   for (const name of names) {
     const rel = `.github/workflows/${name}`;
     const lines = readFile(path.join(dir, name)).split('\n');
+    const st = workflowStructure(lines);
+    // productions per job: { step, pos, path, dir, via, repo } ; a step's YAML productions sit at pos -1
+    const prods = st.jobs.map(() => []);
+    const fileSubjects = [];
     for (let i = 0; i < lines.length; i += 1) {
+      const where = st.info[i];
       const u = /^(\s*)(?:-\s+)?uses:\s*(\.\/\S*)\s*$/.exec(lines[i]);
       if (u) {
         const d = u[2].replace(/\/+$/, '') || '.';
-        subjects.push({ workflow: rel, line: i + 1, kind: 'uses', path: d, candidates: [path.join(d, 'action.yml'), path.join(d, 'action.yaml')] });
+        if (where && where.jobKey) {
+          const target = d.replace(/^\.\//, '');
+          const ok = /^\.github\/workflows\/[^/]+\.ya?ml$/.test(target);
+          subjects.push({ workflow: rel, line: i + 1, kind: 'workflow', path: d, candidates: ok ? [target] : [], job: st.jobs[where.job].id, callable: null, not_workflow: !ok });
+        } else {
+          subjects.push({ workflow: rel, line: i + 1, kind: 'uses', path: d, candidates: [path.join(d, 'action.yml'), path.join(d, 'action.yaml')] });
+        }
         continue;
       }
       const m = /^(\s*)(?:-\s+)?run:\s*(.*)$/.exec(lines[i]);
       if (!m) continue;
       const commands = [];
       const inline = m[2].trim();
+      const folded = /^>[-+]?\s*$/.test(inline);
       if (/^[|>][-+]?\s*$/.test(inline)) {
         const indent = m[1].length;
         for (let j = i + 1; j < lines.length; j += 1) {
-          if (lines[j].trim() === '') continue;
+          if (lines[j].trim() === '') { commands.push({ text: '', line: j + 1 }); continue; }
           if (lines[j].length - lines[j].trimStart().length <= indent) break;
           commands.push({ text: lines[j], line: j + 1 });
         }
+        while (commands.length && commands[commands.length - 1].text === '') commands.pop();
       } else commands.push({ text: inline, line: i + 1 });
-      for (const c of commands) {
-        if (/^\s*#/.test(c.text)) continue;
+      // The block as one string, and where each line starts in it.
+      const starts = [];
+      let S = '';
+      for (const c of commands) { starts.push(S.length); S += `${c.text}\n`; }
+      const job = where ? where.job : null;
+      const step = where ? where.step : null;
+      const stepRec = job !== null && step !== null ? st.jobs[job].steps[step] : null;
+      const followable = stepRec && !folded && !st.fileUnknown && !st.jobs[job].unknown && !stepRec.unknown;
+      const sh = followable ? readShell(S, '.') : { ok: false, cwdAt: () => null, produced: [] };
+      if (sh.ok) for (const p of sh.produced) prods[job].push({ step, cond: stepRec.cond || null, pos: p.pos, path: p.path, dir: p.dir, via: `${p.via} at line ${commands[starts.filter((s) => s <= p.pos).length - 1].line}`, line: commands[starts.filter((s) => s <= p.pos).length - 1].line });
+      commands.forEach((c, n) => {
+        if (/^\s*#/.test(c.text)) return;
         for (const re of RUNS) {
           for (const mm of c.text.matchAll(re)) {
             const p = mm[1].replace(/^\.\//, '');
             if (/[$*{]/.test(p) || /:\/\//.test(p)) continue;
             // `require('./lib/receipt')` names a module, not a file: Node tries the
             // path as written, then with .js, .mjs, .cjs, then as a directory index.
-            const candidates = re === RUNS[2] ? [p, `${p}.js`, `${p}.mjs`, `${p}.cjs`, path.join(p, 'index.js')] : [p];
-            subjects.push({ workflow: rel, line: c.line, kind: 'run', path: p, candidates });
+            const pos = starts[n] + mm.index;
+            const cwd = sh.ok ? sh.cwdAt(pos) : null;
+            const resolved = cwd === null ? null : norm(path.posix.join(cwd, p));
+            fileSubjects.push({ workflow: rel, line: c.line, kind: 'run', path: p, resolved, isModule: re === RUNS[2], job, step, cond: stepRec ? stepRec.cond || null : null, pos });
           }
         }
+      });
+    }
+    // YAML productions: checkout and download-artifact steps with a literal `path:`.
+    st.jobs.forEach((j, jn) => j.steps.forEach((s, sn) => {
+      const p = s.with.path;
+      if (!s.uses || !p || /[$*{]/.test(p) || p.startsWith('/')) return;
+      const action = s.uses.replace(/@.*$/, '');
+      if (action === 'actions/checkout') prods[jn].push({ step: sn, cond: s.cond || null, pos: -1, path: norm(p), dir: true, via: `actions/checkout path: ${p} at line ${s.line + 1}`, line: s.line + 1, thisRepo: !s.with.repository });
+      else if (action === 'actions/download-artifact') prods[jn].push({ step: sn, cond: s.cond || null, pos: -1, path: norm(p), dir: true, via: `actions/download-artifact path: ${p} at line ${s.line + 1}`, line: s.line + 1 });
+    }));
+    for (const x of fileSubjects) {
+      const out = { workflow: x.workflow, line: x.line, kind: 'run', path: x.path };
+      const own = x.job !== null ? prods[x.job] : [];
+      const under = (q) => x.resolved !== null && (x.resolved === q.path || (q.dir && (q.path === '.' ? !x.resolved.startsWith('../') : x.resolved.startsWith(`${q.path}/`))));
+      // A step under `if:` may not run: what it produces covers only its own reads
+      // and the reads of steps under the same condition, read as the same text.
+      const before = (q) => (q.step < x.step && (q.cond === null || q.cond === x.cond)) || (q.step === x.step && q.pos < x.pos);
+      const cover = own.filter((q) => under(q) && before(q))
+        .sort((a, b) => b.path.length - a.path.length || b.step - a.step || b.pos - a.pos)[0];
+      if (x.resolved !== null && x.resolved !== x.path) out.resolved = x.resolved;
+      if (cover && cover.thisRepo) {
+        const inner = cover.path === '.' ? x.resolved : x.resolved.slice(cover.path.length + 1);
+        out.candidates = variants(inner, x.isModule);
+        out.via = `${cover.via}, a checkout of this repository, so ${x.resolved} is this tree's ${inner}`;
+      } else if (cover) {
+        out.candidates = [];
+        out.produced_by = cover.via;
+      } else {
+        const base = x.resolved === null ? x.path : x.resolved;
+        out.candidates = base.startsWith('../') ? [] : variants(base, x.isModule);
+        const later = own.find((q) => under(q) && !before(q));
+        if (later) out.later = later.via;
+        if (!later && x.resolved !== null) {
+          const other = prods.findIndex((ps, jn) => jn !== x.job && ps.some((q) => (x.resolved === q.path || (q.dir && x.resolved.startsWith(`${q.path}/`)))));
+          if (other >= 0) out.other_job = st.jobs[other].id;
+        }
       }
+      subjects.push(out);
     }
   }
-  const missing = subjects.filter((x) => !x.candidates.some((c) => exists(path.join(root, c))));
+  const covered = (x) => x.kind === 'run' && x.produced_by;
+  const missing = subjects.filter((x) => {
+    if (covered(x)) return false;
+    if (x.kind === 'workflow') {
+      if (x.not_workflow || !exists(path.join(root, x.candidates[0]))) return true;
+      let text = '';
+      try { text = readFile(path.join(root, x.candidates[0])); } catch (_e) { text = ''; }
+      x.callable = declaresTrigger(text, 'workflow_call');
+      return !x.callable;
+    }
+    return !x.candidates.some((c) => exists(path.join(root, c)));
+  });
   const problems = [];
   if (!names.length) problems.push(`no workflow under ${path.relative(root, dir) || dir} was read, so no shipped step was checked`);
   else if (!subjects.length) problems.push(`${names.length} workflow(s) read and no file a step runs was found in any of them; a parser that matches nothing must not report a pass`);
-  for (const x of missing) problems.push(`${x.workflow}:${x.line} ${x.kind === 'uses' ? 'uses the local action' : 'runs'} ${x.path}, which this tree does not carry`);
+  for (const x of missing) {
+    if (x.kind === 'workflow') {
+      if (x.not_workflow) problems.push(`${x.workflow}:${x.line} job ${x.job} calls ${x.path}, which is not a workflow file under .github/workflows/`);
+      else if (x.callable === false) problems.push(`${x.workflow}:${x.line} job ${x.job} calls the reusable workflow ${x.path}, which declares no workflow_call trigger`);
+      else problems.push(`${x.workflow}:${x.line} job ${x.job} calls the reusable workflow ${x.path}, which this tree does not carry`);
+      continue;
+    }
+    let s = `${x.workflow}:${x.line} ${x.kind === 'uses' ? 'uses the local action' : 'runs'} ${x.path}, which this tree does not carry`;
+    if (x.resolved) s += ` (read as ${x.resolved} from the step's working directory)`;
+    if (x.via) s += ` (${x.via})`;
+    if (x.later) s += `; the job produces it only later, by ${x.later}`;
+    if (x.other_job) s += `; only job ${x.other_job} produces it, and a job does not see another job's files`;
+    problems.push(s);
+  }
   return { workflows: names.map((n) => `.github/workflows/${n}`), subjects, missing, problems };
 }
 
@@ -1165,4 +1724,5 @@ module.exports = {
   probeCopies, probeCopyExceptionProblems, probeCopiesCheck, PROBE_COPY_EXCEPTIONS, productFunctionExports,
   releaseEntryFacts, RELEASE_ENTRY_FACTS, publishedInvocations, WORDS, NARROWING_CLASSES, archiveReceipts, bandSites, WINDOW_SCOPES, productPathReaches, orphanModules, undeclaredHarnessOnly, HARNESS_ONLY_LIB, judgeSampleViolations, ATTRS_CARRYING_PROSE, attributeText, visibleText, documentText, countClaims, publishedFiles, signedReceiptClaims, FROZEN_SCHEMA, scanTimeoutLiterals,
   capLiteralClaims, capConstantNames, proseBlocks, capLiterals, capSubjects, CAP_MUTATIONS, plantCapMutation, FROZEN_PROSE, RECORDED_OUTPUT,
-  workflowRunSubjects, exclusionCheckMode, sourceHistory, SOURCE_ROOT_COMMIT, publishExclusionHits, isInternalNarrative, PUBLISH_GOVERNANCE_SET };
+  workflowRunSubjects, declaresTrigger, workflowStructure, readShell, exclusionCheckMode, sourceHistory, SOURCE_ROOT_COMMIT, publishExclusionHits, isInternalNarrative, PUBLISH_GOVERNANCE_SET,
+  releaseVersionLiteralCheck, freezeLiteralFiles, specGateAndProbeFiles, pipefailQuietGrepCheck };

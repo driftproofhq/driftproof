@@ -411,7 +411,14 @@ fi
 # `^docs/reviews/`: spec 064. Each architecture review branch keeps its working
 # material there, several megabytes of it, none of it for the public tree. The
 # repository gate builds a scratch tree to hold this (tests/public-exclusion.js).
-EXCLUDE_RE='^reports/(week-[0-9][^/]*|phase-[0-9][^/]*)\.md$|^tests/gate-results\.json$|(^|/)[^/]*-draft/|^reports/pending-publish\.md$|^reports/interop-outreach\.md$|^(BACKLOG|CLAUDE|CONSTITUTION|DECISIONS)\.md$|^specs/|^state/|^docs/reviews/'
+# The pipeline files (PUBLIC-PATH CHANGE, the pipeline's Part 3): the private repository's workflows
+# except release.yml and the two selftests, its prompts and issue template, scripts/pipeline.mjs,
+# scripts/sweep-shards.mjs, scripts/runner-setup.sh, tests/pipeline.test.js and
+# tests/sweep-shards.test.js (a test does not ship without its subject) stay out of the public tree.
+# specs/000-governance/gate-map.json is already out by `^specs/`. release.yml, release-record.json
+# (release.yml reads it), scripts/release-body.mjs and scripts/indexnow.mjs ship. Held by
+# tests/public-pipeline-exclusion.test.js.
+EXCLUDE_RE='^reports/(week-[0-9][^/]*|phase-[0-9][^/]*)\.md$|^tests/gate-results\.json$|(^|/)[^/]*-draft/|^reports/pending-publish\.md$|^reports/interop-outreach\.md$|^(BACKLOG|CLAUDE|CONSTITUTION|DECISIONS)\.md$|^specs/|^state/|^docs/reviews/|^\.github/workflows/(sweep|gates|nightly|build|review|fix-on-red|merge-on-green|queue|release-train|digest|labels)\.yml$|^\.github/prompts/|^\.github/ISSUE_TEMPLATE/spec\.yml$|^scripts/(pipeline|sweep-shards)\.mjs$|^scripts/runner-setup\.sh$|^tests/(pipeline|sweep-shards)\.test\.js$'
 
 # RECURSION BOUND, structural rather than a timeout, and a BACKSTOP rather than
 # the primary mechanism. This script's last act is to run the repo gate against the
