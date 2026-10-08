@@ -1070,6 +1070,101 @@ const answerPage = (render) => () => {
   return shell({ title, description: title, main });
 };
 
+// ── /benchmark-gap/ (spec 167) ──────────────────────────────────────────────────────────────
+// The companion calculator to the leaderboard-noise write-up (R-9): a reader types two scores and a
+// question count and sees whether the gap clears the benchmark's own sampling noise, by the same
+// frozen formula (docs/benchmark-gap/gap.js). Runs entirely in the browser; this file writes only the
+// markup and the preset table, never a figure the calculator itself computes.
+const BENCHMARK_GAP_PRESETS = [
+  ['SWE-bench Verified', 500, 'https://www.swebench.com/'],
+  ['SWE-bench Pro V2 Full', 642, 'https://scale.com/leaderboard/swe_bench_pro_public_v2'],
+  ['SWE-bench Lite', 300, 'https://www.swebench.com/'],
+  ['SWE-bench Multilingual', 300, 'https://www.swebench.com/'],
+  ['SWE-bench Multimodal', 517, 'https://www.swebench.com/'],
+  ['SWE-bench Full', 2294, 'https://www.swebench.com/'],
+  ['Terminal-Bench 4.0', 66, 'https://www.tbench.ai/'],
+  ['Terminal-Bench-Science 0.1', 70, 'https://www.tbench.ai/'],
+  ['Aider polyglot', 225, 'https://aider.chat/docs/leaderboards/'],
+  ['GPQA Diamond', 198, 'https://arxiv.org/abs/2311.12022'],
+  ['AIME 2025', 30, 'https://matharena.ai/'],
+  ["Humanity's Last Exam", 2500, 'https://lastexam.ai/'],
+  ['MMLU-Pro', 12032, 'https://huggingface.co/datasets/TIGER-Lab/MMLU-Pro'],
+  ['Chartography', 100, 'https://www.tbench.ai/'],
+  ['DeepSWE v1.1', 113, 'https://github.com/agentica-project/deepswe'],
+  ['RiemannBench', 25, 'https://github.com/epoch-research/riemannbench'],
+];
+function benchmarkGapPage() {
+  const options = BENCHMARK_GAP_PRESETS.map(([label, n, source]) => `<option value="${n}" title="N = ${n}, source: ${esc(source)}">${esc(label)} (${n})</option>`).join('\n');
+  const sources = BENCHMARK_GAP_PRESETS.map(([label, n, source]) => `<li>${esc(label)}: N = ${n}. <a href="${esc(source)}">${esc(source)}</a></li>`).join('\n');
+  const main = `<main class="screens">
+<section class="screen is-text">
+<h1>Benchmark gap calculator</h1>
+<p class="lede">Type two benchmark scores and the number of questions, and see whether the gap is bigger than the benchmark's own sampling noise.</p>
+<p>Method frozen 7 Oct 2026: Wilson 95% intervals and Newcombe's hybrid difference, written out in <a href="/benchmark-gap/gap.js">gap.js</a>; the verdict words are the <a href="/methodology/">methodology page</a>'s.</p>
+
+<div class="gap-tabs" role="tablist" aria-label="Calculator mode">
+<button type="button" class="gap-tab" role="tab" data-tab="items" aria-selected="true">Two scores (item noise)</button>
+<button type="button" class="gap-tab" role="tab" data-tab="runs" aria-selected="false">Repeated runs (band rule)</button>
+</div>
+
+<section id="gap-panel-items" class="gap-panel">
+<h2>Two scores (item noise)</h2>
+<label for="gap-preset">Preset</label>
+<select id="gap-preset"><option value="">Choose a benchmark&hellip;</option>
+${options}
+</select>
+<label for="gap-score-a">Score A (%)</label>
+<input id="gap-score-a" type="number" min="0" max="100" step="0.01" inputmode="decimal">
+<label for="gap-score-b">Score B (%)</label>
+<input id="gap-score-b" type="number" min="0" max="100" step="0.01" inputmode="decimal">
+<label for="gap-n">Questions (N)</label>
+<input id="gap-n" type="number" min="1" step="1" inputmode="numeric">
+<div id="gap-items-out" aria-live="polite"></div>
+</section>
+
+<section id="gap-panel-runs" class="gap-panel" hidden>
+<h2>Repeated runs (Driftproof's band rule)</h2>
+<p>Mean and standard deviation in percent, and the run count, per arm. This is the rule the published reports use: bands that do not overlap read separated. <a href="/methodology/">Methodology</a>.</p>
+<label for="gap-runs-a-mean">Arm A mean (%)</label>
+<input id="gap-runs-a-mean" type="number" step="any">
+<label for="gap-runs-a-sd">Arm A standard deviation (points)</label>
+<input id="gap-runs-a-sd" type="number" step="any" min="0">
+<label for="gap-runs-a-n">Arm A runs</label>
+<input id="gap-runs-a-n" type="number" step="1" min="0">
+<label for="gap-runs-b-mean">Arm B mean (%)</label>
+<input id="gap-runs-b-mean" type="number" step="any">
+<label for="gap-runs-b-sd">Arm B standard deviation (points)</label>
+<input id="gap-runs-b-sd" type="number" step="any" min="0">
+<label for="gap-runs-b-n">Arm B runs</label>
+<input id="gap-runs-b-n" type="number" step="1" min="0">
+<div id="gap-runs-out" aria-live="polite"></div>
+</section>
+
+<p><button type="button" id="gap-copy-link">Copy link</button></p>
+
+<h2>What this does not tell you</h2>
+<ul>
+<li>Item noise is not run noise: the two tabs answer different questions and use different rules.</li>
+<li>No separation detected is not equal ability: it means this sample size could not tell them apart.</li>
+<li>Both intervals assume independent questions.</li>
+</ul>
+
+<h2>Presets and their sources</h2>
+<ul class="gap-sources">
+${sources}
+</ul>
+
+<p>Method per the Driftproof paper (<a href="https://driftproofhq.com/paper">driftproofhq.com/paper</a>): the band rule and the verdict words.</p>
+</section>
+</main>
+<script src="/benchmark-gap/gap.js" defer></script>`;
+  return shell({
+    title: 'Benchmark gap calculator | Driftproof',
+    description: "Type two benchmark scores and the number of questions, and see whether the gap clears the benchmark's own sampling noise, by Wilson and Newcombe intervals.",
+    main,
+  });
+}
+
 const TARGETS = {
   'index.html': homepage,
   'glossary/index.html': glossaryPage,
@@ -1082,6 +1177,7 @@ const TARGETS = {
   'agent-skill-evaluation/index.html': answerPage(() => answers.questionPage('agent-skill-evaluation')),
   'agent-skill-regression-testing/index.html': answerPage(() => answers.questionPage('agent-skill-regression-testing')),
   'compare/index.html': answerPage(answers.comparePage),
+  'benchmark-gap/index.html': benchmarkGapPage,
   '404.html': notFoundPage,
   ...Object.fromEntries(Object.entries(STUBS).map(([slug, label]) => [`${slug}.html`, () => redirectStub(slug, label)])),
 };
