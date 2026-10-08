@@ -945,7 +945,26 @@ function patchMethodology(html, root = ROOT) {
   return out;
 }
 
-const PATCHES = { 'methodology/index.html': patchMethodology };
+// ── docs/interop.md: the receipt version it names (spec 004 A-004-3) ────────
+// The guide's contract sentence named the receipt spec version as typed text, and
+// it stayed at the version of the day it was written while the schema moved on.
+// The version is now read from spec/receipt.schema.json, the schema_version const
+// the served schema carries, and written into that sentence on every build. The
+// sentence is the anchor: where it is gone, the build fails rather than leaving a
+// version nobody wrote.
+const INTEROP_CONTRACT = /\(JSON Schema draft 2020-12, spec v\d+(?:\.\d+)+\)/;
+function receiptSchemaVersion(root = ROOT) {
+  const s = JSON.parse(fs.readFileSync(path.join(root, 'spec', 'receipt.schema.json'), 'utf8'));
+  const v = s && s.properties && s.properties.schema_version && s.properties.schema_version.const;
+  if (typeof v !== 'string' || !/^\d+(?:\.\d+)+$/.test(v)) throw new Error('spec/receipt.schema.json: no schema_version const to cite');
+  return v;
+}
+function patchInteropMd(md, root = ROOT) {
+  if (!INTEROP_CONTRACT.test(md)) throw new Error('docs/interop.md: the contract sentence that names the receipt spec version is no longer there');
+  return md.replace(INTEROP_CONTRACT, `(JSON Schema draft 2020-12, spec v${receiptSchemaVersion(root)})`);
+}
+
+const PATCHES = { 'methodology/index.html': patchMethodology, 'interop.md': patchInteropMd };
 
 // ── How this is built (spec 037 AC-4) ───────────────────────────────────────
 // The method in plain prose, with counts and no record contents. Every count is read
@@ -1101,4 +1120,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { paperPage, shell, heroReceipt, receiptWords, casesItem, reportCard, HOME_CARD_STAT, statePlot, plotState, subscribedPage, reportTypes, typeNote, word, bandFacts, bandsSection, floorFigure, checksSchemaVersion, tokensSchemaVersion, patchMethodology, PATCHES, homepage, reportsIndex, glossaryPage, reportTypesPage, notFoundPage, redirectStub, STUBS, TERMS, TARGETS, reader, stats, reports, buildCards };
+module.exports = { paperPage, shell, heroReceipt, receiptWords, casesItem, reportCard, HOME_CARD_STAT, statePlot, plotState, subscribedPage, reportTypes, typeNote, word, bandFacts, bandsSection, floorFigure, checksSchemaVersion, tokensSchemaVersion, patchMethodology, receiptSchemaVersion, patchInteropMd, PATCHES, homepage, reportsIndex, glossaryPage, reportTypesPage, notFoundPage, redirectStub, STUBS, TERMS, TARGETS, reader, stats, reports, buildCards };

@@ -8,7 +8,7 @@ the minimal stable summary other tools can consume without parsing full receipts
 
 The machine-readable receipt contract is
 [`spec/receipt.schema.json`](https://driftproofhq.com/spec/receipt.schema.json)
-(JSON Schema draft 2020-12, spec v0.4); the human companion is
+(JSON Schema draft 2020-12, spec v0.11); the human companion is
 [`spec/RECEIPT.md`](https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md).
 
 ## The honesty rule that governs every import

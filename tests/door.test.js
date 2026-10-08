@@ -22,6 +22,17 @@ const DOOR = path.join(ROOT, 'plugin', 'driftproof', 'lib', 'door.mjs');
 const FAKE_BIN = path.join(ROOT, 'specs', '028-claude-code-plugin', 'probes', 'bin');
 const made = [];
 const tmp = () => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'spec138-door-')); made.push(d); return d; };
+// A copy of door.mjs's semverGte (an ES module the CommonJS test cannot require).
+function semverGte(a, b) {
+  const pa = String(a).split('.').map(Number);
+  const pb = String(b).split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    const x = pa[i] || 0; const y = pb[i] || 0;
+    if (x > y) return true;
+    if (x < y) return false;
+  }
+  return true;
+}
 test.after(() => { for (const d of made) fs.rmSync(d, { recursive: true, force: true }); });
 
 // A sandbox: a working folder, a skill in it, and a spawn log.
@@ -188,13 +199,28 @@ test('init into a skill that exists needs the yes: refused without it, nothing s
     assert.equal(fs.readFileSync(md, 'utf8'), before, name);
     fs.rmSync(sb.log, { force: true });
   }
-  // The set state, the tree as the release bump leaves it (start_minimum equals RUNNER_VERSION): the yes goes past the
-  // guard, adds evals/evals.json and nothing else, and SKILL.md is as it was.
+  // The set state: a release has written start_minimum and it never moves after, so the tree's own
+  // start_minimum reads as a string no higher than the runner's own version. The yes goes past the guard, adds
+  // evals/evals.json and nothing else, and SKILL.md is as it was.
   const guard = JSON.parse(fs.readFileSync(path.join(ROOT, 'plugin', 'driftproof', 'version-guard.json'), 'utf8'));
-  assert.equal(guard.start_minimum, require('../config').RUNNER_VERSION, 'the tree records start_minimum as RUNNER_VERSION');
+  assert.equal(typeof guard.start_minimum, 'string', 'the tree records start_minimum as a string');
+  assert.ok(semverGte(require('../config').RUNNER_VERSION, guard.start_minimum), 'start_minimum is not above RUNNER_VERSION');
   const set = doorIn(sb, ['init', 'my-skill', '--confirm-write']);
   assert.equal(set.status, 0, set.stderr);
   assert.doesNotMatch(set.stderr, /init needs/);
+  assert.deepEqual(npx(sb).map((v) => v[0]), ['--version', 'init']);
+  assert.deepEqual(fs.readdirSync(sb.skill).sort(), ['SKILL.md', 'evals']);
+  assert.deepEqual(fs.readdirSync(path.join(sb.skill, 'evals')), ['evals.json']);
+  assert.equal(fs.readFileSync(md, 'utf8'), before);
+});
+
+test('a start_minimum set below the runner lets the yes through', () => {
+  const sb = sandbox({ suite: false });
+  const md = path.join(sb.skill, 'SKILL.md');
+  const before = fs.readFileSync(md, 'utf8');
+  const yes = doorIn(sb, ['init', 'my-skill', '--confirm-write'], { doorFile: guardedDoor('0.0.1') });
+  assert.equal(yes.status, 0, yes.stderr);
+  assert.doesNotMatch(yes.stderr, /init needs/);
   assert.deepEqual(npx(sb).map((v) => v[0]), ['--version', 'init']);
   assert.deepEqual(fs.readdirSync(sb.skill).sort(), ['SKILL.md', 'evals']);
   assert.deepEqual(fs.readdirSync(path.join(sb.skill, 'evals')), ['evals.json']);

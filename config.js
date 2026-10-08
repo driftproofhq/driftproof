@@ -9,7 +9,7 @@ const PROJECT_NAME = 'driftproof';
 // Bumped whenever the runner's behaviour or receipt-generation semantics change
 // in a way that could affect results. Recorded into every receipt as
 // run.runner_version so a receipt is reproducible against a known engine.
-const RUNNER_VERSION = '0.14.0';
+const RUNNER_VERSION = '0.15.0';
 
 // The eval format we CONSUME (we deliberately do not invent our own).
 const SUITE_FORMAT = 'agentskills.io/evals';

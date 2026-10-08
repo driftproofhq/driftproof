@@ -136,7 +136,30 @@ function runCodeql(tree, sha) {
   if (r.status === 1 && summary && summary.state === 'new' && summary.new.length) return { ...base, out: tilde(out), state: 'new', summary };
   return { ...base, out: tilde(out), state: 'unreadable', why: `the scan exited ${r.status === null ? 'with a signal' : r.status} and left ${summary ? `a ${summary.state} summary` : 'no summary'}: ${tail}` };
 }
+// ── the tools the gates need (spec 029 A-029-2) ─────────────────────────────────────────────
+// Three gates read a CLI that is not on PATH as a failure of their own. On 6 Oct 2026 a unit whose
+// PATH lacked ~/.local/bin read 013, 028 and 131 red, and the report said nothing of PATH. So a
+// sweep with either CLI missing does not run: it stops at its start, exit 2, naming the tool and the
+// PATH it read. A scan alone (--codeql-only) runs no gate and is not held to it.
+const REQUIRED_TOOLS = ['claude', 'spectrace'];
+function onPath(name, PATH = process.env.PATH || '') {
+  for (const dir of PATH.split(path.delimiter).filter(Boolean)) {
+    const f = path.join(dir, name);
+    try { if (fs.statSync(f).isFile()) { fs.accessSync(f, fs.constants.X_OK); return true; } } catch { /* not here */ }
+  }
+  return false;
+}
+const shownPath = () => tilde(process.env.PATH || '(unset)');
+
 async function main() {
+  process.stderr.write(`nightly: PATH ${shownPath()}\n`);
+  if (!codeqlOnly) {
+    const missing = REQUIRED_TOOLS.filter((t) => !onPath(t));
+    if (missing.length) {
+      process.stderr.write(`nightly: REFUSING: ${missing.join(' and ')} not found on PATH, so the gates that run ${missing.length > 1 ? 'them' : 'it'} would read red for a missing tool. Set PATH where this runs (the CLIs live in ~/.local/bin) and run again.\n  PATH: ${shownPath()}\n`);
+      return 2;
+    }
+  }
   fs.mkdirSync(path.join(state, 'runs'), { recursive: true });
   const lockFile = path.join(state, 'nightly.lock');
   const got = takeLock(lockFile);
@@ -245,6 +268,7 @@ async function report(r) {
     `Compared with ${r.greenCommit ? r.greenCommit.slice(0, 8) : 'nothing'}: ${r.refSource}.`,
     r.emission ? `Swept ${r.emission.runs.length} gates in ${(r.wall / 60000).toFixed(1)} min${only ? ` (PARTIAL: --only ${only.join(',')})` : ' (full)'}; emitter exit ${r.em.status}.` : `The emitter wrote no emission for ${r.sha.slice(0, 8)} (exit ${r.em.status}); see emit.log.`,
     `Alone on the box: ${alone ? 'yes' : `no: ${r.atStart.found.length} other gate, sweep or driver process(es) at start, ${atEnd.found.length} at the end`}.`,
+    `PATH: ${shownPath()}`,
     c ? `Conduct: refs ${c.nfr2.refs_clean ? 'unmoved' : 'MOVED'}, ${c.nfr2.unexcused.length} unexcused write(s), ${c.nfr2.survived_restore.length} unrestored, ${c.nfr3.left.length} sandbox(es) left.` : 'Conduct: not recorded.',
     ...codeql.sweepLines(r.codeql),
     '',
@@ -262,7 +286,7 @@ async function report(r) {
   const text = lines.slice(0, MAX_LINES).join('\n') + '\n';
 
   const rel = path.relative(state, r.runDir);
-  const result = { verdict, commit: r.sha, subject, ref, repo: tilde(repo), started: r.startedAt.toISOString(), wall_ms: r.wall, partial: only, codeql: r.codeql, reference: { source: r.refSource, commit: r.greenCommit }, new_red: newRed, rows, merges, alone, others_at_start: r.atStart, others_at_end: atEnd, inputs_copied: r.copied, emitter_exit: r.em.status, ...(candidate ? { candidate } : {}) };
+  const result = { verdict, commit: r.sha, subject, ref, repo: tilde(repo), path: shownPath(), started: r.startedAt.toISOString(), wall_ms: r.wall, partial: only, codeql: r.codeql, reference: { source: r.refSource, commit: r.greenCommit }, new_red: newRed, rows, merges, alone, others_at_start: r.atStart, others_at_end: atEnd, inputs_copied: r.copied, emitter_exit: r.em.status, ...(candidate ? { candidate } : {}) };
   fs.writeFileSync(path.join(r.runDir, 'report.md'), text);
   fs.writeFileSync(path.join(r.runDir, 'result.json'), JSON.stringify(result, null, 2) + '\n');
   // A partial run (--only) is never a reference: it writes last-partial.json and nothing that

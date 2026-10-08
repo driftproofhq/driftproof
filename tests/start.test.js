@@ -23,6 +23,17 @@ const DOOR = path.join(ROOT, 'plugin', 'driftproof', 'lib', 'door.mjs');
 const FAKE_BIN = path.join(ROOT, 'specs', '028-claude-code-plugin', 'probes', 'bin');
 const made = [];
 const tmp = () => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'spec139-start-')); made.push(d); return d; };
+// A copy of door.mjs's semverGte (an ES module the CommonJS test cannot require).
+function semverGte(a, b) {
+  const pa = String(a).split('.').map(Number);
+  const pb = String(b).split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    const x = pa[i] || 0; const y = pb[i] || 0;
+    if (x > y) return true;
+    if (x < y) return false;
+  }
+  return true;
+}
 test.after(() => { for (const d of made) fs.rmSync(d, { recursive: true, force: true }); });
 
 // A sandbox: a working folder in a git repository, a skill in it, a spawn log, and a bin folder
@@ -267,9 +278,11 @@ function snapshot(dir) {
 }
 
 test('start on a runner before its own minimum refuses after --version, spawning no init and changing nothing (F-2)', () => {
-  // The set state (A-139-9): the release bump has written start_minimum as the runner's own version.
+  // The set state: a release has written start_minimum and it never moves after, so the tree's own
+  // start_minimum reads as a string no higher than the runner's own version.
   const guard = JSON.parse(fs.readFileSync(path.join(ROOT, 'plugin', 'driftproof', 'version-guard.json'), 'utf8'));
-  assert.equal(guard.start_minimum, require('../config').RUNNER_VERSION, 'the tree records start_minimum as RUNNER_VERSION');
+  assert.equal(typeof guard.start_minimum, 'string', 'the tree records start_minimum as a string');
+  assert.ok(semverGte(require('../config').RUNNER_VERSION, guard.start_minimum), 'start_minimum is not above RUNNER_VERSION');
   for (const [name, doorFile] of [['no release recorded (null)', released(null)], ['a minimum above the runner', released('999.0.0')]]) {
     const sb = sandbox({ suite: false });
     const draft = path.join(sb.work, 'cases-draft.json');

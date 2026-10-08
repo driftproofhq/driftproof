@@ -975,8 +975,10 @@ function amend006({ nowIso, write = true } = {}) {
 // baselines were single draws from wide distributions and asserted no cause.
 // v1.2 reports what a multi-draw re-measurement found and holds the same line
 // on cause, now with a second instrument change in the way.
-function amend005(rows, { nowIso, write = true } = {}) {
-  let html = fs.readFileSync(P005, 'utf8');
+// `file` is the page to amend; it defaults to the published page. scripts/rebuild-report-005.js
+// passes a sandbox copy, so the replay never writes the tree.
+function amend005(rows, { nowIso, write = true, file = P005 } = {}) {
+  let html = fs.readFileSync(file, 'utf8');
   const NEEDLE005 = 'The three cells v1.1 flagged have been re-measured';
   if (html.includes(NEEDLE005) || /<strong>v1\.2\s*(?:&middot;|\u00b7)/.test(html)) {
     return { applied: false, already: true, reason: 'already amended' };
@@ -996,7 +998,7 @@ function amend005(rows, { nowIso, write = true } = {}) {
     <p><strong>Unaffected, and unchanged from v1.1.</strong> The cost-driver correlation, the substrate-disagreement result and the three-axis presentation do not rest on single-cell baselines and are not qualified here. <strong>No figure on this page has been edited</strong>; every number, count and verdict above is as published and re-derives from the same 30 receipts.</p>\n`;
 
   html = html.replace('  <h2>Amendments</h2>\n  <div class="card">\n', `  <h2>Amendments</h2>\n  <div class="card">\n${note}`);
-  if (write) fs.writeFileSync(P005, html);
+  if (write) fs.writeFileSync(file, html);
   return { applied: true };
 }
 
