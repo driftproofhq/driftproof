@@ -72,6 +72,7 @@ function answerLines(root) {
     `- [${A.links['agent-skill-regression-testing']}](${ORIGIN}/agent-skill-regression-testing/): ${q('agent-skill-regression-testing')}`,
     `- [${A.links.compare}](${ORIGIN}/compare/): ${firstSentence(P.compare.intro)}`,
     `- [${A.links.paper}](${ORIGIN}/paper/): ${paper.title}. ${paper.version_line}. ${paper.preprint_line}.`,
+    `- [${A.links['benchmark-gap']}](${ORIGIN}/benchmark-gap/): type two benchmark scores and the question count, and see whether the gap clears the benchmark's own sampling noise.`,
   ];
 }
 

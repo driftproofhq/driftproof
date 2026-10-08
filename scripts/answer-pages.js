@@ -240,6 +240,7 @@ const PAGES = [
   ['agent-skill-evaluation', '/agent-skill-evaluation/'],
   ['agent-skill-regression-testing', '/agent-skill-regression-testing/'],
   ['compare', '/compare/'],
+  ['benchmark-gap', '/benchmark-gap/'],
 ];
 function linkLabel(key) {
   const A = answers();
