@@ -13,11 +13,11 @@ It measures and never changes a skill's instructions. The one file it adds is a 
 
 ## What runs
 
-Each command runs `npx driftproof@0.15.0`, the version this plugin is released with. It passes the arguments as a list, with no shell. The plugin holds no measuring code of its own.
+Each command runs `npx driftproof@0.16.0`, the version this plugin is released with. It passes the arguments as a list, with no shell. The plugin holds no measuring code of its own.
 
 ## What it sends, and where
 
-- Unless your project already has `driftproof@0.15.0` installed, `npx` asks the npm registry about that version each time a command runs, and downloads the package and its dependencies when your npm cache does not already hold them. npm may also check the registry for a newer npm.
+- Unless your project already has `driftproof@0.16.0` installed, `npx` asks the npm registry about that version each time a command runs, and downloads the package and its dependencies when your npm cache does not already hold them. npm may also check the registry for a newer npm.
 - Apart from that, `/driftproof:init`, `/driftproof:badge` and the version check each command runs first use local files only. Driftproof makes no network call for them.
 - `/driftproof:run` sends each test case, with and without your skill's `SKILL.md`, to the model through `claude -p`, Claude Code's own command line, so the calls go through your own Claude Code account. It removes `ANTHROPIC_API_KEY` from that call, so that key in your shell is not used.
 - The same model grades each answer, and is sent the test case, the answer and its rubric to do it.
