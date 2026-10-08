@@ -31,6 +31,7 @@ What each other tool measures, and whether it compares a task with the skill and
 
 Every published report, newest first.
 
+- [Report 014](https://driftproofhq.com/reports/014/): Claude Haiku 5.5 on release day, three skills
 - [Report 013](https://driftproofhq.com/reports/013/): Claude Sonnet 5.5, the day after its release
 - [Report 011](https://driftproofhq.com/reports/011/): Claude Opus 5.5 on release day, three skills
 - [Report 010](https://driftproofhq.com/reports/010/): repeated ADR evaluations across two Claude Code configurations

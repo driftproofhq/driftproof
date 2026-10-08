@@ -6498,6 +6498,79 @@ gate.section('report 013 (published path)');
   }
 }
 
+// ── Report 014 (published path, spec 166) ────────────────────────────────────
+//
+// Rendered straight to its published path from spec 166's committed runs, three of them.
+// The page reads its evidence copies under docs/ and Report 013's published receipts; the
+// renderer lists the runs from spec 166's evidence, which the published tree does not
+// carry, so there the rows read the shipped files rather than re-render them.
+gate.section('report 014 (published path)');
+{
+  gate.check('report 014: no draft path exists in any tree',
+    !fs.existsSync(path.join(ROOT, 'docs', 'reports', '014-draft'))
+      && !fs.existsSync(path.join(ROOT, 'receipts', 'report-014-draft'))
+      && !fs.existsSync(path.join(SCAN_ROOT, 'docs', 'reports', '014-draft')));
+  if (SCAN_ROOT_ARG) {
+    const ev14 = path.join(SCAN_ROOT, 'docs', 'reports', '014', 'evidence');
+    gate.check('report 014: the page and its evidence ship in the published tree',
+      fs.existsSync(path.join(SCAN_ROOT, 'docs', 'reports', '014', 'index.html'))
+        && fs.existsSync(ev14) && fs.readdirSync(ev14).length > 0,
+      { scanRoot: SCAN_ROOT });
+  }
+  // A-016-5 (Part 1 row 12): these rows read files the published tree carries, so
+  // they run in BOTH trees. As an else branch they did not register in the
+  // build's verification run at all: a silent drop-out a count could not see.
+  {
+    const prep14 = require(path.join(ROOT, 'scripts', 'prepare-report-014.js'));
+    const onDisk13Path = path.join(ROOT, 'docs', prep14.PAGE_REL);
+    const onDisk14 = fs.existsSync(onDisk13Path) ? fs.readFileSync(onDisk13Path, 'utf8') : null;
+    // The renderer reads spec 166's runs under specs/, which a published tree does not carry
+    // (spec 030 AC-5 runs this gate on a clean clone of it), so there the page row does not apply.
+    const runs14 = fs.existsSync(path.join(ROOT, prep14.SPEC, 'evidence'));
+    if (runs14) {
+      const page14 = prep14.buildPage(prep14.readAll());
+      gate.check('report 014: the page on disk is byte-identical to what its files render (a pure function of them)',
+        onDisk14 != null && onDisk14 === page14,
+        { present: onDisk14 != null, bytesOnDisk: onDisk14 ? onDisk14.length : 0, bytesRendered: page14.length });
+    } else {
+      gate.notApplicable('report 014: the page on disk is byte-identical to what its files render (a pure function of them)',
+        "spec 166's runs under specs/ are not in this tree");
+    }
+    // The card, the receipt pages and the badges read receipts/report-014/run-<k>/; the page
+    // links its evidence copies under evidence/run-<k>/, which carry the same names. Two copies
+    // of one receipt are one receipt only while they are the same bytes. Read from disk, so the
+    // row holds in a published tree too.
+    const onDiskCopies14 = [];
+    (function walk(d) {
+      if (!fs.existsSync(d)) return;
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        const p = path.join(d, e.name);
+        if (e.isDirectory()) walk(p); else onDiskCopies14.push(path.relative(ROOT, p).split(path.sep).join('/'));
+      }
+    })(path.join(ROOT, 'receipts', 'report-014'));
+    onDiskCopies14.sort();
+    const pairs14 = onDiskCopies14.map((c) => {
+      const run = (/\/run-(\d)\//.exec(c) || [])[1];
+      const ev = run ? path.join(ROOT, prep14.PUB, `run-${run}`, path.basename(c)) : null;
+      return { c, a: fs.readFileSync(path.join(ROOT, c)), b: ev && fs.existsSync(ev) ? fs.readFileSync(ev) : null };
+    });
+    const same14 = (ps) => ps.length === 36 && ps.every((x) => x.a !== null && x.b !== null && Buffer.compare(x.a, x.b) === 0);
+    const named14 = !runs14 || onDiskCopies14.join('\n') === [...prep14.receiptCopies().keys()].sort().join('\n');
+    gate.check('report 014: receipts/report-014/ holds exactly the 18 receipts and 18 summaries, each byte-identical to its evidence copy beside the page',
+      same14(pairs14) && named14,
+      { onDisk: onDiskCopies14.length, named: named14 });
+    const grown14 = pairs14.map((x, i) => (i === 0 && x.a ? { ...x, a: Buffer.concat([x.a, Buffer.from(' ')]) } : x));
+    gate.check('report 014 MUTATION: one receipt copy a byte longer than its evidence twin takes the copy check red',
+      pairs14.length === 36 && !same14(grown14));
+    const style14 = fs.readFileSync(path.join(ROOT, 'REPORT-STYLE.md'), 'utf8');
+    const labels14 = [...style14.matchAll(/^\|[^|\n]+\|\s*`([^`]+ report)`\s*\|/gm)].map((m) => m[1]);
+    const type14 = ((onDisk14 || '').match(/<p class="report-type">([^<]*)/) || [])[1] || '';
+    gate.check('report 014: the page is not a draft (no noindex, no DRAFT) and its eyebrow type is a label REPORT-STYLE.md lists',
+      onDisk14 != null && !/name="robots" content="noindex"/.test(onDisk14) && !/DRAFT/.test(onDisk14) && labels14.includes(type14),
+      { type: type14, labels: labels14.length });
+  }
+}
+
 // ── sampling-era cap recalibration (spec 018) ───────────────────────────────
 //
 // THESE RUN HERE, NOT ONLY IN specs/018's GATE. `specs/` is excluded from the

@@ -20,7 +20,7 @@ const fs = require('fs');
 const path = require('path');
 const scope = require('./assertion-scope.js');
 
-const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen'];
 const ESSAY_REL = path.join('docs', 'writing', 'three-releases', 'index.html');
 const PUBLISHED_ON = '2026-08-11'; // the essay's publication date, as printed on it
 
@@ -66,6 +66,11 @@ const VARIANTS = {
   'not enough draws': ['with not enough draws', 'not enough draws'],
   'separated upward': ['separated upward', 'with a separation detected upward'],
   'separated downward': ['separated downward', 'with a separation detected downward'],
+  // The lift-table shape's labels (spec 166, Report 014): lib/plain.js's four plain words for a receipt's own result.
+  'clearly helped': ['clearly helped'],
+  'no clear difference': ['no clear difference', 'with no clear difference'],
+  'too few answers to tell': ['too few answers to tell', 'with too few answers to tell'],
+  'clearly hurt': ['clearly hurt'],
 };
 
 const pair = (count, label) => ({ count: String(count), label, variants: VARIANTS[label] || [label] });
@@ -268,6 +273,30 @@ function comparisonTablePairs(html) {
   return [...counts.entries()].map(([label, n]) => pair(n, label));
 }
 
+// ── the ninth shape: a table of each model's own result in every run (spec 166, Report 014) ──
+//
+// Report 014 compares no pair of receipts. Its first table, <table class="lift">, has a row per skill and
+// model and one cell per run, each a <data> element whose value is the receipt's own verdict token
+// (lib/verdict.js: PASSED, NO_EFFECT, UNDERPOWERED, REGRESSED). The tally is the count of those cells
+// over the rows the report ran itself, read off the token and never out of the prose; the rows of
+// the comparison models say (Report NNN) beside the model and are another report's.
+function liftTablePairs(html) {
+  const t = html.match(/<table class="lift">([\s\S]*?)<\/table>/);
+  if (!t) return null;
+  const rows = [...t[1].matchAll(/<tr data-skill="[^"]*" data-model="[^"]*">([\s\S]*?)<\/tr>/g)].map((m) => m[1]).filter((r) => !/\(Report \d{3}\)/.test(r));
+  if (!rows.length) return null;
+  const LABEL = { PASSED: 'clearly helped', NO_EFFECT: 'no clear difference', UNDERPOWERED: 'too few answers to tell', REGRESSED: 'clearly hurt' };
+  const counts = new Map();
+  for (const row of rows) {
+    for (const m of row.matchAll(/<data value="([A-Z_]+)"/g)) {
+      const label = LABEL[m[1]];
+      if (!label) return null;
+      counts.set(label, (counts.get(label) || 0) + 1);
+    }
+  }
+  return [...counts.entries()].map(([label, n]) => pair(n, label));
+}
+
 function valuePairs(text) {
   const a = text.match(/In (\d+) of (\d+) skill × substrate pairs/);
   const b = text.match(/(\d+) cleared the floor on aggregate: (\d+) carry a price and (\d+) report a saving/);
@@ -288,7 +317,7 @@ function derive(root) {
   for (const id of publishedReportIds(root)) {
     const html = fs.readFileSync(path.join(root, 'docs', 'reports', id, 'index.html'), 'utf8');
     const text = stripTags(html);
-    const pairs = valuePairs(text) || tallyLinePairs(text) || verdictCellPairs(html) || refusalTablePairs(html) || instrumentComparisonPairs(html) || runTablePairs(html) || comparisonTablePairs(html) || underTheRulePairs(html);
+    const pairs = valuePairs(text) || tallyLinePairs(text) || verdictCellPairs(html) || refusalTablePairs(html) || instrumentComparisonPairs(html) || runTablePairs(html) || comparisonTablePairs(html) || liftTablePairs(html) || underTheRulePairs(html);
     if (!pairs) throw new Error(`no tally derivable from report ${id}`);
     // A count derived from the page (#002's verdict cells) is a figure the page
     // supports though it never spells it out, so it joins the page's numbers.

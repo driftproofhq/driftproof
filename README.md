@@ -24,15 +24,14 @@ measures a skill in your repository and writes its receipt. It runs on your
 Claude Code subscription. You need Node.js 22 or later.
 [Other ways to install](#install) · [Measure your own skill](#quickstart-receipt-for-your-own-skill)
 
-**Latest finding** · [Report 013](https://driftproofhq.com/reports/013/), 29 Sep
-2026: with the skill, Sonnet 5.5 was never clearly higher or lower than Opus 5.5
-in nine results (three tasks, three repeats); five of the nine had too few
-answers to tell.
+**Latest finding** · [Report 014](https://driftproofhq.com/reports/014/), 7 Oct
+2026: on Claude Haiku 5.5 no skill clearly helped in two or more of three
+repeats.
 
 [![driftproof](https://img.shields.io/endpoint?url=https://driftproofhq.com/badges/commit-message-conventions.json)](https://driftproofhq.com)
 live badge for the bundled example, generated from its own receipt.
 
-[All twelve reports](#reports) · [driftproofhq.com](https://driftproofhq.com)
+[All thirteen reports](#reports) · [driftproofhq.com](https://driftproofhq.com)
 
 ![The page driftproof view makes from Report 013's receipts: three skills by three models, each result in plain words: clearly helped, no clear difference, or too few answers to tell.](https://driftproofhq.com/assets/view-report-013.png)
 The page `npx driftproof view` makes from [Report 013's
@@ -647,7 +646,7 @@ site, so it reflects a real dated run, not a hand-set color.
 
 ## Reports
 
-Twelve reports are published, spanning seven report types. A report page lives at a
+Thirteen reports are published, spanning seven report types. A report page lives at a
 draft path — `docs/reports/NNN-draft/` — until the publish sequence renames it, and
 `scripts/build-public.sh` excludes every `*-draft/` path from the published tree
 (see the roll below, and
@@ -658,10 +657,10 @@ under [`receipts/`](receipts/)
 Report #010 takes no Driftproof measurement and has no receipts: it is re-derived
 from the upstream harness's output files, published beside its page.
 
-📊 **Twelve published reports** (each re-derived from committed files, nothing
+📊 **Thirteen published reports** (each re-derived from committed files, nothing
 hand-entered: Driftproof's receipts, or for Report #010 the upstream harness's own
 output), spanning seven published report types, the newest being instrument
-comparison. The eleven that measure with Driftproof read its own arms by one
+comparison. The twelve that measure with Driftproof read its own arms by one
 band-based, floor-gated verdict rule and differ in what moves underneath the
 skill — or, in the value report, in which axes are measured; or, in the instrument re-measurement, in the
 instrument itself; or, in the instrument comparison, in which instrument measures:
@@ -752,11 +751,21 @@ instrument itself; or, in the instrument comparison, in which instrument measure
   nine results in all, and five of those nine had too few answers to tell.
   Every draw was judged with `claude-opus-5`, which departs from the judge policy; its
   figures compare with Reports #009 and #011, not with Reports #001 to #008.
+- **[Report #014](https://driftproofhq.com/reports/014/)**: *release drift*,
+  Claude Haiku 5.5 on its release day, measured on Report #013's three skills and cases,
+  one case each, beside fresh Claude Haiku 4.5 arms on the same Claude Code version, every
+  arm run three times; Claude Sonnet 5.5 and Claude Opus 5.5 appear as Report #013's own
+  receipts. Each receipt is read for what the skill added to the model that answered:
+  documentation clearly helped Claude Haiku 4.5 in two of three runs and Claude Haiku 5.5
+  in none, where all three had too few answers to tell; code review and git workflow
+  clearly helped neither Haiku model in two of three runs. Every draw was judged with
+  `claude-opus-5`, which departs from the judge policy; its figures compare with Reports
+  #009, #011 and #013, not with Reports #001 to #008.
 
 ✍️ The launch essay, **[Three model releases later: what actually happens to agent
-skills](https://driftproofhq.com/writing/three-releases/)**, reads all twelve reports
+skills](https://driftproofhq.com/writing/three-releases/)**, reads all thirteen reports
 together: what moves underneath a skill, what the skill costs to run, and what a
-corrected instrument did to three published results. Revised 2026-09-29; every
+corrected instrument did to three published results. Revised 2026-10-07; every
 figure in it is gate-checked against the report page it cites.
 
 Driftproof does **not** commit third-party skill content. Each `SKILL.md` is
