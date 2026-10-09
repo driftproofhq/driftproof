@@ -1028,12 +1028,15 @@ function howBuiltPage() {
 // Who maintains Driftproof, in issue 60's words as the operator approved them on 8 Oct 2026. The
 // paper's title, its concept DOI and its record are read from docs/data/paper.json; the releases and
 // pull requests from scripts/answer-pages.js's UPSTREAM_CREDITS, the list /what-is-driftproof/ also
-// renders. The Person node in the head is scripts/build-head-tags.js's.
+// renders. The Person node in the head is scripts/build-head-tags.js's. The merged-upstream heading and
+// the sentence under it are issue 103's (spec 169 A-169-2): a row marked unreleased has no release-note
+// credit yet, so the heading claims none.
 function maintainerPage() {
   const P = JSON.parse(fs.readFileSync(path.join(DOCS, 'data', 'paper.json'), 'utf8'));
   const me = answers.MAINTAINER_PROFILE;
   const a = (href, text) => `<a href="${esc(href)}">${esc(text)}</a>`;
-  const rows = answers.UPSTREAM_CREDITS.map((c) => `<tr><td>${esc(c.project)}</td><td>${a(c.release_url, c.release)}</td><td>${c.pulls.map((n) => (c.linked ? a(answers.pullUrl(c.repo, n), `#${n}`) : `#${n}`)).join(', ')}</td></tr>`).join('\n');
+  // A credit with no release_url is merged and in no release yet (spec 169 A-169-2): its cell is plain words.
+  const rows = answers.UPSTREAM_CREDITS.map((c) => `<tr><td>${esc(c.project)}</td><td>${c.release_url ? a(c.release_url, c.release) : esc(c.release)}</td><td>${c.pulls.map((n) => (c.linked ? a(answers.pullUrl(c.repo, n), `#${n}`) : `#${n}`)).join(', ')}</td></tr>`).join('\n');
   const main = `<main class="prose maintainer">
 <h1>Maintainer</h1>
 <p class="lede">Driftproof is maintained by Maverick (${a(me, 'mavericksea-ai')} on GitHub), who also writes its reports and the paper, and does the upstream research on other evaluation tools. Maverick works under this name. Contact: <a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a>.</p>
@@ -1044,7 +1047,8 @@ function maintainerPage() {
 <li>${a('/reports/', 'Reports')}: dated measurements of whether agent skills still help after each model release.</li>
 </ul>
 
-<h2 id="merged-upstream">Merged upstream, credited in release notes</h2>
+<h2 id="merged-upstream">Merged upstream</h2>
+<p>Each project credits its fixes in its release notes, except a row marked unreleased, which is merged and waits for that project's next release.</p>
 <table>
 <thead>
 <tr><th scope="col">Project</th><th scope="col">Release</th><th scope="col">PRs</th></tr>
