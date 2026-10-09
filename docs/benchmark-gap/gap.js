@@ -121,6 +121,9 @@ if (typeof module !== 'undefined' && module.exports) {
 // result is one paper receipt card: the stamp and one sentence, three band rows (A, B, and A minus B
 // against a zero line) on an axis zoomed to the scores, then the interval numbers. Second, the
 // hand-off: the island imports this file as a module, where module.exports does not exist.
+// Since spec 174 (issue 63) each tab renders twice: the plain result above the fold (items, runs), in
+// words for a reader who has never met an interval, and the receipt card behind "Show the statistics"
+// (itemsStats, runsStats), the stamp, the plot and the numbers as they were.
 (function renderers() {
   // A typed field: null when it is empty (missing, not zero), NaN when it is not a number.
   function fieldValue(raw) {
@@ -185,24 +188,66 @@ if (typeof module !== 'undefined' && module.exports) {
   const message = (lines) => `<div class="gap-message" role="status">${lines.map((l) => `<p>${l}</p>`).join('')}</div>`;
   const numbers = (rows) => `<dl class="gap-numbers">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd><code>${v}</code></dd></div>`).join('')}</dl>`;
 
-  // Tab 1: two scores, item noise. Each argument is a field's raw text.
-  function items(rawA, rawB, rawN) {
+  // THE PLAIN RESULT (spec 174): one verdict for each case the frozen rule tells apart, no new
+  // threshold. The gap clears the noise (the rule's separated), it does not, and too few questions to
+  // tell (no gap on this many questions, however large, would clear it; fewer than two runs on the
+  // runs tab). The stamp behind the expander keeps the rule's own words.
+  const PLAIN = { ahead: (who) => `${who}'s lead clears the noise`, close: 'Too close to call a winner', few: 'Not enough questions to tell', fewRuns: 'Not enough runs to tell' };
+  const plural = (k, one, many) => `${k} ${k === 1 ? one : many}`;
+  const bare = (x) => String(Number((x * 100).toFixed(1)));
+  const plain = (lines) => `<article class="gap-result gap-plain" aria-label="Result">
+${lines.filter(Boolean).map(([cls, text]) => `<p class="${cls}">${text}</p>`).join('\n')}
+</article>`;
+
+  // Tab 1's fields, read once for both renderings: a message, nothing yet, or the figures.
+  function itemsRead(rawA, rawB, rawN) {
     const pA = fieldValue(rawA), pB = fieldValue(rawB), n = fieldValue(rawN);
     const wrong = [];
     if (pA !== null && !isScore(pA)) wrong.push('Score A is a percentage from 0 to 100.');
     if (pB !== null && !isScore(pB)) wrong.push('Score B is a percentage from 0 to 100.');
-    if (n !== null && !isCount(n)) wrong.push('N is a whole number of questions, at least 1.');
-    if (wrong.length) return message(wrong);
-    if (pA === null || pB === null || n === null) return '';
+    if (n !== null && !isCount(n)) wrong.push('The number of benchmark questions is a whole number, at least 1.');
+    if (wrong.length) return { wrong };
+    if (pA === null || pB === null || n === null) return null;
     const fA = pA / 100, fB = pB / 100;
+    const [dLo, dHi] = CALC.newcombeDiff(fA, n, fB, n);
+    return { fA, fB, n, dLo, dHi, verdict: CALC.verdictOf(dLo, dHi), lead: Math.round(Math.abs(fA - fB) * n), minGapQ: CALC.minimumGapQuestions(n) };
+  }
+
+  // Tab 1, above the fold: the plain verdict, the lead, the difference the rule needs at this N, and
+  // one sentence built from the same figures. Each argument is a field's raw text.
+  function items(rawA, rawB, rawN) {
+    const r = itemsRead(rawA, rawB, rawN);
+    if (!r) return '';
+    if (r.wrong) return message(r.wrong);
+    const { fA, fB, n, verdict, lead, minGapQ } = r;
+    const who = fA >= fB ? 'A' : 'B';
+    const [hi, lo] = fA >= fB ? [fA, fB] : [fB, fA];
+    const word = minGapQ === null ? PLAIN.few : verdict === CALC.SEPARATED ? PLAIN.ahead(who) : PLAIN.close;
+    const needed = minGapQ === null
+      ? `Difference needed for stronger evidence: more than ${plural(n, 'question', 'questions')} can show.`
+      : `Difference needed for stronger evidence: about ${((minGapQ / n) * 100).toFixed(1)} points.`;
+    const beat = `${bare(hi)}% beat ${bare(lo)}% by ${plural(lead, 'question', 'questions')}`;
+    const why = lead === 0 ? `${bare(fA)}% and ${bare(fB)}% are level on ${plural(n, 'question', 'questions')}, so neither score is ahead.`
+      : minGapQ === null ? `${beat}, but with only ${plural(n, 'question', 'questions')} no gap, however large, stands out from sampling noise.`
+        : verdict === CALC.SEPARATED ? `${beat}, and with ${n} questions sampling noise alone can span ${plural(minGapQ - 1, 'question', 'questions')}, so a gap this large stands out from it.`
+          : `${beat}, but with only ${n} questions a gap this small can happen from sampling noise.`;
+    return plain([
+      ['gap-verdict', word],
+      ['gap-lead', lead === 0 ? 'The two scores are level.' : `${who} is ahead by ${plural(lead, 'question', 'questions')}.`],
+      ['gap-needed', needed],
+      ['gap-why', why],
+    ]);
+  }
+
+  // Tab 1, behind the expander: the receipt card, the stamp, the plot and the interval numbers.
+  function itemsStats(rawA, rawB, rawN) {
+    const r = itemsRead(rawA, rawB, rawN);
+    if (!r || r.wrong) return '';
+    const { fA, fB, n, dLo, dHi, verdict, lead, minGapQ } = r;
     const [loA, hiA] = CALC.wilsonInterval(fA, n);
     const [loB, hiB] = CALC.wilsonInterval(fB, n);
-    const [dLo, dHi] = CALC.newcombeDiff(fA, n, fB, n);
-    const verdict = CALC.verdictOf(dLo, dHi);
-    const lead = Math.round(Math.abs(fA - fB) * n);
-    const minGapQ = CALC.minimumGapQuestions(n);
     const span = minGapQ === null ? `all ${n} question${n === 1 ? '' : 's'}` : `${minGapQ - 1} question${minGapQ - 1 === 1 ? '' : 's'}`;
-    return `<article class="gap-result" aria-label="Result">
+    return `<article class="gap-result" aria-label="The statistics">
 <div class="gap-head"><p class="gap-stamp">${stampHtml(verdict)}</p>
 <p class="gap-sentence">${pct(fA)}% vs ${pct(fB)}% on ${n} questions is a lead of ${lead} question${lead === 1 ? '' : 's'}; at this size, noise alone can span ${span}.</p></div>
 ${bandPlot({ a: { point: fA, lo: loA, hi: hiA, verdict }, b: { point: fB, lo: loB, hi: hiB, verdict }, d: { point: fA - fB, lo: dLo, hi: dHi }, labelA: 'Score A', labelB: 'Score B' })}
@@ -212,19 +257,48 @@ ${numbers([['Score A, Wilson 95%', `${pct(loA)} to ${pct(hiA)}`], ['Score B, Wil
 
   // Tab 2: repeated runs, Driftproof's band rule. Means and SDs are typed in percent, as tab 1's
   // scores are, and read as fractions for the plot; the overlap test gives the same verdict either way.
-  function runs(f) {
+  function runsRead(f) {
     const v = Object.fromEntries(Object.entries(f).map(([k, raw]) => [k, fieldValue(raw)]));
     const wrong = [];
     for (const [k, arm] of [['a', 'A'], ['b', 'B']]) {
-      if (v[`${k}Mean`] !== null && !isScore(v[`${k}Mean`])) wrong.push(`Arm ${arm} mean is a percentage from 0 to 100.`);
-      if (v[`${k}Sd`] !== null && !(Number.isFinite(v[`${k}Sd`]) && v[`${k}Sd`] >= 0)) wrong.push(`Arm ${arm} standard deviation is a number of points, 0 or more.`);
-      if (v[`${k}N`] !== null && !isCount(v[`${k}N`])) wrong.push(`Arm ${arm} runs is a whole number, at least 1.`);
+      if (v[`${k}Mean`] !== null && !isScore(v[`${k}Mean`])) wrong.push(`${arm}'s average score is a percentage from 0 to 100.`);
+      if (v[`${k}Sd`] !== null && !(Number.isFinite(v[`${k}Sd`]) && v[`${k}Sd`] >= 0)) wrong.push(`${arm}'s spread between runs is a number of points, 0 or more.`);
+      if (v[`${k}N`] !== null && !isCount(v[`${k}N`])) wrong.push(`${arm}'s number of runs is a whole number, at least 1.`);
     }
-    if (wrong.length) return message(wrong);
-    if (Object.values(v).some((x) => x === null)) return '';
+    if (wrong.length) return { wrong };
+    if (Object.values(v).some((x) => x === null)) return null;
     const aMean = v.aMean / 100, aSd = v.aSd / 100, bMean = v.bMean / 100, bSd = v.bSd / 100;
-    const verdict = CALC.runsVerdict({ mean: aMean, sd: aSd, runs: v.aN }, { mean: bMean, sd: bSd, runs: v.bN });
-    return `<article class="gap-result" aria-label="Result">
+    return { aMean, aSd, bMean, bSd, verdict: CALC.runsVerdict({ mean: aMean, sd: aSd, runs: v.aN }, { mean: bMean, sd: bSd, runs: v.bN }) };
+  }
+
+  // Tab 2, above the fold. The spread is one standard deviation; the band rule calls a gap wider than
+  // the two spreads together separated, and the difference needed says so in points.
+  function runs(f) {
+    const r = runsRead(f);
+    if (!r) return '';
+    if (r.wrong) return message(r.wrong);
+    const { aMean, aSd, bMean, bSd, verdict } = r;
+    const who = aMean >= bMean ? 'A' : 'B';
+    const gap = Math.abs(aMean - bMean) * 100;
+    const word = verdict === CALC.NOT_ENOUGH_DRAWS ? PLAIN.fewRuns : verdict === CALC.SEPARATED ? PLAIN.ahead(who) : PLAIN.close;
+    const averaged = `A averaged ${bare(aMean)}% and B ${bare(bMean)}%`;
+    const why = verdict === CALC.NOT_ENOUGH_DRAWS ? `${averaged}, but with fewer than two runs on a side there is no spread between runs to compare.`
+      : verdict === CALC.SEPARATED ? `${averaged}, and with each side's usual spread between runs, the two ranges do not overlap.`
+        : `${averaged}, but with each side's usual spread between runs, the two ranges overlap, so a gap this small can happen from run-to-run noise.`;
+    return plain([
+      ['gap-verdict', word],
+      ['gap-lead', gap.toFixed(1) === '0.0' ? 'The two averages are level.' : `${who} is ahead by ${gap.toFixed(1)} points on average.`],
+      verdict === CALC.NOT_ENOUGH_DRAWS ? null : ['gap-needed', `Difference needed for stronger evidence: more than ${((aSd + bSd) * 100).toFixed(1)} points.`],
+      ['gap-why', why],
+    ]);
+  }
+
+  // Tab 2, behind the expander.
+  function runsStats(f) {
+    const r = runsRead(f);
+    if (!r || r.wrong) return '';
+    const { aMean, aSd, bMean, bSd, verdict } = r;
+    return `<article class="gap-result" aria-label="The statistics">
 <div class="gap-head"><p class="gap-stamp">${stampHtml(verdict)}</p>
 <p>This is the band rule the published reports use: mean plus or minus one standard deviation, bands overlapping or not. See the <a href="/methodology/">methodology page</a>.</p></div>
 ${bandPlot({ a: { point: aMean, lo: aMean - aSd, hi: aMean + aSd, verdict }, b: { point: bMean, lo: bMean - bSd, hi: bMean + bSd, verdict }, labelA: 'Arm A', labelB: 'Arm B' })}
@@ -232,7 +306,7 @@ ${numbers([['Arm A, mean plus or minus one SD', `${pct(aMean - aSd)} to ${pct(aM
 </article>`;
   }
 
-  CALC.render = { items, runs };
+  CALC.render = { items, itemsStats, runs, runsStats };
 })();
 
 if (typeof document !== 'undefined' && typeof globalThis !== 'undefined') globalThis.driftproofGap = CALC;
