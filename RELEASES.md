@@ -8,6 +8,165 @@ makes this one a record.
 
 ---
 
+## v0.18.0 - 2026-10-09
+
+### What's new
+
+- **Runs through Claude Code no longer stop on Claude Code's own helper calls.** Recent Claude Code
+  versions can make a small call to another model of their own beside the one you asked for. Driftproof
+  read that as the wrong model answering, stopped the run and wrote no receipt. A run now checks that
+  the model you asked for answered the task itself, and records any other model Claude Code called in
+  the receipt beside it. A run still stops when the model you asked for did not answer the task.
+- **Report 008's reading of its biggest baseline move is corrected.** For one case, the report said a
+  baseline score "fell 0.585 to 0.308." One of the draws behind that baseline number timed out and was
+  never scored. Read at either end of the judge's scale, that missing score widens the baseline's range
+  enough to overlap the new model's, so the fall does not hold up as a real change, and the drop is not
+  evidence the score held steady either. The page's dated note and its plain-language summary both now
+  say this; no figure, verdict or receipt reference on the page changes.
+- **One more contributed fix is credited on the maintainer page.** A fix sent to another agent-skill
+  evaluation project merged on 9 October 2026; the page lists it as merged and waiting on that
+  project's own next release.
+
+### What may change for you
+
+- **A drift comparison no longer calls a case regressed or improved when the call rests on an answer
+  the run could not score.** When a draw times out or otherwise cannot be judged, it is left out of
+  that case's average, as before. Now, before a comparison calls a case regressed or improved, it also
+  checks whether that call would still hold whatever score the missing answer could have gotten, from
+  the bottom of the judge's scale to the top. When it would not hold, the comparison reads that case as
+  inconclusive instead, names the missing draw, and says so; a report whose headline would otherwise be
+  "drifted" or "improved" reads "inconclusive" when this is the only kind of case behind it. A
+  comparison where nothing was missing reads exactly as before. No comparison already published
+  changes; this changes what a comparison you run from here on can say.
+
+### Known issues
+
+- **Unpaired evals from `claude plugin eval` still pool into the aggregate.** Only the skill-creator
+  importer excludes an eval scored in one arm only, or with mismatched expectation counts between
+  arms, from the aggregates this release. The same mismatch in a `claude plugin eval` import can still
+  skew the reported delta.
+- **Cases from a skill that does not exist.** On the command line, `driftproof init <new folder>
+  --cases <file> --drafted-from-skill` creates a stub `SKILL.md` and labels the suite and each case as
+  drafted from the skill and approved by the user, though there was no skill to draft from. The
+  plugin never takes this route.
+- **A lost-answer reading still has edges.** A bare "Created `report.md`." beside a pleasantry, a
+  reply that opens with a title, and some code names that end in a file extension can still be read the
+  wrong way.
+- **Backslashes in the stale summary.** A path or model id that holds a backslash shows it doubled in
+  the stale summary's code cells.
+- **`driftproof view` and a bad `capture` value.** A `.driftproofrc` in the working directory with
+  `"capture": "both"` makes `view` list the receipt as not read, where `stale` and `run` exit 2.
+- **One check clears at the publish.** The plugin's check that its package matches the published npm
+  package can read only after 0.16.0 is on npm.
+
+### Upgrade
+
+- npm: `npx driftproof@0.18.0`. The Action: `driftproofhq/driftproof@v0.18.0`, and the stale Action
+  `driftproofhq/driftproof/stale@v0.18.0`.
+- Claude Code plugin: `claude plugin update driftproof@driftproofhq`. The plugin runs `npx
+  driftproof@0.18.0`, and `/driftproof:start` needs a runner at 0.14.0 or later.
+- Receipt spec is unchanged at v0.11. Receipts from earlier versions still validate. A workflow that
+  does not set any new option behaves as on 0.17.0, except for the drift-comparison change listed
+  under What may change for you.
+
+### Engineering log
+
+**`package.json` reads 0.18.0**, and `config.js`'s `RUNNER_VERSION` is held equal to it, the only
+place the version is typed. The Action pins in `README.md` are `@v0.18.0`, and so is
+`examples/workflows/driftproof-stale.yml`'s `stale@v0.18.0` pin. The plugin's pin in
+`plugin/driftproof/.claude-plugin/plugin.json` is 0.18.0, and so is the npx pin in
+`plugin/driftproof/README.md`. `plugin/driftproof/version-guard.json` carries `minimum` 0.18.0 and
+`resolved_by` 18945304, the version bump commit; `start_minimum` stays 0.14.0, unmoved since the
+release that first shipped `init --cases` (DECISIONS C-278). `package-lock.json` moves with them, and
+`tests/fixtures/export-summary.snapshot.json`'s `receipt_hash` is re-cut, because `runner_version` is
+inside the canonical receipt that hash is taken over. `docs/data/stats.json` and every report,
+methodology and site page's `index.html` move with it; `docs/data/page-dates.json` and the sitemap
+files stay as they were, since no page's own content changed this time. **Not yet on npm** at the
+bump; a Published section is added here after the publish. No comparison already published changes in
+this release; what a comparison run from here on can say is in What may change for you.
+
+**A drift verdict now holds against a case's own lost draws (issue 105, PR 113, spec 178).** Spec 119
+already made a single receipt's own verdict hold whatever its lost draws would have scored; the
+comparison between two receipts, `lib/diff.js`, was out of that spec's scope and read only the
+surviving draws, so one timed-out draw could turn an overlap into a published "regression" with no
+word about the loss. This spec has the comparison read each side's lost draws and keep a separation
+only when it holds at every score they could have had; a separation that does not hold reads
+`inconclusive`, names the case's lost and drawn counts on both sides, and the comparison's own header
+gains a per-case measured-of-drawn column once any case lost a draw. The issue's own scan of every
+tracked, published comparison found none whose verdict rests on a lost draw, so nothing already
+published moves. A fresh-context review (PR 113's F-1) raised the change's own tier from T2 to T1,
+since it can change what a verdict says; the fix loop closed that finding by writing the acceptance
+criteria in EARS form and confirming the behaviour was already sound.
+
+**Report 008's lost-draw correction, in two parts (issue 109, PR 112; issue 116, PR 122).** A private
+outside audit dated 9 October 2026 found that the report's "baseline arm fell 0.585 to 0.308," its
+widest reported baseline move, rests on a baseline draw that timed out. Bounded at either end of the
+judge's scale, the case does not separate under the rule either way, so it is not the regression the
+report's 2026-09-14 entry called it. PR 112 gives the full report page its dated v1.3 entry, under spec
+031's claims discipline; PR 112 shipped in 0.17.0's public tree the same day, ahead of this release and
+independent of it, because a public-claim correction does not wait for a code fix of the same defect
+(DECISIONS C-282). PR 122 brings the site's plain-language summary of the same case into line with it.
+Neither changes a figure, verdict token, table value or receipt reference on the page.
+
+**Already shipped in 0.17.0, before its own cut (issues 104, 108, 117; PRs 111, 110, 118).** The same
+9 October audit also found that `caseRule`'s effect-floor test compared an unrounded float delta
+against the inclusive 0.05 floor, so ten of the twenty exact 0.05 steps read as below it; a receipt
+with cases each regressing by exactly 0.05 could read PASSED. PR 110 (spec 035 A-035-11) rounds the
+delta before the floor test; PR 118 (A-035-12) narrows the rounding to the floor test alone, so the
+delta a receipt reports is unchanged, because spec 053 pins `receiptVerdict`'s output. Separately, the
+0.17.0 release sweep read three gates red that were green at 0.16.0, each tracing to the same cause: a
+run at `--concurrency 1`, and every regrade, now made its judge calls together instead of one at a
+time, and `--keep-transcripts`' choice of which draw to keep moved out of the draw loop. PR 111 (issue
+104, spec 177) moves both back for the one-at-a-time case and corrects the plugin README's claim about
+what `/driftproof:start`'s small full run sends. All four pull requests were merged into `dev` and then
+into `release/v0.17.0` before that release's own sweep passed and it published (`b0a95d71`,
+`b468e65a`); they ship nothing new here and appear in this release's merge list only because `dev`'s
+history runs through them.
+
+**Pipeline and release-process fixes, none of them shipped in the npm package (issue 127, PR 130, spec
+179).** A release sweep that the pipeline itself dispatched caused no `workflow_run` event (only a
+person dispatching one does), so the release train could not read its result; the sweep now dispatches
+the release train directly with the run's own id once it finishes, and the train waits on it through
+the API. The release train's own bisect and the public-site build now install their npm dependencies
+before they run, and the bisect's own git fetch authenticates through the job's token. None of this
+touches `lib/`, the CLI, the Action or the plugin.
+
+**Housekeeping (issue 124, PR 125; issue 128, PR 129).** Spec 025's evidence screenshots of the
+maintainer and Report 008 pages are taken again after the pages above changed under them; no page
+itself moves again. `DECISIONS.md` gains C-282 and C-283, recording the 9 October audit's priority
+ruling and the tier correction it made to two approvals, in the catalogue.
+
+**Already in 0.17.0's own notes, above (PR 102).** PR 102 is the `release/v0.17.0` branch's merge back
+into `dev`, carrying that release's version bump and its RELEASES.md entry. It is already described in
+the v0.17.0 entry below and adds nothing new here; it appears in this release's merge list only because
+`dev`'s history runs through it.
+
+#### The 0.18.0 merge list
+
+Eleven merges since v0.17.0's source commit `c15a07e9`, oldest first:
+
+- judge calls one at a time at `--concurrency 1` and in a regrade, and the plugin README's small-full-run
+  claim (issue 104, PR 111): already shipped in 0.17.0, above.
+- effect-floor rounding (issue 108, PR 110): already shipped in 0.17.0, above.
+- Report 008 v1.3, the full page (issue 109, PR 112): already shipped in 0.17.0's public tree, above.
+- effect-floor rounding narrowed to the floor test alone (issue 117, PR 118): already shipped in
+  0.17.0, above.
+- release/v0.17.0 merge back (PR 102): that release's version bump and its RELEASES.md entry land on
+  `dev`; carries no new change of its own.
+- maintainer page, one more upstream fix credited (issue 103, PR 107): the new table row.
+- Report 008 v1.3, the plain-language summary (issue 116, PR 122): brought into line with the full
+  page above.
+- a drift verdict holds against a case's own lost draws (issue 105, PR 113): the `inconclusive` reading.
+- claude-cli auxiliary model calls (issue 134, PR 135, spec 180): attest() reads the model that served
+  the main turn; the other ids are recorded on the draw as auxiliary_calls.
+- release train and sweep pipeline fixes (issue 127, PR 130): the dispatched-sweep read, the
+  dependency installs, the bisect's authenticated fetch.
+- spec 025's screenshots taken again after the maintainer and Report 008 changes (issue 124, PR 125): no page
+  moves again.
+- decisions catalogue rows C-282, C-283 (issue 128, PR 129): the 9 October audit's rulings recorded.
+
+---
+
 ## v0.17.0 - 2026-10-09
 
 ### What's new

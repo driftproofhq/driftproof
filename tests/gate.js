@@ -6348,6 +6348,8 @@ if (SCAN_ROOT_ARG) {
     const data8 = fs.existsSync(SUMMARIES8) ? JSON.parse(fs.readFileSync(SUMMARIES8, 'utf8')) : null;
     const lower8 = (s) => /\bwithout the skill\b[^.]*\bclearly lower\b/i.test(s);
     const summaryOf8 = (html) => (/<section class="plain-summary"[\s\S]*?<\/section>/.exec(html || '') || [''])[0];
+    // Tags stripped until the text stops changing (CodeQL js/incomplete-multi-character-sanitization).
+    const untag8 = (s) => { let t = s, was; do { was = t; t = t.replace(/<[^>]+>/g, ''); } while (t !== was); return t; };
     const summaryProblems8 = (data, html) => {
       const out = [];
       const row = data && data.reports && data.reports['008'];
@@ -6358,7 +6360,7 @@ if (SCAN_ROOT_ARG) {
       });
       const shown = summaryOf8(html);
       if (!shown) out.push('the page shows no plain summary');
-      else if (lower8(shown.replace(/<[^>]+>/g, ''))) out.push('the page\'s plain summary says a task without the skill scored clearly lower');
+      else if (lower8(untag8(shown))) out.push('the page\'s plain summary says a task without the skill scored clearly lower');
       return out;
     };
     const summary8 = summaryProblems8(data8, onDisk8);
