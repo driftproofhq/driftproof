@@ -6335,6 +6335,48 @@ if (SCAN_ROOT_ARG) {
         && !!swapped8 && swapped8 !== onDisk8 && entryProblems8(swapped8).some((p) => /not the last entry|not labelled/.test(p)),
       { nudged: !!nudged8, swapped: !!swapped8 });
   }
+
+  // 10. THE PLAIN SUMMARY CARRIES NO READING THE LOST-DRAW ENTRY CORRECTS (issue 116, spec 031
+  //     A-031-27). Report 008's row in docs/data/report-summaries.json led one point with "Without
+  //     the skill, one task scored clearly lower on the new model", citing the entry of 2026-09-14's
+  //     "did separate under the rule". The entry above reads that move as not a separation under the
+  //     rule, so the row may not say it or cite it, and the page's plain summary, which renders the
+  //     row, may not show it.
+  {
+    const CORRECTED8 = 'Without the skill, one task scored clearly lower on the new model.';
+    const SUMMARIES8 = path.join(ROOT, 'docs', 'data', 'report-summaries.json');
+    const data8 = fs.existsSync(SUMMARIES8) ? JSON.parse(fs.readFileSync(SUMMARIES8, 'utf8')) : null;
+    const lower8 = (s) => /\bwithout the skill\b[^.]*\bclearly lower\b/i.test(s);
+    const summaryOf8 = (html) => (/<section class="plain-summary"[\s\S]*?<\/section>/.exec(html || '') || [''])[0];
+    const summaryProblems8 = (data, html) => {
+      const out = [];
+      const row = data && data.reports && data.reports['008'];
+      if (!row || !Array.isArray(row.points)) return ['no Report 008 row'];
+      row.points.forEach((p, k) => {
+        if (lower8(`${p.lead} ${p.text}`)) out.push(`point ${k} says a task without the skill scored clearly lower: ${p.lead}`);
+        for (const s of p.sources || []) if (/did separate under the rule/.test(s.quote)) out.push(`point ${k} cites the corrected reading: ${s.quote.slice(0, 60)}`);
+      });
+      const shown = summaryOf8(html);
+      if (!shown) out.push('the page shows no plain summary');
+      else if (lower8(shown.replace(/<[^>]+>/g, ''))) out.push('the page\'s plain summary says a task without the skill scored clearly lower');
+      return out;
+    };
+    const summary8 = summaryProblems8(data8, onDisk8);
+    gate.check('report 008: the plain summary no longer says a task scored clearly lower without the skill, or cites the reading the lost-draw entry corrects, in the data row or on the page',
+      summary8.length === 0, { problems: summary8.slice(0, 6) });
+    // MUTATION. The old sentence put back as the lead of the row's point on the baseline, and as the
+    // lead the page shows, each read red.
+    const at8 = data8 && data8.reports && data8.reports['008'] ? data8.reports['008'].points.findIndex((p) => /^Without the skill\b/.test(p.lead)) : -1;
+    const plantedData8 = at8 >= 0 ? JSON.parse(JSON.stringify(data8)) : null;
+    if (plantedData8) plantedData8.reports['008'].points[at8].lead = CORRECTED8;
+    const dataTook8 = !!plantedData8 && JSON.stringify(plantedData8) !== JSON.stringify(data8);
+    const shownLead8 = /<li><b>(Without the skill\b[^<]*)<\/b>/.exec(summaryOf8(onDisk8));
+    const plantedPage8 = shownLead8 && shownLead8[1] !== CORRECTED8 ? onDisk8.replace(shownLead8[0], `<li><b>${CORRECTED8}</b>`) : null;
+    gate.check('report 008 MUTATION: the corrected sentence put back in the data row, or on the page, reads red',
+      dataTook8 && summaryProblems8(plantedData8, onDisk8).some((p) => /says a task without the skill/.test(p))
+        && !!plantedPage8 && summaryProblems8(data8, plantedPage8).some((p) => /page's plain summary says/.test(p)),
+      { dataPlanted: dataTook8, pagePlanted: !!plantedPage8 });
+  }
 }
 
 // ── Report 009 (PROMOTED to the published path, spec 039) ────────────────────

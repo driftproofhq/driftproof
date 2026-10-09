@@ -317,6 +317,9 @@ const UPSTREAM_CREDITS = [
   { project: 'MLflow', release: '3.17.0', release_url: 'https://github.com/mlflow/mlflow/releases/tag/v3.17.0', repo: 'mlflow/mlflow', pulls: [26252], linked: true },
   { project: 'NVIDIA SkillEvaluator', release: 'v0.4.0', release_url: 'https://github.com/NVIDIA/SkillEvaluator/releases/tag/v0.4.0', repo: 'NVIDIA/SkillEvaluator', pulls: [154], linked: true },
   { project: 'Agent Skills', release: '0.6.10 to 0.6.12', release_url: 'https://github.com/addyosmani/agent-skills/releases', repo: 'addyosmani/agent-skills', pulls: [576, 578, 587, 598, 600, 614, 615], linked: false },
+  // Merged 9 Oct 2026, in no release yet (issue 103, spec 169 A-169-2): no release_url, since no release
+  // contains it. Only /maintainer/'s table renders it; the pages above read the first three by position.
+  { project: 'alibaba/skill-up', release: 'merged 9 Oct 2026, unreleased', release_url: null, repo: 'alibaba/skill-up', pulls: [304], linked: true },
 ];
 const pullUrl = (repo, n) => `https://github.com/${repo}/pull/${n}`;
 const pullLink = (repo, n) => `<a href="${esc(pullUrl(repo, n))}">#${n}</a>`;
