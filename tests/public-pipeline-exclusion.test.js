@@ -28,6 +28,8 @@ const OUT = [
   'tests/pipeline.test.js',
   // a test does not ship without its subject: scripts/sweep-shards.mjs is out, so its test is too
   'tests/sweep-shards.test.js',
+  // its subjects, build.yml and release-train.yml, are out, so it is too (spec 176)
+  'tests/release-freeze-and-cause.test.js',
   'CLAUDE.md',
   'DECISIONS.md',
 ];

@@ -2,7 +2,8 @@
 'use strict';
 
 // Unit tests for the plugin door's spec 139 changes (AC-4, AC-8): --quick passed through to the
-// CLI and refused beside the three flags it sets, and the guided first run (`start`).
+// CLI and refused beside the three flags it sets, and the guided first run (`start`). Spec 173
+// A-173-2: a direct `start --full` with no quick run's receipt asks one question at a terminal.
 //
 //   node --test tests/start.test.js
 //
@@ -69,13 +70,13 @@ function released(startMinimum = require('../config').RUNNER_VERSION) {
   return path.join(dir, 'lib', 'door.mjs');
 }
 const releasedDoor = () => (releasedPlugin = releasedPlugin || released());
-function door(sb, args, { stub = true, extra = {}, doorFile = DOOR, cwd = sb.work } = {}) {
+function doorEnv(sb, { stub = true, extra = {} } = {}) {
   const env = {};
   for (const [k, v] of Object.entries(process.env)) {
     if (/API_KEY|TOKEN|SECRET|^CLAUDE_PROVIDER$|^OPENAI_|^DRIFTPROOF_|^SPEC0|^GIT_/.test(k)) continue;
     env[k] = v;
   }
-  Object.assign(env, {
+  return Object.assign(env, {
     PATH: [sb.bin, FAKE_BIN, path.dirname(process.execPath), '/usr/bin', '/bin'].join(path.delimiter),
     SPEC028_ROOT: ROOT,
     SPEC028_SPAWNLOG: sb.log,
@@ -83,7 +84,18 @@ function door(sb, args, { stub = true, extra = {}, doorFile = DOOR, cwd = sb.wor
     ...(stub ? { DRIFTPROOF_STUB: '1' } : {}),
     ...extra,
   });
-  return spawnSync(process.execPath, [doorFile, ...args], { cwd, env, encoding: 'utf8', timeout: 300000 });
+}
+function door(sb, args, { stub = true, extra = {}, doorFile = DOOR, cwd = sb.work, input } = {}) {
+  return spawnSync(process.execPath, [doorFile, ...args], { cwd, env: doorEnv(sb, { stub, extra }), input, encoding: 'utf8', timeout: 300000 });
+}
+// Spec 173 A-173-2: the door under a terminal. util-linux `script` gives it one and passes `answer` in
+// as typed; the end of `answer` is the end of input.
+const HAS_SCRIPT = spawnSync('script', ['--version'], { encoding: 'utf8' }).status === 0;
+function ttyDoor(sb, args, answer) {
+  const q = (s) => `'${String(s).replace(/'/g, "'\\''")}'`;
+  const r = spawnSync('script', ['-qec', [process.execPath, DOOR, ...args].map(q).join(' '), '/dev/null'], { cwd: sb.work, env: doorEnv(sb), input: answer, encoding: 'utf8', timeout: 300000 });
+  const out = String(r.stdout || '').replace(/\r/g, '');
+  return { status: r.status, out, asked: (out.match(/\[y\/N\]/g) || []).length };
 }
 const spawns = (sb) => (fs.existsSync(sb.log) ? fs.readFileSync(sb.log, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l)) : []);
 const npx = (sb) => spawns(sb).filter((s) => s.bin === 'npx').map((s) => s.argv.slice(1));
@@ -268,6 +280,55 @@ test('start on a skill with a suite runs without init', () => {
   const r = door(sb, ['start', 'my-skill'], { doorFile: releasedDoor() });
   assert.equal(r.status, 0, r.stderr.slice(-1500));
   assert.deepEqual(npx(sb).map((x) => x[0]), ['--version', 'run', 'view']);
+});
+
+// Spec 173 A-173-2 (issue 92, the ruling on Q2): a direct --full with no quick run's receipt in the
+// folder asks one question at a terminal, then runs; with no terminal it neither refuses nor asks.
+test('the door\'s copy of the quick preset is lib/smoke.js\'s', () => {
+  const { PRESET_QUICK } = require('../lib/smoke');
+  assert.match(fs.readFileSync(DOOR, 'utf8'), new RegExp(`^const PRESET_QUICK = '${PRESET_QUICK}';$`, 'm'));
+});
+
+test('start --full with no quick run\'s receipt and no terminal is not refused and not asked: it says whose yes it is and runs', () => {
+  const sb = sandbox();
+  const r = door(sb, ['start', 'my-skill', '--full'], { input: 'n\n' });
+  assert.equal(r.status, 0, r.stderr.slice(-800));
+  assert.doesNotMatch(`${r.stdout}${r.stderr}`, /REFUSED|\[y\/N\]/);
+  assert.match(r.stdout, /no quick run's receipt in .*start\.md has Claude ask the person/);
+  assert.deepEqual(npx(sb).map((x) => x[0]), ['--version', 'run', 'view']);
+});
+
+test('start --full at a terminal with no quick run\'s receipt asks once: a no spawns and writes nothing, a yes runs', { skip: !HAS_SCRIPT && 'util-linux script is not on this machine' }, () => {
+  for (const answer of ['n\n', '\n', '']) {
+    const sb = sandbox();
+    const before = snapshot(sb.work);
+    const r = ttyDoor(sb, ['start', 'my-skill', '--full'], answer);
+    assert.equal(r.asked, 1, `${JSON.stringify(answer)}: ${r.out.slice(-400)}`);
+    assert.equal(r.status, 0, r.out.slice(-400));
+    assert.match(r.out, /not run: the answer was not yes/);
+    assert.equal(spawns(sb).length, 0, JSON.stringify(answer));
+    assert.deepEqual(snapshot(sb.work), before, JSON.stringify(answer));
+  }
+  const sb = sandbox();
+  const r = ttyDoor(sb, ['start', 'my-skill', '--full'], 'y\n');
+  assert.equal(r.asked, 1, r.out.slice(-400));
+  assert.equal(r.status, 0, r.out.slice(-800));
+  assert.deepEqual(npx(sb).map((x) => x[0]), ['--version', 'run', 'view']);
+  assert.ok(!npx(sb)[1].includes('--quick'), JSON.stringify(npx(sb)[1]));
+});
+
+test('start --full at a terminal with a quick run\'s receipt in receipts/ asks nothing, and start alone asks nothing', { skip: !HAS_SCRIPT && 'util-linux script is not on this machine' }, () => {
+  const sb = sandbox();
+  fs.mkdirSync(path.join(sb.work, 'receipts'));
+  fs.writeFileSync(path.join(sb.work, 'receipts', 'quick.json'), JSON.stringify({ run: { preset: require('../lib/smoke').PRESET_QUICK } }));
+  const r = ttyDoor(sb, ['start', 'my-skill', '--full'], '');
+  assert.equal(r.asked, 0, r.out.slice(-400));
+  assert.equal(r.status, 0, r.out.slice(-800));
+  assert.deepEqual(npx(sb).map((x) => x[0]), ['--version', 'run', 'view']);
+  const sb2 = sandbox();
+  const q = ttyDoor(sb2, ['start', 'my-skill'], '');
+  assert.equal(q.asked, 0, q.out.slice(-400));
+  assert.ok((npx(sb2).find((x) => x[0] === 'run') || []).includes('--quick'));
 });
 
 // Every file under a folder, by path and bytes (links by their target), for "changed nothing".

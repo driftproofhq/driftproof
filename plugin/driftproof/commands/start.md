@@ -102,6 +102,16 @@ with your own folder and file.
    again and opens it. Then say what the page says, as in step 6. If they say
    no, or do not answer, stop here and run nothing more. Never give `--full` on
    your own.
+8. **A full run asked for directly.** If the person asks for the full run with
+   no quick run before it, that is with no quick run's receipt in the
+   `receipts/` folder of the folder you run start from, ask them one question
+   before anything runs: this run comes without the quick run and its offer, it
+   runs on at most five test cases with the normal judge samples, four calls at
+   once, and its result is the verdict rules', often "Too few test tasks to
+   tell". Wait for their answer. Only after a clear yes, run the fourth line
+   with `--full`. If they say no, or do not answer, run nothing. At a terminal
+   the door asks that one question itself; run from here it has no terminal, so
+   it does not ask, and it never refuses a direct `--full`.
 
 ## When it refuses
 
@@ -146,6 +156,7 @@ a file on this computer; it loads nothing.
   {"op": "outside-skill"},
   {"op": "require-suite"},
   {"op": "confirm-write"},
+  {"op": "confirm-full"},
   {"op": "state-trusted"},
   {"op": "version-guard", "minimum": "start_minimum"},
   {"op": "resolve-model"},
