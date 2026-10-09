@@ -1205,6 +1205,13 @@ function famousGapCards() {
 // fields and rendered into the result by gap.js's own CALC.render at build. The island
 // (docs/islands/benchmark-gap.js) renders with the same function, so it has nothing to change on mount
 // and the first paint is the final one; a query string replaces the example.
+//
+// PLAIN WORDS ABOVE THE FOLD (spec 174, issue 63): one explainer line, the preset, the two scores and a
+// "Check the gap" button; the question count fills itself from the preset and shows only for a custom
+// benchmark. The result is the plain verdict. Everything else the page says is still on it, behind one
+// "Show the statistics" expander, a native <details>, closed, its content in the page: the result card
+// with the stamp, the plot and the interval numbers, the preset cards, the assumptions, the method and
+// the sources. Spec 174 AC-2 reads the copy outside it for the statistics words.
 const BENCHMARK_GAP_EXAMPLE = { preset: 'SWE-bench Verified', a: '72', b: '70' };
 function benchmarkGapPage() {
   const CALC = require('../docs/benchmark-gap/gap.js');
@@ -1212,29 +1219,32 @@ function benchmarkGapPage() {
   const options = BENCHMARK_GAP_PRESETS.map(([label, n, source]) => `<option value="${n}" title="N = ${n}, source: ${esc(source)}"${label === ex.preset ? ' selected' : ''}>${esc(label)} (${n})</option>`).join('\n');
   const sources = BENCHMARK_GAP_PRESETS.map(([label, n, source]) => `<li>${esc(label)}: N = ${n}. <a href="${esc(source)}">${esc(source)}</a></li>`).join('\n');
   const field = (id, label, attrs) => `<div class="gap-field"><label for="${id}">${label}</label>\n<input id="${id}" ${attrs}></div>`;
+  const check = (id) => `<p class="gap-actions"><button type="button" class="gap-check" id="${id}">Check the gap</button></p>`;
   const main = `<main class="calc">
 <h1>Benchmark gap calculator</h1>
-<p class="lede">Type two benchmark scores and the number of questions, and see whether the gap is bigger than the benchmark's own sampling noise.</p>
+<p class="lede">Pick a benchmark and type two scores to see whether the gap clears the benchmark's own noise, or could come down to luck in which questions were asked.</p>
 <p class="gap-how"><a href="#how-this-works">How this works</a></p>
 
 <div class="gap-tool">
 <div class="gap-tabs" role="tablist" aria-label="Calculator mode">
-<button type="button" class="gap-tab" role="tab" id="gap-tab-items" aria-controls="gap-panel-items" data-tab="items" aria-selected="true">Two scores (item noise)</button>
-<button type="button" class="gap-tab" role="tab" id="gap-tab-runs" aria-controls="gap-panel-runs" data-tab="runs" aria-selected="false" tabindex="-1">Repeated runs (band rule)</button>
+<button type="button" class="gap-tab" role="tab" id="gap-tab-items" aria-controls="gap-panel-items" data-tab="items" aria-selected="true">I have two scores</button>
+<button type="button" class="gap-tab" role="tab" id="gap-tab-runs" aria-controls="gap-panel-runs" data-tab="runs" aria-selected="false" tabindex="-1">I ran it more than once</button>
 </div>
 
 <section id="gap-panel-items" class="gap-panel" role="tabpanel" aria-labelledby="gap-tab-items">
 <div class="gap-inputs">
 <h3>Two scores (item noise)</h3>
 <div class="gap-fields">
-<div class="gap-field is-wide"><label for="gap-preset">Preset</label>
-<select id="gap-preset"><option value="">Choose a benchmark&hellip;</option>
-${options}
+<div class="gap-field is-wide"><label for="gap-preset">Benchmark</label>
+<select id="gap-preset">${options}
+<option value="custom">Custom: type the number of questions</option>
 </select></div>
 ${field('gap-score-a', 'Score A (%)', `type="number" min="0" max="100" step="0.01" inputmode="decimal" value="${ex.a}"`)}
 ${field('gap-score-b', 'Score B (%)', `type="number" min="0" max="100" step="0.01" inputmode="decimal" value="${ex.b}"`)}
-${field('gap-n', 'Questions (N)', `type="number" min="1" step="1" inputmode="numeric" value="${ex.n}"`)}
+<div class="gap-field is-wide" id="gap-n-field" hidden><label for="gap-n">Number of benchmark questions</label>
+<input id="gap-n" type="number" min="1" step="1" inputmode="numeric" value="${ex.n}"></div>
 </div>
+${check('gap-items-check')}
 </div>
 <div id="gap-items-out" class="gap-out" aria-live="polite" data-island="benchmark-gap">${CALC.render.items(ex.a, ex.b, ex.n)}</div>
 </section>
@@ -1242,21 +1252,27 @@ ${field('gap-n', 'Questions (N)', `type="number" min="1" step="1" inputmode="num
 <section id="gap-panel-runs" class="gap-panel" role="tabpanel" aria-labelledby="gap-tab-runs" hidden>
 <div class="gap-inputs">
 <h3>Repeated runs (Driftproof's band rule)</h3>
-<p>Mean and standard deviation in percent, and the run count, per arm. This is the rule the published reports use: bands that do not overlap read separated. <a href="/methodology/">Methodology</a>.</p>
+<p>For each side: its average score, how far its runs usually sit from that average, and how many runs it had.</p>
 <div class="gap-fields">
-${field('gap-runs-a-mean', 'Arm A mean (%)', 'type="number" step="any"')}
-${field('gap-runs-a-sd', 'Arm A standard deviation (points)', 'type="number" step="any" min="0"')}
-${field('gap-runs-a-n', 'Arm A runs', 'type="number" step="1" min="0"')}
-${field('gap-runs-b-mean', 'Arm B mean (%)', 'type="number" step="any"')}
-${field('gap-runs-b-sd', 'Arm B standard deviation (points)', 'type="number" step="any" min="0"')}
-${field('gap-runs-b-n', 'Arm B runs', 'type="number" step="1" min="0"')}
+${field('gap-runs-a-mean', 'A: average score (%)', 'type="number" step="any"')}
+${field('gap-runs-a-sd', 'A: spread between runs (points)', 'type="number" step="any" min="0"')}
+${field('gap-runs-a-n', 'A: number of runs', 'type="number" step="1" min="0"')}
+${field('gap-runs-b-mean', 'B: average score (%)', 'type="number" step="any"')}
+${field('gap-runs-b-sd', 'B: spread between runs (points)', 'type="number" step="any" min="0"')}
+${field('gap-runs-b-n', 'B: number of runs', 'type="number" step="1" min="0"')}
 </div>
+${check('gap-runs-check')}
 </div>
 <div id="gap-runs-out" class="gap-out" aria-live="polite"></div>
 </section>
 
 <p class="gap-copy"><button type="button" id="gap-copy-link">Copy link</button></p>
 </div>
+
+<details class="gap-stats">
+<summary>Show the statistics</summary>
+<div id="gap-items-stats" class="gap-out">${CALC.render.itemsStats(ex.a, ex.b, ex.n)}</div>
+<div id="gap-runs-stats" class="gap-out" hidden></div>
 
 <h2 id="gap-presets">Three presets, at the edge of noise</h2>
 <div class="gap-famous-list">
@@ -1272,6 +1288,8 @@ ${famousGapCards()}
 
 <h2 id="how-this-works">How this works</h2>
 <p>Method frozen 7 Oct 2026: Wilson 95% intervals and Newcombe's hybrid difference, written out in <a href="/benchmark-gap/gap.js">gap.js</a>; the verdict words are the <a href="/methodology/">methodology page</a>'s.</p>
+<p>Mean and standard deviation in percent, and the run count, per arm. This is the rule the published reports use: bands that do not overlap read separated. <a href="/methodology/">Methodology</a>.</p>
+<p>On the runs tab, the spread between runs is one standard deviation, in points.</p>
 ${NOISE_PIECE_LINE}
 
 <h2>Presets and their sources</h2>
@@ -1280,6 +1298,7 @@ ${sources}
 </ul>
 
 <p>Method per the Driftproof paper (<a href="https://driftproofhq.com/paper">driftproofhq.com/paper</a>): the band rule and the verdict words.</p>
+</details>
 </main>`;
   return shell({
     title: 'Benchmark gap calculator | Driftproof',

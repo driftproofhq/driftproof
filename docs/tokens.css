@@ -1018,8 +1018,9 @@ table { box-shadow: none; }
 /* The calculator's own verdict word is a full sentence ("no separation detected at this sample
    size"), the only stamp this long. A stamp sets on one line (spec 038 AC-5), so this one keeps the
    stamp's nowrap and takes its size from the result card it is pressed on (--t-gap-stamp, read
-   against the card's own width), which keeps it inside the card from a phone's 375 up (spec 170). */
-.gap-panel .receipt-stamp { white-space: nowrap; font-size: var(--t-gap-stamp); }
+   against the card's own width), which keeps it inside the card from a phone's 375 up (spec 170).
+   Since spec 174 the stamp is pressed on the card behind "Show the statistics". */
+.gap-stats .receipt-stamp { white-space: nowrap; font-size: var(--t-gap-stamp); }
 
 /* ── the benchmark gap calculator (spec 170) ──────────────────────────────────
    The tabs are tabs, the active one underlined in the accent. The inputs are a labelled grid on a
@@ -1078,6 +1079,24 @@ main.calc .gap-how { margin: 0 0 var(--s-4); }
   background: var(--paper-2); color: var(--ink); border: 1px solid var(--ink-muted); border-radius: var(--radius);
 }
 .gap-load:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
+/* The plain pass (spec 174): the "Check the gap" button is the one filled control on the desk, the
+   plain verdict is set as large as a stat figure in the body face, and "Show the statistics" is a
+   native expander whose summary reads as a control. */
+.gap-actions { margin: var(--s-2) 0 0; }
+.gap-check {
+  font: inherit; font-weight: 500; cursor: pointer; min-height: var(--touch); padding: 0 var(--s-3);
+  background: var(--shell-accent); color: var(--desk); border: 1px solid var(--shell-accent); border-radius: var(--radius);
+}
+.gap-check:hover { border-color: var(--shell-text); }
+.gap-plain .gap-verdict { font-family: var(--sans); font-size: var(--t-stat); font-weight: 500; line-height: var(--lh-h2); }
+.gap-plain .gap-why { margin: 0; }
+.gap-stats { margin: 0 0 var(--s-6); }
+.gap-stats > summary {
+  cursor: pointer; font-weight: 500; min-height: var(--touch); display: flex; align-items: center; gap: var(--s-1);
+  color: var(--shell-text); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 0 0 var(--s-4);
+}
+.gap-stats > summary:hover { color: var(--shell-accent); }
+.gap-stats > .gap-out { margin: 0 0 var(--s-6); }
 
 /* ── the published report bodies ──────────────────────────────────────────────
    Pages this pass may restyle and may not edit. docs/style.css carries their structure; these
