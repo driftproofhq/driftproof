@@ -26,8 +26,8 @@
 // guided first run (`start`). The two rules above hold for all of it: `start` lists, checks and
 // spawns the pinned CLI, and opens the page the CLI wrote with the platform's opener. SPEC 140
 // adds the trusted lane where there is no git repository, behind --trust-outside-repo, and init
-// into a skill that exists, behind --confirm-write. Neither is ever a default, and this file
-// never reads stdin, so a yes typed to it does nothing: the command files have Claude ask.
+// into a skill that exists, behind --confirm-write. Neither is ever a default, and neither is ever
+// read from stdin, so a yes typed to this file never stands for either: the command files have Claude ask.
 // SPEC 165 leads a skill that exists into the guided run: `init` given a draft takes the steps of
 // `start`, and `run` on a skill with no test cases says it can draft them. Neither writes anything
 // of its own; the one new file is still the CLI's, after --confirm-write.
@@ -38,9 +38,14 @@
 // run the view offers after a quick run. It runs that run in place of the quick run, then the page;
 // the run's numbers are the steps block's. It adds no refusal: a skill with no test cases is refused
 // as before, and --full with no folder too.
+// SPEC 173 A-173-2 (issue 92, the ruling on Q2): a direct --full with no quick run's receipt in the
+// folder start runs from asks one y/N question at a terminal, then runs on a yes. With no terminal it
+// neither refuses nor asks: start.md has Claude ask that question in the conversation. This is the one
+// place this file reads stdin, and only from a terminal (confirmFull).
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import tty from 'node:tty';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
@@ -217,7 +222,7 @@ function repoState() {
 // SPEC 140: WHERE THERE IS NO GIT REPOSITORY, THE PERSON CONFIRMS, BY A FLAG. The claim the trusted
 // lane rests on is that a person looked at the skill and owns it; inside a repository the boundary
 // stands in for that, and outside one nothing does, so the person says it: --trust-outside-repo.
-// It is never a default and never an interactive yes. This file never reads stdin, and Claude Code
+// It is never a default and never an interactive yes. This file never reads it from stdin, and Claude Code
 // runs it with no terminal, so the command files tell Claude to ask the person first and pass the
 // flag only on a yes. Without it the door refuses with one message: the isolated invocation, the
 // isolation account's state, and the flag. Inside a repository the flag is refused, and a skill
@@ -633,7 +638,7 @@ function outsideSkill() {
   try { draft = fs.realpathSync(draft); } catch (e) { /* validate has refused a draft that is not there */ }
   if (inside(draft)) {
     refuse('the draft ' + draft + ' is inside the skill folder ' + dir + ', and ' + command + ' adds no file there but the test cases.'
-      + ' Move the draft to the folder you run ' + command + ' from and give that path. Better, hold it under the system temp directory until the person\'s yes, so nothing is written before it. Nothing was spawned.');
+      + ' Hold the draft under the system temp directory until the person\'s yes, so nothing is written before it, and give that path. Nothing was spawned.');
   }
 }
 
@@ -692,6 +697,60 @@ function confirmWrite() {
   }
   say('adding one new file, ' + path.join(state.resolvedTarget, 'evals', 'evals.json') + ', from ' + path.resolve(process.cwd(), INPUTS['cases'])
     + ' (confirmed with --confirm-write). No other file in the folder is written. The run that follows also creates ' + receiptsDir + ' and writes ' + viewPage + '.');
+}
+
+// A direct --full asks once (spec 173 A-173-2, the ruling on Q2). The offer of a small full run comes
+// after a quick run; --full given with no quick run's receipt in receipts/ here, read from the files on
+// disk, has had no offer. At a terminal that is one y/N question, before anything is spawned: a yes goes
+// on, and any other answer ends the command with nothing spawned or written, exit 0. With no terminal
+// (the plugin, CI) nobody can answer inline, so it neither refuses nor asks: start.md has Claude ask
+// the person that one question in the conversation before it gives --full. Whether the offer was taken
+// is not recorded anywhere. A quick receipt is one whose run.preset is "quick", as lib/smoke.js reads
+// it; tests/start.test.js holds this copy to that file.
+const PRESET_QUICK = 'quick';
+function quickReceiptIn(dir) {
+  let names = [];
+  try { names = fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort(); } catch (e) { return null; }
+  for (const name of names) {
+    let r = null;
+    try { r = readJson(path.join(dir, name)); } catch (e) { continue; }
+    if (r && r.run && r.run.preset === PRESET_QUICK) return name;
+  }
+  return null;
+}
+// One line from the terminal on stdin, read as typed; the end of input reads as an empty line.
+function askLine(question) {
+  process.stdout.write(MARK + ' ' + question + ' [y/N] ');
+  const buf = Buffer.alloc(1);
+  let line = '';
+  for (;;) {
+    let n = 0;
+    try { n = fs.readSync(0, buf, 0, 1, null); } catch (e) {
+      if (e.code !== 'EAGAIN') break;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
+      continue;
+    }
+    if (n === 0 || buf[0] === 0x0a || buf[0] === 0x0d) break;
+    line += String.fromCharCode(buf[0]);
+  }
+  return line;
+}
+function confirmFull() {
+  if (INPUTS['full'] !== true) return;
+  const dir = path.join(process.cwd(), 'receipts');
+  const quick = quickReceiptIn(dir);
+  if (quick) { say('a quick run\'s receipt is in ' + dir + ' (' + quick + '), so this full run follows it.'); return; }
+  const none = 'there is no quick run\'s receipt in ' + dir + ', so this full run comes with no offer before it';
+  if (!tty.isatty(0)) {
+    say(none + '. There is no terminal here to ask in: the yes for it is the one start.md has Claude ask the person for, in the conversation, before it gives --full.');
+    return;
+  }
+  const answer = askLine(none + ' (after a quick run, the view offers it with its calls and its time). Run the small full run now?');
+  if (!/^y(es)?$/i.test(answer.trim())) {
+    say('not run: the answer was not yes. Nothing was spawned and nothing was written.');
+    process.exit(0);
+  }
+  say('running the small full run, because you said yes.');
 }
 
 // The person's yes for init into a skill that exists (spec 140 R-1, the operator's three conditions
@@ -941,6 +1000,7 @@ for (let at = 0; at < steps.length; at++) {
   if (step.op === 'outside-skill') { outsideSkill(); continue; }
   if (step.op === 'require-suite') { requireSuite(); continue; }
   if (step.op === 'confirm-write') { confirmWrite(); continue; }
+  if (step.op === 'confirm-full') { confirmFull(); continue; }
   if (step.op === 'confirm-add') { confirmAdd(); continue; }
   if (step.op === 'report-add') { reportAdd(); continue; }
   if (step.op === 'open-view') { openView(step.file); continue; }

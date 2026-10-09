@@ -51,7 +51,9 @@ const { applyHeadTags } = require('./build-head-tags');
 // docs/data/reports.json: that file is a published surface and this report is
 // unapproved. So the card is applied last, with the row handed in.
 const { renderReportPage } = require('./site-chrome');
-// Spec 161's dated note, inserted into the render so this page stays a pure function of its receipts.
+// Spec 161's dated note, inserted into the render so this page stays a pure function of its receipts,
+// and the dated entry on the baseline arm that lost a draw (issue 109, spec 031 A-031-27), whose
+// figures are read from the receipts CELLS names, handed in below.
 const corrections = require('./report-corrections');
 // The data layer derives the row, rather than a second derivation living here.
 // Node 22 resolves require() of an ESM module with no top-level await.
@@ -608,7 +610,7 @@ ${receiptsBlock(rows)}
 </main>
 </body>
 </html>
-`, '008'), PAGE_REL);
+`, '008', { cells: CELLS }), PAGE_REL);
   // The row is derived from the page just rendered, by the same function that
   // will derive it from the file after promotion, so the card reviewed now is
   // the card that ships. The page stays a pure function of its receipts: nothing

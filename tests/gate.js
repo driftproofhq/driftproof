@@ -6235,6 +6235,106 @@ if (SCAN_ROOT_ARG) {
     gate.check('report 008: the hashes the run record says were asserted pre-launch are the hashes the committed receipts carry',
       bad8.length === 0, { mismatches: bad8 });
   }
+
+  // 9. THE DATED ENTRY ON THE LOST BASELINE DRAW (issue 109, spec 031 A-031-27). Of the four
+  //    receipts this page reads, one arm lost a draw: the older baseline of the case whose fall
+  //    the recurrence section quotes. Every figure the entry must print is read here from the
+  //    receipts by the rule's own code (lib/verdict.js lostDrawsOf, caseRule and readCases;
+  //    lib/stats.js; lib/reuse.js bandOf), never from scripts/report-corrections.js, which writes
+  //    the entry. The entry is read in the page's Amendments section, as the last entry there,
+  //    labelled one past the labels before it.
+  {
+    const { lostDrawsOf: lost8Of, caseRule: rule8, readCases: cases8 } = require(path.join(ROOT, 'lib', 'verdict.js'));
+    const stats8 = require(path.join(ROOT, 'lib', 'stats.js'));
+    const { bandOf: band8 } = require(path.join(ROOT, 'lib', 'reuse.js'));
+    const { SCORE_SCALE: scale8 } = require(path.join(ROOT, 'config'));
+    const { splitReportBody: split8 } = require(path.join(ROOT, 'scripts', 'site-chrome.js'));
+    const f3 = (x) => Number(x).toFixed(3);
+    const s3 = (x) => `${x >= 0 ? '+' : ''}${Number(x).toFixed(3)}`;
+    const lost8 = [];
+    for (const r of rows8) {
+      for (const [side, rcpt, rel] of [['older', r.baselineReceipt, r.baseline_rel], ['newer', r.receipt, r.receipt_rel]]) {
+        rcpt.results.cases.forEach((c, i) => { const l = lost8Of(c); if (l) lost8.push({ r, side, rcpt, rel, c, i, l }); });
+      }
+    }
+    // What the entry must carry, or null with the reason no entry can be true.
+    const want8 = (() => {
+      if (lost8.length !== 1) return { why: `${lost8.length} arms lost draws, not one` };
+      const { r, side, rcpt, rel, c, i, l } = lost8[0];
+      if (side !== 'older' || c.mode !== 'baseline' || !l.measured) return { why: 'the arm that lost a draw is not an older baseline the rule can bound' };
+      const row = (x, mode) => x.results.cases.find((y) => y.id === c.id && y.mode === mode);
+      const o = band8(c); const n = band8(row(r.receipt, 'baseline'));
+      const w = band8(row(rcpt, 'with_skill')); const nw = band8(row(r.receipt, 'with_skill'));
+      const fill = (t) => {
+        const xs = [...l.measured, ...Array(l.lost).fill(t)];
+        const m = stats8.mean(xs); const sd = stats8.stddev(xs);
+        return { mean: m, sd, n: xs.length, lo: m - sd, hi: m + sd, state: rule8({ mean: m, sd, n: xs.length }, { mean: n.mean, sd: n.sd, n: n.n }).state };
+      };
+      const low = fill(scale8.worst); const high = fill(scale8.best);
+      const report007 = cases8(rcpt).find((x) => x.id === c.id);
+      const draws = c.generation.draws;
+      const lostAt = draws.map((d, k) => (d.status === 'measured' ? null : k)).filter((k) => k !== null);
+      const keptAt = draws.map((d, k) => (d.status === 'measured' ? k : null)).filter((k) => k !== null);
+      if (lostAt.length !== 1) return { why: `${lostAt.length} draw records are unmeasured, not one` };
+      return {
+        figures: [
+          `<code>${rel}</code>`, `<code>results.cases[${i}]</code>`, `<code>${c.id}</code>`, `<code>${r.slug}</code>`,
+          `drew ${c.generation.n_drawn} generation draws and measured ${c.generation.n_measured}`,
+          `draw ${lostAt[0]} has no score and records <em>&ldquo;${draws[lostAt[0]].reason}&rdquo;</em>`,
+          `draws ${keptAt[0]} to ${keptAt[keptAt.length - 1]} score ${l.measured.slice(0, -1).map(f3).join(', ')} and ${f3(l.measured[l.measured.length - 1])}`,
+          `<code>n_measured</code> is ${c.generation.n_measured} and its <code>n_unmeasured</code> ${c.generation.n_unmeasured}`,
+          `${f3(o.mean)} ± ${f3(o.sd)} <span class="muted">(${o.source})</span>`, `${f3(n.mean)} ± ${f3(n.sd)} <span class="muted">(${n.source})</span>`, `at ${s3(n.mean - o.mean)}`,
+          `${f3(low.mean)} ± ${f3(low.sd)} <span class="muted">(${o.source})</span>, from ${f3(low.lo)} to ${f3(low.hi)}`,
+          `${f3(high.mean)} ± ${f3(high.sd)} <span class="muted">(${o.source})</span>`,
+          `${s3(w.mean - o.mean)}`, `highest end is ${f3(Math.max(low.hi, high.hi))}`, `lowest end, ${f3(w.lo)}`,
+        ],
+        quotes: [`The baseline arm fell ${f3(o.mean)} to ${f3(n.mean)}.`, `The cell's lift on this case therefore <em>grew</em>, ${s3(w.mean - o.mean)} to ${s3(nw.mean - n.mean)}`],
+        // The entry's three readings, true of the receipts or the entry is false: at the low score
+        // the bands overlap, at the high score they separate, and Report 007's lift holds at both.
+        readings: { low: low.state, high: high.state, report007: report007 && report007.state },
+      };
+    })();
+    const ENTRY_RE8 = /\n  <div class="card" id="amendment-lost-draw">\n(?:    <p>[^\n]*<\/p>\n)+  <\/div>\n/;
+    const entryProblems8 = (html) => {
+      const out = [];
+      if (!html) return ['no page'];
+      if (want8.why) return [want8.why];
+      const rd = want8.readings;
+      if (rd.low.startsWith('separated') || !rd.high.startsWith('separated') || rd.report007 !== 'separated-up') out.push(`the receipts do not read as the entry says: ${JSON.stringify(rd)}`);
+      const { body, amendments } = split8(html);
+      for (const q of want8.quotes) if (!body.includes(q)) out.push(`the body does not carry the quoted words: ${q.slice(0, 60)}`);
+      const found = (html.match(/id="amendment-lost-draw"/g) || []).length;
+      if (found !== 1) return [...out, `the page carries the entry ${found} time(s), not once`];
+      const m = ENTRY_RE8.exec(amendments);
+      if (!m) return [...out, 'the entry is not a card of paragraphs in the Amendments section'];
+      const card = m[0];
+      if (amendments.slice(m.index + card.length).trim() !== '') out.push('the entry is not the last entry of the Amendments section');
+      const before = amendments.slice(0, m.index);
+      const labels = [...before.matchAll(/<strong>v(\d+)\.(\d+) &middot; /g)].map((x) => [Number(x[1]), Number(x[2])]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+      const top = labels[labels.length - 1];
+      const label = /^\n  <div class="card" id="amendment-lost-draw">\n    <p><strong>v(\d+)\.(\d+) &middot; (\d{4}-\d{2}-\d{2})<\/strong>\. /.exec(card);
+      if (!top || !label || Number(label[1]) !== top[0] || Number(label[2]) !== top[1] + 1) out.push(`the entry is not labelled one past the labels before it (${label ? `v${label[1]}.${label[2]}` : 'no label'} after ${top ? `v${top.join('.')}` : 'none'})`);
+      for (const q of want8.quotes) if (!card.includes(`&ldquo;${q.replace(/\.$/, '').replace(/'/g, '&rsquo;').replace(/<\/?em>/g, '')}&rdquo;`)) out.push(`the entry does not quote: ${q.slice(0, 60)}`);
+      for (const f of want8.figures) if (!card.includes(f)) out.push(`the entry does not print ${f}`);
+      if (/—|&mdash;|confiden|significan|certain(?:ty|ly)/i.test(card)) out.push('the entry carries an em dash or confidence language');
+      return out;
+    };
+    const problems8 = entryProblems8(onDisk8);
+    gate.check('report 008: the dated entry on the lost baseline draw is the last Amendments entry, labelled one past the last, quotes the page, and prints each figure the receipts give for that arm',
+      problems8.length === 0, { problems: problems8.slice(0, 8) });
+    // MUTATION. One figure of the entry moved by a thousandth, and the entry moved above the one
+    // before it, each read red.
+    const m8 = onDisk8 && ENTRY_RE8.exec(onDisk8);
+    const lowEnd8 = want8.figures ? want8.figures.find((f) => /, from /.test(f)) : null;
+    const nudged8 = m8 && lowEnd8 && m8[0].includes(lowEnd8)
+      ? onDisk8.replace(lowEnd8, lowEnd8.replace(/from (\d\.\d{3})/, (_x, v) => `from ${(Number(v) + 0.001).toFixed(3)}`)) : null;    const prior8 = m8 ? /\n  <div class="card" id="amendment-interim-note">\n    <p>[^\n]*<\/p>\n  <\/div>\n/.exec(onDisk8) : null;
+    const swapped8 = m8 && prior8 && prior8.index < m8.index
+      ? onDisk8.replace(m8[0], '').replace(prior8[0], `${m8[0]}${prior8[0]}`) : null;
+    gate.check('report 008 MUTATION: the lost-draw entry with one figure moved, or placed above the entry before it, reads red',
+      !!nudged8 && entryProblems8(nudged8).some((p) => /does not print/.test(p))
+        && !!swapped8 && swapped8 !== onDisk8 && entryProblems8(swapped8).some((p) => /not the last entry|not labelled/.test(p)),
+      { nudged: !!nudged8, swapped: !!swapped8 });
+  }
 }
 
 // ── Report 009 (PROMOTED to the published path, spec 039) ────────────────────

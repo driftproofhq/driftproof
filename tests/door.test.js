@@ -301,6 +301,10 @@ test('init given a draft takes the steps of start: the yes first, then the versi
   assert.match(noYes.stderr, /receipts/);
   assert.match(noYes.stderr, /driftproof-view\.html/);
   assert.equal(npx(sb).length, 0);
+  // Issue 86 (A-172-3, PR 62's F-2): and it writes none of the three.
+  assert.equal(fs.existsSync(path.join(sb.skill, 'evals')), false, 'no evals/ in the skill folder');
+  assert.equal(fs.existsSync(path.join(sb.work, 'receipts')), false, 'no receipts/');
+  assert.equal(fs.existsSync(path.join(sb.work, 'driftproof-view.html')), false, 'no results page');
   // With the yes, below start's own minimum (null, or above the runner): the version guard refuses, nothing is written.
   for (const [name, doorFile] of [['no release recorded (null)', guardedDoor(null)], ['a minimum above the runner', guardedDoor('999.0.0')]]) {
     const yes = doorIn(sb, ['init', 'my-skill', '--cases', 'cases-draft.json', '--confirm-write'], { doorFile });
@@ -348,7 +352,11 @@ test('init <skill with a suite> given a draft is refused with the route init has
   fs.writeFileSync(path.join(sb.skill, 'inside-draft.json'), '{"cases":[]}');
   const x = doorIn(sb, ['init', 'my-skill', '--cases', 'my-skill/inside-draft.json', '--confirm-write']);
   assert.equal(x.status, 2, x.stderr);
-  assert.match(x.stderr, /Move the draft to the folder you run init from/);
+  assert.match(x.stderr, /, and init adds no file there but the test cases\./);
+  // Issue 86 (A-172-3, A-165-7): the operator's wording of 9 Oct. A draft is held under the system
+  // temp directory until the person's yes, never in the folder the command runs from.
+  assert.match(x.stderr, /Hold the draft under the system temp directory until the person's yes, so nothing is written before it, and give that path\./);
+  assert.doesNotMatch(x.stderr, /folder you run/);
   assert.doesNotMatch(x.stderr, /\bstart\b/);
   assert.equal(npx(sb).filter((v) => v[0] !== '--version').length, 0);
 });

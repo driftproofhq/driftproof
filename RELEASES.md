@@ -8,6 +8,171 @@ makes this one a record.
 
 ---
 
+## v0.17.0 - 2026-10-09
+
+### What's new
+
+- **A page on how often quoted AI benchmark gaps hold up against each benchmark's own sampling
+  noise.** `/leaderboard-noise/` is Maverick's own written analysis, not a Driftproof run: it checks
+  162 quoted comparisons across six posts against each benchmark's own noise, using the same method
+  the site's reports use, and finds 20 hold up. The page carries no receipt, badge or verdict stamp.
+  It is linked from the nav, right after the gap calculator, and from a line under the homepage's
+  hero.
+- **The benchmark gap calculator reads at a glance.** Above the fold, pick a benchmark, type two
+  scores and press "Check the gap": one plain verdict, how far ahead one score is, and one sentence
+  built from the numbers. Everything the page said before is still there, behind a "Show the
+  statistics" expander.
+
+### What may change for you
+
+- **The guided first run asks once before it writes anything.** Saying yes to the drafted test cases
+  used to also, with no question asked of its own, create the `receipts/` folder and the results
+  page. Now the one yes you give covers all of it, and nothing is written until you give it.
+- **A drafted test case checks what your skill needs before it is written.** Drafting could hand you
+  a case that needs a tool, a bundled file or an input the run never supplies, so it failed on the
+  very first step. Drafting now reads what the skill needs first.
+- **The results page reads your last run's skill, model and judge from the receipt.** On a first run,
+  with no `--model`, `--skill` or `--judge` flag and no `.driftproofrc`, the "Up to date?" row used to
+  read "Can't tell" even though the receipt itself names what ran. It now reads those three from the
+  receipt and says so.
+- **A full run with no quick run first now asks once, and every run goes faster.** Asking for the
+  full run directly, with no quick run's receipt on hand, asks one question before anything runs,
+  instead of running unasked or refusing outright. And within any run, a test case's repeat draws and
+  a draw's judge samples now go out together rather than one at a time, so a run finishes sooner
+  without changing its result.
+
+### Known issues
+
+- **Unpaired evals from `claude plugin eval` still pool into the aggregate.** Only the skill-creator
+  importer excludes an eval scored in one arm only, or with mismatched expectation counts between
+  arms, from the aggregates this release. The same mismatch in a `claude plugin eval` import can still
+  skew the reported delta.
+- **Cases from a skill that does not exist.** On the command line, `driftproof init <new folder>
+  --cases <file> --drafted-from-skill` creates a stub `SKILL.md` and labels the suite and each case as
+  drafted from the skill and approved by the user, though there was no skill to draft from. The
+  plugin never takes this route.
+- **A lost-answer reading still has edges.** A bare "Created `report.md`." beside a pleasantry, a
+  reply that opens with a title, and some code names that end in a file extension can still be read the
+  wrong way.
+- **Backslashes in the stale summary.** A path or model id that holds a backslash shows it doubled in
+  the stale summary's code cells.
+- **`driftproof view` and a bad `capture` value.** A `.driftproofrc` in the working directory with
+  `"capture": "both"` makes `view` list the receipt as not read, where `stale` and `run` exit 2.
+- **One check clears at the publish.** The plugin's check that its package matches the published npm
+  package can read only after 0.16.0 is on npm.
+
+### Upgrade
+
+- npm: `npx driftproof@0.17.0`. The Action: `driftproofhq/driftproof@v0.17.0`, and the stale Action
+  `driftproofhq/driftproof/stale@v0.17.0`.
+- Claude Code plugin: `claude plugin update driftproof@driftproofhq`. The plugin runs `npx
+  driftproof@0.17.0`, and `/driftproof:start` needs a runner at 0.14.0 or later.
+- Receipt spec is unchanged at v0.11. Receipts from earlier versions still validate. A workflow that
+  does not set any new option behaves as on 0.16.0, except for the two confirmations and the receipt
+  reading listed under What may change for you.
+
+### Engineering log
+
+**`package.json` reads 0.17.0**, and `config.js`'s `RUNNER_VERSION` is held equal to it, the only
+place the version is typed. The Action pins in `README.md` are `@v0.17.0`, and so is
+`examples/workflows/driftproof-stale.yml`'s `stale@v0.17.0` pin. The plugin's pin in
+`plugin/driftproof/.claude-plugin/plugin.json` is 0.17.0, and so is the npx pin in
+`plugin/driftproof/README.md`. `plugin/driftproof/version-guard.json` carries `minimum` 0.17.0 and
+`resolved_by` bd021e58, the version bump commit; `start_minimum` stays 0.14.0, unmoved since the
+release that first shipped `init --cases` (DECISIONS C-278). `package-lock.json` moves with them, and
+`tests/fixtures/export-summary.snapshot.json`'s `receipt_hash` is re-cut, because `runner_version` is
+inside the canonical receipt that hash is taken over. `docs/data/stats.json`, `docs/index.html`,
+`docs/data/page-dates.json`, `docs/sitemap.xml` and `docs/sitemap-receipts.xml` are regenerated by
+their generators. **Not yet on npm** at the bump; a Published section is added here after the
+publish. No published receipt, number or verdict changes in this release.
+
+**The guided first run, in two parts (specs 172, 173, PRs 62, 80, 98).** Spec 172's M-4 has drafting
+read what the skill needs before it drafts a case, so a case the run cannot satisfy is not drafted in
+the first place; its M-5 moves the person's one yes ahead of everything the guided run writes, not
+only `evals/evals.json`, so a refusal before the first call leaves nothing behind, not even an empty
+`receipts/`. Spec 173's S-5 has the results page's stale check take a first run's skill, model and
+judge from the receipt itself when no flag and no `.driftproofrc` names them, in place of reading all
+three as unknown; R-2 adds the small full run's offer after a quick run, with its calls and a time
+estimate, run only on a clear yes; R-3 runs a task's draws and a draw's judge samples concurrently
+rather than one at a time. A-173-2 (issue 92, PR 98) closes the one case R-2 left open: asked for
+directly, with no quick run's receipt on hand, `--full` now asks one question at a terminal before it
+runs, or has `start.md` ask it in the conversation where there is no terminal. A review follow-up
+(issue 86, PR 91) also corrected a wording slip spec 172 introduced earlier in this same cycle: the
+draft-inside-skill refusal named `start` where it should have named `init`; the wrong wording was
+never released.
+
+**The site (specs 171, 174, 175, PRs 81, 77, 85).** Spec 171 adds `/leaderboard-noise/`, Maverick's
+own analysis of 162 quoted benchmark comparisons against each benchmark's own sampling noise, 20 of
+which hold up, read with the 8 October score-type audit and the site's own interval method; it is
+prose and data, not a Driftproof run, and carries no receipt or verdict. Spec 174 is the calculator's
+plain-language pass: a "Check the gap" button, one plain verdict and the sentence it is built from
+above the fold, with the existing intervals chart, formulas and edge cases moved behind a "Show the
+statistics" expander; `gap.js`'s numeric core and `tests/benchmark-gap.test.js` are untouched. Spec
+175 puts spec 171's page in the nav, right after the gap calculator, and moves its homepage line from
+the stats section to directly under the hero. None of these three touch the runner, the CLI or a
+published report's existing numbers.
+
+**Review follow-ups and two CodeQL alerts (specs 148, 165, 171-174, PRs 79, 91).** Two dismissed
+CodeQL results were fixed in code: `build-head-tags.js`'s `strip()` and `assertion-scope.js`'s
+`visibleText()` (issue 78, PR 79). Spec 148's baseline then drops exactly those two entries, and
+A-148-6 adds a check that an alert named fixed in code is off the baseline and its line is gone from
+its file (issue 86, PR 91). The same pull request carries eleven other non-blocking findings from the
+review of specs 171 through 174, tightening mutation coverage on the leaderboard-noise figure's
+numerals and on the CodeQL baseline comparison, besides the `init` wording fix named above. None of
+it loosens a criterion.
+
+**Pipeline and release-process fixes, none of them shipped in the npm package (spec 176, PRs 97, 96,
+and issues 73, 75, 83).** Spec 176 fixes two defects from the 0.16.0 release train: the freeze step's
+git fetch now authenticates through the job's own token in place of exiting 128 (fix 1), and a red
+sweep's bisect comment now names the gate and cause it reads from the sweep report's own
+`result.json`, in place of "gate unknown" (fix 2); fix 3 (issue 94, PR 96) has the freeze step rewrite
+`release-record.json` when the release branch took commits after the draft. `gate-map.json` is
+re-derived so two previously failing pipeline tests pass (issue 75, PR 76). `release-record.json`'s
+`tarball_integrity` for 0.16.0 is corrected to the hash of the tarball actually packed, recorded once
+the npm publish made it checkable (issue 73, PR 74). `DECISIONS.md` gains C-280 and C-281, recording
+two widenings from 0.16.0's own review (issue 60, spec 169, PR 67 finding F-4) in the catalogue,
+operator-approved 9 Oct (issue 83, PR 84).
+
+**Already in 0.16.0's own notes, above (PRs 68, 70, 72).** PR 70 and PR 72 are the 0.16.0 release
+sweep's own fixes (issues 69 and 71), and PR 68 is the `release/v0.16.0` branch's merge back into
+`dev`, carrying that release's version bump and its RELEASES.md entry. All three are already
+described in the v0.16.0 entry below and add nothing new here; they appear in this release's merge
+list only because `dev`'s history runs through them.
+
+#### The 0.17.0 merge list
+
+Sixteen merges since v0.16.0's source commit `f5588da9`, oldest first:
+
+- release sweep fixes (issue 69, PR 70) and release sweep fix (issue 71, PR 72): already in 0.16.0's
+  own notes below.
+- release/v0.16.0 merge back (PR 68): that release's version bump and its RELEASES.md entry land on
+  `dev`; carries no new change of its own.
+- 0.16.0 tarball record fix (issue 73, PR 74): `release-record.json`'s `tarball_integrity` corrected
+  to the packed tarball's actual hash.
+- 172-first-run-drafting-and-consent (issue 54, PR 62): drafted cases the skill can run, and one yes
+  before any file is written.
+- gate-map re-derivation (issue 75, PR 76): two failing pipeline tests pass.
+- CodeQL fix (issue 78, PR 79): `build-head-tags.js`'s `strip()` and `assertion-scope.js`'s
+  `visibleText()`.
+- 173-first-result-and-speed (issue 55, PR 80): a plain first result, a small full run on offer, and
+  faster runs.
+- 171-leaderboard-noise-page (issue 51, PR 81): the `/leaderboard-noise/` page.
+- 174-calculator-plain-language (issue 63, PR 77): the Check button, the plain verdict, the statistics
+  behind one expander.
+- decisions catalogue rows C-280, C-281 (issue 83, PR 84): two 0.16.0 review widenings recorded in the
+  catalogue, operator-approved.
+- 175-leaderboard-noise-nav (issue 82, PR 85): the nav entry and the homepage line under the hero.
+- review follow-ups (issue 86, PR 91): the CodeQL baseline prune, the `init` refusal wording, eleven
+  non-blocking findings.
+- 176-release-freeze-auth-and-red-cause, fix 3 (issue 94, PR 96): the freeze rewrites
+  `release-record.json` when the release branch took commits after the draft.
+- 173-first-result-and-speed, A-173-2 (issue 92, PR 98): a direct `--full` with no earlier quick run
+  asks one confirmation.
+- 176-release-freeze-auth-and-red-cause, fixes 1 and 2 (issue 95, PR 97): the freeze step
+  authenticates its fetch, and a red sweep names its gate.
+
+---
+
 ## v0.16.0 - 2026-10-08
 
 ### What's new

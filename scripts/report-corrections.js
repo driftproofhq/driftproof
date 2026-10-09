@@ -15,6 +15,8 @@
 //     corrected counts follow in spec 159.
 //   - the same reports: one dated entry appended to the page's Amendments, naming the note.
 //     Reports 002 and 004 had no Amendments section, so the entry starts one.
+//   - Report 008, after that entry: one more dated entry, on the baseline arm that lost a draw
+//     (issue 109, spec 031 A-031-27). Its figures are read from the receipts the page reads, below.
 //
 // WHERE THE NOTE IS TRUE. Not on every page. `NOTE_ON` below is the table, and `notApplicable`
 // holds the reason for each page that does not take it. `checkNote` reads every receipt a page
@@ -218,10 +220,132 @@ const carries = (html) => ({
   corrections: (html.match(/class="muted judge-correction"/g) || []).length,
 });
 
-// A page with the note, the entry and (Report 007) the three corrections. `opts.cells` is Report
-// 007's { receipt, model } list and `opts.judgeModel` its judge, from the builder that knows them.
+// ── Report 008: the baseline arm that lost a draw (issue 109, spec 031 A-031-27) ──────────────
+//
+// A private outside audit of 9 Oct 2026 read the receipt behind Report 008's "The baseline arm fell"
+// sentence. The older side of that move lost one of its draws to a timeout, and the page does not
+// say so. Scored at the bottom of the scale, the lost draw leaves the arm's band overlapping the new
+// model's; scored at the top, it does not. A reading one lost draw can overturn is not a separation
+// under the rule. The entry says that, after the entry above, and every figure in it is read here
+// from the receipts the page reads, by the rule's own code. Nothing is printed if the receipts or
+// the page stop reading as the entry says.
+const LOST_DRAW_DATE = '2026-10-09';
+const LOST_DRAW_ON = '008';
+const LOST_DRAW_CARD = /  <div class="card" id="amendment-lost-draw">\n(?:    <p>[^\n]*<\/p>\n)+  <\/div>\n\n/;
+
+// The one arm of the page's receipts that lost draws, with what the entry prints about it.
+// `cells` is the page's { slug, from, baseline, receipt } list, from its builder.
+function lostDrawFigures(cells) {
+  const { lostDrawsOf, readCases } = require('../lib/verdict');
+  const { mean, stddev, bandVerdict, WITHIN_NOISE } = require('../lib/stats');
+  const { bandOf } = require('../lib/reuse');
+  const { SCORE_SCALE } = require('../config');
+  const found = [];
+  for (const cell of cells) {
+    for (const [side, rel] of [['older', cell.baseline], ['newer', cell.receipt]]) {
+      const r = JSON.parse(read(rel));
+      r.results.cases.forEach((c, i) => { const l = lostDrawsOf(c); if (l) found.push({ cell, side, rel, r, c, i, l }); });
+    }
+  }
+  if (found.length !== 1) throw new Error(`Report 008: ${found.length} arms of its receipts lost draws, and the entry is written for one`);
+  const { cell, side, rel, r, c, i, l } = found[0];
+  const draws = (c.generation && c.generation.draws) || [];
+  const lostAt = draws.map((d, k) => (d.status === 'measured' ? null : k)).filter((k) => k !== null);
+  const keptAt = draws.map((d, k) => (d.status === 'measured' ? k : null)).filter((k) => k !== null);
+  if (side !== 'older' || c.mode !== 'baseline' || !l.measured || l.lost !== 1 || lostAt.length !== 1) {
+    throw new Error(`Report 008: the arm that lost draws (${rel}, ${c.id}, ${c.mode}) is not an older baseline with one lost draw the rule can bound`);
+  }
+  const newer = JSON.parse(read(cell.receipt));
+  const row = (x, mode) => x.results.cases.find((y) => y.id === c.id && y.mode === mode);
+  const o = bandOf(c);
+  const n = bandOf(row(newer, 'baseline'));
+  const w = bandOf(row(r, 'with_skill'));
+  const nw = bandOf(row(newer, 'with_skill'));
+  // THE READING IS THE RULE'S. The older baseline arm against the newer one, read by readCases, which
+  // bounds a lost draw over every score it could have had (lib/verdict.js boundedCase): the move as
+  // the page read it, and whether it holds whatever the lost draw scored. Report 007's own lift on
+  // the case is read by the same function over its receipt.
+  const across = readCases({ results: { cases: [c, { ...row(newer, 'baseline'), mode: 'with_skill' }] } }).find((x) => x.id === c.id);
+  const held = readCases(r).find((x) => x.id === c.id);
+  // The figures the entry prints for that reading: the arm's mean and sd with its lost draw scored
+  // at each end of the scale, [score, mean, sd], and whether each overlaps the new arm's band.
+  const scored = (t) => { const xs = [...l.measured, t]; return [t, mean(xs), stddev(xs)]; };
+  const low = scored(SCORE_SCALE.worst);
+  const high = scored(SCORE_SCALE.best);
+  const overlaps = (s) => bandVerdict(s[1], s[2], n.mean, n.sd) === WITHIN_NOISE;
+  if (!across || across.observed !== 'separated-down' || across.state.startsWith('separated') || !overlaps(low) || overlaps(high) || !held || held.state !== 'separated-up') {
+    throw new Error(`Report 008: the receipts do not read as the entry says (across the release ${across && `${across.observed} read ${across.state}`}, Report 007 ${held && held.state})`);
+  }
+  const g = c.generation;
+  return { slug: cell.slug, from: cell.from, id: c.id, rel, index: i, drawn: g.n_drawn, measured: g.n_measured, unmeasured: g.n_unmeasured, reason: draws[lostAt[0]].reason, lostAt, keptAt, scores: l.measured, o, n, w, nw, low, high };
+}
+
+function lostDrawCard(html, f) {
+  const f3 = (x) => Number(x).toFixed(3);
+  const s3 = (x) => `${x >= 0 ? '+' : ''}${Number(x).toFixed(3)}`;
+  // A band as the page prints one, with its source: every band here is over generation draws.
+  const label = ` <span class="muted">(${esc(f.o.source)})</span>`;
+  const band = (b) => `${f3(b.mean)} ± ${f3(b.sd)}${label}`;
+  const at = (s) => `${f3(s[1])} ± ${f3(s[2])}${label}`;
+  const move = s3(f.n.mean - f.o.mean);
+  const fell = `The baseline arm fell ${f3(f.o.mean)} to ${f3(f.n.mean)}`;
+  const grew = `The cell's lift on this case therefore <em>grew</em>, ${s3(f.w.mean - f.o.mean)} to ${s3(f.nw.mean - f.n.mean)}`;
+  const widest = `the widest baseline movement is ${f3(Math.abs(f.n.mean - f.o.mean))}`;
+  const zero = '<strong>0 unmeasured</strong>';
+  for (const words of [`${fell}.`, grew, widest, zero]) {
+    if (!html.includes(words)) throw new Error(`Report 008 no longer carries the words its entry reads: ${words}`);
+  }
+  // The entry names the receipt and does not link it: the page's Receipts section links it, and the
+  // head's structured data lists the receipts in the order the page first links them.
+  if (!html.includes(`/${f.rel}"`)) throw new Error(`Report 008 does not link ${f.rel}`);
+  const a = AMEND_H2.exec(html);
+  const end = a ? lineBefore(html, a.index + a[0].length) : -1;
+  if (end < 0) throw new Error('Report 008: no Amendments section to end the entry in');
+  const section = html.slice(a.index, end);
+  const labels = [...section.matchAll(/<strong>v(\d+)\.(\d+) &middot; /g)].map((m) => [Number(m[1]), Number(m[2])]).sort((x, y) => x[0] - y[0] || x[1] - y[1]);
+  if (!labels.length) throw new Error('Report 008: its Amendments carry no label to follow');
+  const [major, minor] = labels[labels.length - 1];
+  // The earlier entry that reads this move as a separation, and its date, read from the section.
+  const said = `<code>${f.id}</code>, did separate under the rule, at ${move}`;
+  const card = section.split('<div class="card"').find((x) => x.includes(said));
+  const saidOn = card && /<strong>v\d+\.\d+ &middot; (\d{4}-\d{2}-\d{2})<\/strong>/.exec(card);
+  if (!saidOn) throw new Error(`Report 008: no entry of its Amendments carries "${said}"`);
+  const quote = (s) => s.replace(/<\/?em>/g, '').replace(/'/g, '&rsquo;');
+  const runs = (ks) => (ks.every((k, j) => j === 0 || k === ks[j - 1] + 1) ? `${ks[0]} to ${ks[ks.length - 1]}` : `${ks.slice(0, -1).join(', ')} and ${ks[ks.length - 1]}`);
+  const scores = `${f.scores.slice(0, -1).map(f3).join(', ')} and ${f3(f.scores[f.scores.length - 1])}`;
+  const ps = [
+    `<strong>v${major}.${minor + 1} &middot; ${LOST_DRAW_DATE}</strong>. <strong>This entry corrects how one baseline move on this page is read; no earlier text is changed, and no figure, verdict token, table value or receipt reference changes.</strong> For <code>${esc(f.id)}</code> in the <code>${esc(f.slug)}</code> cell, this page says <em>&ldquo;${quote(fell)}&rdquo;</em>, and builds on it <em>&ldquo;${quote(grew)}&rdquo;</em>. The same move is the page&rsquo;s widest baseline movement, and its entry of ${saidOn[1]} reads it as the one baseline case that separated under the rule across the release, at ${move}. A private outside audit of the same date as this entry read the receipt behind it, and this entry records what that receipt holds.`,
+    `<strong>What the receipt records.</strong> The older side of that move is the case&rsquo;s baseline arm in <code>${esc(f.rel)}</code>, <code>results.cases[${f.index}]</code>. It drew ${f.drawn} generation draws and measured ${f.measured}: draw ${f.lostAt[0]} has no score and records <em>&ldquo;${esc(f.reason)}&rdquo;</em>, and draws ${runs(f.keptAt)} score ${scores}. Its <code>n_measured</code> is ${f.measured} and its <code>n_unmeasured</code> ${f.unmeasured}, and ${band(f.o)} is the mean and sample standard deviation of the ${f.measured} measured draws. This page does not name the lost draw. Its count of 0 unmeasured draws is of the two receipts measured for it, not of the Report 007 receipts they are diffed against.`,
+    `<strong>With the lost draw bounded.</strong> Scored ${f.low[0]}, the bottom of the scale, the arm reads ${at(f.low)}, from ${f3(f.low[1] - f.low[2])} to ${f3(f.low[1] + f.low[2])}, which overlaps the new model&rsquo;s ${band(f.n)}. Scored ${f.high[0]}, the top of the scale, it reads ${at(f.high)}, and the two bands do not overlap. A reading that the score of one lost draw can overturn is not a separation under the rule. So <em>fell ${f3(f.o.mean)} to ${f3(f.n.mean)}</em> is not a separation under the rule, and neither is the lift that <em>grew</em> on it, nor the reading of this case as separated in the entry of ${saidOn[1]}. Across the release this baseline case was not separated, which is not evidence that it did not move.`,
+    `<strong>What stands.</strong> Report 007&rsquo;s lift on this case, ${s3(f.w.mean - f.o.mean)}, with_skill against baseline on <code>${esc(f.from)}</code>, stands: at either score of the lost draw the baseline band&rsquo;s highest end is ${f3(Math.max(f.low[1] + f.low[2], f.high[1] + f.high[2]))}, below the with_skill band&rsquo;s lowest end, ${f3(f.w.lo)}. The new model&rsquo;s receipts lost no draw, and this entry changes no reading made within them. Filed under the wording rules of the repository's spec 031, amendment A-031-27.`,
+  ];
+  return { at: end, card: `  <div class="card" id="amendment-lost-draw">\n${ps.map((p) => `    <p>${p}</p>\n`).join('')}  </div>\n` };
+}
+
+// Report 008 with the lost-draw entry at the end of its Amendments. A page that carries an entry of
+// that id that is not the one this script writes is refused.
+function applyLostDraw(html, opts) {
+  const f = lostDrawFigures((opts && opts.cells) || cellsFor008().cells);
+  if (html.includes('id="amendment-lost-draw"')) {
+    const bare = html.replace(LOST_DRAW_CARD, '');
+    if (bare === html || applyLostDraw(bare, opts) !== html) throw new Error('Report 008 carries a lost-draw entry that is not the one this script writes');
+    return html;
+  }
+  const { at, card } = lostDrawCard(html, f);
+  return html.slice(0, at) + card + '\n' + html.slice(at);
+}
+
+// A page with the note, the entry and (Report 007) the three corrections, and Report 008's lost-draw
+// entry. `opts.cells` is the page's cells, from the builder that knows them: Report 007's
+// { receipt, model } list, with `opts.judgeModel` its judge, or Report 008's { slug, from, baseline,
+// receipt } list.
 function applyToPage(html, n, opts = {}) {
   if (!NOTE_ON.includes(n)) return html;
+  const out = applyInterim(html, n, opts);
+  return n === LOST_DRAW_ON ? applyLostDraw(out, opts) : out;
+}
+
+function applyInterim(html, n, opts) {
   const had = carries(html);
   if (had.note || had.entry || had.corrections) {
     const want = n === '007' ? 3 : 0;
@@ -249,7 +373,8 @@ function applyToPage(html, n, opts = {}) {
 function looseStrip(html) {
   let out = html
     .replace(/ *<p class="muted interim-note" id="interim-note">[^\n]*<\/p>\n/g, '')
-    .replace(/ *<p class="muted judge-correction">[^\n]*<\/p>\n/g, '');
+    .replace(/ *<p class="muted judge-correction">[^\n]*<\/p>\n/g, '')
+    .replace(LOST_DRAW_CARD, '');
   // An entry in an existing Amendments section: the card and the blank line after it. In a section
   // this script started (no Amendments before), the heading goes with it.
   out = out.replace(/ *<!--driftproof:anchor--><span id="amendments"[^>]*><\/span><!--\/driftproof:anchor--><h2>Amendments<\/h2>\n  <div class="card" id="amendment-interim-note">\n    <p>[^\n]*<\/p>\n  <\/div>\n\n/, '');
@@ -262,7 +387,7 @@ function stripInterimLines(html, n, opts) {
   const candidate = looseStrip(html);
   if (candidate === html) return html;
   try {
-    const o = opts || (n === '007' ? cellsFor007() : {});
+    const o = opts || (n === '007' ? cellsFor007() : n === LOST_DRAW_ON ? cellsFor008() : {});
     return applyToPage(candidate, n, o) === html ? candidate : html;
   } catch {
     return html;
@@ -295,6 +420,11 @@ function cellsFor007() {
   return { cells: p.CELLS.map((c) => ({ receipt: c.receipt, model: c.model })), judgeModel: p.JUDGE_MODEL };
 }
 
+function cellsFor008() {
+  const p = require('./prepare-report-008.js');
+  return { cells: p.CELLS.map((c) => ({ slug: c.slug, from: c.from, baseline: c.baseline, receipt: c.receipt })) };
+}
+
 function main(argv = process.argv.slice(2)) {
   const check = argv.includes('--check');
   const stale = [];
@@ -305,14 +435,14 @@ function main(argv = process.argv.slice(2)) {
     fs.writeFileSync(path.join(ROOT, rel), text);
   };
   for (const n of NOTE_ON) {
-    write(PAGE(n), applyToPage(read(PAGE(n)), n, n === '007' ? cellsFor007() : {}));
+    write(PAGE(n), applyToPage(read(PAGE(n)), n, n === '007' ? cellsFor007() : n === LOST_DRAW_ON ? cellsFor008() : {}));
   }
   write(MD001, applyToMarkdown(read(MD001)));
   if (stale.length) {
     console.error(`not as written - run: node scripts/report-corrections.js\n  ${stale.join('\n  ')}`);
     return 1;
   }
-  console.log(check ? `${NOTE_ON.length} report pages and the Report 001 mirror carry spec 161's notes` : `spec 161's notes written on ${NOTE_ON.length} report pages and the Report 001 mirror`);
+  console.log(check ? `${NOTE_ON.length} report pages and the Report 001 mirror carry spec 161's notes, and Report ${LOST_DRAW_ON} its lost-draw entry` : `spec 161's notes written on ${NOTE_ON.length} report pages and the Report 001 mirror, and Report ${LOST_DRAW_ON}'s lost-draw entry`);
   return 0;
 }
 
