@@ -211,7 +211,8 @@ function homepage() {
 
   // THE PROMISE FIRST, THE EVIDENCE UNDER IT (spec 037). The first screen asks the
   // question, gives the Claude Code plugin as the first install, and links a receipt
-  // and the findings; everything a specialist wants is further down.
+  // and the findings; everything a specialist wants is further down. Spec 171's leaderboard-noise
+  // line is the last line of the hero's text, under its links (spec 175).
   const exampleHash = example.receipt_hash;
   const plugin = ['claude plugin marketplace add driftproofhq/driftproof', 'claude plugin install driftproof@driftproofhq'];
   const copy = (c) => `<span class="copy-cta"><code>${esc(c)}</code><button type="button" data-copy="${esc(c)}">Copy</button></span>`;
@@ -226,6 +227,7 @@ ${plugin.map(copy).join('\n')}
 <p class="muted">Then run <code>/driftproof:run</code> on a skill in your repository. For CI, <a href="#ci">npx and the GitHub Action</a> are further down.</p>
 </div>
 <p class="hero-links"><a class="cta" href="/r/${esc(exampleHash)}/">See a receipt</a> <a href="/findings/">Read the findings</a> <a href="/reports/${esc(V('latest_report_number'))}/">Read the latest report</a></p>
+<p class="gap-line">A piece by Maverick: <a href="/leaderboard-noise/">quoted AI benchmark gaps, checked against their own sampling noise</a>.</p>
 </div>
 ${heroReceipt(V, example)}
 </section>
@@ -235,7 +237,6 @@ ${heroReceipt(V, example)}
 ${statBand}
 </div>
 <p class="gap-line">Comparing two benchmark scores? The <a href="/benchmark-gap/">gap calculator</a> says whether the gap is bigger than the benchmark's own sampling noise.</p>
-<p class="gap-line">A piece by Maverick: <a href="/leaderboard-noise/">quoted AI benchmark gaps, checked against their own sampling noise</a>.</p>
 </section>
 
 <section id="states" class="screen is-text">

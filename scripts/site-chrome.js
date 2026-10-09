@@ -88,13 +88,14 @@ const DOCS_LINKS = [
 // THE TOP LEVEL (spec 170): Reports, Gap calculator, Findings, Paper, Docs, GitHub. How it works
 // moves into the Docs menu, where spec 020 AC-12 still finds its href. The current page is marked
 // by docs/tokens.css from the page's own canonical link, so this stays one set of bytes on every page
-// (spec 127 AC-13).
+// (spec 127 AC-13). Leaderboard noise follows Gap calculator (spec 175).
 const NAV = `${NAV_OPEN}<header class="site">
 <a class="brand" href="/"><img class="brand-mark" src="/favicon.svg" alt="" width="28" height="28"><span>Driftproof</span></a>
 <details class="nav-menu"><summary>Menu</summary></details>
 <nav class="site-nav" aria-label="Site">
 <a href="/reports/">Reports</a>
 <a href="/benchmark-gap/">Gap calculator</a>
+<a href="/leaderboard-noise/">Leaderboard noise</a>
 <a href="/findings/">Findings</a>
 <a href="/paper/">Paper</a>
 <details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
