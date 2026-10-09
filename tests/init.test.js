@@ -16,7 +16,7 @@ const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const { scaffoldInit } = require('../lib/init');
-const { normalizeCases } = require('../lib/skill');
+const { normalizeCases, parseSkillMeta } = require('../lib/skill');
 const { escapeRegExp } = require('../scripts/html-text');
 
 const BIN = path.join(__dirname, '..', 'bin', 'driftproof');
@@ -240,6 +240,15 @@ test('drafted cases carry the label on the suite and on every case; the loader k
   assert.doesNotMatch(fs.readFileSync(path.join(plain, 'evals', 'evals.json'), 'utf8'), /origin/);
   const long = normalizeCases({ cases: [{ id: 'a', prompt: 'p', rubric: 'r', origin: 'x'.repeat(201) }, { id: 'b', prompt: 'p', rubric: 'r', origin: 7 }] });
   assert.ok(long.every((c) => !('origin' in c)), 'a label that is not a short string is not carried');
+});
+
+// Spec 172 (M-4): a hyphenated front-matter key, such as the agentskills.io `allowed-tools`, is
+// read; the guided drafting steps read it from here to say which of a skill's needs a run cannot
+// meet, so that line comes from the file, not from a free reading of it.
+test('parseSkillMeta reads a hyphenated front-matter key', () => {
+  const meta = parseSkillMeta('---\nname: fx\nallowed-tools: Bash, Read\n---\n\n# fx\n');
+  assert.equal(meta['allowed-tools'], 'Bash, Read');
+  assert.equal(meta.name, 'fx');
 });
 
 test('the CLI: --drafted-from-skill labels the cases, and is refused with no --cases, writing nothing', () => {

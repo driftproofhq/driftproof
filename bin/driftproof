@@ -491,8 +491,10 @@ async function cmdRun(positional, flags) {
     const refusal = isolationPreflight({ surfaces: isolatedSurfaces, trusted, stub: stubRun, user, exists: evalUserExists(user) });
     if (refusal) { console.error(`  ✗ REFUSED (isolation): ${refusal}`); process.exit(2); }
   }
+  // Spec 172 (M-5): the receipts directory is made only once there is a receipt to put in it, not
+  // here, before the skill has even loaded: a run that refuses before its first call (no suite, a
+  // bad cases file, the isolation preflight) used to create an empty receipts/ anyway.
   const outDir = flags.out ? path.resolve(flags.out) : RECEIPTS_DIR;
-  fs.mkdirSync(outDir, { recursive: true });
 
   let skill;
   try { skill = loadSkillOrRefuse(skillDir, 'run'); } catch (e) {
@@ -636,6 +638,7 @@ async function cmdRun(positional, flags) {
     const base = receiptBaseName({ skill: skill.name, model: receipt.run.model_id, ...(quick ? { tag: PRESET_QUICK } : {}), date: dateStamp(receipt.run.date_utc), hash: receipt.receipt_hash });
     const jsonPath = path.join(outDir, `${base}.json`);
     const mdPath = path.join(outDir, `${base}.summary.md`);
+    fs.mkdirSync(outDir, { recursive: true });
     fs.writeFileSync(jsonPath, JSON.stringify(receipt, null, 2), { flag: 'wx' });
     fs.writeFileSync(mdPath, summarizeReceipt(receipt));
     emitted.push(jsonPath);
@@ -764,6 +767,7 @@ function cmdView(positional, flags) {
   refuseUnknownFlags('view', flags);
   refuseExtraPositionals('view', positional, '<receipts-dir>');
   const { renderView, isViewPage } = require('../lib/view');
+  const { fullRunOffer, fullRunLine } = require('../lib/firstrun');
   const bad = (msg) => { console.error(`  \u2717 REFUSED (view): ${msg}. Nothing written.`); process.exit(2); };
   const dir = positional[0];
   if (!dir) bad(`a receipts directory is required: ${PROJECT_NAME} view <receipts-dir> [--out FILE]`);
@@ -779,18 +783,25 @@ function cmdView(positional, flags) {
   const abs = path.resolve(dir);
   const rel = path.relative(process.cwd(), abs);
   const label = rel && !rel.startsWith('..') && !path.isAbsolute(rel) ? rel.split(path.sep).join('/') : path.basename(abs);
-  const { html, receipts } = renderView(abs, {
+  // Spec 173 (S-5): a skill, model or judge that no flag and no rc gives is read from each receipt, so
+  // the page's "Up to date?" row says what is true rather than "Can't tell" on every first run.
+  const { html, receipts, newest } = renderView(abs, {
     now, label,
     stale: {
       skill: flags.skill || null, suite: flags.suite || null, model: flags.model || null, judge: flags.judge || null,
       harnessVersion: flags['harness-version'] || null, noHarnessCheck: !!flags['no-harness-check'], strict: false,
       rc: loadRc(flags.skill || null),
+      fromReceipt: true,
     },
   });
   if (!receipts) bad(`${dir} holds no receipts`);
   fs.mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
   fs.writeFileSync(out, html);
   console.log(`view written to ${out}  (${receipts} receipts, ${Buffer.byteLength(html)} bytes)`);
+  // Spec 173 (R-2): after a quick run, the small full run on offer, with its calls and its time. The
+  // guided start reads this line and asks the person; nothing here runs it.
+  const offer = newest && isSmoke(newest) ? fullRunLine(fullRunOffer(newest)) : null;
+  if (offer) console.log(offer);
 }
 
 // ── regrade (spec 044) ──────────────────────────────────────────────────────

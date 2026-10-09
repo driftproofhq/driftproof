@@ -23,7 +23,7 @@ const fs = require('fs');
 const path = require('path');
 const chrome = require('./site-chrome.js');
 const { humanModelName } = require('./model-names.js');
-const { escapeRegExp, escapeAttr } = require('./html-text.js');
+const { escapeRegExp, escapeAttr, htmlToText } = require('./html-text.js');
 
 const ROOT = path.join(__dirname, '..');
 const ORIGIN = 'https://driftproofhq.com';
@@ -137,7 +137,9 @@ const decodeOnce = (s) => String(s).replace(/&(?:#(\d+)|#x([0-9a-fA-F]+)|(amp|lt
   const cp = d !== undefined ? Number(d) : parseInt(x, 16);
   return cp <= 0x10FFFF ? String.fromCodePoint(cp) : m;
 });
-const strip = (html) => decode(String(html).replace(/<[^>]*>/g, '')).replace(/\s+/g, ' ').trim();
+// The tokenizer reads the tags, so a tag split by another (`<scr<x>ipt>`) is not left behind as text
+// the way a one-pass regex strip leaves it (CodeQL js/incomplete-multi-character-sanitization).
+const strip = (html) => htmlToText(String(html), { decode, collapse: true });
 const esc = escapeAttr;
 
 // One cap for every description, so a long page and a short one produce the

@@ -36,21 +36,33 @@ into the guided first run, which is `/driftproof:start`'s: follow `start.md`'s s
 6 for this skill, with the second line above in place of its third.
 
 1. **Draft the test cases from the skill, with the person.** Read the skill's
-   `SKILL.md`. Draft three to five test cases, each aimed at an outcome a user of the
-   skill would check: an `id`, a `prompt` a real user might send, and a `rubric` that
-   says what the answer must contain or do, scored so that a fully correct answer is
-   0.80. A rubric states what a person could look for in the answer, and is not a
-   restatement of what the skill says. Show the drafts, take the person's changes, and
-   agree on the set. Save the set, as `{"cases": [...]}`, to a new file named
-   `cases-draft.json` in the folder you run from, which is never the skill's folder or a
-   folder inside it. Run from the folder above the skill.
-2. **Ask before anything is added.** Name the skill and its folder, tell the person that
-   one new file, `<dir>/evals/evals.json` (give its full path), will be added from the
-   draft, that nothing else in the folder is touched, `SKILL.md` included, and that the
-   file labels the suite and each case as drafted from the skill and approved by the
-   user. Show the cases and ask whether to go ahead. Only a clear yes in this
-   conversation counts. If they say no, or do not answer, stop and give no flag: the
-   door refuses without `--confirm-write`, and nothing is added.
+   `SKILL.md`, its front matter's `allowed-tools`, any other files it bundles, and any
+   input it asks the person to supply. A run grants only Read, WebFetch and WebSearch,
+   in an empty directory with none of the skill's other files and nothing the person
+   would otherwise type in: draft three to five test cases, each aimed at an outcome a
+   user of the skill would check, that carry everything they need inside the prompt
+   itself, never a tool, a bundled file or an input a run does not supply. An `id`, a
+   `prompt` a real user might send, and a `rubric` that says what the answer must contain
+   or do, scored so that a fully correct answer is 0.80. A rubric states what a person
+   could look for in the answer, and is not a restatement of what the skill says. If the
+   skill names a tool, a bundled file or an input a run cannot supply, say so to the
+   person in one line (for example "this skill uses Bash; a Driftproof run grants Read,
+   WebFetch and WebSearch"), and draft around it rather than drafting a case that would
+   fail on setup. Show the drafts, take the person's changes, and agree on the set. Then
+   hold the set, as `{"cases": [...]}`, in this conversation, or save it to a file under
+   the system temp directory (never the folder you run from, and never the skill's
+   folder or a folder inside it) until the person says yes in the next step. Run from the
+   folder above the skill.
+2. **Ask once, before anything is written.** Name the skill and its folder, and tell the
+   person, in one question, everything this run will create: one new file,
+   `<dir>/evals/evals.json` (give its full path), added from the draft, with nothing else
+   in the folder touched, `SKILL.md` included; a `receipts/` folder created in the folder
+   you run from, holding the run's receipt; and a results page, `driftproof-view.html`,
+   written beside it. Tell them the suite file labels itself and each case as drafted
+   from the skill and approved by the user. Show the cases and ask whether to go ahead.
+   Only a clear yes in this conversation counts, and it is the one yes for everything
+   this run writes: nothing in step 3 asks again. If they say no, or do not answer, stop
+   and give no flag: the door refuses without `--confirm-write`, and nothing is written.
    Never give the flag on your own.
 3. **Run it.** After the yes, give the second line, with the draft and
    `--confirm-write`. It adds the cases as the skill's test cases, runs a quick run on
@@ -78,10 +90,14 @@ whether the file was added or nothing was. Tell the person which it said.
 
 ## A new skill: the scaffold
 
-A folder that does not exist is a new skill. The first line creates the folder with
-`SKILL.md`, `evals/evals.json` (three example cases) and `.driftproofrc`, and
-writes nothing outside it. It takes no yes, no draft and no model; the door refuses
-`--cases` and `--models` there. It will not write over something that is already there.
+A folder that does not exist is a new skill. Before running the first line, ask the
+person, in one question, before anything is written: name the folder (give its full
+path) and the three files it will create there, `SKILL.md`, `evals/evals.json` (three
+example cases) and `.driftproofrc`, and ask whether to go ahead. Only a clear yes in
+this conversation counts. If they say no, or do not answer, stop and run nothing. The
+door takes no flag for this route: the yes is asked for here, in words, and the door
+refuses `--confirm-write`, `--cases` and `--models` there. It writes nothing outside
+that folder, and will not write over something that is already there.
 
 A folder that exists and holds no `SKILL.md` is not a skill folder yet, and it is not a
 new folder either: this command is for a folder that does not exist, or a skill that

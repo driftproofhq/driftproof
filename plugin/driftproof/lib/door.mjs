@@ -31,6 +31,13 @@
 // SPEC 165 leads a skill that exists into the guided run: `init` given a draft takes the steps of
 // `start`, and `run` on a skill with no test cases says it can draft them. Neither writes anything
 // of its own; the one new file is still the CLI's, after --confirm-write.
+// SPEC 172: the one yes confirmWrite asks for names every file and folder the guided run goes on to
+// create (evals/evals.json, receipts/, the results page), not the suite file alone, so the person
+// sees the whole write before any of it happens.
+// SPEC 173: `start` takes --full, given by Claude only after the person's clear yes to the small full
+// run the view offers after a quick run. It runs that run in place of the quick run, then the page;
+// the run's numbers are the steps block's. It adds no refusal: a skill with no test cases is refused
+// as before, and --full with no folder too.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -626,7 +633,7 @@ function outsideSkill() {
   try { draft = fs.realpathSync(draft); } catch (e) { /* validate has refused a draft that is not there */ }
   if (inside(draft)) {
     refuse('the draft ' + draft + ' is inside the skill folder ' + dir + ', and ' + command + ' adds no file there but the test cases.'
-      + ' Move the draft to the folder you run ' + command + ' from and give that path. Nothing was spawned.');
+      + ' Move the draft to the folder you run ' + command + ' from and give that path. Better, hold it under the system temp directory until the person\'s yes, so nothing is written before it. Nothing was spawned.');
   }
 }
 
@@ -643,7 +650,7 @@ function requireSuite() {
   try { fs.lstatSync(suite); there = true; } catch (e) { there = false; }
   if (!there && INPUTS['cases'] === undefined) {
     refuse(dir + ' has no evals/evals.json yet, so there is nothing to run. Draft test cases with the person first,'
-      + ' save them to a file outside the skill folder, and run ' + command + ' again with --cases <file>. Nothing was spawned.');
+      + ' hold them in the conversation or save them to a file under the system temp directory, never in the skill folder, and run ' + command + ' again with --cases <file> once the person says yes. Nothing was spawned.');
   }
   if (there && INPUTS['cases'] !== undefined) {
     refuse(dir + ' already has evals/evals.json, and init never writes over a suite, so --cases would be dropped.'
@@ -673,12 +680,18 @@ function confirmWrite() {
     refuse('--confirm-write confirms writing a draft, and was given with no --cases, so there is nothing to confirm. Nothing was spawned.');
   }
   if (!cases) return;
+  // Spec 172 (M-5): the run this yes confirms writes more than the one new file: a quick run follows
+  // it, into receipts/ in the folder you run from, and the results page beside it. The refusal, and
+  // the one question it stands behind, name all three before anything is written.
+  const receiptsDir = path.join(process.cwd(), 'receipts');
+  const viewPage = path.join(process.cwd(), 'driftproof-view.html');
   if (!yes) {
     refuse(command + ' would add evals/evals.json to ' + state.resolvedTarget + ' from ' + INPUTS['cases'] + ', as the one new file ' + path.join(state.resolvedTarget, 'evals', 'evals.json') + ', and adds a file to a skill folder only with the person\'s yes.'
-      + ' Show the person the skill\'s folder, the file\'s path and the cases, and when they say yes run ' + command + ' again with --confirm-write. Nothing was written and nothing was spawned.');
+      + ' Show the person the skill\'s folder, the file\'s path and the cases, and when they say yes run ' + command + ' again with --confirm-write. Nothing was written and nothing was spawned.'
+      + ' The run that follows also creates ' + receiptsDir + ' and writes the results page ' + viewPage + '; name every one of these three to the person before they say yes, in the one question, not after.');
   }
   say('adding one new file, ' + path.join(state.resolvedTarget, 'evals', 'evals.json') + ', from ' + path.resolve(process.cwd(), INPUTS['cases'])
-    + ' (confirmed with --confirm-write). No other file in the folder is written.');
+    + ' (confirmed with --confirm-write). No other file in the folder is written. The run that follows also creates ' + receiptsDir + ' and writes ' + viewPage + '.');
 }
 
 // The person's yes for init into a skill that exists (spec 140 R-1, the operator's three conditions
@@ -789,15 +802,15 @@ const INPUTS = {};
 // Spec 138: run passes --samples, --concurrency and --max-cases through, each checked
 // by the contract. Spec 139: run takes --quick, and start takes a model and the drafted
 // cases. Spec 140: run takes --trust-outside-repo and init takes --confirm-write. Spec 165: init takes
-// the draft and a model too, for the guided run it leads a skill that exists into, and refuses them elsewhere. A flag in
-// NO_VALUE is set by its name alone, as the CLI's are.
+// the draft and a model too, for the guided run it leads a skill that exists into, and refuses them elsewhere. Spec 173:
+// start takes --full. A flag in NO_VALUE is set by its name alone, as the CLI's are.
 const ACCEPTS = {
   init: ['confirm-write', 'cases', 'models'],
   run: ['models', 'max-calls', 'max-usd', 'samples', 'concurrency', 'max-cases', 'quick', 'trust-outside-repo'],
   badge: [],
-  start: ['models', 'cases', 'confirm-write'],
+  start: ['models', 'cases', 'confirm-write', 'full'],
 };
-const NO_VALUE = new Set(['quick', 'confirm-write', 'trust-outside-repo']);
+const NO_VALUE = new Set(['quick', 'confirm-write', 'trust-outside-repo', 'full']);
 const QUICK_SETS = ['samples', 'concurrency', 'max-cases'];
 function parseArgv(argv) {
   const command = argv[0];
@@ -963,8 +976,10 @@ for (let at = 0; at < steps.length; at++) {
     continue;
   }
   if (step.op === 'cli') {
-    // Spec 139: a step guarded by an input runs only when that input was given.
+    // Spec 139: a step guarded by an input runs only when that input was given. Spec 173: a step
+    // marked `unless` an input runs only when it was not (start's quick run, which --full replaces).
     if (step.when && INPUTS[step.when] === undefined) continue;
+    if (step.unless && INPUTS[step.unless] !== undefined) continue;
     const vector = buildVector(step.args, state);
     const r = runCli(vector, { capture: !!step.capture });
     if (step.capture) {

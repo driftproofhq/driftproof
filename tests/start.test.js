@@ -202,8 +202,13 @@ test('start with a draft and no --confirm-write is refused, writing and spawning
   assert.equal(r.status, 2, r.stderr.slice(-800));
   assert.match(r.stderr, /--confirm-write/);
   assert.match(r.stderr, /the person's yes/);
+  // Spec 172 (M-5): the one question names every file and folder the run will create, not the
+  // suite file alone: receipts/ and the results page, both written in the folder you run start from.
+  assert.match(r.stderr, new RegExp(`receipts`));
+  assert.match(r.stderr, new RegExp(`driftproof-view\\.html`));
   assert.equal(spawns(sb).length, 0);
   assert.equal(fs.existsSync(path.join(sb.skill, 'evals')), false, 'nothing was written into the skill folder');
+  assert.equal(fs.existsSync(path.join(sb.work, 'receipts')), false, 'receipts/ is not made until a receipt is written');
 });
 
 test('--confirm-write with no draft has nothing to confirm, and run takes no such flag', () => {
