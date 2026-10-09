@@ -35,6 +35,44 @@ same way: it adds optional fields and widens three values, so a v0.8 receipt res
 v0.8 is frozen because its version constant refuses anything else (see *What v0.9 adds*).
 v0.8 was additive over v0.7 in the same way (see *What v0.8 adds*).
 
+## Auxiliary calls on claude-cli
+
+Spec 180 (issue 134). Claude Code can make a call of its own on another model, such as a Haiku call,
+and name that model in the reply's `modelUsage` beside the model the run asked for. The runner reads
+which model served the main turn, never only which models were named. With `want` the canonical form
+of the requested id (a trailing `-YYYYMMDD` is not part of it):
+
+1. `want` is not among the ids named: the run stops with `SUBSTRATE_MISMATCH`.
+2. The result message names its serving model (a top-level `model`) and it is another: the run stops.
+3. Every id named is `want`: attested, as before.
+4. The result names `want` as its serving model: attested.
+5. Otherwise `want` must carry more than half of the output tokens the reply counts per id, ids summed
+   by canonical form. A tie, or no count at all, stops the run.
+
+A stop happens before the next call, and no receipt is written. Its message names the id that
+answered, the requested id and which rule fired.
+
+**Every other id is recorded.** On an attested reply each id that is not `want` is an auxiliary call.
+The draw records it in **`auxiliary_calls`**
+(`results.cases[].generation.draws[].auxiliary_calls`): a list of `{phase, model, input_tokens,
+output_tokens}`. `phase` is `generation` or `judge`, `model` is the id as the
+surface named it, `input_tokens` is total input with cache, as the usage block is normalized, and
+`output_tokens` is what that id generated. Generation entries come first, then each judge sample's. The
+field is absent when there was none. A regrade keeps the generation entries and records its own judge
+entries. `run.answered_by.reported_models` still carries every canonical id named.
+
+The field is optional and sits on a draw object, which v0.11 declares open (`additionalProperties`
+true). The schema does not change and `schema_version` stays `"0.11"`, so a receipt with no auxiliary
+call is the same bytes as before.
+
+**The Claude Code version** is in `run.harness` `{name: "claude-code", version}`, read from `claude
+--version` as generation begins (see *What v0.10 adds*).
+
+**The range the claude-cli lane is verified on.** Published reports ran on Claude Code 2.1.272 (Report
+009), 2.1.280 (Report 011) and 2.1.284 (Reports 013 and 014), each read from the report's own page. A
+check on 9 Oct 2026 ran on 2.1.295 and its replies named only the requested model. The two-id reply
+reported on 2.1.295 is covered by fixtures in `tests/substrate-auxiliary.test.js`, not by a live call.
+
 ## What v0.11 adds: a smoke run says so
 
 Spec 139, the first run. `driftproof run --quick` is a smoke run: two judge samples, four
