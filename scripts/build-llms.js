@@ -86,6 +86,8 @@ function phraseLines() {
     `- [LLM eval measurement defects](${ORIGIN}/paper/): the paper on measurement defects in LLM and agent evaluation tools, with its data and its citation.`,
     `- [Maintainer](${ORIGIN}/maintainer/): who maintains Driftproof: Maverick (mavericksea-ai on GitHub), who also writes its reports and the paper.`,
     `- [Fixes merged into other evaluation tools](${ORIGIN}/what-is-driftproof/#fixes-merged-upstream): the fixes the maintainer contributed upstream, each credited in its project's own release notes.`,
+    // Spec 171, issue 51: Maverick's piece, which the gap calculator links as its Piece.
+    `- [AI benchmark gaps vs sampling noise](${ORIGIN}/leaderboard-noise/): a piece by Maverick that checks the gaps quoted in frontier launch posts and on public leaderboards against each benchmark's own sampling noise, with its code and data linked.`,
   ];
 }
 

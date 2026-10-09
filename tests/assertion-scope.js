@@ -108,8 +108,8 @@ const REAL_TAG = /<[A-Za-z\/!][^>]*>/g;
 
 function visibleText(src) {
   return src
-    .replace(/<script[\s\S]*?<\/script>/g, ' ')
-    .replace(/<style[\s\S]*?<\/style>/g, ' ')
+    .replace(/<script[\s\S]*?<\/script[^>]*>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style[^>]*>/gi, ' ')
     .replace(REAL_TAG, ' ')
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')

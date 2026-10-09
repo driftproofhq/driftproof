@@ -36,3 +36,9 @@ test('A-013-5 documentText keeps the text after a bare "<" in a Markdown file', 
   assert.ok(t.includes('n < 2'), t);
   assert.ok(!t.includes('href'), t);
 });
+
+test('issue 78: a script or style block is dropped whatever its case and however its end tag is spaced', () => {
+  for (const src of ['a <SCRIPT>x = 1</SCRIPT> b', 'a <script>x = 1</script > b', 'a <Script type="m">x</script\n foo> b', 'a <STYLE>p{}</style > b']) {
+    assert.equal(scope.visibleText(src).trim(), 'a b', src);
+  }
+});

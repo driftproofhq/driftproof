@@ -67,8 +67,10 @@ A skill that holds a `SKILL.md` and no `evals/evals.json` has nothing to measure
 the runner stops with its own message. Before it does, this command says the skill has
 no test cases and that a draft is on offer. **Ask the person.** Tell them the skill has
 no test cases yet, and offer to draft the test cases with the person from the skill
-itself: that is `/driftproof:start`, which drafts them with Claude, adds one new file,
-`evals/evals.json`, only after a yes, and runs a quick first look. Take the guided steps
+itself: that is `/driftproof:start`, which drafts them with Claude, asks one question
+naming everything its run will create (the new file `evals/evals.json`, a `receipts/`
+folder and the results page `driftproof-view.html`), adds the file only after a yes,
+and runs a quick first look. Take the guided steps
 only after a yes, and follow `/driftproof:start`'s steps, never a shortcut of your own.
 Nothing is written by this command, and never give `--confirm-write` here.
 

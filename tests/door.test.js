@@ -297,6 +297,9 @@ test('init given a draft takes the steps of start: the yes first, then the versi
   const noYes = doorIn(sb, ['init', 'my-skill', '--cases', 'cases-draft.json']);
   assert.equal(noYes.status, 2, noYes.stderr);
   assert.match(noYes.stderr, /init would add evals\/evals\.json to/);
+  // Spec 172 (M-5): the one question names every file and folder the run will create.
+  assert.match(noYes.stderr, /receipts/);
+  assert.match(noYes.stderr, /driftproof-view\.html/);
   assert.equal(npx(sb).length, 0);
   // With the yes, below start's own minimum (null, or above the runner): the version guard refuses, nothing is written.
   for (const [name, doorFile] of [['no release recorded (null)', guardedDoor(null)], ['a minimum above the runner', guardedDoor('999.0.0')]]) {

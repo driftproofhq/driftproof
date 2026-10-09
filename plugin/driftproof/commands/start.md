@@ -24,6 +24,7 @@ with your own folder and file.
     node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" start
     node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" start <skill-dir>
     node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" start <skill-dir> --cases <draft> --confirm-write
+    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" start <skill-dir> --full
 
 ## The steps, in order
 
@@ -32,30 +33,51 @@ with your own folder and file.
    under this one that holds a `SKILL.md`, and says whether each has test cases
    yet. Ask the person which skill to start with. If it says this folder is
    itself a skill folder, move to the folder above it and run it again.
-2. **If that skill has test cases**, go to step 5.
-3. **Draft its test cases together.** Read the skill's `SKILL.md`. Draft three
-   to five test cases, each grounded in one thing the skill says it does and aimed
-   at an outcome a user of the skill would check: an `id`, a `prompt` a real user
-   might send, and a `rubric` that says what the answer must contain or do, scored
-   so that a fully correct answer is 0.80. A rubric names something a person could
-   look for in the answer, and is not a restatement of what the skill says. Show
-   the drafts to the person, take their changes, and agree on the set. Then save the set,
-   as `{"cases": [...]}`, to a new file named `cases-draft.json` in the folder
-   you run start from, which is never the skill's folder or a folder inside it.
-   The skill's folder is not the place for it: the runner adds the test cases
-   there itself, in the next step, and only when there are none yet. The door
-   refuses a draft inside the skill's folder.
-4. **Ask before anything is added to the skill's folder.** If the skill had no
-   test cases, tell the person exactly what will happen: one new file,
-   `evals/evals.json`, will be added in the skill's folder from the draft, and
-   no other file there is touched, `SKILL.md` included. Name the skill and its
-   folder, and show them the file's full path and the cases. Tell them the file labels
-   the suite and each case as drafted from the skill and approved by the user. Ask whether to go ahead, and wait for their answer. Only a
-   clear yes in this conversation counts. If they say no, or do not answer, stop
-   here and give the third line no `--confirm-write`: the door refuses without
-   it, and nothing is added. Never give the flag on your own.
+2. **If that skill has test cases**, nothing is added to its folder, but the
+   run still writes. Ask the person, in one question, before anything is
+   written: a `receipts/` folder will be created in the folder you run start
+   from, holding the run's receipt, and a results page, `driftproof-view.html`,
+   will be written beside it. After a clear yes, go to step 5. If they say no,
+   or do not answer, stop here and run nothing.
+3. **Draft its test cases together.** Read the skill's `SKILL.md`, its front
+   matter's `allowed-tools`, any other files it bundles, and any input it asks
+   the person to supply. A run grants only Read, WebFetch and WebSearch, in an
+   empty directory with none of the skill's other files and nothing the person
+   would otherwise type in: draft three to five test cases, each grounded in one
+   thing the skill says it does and aimed at an outcome a user of the skill would
+   check, that carry everything they need inside the prompt itself, never a tool,
+   a bundled file or an input a run does not supply. An `id`, a `prompt` a real
+   user might send, and a `rubric` that says what the answer must contain or do,
+   scored so that a fully correct answer is 0.80. A rubric names something a
+   person could look for in the answer, and is not a restatement of what the
+   skill says. If the skill names a tool, a bundled file or an input a run cannot
+   supply, say so to the person in one line (for example "this skill uses Bash; a
+   Driftproof run grants Read, WebFetch and WebSearch"), and draft around it
+   rather than drafting a case that would fail on setup. Show the drafts to the
+   person, take their changes, and agree on the set. Then hold the set, as
+   `{"cases": [...]}`, in this conversation, or save it to a file under the
+   system temp directory (never the folder you run start from, and never the
+   skill's folder or a folder inside it) until the person says yes in the next
+   step. The skill's folder is not the place for it: the runner adds the test
+   cases there itself, in the next step, and only when there are none yet. The
+   door refuses a draft inside the skill's folder.
+4. **Ask once, before anything is written.** If the skill had no test cases,
+   tell the person, in one question, exactly what will happen and everything
+   it will create: one new file, `evals/evals.json`, will be added in the
+   skill's folder from the draft, with no other file there touched, `SKILL.md`
+   included; a `receipts/` folder will be created in the folder you run start
+   from, holding the run's receipt; and a results page, `driftproof-view.html`,
+   will be written beside it. Name the skill and its folder, and show them the
+   suite file's full path and the cases. Tell them the file labels the suite and
+   each case as drafted from the skill and approved by the user. Ask whether to
+   go ahead, and wait for their answer. Only a clear yes in this conversation
+   counts, and it is the one yes for everything this run writes: nothing in step
+   5 asks again. If they say no, or do not answer, stop here and give the third
+   line no `--confirm-write`: the door refuses without it, and nothing is
+   written. Never give the flag on your own.
 5. **Run it.** Run the third line with the draft file, once the person has said
-   yes, or the second line when the skill already had test cases. In order, it
+   yes, or the second line, after the yes of step 2, when the skill already had
+   test cases. In order, it
    checks the runner's version (the pinned runner's `--version` against the
    minimum in `version-guard.json`, and against this command's own minimum
    there, `start_minimum`, the first runner whose `init` takes `--cases`), adds the agreed cases as the skill's test
@@ -64,7 +86,22 @@ with your own folder and file.
    computer's own opener for a file.
 6. **Say what the page says**, in the page's own words. A smoke run is a first
    look: **a smoke run cannot produce a verdict**, and the page says so. For a
-   result that can, run `/driftproof:run` on the skill without `--quick`.
+   result that can, run `/driftproof:run` on the skill without `--quick`, or
+   take the offer in step 7.
+7. **Offer a small full run, once.** After the quick run, the view prints one
+   line that begins `offer:`. It names a small full run on the same test cases:
+   at most five, the normal judge samples, four calls at once, the calls it
+   makes (from the fewest to the most draws) and about how long it takes, scaled
+   from the quick run's own time. Tell the person those figures, in the line's
+   own numbers. Tell them that this run gives a result by the verdict rules, and
+   that on so few test cases that result is often "Too few test tasks to tell";
+   more test cases give a clearer answer. Its receipt goes into the same
+   `receipts/` folder, and the results page is written again over both. Ask
+   whether to run it, and wait for their answer. Only after a clear yes, run the
+   fourth line: it runs the full run in place of the quick run, writes the page
+   again and opens it. Then say what the page says, as in step 6. If they say
+   no, or do not answer, stop here and run nothing more. Never give `--full` on
+   your own.
 
 ## When it refuses
 
@@ -113,7 +150,8 @@ a file on this computer; it loads nothing.
   {"op": "version-guard", "minimum": "start_minimum"},
   {"op": "resolve-model"},
   {"op": "cli", "when": "cases", "args": ["init", "@skill-dir", "--cases", "@cases", "--drafted-from-skill"]},
-  {"op": "cli", "args": ["run", "@skill-dir", {"emit": ["--models", "@models"]}, "--quick", "--trusted-skill"]},
+  {"op": "cli", "unless": "full", "args": ["run", "@skill-dir", {"emit": ["--models", "@models"]}, "--quick", "--trusted-skill"]},
+  {"op": "cli", "when": "full", "args": ["run", "@skill-dir", {"emit": ["--models", "@models"]}, "--max-cases", "5", "--concurrency", "4", "--trusted-skill"]},
   {"op": "cli", "args": ["view", "receipts", "--out", "driftproof-view.html"]},
   {"op": "open-view", "file": "driftproof-view.html"}
 ]

@@ -235,6 +235,7 @@ ${heroReceipt(V, example)}
 ${statBand}
 </div>
 <p class="gap-line">Comparing two benchmark scores? The <a href="/benchmark-gap/">gap calculator</a> says whether the gap is bigger than the benchmark's own sampling noise.</p>
+<p class="gap-line">A piece by Maverick: <a href="/leaderboard-noise/">quoted AI benchmark gaps, checked against their own sampling noise</a>.</p>
 </section>
 
 <section id="states" class="screen is-text">
@@ -1271,6 +1272,7 @@ ${famousGapCards()}
 
 <h2 id="how-this-works">How this works</h2>
 <p>Method frozen 7 Oct 2026: Wilson 95% intervals and Newcombe's hybrid difference, written out in <a href="/benchmark-gap/gap.js">gap.js</a>; the verdict words are the <a href="/methodology/">methodology page</a>'s.</p>
+${NOISE_PIECE_LINE}
 
 <h2>Presets and their sources</h2>
 <ul class="gap-sources">
@@ -1282,6 +1284,113 @@ ${sources}
   return shell({
     title: 'Benchmark gap calculator | Driftproof',
     description: "Type two benchmark scores and the number of questions, and see whether the gap clears the benchmark's own sampling noise, by Wilson and Newcombe intervals.",
+    main,
+  });
+}
+
+// ── /leaderboard-noise/ (spec 171) ───────────────────────────────────────────────────────────────
+// Maverick's piece on quoted benchmark gaps, in issue 51's words as he approved them on 8 Oct 2026: a
+// code-and-data analysis crediting the Driftproof paper's method, not a Driftproof run, so the page
+// carries no receipt, badge, stamp or report number. The words sit on the desk; the figure and the two
+// tables are evidence on paper, in classes docs/tokens.css already paints. Every figure in them is read
+// from docs/data/leaderboard-noise.json, which cites the frozen FINDINGS; the text's own numbers are
+// his and are spec 171's to hold.
+const NOISE_PIECE_LINE = '<p class="gap-piece">Piece: <a href="/leaderboard-noise/">AI benchmark gaps vs sampling noise</a>, by Maverick, applies this method to the gaps quoted in launch posts and on public leaderboards.</p>';
+const NOISE_REPO = 'https://github.com/driftproofhq/ranknoise';
+const NOISE_SCORE_TYPES = 'https://github.com/driftproofhq/ranknoise/blob/main/method/SCORE_TYPES.md';
+const NOISE_GAP_RULE = 'https://github.com/driftproofhq/ranknoise/blob/main/src/core.js#L12';
+const noiseData = () => JSON.parse(fs.readFileSync(path.join(DOCS, 'data', 'leaderboard-noise.json'), 'utf8'));
+
+// THE FIGURE, IN THE REPORT CHARTS' INK (spec 171 AC-5): one group per post, a filled bar for its
+// separated comparisons, a hollow one for those not separated and a dashed one for those not checkable
+// (A-171-2), on one scale, each labelled with its count. A post
+// with none says so in words. No axis ticks: every numeral drawn is a count the data file carries.
+function noiseFigure(D) {
+  const W = 380; const x0 = 8; const x1 = W - 36; const top = 44; const nameH = 24; const rowH = 22; const gapP = 12; const barH = 14;
+  const max = Math.max(...D.posts.flatMap((p) => [p.separated, p.comparisons - p.separated - p.not_checkable, p.not_checkable]));
+  if (!(max > 0)) throw new Error('docs/data/leaderboard-noise.json: no post has a comparison to draw');
+  const unit = (x1 - x0) / max;
+  const groups = []; let y = top;
+  for (const p of D.posts) {
+    if (p.separated + p.not_checkable > p.comparisons) throw new Error(`docs/data/leaderboard-noise.json: ${p.id} has more separated and not checkable than comparisons`);
+    const g = [`<text class="model" x="0" y="${y + nameH - 6}">${esc(`${p.id} ${p.label}, ${p.date}`)}</text>`];
+    y += nameH;
+    const rows = [['with', p.separated], ['without', p.comparisons - p.separated - p.not_checkable], ['unchecked', p.not_checkable]].filter(([, n]) => n > 0);
+    if (!rows.length) { g.push(`<text class="tick" x="${x0}" y="${y + 16}">0 comparisons</text>`); y += rowH; }
+    for (const [cls, n] of rows) {
+      const w = (n * unit).toFixed(1);
+      g.push(`<rect class="${cls}" x="${x0}" y="${y + 3}" width="${w}" height="${barH}"/><text class="tick" x="${(x0 + n * unit + 6).toFixed(1)}" y="${y + 16}">${n}</text>`);
+      y += rowH;
+    }
+    groups.push(`<g class="post" data-post="${esc(p.id)}">${g.join('')}</g>`);
+    y += gapP;
+  }
+  const H = y - gapP + 8;
+  const key = '<g class="key"><rect class="with" x="0" y="8" width="16" height="14"/><text class="tick" x="22" y="20">separated</text><rect class="without" x="118" y="8" width="16" height="14"/><text class="tick" x="140" y="20">not separated</text><rect class="unchecked" x="250" y="8" width="16" height="14"/><text class="tick" x="272" y="20">not checkable</text></g>';
+  return `<svg class="chart-panel" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="noise-figure-title"><title id="noise-figure-title">Headline comparisons in each launch post: separated, not separated and not checkable</title>${key}${groups.join('')}</svg>`;
+}
+
+function leaderboardNoisePage() {
+  const D = noiseData();
+  const T = D.totals;
+  const repo = (text) => `<a href="${NOISE_REPO}">${text}</a>`;
+  const rows = (rs) => rs.map((r) => `<tr>${r.map((c) => `<td>${esc(String(c))}</td>`).join('')}</tr>`).join('\n');
+  const head = (hs) => `<thead><tr>${hs.map((h) => `<th scope="col">${h}</th>`).join('')}</tr></thead>`;
+  // A bare <table>: the chrome wraps each one in its paper .table-wrap (site-chrome.js).
+  const perPost = `<table>
+${head(['Post', 'Date', 'Headline comparisons', 'Separated', 'Not checkable'])}
+<tbody>
+${rows([...D.posts.map((p) => [`${p.id} ${p.label}`, p.date, p.comparisons, p.separated, p.not_checkable]), [`All ${word(D.posts.length)} posts`, '', T.headline.comparisons, T.headline.separated, T.headline.not_checkable]])}
+</tbody>
+</table>
+<p class="caption">Each launch post's headline comparisons, from the frozen FINDINGS read with the 8 October score-type audit.</p>`;
+  const minGap = `<table>
+${head(['Benchmark', 'Items', 'Smallest gap that clears the noise', 'In points'])}
+<tbody>
+${rows(D.minimum_gap.map((g) => [g.benchmark, g.of, g.question_count_allowed === false ? 'points only' : g.questions, `${g.points} pp`]))}
+</tbody>
+</table>
+<p class="caption">The smallest gap that clears each benchmark's own sampling noise, from the frozen FINDINGS. Terminal-Bench 4.0 and Aider polyglot scores are not one run over their items (Terminal-Bench averages repeated trials per task; Aider allows a second repair attempt), so their gap is given in points only, by the repo's <a href="${NOISE_GAP_RULE}">gap rule</a>.</p>`;
+  const figure = `<div class="chart-panels">
+<figure class="chart-cell">
+${noiseFigure(D)}
+<figcaption class="caption">Headline comparisons in each launch post. Filled bars are separated, hollow bars are not, dashed bars are not checkable, and each bar is labelled with its count. P2 and P4 have zero comparisons. From the frozen FINDINGS read with the 8 October score-type audit; the detailed charts are in the data repository.</figcaption>
+</figure>
+</div>`;
+  const lede = "Six frontier launch posts and nine public leaderboards, every quoted gap tested against the benchmark's own sampling noise, with a method frozen before the data was collected. Most gaps don't clear it. For 28 of them, the published data isn't even enough to check.";
+  const main = `<main class="prose noise">
+<h1>We checked 162 quoted AI benchmark gaps against their own noise. 20 hold up.</h1>
+<p class="muted">Counts use <a href="${NOISE_SCORE_TYPES}">each benchmark's own published intervals</a> where they exist; where none exists, the gap is marked as not checkable.</p>
+<p class="lede">${lede}</p>
+<p class="byline muted">Written by <a href="/maintainer/">Maverick</a>.</p>
+
+<h2>The scoreboard problem in one example</h2>
+<p>On SWE-bench Multilingual, the top two models score 72.7% and 66.3%. That looks decisive. It is a gap on 300 tasks, and this benchmark needs about 24 tasks of daylight before a gap at this size clears its own sampling noise. Six positions on that leaderboard sit inside the noise of first place.</p>
+
+<h2>What we did</h2>
+<p>We took the six most recent frontier launch announcements (Anthropic, OpenAI, Google and Mistral, September 22 to October 6) and nine public leaderboard views (SWE-bench's six, Terminal-Bench, Aider polyglot, SWE-bench Pro V2). We extracted every eligible head-to-head gap: 44 from the launch posts, 118 adjacent pairs from the leaderboards, 162 in all. Then we asked one question per gap: is it bigger than the sampling noise of the benchmark it comes from? The method (Wilson 95% intervals, Newcombe difference, a paired check where per-task results exist) was frozen before any data was read, and every number, source and hash is in the ${repo('open repo')}.</p>
+${figure}
+${perPost}
+
+<h2>Finding one: most quoted gaps don't clear the noise</h2>
+<p>Of the 44 launch-post gaps, 11 clear it, 5 don't and 28 can't be checked. Of the 118 leaderboard pairs, 9 clear it and 109 don't. Only 14 pairs anywhere had published per-task results allowing the stronger paired test; one clears it. Small benchmarks are the worst: Terminal-Bench has 66 tasks, so on the simple reading two models need to be about 18 points apart, and 25 of its 27 quoted gaps are smaller than that. Read with its own published intervals where they match, 4 of the 27 separate, 15 don't and 8 can't be checked.</p>
+${minGap}
+
+<h2>Finding two: for most comparisons, you can't even check</h2>
+<p>This is the result we didn't expect. Many published scores are not one run over N questions; they're averages over repeated runs, with the repeat counts often unstated and harness, tools and effort settings differing between the two sides. For 483 of the 617 comparisons we examined (including an appendix of effort-curve contrasts), the published data does not support an honest repeat-aware interval at all. We withdraw those as claims rather than guessing, and 175 of them had looked separated under the simple reading. The replication crisis question for AI benchmarks is not whether the gap is significant. It is whether anyone published enough for the question to be answerable.</p>
+
+<h2>Finding three: when sources do publish error bars, verdicts move in both directions</h2>
+<p>Terminal-Bench publishes real 95% intervals. Using them, first place does separate from positions 3 through 15; second place is the only one the test can't tell apart from first. Four gaps that looked unresolved under the simple reading become separated under the source's own bars.* Error bars are not a pedantic garnish; they change the reading both ways.</p>
+<p class="muted">* One of the four, on Chartography, uses an interval read off Chartography's published graphs, not stated numbers.</p>
+<p>Also worth knowing: GPQA Diamond, AIME 2025 and MMLU-Pro, until recently fixtures of every launch post, appear in none of the six. And one result that looked clearly separated compares a lab-run score against a competitor's self-reported one; it is now marked not checkable.</p>
+
+<h2>Check any gap yourself</h2>
+<p>The <a href="/benchmark-gap/">gap calculator</a> takes two scores and an N and gives the verdict in questions, not percentage points. The data, method, archived-source hashes and every one of the 617 rows are in the ${repo('repo')}. None of this says two models are equal; no separation detected means this benchmark, at this size, with this data, cannot tell.</p>
+<p>Method per the <a href="/paper/">Driftproof paper</a>. A gap you can't distinguish from noise is not a lead; it's a coin flip with a press release.</p>
+</main>`;
+  return shell({
+    title: 'AI benchmark gaps vs noise: 20 of 162 hold up | Driftproof',
+    description: lede,
     main,
   });
 }
@@ -1300,6 +1409,7 @@ const TARGETS = {
   'agent-skill-regression-testing/index.html': answerPage(() => answers.questionPage('agent-skill-regression-testing')),
   'compare/index.html': answerPage(answers.comparePage),
   'benchmark-gap/index.html': benchmarkGapPage,
+  'leaderboard-noise/index.html': leaderboardNoisePage,
   '404.html': notFoundPage,
   ...Object.fromEntries(Object.entries(STUBS).map(([slug, label]) => [`${slug}.html`, () => redirectStub(slug, label)])),
 };
