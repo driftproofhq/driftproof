@@ -33,7 +33,7 @@ Every published report, newest first.
 
 - [Report 014](https://driftproofhq.com/reports/014/): Claude Haiku 5.5 on release day, three skills
 - [Report 013](https://driftproofhq.com/reports/013/): Claude Sonnet 5.5, the day after its release
-- [Report 011](https://driftproofhq.com/reports/011/): Claude Opus 5.5 on release day, three skills
+- [Report 011](https://driftproofhq.com/reports/011/): Claude Opus 5.5, the day after its release, three skills
 - [Report 010](https://driftproofhq.com/reports/010/): repeated ADR evaluations across two Claude Code configurations
 - [Report 009](https://driftproofhq.com/reports/009/): three skills under two eval harnesses
 - [Report 008](https://driftproofhq.com/reports/008/): the skill stabilises the floor, not the ceiling
