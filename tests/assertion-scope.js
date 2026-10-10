@@ -1079,17 +1079,43 @@ function specGateAndProbeFiles(root) {
   }
   return out;
 }
+// The versions the next release can take from `version` (issue 161): the next
+// patch, the next minor (patch 0) and the next major (minor and patch 0). A
+// literal of one of them is stale only from the bump, as spec 179's probe's
+// `release/v0.18.0` was while dev read 0.17.0. Null when `version` is not
+// three dot-separated numbers.
+function nextReleaseVersions(version) {
+  const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
+  if (!m) return null;
+  const [maj, min, pat] = m.slice(1).map(Number);
+  return [
+    { which: 'next patch', version: `${maj}.${min}.${pat + 1}` },
+    { which: 'next minor', version: `${maj}.${min + 1}.0` },
+    { which: 'next major', version: `${maj + 1}.0.0` },
+  ];
+}
+// A next version is matched whole: not inside a longer number, so 1.0.0 is not
+// read in 11.0.0 or 1.0.0.1. The current version keeps its substring match.
+function carriesWhole(line, version) {
+  return new RegExp(`(?<![0-9.])${version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![0-9]|\\.[0-9])`).test(line);
+}
 // THE PREDICATE: no gate-or-probe file outside FREEZE_LITERALS carries the
-// current RUNNER_VERSION on a non-comment line. Exercised by the two arms
-// beside it in tests/gate.js, on a planted tree (a code-line plant reads red
-// naming the file; a comment-line plant reads green).
+// current RUNNER_VERSION, or a version the next release can take, on a
+// non-comment line. Each violation names the file, the line and the version it
+// carries. Exercised by the arms beside it in tests/gate.js, on a planted tree
+// (a code-line plant of each version reads red naming the file; a comment-line
+// plant reads green; a version two minors ahead reads green).
 function releaseVersionLiteralCheck(root) {
   const { RUNNER_VERSION } = require('../config');
+  const nextVersions = nextReleaseVersions(RUNNER_VERSION);
+  const next = nextVersions ? nextVersions.map((n) => n.version) : null;
   // The published tree ships neither the freeze table (scripts/pipeline.mjs is a pipeline file) nor specs/: there is
   // nothing to read, so the check passes with no file read, as the neighbouring source-only checks do.
   if (!fs.existsSync(path.join(root, 'scripts', 'pipeline.mjs')) || !fs.existsSync(path.join(root, 'specs'))) {
-    return { pass: true, filesRead: 0, violations: [], version: RUNNER_VERSION, exempt: [] };
+    return { pass: true, filesRead: 0, violations: [], version: RUNNER_VERSION, next, exempt: [] };
   }
+  // A version the next ones cannot be worked out from is not a pass: the rule would read nothing it names.
+  if (!nextVersions) return { pass: false, filesRead: 0, violations: [], version: RUNNER_VERSION, next, exempt: [], problem: `RUNNER_VERSION ${RUNNER_VERSION} is not three dot-separated numbers` };
   const exempt = freezeLiteralFiles(root);
   const files = specGateAndProbeFiles(root);
   const violations = [];
@@ -1098,11 +1124,12 @@ function releaseVersionLiteralCheck(root) {
     if (exempt.has(rel)) continue;
     const lines = fs.readFileSync(f, 'utf8').split('\n');
     lines.forEach((line, i) => {
-      if (!line.includes(RUNNER_VERSION) || isCommentLine(line)) return;
-      violations.push({ file: rel, line: i + 1 });
+      if (isCommentLine(line)) return;
+      if (line.includes(RUNNER_VERSION)) violations.push({ file: rel, line: i + 1, which: 'current', version: RUNNER_VERSION });
+      for (const n of nextVersions) if (carriesWhole(line, n.version)) violations.push({ file: rel, line: i + 1, which: n.which, version: n.version });
     });
   }
-  return { pass: violations.length === 0, filesRead: files.length, violations, version: RUNNER_VERSION, exempt: [...exempt] };
+  return { pass: violations.length === 0, filesRead: files.length, violations, version: RUNNER_VERSION, next, exempt: [...exempt] };
 }
 
 // ── a pipe into grep -q, in a shell file under pipefail (issue 31) ───────────
@@ -1745,4 +1772,4 @@ module.exports = {
   releaseEntryFacts, RELEASE_ENTRY_FACTS, publishedInvocations, WORDS, NARROWING_CLASSES, archiveReceipts, bandSites, WINDOW_SCOPES, productPathReaches, orphanModules, undeclaredHarnessOnly, HARNESS_ONLY_LIB, judgeSampleViolations, ATTRS_CARRYING_PROSE, attributeText, visibleText, documentText, countClaims, publishedFiles, signedReceiptClaims, FROZEN_SCHEMA, scanTimeoutLiterals,
   capLiteralClaims, capConstantNames, proseBlocks, capLiterals, capSubjects, CAP_MUTATIONS, CAP_WORD_PLANTS, plantCapMutation, FROZEN_PROSE, RECORDED_OUTPUT,
   workflowRunSubjects, declaresTrigger, workflowStructure, readShell, exclusionCheckMode, sourceHistory, SOURCE_ROOT_COMMIT, publishExclusionHits, isInternalNarrative, PUBLISH_GOVERNANCE_SET,
-  releaseVersionLiteralCheck, freezeLiteralFiles, specGateAndProbeFiles, pipefailQuietGrepCheck };
+  releaseVersionLiteralCheck, nextReleaseVersions, freezeLiteralFiles, specGateAndProbeFiles, pipefailQuietGrepCheck };

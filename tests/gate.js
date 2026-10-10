@@ -4925,12 +4925,19 @@ gate.section('receipt integrity (spec 026)');
 // the release version anywhere else goes stale at the next bump, found only
 // by a release sweep an hour later. Runs HERE, not only beside a spec: specs/
 // is excluded from the published tree and no workflow runs a spec gate.
+// Issue 161: a literal of the version the next release will take is stale
+// only from the bump, so the rule also refuses the next patch, minor and major.
 gate.section('release version literal scope (C-276)');
 {
   const scope = require('./assertion-scope');
   const rv = scope.releaseVersionLiteralCheck(ROOT);
-  gate.check('no gate or probe under specs/ carries the current RUNNER_VERSION on a non-comment line, except the files FREEZE_LITERALS names',
-    rv.pass, { version: rv.version, filesRead: rv.filesRead, violations: rv.violations.slice(0, 10), exempt: rv.exempt });
+  gate.check('no gate or probe under specs/ carries the current RUNNER_VERSION, or the next patch, minor or major version, on a non-comment line, except the files FREEZE_LITERALS names',
+    rv.pass, { version: rv.version, next: rv.next, problem: rv.problem, filesRead: rv.filesRead, violations: rv.violations.slice(0, 10), exempt: rv.exempt });
+  // The next versions, worked out here from the version and not read from the rule, so a rule that names the wrong ones reads red.
+  const [maj, min, pat] = rv.version.split('.').map(Number);
+  const next = { 'next patch': `${maj}.${min}.${pat + 1}`, 'next minor': `${maj}.${min + 1}.0`, 'next major': `${maj + 1}.0.0` };
+  gate.check('the rule names the next patch, minor and major versions of RUNNER_VERSION as the versions the next release can take',
+    JSON.stringify(rv.next) === JSON.stringify(Object.values(next)), { version: rv.version, next: rv.next, expected: Object.values(next) });
   // The two arms: a planted tree carries the real freeze table and one probe. A check that cannot go red proves nothing.
   const plant = (body) => {
     const dir = fs.mkdtempSync(path.join(process.env.TMPDIR || require('node:os').tmpdir(), 'release-literal-'));
@@ -4949,6 +4956,19 @@ gate.section('release version literal scope (C-276)');
     !onCode.pass && onCode.violations.length === 1 && onCode.violations[0].file === planted, { violations: onCode.violations });
   const onComment = plant(`// the ${rv.version} release bump moved this\n`);
   gate.check('the current version on a comment line of the same probe reads GREEN', onComment.pass && onComment.filesRead === 1, { violations: onComment.violations });
+  // Issue 161's arms: each next version on a code line and on a comment line, and one two minors ahead.
+  for (const [which, v] of Object.entries(next)) {
+    const code = plant(`const tag = 'release/v${v}';\n`);
+    gate.check(`MUTATION: the ${which} version planted on a code line of a probe the freeze does not name reads RED, naming the file and the version`,
+      !code.pass && code.violations.length === 1 && code.violations[0].file === planted && code.violations[0].line === 1 && code.violations[0].version === v,
+      { version: v, violations: code.violations });
+    const comment = plant(`// release/v${v} is the next tag\n`);
+    gate.check(`the ${which} version on a comment line of the same probe reads GREEN`, comment.pass && comment.filesRead === 1, { version: v, violations: comment.violations });
+  }
+  const beyond = `${maj}.${min + 2}.0`;
+  const twoAhead = plant(`const tag = 'release/v${beyond}';\n`);
+  gate.check('a version two minors ahead on a code line of the same probe reads GREEN (the rule names only the next versions)',
+    twoAhead.pass && twoAhead.filesRead === 1, { version: beyond, violations: twoAhead.violations });
 }
 
 // ── a pipe into grep -q under pipefail (issue 31) ────────────────────────────
@@ -6242,7 +6262,8 @@ if (SCAN_ROOT_ARG) {
   //    receipts by the rule's own code (lib/verdict.js lostDrawsOf, caseRule and readCases;
   //    lib/stats.js; lib/reuse.js bandOf), never from scripts/report-corrections.js, which writes
   //    the entry. The entry is read in the page's Amendments section, as the last entry there,
-  //    labelled one past the labels before it.
+  //    labelled one past the labels before it. Its sentence scoping the page's count of
+  //    unmeasured draws is read with that count in the body (issue 115).
   {
     const { lostDrawsOf: lost8Of, caseRule: rule8, readCases: cases8 } = require(path.join(ROOT, 'lib', 'verdict.js'));
     const stats8 = require(path.join(ROOT, 'lib', 'stats.js'));
@@ -6276,6 +6297,9 @@ if (SCAN_ROOT_ARG) {
       const lostAt = draws.map((d, k) => (d.status === 'measured' ? null : k)).filter((k) => k !== null);
       const keptAt = draws.map((d, k) => (d.status === 'measured' ? k : null)).filter((k) => k !== null);
       if (lostAt.length !== 1) return { why: `${lostAt.length} draw records are unmeasured, not one` };
+      // The body's count of unmeasured draws is of the newer receipts only (issue 115, F-1).
+      const unmeasured = rows8.reduce((a, x) => a + x.sampling.unmeasured, 0);
+      const counted = ['no', 'one', 'two', 'three', 'four'][rows8.length];
       return {
         figures: [
           `<code>${rel}</code>`, `<code>results.cases[${i}]</code>`, `<code>${c.id}</code>`, `<code>${r.slug}</code>`,
@@ -6283,11 +6307,13 @@ if (SCAN_ROOT_ARG) {
           `draw ${lostAt[0]} has no score and records <em>&ldquo;${draws[lostAt[0]].reason}&rdquo;</em>`,
           `draws ${keptAt[0]} to ${keptAt[keptAt.length - 1]} score ${l.measured.slice(0, -1).map(f3).join(', ')} and ${f3(l.measured[l.measured.length - 1])}`,
           `<code>n_measured</code> is ${c.generation.n_measured} and its <code>n_unmeasured</code> ${c.generation.n_unmeasured}`,
+          `Its count of ${unmeasured} unmeasured draws is of the ${counted} receipts measured for it, not of the Report 007 receipts they are diffed against.`,
           `${f3(o.mean)} ± ${f3(o.sd)} <span class="muted">(${o.source})</span>`, `${f3(n.mean)} ± ${f3(n.sd)} <span class="muted">(${n.source})</span>`, `at ${s3(n.mean - o.mean)}`,
           `${f3(low.mean)} ± ${f3(low.sd)} <span class="muted">(${o.source})</span>, from ${f3(low.lo)} to ${f3(low.hi)}`,
           `${f3(high.mean)} ± ${f3(high.sd)} <span class="muted">(${o.source})</span>`,
-          `${s3(w.mean - o.mean)}`, `highest end is ${f3(Math.max(low.hi, high.hi))}`, `lowest end, ${f3(w.lo)}`,
+          `Report 007&rsquo;s lift on this case, ${s3(w.mean - o.mean)}`, `highest end is ${f3(Math.max(low.hi, high.hi))}`, `lowest end, ${f3(w.lo)}`,
         ],
+        count: `<strong>${unmeasured} unmeasured</strong>`,
         quotes: [`The baseline arm fell ${f3(o.mean)} to ${f3(n.mean)}.`, `The cell's lift on this case therefore <em>grew</em>, ${s3(w.mean - o.mean)} to ${s3(nw.mean - n.mean)}`],
         // The entry's three readings, true of the receipts or the entry is false: at the low score
         // the bands overlap, at the high score they separate, and Report 007's lift holds at both.
@@ -6303,6 +6329,7 @@ if (SCAN_ROOT_ARG) {
       if (rd.low.startsWith('separated') || !rd.high.startsWith('separated') || rd.report007 !== 'separated-up') out.push(`the receipts do not read as the entry says: ${JSON.stringify(rd)}`);
       const { body, amendments } = split8(html);
       for (const q of want8.quotes) if (!body.includes(q)) out.push(`the body does not carry the quoted words: ${q.slice(0, 60)}`);
+      if (!body.includes(want8.count)) out.push(`the body does not carry the count the entry scopes: ${want8.count}`);
       const found = (html.match(/id="amendment-lost-draw"/g) || []).length;
       if (found !== 1) return [...out, `the page carries the entry ${found} time(s), not once`];
       const m = ENTRY_RE8.exec(amendments);
@@ -6334,6 +6361,27 @@ if (SCAN_ROOT_ARG) {
       !!nudged8 && entryProblems8(nudged8).some((p) => /does not print/.test(p))
         && !!swapped8 && swapped8 !== onDisk8 && entryProblems8(swapped8).some((p) => /not the last entry|not labelled/.test(p)),
       { nudged: !!nudged8, swapped: !!swapped8 });
+    // MUTATION (issue 115, F-2). Each figure of the entry, moved at its first place in the entry,
+    // one at a time, reads red naming that figure: its last digit moved by one, or, with no digit,
+    // its code name grown by a letter. A figure the entry also prints elsewhere is not held there.
+    const move8 = (f) => (/\d/.test(f)
+      ? f.replace(/(\d)(\D*)$/, (_x, d, rest) => `${(Number(d) + 1) % 10}${rest}`)
+      : f.replace('</code>', 'x</code>'));
+    const unheld8 = m8 && want8.figures ? want8.figures.filter((f) => {
+      if (!m8[0].includes(f)) return true;
+      const planted = onDisk8.replace(m8[0], () => m8[0].replace(f, () => move8(f)));
+      return planted === onDisk8 || !entryProblems8(planted).includes(`the entry does not print ${f}`);
+    }) : null;
+    gate.check('report 008 MUTATION: each figure of the lost-draw entry, moved at its first place in the entry, reads red naming that figure',
+      !!unheld8 && unheld8.length === 0,
+      { figures: want8.figures ? want8.figures.length : 0, unheld: (unheld8 || []).slice(0, 6) });
+    // MUTATION (issue 115, F-1). The body's count of unmeasured draws, the count the entry's
+    // scoping sentence is of, taken out of the body, reads red naming it.
+    const count8 = want8.count;
+    const uncounted8 = onDisk8 && count8 && onDisk8.includes(`, ${count8}`) ? onDisk8.replace(`, ${count8}`, '') : null;
+    gate.check('report 008 MUTATION: the body without the count of unmeasured draws the entry scopes reads red',
+      !!uncounted8 && entryProblems8(uncounted8).some((p) => p.includes(`the body does not carry the count the entry scopes: ${count8}`)),
+      { planted: !!uncounted8 });
   }
 
   // 10. THE PLAIN SUMMARY CARRIES NO READING THE LOST-DRAW ENTRY CORRECTS (issue 116, spec 031
@@ -6350,17 +6398,75 @@ if (SCAN_ROOT_ARG) {
     const summaryOf8 = (html) => (/<section class="plain-summary"[\s\S]*?<\/section>/.exec(html || '') || [''])[0];
     // Tags stripped until the text stops changing (CodeQL js/incomplete-multi-character-sanitization).
     const untag8 = (s) => { let t = s, was; do { was = t; t = t.replace(/<[^>]+>/g, ''); } while (t !== was); return t; };
+    const ENT8 = { rsquo: '’', lsquo: '‘', ldquo: '“', rdquo: '”', middot: '·', amp: '&', nbsp: ' ', lt: '<', gt: '>', quot: '"', apos: "'", plusmn: '±', minus: '−' };
+    const decode8 = (s) => s.replace(/&(?:#(\d+)|#x([0-9a-f]+)|([a-z]+));/gi, (m, d, x, n) => (d ? String.fromCodePoint(Number(d)) : x ? String.fromCodePoint(parseInt(x, 16)) : (ENT8[n] || m)));
+    // The move itself, in any of its words (issue 123, A-031-29); the two checks above read one
+    // phrasing of it. A text is cut into sentences and each sentence into clauses at its commas,
+    // semicolons and colons. A clause with a negation is not read. Any other clause reads the move
+    // when it says a score fell, when it says the lift grew, or when it says a task separated,
+    // moved, changed or differed, its scope names the arm without the skill and the clause does
+    // not name the arm with it. A fall is read on either arm: the page's amended headline reads no
+    // with_skill case as separated.
+    const NEG8 = /\b(?:not|no|none|neither|nor|never|nothing|cannot)\b|n['’]t\b/i;
+    const FALL8 = /\b(?:fell|fall(?:s|en|ing)?|drop(?:s|ped|ping)?|declin(?:e|es|ed|ing)|decreas(?:e|es|ed|ing)|lower(?:ed)?|worse(?:ned)?|worsen(?:s|ing)?|regress\w*|slip(?:s|ped)?|sank|sunk|dip(?:s|ped)?|down|deteriorat\w*|degrad\w*|lost ground|scored less)\b/i;
+    const GREW8 = /\b(?:grew|grow(?:s|n|ing)?|rose|risen|widen\w*|increas\w*|larger|bigger)\b/i;
+    const MOVE8 = /\b(?:separat\w*|mov(?:e|es|ed|ing)|chang(?:e|es|ed|ing)|shift\w*|differ\w*|diverg\w*)\b/i;
+    const BASE8 = /\bwithout (?:the |a |any )?skill\b|\bunskilled\b|\b(?:the|one|a) baseline\b|\bbaseline (?:arm|case|task|side|score|run)s?\b/i;
+    const SKILLED8 = /\bwith the skill\b|\bwith_skill\b|\bskilled\b/i;
+    const spans8 = (t, re) => {
+      const out = []; let start = 0;
+      for (const m of t.matchAll(re)) { const end = m.index + m[0].length; out.push({ start, end, text: t.slice(start, end) }); start = end; }
+      if (start < t.length) out.push({ start, end: t.length, text: t.slice(start) });
+      return out;
+    };
+    // The clauses of `text` that read the move, among those overlapping [from, to). The arm is read
+    // from `scope` when it is given (a summary point), else from the clause's own sentence.
+    const movesIn8 = (text, { scope, from = 0, to = text.length } = {}) => {
+      const out = [];
+      for (const s of spans8(text, /[.!?](?=\s|$)|\n/g)) {
+        if (s.end <= from || s.start >= to) continue;
+        const base = BASE8.test(scope === undefined ? s.text : scope);
+        for (const c of spans8(s.text, /[,;:]/g)) {
+          if (s.start + c.end <= from || s.start + c.start >= to) continue;
+          const t = c.text;
+          if (NEG8.test(t)) continue;
+          if (FALL8.test(t) || (/\blift\b/i.test(t) && GREW8.test(t)) || (base && MOVE8.test(t) && !SKILLED8.test(t))) out.push(t.trim());
+        }
+      }
+      return out;
+    };
+    // The page as sentences: tags out, entities decoded, white space collapsed as a quote is matched
+    // (spec 125 AC-5), each block on its own line.
+    const pageText8 = (html) => decode8(untag8(String(html || '').replace(/<\/(?:p|li|h[1-6]|td|th|div|section|ul|ol|tr|figcaption|summary|dd|dt)>|<br\s*\/?>/gi, '\u0001').replace(/<[^>]+>/g, ' ')))
+      .replace(/\s+/g, ' ').replace(/ ?\u0001[ \u0001]*/g, '\n');
+    const sourceMoves8 = (s, page) => {
+      const q = String(s.quote || '');
+      const at = s.file === 'docs/reports/008/index.html' ? page.indexOf(q) : -1;
+      return at >= 0 ? movesIn8(page, { from: at, to: at + q.length }) : movesIn8(q);
+    };
     const summaryProblems8 = (data, html) => {
       const out = [];
       const row = data && data.reports && data.reports['008'];
       if (!row || !Array.isArray(row.points)) return ['no Report 008 row'];
+      const page = pageText8(html);
       row.points.forEach((p, k) => {
         if (lower8(`${p.lead} ${p.text}`)) out.push(`point ${k} says a task without the skill scored clearly lower: ${p.lead}`);
-        for (const s of p.sources || []) if (/did separate under the rule/.test(s.quote)) out.push(`point ${k} cites the corrected reading: ${s.quote.slice(0, 60)}`);
+        const said = `${p.lead} ${p.text}`;
+        for (const c of movesIn8(said, { scope: said })) out.push(`point ${k} reads a move the lost-draw entry corrects: "${c}"`);
+        (p.sources || []).forEach((s, j) => {
+          if (/did separate under the rule/.test(s.quote)) out.push(`point ${k} cites the corrected reading: ${s.quote.slice(0, 60)}`);
+          for (const c of sourceMoves8(s, page)) out.push(`point ${k} source ${j} quotes a move the lost-draw entry corrects: "${c}"`);
+        });
       });
       const shown = summaryOf8(html);
       if (!shown) out.push('the page shows no plain summary');
-      else if (lower8(untag8(shown))) out.push('the page\'s plain summary says a task without the skill scored clearly lower');
+      else {
+        if (lower8(untag8(shown))) out.push('the page\'s plain summary says a task without the skill scored clearly lower');
+        for (const li of shown.matchAll(/<li>([\s\S]*?)<\/li>/g)) {
+          const said = decode8(untag8(li[1])).replace(/\s+/g, ' ').trim();
+          for (const c of movesIn8(said, { scope: said })) out.push(`the page's plain summary reads a move the lost-draw entry corrects: "${c}"`);
+        }
+      }
       return out;
     };
     const summary8 = summaryProblems8(data8, onDisk8);
@@ -6378,6 +6484,42 @@ if (SCAN_ROOT_ARG) {
       dataTook8 && summaryProblems8(plantedData8, onDisk8).some((p) => /says a task without the skill/.test(p))
         && !!plantedPage8 && summaryProblems8(data8, plantedPage8).some((p) => /page's plain summary says/.test(p)),
       { dataPlanted: dataTook8, pagePlanted: !!plantedPage8 });
+    // MUTATION (issue 123, A-031-29). Paraphrases of the corrected move, each planted as the point
+    // on the baseline arm, in the row and on the page, and each sentence the lost-draw entry quotes
+    // as corrected, with the entry of 2026-09-14's words, planted as a source of that point. Each
+    // reads red under the reading of the move, not only under the phrasing above.
+    const lead8 = at8 >= 0 ? data8.reports['008'].points[at8].lead : '';
+    const plants8 = [
+      { lead: CORRECTED8 },
+      { lead: 'One task fell on the new model.' },
+      { lead: lead8.replace(/ not\b/, '') },
+      { lead: 'Without the skill, one task separated across the release.' },
+      { lead: 'One task got worse without the skill.' },
+      { lead: 'Without the skill.', text: 'One task moved clearly on the new model.' },
+      { lead: 'On the new model the lift grew on one task.' },
+    ];
+    // The entry's first paragraph quotes what the page says; its later quotes are the receipt's.
+    const said8 = (/<div class="card" id="amendment-lost-draw">\n    <p>[^\n]*<\/p>/.exec(onDisk8 || '') || [''])[0];
+    const quotes8 = [...said8.matchAll(/&ldquo;([\s\S]*?)&rdquo;/g)].map((x) => decode8(untag8(x[1])));
+    quotes8.push('did separate under the rule');
+    const li8 = (/<li><b>Without the skill\b[\s\S]*?<\/li>/.exec(summaryOf8(onDisk8)) || [''])[0];
+    const unread8 = [];
+    for (const p of plants8) {
+      const row = JSON.parse(JSON.stringify(data8));
+      const point = row.reports['008'].points[at8];
+      point.lead = p.lead; if (p.text) point.text = p.text;
+      const page = onDisk8.replace(li8, () => `<li><b>${p.lead}</b> ${p.text || ''}</li>`);
+      if (p.lead === lead8 || !summaryProblems8(row, onDisk8).some((x) => /reads a move the lost-draw entry corrects/.test(x))) unread8.push(`row: ${p.lead}`);
+      if (page === onDisk8 || !summaryProblems8(data8, page).some((x) => /page's plain summary reads a move/.test(x))) unread8.push(`page: ${p.lead}`);
+    }
+    for (const q of quotes8) {
+      const row = JSON.parse(JSON.stringify(data8));
+      row.reports['008'].points[at8].sources.push({ file: 'docs/reports/008/index.html', quote: q });
+      if (!summaryProblems8(row, onDisk8).some((x) => /quotes a move the lost-draw entry corrects/.test(x))) unread8.push(`source: ${q.slice(0, 50)}`);
+    }
+    gate.check('report 008 MUTATION: each paraphrase of the move the lost-draw entry corrects, in the row, on the page or as a source, reads red',
+      at8 >= 0 && !!li8 && quotes8.length >= 3 && unread8.length === 0,
+      { plants: plants8.length, quotes: quotes8.length, unread: unread8.slice(0, 8) });
   }
 }
 

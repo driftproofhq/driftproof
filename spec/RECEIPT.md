@@ -73,6 +73,66 @@ call is the same bytes as before.
 check on 9 Oct 2026 ran on 2.1.295 and its replies named only the requested model. The two-id reply
 reported on 2.1.295 is covered by fixtures in `tests/substrate-auxiliary.test.js`, not by a live call.
 
+## Criteria cases
+
+Spec 185 (issue 179). A case in `evals/evals.json` may list **`criteria`**, entries of `{ id, weight,
+description }`. Ids are unique within the case, each 1 to 64 of A-Z, a-z, 0-9, underscore, dot and
+hyphen. Weights are numbers greater than 0, and their sum is finite. Descriptions are not empty. A bad
+list is refused when the suite loads, before any call. A case with criteria needs no rubric; a rubric
+it has is shown to the judge as context.
+
+A `criteria` list is read as criteria only when it holds objects. A `criteria` that is a string,
+a list of strings or an empty list takes the path it took before spec 185: it is the rubric text when
+the case has no rubric, and is not read when it has one, with the same hashes as before. A list that
+mixes objects with other entries is refused.
+
+**The judge decides, and the code adds up.** For a criteria case the judge is asked to decide each
+criterion, `met` or `not_met`, with a one-sentence reason, and to give no total. The weighted total is
+computed in code: the weights of the criteria decided `met` over the sum of all the weights, rounded to
+six places. So is the pass: the total at or above `pass_threshold`. Any key in the reply that is not
+read is recorded as ignored: a top-level key other than `judgments`, such as `score` or `pass`, by its
+name, and a key inside an entry other than `id`, `decision` and `reason` as `judgments[<id>].<key>`.
+
+**A sample's pass is not the case outcome.** The pass above is per sample. The case outcome comes from
+the draws by the rule every case uses: the mean and its standard deviation against the threshold. That
+rule reads a band that touches the threshold as borderline,
+so a mean exactly at the threshold reads borderline. Three of four equal weights met at a threshold of
+0.75 gives every sample a pass, and the case reads borderline, not pass.
+
+**A reply that does not decide every criterion is unmeasured.** Every criterion must appear exactly
+once with an allowed decision. A missing, duplicate, unknown or malformed entry, or a decision outside
+the set, makes the judge sample unmeasured, and its draw with it, with a reason naming the fault. It is
+never scored.
+
+**What is recorded.** A measured draw of a criteria case carries **`criteria_judgments`**
+(`results.cases[].generation.draws[].criteria_judgments`): one entry per judge sample, in sample order,
+each `{ total, pass, judgments, ignored }`. `judgments` is `{ id, decision }` per criterion, in the
+suite's order, and `total` is the sample's entry in `samples`. Under `--keep-transcripts` the retained
+record of the case also carries **`criteria_samples`**, one per sample, `{ raw, judgments, total, pass,
+ignored }`, with each judgment's reason beside the judge's raw reply. `raw` is the text whose sha256 is
+the sample's entry in `judge_sample_hashes`.
+
+**What a regrade keeps.** A regrade records `criteria_judgments` the same way. Regrade has
+no `--keep-transcripts`, so a regraded criteria draw keeps each sample's decisions, total, pass,
+ignored keys and hash, and not the per-criterion reasons or the raw replies.
+
+**A rubric regrade of a criteria case.** `regrade --rubric` may revise its criteria: descriptions,
+weights, criteria added or removed. The revised list is held to the checks a run applies, before any
+call. The case is graded per criterion under the revised list, its `criteria_judgments` are recorded,
+and its rubric hash and the sidecar's changed cases name the change. A case may not change shape, from
+criteria objects to a rubric alone or back. See *A rubric regrade* under § Transcripts.
+
+**Identity.** The criteria enter `suite_hash`, so an edit to any id, weight or description moves it.
+With the criteria template, they enter the case's `judge.rubric_hash` and a regrade's
+`grader_revision.rubric_hashes`. A suite with no criteria case is hashed, graded and recorded as
+before, byte for byte. The field sits on a draw object, which v0.11 declares open, so the schema does
+not change and `schema_version` stays `"0.11"`.
+
+**What this does not claim.** Computing the total in code fixes the arithmetic, not the judge's reading
+of an answer: a judge can still decide a criterion wrongly. How accurately a judge reads answers is a
+separate validation question. Nothing here says criteria make grading more accurate or show that a
+skill is better. What they add is a record of each decision behind a score, which a reader can audit.
+
 ## What v0.11 adds: a smoke run says so
 
 Spec 139, the first run. `driftproof run --quick` is a smoke run: two judge samples, four
@@ -573,7 +633,7 @@ The v0.3.1 schema gained an **additive interop revision** so receipts can be
 | field | type | notes |
 |---|---|---|
 | `format` | string | Always `"agentskills.io/evals"`. |
-| `suite_hash` | sha256 hex | Over the canonicalized normalized case list (`{id, prompt, rubric, pass_threshold}`). |
+| `suite_hash` | sha256 hex | Over the canonicalized normalized case list (`{id, prompt, rubric, pass_threshold}`, and `criteria` on a case that lists them; see *Criteria cases*). |
 | `case_count` | integer | Cases in the suite (before any `--max-cases` cap). |
 
 ### `run` (object, required)
@@ -620,7 +680,7 @@ receipt says so.
   | `threshold` | number or `null` | The case's pass threshold (or `null`). |
   | `reason` | string | One-line judge rationale (optional). |
   | `checks` | array | **v0.3.1, optional.** Deterministic post-check results, each `{ name, kind, pass }` (`kind ∈ regex/contains/not_contains/min_length`). Run alongside the judge; a **separate column**, **not** folded into `outcome`/the band verdict. |
-  | `judge` | object | `{ model_id, rubric_hash }` — who graded and a hash binding the grade to the exact rubric + judge system prompt. |
+  | `judge` | object | `{ model_id, rubric_hash }`: who graded and a hash binding the grade to the exact rubric + judge system prompt. A criteria case's hash also binds its criteria and their template (see *Criteria cases*). |
   | `activation`, `excluded_draws`, `label` | array, array, string | **v0.9**, optional, imported receipts. Whether the skill fired (never a score), the runs kept out of `samples` with their reasons, and the source's display name. See *What v0.9 adds*. |
 - **`aggregates`** — `{ with_skill, baseline }`, each
   `{ case_count, pass_count, borderline_count?, mean_score, stddev }`. Here
@@ -659,19 +719,55 @@ sha256 over the canonical receipt JSON **with `receipt_hash` removed**.
 Every generation and every judge sample is hashed into the receipt
 (`generation_hash`, `judge_sample_hashes[]`), so a verdict is always checkable
 *in principle*. `--keep-transcripts` makes it checkable *in practice*: the raw
-generations and judge outputs are written to `transcripts/<receipt_hash>/` (one
-JSON per case+mode, plus an `index.json`), and the receipt records
-`transcripts: "retained-local"`. Without the flag the receipt records
-`transcripts: "hashes-only"` and only the hashes are kept. **What is retained
-is the last measured draw of each case and mode only**: the runner keeps one
-transcript per case and mode and overwrites it on every draw, so the per-case
-top-level hashes (which are that draw's) can be re-derived from disk, and the
-draw-level hashes of earlier draws are checkable against nothing the runner
-wrote (spec 026, stated as the bound rather than moved). The transcript
-directory is **gitignored by default** — raw model text is never committed. The
-default for trigger-initiated runs is `retained-local` (disk is cheap, audits are
-not). To verify a retained receipt: re-hash each transcript file and compare
-against the receipt's `generation_hash` / `judge_sample_hashes`.
+generations and judge outputs are written to `transcripts/<receipt_hash>/`, and
+the receipt records `transcripts: "retained-local"`. Without the flag the receipt
+records `transcripts: "hashes-only"` and only the hashes are kept.
+
+**Every answer (spec 184).** `answers.json` in that directory holds every answer
+the run was returned, in the form `regrade --answers` reads:
+`{"format": "driftproof-answers/2", "receipt_hash", "model_id", "answers":
+{"<sha256>": "<text>"}, "draws": [...]}`. `draws` has one row for each draw of
+each case and mode, in receipt order: `id`, `mode`, `draw_index`, the receipt's
+`generation_hash` and `status`, `answer_sha256` (the sha256 of the text kept,
+null when no answer came back) and `judge_outputs` (the judge replies that came
+back for that draw). An answer is kept when the judge gave no valid score, timed
+out or failed, and when the draw was truncated or lost. A draw whose generation
+timed out, or came back empty, has no answer, and none is made up for it. Draws
+that returned the same text share one `answers` entry and stay separate rows. So
+the draw-level hashes of earlier draws are checkable against `answers.json`.
+
+**The per-case files.** One JSON per case and mode, listed in `index.json`, keeps
+what earlier versions kept: the runner retains the last measured draw of each case
+and mode only in these files, so the per-case top-level hashes (which are that
+draw's) can be re-derived from them. Two case ids that make one file name get two
+names, and no file in the directory is written over.
+
+**An archive written before spec 184** has the per-case files and no
+`answers.json`. `regrade --answers <dir>` reads it as what it holds, the last
+measured draw of each case and mode; every other draw has no answer there, and the
+regrade refuses each one by name.
+
+**A rubric regrade (spec 184).** `driftproof regrade --rubric <evals.json>` grades
+a receipt's saved answers again under a revised rubric, with the original's judge,
+judge sample count and judge template, and no generation call. The revised suite may
+differ from the original only in each case's `rubric` and `pass_threshold`, and, in a
+case that lists criteria objects, its `criteria` (spec 185), read as written (a
+threshold must be a number in [0, 1]; a revised criteria list is held to the checks a
+run applies, and a case may not change shape between criteria objects and a rubric
+alone); anything else is refused before any call. The
+new receipt carries the revised `suite.suite_hash`, `run.grader_revision` with the
+revised rubric hashes, `run.judged_at`, the original's archived arms and no
+`run.generated_at`: it is a re-judge of answers generated earlier, not a run. Its
+`.regrade.json` names the original receipt and adds `rubric_revision` (the revised
+file, the original and revised suite hashes, and each case changed). Its summary
+names the original receipt and its run date, and gives its own `date_utc` as the
+grading time, not a run date. The original receipt is not written over. The schema
+does not change.
+
+The transcript directory is **gitignored by default**: raw model text is never
+committed. The default for trigger-initiated runs is `retained-local` (disk is
+cheap, audits are not). To verify a retained receipt: re-hash each transcript file
+and compare against the receipt's `generation_hash` / `judge_sample_hashes`.
 
 ## Drift verdict (how `diff` reads two receipts)
 

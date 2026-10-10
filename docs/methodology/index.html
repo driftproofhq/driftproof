@@ -174,7 +174,7 @@
     <div>
       <h2 id="receipts-are-an-open-format">Receipts are an open format</h2>
       <p>A receipt is the file behind every published number. Its format is public and any tool may write one; Driftproof also converts results from neighbouring test tools (see <a href="/interop/">interop</a>).</p>
-      <p>A receipt records what produced its numbers: the model, the tools, the skill and the tasks by their content, and the grader with its instructions. The <code>stale</code> command compares those with what would run today and says what has moved.</p>
+      <p>A receipt records what produced its numbers: the model, the tools, the skill and the tasks by their content, and the grader with its instructions. The <code>stale</code> command compares those with what would run today and says what has moved. With <code>--keep-transcripts</code> a run keeps every answer it was returned, each with the grader's replies to it. Those answers can be graded again under a revised rubric, or a task's revised criteria, by the same grader and with no new answer drawn, and that regrade writes a receipt of its own that names the original (<a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md#transcripts-v03">the receipt specification</a>).</p>
     </div>
     <div class="tile">
       <p class="tile-label">The method in one sentence</p>
@@ -352,6 +352,7 @@ svg {
   <div class="card">
     <p>A suite case may declare optional <code>checks[]</code> - structural or regex assertions on the model output that simply hold or don't, with no LLM judgment (e.g. "the output contains a Conventional-Commits subject line", "the output mentions the 429 status the task described"). These run <strong>alongside</strong> the judge and are reported as a <strong>separate column</strong>.</p>
     <p><strong>Post-checks are supplementary evidence only.</strong> They are <em>not</em> folded into the case outcome or the band-overlap verdict - they corroborate or contradict the judge with a cheap, unambiguous signal, they do not replace it. Authors add them where they are natural and in-text-groundable; they are never required, and a suite without them is unaffected. Each result is recorded in the receipt as <code>{ name, kind, pass }</code><!--driftproof:checks--> (spec v0.3.1)<!--/driftproof:checks-->.</p>
+    <p>A case may also list weighted criteria in place of a free-text rubric. The grader then decides each criterion, met or not met, and the weighted total and the pass are computed in code, never taken from the grader; a reply that does not decide every criterion is not measured (<a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md#criteria-cases">the receipt specification</a>). That pass is per sample: the case outcome still comes from the mean and spread of its scores against the threshold, as for every case, so a mean exactly at the threshold reads borderline. This fixes the arithmetic, not the grader's reading of an answer. Each criterion's id, weight and description enter the case's rubric hash in the receipt, with the criteria template, so an edit to any of them moves that hash.</p>
   </div>
 
   <h3 id="the-value-per-token-axis">The value-per-token axis</h3>
