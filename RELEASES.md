@@ -8,6 +8,258 @@ makes this one a record.
 
 ---
 
+## v0.19.0 - 2026-10-10
+
+### What's new
+
+- **Every answer a run gets back is kept, and can be graded again under a revised rubric.** With
+  `--keep-transcripts`, a run now writes every sampled answer to `answers.json`, not only the last
+  measured draw of each case: answers the judge could not score, and answers from truncated or lost
+  draws, are kept too. `driftproof regrade --rubric <evals.json>` grades those saved answers again
+  under a revised rubric or pass threshold, with the original run's judge, judge sample count and
+  judge template, and no new generation call. Anything else changed in the revised suite is refused
+  before any call. The new receipt and its summary say it is a regrade, and name the original
+  receipt and its run date, so a regraded result can be checked against the exact answers it graded.
+- **A case can list weighted criteria, and the total is computed in code.** A case in
+  `evals/evals.json` may list `criteria`, each with an `id`, a `weight` and a `description`. The judge
+  decides each criterion met or not met with a one-sentence reason; the weighted total and each
+  sample's pass are computed by the runner, and any score or pass the judge returns is ignored and
+  recorded as ignored. A judge reply that does not decide every criterion exactly once leaves that
+  draw unmeasured, with the reason, and is never scored. Each draw records the per-criterion
+  decisions, and `--keep-transcripts` keeps the judge's raw reply beside them. `regrade --rubric` can
+  revise a case's criteria. This changes how a criteria case's total is added up, not how the judge
+  reads an answer.
+
+- **Three published reports gain dated corrections, and one a corrected title.** Report 007's
+  three judge-cost figures stay exactly as published, each now followed by a corrected total
+  counted over every draw's own judge usage instead of only its last draw: $2.601445 is followed
+  by $8.047195, $2.313420 by $7.634930, and $3.253265 by $13.737220. Reports 001 through 005, and
+  007 and 008, each gain a note where their headline counts include receipts their own receipt
+  pages mark Not measured; Report 006 is left alone, since its headline states no count to
+  correct. Report 011's title is corrected from "Claude Opus 5.5 on release day, three skills" to
+  "Claude Opus 5.5, the day after its release, three skills," since the run behind every figure on
+  the page began the day after the model's actual release date. No published figure, verdict or
+  badge changes; each correction is a dated line added beside what was already published.
+- **The maintainer page catches up with GitHub.** The credit for the maintainer's fix to
+  alibaba/skill-up (pull request #304) now links that project's v0.13.0 release notes, which
+  credit the fix by name, in place of "merged, unreleased."
+- **`driftproof view`'s answer count reads less ambiguously.** The Answers row now says the judge
+  scored each answer N times, where the wording used to read in a way that could be misread as
+  the whole suite being scored N times.
+
+### What may change for you
+
+- **Nothing in this release changes what an existing run, receipt or verdict reports.** A suite
+  without criteria objects is hashed, graded and recorded exactly as on 0.18.0. A `criteria` field
+  that is a string, a list of strings or an empty list is read as before.
+- **`--keep-transcripts` writes more.** The transcripts directory now also holds `answers.json`,
+  every answer of the run. When the receipt, its summary or that directory is already taken, a run
+  writes nothing and exits non-zero.
+  An archive written by an earlier version can still be read by `regrade --answers`, for the draws it
+  holds.
+
+### Known issues
+
+- **Unpaired evals from `claude plugin eval` still pool into the aggregate.** Only the skill-creator
+  importer excludes an eval scored in one arm only, or with mismatched expectation counts between
+  arms, from the aggregates this release. The same mismatch in a `claude plugin eval` import can still
+  skew the reported delta.
+- **Cases from a skill that does not exist.** On the command line, `driftproof init <new folder>
+  --cases <file> --drafted-from-skill` creates a stub `SKILL.md` and labels the suite and each case as
+  drafted from the skill and approved by the user, though there was no skill to draft from. The
+  plugin never takes this route.
+- **A lost-answer reading still has edges.** A bare "Created `report.md`." beside a pleasantry, a
+  reply that opens with a title, and some code names that end in a file extension can still be read the
+  wrong way.
+- **Backslashes in the stale summary.** A path or model id that holds a backslash shows it doubled in
+  the stale summary's code cells.
+- **`driftproof view` and a bad `capture` value.** A `.driftproofrc` in the working directory with
+  `"capture": "both"` makes `view` list the receipt as not read, where `stale` and `run` exit 2.
+- **One check clears at the publish.** The plugin's check that its package matches the published npm
+  package can read only after 0.16.0 is on npm.
+
+### Upgrade
+
+- npm: `npx driftproof@0.19.0`. The Action: `driftproofhq/driftproof@v0.19.0`, and the stale Action
+  `driftproofhq/driftproof/stale@v0.19.0`.
+- Claude Code plugin: `claude plugin update driftproof@driftproofhq`. The plugin runs `npx
+  driftproof@0.19.0`, and `/driftproof:start` needs a runner at 0.14.0 or later.
+- Receipt spec is unchanged at v0.11. Receipts from earlier versions still validate. A criteria case
+  adds `criteria_judgments` to a draw, which v0.11 declares open, so `schema_version` stays "0.11". A
+  workflow that sets no new option and lists no criteria objects behaves as on 0.18.0.
+
+### Engineering log
+
+**`package.json` reads 0.19.0**, and `config.js`'s `RUNNER_VERSION` is held equal to it, the only
+place the version is typed. The Action pins in `README.md` are `@v0.19.0`, and so is
+`examples/workflows/driftproof-stale.yml`'s `stale@v0.19.0` pin. The plugin's pin in
+`plugin/driftproof/.claude-plugin/plugin.json` is 0.19.0, and so is the npx pin in
+`plugin/driftproof/README.md`. `plugin/driftproof/version-guard.json` carries `minimum` 0.19.0 and
+`resolved_by` `27984ad0`, the version bump commit; `start_minimum` stays 0.14.0, unmoved.
+`package-lock.json` moves with them, and every report, methodology and site page's `index.html`,
+`docs/data/page-dates.json` and the sitemap files move with the bump and the freeze that follows
+it. **Not yet on npm** at the bump; a Published section is added here after the publish.
+
+**Reports 001 to 005, 007, 008 and 011 are corrected without touching a published figure (issue 8,
+PR 157, spec 161).** Report 007's three judge-cost figures were read from the last draw's judge
+usage only; counted over the judge usage every draw records, each is larger ($8.047195,
+$7.634930, $13.737220), and the page keeps its original figure with the corrected total directly
+beneath it. Reports 001 to 005, 007 and 008 each gain a note where their headline counts include
+receipts their own pages mark Not measured; Report 006 carries none, since its headline states no
+count. Report 011's `<h1>` is corrected from "on release day" to "the day after its release" (the
+vendor's news index dates the model's release 22 Sep 2026; the run behind every figure on the page
+began 23 Sep). This is the first use of the correction rule CONSTITUTION.md now states in §
+Decision policy (issue 132, PR 144, spec 181, catalogue row C-282): a public claim a defect leaves
+unsupported is corrected by a dated amendment on the artefact itself, never waiting for the
+matching code fix.
+
+**The maintainer page's upstream credit for alibaba/skill-up moves from unreleased to shipped
+(issue 152, PR 153, spec 169 A-169-3).** skill-up released v0.13.0 on 10 Oct 2026, crediting the
+fix by name; the page's row now links that release note. A sibling amendment (issue 120, PR 165,
+spec 169 A-169-4) separately tightens the page's own gate so a link to a release, tag, tree,
+compare or archive page can no longer pass as "not a release" in a row still marked unreleased;
+nothing on the page itself moved by that change.
+
+**`driftproof view`'s Answers row names what it counts (issue 6, PR 147, spec 128).** It read
+"...each scored N times," which could be read as the whole suite being scored N times; it now
+reads "...the judge scored each answer N times." No number on the row moves.
+
+**Every sampled answer kept, and `regrade --rubric` (issue 176, PR 182, spec 184).**
+`run --keep-transcripts` kept the last measured draw of each case and mode only. It now also writes
+`answers.json` (format `driftproof-answers/2`): every answer the run got back, keyed by its sha256,
+with one row per draw naming its `generation_hash`, status and judge outputs. Answers are kept when
+the judge failed, timed out or gave no valid score, and when the draw was truncated or lost; a draw
+with no answer has none made up. `regrade --rubric <evals.json>` re-judges those answers with the
+original's judge, sample count and judge template; the revised suite is read as written and may
+differ only in each case's `rubric` and `pass_threshold` (a number in [0, 1]), and the regrade's
+receipt carries the revised `suite_hash`, `run.grader_revision` and `run.judged_at`, with no
+`run.generated_at`. Its summary prints `graded (UTC)` and names the original receipt, file and run
+date. An independent review before the pull request found five faults (a files-capture draw whose
+judge reply was invalid was hashed as the bare reply; the revised suite was compared after
+normalisation; the summary read like a run; `--samples` and a moved judge template were accepted in
+rubric mode; one refusal lived in the CLI only); each was fixed with a test that read red first
+(A-184-1 to A-184-5).
+
+**Per-criterion judgments (issue 179, PR 184, spec 185).** `lib/judge.js` asks for a decision per
+criterion and reads it strictly; `lib/skill.js` validates the list when the suite loads (unique ids
+matching `^[A-Za-z0-9_.-]{1,64}$`, weights finite and above 0 with a finite sum, non-empty
+descriptions); `lib/run.js` and `lib/regrade.js` grade through the same code. Criteria enter
+`suite_hash` and the case's `judge.rubric_hash`. Two independent reviews ran before the pull
+request: the first's seven findings were fixed with tests that read red first (A-185-1 to A-185-7),
+and the second found nothing blocking. `regrade --rubric` accepts revised criteria under the checks
+a run applies, and refuses a case that changes shape (A-185-8). Non-blocking findings from the
+reviews and from PR 182's and PR 184's approvals are owed in issue 183.
+
+**The release build finishes a draft the action fails for its turn count (issue 26, PR 178).** The
+v0.19.0 draft stopped at the action's turn cap after its notes were written and its pull request
+opened. A new `ended` step in `build.yml` lets such a build finish when the action's own record ends
+in a successful result and the pull request is open; any other failure parks as before. Release mode's
+turn cap is 160.
+
+**The auto-start trigger's live reads are tested on recorded responses (issue 168, PR 177, spec 183
+A-183-2).** Each GitHub read the trigger makes can be served from a recorded response, and six plants,
+one per read, each read red. Required before `AUTO_RELEASE` is set; it stays unset.
+
+**A CodeQL alert in a test helper (issue 180, PR 181).** `tests/assertion-scope.js` escaped only the
+dots of a version before building a regex (js/incomplete-sanitization); it now escapes every regex
+metacharacter. The release sweep reads CodeQL, and this alert was its one new result.
+
+**The rehearsal sweep's reds, gate baselines only (issue 185, PR 186).** A rehearsal sweep of
+this release read four gates red that pin the README body (specs 126, 145 and 162): issue 8's README
+change had been recorded in spec 020's baseline only. Specs 126 and 145 now read that change as a named
+hunk, byte for byte (A-126-18, A-145-10, under spec 161's A-161-3). Spec 161 AC-8 read the release
+bump's `npx driftproof@<version> validate` line on receipt pages as a moved page; it now allows that
+line alone, with both versions read from `package.json` (A-161-3). Each change carries plants that read
+red. No product file moved.
+
+**The release train can start a release itself when the queue is quiet (issue 162, PRs 167 and
+172, spec 183; DECISIONS C-273, PR 170).** Catalogue row C-273 named one way to start a release:
+the operator's own comment. This adds a second, off by default: with the repository variable
+`AUTO_RELEASE` set to `true`, an hourly job starts a release itself once an unreleased
+`class:product` merge is waiting and the queue has gone quiet (no open `building` issue, no
+`ready` pull request, `dev`'s head at least two hours old, no release or sweep already running),
+and posts its reading on the pinned Release issue first. It stays off through this release; the
+operator turns it on only after the public release reviewer is removed. None of this touches the
+npm package, the Action or the plugin.
+
+**Already shipped before this release's own cut (issue 134, PR 135; PR 133).** `release/v0.18.0`'s
+own version bump and its RELEASES.md entry land on `dev` here; they carry no new change of their
+own and are already described in the v0.18.0 entry below.
+
+**Already shipped in 0.18.0, `dev`'s own history catching up (issue 134 continued, PRs 140 and
+143, spec 180).** The auxiliary-model-attestation build (`attest()` reads the model that served
+the main turn; the other ids are recorded on the draw as `auxiliary_calls`) and its two sibling
+amendments to specs 032 and 035 land on `dev`'s own first-parent line only now; the behaviour
+itself is already described in the v0.18.0 entry below and ships nothing new here.
+
+**Gate and nightly hygiene, no product change (issues 7, 99, 100, 101, 114, 115, 119 and 123; PRs
+139, 146, 150, 154, 156, 159, 163, 164 and 166).** None of these touch `lib/`, `bin/`, `action.yml`,
+the plugin, a receipt or a published page. Each closes a gate that was reading a false signal or
+missing a real one: spec 018's cap-word scanner stopped misreading "re-captured" and "captures" as
+a cost-cap literal, the fault that had forced earlier release notes to be hand-reworded around it
+(issue 137, PR 139); spec 022's isolation gate now reads the eval user's own `TMPDIR` instead of
+assuming it matches the parent process's (PR 146); spec 144 gains gate coverage proving seven
+hostile-text forms already render as inert text on every surface (PR 150); spec 173's gate now
+reads the commits each of its own amendments actually carries, instead of only the commits between
+its original Base and Tip (PR 154); spec 176 now names the real cause when a release sweep reads
+CodeQL as unreadable, instead of a generic verdict line (PR 156); spec 035's claims-count scan now
+re-runs itself instead of trusting a hardcoded figure (PR 159); spec 031's repository-gate coverage
+of two report-correction entries is tightened, closing two findings owed from earlier approvals
+(PRs 163 and 173); spec 177 records its own classification for an earlier amendment, moving no
+reading (PR 164); and spec 026's rule against a second copy of a probe now reads three more probe
+files that had drifted out of its sight (PR 166).
+
+#### The 0.19.0 merge list
+
+Twenty-eight merges since v0.18.0's source commit `ea2938f0`, oldest first:
+
+- claude-cli auxiliary-model attestation, `dev`'s own copy (issue 134, PR 135): already shipped in
+  0.18.0, above.
+- release-pipeline false-red fix, spec 018's cap-word scanner (issue 137, PR 139): gate only,
+  above.
+- release/v0.18.0 merge back (PR 133): that release's version bump and its RELEASES.md entry land
+  on `dev`; carries no new change of its own.
+- claude-cli auxiliary-model attestation, the build (issue 134, PR 140, spec 180): already shipped
+  in 0.18.0, above.
+- claude-cli auxiliary-model attestation, sibling amendments to specs 032 and 035 (PR 143): already
+  shipped in 0.18.0, above.
+- the public-claim-correction rule, in CONSTITUTION.md (issue 132, PR 144, spec 181): the
+  mechanism the report corrections below use.
+- eval-user isolation gate, `TMPDIR` read inside the hop (issue 99, PR 146): gate only, above.
+- `driftproof view`'s Answers row wording (issue 6, PR 147, spec 128): the judge-scored-per-answer
+  wording.
+- PR-comment escaping test coverage (issue 7, PR 150, spec 144): gate only, above.
+- maintainer page, skill-up's fix now shipped (issue 152, PR 153, spec 169 A-169-3): the v0.13.0
+  credit.
+- spec 173's gate, reading each amendment's own commits (issue 100, PR 154): gate only, above.
+- release-sweep CodeQL-unreadable cause naming (issue 101, PR 156, spec 176): gate only, above.
+- Reports 001 to 005, 007, 008 and 011 corrected (issue 8, PR 157, spec 161): the dated notes and
+  totals.
+- spec 035's claims-count scan, re-run instead of trusted (issue 114, PR 159): gate only, above.
+- spec 031's repository-gate coverage of a report-correction entry, tightened (issue 115, PR 163):
+  gate only, above.
+- spec 177's own classification, recorded (issue 119, PR 164): gate only, no reading moves.
+- maintainer page's unreleased-row link check, tightened (issue 120, PR 165, spec 169 A-169-4):
+  gate only, above.
+- spec 026's no-second-probe-copy rule, three more files in its sight (issue 161, PR 166): gate
+  only, above.
+- the release train's own auto-start trigger (issue 162, PR 167, spec 183): the build.
+- DECISIONS C-273, the auto-start trigger recorded (issue 162, PR 170): the catalogue row.
+- the release train's auto-start trigger, a follow-up (issue 162, PR 172, spec 183): draft and
+  label-release run on every start.
+- spec 031's repository-gate coverage of a second report-correction entry, tightened (issue 123,
+  PR 173): gate only, above.
+- the auto-start trigger's live reads, tested on recorded responses (issue 168, PR 177, spec 183
+  A-183-2): above.
+- a release draft the action fails for its turn count, finished (issue 26, PR 178): above.
+- the version-literal rule's regex escaping (issue 180, PR 181): above.
+- every sampled answer kept, and `regrade --rubric` (issue 176, PR 182, spec 184): the first
+  feature above.
+- per-criterion judgments (issue 179, PR 184, spec 185): the second feature above.
+- the rehearsal sweep's reds (issue 185, PR 186): gate baselines only, above.
+
+---
+
 ## v0.18.0 - 2026-10-09
 
 ### What's new

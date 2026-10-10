@@ -30,6 +30,8 @@ const OUT = [
   'tests/sweep-shards.test.js',
   // its subjects, build.yml and release-train.yml, are out, so it is too (spec 176)
   'tests/release-freeze-and-cause.test.js',
+  // its subjects, pipeline.mjs and release-train.yml, are out, so it is too (spec 183)
+  'tests/auto-release.test.js',
   'CLAUDE.md',
   'DECISIONS.md',
 ];

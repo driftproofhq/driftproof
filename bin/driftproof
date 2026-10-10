@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { PROJECT_NAME, RUNNER_VERSION, DEFAULT_JUDGE_SAMPLES, DEV_MAX_USD, DEV_MAX_CALLS } = require('../config');
 const { loadSkill, normalizeCases } = require('../lib/skill');
-const { runSkillOnModel, summarizeReceipt, projectCalls, answeredLine, band, uncertaintyStr } = require('../lib/run');
+const { runSkillOnModel, summarizeReceipt, projectCalls, answeredLine, band, uncertaintyStr, transcriptRecord } = require('../lib/run');
 const { SAMPLING } = require('../lib/sampling');
 const { validateReceipt, verifyReceiptHash, duplicateCaseRows, ambiguityLine, listReceipts, receiptBaseName, fileSlug, REGRADE_SIDECAR, SUMMARY_SIDECAR } = require('../lib/receipt');
 const { buildDriftReport, revisionPairProblem } = require('../lib/diff');
@@ -19,8 +19,8 @@ const { registryStatus, assertRegistered, REGISTRY_PATH } = require('../lib/mode
 const { verdictFromReceipt, badgeEndpoint, githubOutputLines, drawsLine, underpoweredLine, lostDrawsLine } = require('../lib/verdict');
 const decision = require('../lib/decision');
 const { scaffoldInit } = require('../lib/init');
-const { planRegrade, regradeReceipt } = require('../lib/regrade');
-const { sha256 } = require('../lib/canonical');
+const { planRegrade, regradeReceipt, answersArchive, readAnswers, readRevisedSuite, ANSWERS_ARCHIVE } = require('../lib/regrade');
+const { canonicalModelId } = require('../lib/usage');
 
 // Output dirs default to the USER's current directory, not the package dir, so a
 // global/npx install writes receipts/transcripts into the project being tested
@@ -28,19 +28,29 @@ const { sha256 } = require('../lib/canonical');
 const TRANSCRIPTS_DIR = path.join(process.cwd(), 'transcripts');
 
 // Write retained transcripts for one receipt to transcripts/<receipt_hash>/.
-// One JSON file per (case, mode); gitignored by default. Called only when
+// One JSON file per (case, mode), its last measured draw; and answers.json,
+// every draw's answer (spec 184). Gitignored by default. Called only when
 // --keep-transcripts is set (run.transcripts === 'retained-local').
-function writeTranscripts(receipt, transcripts) {
+// Spec 184 (R-2): every file is created, never replaced, and two case ids whose
+// file names collide get two names, the second with a number.
+function writeTranscripts(receipt, transcripts, answers) {
   const dir = path.join(TRANSCRIPTS_DIR, receipt.receipt_hash);
-  fs.mkdirSync(dir, { recursive: true });
-  const manifest = { receipt_hash: receipt.receipt_hash, model_id: receipt.run.model_id, date_utc: receipt.run.date_utc, entries: [] };
+  fs.mkdirSync(TRANSCRIPTS_DIR, { recursive: true });
+  fs.mkdirSync(dir);   // created, never reused: an existing archive fails here, before any file is written
+
+  const manifest = { receipt_hash: receipt.receipt_hash, model_id: receipt.run.model_id, date_utc: receipt.run.date_utc, entries: [], answers: ANSWERS_ARCHIVE };
+  const taken = new Set(['index.json', ANSWERS_ARCHIVE]);
   for (const t of transcripts) {
     if (!t) continue;
-    const base = `${fileSlug(t.id)}-${t.mode}`;
-    fs.writeFileSync(path.join(dir, `${base}.json`), JSON.stringify({ id: t.id, mode: t.mode, generation: t.generation, judge_outputs: t.judge_outputs }, null, 2));
+    let base = `${fileSlug(t.id)}-${t.mode}`;
+    for (let n = 2; taken.has(`${base}.json`); n++) base = `${fileSlug(t.id)}-${t.mode}-${n}`;
+    taken.add(`${base}.json`);
+    // Spec 185: the record lib/run.js makes, which keeps a criteria case's judgments beside each raw reply.
+    fs.writeFileSync(path.join(dir, `${base}.json`), JSON.stringify(transcriptRecord(t), null, 2), { flag: 'wx' });
     manifest.entries.push(`${base}.json`);
   }
-  fs.writeFileSync(path.join(dir, 'index.json'), JSON.stringify(manifest, null, 2));
+  fs.writeFileSync(path.join(dir, ANSWERS_ARCHIVE), JSON.stringify(answersArchive({ receipt, kept: answers }), null, 2), { flag: 'wx' });
+  fs.writeFileSync(path.join(dir, 'index.json'), JSON.stringify(manifest, null, 2), { flag: 'wx' });
   return dir;
 }
 
@@ -261,7 +271,8 @@ const COMMAND_FLAGS = {
   // Spec 139: init takes the cases a suite is written from. Spec 165: and the label for cases a person
   // approved after they were drafted from the skill, which needs those cases.
   init: ['cases', 'drafted-from-skill'],
-  regrade: ['skill', 'answers', 'judge-model', 'samples', 'max-calls', 'max-usd', 'out', 'trusted-skill'],
+  // Spec 184: and the revised suite of a rubric regrade.
+  regrade: ['skill', 'answers', 'judge-model', 'samples', 'max-calls', 'max-usd', 'out', 'trusted-skill', 'rubric'],
   // Spec 072 (Q5): a misspelt fail-on flag is refused, not run with its default.
   decide: ['models', 'github-output', 'badge', 'summary', 'enforce', 'fail-on-regression', 'fail-on-underpowered'],
   // Spec 128: the page, and the stale check's own options, passed to it as `stale` takes them.
@@ -305,7 +316,7 @@ USAGE
                         [--keep-transcripts] [--out DIR] [--trusted-skill] [--capture text|files] [--quick]
   ${PROJECT_NAME} diff <receiptA.json> <receiptB.json> [--out FILE] [--mode release|revision]
   ${PROJECT_NAME} regrade <receipt.json> --skill <dir> --answers <file> --judge-model <id>
-                        [--samples N] [--max-calls N] [--max-usd N] [--out DIR] [--trusted-skill]
+                        [--rubric <evals.json>] [--samples N] [--max-calls N] [--max-usd N] [--out DIR] [--trusted-skill]
   ${PROJECT_NAME} stale <receipt.json>... [--skill DIR] [--suite FILE] [--model ID] [--judge ID]
                         [--capture text|files] [--harness-version V | --no-harness-check] [--strict] [--json [path]]
   ${PROJECT_NAME} view <receipts-dir> [--out FILE] [--skill DIR] [--suite FILE] [--model ID] [--judge ID]
@@ -355,6 +366,10 @@ NOTES
   - --keep-transcripts writes the raw generations + judge outputs to
     transcripts/<receipt-hash>/ (gitignored) and records transcripts:"retained-
     local" in the receipt. Default is "hashes-only" (only the sha256 hashes).
+    There, answers.json holds every answer the run was returned: one row per draw,
+    by case, mode and draw index, with its generation_hash and the judge outputs that
+    came back for it, kept when the judge failed too. One file per case and mode
+    holds its last measured draw, as before. No file there is written over.
   - Prices and registry status come from config/models.json (or the registry
     DRIFTPROOF_REGISTRY names). An unregistered model id is REFUSED before any call,
     naming the id and the registry path (so is one not shaped like a model id);
@@ -402,12 +417,27 @@ NOTES
     over a file it did not write.
   - regrade grades a receipt's saved answers again with another judge (or the
     same judge under a new template): what lib/reuse.js's triage calls
-    "regrade". --answers is {"answers": {"<generation_hash>": "<text>"}}; every
-    answer is checked against its hash before any call. The generation side of
+    "regrade". --answers is {"answers": {"<generation_hash>": "<text>"}}, or a
+    transcripts/<receipt-hash>/ directory (its answers.json; an archive written
+    before every draw was kept is read as what it holds, its last measured draws);
+    every answer is checked against its hash before any call. The generation side of
     the new receipt is the original's, draw for draw; --samples defaults to the
     original's. The receipt records the re-judge (its archived arms, judged_at and
     grader_revision); <receipt>.regrade.json beside it names the original receipt
-    and the answers file.
+    and the answers file. Nothing is written over.
+  - regrade --rubric <evals.json> grades the same saved answers again under a revised
+    rubric, with the original's judge, judge sample count and judge template
+    (--judge-model and --samples may be left out; another of any is refused). The
+    revised suite may differ from the skill's own only in each case's rubric and
+    pass_threshold, and in a case that lists criteria objects its criteria (held to
+    the checks a run applies; a case may not switch between criteria objects and a
+    rubric alone), read as written: a threshold that is not a number in [0, 1], a key
+    the original case does not carry, a changed prompt, a case id changed, added or
+    removed, a changed case order or any other field is refused before any call,
+    naming it. No answer is generated. The new receipt carries the revised suite_hash
+    and rubric hashes; its .regrade.json adds rubric_revision: the revised file, the
+    original and revised suite hashes, and each case changed. A regrade's summary
+    names the original receipt and its run date, and its own time as the grading time.
   - export --to summary-json emits the minimal stable interchange summary
     (driftproof/summary v1) other tools can consume without a receipt parser.`);
 }
@@ -620,7 +650,7 @@ async function cmdRun(positional, flags) {
       }
       throw e;
     }
-    const { receipt, calls, transcripts } = result;
+    const { receipt, calls, transcripts, answers } = result;
 
     const { valid, errors } = validateReceipt(receipt);
     if (!valid) {
@@ -638,17 +668,28 @@ async function cmdRun(positional, flags) {
     const base = receiptBaseName({ skill: skill.name, model: receipt.run.model_id, ...(quick ? { tag: PRESET_QUICK } : {}), date: dateStamp(receipt.run.date_utc), hash: receipt.receipt_hash });
     const jsonPath = path.join(outDir, `${base}.json`);
     const mdPath = path.join(outDir, `${base}.summary.md`);
+    // Spec 184 A-184-5: the receipt and its transcripts directory are both new. Each is checked free
+    // before either is written, and the archive is written first, so a name already taken never
+    // leaves a receipt beside a partial archive.
+    const tdir = keepTranscripts && transcripts ? path.join(TRANSCRIPTS_DIR, receipt.receipt_hash) : null;
+    const taken = [jsonPath, mdPath, ...(tdir ? [tdir] : [])].filter((p) => fs.existsSync(p));
+    if (taken.length) {
+      console.error(`  ✗ ${taken.map((p) => path.relative(process.cwd(), p)).join(' and ')} already exist${taken.length === 1 ? 's' : ''}; nothing is written over, so nothing is written for ${model}`);
+      process.exitCode = 1;
+      continue;
+    }
+
+    // v0.3: retained transcripts are written keyed by the sealed receipt_hash,
+    // so a reader can verify every generation_hash / judge_sample_hash.
+    if (tdir) {
+      writeTranscripts(receipt, transcripts, answers);
+      console.log(`  → transcripts (retained-local): ${path.relative(process.cwd(), tdir)}/`);
+      console.log(`  → ${ANSWERS_ARCHIVE}: every answer the run was returned, ${(answers || []).length} draw(s)`);
+    }
     fs.mkdirSync(outDir, { recursive: true });
     fs.writeFileSync(jsonPath, JSON.stringify(receipt, null, 2), { flag: 'wx' });
     fs.writeFileSync(mdPath, summarizeReceipt(receipt));
     emitted.push(jsonPath);
-
-    // v0.3: retained transcripts are written keyed by the sealed receipt_hash,
-    // so a reader can verify every generation_hash / judge_sample_hash.
-    if (keepTranscripts && transcripts) {
-      const tdir = writeTranscripts(receipt, transcripts);
-      console.log(`  → transcripts (retained-local): ${path.relative(process.cwd(), tdir)}/`);
-    }
 
     const cmp = receipt.comparison;
     const aw = receipt.results.aggregates.with_skill;
@@ -813,13 +854,23 @@ async function cmdRegrade(positional, flags) {
   if (!receiptPath) { console.error('  ✗ regrade: a receipt path is required\n'); usage(); process.exit(2); }
   refuseUnknownFlags('regrade', flags);
   refuseExtraPositionals('regrade', positional, '<receipt.json>');
-  for (const f of ['skill', 'answers', 'judge-model']) {
-    if (typeof flags[f] !== 'string' || !flags[f]) { console.error(`  ✗ REFUSED (regrade): --${f} is required; nothing run, no receipt written.`); process.exit(2); }
+  const refuse = (why) => { console.error(`  ✗ REFUSED (regrade): ${why}; nothing run, no receipt written.`); process.exit(2); };
+  // Spec 184: --rubric names the revised suite of a rubric regrade, which keeps the original's judge.
+  const rubricMode = Object.hasOwn(flags, 'rubric');
+  if (rubricMode && (typeof flags.rubric !== 'string' || !flags.rubric)) refuse('--rubric needs the revised suite file, an evals.json');
+  for (const f of ['skill', 'answers', ...(rubricMode ? [] : ['judge-model'])]) {
+    if (typeof flags[f] !== 'string' || !flags[f]) refuse(`--${f} is required`);
   }
+  if (rubricMode && Object.hasOwn(flags, 'judge-model') && (typeof flags['judge-model'] !== 'string' || !flags['judge-model'])) refuse('--judge-model needs a model id');
   const checked = checkNumericInputs(flags, {});
   const receipt = JSON.parse(fs.readFileSync(receiptPath, 'utf8'));
-  const judgeModel = resolveModel(flags['judge-model']);
+  const origJudge = receipt.run && receipt.run.judge && receipt.run.judge.model_id;
+  if (rubricMode && !flags['judge-model'] && !origJudge) refuse('the receipt records no judge, so a rubric regrade has no judge to keep; pass --judge-model');
+  const judgeModel = resolveModel(flags['judge-model'] || origJudge);
   checkRegistered([receipt.run.model_id], () => judgeModel);
+  if (rubricMode && origJudge && canonicalModelId(judgeModel) !== canonicalModelId(resolveModel(origJudge))) {
+    refuse(`a rubric regrade keeps the original's judge ${origJudge}, and --judge-model ${flags['judge-model']} is another; regrade with another judge without --rubric`);
+  }
   const origSamples = receipt.run && receipt.run.judge && receipt.run.judge.samples;
   const samples = checked.samples !== undefined ? parseInt(checked.samples, 10) : origSamples;
   if (!Number.isInteger(samples) || samples < 1) { console.error('  ✗ REFUSED (regrade): the receipt records no judge sample count; pass --samples.'); process.exit(2); }
@@ -828,14 +879,22 @@ async function cmdRegrade(positional, flags) {
   const trusted = !!flags['trusted-skill'];
   const outDir = flags.out ? path.resolve(flags.out) : RECEIPTS_DIR;
   const skill = loadSkillOrRefuse(flags.skill, 'regrade');
-  const answersFile = path.resolve(flags.answers);
-  const answersBytes = fs.readFileSync(answersFile);
-  const answers = (JSON.parse(answersBytes.toString('utf8')) || {}).answers || {};
+  // Spec 184 (R-3): a file, or a transcripts directory, read as what it holds.
+  let read;
+  try { read = readAnswers(flags.answers); } catch (e) { refuse(`--answers ${flags.answers} cannot be read: ${e.message}`); }
+  const answers = read.answers;
+  // Spec 184 (R-4): the revised suite, hashed by the code a run hashes a suite with.
+  let revised = null;
+  if (rubricMode) {
+    try { revised = readRevisedSuite(flags.rubric); } catch (e) { refuse(`--rubric ${flags.rubric} is not a suite this runner reads: ${e.message}`); }
+  }
 
-  const plan = planRegrade({ receipt, skill, answers, judgeModel, samples });
+  const plan = planRegrade({ receipt, skill, answers, judgeModel, samples, revised });
   console.log(`\n${PROJECT_NAME} regrade: ${path.basename(receiptPath)}`);
   if (process.env.DRIFTPROOF_STUB === '1') console.log('  STUB RUN (DRIFTPROOF_STUB=1): nothing will answer the judge; the receipt will be UNVERIFIED and grade nothing');
   console.log(`  model: ${receipt.run.model_id} (generations kept)   judge: ${receipt.run.judge.model_id} → ${judgeModel}   samples/answer: ${samples}`);
+  if (read.source.kind === 'legacy-archive') console.log(`  answers: ${Object.keys(answers).length} read from ${read.source.file}/, an archive written before every draw was kept: it holds the last measured draw of each case and mode`);
+  if (revised) console.log(`  rubric: ${revised.file} (suite ${String(receipt.suite.suite_hash).slice(0, 12)}… → ${revised.suiteHash.slice(0, 12)}…); no answer is generated`);
   // Spec 138 (R-9): the same loud warning when the new judge is the model whose answers it grades.
   if (selfJudged(receipt.run.model_id, judgeModel)) for (const line of selfJudgeLines(receipt.run.model_id)) console.error(line);
   if (plan.problems.length) {
@@ -856,7 +915,7 @@ async function cmdRegrade(positional, flags) {
   let result;
   try {
     result = await regradeReceipt({
-      receipt, skill, answers, judgeModel, samples,
+      receipt, skill, answers, judgeModel, samples, revised,
       opts: {
         trusted, budget: new BudgetTracker(maxUsd),
         onProgress: (p) => { if (p.phase === 'done') console.log(`  ${p.case} / ${p.mode}: ${p.outcome} (${p.score.toFixed(2)} ± ${(p.stddev || 0).toFixed(2)})`); },
@@ -872,15 +931,20 @@ async function cmdRegrade(positional, flags) {
   if (!valid) { console.error('  ✗ regraded receipt FAILED schema validation:', JSON.stringify(errors, null, 2)); process.exitCode = 1; }
   if (!verifyReceiptHash(out)) { console.error('  ✗ receipt_hash does not verify'); process.exitCode = 1; }
   fs.mkdirSync(outDir, { recursive: true });
-  const base = receiptBaseName({ skill: out.skill.name, model: out.run.model_id, tag: `regrade-${fileSlug(judgeModel)}`, date: dateStamp(out.run.date_utc), hash: out.receipt_hash });
+  // Spec 184 (R-5): a rubric regrade is named one; every file is created, never replaced.
+  const base = receiptBaseName({ skill: out.skill.name, model: out.run.model_id, tag: revised ? 'regrade-rubric' : `regrade-${fileSlug(judgeModel)}`, date: dateStamp(out.run.date_utc), hash: out.receipt_hash });
   const jsonPath = path.join(outDir, `${base}.json`);
   fs.writeFileSync(jsonPath, JSON.stringify(out, null, 2), { flag: 'wx' });
-  fs.writeFileSync(path.join(outDir, `${base}.summary.md`), summarizeReceipt(out));
-  const provenance = { ...result.provenance, answers: { file: path.basename(answersFile), sha256: sha256(answersBytes), graded: plan.draws } };
+  // Spec 184 A-184-3: the summary says it is a regrade, naming the original receipt and its run date
+  // (both kinds: the judge-only regrade of spec 044 is this same code path).
+  const regradeOf = { receipt_hash: receipt.receipt_hash, file: path.basename(receiptPath), date_utc: receipt.run.date_utc, kind: revised ? 'rubric' : 'judge', judge: judgeModel };
+  fs.writeFileSync(path.join(outDir, `${base}.summary.md`), summarizeReceipt(out, { regradeOf }), { flag: 'wx' });
+  const provenance = { ...result.provenance, answers: { file: read.source.file, sha256: read.source.sha256, graded: plan.draws } };
   // The sidecar's name is lib/receipt.js's, which the directory readers skip by (spec 069).
   const sidecar = `${base}${REGRADE_SIDECAR.suffix}`;
-  fs.writeFileSync(path.join(outDir, sidecar), JSON.stringify(provenance, null, 2));
-  console.log(`  → ${path.relative(process.cwd(), jsonPath)}  (${result.calls} judge calls)`);
+  fs.writeFileSync(path.join(outDir, sidecar), JSON.stringify(provenance, null, 2), { flag: 'wx' });
+  console.log(`  → ${path.relative(process.cwd(), jsonPath)}  (${result.calls} judge calls${revised ? ', no generation call' : ''})`);
+  console.log(`  → a regrade of the saved answers of ${path.basename(receiptPath)} (run ${receipt.run.date_utc}), ${revised ? 'under a revised rubric' : `by the judge ${judgeModel}`}; graded ${out.run.date_utc}`);
   console.log(`  → verification_level ${out.verification_level}; provenance: ${sidecar}\n`);
 }
 
