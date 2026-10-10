@@ -6904,6 +6904,23 @@ gate.section('sampling-era cap recalibration (spec 018)');
     gate.check('AC-7 MUTATION: every cap-statement shape — bare default, compound N-call, two-digit budget, trigger-cap prose — takes the published-prose scan red when planted',
       scope018.CAP_MUTATIONS.length >= 4 && capMissed018.length === 0,
       { planted: scope018.CAP_MUTATIONS.length, missed: capMissed018 });
+
+    // THE CAP WORD IS A WORD (A-018-1, issue 137). `cap` inside `re-captured`
+    // beside "issue 124, PR 125" turned the 0.18.0 freeze red. The plant with
+    // cap inside longer words must read green; the plant with the word cap and
+    // no constant named must read red. Shared with the spec gate.
+    const capWordWrong018 = [];
+    for (const p of scope018.CAP_WORD_PLANTS) {
+      let read = 'unplanted';
+      try {
+        const planted = scope018.plantCapMutation(SCAN_ROOT, p);
+        read = scope018.capLiteralClaims(SCAN_ROOT, { [p.rel]: planted }).claims.length ? 'red' : 'green';
+      } catch (e) { read = 'unplanted'; }
+      if (read !== p.expect) capWordWrong018.push(`${p.id} (${p.rel}) reads ${read}, want ${p.expect}`);
+    }
+    gate.check('AC-7 (A-018-1): cap inside a longer word is not a cap word; a cap of 124 with no constant named still reads red',
+      scope018.CAP_WORD_PLANTS.length >= 2 && capWordWrong018.length === 0,
+      { plants: scope018.CAP_WORD_PLANTS.length, wrong: capWordWrong018 });
   }
 }
 

@@ -690,7 +690,14 @@ const FROZEN_PROSE_FILE = /^RELEASE-NOTES-[\d.]+\.md$/;
 // report run") and the unit beside one ("call cap", "cap of 2000 calls"). A
 // dollar cap is a budget in English, so a USD constant also contributes the bare
 // noun. A cap constant declared tomorrow is a subject tomorrow.
-const CAP_NOUN = '(?:caps?|budgets?|limits?|ceilings?)';
+//
+// THE CAP WORD IS A WORD (A-018-1, issue 137). `caps?` matched the letters
+// inside `re-captured` and `captures`, so "Report 008 pages are re-captured"
+// beside "issue 124, PR 125" read as a REPORT_MAX_USD statement and its issue
+// numbers as bare cap literals. `cap`, `caps`, `capped` and `capping` now count
+// only with no letter on either side; a hyphen, digit or space still bounds them.
+const CAP_WORD = '(?<![a-z])cap(?:s|ped|ping)?(?![a-z])';
+const CAP_NOUN = `(?:${CAP_WORD}|budgets?|limits?|ceilings?)`;
 const CAP_NEAR = '[^.\\n]{0,24}?';
 
 function capSubjects(root) {
@@ -774,7 +781,7 @@ function proseBlocks(rel, text) {
 // side — which is what "N-call", "N calls", "default N", "cap of N" and "budget
 // N" all are. The bare three-digit form is kept as well: a large number beside a
 // cap subject is worth naming a constant for even when no cap word touches it.
-const CAP_NUMBER_WORD = '(?:defaults?|caps?|budgets?|limits?|ceilings?|calls?)';
+const CAP_NUMBER_WORD = `(?:defaults?|${CAP_WORD}|budgets?|limits?|ceilings?|calls?)`;
 
 function capLiterals(block) {
   const t = block
@@ -810,6 +817,19 @@ const CAP_MUTATIONS = [
   { id: 'trigger-cap', rel: 'RUNBOOK.md', anchor: 'under `TRIGGER_MAX_USD` from [`config.js`](config.js)',
     says: 'F-018-D\'s live violation: a cap constant with no phrase in the old hand list',
     replace: 'under the $25 trigger cap' },
+];
+
+// THE CAP WORD IS A WORD (spec 018 A-018-1, issue 137). Two plants, read by the
+// spec gate and the repo gate alike. `cap` inside `re-captured` or `captures`
+// beside issue numbers read as a cap statement and turned the 0.18.0 freeze red;
+// a cap stated with no constant named must still read red.
+const CAP_WORD_PLANTS = [
+  { id: 'cap-inside-word', rel: 'README.md', anchor: '### Cost guard\n', expect: 'green',
+    says: 'cap as letters inside re-captured and captures, beside numbers',
+    replace: '### Cost guard\n\nThe Report 008 pages are re-captured beside 124, and their captures beside 125.\n' },
+  { id: 'cap-of-n', rel: 'README.md', anchor: '### Cost guard\n', expect: 'red',
+    says: 'the word cap beside a number, no constant named',
+    replace: '### Cost guard\n\nThe report run keeps a cap of 124.\n' },
 ];
 
 function plantCapMutation(root, m) {
@@ -1723,6 +1743,6 @@ function workflowRunSubjects(root, { readDir = fs.readdirSync, readFile = (f) =>
 module.exports = {
   probeCopies, probeCopyExceptionProblems, probeCopiesCheck, PROBE_COPY_EXCEPTIONS, productFunctionExports,
   releaseEntryFacts, RELEASE_ENTRY_FACTS, publishedInvocations, WORDS, NARROWING_CLASSES, archiveReceipts, bandSites, WINDOW_SCOPES, productPathReaches, orphanModules, undeclaredHarnessOnly, HARNESS_ONLY_LIB, judgeSampleViolations, ATTRS_CARRYING_PROSE, attributeText, visibleText, documentText, countClaims, publishedFiles, signedReceiptClaims, FROZEN_SCHEMA, scanTimeoutLiterals,
-  capLiteralClaims, capConstantNames, proseBlocks, capLiterals, capSubjects, CAP_MUTATIONS, plantCapMutation, FROZEN_PROSE, RECORDED_OUTPUT,
+  capLiteralClaims, capConstantNames, proseBlocks, capLiterals, capSubjects, CAP_MUTATIONS, CAP_WORD_PLANTS, plantCapMutation, FROZEN_PROSE, RECORDED_OUTPUT,
   workflowRunSubjects, declaresTrigger, workflowStructure, readShell, exclusionCheckMode, sourceHistory, SOURCE_ROOT_COMMIT, publishExclusionHits, isInternalNarrative, PUBLISH_GOVERNANCE_SET,
   releaseVersionLiteralCheck, freezeLiteralFiles, specGateAndProbeFiles, pipefailQuietGrepCheck };

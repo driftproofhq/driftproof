@@ -731,7 +731,7 @@ instrument itself; or, in the instrument comparison, in which instrument measure
   not state. No Driftproof measurement was taken and no Driftproof judge ran, and
   the report does not isolate what caused the variation.
 - **[Report #011](https://driftproofhq.com/reports/011/)** — *release drift*:
-  Claude Opus 5.5 on its release day, measured on Report #009's three skills and
+  Claude Opus 5.5 the day after its release, measured on Report #009's three skills and
   cases, one case each, beside a fresh Claude Opus 5 arm on the same Claude Code
   version. Read by the runner's own comparison of the with-skill arms, the three
   skills read 1 with no separation detected and 2 with not enough draws to conclude

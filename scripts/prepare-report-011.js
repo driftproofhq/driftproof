@@ -2,8 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 'use strict';
 
-// prepare-report-011.js: render Driftproof Report 011, Claude Opus 5.5 on release day,
-// measured on the three skills and cases of Report 009.
+// prepare-report-011.js: render Driftproof Report 011, Claude Opus 5.5 the day after its
+// release, measured on the three skills and cases of Report 009.
+//
+// THE TITLE, CORRECTED BY AMENDMENT 2 (issue 8, spec 161 A-161-2). The page was published as
+// "on release day"; the run began the day after. The <h1> below keeps the title as first
+// published, and scripts/report-corrections.js `applyToPage` replaces it and appends the dated
+// entry, as it does for Reports 007 and 008, so its `stripInterimLines` gives the page back as
+// first published for the gates that hold the body.
 //
 // PROMOTED, 2026-09-23, BY RE-RENDER (spec 047), the way Report 009 was (spec 039): the
 // draft state lived in the constants below and in the chrome this file writes (title,
@@ -45,6 +51,7 @@ const { buildDriftReport } = require('../lib/diff');
 const { WITHIN_NOISE } = require('../lib/stats');
 const { applyHeadTags } = require('./build-head-tags');
 const { renderReportPage } = require('./site-chrome');
+const corrections = require('./report-corrections');
 // The data layer derives the TL;DR row, as prepare-report-009.js does.
 const { reportRow } = require('./site-data.mjs');
 
@@ -575,12 +582,12 @@ function verdicts(rec) {
 
 function buildPage(rec) {
   const v = verdicts(rec);
-  const base = applyHeadTags(`<!doctype html>
+  const base = applyHeadTags(corrections.applyToPage(`<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Driftproof: Report 011, Claude Opus 5.5 on release day</title>
+<title>Driftproof: Report 011, Claude Opus 5.5, the day after its release</title>
 <link rel="stylesheet" href="../../style.css">
 </head>
 <body>
@@ -614,7 +621,7 @@ ${evidenceBlock()}
 </main>
 </body>
 </html>
-`, PAGE_REL);
+`, NUMBER), PAGE_REL);
   const row = reportRow(NUMBER, { pageRel: `docs/${PAGE_REL}`, html: base });
   return renderReportPage(base, PAGE_REL, [row]);
 }

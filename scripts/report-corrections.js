@@ -17,6 +17,10 @@
 //     Reports 002 and 004 had no Amendments section, so the entry starts one.
 //   - Report 008, after that entry: one more dated entry, on the baseline arm that lost a draw
 //     (issue 109, spec 031 A-031-27). Its figures are read from the receipts the page reads, below.
+//   - Report 011: its title, which said release day, corrected in its <h1>, and one dated entry
+//     after its Amendment 1 saying what the title said, what is true and the source (issue 8, spec
+//     161 A-161-2). The one place this script replaces bytes rather than inserting them, and
+//     `stripInterimLines` puts the first title back exactly.
 //
 // WHERE THE NOTE IS TRUE. Not on every page. `NOTE_ON` below is the table, and `notApplicable`
 // holds the reason for each page that does not take it. `checkNote` reads every receipt a page
@@ -335,11 +339,78 @@ function applyLostDraw(html, opts) {
   return html.slice(0, at) + card + '\n' + html.slice(at);
 }
 
+// ── Report 011: the title, which said release day (issue 8, spec 161 A-161-2) ─────────────────
+//
+// Report 011 was published as "on release day". The vendor's news index lists Claude Opus 5.5 the
+// day before the run every figure on the page is read from began. The correction puts the corrected
+// title in the page's <h1>, which every builder that lists the report reads, and appends one dated
+// entry after Amendment 1. Nothing else on the page moves. The release date is read from the record
+// saved beside the vendor's page, as published beside the report, and the run's start from the run
+// record published there; the entry is not written if the run did not begin the day after.
+const RETITLE_ON = '011';
+const RETITLE_DATE = '2026-10-10';
+const TITLE_WAS = 'Report 011: Claude Opus 5.5 on release day, three skills';
+const TITLE_NOW = 'Report 011: Claude Opus 5.5, the day after its release, three skills';
+const RETITLE_RECORD = 'specs/161-report-corrections-interim/evidence/report-011-release-date.json';
+const RETITLE_PUB = 'docs/reports/011/amendment-2/release-date.json';
+const RETITLE_RUN = 'docs/reports/011/evidence/run-20260923T062806Z--run-record.json';
+const RETITLE_CARD = /  <div class="card" id="amendment-retitle">\n(?: {4}<[^\n]*\n)+ {2}<\/div>\n\n/;
+const H1_WAS = `<h1>${TITLE_WAS}</h1>`;
+const H1_NOW = `<h1>${TITLE_NOW}</h1>`;
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// 2026-09-22, or a run stamp 20260923T062806Z, as 22 Sep 2026.
+const dayMon = (iso) => { const m = /^(\d{4})-?(\d{2})-?(\d{2})/.exec(iso); return `${Number(m[3])} ${MONTHS[Number(m[2]) - 1]} ${m[1]}`; };
+const isoDay = (iso) => { const m = /^(\d{4})-?(\d{2})-?(\d{2})/.exec(iso); return `${m[1]}-${m[2]}-${m[3]}`; };
+
+function retitleCard() {
+  const rec = JSON.parse(read(RETITLE_PUB));
+  const st = JSON.parse(read(RETITLE_RUN)).stamp;
+  const next = new Date(`${isoDay(rec.released_on)}T00:00:00Z`);
+  next.setUTCDate(next.getUTCDate() + 1);
+  if (next.toISOString().slice(0, 10) !== isoDay(st)) throw new Error(`Report 011: the run ${st} did not begin the day after the release, ${rec.released_on}, and the entry says it did`);
+  const ps = [
+    `<h3 id="amendment-2">Amendment 2, ${RETITLE_DATE}: the title, which said release day</h3>`,
+    `<p>This report was first published as <q>${esc(TITLE_WAS)}</q>. The vendor&rsquo;s news index lists Claude Opus 5.5 on ${dayMon(rec.released_on)}, and the run every figure on this page is read from, <code>${esc(st)}</code>, began on ${dayMon(st)} at ${st.slice(9, 11)}:${st.slice(11, 13)} UTC, the day after. The title now says so: <q>${esc(TITLE_NOW)}</q>. It reads so on this page, in its Markdown copy and in the site&rsquo;s lists of reports.</p>`,
+    `<p>This amendment changes the title and nothing else: no sentence, figure, table, verdict or file above it, and no receipt or badge. The news index was read on ${dayMon(rec.read_at)}. Its record, with the line quoted and the sha256 of the page, is published beside this page as <a href="amendment-2/release-date.json"><code>release-date.json</code></a>.</p>`,
+  ];
+  return `  <div class="card" id="amendment-retitle">\n${ps.map((p) => `    ${p}\n`).join('')}  </div>\n`;
+}
+
+// Report 011 with its corrected <h1> and the entry at the end of its Amendments. A page that carries an
+// entry of that id that is not the one this script writes, or a title it does not expect, is refused.
+function applyRetitle(html) {
+  if (html.includes('id="amendment-retitle"')) {
+    const bare = html.replace(RETITLE_CARD, '').replace(H1_NOW, H1_WAS);
+    if (bare === html || applyRetitle(bare) !== html) throw new Error('Report 011 carries a retitle entry that is not the one this script writes');
+    return html;
+  }
+  if (html.split(H1_WAS).length !== 2) throw new Error(`Report 011 does not carry ${H1_WAS} once`);
+  const a = AMEND_H2.exec(html);
+  const end = a ? lineBefore(html, a.index + a[0].length) : -1;
+  if (end < 0) throw new Error('Report 011: no Amendments section to end the entry in');
+  const section = html.slice(a.index, end);
+  if (!section.includes('<h3 id="amendment-1">Amendment 1, ') || section.includes('<h3 id="amendment-2"')) throw new Error('Report 011: its Amendments do not hold Amendment 1 alone');
+  return html.slice(0, end).replace(H1_WAS, H1_NOW) + retitleCard() + '\n' + html.slice(end);
+}
+
+// The page with the first title back and the entry out, taken only if correcting it again gives the
+// page byte for byte; otherwise the page as it is, so a changed byte stays in it.
+function stripRetitle(html) {
+  if (!html.includes('id="amendment-retitle"')) return html;
+  const candidate = html.replace(RETITLE_CARD, '').replace(H1_NOW, H1_WAS);
+  try {
+    return applyRetitle(candidate) === html ? candidate : html;
+  } catch {
+    return html;
+  }
+}
+
 // A page with the note, the entry and (Report 007) the three corrections, and Report 008's lost-draw
-// entry. `opts.cells` is the page's cells, from the builder that knows them: Report 007's
-// { receipt, model } list, with `opts.judgeModel` its judge, or Report 008's { slug, from, baseline,
-// receipt } list.
+// entry; Report 011 with its title corrected. `opts.cells` is the page's cells, from the builder that
+// knows them: Report 007's { receipt, model } list, with `opts.judgeModel` its judge, or Report 008's
+// { slug, from, baseline, receipt } list.
 function applyToPage(html, n, opts = {}) {
+  if (n === RETITLE_ON) return applyRetitle(html);
   if (!NOTE_ON.includes(n)) return html;
   const out = applyInterim(html, n, opts);
   return n === LOST_DRAW_ON ? applyLostDraw(out, opts) : out;
@@ -384,6 +455,7 @@ function looseStrip(html) {
 }
 
 function stripInterimLines(html, n, opts) {
+  if (n === RETITLE_ON) return stripRetitle(html);
   const candidate = looseStrip(html);
   if (candidate === html) return html;
   try {
@@ -438,11 +510,19 @@ function main(argv = process.argv.slice(2)) {
     write(PAGE(n), applyToPage(read(PAGE(n)), n, n === '007' ? cellsFor007() : n === LOST_DRAW_ON ? cellsFor008() : {}));
   }
   write(MD001, applyToMarkdown(read(MD001)));
+  // Report 011's record, published as saved, before the page that reads it.
+  const rec = read(RETITLE_RECORD);
+  const pub = path.join(ROOT, RETITLE_PUB);
+  if (!fs.existsSync(pub) || fs.readFileSync(pub, 'utf8') !== rec) {
+    if (check) stale.push(RETITLE_PUB);
+    else { fs.mkdirSync(path.dirname(pub), { recursive: true }); fs.writeFileSync(pub, rec); }
+  }
+  if (!stale.includes(RETITLE_PUB)) write(PAGE(RETITLE_ON), applyToPage(read(PAGE(RETITLE_ON)), RETITLE_ON));
   if (stale.length) {
     console.error(`not as written - run: node scripts/report-corrections.js\n  ${stale.join('\n  ')}`);
     return 1;
   }
-  console.log(check ? `${NOTE_ON.length} report pages and the Report 001 mirror carry spec 161's notes, and Report ${LOST_DRAW_ON} its lost-draw entry` : `spec 161's notes written on ${NOTE_ON.length} report pages and the Report 001 mirror, and Report ${LOST_DRAW_ON}'s lost-draw entry`);
+  console.log(check ? `${NOTE_ON.length} report pages and the Report 001 mirror carry spec 161's notes, Report ${LOST_DRAW_ON} its lost-draw entry and Report ${RETITLE_ON} its corrected title` : `spec 161's notes written on ${NOTE_ON.length} report pages and the Report 001 mirror, Report ${LOST_DRAW_ON}'s lost-draw entry and Report ${RETITLE_ON}'s corrected title`);
   return 0;
 }
 
