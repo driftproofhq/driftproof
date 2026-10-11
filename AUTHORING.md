@@ -191,3 +191,12 @@ from the `suite_hash`, so adding or refining them never disturbs a receipt. The 
 the manifest shape, permissive licensing, that every tested skill has a committed suite, and
 that every case carries a `claim` + `grounding` — run `npm run gate` before opening the PR. See [CONTRIBUTING.md](CONTRIBUTING.md) for ground
 rules (scanner-safe fixtures, no secrets, neutral tone).
+
+## Writing a change spec
+
+In the source repository, start a change spec from the
+[repository template](specs/000-governance/spec-template.md). It includes the
+conditional "Claim and invariants" section for work that ships a public claim.
+Use CONSTITUTION.md § Quality bar and RUNBOOK.md § The loop, item 2: approvals
+for the claim review before the build. Specs whose change ships no public claim
+are unchanged.

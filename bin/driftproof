@@ -887,7 +887,10 @@ async function cmdRegrade(positional, flags) {
   const skill = loadSkillOrRefuse(flags.skill, 'regrade');
   // Spec 184 (R-3): a file, or a transcripts directory, read as what it holds.
   let read;
-  try { read = readAnswers(flags.answers); } catch (e) { refuse(`--answers ${flags.answers} cannot be read: ${e.message}`); }
+  try { read = readAnswers(flags.answers); } catch (e) {
+    if (e.code === 'REGRADE_REFUSED') refuse(e.message);
+    refuse('--answers cannot be read');
+  }
   const answers = read.answers;
   // Spec 184 (R-4): the revised suite, hashed by the code a run hashes a suite with.
   let revised = null;

@@ -23,7 +23,7 @@ const fs = require('fs');
 const path = require('path');
 const chrome = require('./site-chrome.js');
 const { humanModelName } = require('./model-names.js');
-const { escapeRegExp, escapeAttr, htmlToText } = require('./html-text.js');
+const { escapeRegExp, escapeAttr, htmlToText, tokenize, attrOf } = require('./html-text.js');
 
 const ROOT = path.join(__dirname, '..');
 const ORIGIN = 'https://driftproofhq.com';
@@ -125,11 +125,15 @@ const urlOf = (rel) => ORIGIN + '/' + (rel === 'index.html' ? '' : rel.replace(/
 const isReport = (rel) => /^reports\/[^/]+\/index\.html$/.test(rel);
 
 // ── text ────────────────────────────────────────────────────────────────────
-const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
-const decode = (s) => String(s)
-  .replace(/&#(\d+);/g, (_m, d) => String.fromCodePoint(Number(d)))
-  .replace(/&#x([0-9a-fA-F]+);/g, (_m, d) => String.fromCodePoint(parseInt(d, 16)))
-  .replace(/&(amp|lt|gt|quot|apos|nbsp);/g, (_m, n) => ENT[n]);
+const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', copy: '©' };
+// One reference pass, over the supported names and semicolon-terminated numeric references.
+// Invalid scalar values become replacement text rather than throwing or producing surrogates.
+const decode = (s) => String(s).replace(/&(?:#(\d+)|#[xX]([0-9a-fA-F]+)|(amp|lt|gt|quot|apos|nbsp|copy));/g, (_m, d, x, n) => {
+  if (n) return ENT[n];
+  const cp = d !== undefined ? Number(d) : parseInt(x, 16);
+  const valid = cp > 0 && cp <= 0x10FFFF && !(cp >= 0xD800 && cp <= 0xDFFF);
+  return valid ? String.fromCodePoint(cp) : '\uFFFD';
+});
 // One pass over the string: a reference's own result is never read again, so `&#38;lt;` is the
 // text `&lt;` and not `<`. A reference with no code point behind it stays as written.
 const decodeOnce = (s) => String(s).replace(/&(?:#(\d+)|#x([0-9a-fA-F]+)|(amp|lt|gt|quot|apos|nbsp));/g, (m, d, x, n) => {
@@ -425,7 +429,12 @@ function canonicalOf(html, rel) {
 }
 
 // ── structured data ─────────────────────────────────────────────────────────
-const ld = (obj) => `<script type="application/ld+json">\n${JSON.stringify(obj, null, 2)}\n</script>`;
+// JSON escaping preserves the selected values while preventing HTML raw-text boundaries.
+const ld = (obj) => {
+  const escapes = { '<': '\\u003c', '>': '\\u003e', '&': '\\u0026' };
+  const json = JSON.stringify(obj, null, 2).replace(/[<>&]/g, (char) => escapes[char]);
+  return '<script type="application/ld+json">\n' + json + '\n</script>';
+};
 
 // ── the Organization (spec 133 AC-5) ────────────────────────────────────────
 //
@@ -573,13 +582,76 @@ function jsonLd(html, rel, rows, title, description) {
 // A FAQPage, DERIVED FROM THE PAGE: each <section class="qa"> is one question, its <h2> the
 // question and the paragraph of class "answer" under it the answer, as the page shows them. A
 // page with no such section carries none.
+const MAX_PAGE_BYTES = 2 * 1024 * 1024;
+const MAX_BATCH_PAGES = 1024;
+const MAX_BATCH_BYTES = 64 * 1024 * 1024;
+function headInputError(message) {
+  const e = new Error(message);
+  e.name = 'HeadInputError';
+  e.code = 'HEAD_INPUT_INVALID';
+  return e;
+}
+function validatePageInput(html) {
+  if (typeof html !== 'string') throw headInputError('page input must be a string');
+  const bytes = Buffer.byteLength(html, 'utf8');
+  if (bytes > MAX_PAGE_BYTES) throw headInputError('page exceeds the 2 MiB UTF-8 limit');
+}
+
+// A forward token scan. An unclosed QA is refused rather than repeatedly matching suffixes.
+// Ordinary sections may nest; QA sections may not. Preserve question and answer markup for strip().
+function qaValues(html) {
+  const qs = [];
+  let depth = 0;
+  let active = null;
+  for (const t of tokenize(html)) {
+    if (t.type === 'start' && t.name === 'section') {
+      depth++;
+      if (attrOf(t, 'class') === 'qa') {
+        if (active || attrOf(t, 'id') === null) throw headInputError('nested QA or QA without an id');
+        active = { depth, q: null, a: null, capture: null };
+        continue;
+      }
+    }
+    if (t.type === 'end' && t.name === 'section') {
+      if (active && depth === active.depth) {
+        if (active.capture || active.q === null || active.a === null) {
+          throw headInputError('QA must contain one complete question and answer');
+        }
+        qs.push({ q: active.q, a: active.a });
+        active = null;
+        depth--;
+        continue;
+      }
+      depth--;
+    }
+    if (!active) continue;
+    if (active.capture) {
+      const c = active.capture;
+      if (t.type === 'end' && t.name === c.tag) {
+        active[c.key] = c.parts.join('');
+        active.capture = null;
+      } else {
+        if (t.type === 'start' && (t.name === 'h2' || (t.name === 'p' && attrOf(t, 'class') === 'answer'))) {
+          throw headInputError('nested question or answer in QA');
+        }
+        c.parts.push(t.type === 'text' ? t.text : t.raw);
+      }
+      continue;
+    }
+    const key = t.type === 'start' && t.name === 'h2' ? 'q'
+      : t.type === 'start' && t.name === 'p' && attrOf(t, 'class') === 'answer' ? 'a' : null;
+    if (key) {
+      if (active[key] !== null) throw headInputError('duplicate question or answer in QA');
+      active.capture = { key, tag: t.name, parts: [] };
+    }
+  }
+  if (active) throw headInputError('unclosed QA section');
+  return qs;
+}
 function faqLd(html) {
-  const qs = [...String(html).matchAll(/<section class="qa" id="[^"]+">([\s\S]*?)<\/section>/g)].map((m) => {
-    const q = first(m[1], /<h2\b[^>]*>([\s\S]*?)<\/h2>/);
-    const a = first(m[1], /<p class="answer">([\s\S]*?)<\/p>/);
-    if (q === null || a === null) throw new Error('a qa section without its question or its answer');
-    return { '@type': 'Question', name: strip(q), acceptedAnswer: { '@type': 'Answer', text: strip(a) } };
-  });
+  const qs = qaValues(html).map(({ q, a }) => ({
+    '@type': 'Question', name: strip(q), acceptedAnswer: { '@type': 'Answer', text: strip(a) },
+  }));
   return qs.length ? [ld({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: qs })] : [];
 }
 
@@ -682,6 +754,8 @@ function block(html, rel, title, description, rows, cfg) {
 // A receipt page's renderer passes its receipt as `own`, so a receipt outside the archive still
 // takes a title (spec 133 Amendment 1).
 function applyHeadTags(html, rel, config, own) {
+  validatePageInput(html);
+  qaValues(html);
   // The config is read here when a caller does not supply one, so every switch
   // in the build sees the same optional slots without passing them around.
   const cfg = config || siteConfig();
@@ -737,18 +811,36 @@ module.exports = { esc, escapeRegExp, escapeAttr, PRIVACY_LINE, ogDescriptionOf,
 if (require.main === module) {
   const check = process.argv.includes('--check');
   const stale = [];
+  const pending = [];
   let n = 0;
-  for (const f of pageFiles()) {
-    const before = fs.readFileSync(f, 'utf8');
-    const after = render(before, relOf(f));
-    if (before === after) { n++; continue; }
-    if (check) { stale.push(relOf(f)); continue; }
-    fs.writeFileSync(f, after);
-    n++;
-  }
-  if (check && stale.length) {
-    console.error(`stale head tags — run: node scripts/build-head-tags.js\n  ${stale.join('\n  ')}`);
+  // Validate sizes and render the entire bounded batch before publishing any changed page.
+  // Input failures leave every page alone. A disk write failure is outside this contract.
+  try {
+    const files = pageFiles();
+    if (files.length > MAX_BATCH_PAGES) throw headInputError('batch exceeds 1,024 pages');
+    let total = 0;
+    for (const f of files) {
+      const size = fs.statSync(f).size;
+      if (size > MAX_PAGE_BYTES) throw headInputError(relOf(f) + ': page exceeds the 2 MiB UTF-8 limit');
+      total += size;
+      if (total > MAX_BATCH_BYTES) throw headInputError('batch exceeds 64 MiB of source UTF-8');
+    }
+    for (const f of files) {
+      const before = fs.readFileSync(f, 'utf8');
+      const after = render(before, relOf(f));
+      n++;
+      if (before === after) continue;
+      stale.push(relOf(f));
+      pending.push({ f, after });
+    }
+  } catch (e) {
+    console.error('head input refused: ' + String(e.message).slice(0, 240));
     process.exit(1);
   }
-  console.log(check ? `all ${n} published pages carry current head tags` : `head tags written to ${n} published pages`);
+  if (check && stale.length) {
+    console.error('stale head tags: run node scripts/build-head-tags.js\n  ' + stale.join('\n  '));
+    process.exit(1);
+  }
+  if (!check) for (const { f, after } of pending) fs.writeFileSync(f, after);
+  console.log(check ? 'all ' + n + ' published pages carry current head tags' : 'head tags written to ' + n + ' published pages');
 }

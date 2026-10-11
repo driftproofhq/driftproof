@@ -161,6 +161,37 @@ of an answer: a judge can still decide a criterion wrongly. How accurately a jud
 separate validation question. Nothing here says criteria make grading more accurate or show that a
 skill is better. What they add is a record of each decision behind a score, which a reader can audit.
 
+## Plain judge regrade
+
+A plain judge regrade refuses anonymous judge replies; no receipt is written. Each returned sample must report the requested judge identity. A mixed-model reply must explicitly name the requested judge as serving the reply. Reported ids preserve dates when supplied. The stub exception records UNVERIFIED. An UNVERIFIED original stays UNVERIFIED. Reported identity comes from the reply and does not authenticate provider identity or measure grading accuracy.
+
+Every returned sample is checked, including invalid scores and replies beside a timeout.
+A refusal exits 5 before writing a receipt, summary or sidecar. The stub exception requires both
+the configured stub surface and every returned reply to name that surface. A false stub label refuses.
+For a single-model reply, the reported id suffices. Token share alone does not identify the serving
+judge of a mixed-model reply. The serving id must match the requested judge and a reported id by
+canonical model. Aggregate judge ids are unique and sorted in JavaScript lexical order.
+
+Each newly judged draw seals `judge_sample_evidence` in returned-sample order. Each record has
+`sample_index`, `output_sha256`, `reported_models` (including auxiliary ids and duplicates),
+`served_model` (null if absent), `answered_by` and `surface`. Its output hash equals that sample's
+`judge_sample_hashes` entry. The evidence is retained for invalid scores and returned replies beside
+a timeout too. Carried draws stay unchanged. This optional evidence uses the draw's extensible shape.
+The receipt hash seals the correspondence; it cannot authenticate an identity a surface reported.
+
+Plain regrades count endpoint attempts through the runner's attempt callback, independently of
+returned attempt metadata. Retries and timeouts count. A stub makes no endpoint attempt.
+Logical calls count requested samples separately. Requests inside a CLI remain outside the count.
+
+Answers archives are limited to 16777216 bytes before parsing, including legacy directory totals and
+files that grow while read. Direct answers allow 4096 entries, 1048576 UTF-8 bytes per answer and
+16777216 total text bytes. Keys must be 64 lowercase hexadecimal characters. Legacy directories allow
+4096 JSON files. Identity evidence allows 128 ids of at most 256 UTF-8 bytes each, using ASCII letters,
+digits, dot, underscore or hyphen. Blank, malformed and non-string ids refuse. The serving id follows
+the same rule. Input bounds refuse before calling the judge; reply bounds refuse before copying or
+interpolating identity. Bound diagnostics omit hostile input. These limits cover answers and identity
+entering regrade, not provider transport buffering or receipt and suite size.
+
 ## What v0.12 adds: the judge's setting, and a regrade's evidence sealed
 
 Issue 196. A regrade grades a receipt's saved answers again, and its receipt is the evidence that

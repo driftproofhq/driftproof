@@ -47,6 +47,9 @@ const SHAPES = {
   aux: (req) => ({ modelUsage: { 'claude-haiku-5-5': entry(897, 8), [canon(req)]: entry(10, 40, 100) } }),
   // (a) the same, with a result message that names the requested model as serving.
   'aux-named': (req) => ({ model: req, modelUsage: { 'claude-haiku-5-5': entry(897, 8), [canon(req)]: entry(10, 40, 100) } }),
+  // (a) the result names the requested model while the auxiliary key carries the bulk of the output
+  // tokens, so only rule 4 attests it (A-180-4, issue 136 F-2).
+  'aux-named-minor': (req) => ({ model: req, modelUsage: { 'claude-haiku-5-5': entry(897, 400), [canon(req)]: entry(10, 40, 100) } }),
   // (b) the requested model absent.
   absent: () => ({ modelUsage: { 'claude-haiku-5-5': entry(897, 8) } }),
   // (c) another model served the main turn, the requested id present: by the output tokens...
@@ -55,6 +58,16 @@ const SHAPES = {
   'other-named': (req) => ({ model: 'claude-sonnet-5', modelUsage: { [canon(req)]: entry(10, 400), 'claude-haiku-5-5': entry(897, 8) } }),
 };
 const GEN_TEXT = 'A decision record: context, the decision, its consequences.';
+// What the generation and the judge reply, per path. `measured` is the default; each other path ends
+// every draw unmeasured on one of lib/run.js's returns (A-180-4, issue 136 F-3).
+const PATHS = {
+  measured: {},
+  truncated: { stopReason: 'max_tokens' },
+  empty: { gen: '' },
+  lost: { gen: 'I wrote the ADR to docs/adr/0001-database.md.' },
+  'judge-unmeasured': { judge: 'no score here' },
+};
+let PATH = 'measured';
 cp.spawn = (file, args, options) => {
   const call = { file, args: [...args], cwd: (options && options.cwd) || null, input: '' };
   calls.push(call);
@@ -67,8 +80,10 @@ cp.spawn = (file, args, options) => {
       setImmediate(() => {
         call.judge = JUDGE.test(call.input);
         const req = call.args[call.args.indexOf('--model') + 1];
-        const result = call.judge ? JSON.stringify({ score: 0.8, pass: true, reason: 'double' }) : GEN_TEXT;
-        c.stdout.end(JSON.stringify({ type: 'result', result, stop_reason: 'end_turn', usage: { input_tokens: 10, output_tokens: 40, cache_read_input_tokens: 100 }, ...SHAPES[SHAPE](req) }));
+        const p = PATHS[PATH];
+        const result = call.judge ? ('judge' in p ? p.judge : JSON.stringify({ score: 0.8, pass: true, reason: 'double' })) : ('gen' in p ? p.gen : GEN_TEXT);
+        const stop = (!call.judge && p.stopReason) || 'end_turn';
+        c.stdout.end(JSON.stringify({ type: 'result', result, stop_reason: stop, usage: { input_tokens: 10, output_tokens: 40, cache_read_input_tokens: 100 }, ...SHAPES[SHAPE](req) }));
         c.stderr.end();
         setImmediate(() => c.emit('close', 0, null));
       });
@@ -98,7 +113,7 @@ function skillOf() {
   return { name: 'fx-adr', version: '1.0.0', contentHash: sha(SYS), skillMd: SYS, suite: { format: 'agentskills.io/evals', suiteHash, caseCount: cases.length, cases } };
 }
 const OPTS = { samples: 2, trusted: true, judgeModel: 'haiku', nowIso: '2026-10-09T16:05:00.000Z' };
-const run = (l, shape) => { SHAPE = shape; calls.length = 0; return l.run.runSkillOnModel({ skill: skillOf(), model: 'claude-opus-5-5', opts: OPTS }); };
+const run = (l, shape, p = 'measured') => { SHAPE = shape; PATH = p; calls.length = 0; return l.run.runSkillOnModel({ skill: skillOf(), model: 'claude-opus-5-5', opts: OPTS }); };
 const drawsOf = (r) => r.results.cases.flatMap((c) => c.generation.draws);
 
 // A run whose clock reads one instant throughout, so two runs of one shape write the same bytes.
@@ -159,6 +174,40 @@ test('AC-1 (a) with the result naming the requested model as serving, the auxili
   assert.equal(receipt.run.answered_by.attested, true);
   assert.ok(drawsOf(receipt).every((d) => Array.isArray(d.auxiliary_calls) && d.auxiliary_calls[0].model === 'claude-haiku-5-5'));
 });
+
+// A-180-4 (issue 136 F-2): rule 5 would refuse this reply, so it reads rule 4 apart from rule 5.
+test('AC-1 (a) the result naming the requested model attests by rule 4 alone, the auxiliary model carrying 400 of 440 output tokens', async () => {
+  const { receipt } = await run(lib, 'aux-named-minor');
+  assert.equal(receipt.run.answered_by.attested, true);
+  const draws = drawsOf(receipt);
+  assert.ok(draws.length >= 2 && draws.every((d) => d.status === 'measured'), 'every draw measured');
+  for (const d of draws) {
+    assert.deepEqual(d.auxiliary_calls, ['generation', 'judge', 'judge'].map((phase) => ({ phase, model: 'claude-haiku-5-5', input_tokens: 897, output_tokens: 400 })));
+  }
+});
+
+// A-180-4 (issue 136 F-3): R-2 writes the record on unmeasured draws too. Each path is read by its
+// draw's reason, so the fixture is shown to take that return, then by its auxiliary record.
+const UNMEASURED = {
+  truncated: { reason: /^generation truncated at the output cap \(stop_reason max_tokens\)$/, phases: ['generation'] },
+  empty: { reason: /^empty generation \(the surface returned no text\)$/, phases: ['generation'] },
+  lost: { reason: /^the answer points at a file the judge was not shown \(docs\/adr\/0001-database\.md\)$/, phases: ['generation'] },
+  'judge-unmeasured': { reason: /^judge output unparseable$/, phases: ['generation', 'judge', 'judge'] },
+};
+for (const [p, { reason, phases }] of Object.entries(UNMEASURED)) {
+  test(`AC-1 (a) a draw unmeasured on the ${p} return records its auxiliary calls too`, async () => {
+    const { receipt } = await run(lib, 'aux', p);
+    const draws = drawsOf(receipt);
+    assert.ok(draws.length >= 2, 'fewer than two draws');
+    for (const d of draws) {
+      assert.equal(d.status, 'unmeasured');
+      assert.match(d.reason, reason);
+      assert.deepEqual(d.auxiliary_calls, phases.map((phase) => ({ phase, model: 'claude-haiku-5-5', input_tokens: 897, output_tokens: 8 })), `draw ${d.draw_index}`);
+    }
+    const v = lib.receipt.validateReceipt(receipt);
+    assert.ok(v.valid, JSON.stringify(v.errors));
+  });
+}
 
 // ── (b) the requested model absent ────────────────────────────────────────────────────────────────
 
@@ -238,7 +287,8 @@ test('AC-5 a regrade on a CLI with the auxiliary entry attests, keeps the genera
   const { receipt } = await run(lib, 'aux');
   const answers = {};
   for (const d of drawsOf(receipt)) answers[d.generation_hash] = GEN_TEXT;
-  SHAPE = 'aux'; calls.length = 0;
+  // A-180-5 (issue 220): regrades require explicit serving evidence for mixed-model replies.
+  SHAPE = 'aux-named'; calls.length = 0;
   const out = await lib.regrade.regradeReceipt({ receipt, skill: skillOf(), answers, judgeModel: 'haiku', samples: 3, opts: { trusted: true } });
   const draws = drawsOf(out.receipt);
   assert.ok(draws.length >= 2 && draws.every((d) => d.status === 'measured'));
@@ -250,6 +300,20 @@ test('AC-5 a regrade on a CLI with the auxiliary entry attests, keeps the genera
   assert.ok(v.valid, JSON.stringify(v.errors));
 });
 
+// A-180-5 (issue 220): the old reply is still refused on the plain regrade path.
+test('AC-5 a mixed-model regrade reply without serving evidence is refused after its first draw', async () => {
+  const { receipt } = await run(lib, 'aux');
+  const answers = {};
+  for (const d of drawsOf(receipt)) answers[d.generation_hash] = GEN_TEXT;
+  SHAPE = 'aux'; calls.length = 0;
+  await assert.rejects(
+    lib.regrade.regradeReceipt({ receipt, skill: skillOf(), answers, judgeModel: 'haiku', samples: 3, opts: { trusted: true } }),
+    (e) => e.code === 'SUBSTRATE_MISMATCH' && /explicit serving-model evidence/.test(e.message),
+  );
+  assert.equal(calls.length, 3, 'only the first draw reached the judge');
+  assert.ok(calls.every((c) => c.judge), 'no generation call');
+});
+
 // ── the docs note ─────────────────────────────────────────────────────────────────────────────────
 
 test('AC-6 spec/RECEIPT.md states the rule, the auxiliary record and the Claude Code range the claude-cli lane is verified on', () => {
@@ -257,7 +321,7 @@ test('AC-6 spec/RECEIPT.md states the rule, the auxiliary record and the Claude 
   const at = doc.indexOf('\n## Auxiliary calls on claude-cli');
   assert.ok(at >= 0, 'no section');
   const sec = doc.slice(at + 1, doc.indexOf('\n## ', at + 1));
-  for (const want of ['`auxiliary_calls`', 'more than half', 'served the main turn', 'SUBSTRATE_MISMATCH', '2.1.272', '2.1.284', '2.1.295', 'run.harness']) {
+  for (const want of ['`auxiliary_calls`', 'more than half', 'served the main turn', 'SUBSTRATE_MISMATCH', '2.1.272', '2.1.280', '2.1.284', '2.1.295', 'run.harness']) {
     assert.ok(sec.includes(want), `the section does not say ${want}`);
   }
 });

@@ -807,6 +807,21 @@ Moved from CLAUDE.md on 6 Oct 2026. These five rules bind every session. Rule 1 
 5. Mechanical passes (evidence commits, pushes, re-baselines) need no extended thinking.
 6. No background subagents for approvals; they run in their own session.
 
+## The loop, item 2: approvals
+
+2. When a spec's change ships a public claim, run a fresh-context claim review
+   before the build. It reads the "Claim and invariants" section with one brief:
+   "we will say <claim>; find inputs, environments, edits or call paths that
+   make it false." Its findings amend the spec before code is written. The
+   invariants come from the published claim, not only the issue's definitions.
+   A changed claim or invariant goes through claim review before further code.
+   The building session never approves its own claim. Specs whose change ships
+   no public claim are unchanged. T1 and T2 still receive their fresh-context
+   conformance approval under [the ordinary approval procedure](CLAUDE.md#the-loop-and-where-its-rules-live).
+   Claim review precedes implementation; conformance approval reads the built
+   change against the amended spec. Review findings follow CONSTITUTION.md
+   § Fix loop checklist.
+
 ## The loop, items 6 and 7 (moved from CLAUDE.md)
 
 Moved from CLAUDE.md on 6 Oct 2026. Nothing was dropped.
