@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Driftproof receipt, spec v0.11
+# Driftproof receipt, spec v0.12
 
 A **receipt** is a **hash-verified**, dated record of running one agent skill's eval suite
 **with** and **without** the skill on one model version, with the judge **sampled**
@@ -12,8 +12,9 @@ The machine-readable contract is [`receipt.schema.json`](./receipt.schema.json)
 (JSON Schema, draft 2020-12). This document is the human companion. Where they
 disagree, the schema wins.
 
-**Versioning.** The current schema is v0.11
+**Versioning.** The current schema is v0.12
 ([`receipt.schema.json`](./receipt.schema.json)). Prior schemas are kept frozen as
+[`receipt.v0.11.schema.json`](./receipt.v0.11.schema.json),
 [`receipt.v0.10.schema.json`](./receipt.v0.10.schema.json),
 [`receipt.v0.9.schema.json`](./receipt.v0.9.schema.json),
 [`receipt.v0.8.schema.json`](./receipt.v0.8.schema.json),
@@ -27,9 +28,11 @@ disagree, the schema wins.
 [`receipt.v0.1.schema.json`](./receipt.v0.1.schema.json); the validator picks the
 schema by the receipt's own `schema_version`, so every earlier receipt still loads and
 validates against its own frozen schema, including every receipt behind the published
-reports, which the gate asserts on each run. v0.11 is additive for a reader: it adds one
-optional field, so a v0.10 receipt restamped `"0.11"` validates; v0.10 is frozen because its
-version constant refuses anything else (see *What v0.11 adds*). v0.10 was additive over v0.9
+reports, which the gate asserts on each run. v0.12 is additive for a reader: it adds optional
+fields, so a v0.11 receipt restamped `"0.12"` validates; v0.11 is frozen because its version
+constant refuses anything else (see *What v0.12 adds*). v0.11 was additive over v0.10 in the same
+way: it adds one optional field, and v0.10 is frozen for the same reason (see *What v0.11 adds*).
+v0.10 was additive over v0.9
 in the same way: it adds two optional fields (see *What v0.10 adds*). v0.9 was additive in the
 same way: it adds optional fields and widens three values, so a v0.8 receipt restamped `"0.9"` validates;
 v0.8 is frozen because its version constant refuses anything else (see *What v0.9 adds*).
@@ -62,8 +65,9 @@ field is absent when there was none. A regrade keeps the generation entries and 
 entries. `run.answered_by.reported_models` still carries every canonical id named.
 
 The field is optional and sits on a draw object, which v0.11 declares open (`additionalProperties`
-true). The schema does not change and `schema_version` stays `"0.11"`, so a receipt with no auxiliary
-call is the same bytes as before.
+true). The schema did not change for it and `schema_version` stayed `"0.11"`, so a receipt with no
+auxiliary call is the same bytes as before. (v0.12 keeps the draw open; it moves the version for
+other fields, see *What v0.12 adds*.)
 
 **The Claude Code version** is in `run.harness` `{name: "claude-code", version}`, read from `claude
 --version` as generation begins (see *What v0.10 adds*).
@@ -77,14 +81,17 @@ reported on 2.1.295 is covered by fixtures in `tests/substrate-auxiliary.test.js
 
 Spec 185 (issue 179). A case in `evals/evals.json` may list **`criteria`**, entries of `{ id, weight,
 description }`. Ids are unique within the case, each 1 to 64 of A-Z, a-z, 0-9, underscore, dot and
-hyphen. Weights are numbers greater than 0, and their sum is finite. Descriptions are not empty. A bad
-list is refused when the suite loads, before any call. A case with criteria needs no rubric; a rubric
-it has is shown to the judge as context.
+hyphen. Weights are numbers greater than 0, and their sum is finite. Descriptions are not empty. A case
+lists at most 50 criteria. A bad list is refused when the suite loads, before any call, with
+`BAD_CRITERIA`. A description is at most `CASE_MAX_CHARS` characters, the bound a prompt and a rubric
+have, and one longer is refused with `INPUT_BOUND`, naming the bound, as they are. A case with criteria
+needs no rubric; a rubric it has is shown to the judge as context.
 
-A `criteria` list is read as criteria only when it holds objects. A `criteria` that is a string,
-a list of strings or an empty list takes the path it took before spec 185: it is the rubric text when
-the case has no rubric, and is not read when it has one, with the same hashes as before. A list that
-mixes objects with other entries is refused.
+A `criteria` list is read as criteria only when it holds objects. A `criteria` that is a string or
+a list of strings takes the path it took before spec 185: it is the rubric text when the case has no
+rubric, and is not read when it has one, with the same hashes as before. An empty list is not read
+when the case has a rubric; a case with an empty list and no rubric is refused, as a case with no
+rubric is (issue 196). A list that mixes objects with other entries is refused.
 
 **The judge decides, and the code adds up.** For a criteria case the judge is asked to decide each
 criterion, `met` or `not_met`, with a one-sentence reason, and to give no total. The weighted total is
@@ -100,9 +107,12 @@ so a mean exactly at the threshold reads borderline. Three of four equal weights
 0.75 gives every sample a pass, and the case reads borderline, not pass.
 
 **A reply that does not decide every criterion is unmeasured.** Every criterion must appear exactly
-once with an allowed decision. A missing, duplicate, unknown or malformed entry, or a decision outside
-the set, makes the judge sample unmeasured, and its draw with it, with a reason naming the fault. It is
-never scored.
+once with an allowed decision and its reason. A missing, duplicate, unknown or malformed entry, or a
+decision outside the set, makes the judge sample unmeasured, and its draw with it, with a reason naming
+the fault. It is never scored. An entry whose reason is left out, empty or blank is malformed too,
+naming the criterion: a reason is required, not only read when present. A reason must hold a letter or a
+digit, in any script, that is not a default-ignorable code point; one of only white space, punctuation,
+marks, or zero-width, format or filler characters is no reason, and is malformed the same way.
 
 **What is recorded.** A measured draw of a criteria case carries **`criteria_judgments`**
 (`results.cases[].generation.draws[].criteria_judgments`): one entry per judge sample, in sample order,
@@ -110,7 +120,11 @@ each `{ total, pass, judgments, ignored }`. `judgments` is `{ id, decision }` pe
 suite's order, and `total` is the sample's entry in `samples`. Under `--keep-transcripts` the retained
 record of the case also carries **`criteria_samples`**, one per sample, `{ raw, judgments, total, pass,
 ignored }`, with each judgment's reason beside the judge's raw reply. `raw` is the text whose sha256 is
-the sample's entry in `judge_sample_hashes`.
+the sample's entry in `judge_sample_hashes`. Every draw of a criteria case that the judge answered,
+measured or not, also carries **`criteria_template_hash`**: the sha256 of the criteria template with
+nothing of any case in it (the criteria system text, and the prompt rendered with fixed text for the
+task, the answer, the context and one criterion). A draw of a case without criteria carries none. A run
+with a criteria case records the same hash once as `run.judge.criteria_template_hash` (receipt v0.12).
 
 **What a regrade keeps.** A regrade records `criteria_judgments` the same way. Regrade has
 no `--keep-transcripts`, so a regraded criteria draw keeps each sample's decisions, total, pass,
@@ -120,18 +134,145 @@ ignored keys and hash, and not the per-criterion reasons or the raw replies.
 weights, criteria added or removed. The revised list is held to the checks a run applies, before any
 call. The case is graded per criterion under the revised list, its `criteria_judgments` are recorded,
 and its rubric hash and the sidecar's changed cases name the change. A case may not change shape, from
-criteria objects to a rubric alone or back. See *A rubric regrade* under § Transcripts.
+criteria objects to a rubric alone or back. The criteria template may not change either: the original's
+`run.judge.criteria_template_hash`, and each judged draw's `criteria_template_hash` in its criteria
+cases, must be this runner's, and another, or none, is refused before any call. The run's record is
+compared even when every draw of a criteria case timed out and so records none. See *A rubric regrade*
+under § Transcripts.
 
 **Identity.** The criteria enter `suite_hash`, so an edit to any id, weight or description moves it.
-With the criteria template, they enter the case's `judge.rubric_hash` and a regrade's
-`grader_revision.rubric_hashes`. A suite with no criteria case is hashed, graded and recorded as
-before, byte for byte. The field sits on a draw object, which v0.11 declares open, so the schema does
-not change and `schema_version` stays `"0.11"`.
+They enter the case's `judge.rubric_hash` and a regrade's `grader_revision.rubric_hashes` as the
+criteria prompt renders them for this case, with fixed text in place of the task and the answer, so
+a change to how a criterion is shown to the judge moves the hash too. A suite with no criteria case is
+hashed, graded and recorded as before, byte for byte. The fields sit on a draw object, which v0.11
+declares open, so they did not change the schema and `schema_version` stayed `"0.11"`. (v0.12 keeps the
+draw open; it moves the version for other fields, see *What v0.12 adds*.)
+
+**Receipts made by 0.19.0.** A criteria case row of a receipt made by 0.19.0 carries the earlier form
+of the rubric hash, which covered the criteria template with no criterion line in it, and its draws
+carry no `criteria_template_hash`. `driftproof stale` does not read such a case as current: its rubric
+axis says the receipt records the hash in the form 0.19.0 wrote for a criteria case, which did not
+cover how each criterion line is rendered, so this runner's form differs for the same criteria, and a
+regrade records the current form. `regrade --rubric` refuses such a receipt, naming the missing
+`criteria_template_hash`; a judge regrade, without `--rubric`, reads it as before.
 
 **What this does not claim.** Computing the total in code fixes the arithmetic, not the judge's reading
 of an answer: a judge can still decide a criterion wrongly. How accurately a judge reads answers is a
 separate validation question. Nothing here says criteria make grading more accurate or show that a
 skill is better. What they add is a record of each decision behind a score, which a reader can audit.
+
+## What v0.12 adds: the judge's setting, and a regrade's evidence sealed
+
+Issue 196. A regrade grades a receipt's saved answers again, and its receipt is the evidence that
+it did. v0.12 records what the judge graded in, and seals what a regrade did inside the regraded
+receipt's own hash. Every field is optional, so a v0.11 receipt restamped `"0.12"` validates, and
+v0.11 is frozen as [`receipt.v0.11.schema.json`](./receipt.v0.11.schema.json).
+
+**The judge's setting, on every run.** `run.judge` adds these fields, each read before any call but
+the last, which is read from the judge's replies:
+
+- **`harness`**: `{ name, version }` of what the judge ran on: `claude-code` or `codex` with the
+  version its binary printed, read through the judge's own spawn path; `api` with a null version on an
+  api surface; `none` on the stub. On a CLI surface the CLI's own instructions are part of what the
+  judge reads, so its version is part of the judge.
+- **`isolation`**: the judge's spawn path. `eval-user` is the isolated hop; `same-user` is
+  `--trusted-skill`, where the judge runs with the operator's working directory, files and
+  environment; `none` is an api surface or the stub.
+- **`endpoint`**: `{ custom, sha256, resolved_by, routing }`, the route the judge's call takes, resolved
+  by the code that makes the call (`lib/provider.js` `callRoute`), and never the address.
+  - On an api surface, `resolved_by` is `runner`: `sha256` is of the address the call is sent to, the
+    address of the Anthropic client the call is made with (the SDK's reading of `ANTHROPIC_BASE_URL`,
+    else its default), or for an OpenAI judge `OPENAI_BASE_URL`, else the registry's
+    `providers.openai.base_url`, else the public default. `custom` is true when it is not the default.
+  - On a CLI surface, `resolved_by` is `cli`: `sha256` is of the `ANTHROPIC_BASE_URL`, or for codex the
+    `OPENAI_BASE_URL`, in the environment the spawn plan hands the CLI, null when it hands none, and
+    `custom` says which. The CLI resolves its own address from that environment and its own settings.
+  - On the stub, `resolved_by` is `none` and nothing is recorded: no call is made.
+  - `routing` names `ANTHROPIC_BEDROCK_BASE_URL`, `ANTHROPIC_VERTEX_BASE_URL`,
+    `CLAUDE_CODE_USE_BEDROCK`, `CLAUDE_CODE_USE_VERTEX` and `HTTPS_PROXY`, each `{ set, sha256 }`: set or
+    not in the environment the call is made in, and the sha256 of its value. On an api surface that is
+    this process's environment; with `--trusted-skill` it is the operator's, which the spawn plan hands
+    the CLI; behind the hop it is `HOME` and `PATH` only, so every variable reads not set. The hop
+    then runs a login shell as the eval user, which reads that user's shell profile, and what the
+    profile sets is not recorded (see below).
+  - Each hash is an unsalted sha256, so an address or a value that can be guessed can be recovered from
+    it by hashing the guess. Only the hash is recorded.
+- **`code_revision`**: the revision of the code on the judging path, `lib/judge.js`
+  `JUDGE_CODE_REVISION`. It is derived when the runner loads from these files, each hashed whole:
+  `config.js`, `lib/canonical.js`, `lib/capture.js`, `lib/json.js`, `lib/judge.js`, `lib/provider.js`,
+  `lib/regrade.js`, `lib/run.js`, `lib/sampling.js`, `lib/stats.js` and `lib/usage.js`. They hold how a
+  judge's reply is extracted, parsed, read and scored, how its calls are made and retried, how draws are
+  sampled, and which answers reach the judge. A one-character change to any of them moves it. It is
+  `judge-code-` and 16 hex of the sha256 over one line per file, its path and the sha256 of its bytes.
+- **`criteria_template_hash`**, when a case of the run lists criteria: the criteria template the run's
+  criteria cases were graded on (see *Criteria cases*), recorded once.
+- **`reported_models`**: the ids the judge's replies named for the judge's own model, as named, so a
+  dated snapshot stays dated, sorted; null when no reply named one or any answered sample lacked an
+  identity (the stub, and codex, name none).
+
+A rubric regrade compares each of these with its own and refuses a difference, naming the field and how
+to match it; an original that records one not at all is refused by name. An original with null, empty
+or invalid reported model ids is refused before any call. Each answered judge sample must establish
+its own identity; an anonymous reply stops a rubric regrade even if other replies name the expected
+model. The first five are compared
+before any call. `reported_models` is compared as the regrade's judge answers: a draw whose judge names
+an id the original's did not stops the regrade there, and once every call is made the two lists must be
+the same; either way it stops with a substrate mismatch, writes no receipt and says the calls made. A
+regrade records its own judge's setting, never the original's. `runner_version` is not compared, and a
+judge regrade, another judge on purpose, compares none of them.
+
+**Not recorded and not compared.** These can change what the judge reads or where its call goes, and
+the receipt holds none of them, so a rubric regrade cannot show they are the original's:
+
+- a CLI judge's own settings files: `~/.claude/settings.json`, project settings, and any `CLAUDE.md`
+  file the claude CLI reads, and codex's `~/.codex/config.toml`;
+- behind the hop, the eval user's shell profile, which the hop's login shell reads, and anything it
+  sets, its environment variables among them;
+- any routing variable but the five above: `https_proxy` in lower case, `HTTP_PROXY`, `NO_PROXY`, cloud
+  region and credential variables, and the address a CLI resolves from its own settings;
+- the network the call crosses: name resolution, a system proxy, and the service behind the address;
+- the model behind an id that names no date, beyond what `reported_models` records.
+
+**A regrade's evidence, sealed inside its hash.** A regraded receipt carries two objects, together
+and only with `run.judged_at`:
+
+- **`run.regraded_from`**: the original's `receipt_hash`, `runner_version` and `run_date_utc` (its
+  `run.date_utc`);
+  **`answers_sha256`**, the sha256 of the canonical JSON of the `answers` object the regrade read,
+  which a reader recomputes from the archive's `answers`; in a rubric regrade
+  **`rubric_revision_sha256`**, the sha256 of the revised suite file's bytes; and `judge`, the
+  original's `run.judge` block as it recorded it.
+- **`run.regrade`**: `mode`, `judge` (another judge, spec 044) or `rubric` (spec 184); `draws`,
+  `{ graded, carried }`, the draws that reached the judge and the rest (no answer to grade, or a lost
+  answer); **`judge_calls`** and **`judge_attempts`**, equal counts of endpoint attempts, including
+  retries, failed attempts and timeouts; **`judge_logical_calls`**, the logical judge calls started
+  (one sample, possibly several attempts), including calls that failed or timed out; and in a rubric
+  regrade **`cases_changed`**, each case changed with its grading fields. The numeric call cap
+  (`regradeReceipt` defaults to `DEV_MAX_CALLS` from `config.js`) is enforced before each endpoint
+  attempt, as well as against the initial projection. A stop reports
+  the attempts already made. A CLI attempt is one CLI invocation; requests the CLI makes internally
+  are not visible to the runner and are not counted.
+
+**A case row's checks.** A regrade runs no deterministic check. A row whose original carried checks
+gets **`checks_regrade`** `{ carried, generation_hash, reason }`: `carried` true when the row's
+`generation_hash` is the original row's, the answer the checks were run on, and the row carries the
+original's `checks`; `carried` false otherwise, with no `checks` on the row, and the reason says why.
+`generation_hash` is the original row's.
+
+An edit to any of these breaks the regraded receipt's `receipt_hash`. The `.regrade.json` sidecar is a
+readable copy that names the receipt, and the lineage is the receipt's alone. It holds `format`;
+`receipt_hash`, the regraded receipt's own, which names it; `generated_at_basis`, which generation time
+the regrade carried; `draws`, `calls`, `attempts` and `logical_calls`, the counts the receipt seals,
+repeated to read; and
+`judge_reported_models`, the canonical ids the regrade's judge named. `bin/driftproof` adds `answers`:
+the answers file's name, its own sha256 and the draws graded. In a rubric regrade it holds
+`rubric_revision`: the revised file's name and sha256, the original and revised suite hashes, each case
+changed and a note. Of the receipt's own keys it carries only `receipt_hash`, and nothing in it is
+sealed: an edit to the sidecar breaks no hash.
+
+A completed generation keeps its retained-answer hash when its judge times out, so the answer can
+be regraded. Timeout reasons are fixed text and contain none of the provider error's message.
+A regrade writes no file at all when the receipt it built fails its schema or its hash does not verify.
 
 ## What v0.11 adds: a smoke run says so
 
@@ -444,7 +585,7 @@ carry a numeric `mean`.
 ## Which schema validates which receipt (the coexistence rule)
 
 - **A producer emits the current version.** `config.js` `RECEIPT_SCHEMA_VERSION`
-  decides it, and at this revision that is **v0.11**.
+  decides it, and at this revision that is **v0.12**.
 - **A reader validates against the receipt's own `schema_version`**, never
   against the newest schema it happens to have. `validateReceipt()` selects the
   schema by that field, which is why a v0.1 receipt from the first report still
@@ -618,7 +759,7 @@ The v0.3.1 schema gained an **additive interop revision** so receipts can be
 
 ## Fields
 
-### `schema_version` (string, required): `"0.11"`.
+### `schema_version` (string, required): `"0.12"`.
 
 ### `skill` (object, required)
 | field | type | notes |
@@ -655,13 +796,15 @@ The v0.3.1 schema gained an **additive interop revision** so receipts can be
 | `harness`, `import` | object | **v0.9**, optional, imported receipts. See *What v0.9 adds*. `harness` is also written by every run on a CLI or api surface and carried by a regrade; see *What v0.10 adds*. |
 | `capture` | object | **v0.10**, optional, written by every run and carried by a regrade when the original records it: `{mode}`, `text` or `files`, which answer was judged. See *What v0.10 adds*. |
 | `preset` | `"quick"` | **v0.11**, optional. A smoke run (`--quick`); such a receipt is below `TESTED`. See *What v0.11 adds*. |
+| `regraded_from`, `regrade` | object | **v0.12**, optional, together and only with `judged_at`: a regrade's lineage and what it did, sealed inside the receipt's hash. See *What v0.12 adds*. |
 
 **`run.judge`** records how grading was done: `samples` (judge calls per case),
 `temperature` (a number when the surface lets us set it — the `api` surface pins
 **0** — else `null`), `sampling` (`"api-temperature-0"` or `"surface-controlled"`),
 and `surface`. Determinism where the surface allows: on `api` the judge is pinned
 to temperature 0; on `claude-cli` sampling params are surface-controlled and the
-receipt says so.
+receipt says so. **v0.12:** and `harness`, `isolation`, `endpoint`, `code_revision`,
+`criteria_template_hash` and `reported_models`, the judge's setting (see *What v0.12 adds*).
 
 ### `results` (object, required)
 - **`cases`** — one entry **per (case, mode)**; every case appears twice
@@ -680,6 +823,7 @@ receipt says so.
   | `threshold` | number or `null` | The case's pass threshold (or `null`). |
   | `reason` | string | One-line judge rationale (optional). |
   | `checks` | array | **v0.3.1, optional.** Deterministic post-check results, each `{ name, kind, pass }` (`kind ∈ regex/contains/not_contains/min_length`). Run alongside the judge; a **separate column**, **not** folded into `outcome`/the band verdict. |
+  | `checks_regrade` | object | **v0.12, optional**, on a regrade's row whose original carried checks: whether the original's check results were carried to this row's answer, and why. See *What v0.12 adds*. |
   | `judge` | object | `{ model_id, rubric_hash }`: who graded and a hash binding the grade to the exact rubric + judge system prompt. A criteria case's hash also binds its criteria and their template (see *Criteria cases*). |
   | `activation`, `excluded_draws`, `label` | array, array, string | **v0.9**, optional, imported receipts. Whether the skill fired (never a score), the runs kept out of `samples` with their reasons, and the source's display name. See *What v0.9 adds*. |
 - **`aggregates`** — `{ with_skill, baseline }`, each
@@ -758,11 +902,58 @@ alone); anything else is refused before any call. The
 new receipt carries the revised `suite.suite_hash`, `run.grader_revision` with the
 revised rubric hashes, `run.judged_at`, the original's archived arms and no
 `run.generated_at`: it is a re-judge of answers generated earlier, not a run. Its
-`.regrade.json` names the original receipt and adds `rubric_revision` (the revised
-file, the original and revised suite hashes, and each case changed). Its summary
-names the original receipt and its run date, and gives its own `date_utc` as the
-grading time, not a run date. The original receipt is not written over. The schema
-does not change.
+evidence is sealed inside its hash (receipt v0.12, see *What v0.12 adds*):
+`run.regraded_from` names the original receipt, the runner version that made it and
+its run date, the answers by their canonical sha256, the revised file by its sha256
+and the original's judge block, and `run.regrade` the draws graded and carried, the
+judge calls made and each case changed. Its `.regrade.json` is a readable copy that
+names the receipt by its hash and adds `rubric_revision` (the revised file's name,
+the original and revised suite hashes, and each case changed); *What v0.12 adds*
+lists what it holds. Its summary names the original
+receipt and its run date, and gives its own `date_utc` as the grading time, not a
+run date. The original receipt is not written over.
+
+**The judge's recorded setting.** A rubric regrade compares the original's
+`run.judge` `{ model_id, surface, sampling, temperature, samples,
+prompt_template_hash, harness, isolation, endpoint, code_revision,
+criteria_template_hash, reported_models }` with its own, and refuses a judge whose
+recorded setting differs. The model id is compared as recorded, aliases expanded and
+no date stripped. The surface, and with it the sampling and temperature, comes from
+the environment (`CLAUDE_PROVIDER`, `OPENAI_SURFACE`, `DRIFTPROOF_STUB`); the
+harness is the judge surface's, its version read from the binary; the isolation is
+the spawn path (`--trusted-skill` or the hop); the endpoint is the address the call
+uses and the routing variables it is handed, by their sha256; the code revision is
+the runner's; and `reported_models` are the dated ids the judge answered as (see
+*What v0.12 adds*, which also lists what is not recorded and so not compared). Every
+field but `reported_models` is compared before any call, and a difference is
+refused, naming each field and the setting that matches it, such as
+`CLAUDE_PROVIDER=api`; `reported_models` is compared as the judge answers, and a
+difference stops the regrade with no receipt written. An original that records any
+of these not at all is refused by name. Every judged draw of a criteria case must
+also record this runner's `criteria_template_hash`. A judge regrade, without
+`--rubric`, grades with another judge on purpose and compares none of them.
+
+**What a regrade counts, and what it does not run.** A draw reaches the judge only
+when it has an answer and that answer is not lost (see *A lost answer* under § What
+v0.10 adds). The plan and its guards, `--max-calls` and `--max-usd`, project the
+calls of those draws, and the sidecar's `draws` and `answers.graded` and the
+receipt's `run.regrade.draws` count them; a lost draw kept with its
+`generation_hash` is carried and never charged. The judge calls recorded, in the
+sidecar's `calls` and the receipt's `run.regrade.judge_calls`, are the attempts the
+judge made, a timed-out call's among them, so they equal the projection unless a
+call was retried. The judge sample count is a whole number of 1 or more, in both
+modes, or the regrade is refused before any call. `regradeReceipt` takes a call cap,
+`DEV_MAX_CALLS` unless its caller names one, which must be a whole number of 1 or
+more, and refuses a projection past it before any call; a budget hard-stop or a
+substrate mismatch after calls were made says the calls made. A draw whose judge
+call timed out records the runner's fixed words as its reason, never the error's
+message. A
+regrade, by judge or by rubric, runs no deterministic check: a check's definition
+is in no hash the receipt records. A row carries the original's `checks` results
+only when its answer is the one they were run on, and `checks_regrade` says whether
+they were carried. `regradeReceipt` itself runs every check `planRegrade` runs,
+holds the suites it is handed to the files they were read from, and refuses before
+any call.
 
 The transcript directory is **gitignored by default**: raw model text is never
 committed. The default for trigger-initiated runs is `retained-local` (disk is

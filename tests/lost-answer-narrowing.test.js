@@ -107,9 +107,11 @@ const SYS = '---\nname: fx\n---\nAnswer the task.';
 const reset = () => { calls.length = 0; generate = () => 'ok'; leave = () => []; };
 const afterLabel = (c) => (c.args.includes(provider.HOP_LABEL) ? c.args.slice(c.args.indexOf(provider.HOP_LABEL) + 1) : [c.file, ...c.args]);
 const sha = (s) => crypto.createHash('sha256').update(s).digest('hex');
+// Issue 196: the suite hash is the one a run computes for these cases, which a regrade now holds a
+// skill's cases to (spec 184 A-184-15).
 function skillOf() {
-  const cases = [{ id: 'task-1', prompt: 'Do the task.', rubric: 'A complete answer.', pass_threshold: 0.7 }];
-  return { name: 'fx-141', version: '1.0.0', contentHash: sha(SYS), skillMd: SYS, suite: { format: 'agentskills.io/evals', suiteHash: sha(JSON.stringify(cases)), caseCount: cases.length, cases } };
+  const { cases, suiteHash } = require(path.join(__dirname, '..', 'lib', 'skill.js')).suiteIdentity([{ id: 'task-1', prompt: 'Do the task.', rubric: 'A complete answer.', pass_threshold: 0.7 }]);
+  return { name: 'fx-141', version: '1.0.0', contentHash: sha(SYS), skillMd: SYS, suite: { format: 'agentskills.io/evals', suiteHash, caseCount: cases.length, cases } };
 }
 const armOf = (receipt, mode) => receipt.results.cases.find((c) => c.mode === mode);
 const withSkill = (call) => call.args.includes('--append-system-prompt');

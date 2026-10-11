@@ -90,9 +90,12 @@ const lib = libOf(ROOT);
 
 const sha = (s) => crypto.createHash('sha256').update(s).digest('hex');
 const SYS = '---\nname: fx\n---\nWrite the ADR.';
+// Issue 196: the suite hash is the one a run computes for these cases, which a regrade now holds a
+// skill's cases to (spec 184 A-184-15). It is this checkout's lib/skill.js's, so every tree a gate
+// loads is given the same fixture.
 function skillOf() {
-  const cases = [{ id: 'adr-1', prompt: 'Write an ADR choosing a database.', rubric: 'A complete ADR with context, decision and consequences.', pass_threshold: 0.7 }];
-  return { name: 'fx-adr', version: '1.0.0', contentHash: sha(SYS), skillMd: SYS, suite: { format: 'agentskills.io/evals', suiteHash: sha(JSON.stringify(cases)), caseCount: cases.length, cases } };
+  const { cases, suiteHash } = require(path.join(__dirname, '..', 'lib', 'skill.js')).suiteIdentity([{ id: 'adr-1', prompt: 'Write an ADR choosing a database.', rubric: 'A complete ADR with context, decision and consequences.', pass_threshold: 0.7 }]);
+  return { name: 'fx-adr', version: '1.0.0', contentHash: sha(SYS), skillMd: SYS, suite: { format: 'agentskills.io/evals', suiteHash, caseCount: cases.length, cases } };
 }
 const OPTS = { samples: 2, trusted: true, judgeModel: 'haiku', nowIso: '2026-10-09T16:05:00.000Z' };
 const run = (l, shape) => { SHAPE = shape; calls.length = 0; return l.run.runSkillOnModel({ skill: skillOf(), model: 'claude-opus-5-5', opts: OPTS }); };
@@ -213,7 +216,17 @@ test('AC-4 (d) the single-key shape writes a receipt byte-identical to the Base\
     // tree writes the same bytes, so a difference from the Base is the code's.
     const again = await frozen(() => run(lib, 'single'));
     assert.equal(JSON.stringify(again.receipt), JSON.stringify(mine.receipt), 'two runs of this tree differ: the comparison would not be about the code');
-    assert.equal(JSON.stringify(mine.receipt), JSON.stringify(theirs.receipt));
+    // Issue 196 (A-180-n in spec 180): receipt v0.12 adds four run.judge fields and moves
+    // schema_version. Exactly those are taken back to the Base's version, the hash re-sealed over the
+    // rest, and every other byte is compared as before.
+    // A-180-3: and the ids the judge answered as (spec 184 A-184-22).
+    const added = ['harness', 'isolation', 'endpoint', 'code_revision', 'reported_models'];
+    const back = JSON.parse(JSON.stringify(mine.receipt));
+    assert.ok(added.every((k) => k in back.run.judge), 'this tree records the v0.12 judge fields');
+    for (const k of added) delete back.run.judge[k];
+    back.schema_version = require(path.join(dir, 'config.js')).RECEIPT_SCHEMA_VERSION;
+    lib.receipt.sealReceipt(back);
+    assert.equal(JSON.stringify(back), JSON.stringify(theirs.receipt));
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

@@ -383,7 +383,7 @@ A receipt is the unit of evidence — one JSON document conforming to
 
 ```jsonc
 {
-  "schema_version": "0.11",
+  "schema_version": "0.12",
   "skill":  { "name": "commit-message-conventions", "version": "0.2.0",
               "content_hash": "…sha256 over SKILL.md + bundled files…" },
   "suite":  { "format": "agentskills.io/evals", "suite_hash": "…", "case_count": 10 },
@@ -392,7 +392,7 @@ A receipt is the unit of evidence — one JSON document conforming to
     "model_release_date": "2025-10-01",
     "provider": "anthropic",
     "surface": "claude-cli",
-    "runner_version": "0.19.0",
+    "runner_version": "0.19.1",
     "date_utc": "2026-07-27T…Z",
     "registry": "registered",
     "transcripts": "hashes-only",
@@ -471,7 +471,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: driftproofhq/driftproof@v0.19.0
+      - uses: driftproofhq/driftproof@v0.19.1
         with:
           skill-dir: skills/my-skill
           models: claude-haiku-4-5
@@ -599,7 +599,7 @@ permissions:
   contents: read
   issues: write
 # ...
-      - uses: driftproofhq/driftproof/stale@v0.19.0
+      - uses: driftproofhq/driftproof/stale@v0.19.1
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill

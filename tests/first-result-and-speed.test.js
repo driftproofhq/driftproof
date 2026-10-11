@@ -229,7 +229,12 @@ test('gradeSamples asks every sample at once and reads them in sample order', as
     inflight += 1; most = Math.max(most, inflight);
     await new Promise((r) => setTimeout(r, s === 'ok' ? 30 : 5));
     inflight -= 1;
-    if (s === 'throw') { const e = new Error('timed out after retries'); e.code = 'TIMEOUT'; e.attempts = 2; throw e; }
+    if (s === 'throw' || s === 'cap') {
+      const e = new Error(s === 'cap' ? 'call cap reached' : 'timed out after retries');
+      e.code = s === 'cap' ? 'CALL_CAP' : 'TIMEOUT';
+      e.attempts = s === 'cap' ? 0 : 2;
+      throw e;
+    }
     return { text: s === 'prose' ? 'adequate' : JSON.stringify({ score: 0.7, reason: 'r' }), usage: null, attempts: 1, stopReason: 'end_turn' };
   };
   delete require.cache[judgePath];
@@ -244,8 +249,9 @@ test('gradeSamples asks every sample at once and reads them in sample order', as
     assert.equal(u.reason, 'judge output unparseable');
     assert.equal(u.sample_hashes.length, 3, 'every sample that answered is recorded');
     await assert.rejects(grade(['throw', 'prose']), (e) => e.phase === 'judge' && e.judgeAttempts === 3);
-    const v = await grade(['prose', 'throw']);
-    assert.equal(v.unmeasured, true, 'the first in sample order decides');
+    // A-173-5 (issue 204): malformed replies cannot hide a failure or a call cap.
+    await assert.rejects(grade(['prose', 'throw']), (e) => e.phase === 'judge' && e.code === 'TIMEOUT' && e.judgeAttempts === 3 && e.judgeTexts.length === 1);
+    await assert.rejects(grade(['prose', 'throw', 'cap', 'ok']), (e) => e.phase === 'judge' && e.code === 'CALL_CAP' && e.judgeAttempts === 4 && e.judgeTexts.length === 2);
   } finally {
     provider.complete = orig;
     delete require.cache[judgePath];
