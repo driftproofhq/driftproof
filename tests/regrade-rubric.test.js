@@ -1331,15 +1331,27 @@ test('AC-36 a judge-only regrade with an anonymous sample cannot become an ident
 test('AC-37 exhausted non-timeout failures report every attempted request and logical call', async () => {
   const regrade = R('lib/regrade.js');
   const o = await inProcessOriginal('failed-attempts');
-  override = a => { if (isJudge(a)) throw Object.assign(new Error('429 fixture'), { status:429, attempts:4 }); return null; };
+  // A-184-32 (issue 220): count attempts at the provider boundary, as the API path does.
+  let attempts = 0;
+  override = a => {
+    assert.ok(isJudge(a), 'a regrade must not generate an answer');
+    for (let attempt = 1; attempt <= 4; attempt += 1) {
+      a.onAttempt(attempt);
+      attempts += 1;
+    }
+    throw Object.assign(new Error('429 fixture'), { status:429, attempts:4 });
+  };
   seen.judge = 0;
   try {
-    await assert.rejects(regrade.regradeReceipt({ receipt:o.receipt, skill:o.skill(), answers:o.answers, judgeModel:'claude-haiku-4-5', samples:SAMPLES, opts:{trusted:true} }), e => {
-      assert.equal(e.attemptsMade, seen.judge * 4);
-      assert.equal(e.callsMade, seen.judge * 4);
-      assert.equal(e.logicalCallsMade, seen.judge);
-      assert.equal(seen.judge, SAMPLES);
-      return true;
+    await withEnv({ DRIFTPROOF_STUB: null, CLAUDE_PROVIDER: 'api' }, async () => {
+      await assert.rejects(regrade.regradeReceipt({ receipt:o.receipt, skill:o.skill(), answers:o.answers, judgeModel:'claude-haiku-4-5', samples:SAMPLES, opts:{trusted:true} }), e => {
+        assert.equal(attempts, seen.judge * 4, 'four attempted requests per logical call');
+        assert.equal(e.attemptsMade, attempts);
+        assert.equal(e.callsMade, seen.judge * 4);
+        assert.equal(e.logicalCallsMade, seen.judge);
+        assert.equal(seen.judge, SAMPLES);
+        return true;
+      });
     });
   } finally { override = null; }
 });

@@ -8,6 +8,92 @@ makes this one a record.
 
 ---
 
+## v0.20.0 - 2026-10-11
+
+### What's new
+
+- **A plain judge regrade (`driftproof regrade` without `--rubric`) now requires every judge reply to
+  name the requested judge.** It used to accept a reply that named no model and still recorded the
+  run as TESTED. It now refuses, before writing a receipt, summary or sidecar, unless every returned
+  sample identifies the requested judge: a single-model reply's reported id is enough, but a
+  mixed-model reply must explicitly name the requested judge as the one that served it. The stub
+  exception now requires both the configured stub surface and every reply to name it; a false stub
+  label is refused. Per-sample identity evidence, the reported ids, the serving id and the output
+  hash, is sealed in the receipt. `spec/RECEIPT.md` and the methodology page state the rule.
+
+### What may change for you
+
+- **A plain regrade now bounds its answers input.** An answers archive larger than 16,777,216 bytes,
+  more than 4,096 direct answers, a single answer over 1,048,576 UTF-8 bytes, or more than
+  16,777,216 total UTF-8 bytes of answer text is refused before any judge call. A legacy answers
+  directory is capped at 4,096 files. A reported judge id must be at most 256 UTF-8 bytes of ASCII
+  letters, digits, dot, underscore or hyphen; a blank, malformed or non-string id is refused.
+- **A plain regrade that used to succeed with an anonymous judge reply now fails.** This closes the
+  0.19.1 known issue below; a receipt made the old way is unaffected.
+
+### Known issues
+
+- **What is not recorded or compared.** A CLI judge's own settings files (`~/.claude/settings.json`,
+  project settings, `CLAUDE.md` files, codex's config), the eval user's shell profile behind the
+  isolated hop, other proxy, region and credential variables, and the network the call crosses can
+  all change what the judge reads or where its call goes. The receipt holds none of them.
+  `spec/RECEIPT.md` lists them.
+- **The route is recorded as an unsalted hash,** so an address that can be guessed can be recovered
+  from it.
+- **A regrade's raw judge replies are not kept,** only their hashes.
+- **A plain regrade's judge identity is self-reported, not authenticated.** The requested judge's
+  reported id comes from its own reply; it does not authenticate provider identity or measure
+  grading accuracy.
+
+### Upgrade
+
+- npm: `npx driftproof@0.20.0`. The Action: `driftproofhq/driftproof@v0.20.0`, and the stale Action
+  `driftproofhq/driftproof/stale@v0.20.0`.
+- Claude Code plugin: `claude plugin update driftproof@driftproofhq`. The plugin runs `npx
+  driftproof@0.20.0`.
+
+### Engineering log
+
+0.20.0 closes the 0.19.1 known issue on a plain regrade's judge identity, after a claim review
+found two blockers and four majors, closed in A-044-6. The operator's own box gates then caught a
+regression from that fix: a stub regrade no longer stopped when its spend ran out (census RF-46).
+It was fixed at its cause. The work is issue 212, merged in PR 215. spec/RECEIPT.md gains the section on a plain judge regrade's identity rule,
+its evidence shape and its input bounds; the methodology page states the same rule.
+
+Issue 5 closes CodeQL alert 29's cause in `scripts/build-head-tags.js`, the site's own head-tag
+builder: generated JSON-LD is serialized so page text stays JSON data inside its script block, and
+head-tag inputs are validated before any write, after a claim review of spec 133 (2 blockers, 2
+majors, all closed). No published page bytes changed.
+
+The rest of this release is process and the release train's own automation, not a change to the
+published tool. The spec template gains a "Claim and invariants" section and the fresh-context
+claim review it requires before a build that ships a public claim. Autonomy A and B let the release
+train refresh a red release from `dev` and sweep again, twice at most before it parks for a human,
+and hold the tree's merges, builds and fixes while a release is in its own checks. Autonomy C and D
+have the train reconcile and report a failed release draft on its thread, retried once at most
+within the shared spending limit, and move the Claude Code plugin's branch by itself once npm reports
+the version as latest. Two follow-ups close non-blocking findings against two specs' own test
+coverage; neither changes a product file. The merge list below names each issue and pull request.
+
+#### The v0.20.0 merge list
+
+Seven merges since v0.19.1's release merge `9c3cecde`, oldest first:
+
+- spec 178's AC-3 and Base mutation rows read against the merge target instead of an older Base
+  (issue 126, PR 209): gate only.
+- issue 198, the spec template's "Claim and invariants" section and the claim review it requires
+  before a build (PR 210): process only.
+- Autonomy A and B, the release train's red-release refresh and its hold on the tree during a
+  release's own checks (issues 192 and 193, PR 211): the release train only.
+- spec 180's three non-blocking findings from the #134 review: the AC-6 version list, the R-1 rule 4
+  fixture, and `auxiliary_calls` on an unmeasured draw (issue 136, PR 208): gate only.
+- Autonomy C and D, a failed release draft reported and capped, and the plugin branch moved after
+  npm by itself (issue 194, PR 213): the release train only.
+- issue 5, JSON-LD written as contained data and head-tag inputs validated before writes (PR 214):
+  the site's own builder; no published page bytes changed.
+- issue 212, a plain judge regrade reads TESTED only when every judge sample names its judge
+  (PR 215): above.
+
 ## v0.19.1 - 2026-10-10
 
 ### What's new

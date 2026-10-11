@@ -34,7 +34,8 @@ const calls = [];
 let generate = () => 'ok';
 let leave = () => [];
 const JUDGE = /Return ONLY this JSON object/;
-const cliJson = (result) => JSON.stringify({ type: 'result', result, stop_reason: 'end_turn', usage: { input_tokens: 10, output_tokens: 5 } });
+// Issue 220: judge replies name the requested model; generations keep their original shape.
+const cliJson = (result, model) => JSON.stringify({ type: 'result', result, ...(model ? { model, modelUsage: { [model]: { inputTokens: 10, outputTokens: 5 } } } : {}), stop_reason: 'end_turn', usage: { input_tokens: 10, output_tokens: 5 } });
 const b64 = (s) => Buffer.from(s).toString('base64');
 cp.spawn = (file, args, options) => {
   const call = { file, args: [...args], cwd: (options && options.cwd) || null, input: '' };
@@ -49,7 +50,7 @@ cp.spawn = (file, args, options) => {
         const judge = JUDGE.test(call.input);
         call.judge = judge;
         const isCodex = call.args.includes('codex');
-        let out = judge ? cliJson(JSON.stringify({ score: 0.8, pass: true, reason: 'double' }))
+        let out = judge ? cliJson(JSON.stringify({ score: 0.8, pass: true, reason: 'double' }), call.args[call.args.lastIndexOf('--model') + 1])
           : isCodex ? `${JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text: generate(call) } })}\n${JSON.stringify({ type: 'turn.completed', usage: { input_tokens: 1, output_tokens: 1 } })}\n`
             : cliJson(generate(call));
         const files = judge ? [] : leave(call);
