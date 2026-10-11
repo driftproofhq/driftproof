@@ -128,7 +128,7 @@ test('AC-2 with every judge reply invalid, every answer is kept with its judge o
   }
 });
 
-test('AC-2 with every judge call timing out, every answer is kept, though the draw records no hash', async () => {
+test('AC-2 with every judge call timing out, every answer is kept and its hash is sealed (A-184-27)', async () => {
   reset('unique', 'timeout');
   const r = await run(1);
   const doc = archiveOf(r);
@@ -138,7 +138,7 @@ test('AC-2 with every judge call timing out, every answer is kept, though the dr
   for (const t of returned) assert.equal(doc.answers[sha(t)], t, `"${t}" is kept`);
   const kept = doc.draws.filter((x) => x.answer_sha256);
   assert.equal(kept.length, returned.length, 'one kept row per answer returned');
-  for (const row of kept) assert.equal(row.generation_hash, null, 'the receipt records no hash for a draw whose judging timed out');
+  for (const row of kept) assert.equal(row.generation_hash, row.answer_sha256, 'the receipt seals the kept answer even when judging timed out');
 });
 
 // ── the CLI ──────────────────────────────────────────────────────────────────────────────────────────

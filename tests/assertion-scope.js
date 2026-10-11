@@ -783,7 +783,9 @@ function proseBlocks(rel, text) {
 // cap subject is worth naming a constant for even when no cap word touches it.
 const CAP_NUMBER_WORD = `(?:defaults?|${CAP_WORD}|budgets?|limits?|ceilings?|calls?)`;
 
-function capLiterals(block) {
+// `numberWord` is the shipped word unless a plant reads itself under a
+// narrowing of it (A-018-2, issue 142).
+function capLiterals(block, numberWord = CAP_NUMBER_WORD) {
   const t = block
     .replace(/\b[0-9a-f]{7,40}\b/g, ' ')
     .replace(/\d{4}-\d{2}-\d{2}/g, ' ')
@@ -792,7 +794,7 @@ function capLiterals(block) {
   const found = [];
   for (const m of t.matchAll(/\$\s?\d+(?:\.\d+)?/g)) found.push(m[0].replace(/\s/g, ''));
   for (const m of t.matchAll(/(?<![\w.$-])\d{3,}(?![\w.-])/g)) found.push(m[0]);
-  const near = new RegExp(`${CAP_NUMBER_WORD}[^\\n\\d]{0,14}(\\d{2,})|(\\d{2,})[\\s-]?${CAP_NUMBER_WORD}`, 'gi');
+  const near = new RegExp(`${numberWord}[^\\n\\d]{0,14}(\\d{2,})|(\\d{2,})[\\s-]?${numberWord}`, 'gi');
   for (const m of t.matchAll(near)) found.push(m[1] || m[2]);
   return [...new Set(found)];
 }
@@ -830,7 +832,31 @@ const CAP_WORD_PLANTS = [
   { id: 'cap-of-n', rel: 'README.md', anchor: '### Cost guard\n', expect: 'red',
     says: 'the word cap beside a number, no constant named',
     replace: '### Cost guard\n\nThe report run keeps a cap of 124.\n' },
+  // A-018-2 (issue 142). "a cap of 124" is red through the bare three-digit
+  // path whatever CAP_NUMBER_WORD holds. These two are red only through the cap
+  // word inside it, and each names the narrowings under which it reads green.
+  { id: 'cap-of-two-digits', rel: 'README.md', anchor: '### Cost guard\n', expect: 'red',
+    greenWhenNarrowed: ['cap-word-dropped'],
+    says: 'the word cap beside a two-digit number, which only CAP_NUMBER_WORD reads',
+    replace: '### Cost guard\n\nThe report run keeps a cap of 20.\n' },
+  { id: 'capped-at-n', rel: 'README.md', anchor: '### Cost guard\n', expect: 'red',
+    greenWhenNarrowed: ['cap-word-dropped', 'participles-dropped'],
+    says: 'calls are capped at 20: the participle is a cap word',
+    replace: '### Cost guard\n\nPer model, calls are capped at 20.\n' },
 ];
+
+// NARROWINGS OF THE NUMBER WORD (A-018-2, issue 142). Edits a later change could
+// make by mistake. A plant that names one must read red on the shipped word and
+// green under the narrowing, so it is seen to hold the reading it guards.
+function narrowNumberWord(id, from, to) {
+  const word = CAP_NUMBER_WORD.replace(from, to);
+  if (word === CAP_NUMBER_WORD) throw new Error(`cap number word narrowing "${id}" changed nothing`);
+  return word;
+}
+const CAP_NUMBER_WORD_NARROWED = {
+  'cap-word-dropped': narrowNumberWord('cap-word-dropped', `|${CAP_WORD}`, ''),
+  'participles-dropped': narrowNumberWord('participles-dropped', CAP_WORD, '(?<![a-z])caps?(?![a-z])'),
+};
 
 function plantCapMutation(root, m) {
   const text = fs.readFileSync(path.join(root, m.rel), 'utf8');
@@ -840,8 +866,9 @@ function plantCapMutation(root, m) {
 }
 
 // `text` may be supplied per-file to scan a MUTATED copy without writing it to
-// disk; anything not supplied is read from the tree.
-function capLiteralClaims(root, overrides = {}) {
+// disk; anything not supplied is read from the tree. `numberWord` reads the
+// scan under a narrowing of CAP_NUMBER_WORD; it defaults to the shipped word.
+function capLiteralClaims(root, overrides = {}, { numberWord = CAP_NUMBER_WORD } = {}) {
   const version = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version;
   const constants = capConstantNames(root);
   const subject = capSubjects(root);
@@ -862,7 +889,7 @@ function capLiteralClaims(root, overrides = {}) {
     for (const block of proseBlocks(rel, text)) {
       if (!subject.test(block)) continue;
       if (RECORDED_OUTPUT.test(block)) continue;
-      const lits = capLiterals(block);
+      const lits = capLiterals(block, numberWord);
       if (!lits.length) continue;
       if (namesConstant.test(block)) continue;
       const where = block.split('\n').find((l) => subject.test(l)) || block.slice(0, 80);
@@ -1770,6 +1797,6 @@ function workflowRunSubjects(root, { readDir = fs.readdirSync, readFile = (f) =>
 module.exports = {
   probeCopies, probeCopyExceptionProblems, probeCopiesCheck, PROBE_COPY_EXCEPTIONS, productFunctionExports,
   releaseEntryFacts, RELEASE_ENTRY_FACTS, publishedInvocations, WORDS, NARROWING_CLASSES, archiveReceipts, bandSites, WINDOW_SCOPES, productPathReaches, orphanModules, undeclaredHarnessOnly, HARNESS_ONLY_LIB, judgeSampleViolations, ATTRS_CARRYING_PROSE, attributeText, visibleText, documentText, countClaims, publishedFiles, signedReceiptClaims, FROZEN_SCHEMA, scanTimeoutLiterals,
-  capLiteralClaims, capConstantNames, proseBlocks, capLiterals, capSubjects, CAP_MUTATIONS, CAP_WORD_PLANTS, plantCapMutation, FROZEN_PROSE, RECORDED_OUTPUT,
+  capLiteralClaims, capConstantNames, proseBlocks, capLiterals, capSubjects, CAP_MUTATIONS, CAP_WORD_PLANTS, CAP_NUMBER_WORD_NARROWED, plantCapMutation, FROZEN_PROSE, RECORDED_OUTPUT,
   workflowRunSubjects, declaresTrigger, workflowStructure, readShell, exclusionCheckMode, sourceHistory, SOURCE_ROOT_COMMIT, publishExclusionHits, isInternalNarrative, PUBLISH_GOVERNANCE_SET,
   releaseVersionLiteralCheck, nextReleaseVersions, freezeLiteralFiles, specGateAndProbeFiles, pipefailQuietGrepCheck };

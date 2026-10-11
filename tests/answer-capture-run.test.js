@@ -165,9 +165,11 @@ test('AC-2 files capture on an api surface is refused before any call', async ()
 // ── AC-3 to AC-5: through runSkillOnModel ───────────────────────────────────────────────────────
 
 const sha = (s) => crypto.createHash('sha256').update(s).digest('hex');
+// Issue 196 (A-137-n in spec 137): the suite hash is the one a run computes for these cases, which a
+// regrade now holds a skill's cases to (spec 184 A-184-15).
 function skillOf() {
-  const cases = [{ id: 'adr-1', prompt: 'Write an ADR choosing a database.', rubric: 'A complete ADR with context, decision and consequences.', pass_threshold: 0.7 }];
-  return { name: 'fx-adr', version: '1.0.0', contentHash: sha(SYS), skillMd: SYS, suite: { format: 'agentskills.io/evals', suiteHash: sha(JSON.stringify(cases)), caseCount: cases.length, cases } };
+  const { cases, suiteHash } = require(path.join(__dirname, '..', 'lib', 'skill.js')).suiteIdentity([{ id: 'adr-1', prompt: 'Write an ADR choosing a database.', rubric: 'A complete ADR with context, decision and consequences.', pass_threshold: 0.7 }]);
+  return { name: 'fx-adr', version: '1.0.0', contentHash: sha(SYS), skillMd: SYS, suite: { format: 'agentskills.io/evals', suiteHash, caseCount: cases.length, cases } };
 }
 const armOf = (receipt, mode) => receipt.results.cases.find((c) => c.mode === mode);
 const withSkill = (call) => call.args.includes('--append-system-prompt');
@@ -224,6 +226,8 @@ test('AC-3 the frozen v0.9 schema is the Base\'s but for $id, and every tracked 
   generate = () => 'Here is the ADR:\n\n# ADR 1\n\nContext: we need a database.';
   const { receipt } = await runSkillOnModel({ skill: skillOf(), model: 'haiku', opts: { samples: 2, trusted: true } });
   const v09 = JSON.parse(JSON.stringify(receipt));
+  // Issue 196: and without v0.12's judge fields, which no older schema carries.
+  for (const k of ['harness', 'isolation', 'endpoint', 'code_revision', 'reported_models', 'criteria_template_hash']) delete v09.run.judge[k];
   v09.schema_version = '0.9';
   assert.equal(validateReceipt(v09).valid, false, 'a v0.9 receipt carrying run.capture validated');
   delete v09.run.capture;
@@ -301,17 +305,20 @@ test('AC-5 a reply that only describes work is a lost draw, never judged', async
 
 test('AC-4 a regrade reads the answer the same way: a pointing answer is a lost draw and no judge call is made for it', async () => {
   reset();
-  // A distinct answer per draw, so each draw has its own generation_hash.
+  // A distinct answer per draw, so each draw has its own generation_hash. Issue 196 (A-184-11): the
+  // pointing answer is the first generation's own, so the answer kept for its draw is the text its
+  // generation_hash was taken over, as every answer a regrade reads must be.
+  const pointing = 'I saved the ADR to adr.md.';
   const texts = new Map();
   let k = 0;
-  generate = () => { k += 1; const t = `Here is ADR ${k}:\n\nContext: we need a database.`; texts.set(crypto.createHash('sha256').update(t).digest('hex'), t); return t; };
+  generate = () => { k += 1; const t = k === 1 ? pointing : `Here is ADR ${k}:\n\nContext: we need a database.`; texts.set(crypto.createHash('sha256').update(t).digest('hex'), t); return t; };
   const skill = skillOf();
   const { receipt } = await runSkillOnModel({ skill, model: 'haiku', opts: { samples: 2, trusted: true } });
   const answers = {};
   const draws = receipt.results.cases.flatMap((c) => c.generation.draws);
   for (const d of draws) answers[d.generation_hash] = texts.get(d.generation_hash);
-  const planted = draws[0].generation_hash;
-  answers[planted] = 'I saved the ADR to adr.md.';
+  const planted = sha(pointing);
+  assert.ok(draws.some((d) => d.generation_hash === planted), 'the run keeps the pointing draw with its generation_hash');
   reset();
   const out = await regradeReceipt({ receipt, skill, answers, judgeModel: 'haiku', samples: 2, opts: { trusted: true } });
   const lost = out.receipt.results.cases.flatMap((c) => c.generation.draws).filter((d) => d.generation_hash === planted);
@@ -321,6 +328,25 @@ test('AC-4 a regrade reads the answer the same way: a pointing answer is a lost 
   assert.equal(calls.filter((c) => c.judge && /adr\.md/.test(c.input)).length, 0);
   assert.equal(calls.filter((c) => c.judge).length, (draws.length - 1) * 2);
   assert.deepEqual(out.receipt.run.capture, { mode: 'text' });
+});
+
+test('AC-4 a regrade refuses an answer planted behind another draw\'s generation_hash, before any call (issue 196)', async () => {
+  reset();
+  const texts = new Map();
+  let k = 0;
+  generate = () => { k += 1; const t = `Here is ADR ${k}:\n\nContext: we need a database.`; texts.set(sha(t), t); return t; };
+  const skill = skillOf();
+  const { receipt } = await runSkillOnModel({ skill, model: 'haiku', opts: { samples: 2, trusted: true } });
+  const answers = {};
+  const draws = receipt.results.cases.flatMap((c) => c.generation.draws);
+  for (const d of draws) answers[d.generation_hash] = texts.get(d.generation_hash);
+  answers[draws[0].generation_hash] = 'I saved the ADR to adr.md.';
+  reset();
+  await assert.rejects(
+    regradeReceipt({ receipt, skill, answers, judgeModel: 'haiku', samples: 2, opts: { trusted: true } }),
+    (e) => e && e.code === 'REGRADE_REFUSED' && /is not its generation_hash/.test(e.message),
+  );
+  assert.equal(calls.length, 0, 'no call was made');
 });
 
 test('AC-4 a regrade of a files-capture receipt reads each draw with its captured_files, and keeps them for the next regrade', async () => {
@@ -410,9 +436,14 @@ test('AC-10 openai-cli through the hop records codex and the version codex --ver
     const { receipt } = await runSkillOnModel({ skill: skillOf(), model: 'gpt-5.6-sol', opts: { samples: 2, judgeModel: 'haiku', ...(mode === 'files' ? { capture: mode } : {}) } });
     assert.equal(receipt.run.surface, 'openai-cli');
     assert.deepEqual(receipt.run.harness, { name: 'codex', version: want }, mode);
-    assert.equal(versionCalls.length, 1, mode);
+    // Issue 196: the judge (haiku, on claude-cli) is on another surface, so its own harness is read
+    // too, through its own hop, and recorded in run.judge.harness (spec 184 A-184-13).
+    assert.equal(versionCalls.length, 2, mode);
     assert.equal(versionCalls[0].file, '/usr/bin/sudo', mode);
     assert.deepEqual(afterHop(versionCalls[0]), [provider.ISOLATED_WRAPPER, provider.HOP_LABEL, 'codex', '--version'], mode);
+    assert.equal(versionCalls[1].file, '/usr/bin/sudo', mode);
+    assert.deepEqual(afterHop(versionCalls[1]), [provider.ISOLATED_WRAPPER, provider.HOP_LABEL, 'claude', '--version'], mode);
+    assert.deepEqual(receipt.run.judge.harness, { name: 'claude-code', version: '2.1.285' }, mode);
     assert.ok(validateReceipt(receipt).valid, JSON.stringify(validateReceipt(receipt).errors));
   }
 });
@@ -429,6 +460,9 @@ test('AC-10 a version read that fails records a null version on each CLI surface
   }
 });
 
+// Issue 196: a regrade's run.harness is the original's, the harness that produced the answers, and is
+// never read again; the one version it reads is its own judge's, for run.judge.harness (spec 184
+// A-184-13).
 test('AC-11 a regrade carries the original\'s run.harness without reading a version, and none when the original has none', async () => {
   reset();
   versionOut.claude = '2.1.291 (Claude Code)\n';
@@ -444,7 +478,8 @@ test('AC-11 a regrade carries the original\'s run.harness without reading a vers
   versionOut.claude = '2.1.299 (Claude Code)\n';
   const out = await regradeReceipt({ receipt, skill, answers, judgeModel: 'haiku', samples: 2, opts: { trusted: true } });
   assert.deepEqual(out.receipt.run.harness, { name: 'claude-code', version: '2.1.291' });
-  assert.equal(versionCalls.length, 0, 'a regrade read a version instead of carrying the original\'s');
+  assert.deepEqual(versionCalls.map(versionArgv), [['claude', '--version']], 'a regrade read a version other than its own judge\'s');
+  assert.deepEqual(out.receipt.run.judge.harness, { name: 'claude-code', version: '2.1.299' }, 'the judge\'s own harness, read for the regrade');
   assert.ok(validateReceipt(out.receipt).valid, JSON.stringify(validateReceipt(out.receipt).errors));
   assert.ok(verifyReceiptHash(out.receipt));
   const bare = JSON.parse(JSON.stringify(receipt));

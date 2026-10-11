@@ -423,11 +423,16 @@ NOTES
     every answer is checked against its hash before any call. The generation side of
     the new receipt is the original's, draw for draw; --samples defaults to the
     original's. The receipt records the re-judge (its archived arms, judged_at and
-    grader_revision); <receipt>.regrade.json beside it names the original receipt
-    and the answers file. Nothing is written over.
+    grader_revision) and, since receipt v0.12, what the regrade did, inside its hash:
+    run.regraded_from names the original receipt, its run date, the answers read and
+    the original's judge; run.regrade the draws graded and carried and the judge
+    calls made. <receipt>.regrade.json beside it names the receipt and the answers
+    file. No check is run again. Nothing is written over.
   - regrade --rubric <evals.json> grades the same saved answers again under a revised
-    rubric, with the original's judge, judge sample count and judge template
-    (--judge-model and --samples may be left out; another of any is refused). The
+    rubric, with the original's judge, judge sample count and judge template, and its
+    judge setting (surface, sampling, harness version, isolation, endpoint and the
+    judge-reading code); --judge-model and --samples may be left out, and another of
+    any is refused before any call, naming how to match it. The
     revised suite may differ from the skill's own only in each case's rubric and
     pass_threshold, and in a case that lists criteria objects its criteria (held to
     the checks a run applies; a case may not switch between criteria objects and a
@@ -435,8 +440,9 @@ NOTES
     the original case does not carry, a changed prompt, a case id changed, added or
     removed, a changed case order or any other field is refused before any call,
     naming it. No answer is generated. The new receipt carries the revised suite_hash
-    and rubric hashes; its .regrade.json adds rubric_revision: the revised file, the
-    original and revised suite hashes, and each case changed. A regrade's summary
+    and rubric hashes, and seals the revised file's sha256 and each case changed; its
+    .regrade.json adds rubric_revision: the revised file's name, the original and
+    revised suite hashes, and each case changed. A regrade's summary
     names the original receipt and its run date, and its own time as the grading time.
   - export --to summary-json emits the minimal stable interchange summary
     (driftproof/summary v1) other tools can consume without a receipt parser.`);
@@ -889,7 +895,7 @@ async function cmdRegrade(positional, flags) {
     try { revised = readRevisedSuite(flags.rubric); } catch (e) { refuse(`--rubric ${flags.rubric} is not a suite this runner reads: ${e.message}`); }
   }
 
-  const plan = planRegrade({ receipt, skill, answers, judgeModel, samples, revised });
+  const plan = planRegrade({ receipt, skill, answers, judgeModel, samples, revised, trusted });
   console.log(`\n${PROJECT_NAME} regrade: ${path.basename(receiptPath)}`);
   if (process.env.DRIFTPROOF_STUB === '1') console.log('  STUB RUN (DRIFTPROOF_STUB=1): nothing will answer the judge; the receipt will be UNVERIFIED and grade nothing');
   console.log(`  model: ${receipt.run.model_id} (generations kept)   judge: ${receipt.run.judge.model_id} → ${judgeModel}   samples/answer: ${samples}`);
@@ -917,7 +923,7 @@ async function cmdRegrade(positional, flags) {
     result = await regradeReceipt({
       receipt, skill, answers, judgeModel, samples, revised,
       opts: {
-        trusted, budget: new BudgetTracker(maxUsd),
+        trusted, budget: new BudgetTracker(maxUsd), maxCalls,
         onProgress: (p) => { if (p.phase === 'done') console.log(`  ${p.case} / ${p.mode}: ${p.outcome} (${p.score.toFixed(2)} ± ${(p.stddev || 0).toFixed(2)})`); },
       },
     });
@@ -927,9 +933,11 @@ async function cmdRegrade(positional, flags) {
     throw e;
   }
   const out = result.receipt;
+  // Issue 196 (A-184-25): a regraded receipt that fails its schema, or whose hash does not verify, is
+  // not written, and neither is its summary or sidecar.
   const { valid, errors } = validateReceipt(out);
-  if (!valid) { console.error('  ✗ regraded receipt FAILED schema validation:', JSON.stringify(errors, null, 2)); process.exitCode = 1; }
-  if (!verifyReceiptHash(out)) { console.error('  ✗ receipt_hash does not verify'); process.exitCode = 1; }
+  if (!valid) { console.error('  ✗ regraded receipt FAILED schema validation:', JSON.stringify(errors, null, 2)); console.error('  nothing written: a receipt that fails its schema is not written'); process.exit(1); }
+  if (!verifyReceiptHash(out)) { console.error('  ✗ receipt_hash does not verify; nothing written'); process.exit(1); }
   fs.mkdirSync(outDir, { recursive: true });
   // Spec 184 (R-5): a rubric regrade is named one; every file is created, never replaced.
   const base = receiptBaseName({ skill: out.skill.name, model: out.run.model_id, tag: revised ? 'regrade-rubric' : `regrade-${fileSlug(judgeModel)}`, date: dateStamp(out.run.date_utc), hash: out.receipt_hash });
@@ -939,7 +947,8 @@ async function cmdRegrade(positional, flags) {
   // (both kinds: the judge-only regrade of spec 044 is this same code path).
   const regradeOf = { receipt_hash: receipt.receipt_hash, file: path.basename(receiptPath), date_utc: receipt.run.date_utc, kind: revised ? 'rubric' : 'judge', judge: judgeModel };
   fs.writeFileSync(path.join(outDir, `${base}.summary.md`), summarizeReceipt(out, { regradeOf }), { flag: 'wx' });
-  const provenance = { ...result.provenance, answers: { file: read.source.file, sha256: read.source.sha256, graded: plan.draws } };
+  // Issue 196 (A-184-9): the answers graded are the draws the judge was asked about, as it happened.
+  const provenance = { ...result.provenance, answers: { file: read.source.file, sha256: read.source.sha256, graded: result.provenance.draws.graded } };
   // The sidecar's name is lib/receipt.js's, which the directory readers skip by (spec 069).
   const sidecar = `${base}${REGRADE_SIDECAR.suffix}`;
   fs.writeFileSync(path.join(outDir, sidecar), JSON.stringify(provenance, null, 2), { flag: 'wx' });

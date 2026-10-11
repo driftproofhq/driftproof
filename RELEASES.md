@@ -8,6 +8,111 @@ makes this one a record.
 
 ---
 
+## v0.19.1 - 2026-10-10
+
+### What's new
+
+- **`regrade --rubric` holds the judge to its recorded setting, and seals what it did.** A rubric
+  regrade now refuses, before any call, a judge whose recorded setting differs from the original's:
+  its model, surface, sampling, temperature and samples, its templates, what it ran on and that
+  program's version, whether it ran isolated, the route its call takes, and the revision of the
+  runner's judging code. The ids the judge's replies name for its own model must match too. The
+  regraded receipt now carries, inside its own hash, the original's receipt hash and judge, the
+  hashes of the answers it read and of the revised suite, and how many draws reached the judge and
+  how many judge calls and attempts were made. An edit to any of them breaks the receipt hash.
+- **Counts and checks follow what happened.** Planning, the call caps, execution and the recorded
+  counts all count only the draws that reach the judge, and every endpoint attempt, retries and
+  timeouts included. The call cap is enforced during the run, not only on the plan. A regrade runs
+  no check; a row keeps its original check results only when it graded the same answer they were
+  run on, and says so either way.
+- **A criterion judgment needs a reason.** A judgment whose reason is missing, blank, or made only
+  of invisible characters leaves that sample unmeasured. A case whose prompt, rubric or criterion
+  description is blank or invisible is refused.
+- **Answers stay regradable after a judge timeout.** A completed answer keeps its hash when its
+  judge times out, so it can be graded again later.
+- **Correction to the 0.19.0 notes.** They said a rubric regrade grades "with the original run's
+  judge, judge sample count and judge template". 0.19.0 compared only those three, so a different
+  judge surface, sampling or temperature, or an edit to the grading code, passed unnoticed, and the
+  link to the original lived only in an unsealed sidecar file. 0.19.1 compares the fuller setting
+  above and seals the link.
+
+### What may change for you
+
+- **A rubric regrade of a receipt made before 0.19.1 is refused.** Those receipts do not record the
+  judge's setting, so a regrade cannot show it graded under the same one; the refusal names the
+  missing field. `driftproof regrade` without `--rubric`, which grades with the judge `--judge-model` names, still works on
+  them, and compares none of these fields.
+- **A rubric regrade is refused when the runner's judging code changed.** The judging code's
+  revision covers whole files, so a release that changes any of them refuses a rubric regrade of a
+  receipt from an earlier release. Regrade with the release that made the receipt.
+- **A judge that does not name its own model cannot be rubric-regraded.** codex judges and the stub
+  name none, so their receipts are refused for a rubric regrade.
+- **A case with an empty `criteria` list and no rubric is refused.** 0.19.0 accepted it.
+- **Receipts are now spec v0.12.** Every new field is optional; a v0.11 receipt still validates.
+  `driftproof stale` now says why a 0.19.0 criteria case reads as changed.
+
+### Known issues
+
+- **What is not recorded or compared.** A CLI judge's own settings files (`~/.claude/settings.json`,
+  project settings, `CLAUDE.md` files, codex's config), the eval user's shell profile behind the
+  isolated hop, other proxy, region and credential variables, and the network the call crosses can
+  all change what the judge reads or where its call goes. The receipt holds none of them.
+  `spec/RECEIPT.md` lists them.
+- **The route is recorded as an unsalted hash,** so an address that can be guessed can be recovered
+  from it.
+- **A regrade's raw judge replies are not kept,** only their hashes.
+- **A regrade without `--rubric` does not require the judge to name its own model.** It grades with
+  the judge `--judge-model` names and compares none of the original's judge setting, so a judge that
+  names no model still yields a result.
+
+### Upgrade
+
+- npm: `npx driftproof@0.19.1`. The Action: `driftproofhq/driftproof@v0.19.1`, and the stale Action
+  `driftproofhq/driftproof/stale@v0.19.1`.
+- Claude Code plugin: `claude plugin update driftproof@driftproofhq`. The plugin runs `npx
+  driftproof@0.19.1`.
+- Receipt spec v0.12 adds only optional fields; receipts from earlier versions still validate, and
+  v0.11 is frozen as `spec/receipt.v0.11.schema.json`.
+
+### Engineering log
+
+0.19.1 is the fix release for `regrade --rubric` and criteria grading after an outside review of
+0.19.0 found seven holes, each reproduced on the box before any fix (issue 196). Specs 184 and 185
+defined "the same grader" as model, samples and template and kept the regrade's lineage in a sidecar;
+conformance review could not see a definition too narrow for the published claim. Two fresh-context
+claim reviews then attacked the claim itself, and an independent review on another model checked the
+fixes. Their findings are amendments to specs 184 and 185, each with a plant
+that read red before its fix. The second review showed that "the same judge environment" is
+open-ended, so the published claim was narrowed to the fields recorded and compared, and
+`spec/RECEIPT.md` lists what is not. Receipt spec v0.12 adds `run.judge.harness`, `isolation`,
+`endpoint`, `code_revision`, `criteria_template_hash` and `reported_models`, and the regraded
+receipt's `run.regraded_from`, `run.regrade` and each row's `checks_regrade`; v0.11 is frozen as
+`spec/receipt.v0.11.schema.json`. Specs 026, 035 and 043 pin the schema version and moved by
+amendment; specs 131, 137, 138, 141 and 180 moved where their fixtures or censuses read the changed
+code.
+
+The rule this release adds to how work is specified: a spec whose change ships a public claim carries
+a "Claim and invariants" section, claim-reviewed in a fresh context before the build (issue 198,
+merged after this release).
+
+#### The 0.19.1 merge list
+
+Nine merges since v0.19.0's release merge `b2c2445d`, oldest first:
+
+- spec 128 AC-4 reads the answers row to its end (issue 148, PR 190): gate only.
+- follow-ups from the #176 and #179 reviews, specs 184 and 185 (issue 183, PR 191): a revised
+  criterion's other keys and a shape switch named in the regrade refusal; `spec/RECEIPT.md` states
+  R-1's two bounds.
+- spec 106 AC-2 masks only the grading time and reads trust on regrade (issue 189, PR 197): gate
+  only.
+- spec 181 AC-1's last-paragraph clause gets its own plant (issue 145, PR 199): gate only.
+- spec 169 A-169-5, a plant for the in-memory builder subject (issue 155, PR 200): gate only.
+- spec 144 A-144-5, the form rows read per placement (issue 151, PR 201): gate only.
+- spec 018 A-018-2, the cap plants hold the number reader (issue 142, PR 202): gate only.
+- the regrade fixes and receipt v0.12 (issue 196, merged straight into release/v0.19.1): above.
+- the release sweep's reds: sibling plants re-anchored on issue 196's code, and a test's URL
+  check made by host (issue 204, merged straight into release/v0.19.1): gate and tests only.
+
 ## v0.19.0 - 2026-10-10
 
 ### What's new

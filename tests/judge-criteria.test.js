@@ -172,6 +172,19 @@ test('AC-1 an id that is not 1 to 64 of A-Z, a-z, 0-9, underscore, dot and hyphe
   assert.equal(c.criteria[1].id.length, 64);
 });
 
+// A-185-13: the count bound is a criteria rule, so BAD_CRITERIA; the description bound is the length
+// bound every prompt and rubric has, so INPUT_BOUND naming CASE_MAX_CHARS, as the loader's others are.
+test('AC-1 at most 50 criteria, and a description at most CASE_MAX_CHARS characters; one past either is refused, naming the bound (A-185-13)', () => {
+  const many = (n) => Array.from({ length: n }, (_, i) => ({ id: `c${i + 1}`, weight: 1, description: `Criterion ${i + 1}.` }));
+  assert.equal(lib.skill.normalizeCases([caseOf({ criteria: many(50) })])[0].criteria.length, 50);
+  assert.throws(() => lib.skill.normalizeCases([caseOf({ criteria: many(51) })]), (e) => e.code === 'BAD_CRITERIA' && /case "adr-1"/.test(e.message) && /51 criteria exceed the most a case may list \(50\)/.test(e.message));
+  const { CASE_MAX_CHARS } = require(path.join(ROOT, 'config'));
+  assert.ok(Number.isInteger(CASE_MAX_CHARS) && CASE_MAX_CHARS > 0);
+  const described = (n) => [{ id: 'ok', weight: 1, description: 'A.' }, { id: 'long', weight: 1, description: 'x'.repeat(n) }];
+  assert.equal(lib.skill.normalizeCases([caseOf({ criteria: described(CASE_MAX_CHARS) })])[0].criteria[1].description.length, CASE_MAX_CHARS);
+  assert.throws(() => lib.skill.normalizeCases([caseOf({ criteria: described(CASE_MAX_CHARS + 1) })]), (e) => e.code === 'INPUT_BOUND' && e.bound === 'CASE_MAX_CHARS' && e.value === CASE_MAX_CHARS + 1 && /case "adr-1" criterion "long" description characters/.test(e.message));
+});
+
 test('AC-1 an edit to one weight, one description or one id moves the suite hash', () => {
   const h = (criteria) => lib.skill.suiteIdentity([caseOf({ criteria })]).suiteHash;
   const base = h(FOUR);
@@ -296,6 +309,47 @@ test('AC-3 a missing, duplicate, unknown or malformed entry, a decision outside 
   }
 });
 
+test('AC-3 a reason that is present and not a string makes the draw unmeasured, naming the entry and the criterion (A-185-14)', async () => {
+  const criteria = [{ id: 'a', weight: 1, description: 'A.' }, { id: 'b', weight: 1, description: 'B.' }];
+  for (const [what, reason] of [['a number', 7], ['null', null], ['an object', { text: 'met' }]]) {
+    const reply = JSON.stringify({ judgments: [{ id: 'a', decision: 'met', reason }, { id: 'b', decision: 'met', reason: 'b met' }] });
+    const { receipt } = await run(lib, [caseOf({ criteria })], reply);
+    const draws = drawsOf(receipt);
+    assert.ok(draws.length >= 1 && draws.every((d) => d.status === 'unmeasured' && d.samples.length === 0 && d.mean === null), `${what}: every draw unmeasured`);
+    assert.ok(draws.every((d) => /judgment 1 is malformed \(its reason for criterion "a" is not a string\)/.test(d.reason)), `${what}: ${draws.map((d) => d.reason).join(' | ')}`);
+    assert.ok(receipt.results.cases.every((c) => c.case_status === 'failed_unmeasured'), what);
+  }
+});
+
+// Issue 196 (A-185-15): the prompt asks for a one-sentence reason, so a reason left out, empty or blank
+// is malformed. This replaces A-185-14's reading that a reason left out is measured.
+test('AC-3 a reason left out, empty or blank makes the draw unmeasured, naming the entry and the criterion (A-185-15)', async () => {
+  const criteria = [{ id: 'a', weight: 1, description: 'A.' }, { id: 'b', weight: 1, description: 'B.' }];
+  for (const [what, entry] of [['left out', { id: 'a', decision: 'met' }], ['empty', { id: 'a', decision: 'met', reason: '' }], ['blank', { id: 'a', decision: 'met', reason: '  ' }]]) {
+    const reply = JSON.stringify({ judgments: [entry, { id: 'b', decision: 'met', reason: 'b met' }] });
+    const { receipt } = await run(lib, [caseOf({ criteria })], reply);
+    const draws = drawsOf(receipt);
+    assert.ok(draws.length >= 1 && draws.every((d) => d.status === 'unmeasured' && d.samples.length === 0 && d.mean === null), `${what}: every draw unmeasured`);
+    assert.ok(draws.every((d) => /judgment 1 is malformed \(it gives no reason for criterion "a"\)/.test(d.reason)), `${what}: ${draws.map((d) => d.reason).join(' | ')}`);
+    assert.ok(receipt.results.cases.every((c) => c.case_status === 'failed_unmeasured'), what);
+  }
+});
+
+// ── AC-15, a reason of only zero-width or format characters is no reason (A-185-17) ────────────────
+
+test('AC-15 a reason of only zero-width or format characters makes the draw unmeasured, naming the criterion; one with text beside them is a reason', async () => {
+  const criteria = [{ id: 'a', weight: 1, description: 'A.' }, { id: 'b', weight: 1, description: 'B.' }];
+  for (const [what, reason] of [['a zero-width space', '\u200B'], ['zero-width joiners', '\u200B\u200C\u200D'], ['a word joiner', '\u2060'], ['a byte-order mark', '\uFEFF'], ['spaces round a zero-width space', ' \u200B ']]) {
+    const reply = JSON.stringify({ judgments: [{ id: 'a', decision: 'met', reason }, { id: 'b', decision: 'met', reason: 'b met' }] });
+    const { receipt } = await run(lib, [caseOf({ criteria })], reply);
+    const draws = drawsOf(receipt);
+    assert.ok(draws.length >= 1 && draws.every((d) => d.status === 'unmeasured' && d.samples.length === 0), `${what}: every draw unmeasured`);
+    assert.ok(draws.every((d) => /judgment 1 is malformed \(it gives no reason for criterion "a"\)/.test(d.reason)), `${what}: ${draws.map((d) => d.reason).join(' | ')}`);
+  }
+  const { receipt } = await run(lib, [caseOf({ criteria })], JSON.stringify({ judgments: [{ id: 'a', decision: 'met', reason: 'met\u200B' }, { id: 'b', decision: 'met', reason: 'b met' }] }));
+  assert.ok(drawsOf(receipt).every((d) => d.status === 'measured'), 'a reason with text beside a format character is a reason');
+});
+
 // ── AC-4, weights ──────────────────────────────────────────────────────────────────────────────────
 
 test('AC-4 weights 3, 1 and 1 with the first and third met give 0.8 on the receipt', async () => {
@@ -360,7 +414,17 @@ test('AC-5 a suite with no criteria case writes a receipt byte-identical to the 
     // tree writes the same bytes, so a difference from the Base is the code's.
     const again = await frozen(() => run(lib, raw, FREE_REPLY));
     assert.equal(JSON.stringify(again.receipt), JSON.stringify(mine.receipt), 'two runs of this tree differ: the comparison would not be about the code');
-    assert.equal(JSON.stringify(mine.receipt), JSON.stringify(theirs.receipt));
+    // Issue 196 (A-185-17): receipt v0.12 adds four run.judge fields and moves schema_version. Exactly
+    // those are taken back to the Base's version, the hash re-sealed over the rest, and every other
+    // byte is compared as before. A-185-19: and the ids the judge answered as (spec 184 A-184-22); a
+    // free-text suite records no criteria template hash.
+    const added = ['harness', 'isolation', 'endpoint', 'code_revision', 'reported_models'];
+    const back = JSON.parse(JSON.stringify(mine.receipt));
+    assert.ok(added.every((k) => k in back.run.judge), 'this tree records the v0.12 judge fields');
+    for (const k of added) delete back.run.judge[k];
+    back.schema_version = require(path.join(dir, 'config.js')).RECEIPT_SCHEMA_VERSION;
+    lib.receipt.sealReceipt(back);
+    assert.equal(JSON.stringify(back), JSON.stringify(theirs.receipt));
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -450,9 +514,11 @@ test('AC-8 a criteria regrade of retained answers makes no generation call, and 
 
 // ── AC-9, receipts validate ────────────────────────────────────────────────────────────────────────
 
-test('AC-9 a criteria receipt validates under schema version 0.11', async () => {
+// Issue 196 (A-185-17): the version is config.js's RECEIPT_SCHEMA_VERSION, read from the tree under
+// test (C-138), so the next schema bump moves this reading with it.
+test('AC-9 a criteria receipt validates under the running schema version', async () => {
   const { receipt } = await run(lib, [caseOf({ criteria: FOUR })], judgments(FOUR.map((x) => [x.id, 'met'])));
-  assert.equal(receipt.schema_version, '0.11');
+  assert.equal(receipt.schema_version, require(path.join(ROOT, 'config.js')).RECEIPT_SCHEMA_VERSION);
   assert.ok(drawsOf(receipt).every((d) => Array.isArray(d.criteria_judgments)));
   const v = lib.receipt.validateReceipt(receipt);
   assert.ok(v.valid, JSON.stringify(v.errors));
@@ -493,7 +559,8 @@ function decide(prompt, notMet) {
   const ids = [...prompt.slice(at).matchAll(/^- ([A-Za-z0-9_.-]+): /gm)].map((m) => m[1]);
   return judgments(ids.map((id) => [id, notMet.includes(id) ? 'not_met' : 'met']));
 }
-const plan = (o, revised) => lib.regrade.planRegrade({ receipt: o.receipt, skill: o.skill, answers: o.answers, judgeModel: 'haiku', samples: OPTS.samples, revised });
+// Issue 196 (spec 184 A-184-13): the judge's spawn path is the original's, which OPTS ran trusted.
+const plan = (o, revised) => lib.regrade.planRegrade({ receipt: o.receipt, skill: o.skill, answers: o.answers, judgeModel: 'haiku', samples: OPTS.samples, revised, trusted: OPTS.trusted });
 const CRIT_CASES = () => [
   { id: 'crit', prompt: PROMPT, pass_threshold: 0.75, criteria: clone185(FOUR) },
   { id: 'both', prompt: 'Write an ADR choosing a queue.', rubric: RUBRIC, pass_threshold: 0.5, criteria: [{ id: 'a', weight: 1, description: 'A.' }, { id: 'b', weight: 1, description: 'B.' }] },
@@ -622,6 +689,200 @@ test('AC-13 old path: a case with no criteria objects regrades exactly as spec 1
   }
 });
 
+test('AC-13 a criteria case whose rubric is read from expected may revise expected (A-185-9)', async () => {
+  const cases = [{ id: 'exp', prompt: PROMPT, expected: RUBRIC, pass_threshold: 0.75, criteria: clone185(FOUR) }];
+  const o = await criteriaOriginal(cases);
+  try {
+    const rc = clone185(cases); rc[0].expected = 'A complete ADR, naming the alternatives.';
+    const revised = lib.regrade.readRevisedSuite(o.revisedFile(rc));
+    assert.deepEqual(plan(o, revised).problems, []);
+    REPLY = (prompt) => decide(prompt, []);
+    calls.length = 0;
+    const out = await lib.regrade.regradeReceipt({ receipt: o.receipt, skill: o.skill, answers: o.answers, judgeModel: 'haiku', samples: OPTS.samples, revised, opts: { trusted: true } });
+    assert.equal(calls.filter((c) => !c.judge).length, 0, 'zero executor calls');
+    assert.ok(drawsOf(out.receipt).every((d) => d.status === 'measured' && Array.isArray(d.criteria_judgments)));
+    assert.deepEqual(out.provenance.rubric_revision.cases_changed, [{ id: 'exp', fields: ['rubric'] }]);
+  } finally {
+    fs.rmSync(o.dir, { recursive: true, force: true });
+  }
+});
+
+test('AC-13 a key on a revised criterion other than id, weight and description is named, unless the original criterion carries it unchanged (A-185-10)', async () => {
+  const cases = CRIT_CASES(); cases[1].criteria[0].note = 'kept as written';
+  const o = await criteriaOriginal(cases);
+  try {
+    for (const [what, edit, why] of [
+      ['a key the original lacks', (c) => { c[0].criteria[0].prompt = 'Grade generously.'; }, /case crit: criterion "context" carries the key prompt, which the original's criterion of that id does not/],
+      ['a key on an added criterion', (c) => { c[0].criteria.push({ id: 'tradeoffs', weight: 1, description: 'Names a trade-off.', rank: 1 }); }, /case crit: criterion "tradeoffs" carries the key rank, which the original's criterion of that id does not/],
+      ['a changed key', (c) => { c[1].criteria[0].note = 'changed'; }, /case both: criterion "a": the key note differs from the original's/],
+      ['a dropped key', (c) => { delete c[1].criteria[0].note; }, /case both: criterion "a": the key note is missing from the revised criterion/],
+    ]) {
+      const rc = clone185(cases); rc[0].criteria[0].weight = 2; edit(rc);
+      calls.length = 0;
+      const p = plan(o, lib.regrade.readRevisedSuite(o.revisedFile(rc))).problems;
+      assert.ok(p.some((x) => why.test(x)), `${what}: ${p.join(' | ')}`);
+      assert.equal(calls.length, 0, `${what}: no call`);
+    }
+    // An extra key the original's criterion carries, carried unchanged beside a weight edit: nothing named.
+    const rc = clone185(cases); rc[0].criteria[0].weight = 2;
+    assert.deepEqual(plan(o, lib.regrade.readRevisedSuite(o.revisedFile(rc))).problems, []);
+  } finally {
+    fs.rmSync(o.dir, { recursive: true, force: true });
+  }
+});
+
+test('AC-13 a case that switches shape has its other differences named beside the shape change (A-185-11)', async () => {
+  const cases = [...CRIT_CASES(), { id: 'free', prompt: 'Write an ADR choosing a cache.', rubric: RUBRIC, pass_threshold: 0.7 }];
+  const o = await criteriaOriginal(cases);
+  try {
+    const toRubric = clone185(cases); delete toRubric[0].criteria; toRubric[0].rubric = 'A complete ADR.'; toRubric[0].prompt = 'Write an ADR choosing a datastore.';
+    const toCriteria = clone185(cases); toCriteria[2].criteria = [{ id: 'a', weight: 1, description: 'A.' }]; toCriteria[2].pass_threshold = 5;
+    for (const [what, rc, id, other] of [
+      ['criteria to a rubric, beside a changed prompt', toRubric, 'crit', /case crit: the field prompt differs/],
+      ['a rubric to criteria, beside a threshold of 5', toCriteria, 'free', /case free: pass_threshold 5 is not a number in \[0, 1\]/],
+    ]) {
+      calls.length = 0;
+      const p = plan(o, lib.regrade.readRevisedSuite(o.revisedFile(rc))).problems;
+      assert.ok(p.some((x) => x.startsWith(`case ${id}: the case changes shape`)), `${what}: the shape change, ${p.join(' | ')}`);
+      assert.ok(p.some((x) => other.test(x)), `${what}: the other difference, ${p.join(' | ')}`);
+      // The keys that make the shape are named once, by the shape change.
+      assert.ok(!p.some((x) => new RegExp(`^case ${id}: the key (criteria|rubric|expected) `).test(x)), `${what}: ${p.join(' | ')}`);
+      assert.equal(calls.length, 0, `${what}: no call`);
+    }
+  } finally {
+    fs.rmSync(o.dir, { recursive: true, force: true });
+  }
+});
+
+// ── AC-14, the hash covers the rendered prompt, and a rubric regrade keeps the template (A-185-16) ──
+
+// A copy of the tree under test's lib/, config and schemas under the system temp directory, with one
+// exact replacement: a runner that differs from this one in that line only.
+function copyWith(file, from, to) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'spec185-copy-'));
+  for (const p of ['lib', 'config', 'config.js', 'spec', 'package.json']) fs.cpSync(path.join(ROOT, p), path.join(dir, p), { recursive: true });
+  fs.symlinkSync(path.join(REPO, 'node_modules'), path.join(dir, 'node_modules'));
+  const f = path.join(dir, file);
+  const was = fs.readFileSync(f, 'utf8');
+  assert.equal(was.split(from).length - 1, 1, `${file} has no single ${from}`);
+  fs.writeFileSync(f, was.replace(from, () => to));
+  return dir;
+}
+// How a criterion line is rendered, and another way to render it.
+const LINE = '`- ${c.id}: ${String(c.description).trim()}`';
+const OTHER_LINE = '`* ${c.id} = ${String(c.description).trim()}`';
+// The tree at the 0.19.0 release spec 185's header names, lib/ and its config, by git archive.
+function treeAt0190() {
+  const m = /^\*\*0\.19\.0:\*\* `([0-9a-f]{40})`/m.exec(fs.readFileSync(SPEC, 'utf8'));
+  assert.ok(m, 'spec 185 names no 0.19.0 commit');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'spec185-0190-'));
+  const tar = realExecFileSync('git', ['archive', '--format=tar', m[1], 'lib', 'config', 'config.js', 'spec', 'package.json'], { cwd: REPO, maxBuffer: 64 * 1024 * 1024 });
+  realExecFileSync('tar', ['-x', '-C', dir], { input: tar });
+  fs.symlinkSync(path.join(REPO, 'node_modules'), path.join(dir, 'node_modules'));
+  return dir;
+}
+
+test('AC-14 a change to how a criterion line is rendered moves the case rubric hash and the criteria template hash', () => {
+  assert.equal(typeof lib.judge.criteriaTemplateHash, 'function', 'lib/judge.js exports criteriaTemplateHash');
+  const dir = copyWith('lib/judge.js', LINE, OTHER_LINE);
+  try {
+    const other = require(path.join(dir, 'lib', 'judge.js'));
+    const [c] = lib.skill.normalizeCases([caseOf({ criteria: FOUR })]);
+    // The copy renders the criterion lines another way, and nothing else of the judge differs.
+    const slots = { task: PROMPT, response: GEN_TEXT, rubric: RUBRIC, criteria: FOUR };
+    assert.notEqual(other.buildCriteriaPrompt(slots), lib.judge.buildCriteriaPrompt(slots));
+    assert.equal(other.CRITERIA_SYSTEM, lib.judge.CRITERIA_SYSTEM);
+    assert.equal(other.promptTemplateHash(), lib.judge.promptTemplateHash());
+    assert.notEqual(other.caseRubricHash(c), lib.judge.caseRubricHash(c), 'the case rubric hash covers how each criterion line is rendered');
+    assert.notEqual(other.criteriaTemplateHash(), lib.judge.criteriaTemplateHash(), 'and so does the criteria template hash');
+    // A free-text case's hash is its rubric's, by either.
+    const [free] = lib.skill.normalizeCases([caseOf()]);
+    assert.equal(other.caseRubricHash(free), lib.judge.caseRubricHash(free));
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('AC-14 every judged draw of a criteria case records the criteria template hash, measured or not, and a free-text draw none', async () => {
+  const tpl = lib.judge.criteriaTemplateHash();
+  const free = { id: 'free', prompt: 'Write an ADR choosing a cache.', rubric: RUBRIC, pass_threshold: 0.7 };
+  const { receipt } = await run(lib, [caseOf({ criteria: FOUR }), free], (prompt) => decide(prompt, []));
+  for (const c of receipt.results.cases) {
+    for (const d of c.generation.draws) {
+      if (c.id === 'free') assert.ok(!('criteria_template_hash' in d), `free/${c.mode}: a free-text draw records none`);
+      else assert.equal(d.criteria_template_hash, tpl, `${c.id}/${c.mode} draw ${d.draw_index}`);
+    }
+  }
+  const bad = await run(lib, [caseOf({ criteria: FOUR })], judgments([['context', 'met']]));
+  assert.ok(drawsOf(bad.receipt).every((d) => d.status === 'unmeasured' && d.criteria_template_hash === tpl), 'an unmeasured draw the judge answered records it too');
+  const v = lib.receipt.validateReceipt(receipt);
+  assert.ok(v.valid, JSON.stringify(v.errors));
+});
+
+test('AC-14 a rubric regrade refuses an original whose criteria template hash differs or is missing, and a runner that renders criteria another way', async () => {
+  const o = await criteriaOriginal(CRIT_CASES());
+  let dir = null;
+  try {
+    const rc = CRIT_CASES(); rc[0].criteria[0].weight = 2;
+    const revised = lib.regrade.readRevisedSuite(o.revisedFile(rc));
+    assert.deepEqual(plan(o, revised).problems, [], 'the control plan has no problem');
+    const reseal = (edit) => { const r = clone185(o.receipt); for (const c of r.results.cases) for (const d of c.generation.draws) edit(d); delete r.receipt_hash; return lib.receipt.sealReceipt(r); };
+    for (const [what, receipt, why] of [
+      ['another template', reseal((d) => { if (d.criteria_template_hash) d.criteria_template_hash = '0'.repeat(64); }), /case crit\/with_skill: the original's criteria_template_hash 000000000000… is not this runner's/],
+      ['none recorded, as 0.19.0 wrote', reseal((d) => { delete d.criteria_template_hash; }), /case crit\/with_skill: \d+ judged draw\(s\) record no criteria_template_hash \(a receipt made by 0\.19\.0\)/],
+    ]) {
+      calls.length = 0;
+      const p = lib.regrade.planRegrade({ receipt, skill: o.skill, answers: o.answers, judgeModel: 'haiku', samples: OPTS.samples, revised, trusted: OPTS.trusted }).problems;
+      assert.ok(p.some((x) => why.test(x)), `${what}: ${p.join(' | ')}`);
+      await assert.rejects(lib.regrade.regradeReceipt({ receipt, skill: o.skill, answers: o.answers, judgeModel: 'haiku', samples: OPTS.samples, revised, opts: { trusted: true } }), (e) => why.test(e.message), what);
+      assert.equal(calls.length, 0, `${what}: no call`);
+    }
+    // The receipt this tree made, read by a runner whose criterion lines are rendered another way.
+    dir = copyWith('lib/judge.js', LINE, OTHER_LINE);
+    const other = libOf(dir);
+    const p = other.regrade.planRegrade({ receipt: o.receipt, skill: other.skill.loadSkill(path.join(o.dir, 'skill')), answers: o.answers, judgeModel: 'haiku', samples: OPTS.samples, revised: other.regrade.readRevisedSuite(o.revisedFile(rc)), trusted: OPTS.trusted }).problems;
+    assert.ok(p.some((x) => /case crit\/with_skill: the original's criteria_template_hash [0-9a-f]{12}… is not this runner's/.test(x)), p.join(' | '));
+  } finally {
+    fs.rmSync(o.dir, { recursive: true, force: true });
+    if (dir) fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('AC-14 a criteria receipt made by 0.19.0 carries the earlier hash form, and stale says so where it reads the rubric as moved', async () => {
+  const dir = treeAt0190();
+  const tmpd = fs.mkdtempSync(path.join(os.tmpdir(), 'spec185-stale-'));
+  try {
+    const old = require(path.join(dir, 'lib', 'judge.js'));
+    const [c] = lib.skill.normalizeCases([caseOf({ criteria: FOUR })]);
+    assert.equal(typeof lib.judge.caseRubricHash0190, 'function', 'lib/judge.js exports caseRubricHash0190');
+    assert.equal(lib.judge.caseRubricHash0190(c), old.caseRubricHash(c), 'the earlier form is the one 0.19.0\'s own code computes');
+    assert.notEqual(lib.judge.caseRubricHash(c), old.caseRubricHash(c), 'this runner\'s form is another');
+    const { receipt } = await run(lib, [caseOf({ criteria: FOUR })], judgments(FOUR.map((x) => [x.id, 'met'])));
+    const suite = path.join(tmpd, 'evals.json');
+    fs.writeFileSync(suite, JSON.stringify([caseOf({ criteria: FOUR })]));
+    const read = (r, name) => {
+      const f = path.join(tmpd, `${name}.json`);
+      fs.writeFileSync(f, JSON.stringify(r));
+      const x = lib.stale.staleReport([f], { suite, noHarnessCheck: true, model: 'claude-opus-5-5', judge: 'haiku' }).receipts[0];
+      assert.ok(!x.error, x.error);
+      return x.axes.find((e) => e.axis === 'rubric');
+    };
+    // This runner's own receipt reads current on the rubric.
+    assert.equal(read(receipt, 'current').effect, 'current');
+    // Its rows carrying 0.19.0's hash: not read as current, and the reason says why.
+    const r = clone185(receipt);
+    for (const row of r.results.cases) row.judge.rubric_hash = old.caseRubricHash(c);
+    delete r.receipt_hash;
+    const axis = read(lib.receipt.sealReceipt(r), 'v0190');
+    assert.notEqual(axis.effect, 'current', 'a 0.19.0 criteria receipt is not read as current');
+    assert.match(axis.reason, /record the rubric hash in the form 0\.19\.0 wrote for a criteria case/);
+    assert.match(axis.reason, /did not cover how each criterion line is rendered/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+    fs.rmSync(tmpd, { recursive: true, force: true });
+  }
+});
+
 // ── AC-10, the docs ────────────────────────────────────────────────────────────────────────────────
 
 test('AC-10 spec/RECEIPT.md states the criteria field, what a draw and a retained record carry, and what is not claimed', () => {
@@ -637,6 +898,8 @@ test('AC-10 spec/RECEIPT.md states the criteria field, what a draw and a retaine
   for (const want of ['a list of strings', 'an empty list', '`judgments[<id>].<key>`', 'per sample', 'a mean exactly at the threshold reads borderline', 'no `--keep-transcripts`', 'not the per-criterion reasons or the raw replies']) {
     assert.ok(sec.includes(want), `the section does not say ${want}`);
   }
+  // A-185-13: both bounds of R-1, and the code each refuses with.
+  for (const want of ['at most 50 criteria', '`CASE_MAX_CHARS`', '`BAD_CRITERIA`', '`INPUT_BOUND`']) assert.ok(sec.includes(want), `the section does not say ${want}`);
   // A-185-8: the rubric regrade of a criteria case, in this section and in § Transcripts, where spec
   // 184 states rubric mode.
   assert.ok(sec.includes('`regrade --rubric`') && sec.includes('may revise its criteria'), 'the section does not say a rubric regrade may revise criteria');
@@ -650,12 +913,12 @@ test('AC-10 the methodology page says a sample\'s pass is per sample and a mean 
   const page = fs.readFileSync(path.join(REPO, 'docs', 'methodology', 'index.html'), 'utf8');
   const p = page.split('\n').find((l) => l.includes('weighted criteria'));
   assert.ok(p, 'no paragraph on weighted criteria');
-  for (const want of ['per sample', 'exactly at the threshold reads borderline']) assert.ok(p.includes(want), `the paragraph does not say ${want}`);
+  for (const want of ['per sample', 'exactly at the threshold reads borderline', 'at most 50 criteria']) assert.ok(p.includes(want), `the paragraph does not say ${want}`);
 });
 
 // ── AC-11, suites without criteria objects load as on the Base ─────────────────────────────────────
 
-test('AC-11 a criteria list of strings, or an empty one, loads and hashes byte-identically to the Base, with or without a rubric (A-185-2)', () => {
+test('AC-11 non-empty legacy criteria text keeps its Base hash; an empty list requires a rubric (A-185-22)', () => {
   const dir = baseTree();
   try {
     const base = libOf(dir);
@@ -663,8 +926,8 @@ test('AC-11 a criteria list of strings, or an empty one, loads and hashes byte-i
       'strings with a rubric': [{ id: 's1', prompt: PROMPT, rubric: RUBRIC, criteria: ['must name the database', 'must say why'] }],
       'strings without a rubric': [{ id: 's2', prompt: PROMPT, criteria: ['must name the database'] }],
       'empty with a rubric': [{ id: 'e1', prompt: PROMPT, rubric: RUBRIC, criteria: [] }],
-      'empty without a rubric': [{ id: 'e2', prompt: PROMPT, criteria: [] }],
     };
+    assert.throws(() => lib.skill.suiteIdentity([{ id: 'e2', prompt: PROMPT, criteria: [] }]), /rubric/);
     for (const [what, raw] of Object.entries(suites)) {
       const mine = lib.skill.suiteIdentity(raw);
       const theirs = base.skill.suiteIdentity(raw);
@@ -689,4 +952,84 @@ test('AC-12 three of four equal weights met at pass_threshold 0.75: each sample 
     assert.equal(c.stddev, 0);
     assert.equal(c.outcome, 'borderline');
   }
+});
+
+// ── AC-16, a reason holds a letter or a digit (A-185-18) ───────────────────────────────────────────
+
+test('AC-16 a reason with no letter and no digit is no reason, whatever invisible or mark characters it holds; one letter or digit in any script is a reason', async () => {
+  const criteria = [{ id: 'a', weight: 1, description: 'A.' }, { id: 'b', weight: 1, description: 'B.' }];
+  const reply = (reason) => ({ judgments: [{ id: 'a', decision: 'met', reason }, { id: 'b', decision: 'met', reason: 'b met' }] });
+  // The review's characters, each shown as nothing or as no word, and punctuation alone.
+  const none = [['a left-to-right mark', '\u200E'], ['a right-to-left mark', '\u200F'], ['a soft hyphen', '\u00AD'], ['a combining grapheme joiner', '\u034F'], ['a braille blank', '\u2800'], ['a hangul filler', '\u3164'], ['a bidi override', '\u202E'], ['a tag space', '\u{E0020}'], ['an invisible times', '\u2062'], ['punctuation alone', '...!?'], ['a dash and spaces', ' - ']];
+  for (const [what, reason] of none) {
+    const read = lib.judge.readJudgments(reply(reason), criteria);
+    assert.match(String(read.error), /judge judgment 1 is malformed \(it gives no reason for criterion "a"\)/, `${what}: ${JSON.stringify(read)}`);
+  }
+  for (const [what, reason] of [['a Latin letter', 'x'], ['an accented letter', '\u00E9'], ['a CJK character', '\u4E94'], ['an Arabic-Indic digit', '\u0663'], ['a digit', '7']]) {
+    const read = lib.judge.readJudgments(reply(reason), criteria);
+    assert.ok(!read.error, `${what}: ${read.error}`);
+  }
+  // Through the run, as the review read it: a left-to-right mark alone makes every draw unmeasured.
+  const { receipt } = await run(lib, [caseOf({ criteria })], JSON.stringify(reply('\u200E')));
+  const draws = drawsOf(receipt);
+  assert.ok(draws.length >= 1 && draws.every((d) => d.status === 'unmeasured' && /it gives no reason for criterion "a"/.test(d.reason)), draws.map((d) => d.reason).join(' | '));
+  const doc = fs.readFileSync(path.join(ROOT, 'spec', 'RECEIPT.md'), 'utf8').replace(/\s+/g, ' ');
+  assert.ok(doc.includes('a letter or a digit'), 'spec/RECEIPT.md does not say a reason holds a letter or a digit');
+});
+
+// ── AC-17, the criteria template hash once in run.judge (A-185-19) ─────────────────────────────────
+
+test('AC-17 a run records the criteria template hash once in run.judge, and a rubric regrade compares it even when no draw of a criteria case reached the judge', async () => {
+  const tpl = lib.judge.criteriaTemplateHash();
+  const { receipt } = await run(lib, [caseOf({ criteria: FOUR })], (prompt) => decide(prompt, []));
+  assert.equal(receipt.run.judge.criteria_template_hash, tpl, 'a criteria run records it');
+  const v = lib.receipt.validateReceipt(receipt);
+  assert.ok(v.valid, JSON.stringify(v.errors));
+  const free = await run(lib, [caseOf()], FREE_REPLY);
+  assert.ok(!('criteria_template_hash' in free.receipt.run.judge), 'a free-text run records none');
+  const o = await criteriaOriginal(CRIT_CASES());
+  try {
+    assert.equal(o.receipt.run.judge.criteria_template_hash, tpl);
+    const rc = CRIT_CASES(); rc[0].criteria[0].weight = 2;
+    const revised = lib.regrade.readRevisedSuite(o.revisedFile(rc));
+    // The review's case: every draw of the criteria case timed out, so no draw records the template.
+    const reseal = (edit) => {
+      const r = clone185(o.receipt);
+      for (const c of r.results.cases.filter((x) => x.id === 'crit')) c.generation.draws = c.generation.draws.map((d) => ({ draw_index: d.draw_index, generation_hash: null, status: 'unmeasured', reason: 'provider(claude-cli) timed out after 300000ms', samples: [], mean: null, stddev: null, stop_reason: null, truncated: false, reported_model: null }));
+      edit(r.run.judge);
+      delete r.receipt_hash;
+      return lib.receipt.sealReceipt(r);
+    };
+    const control = plan({ ...o, receipt: reseal(() => {}) }, revised).problems;
+    assert.deepEqual(control.filter((x) => /criteria_template_hash/.test(x)), [], control.join(' | '));
+    for (const [what, receipt, why] of [
+      ['another template in run.judge', reseal((j) => { j.criteria_template_hash = '0'.repeat(64); }), /the original's run\.judge\.criteria_template_hash 000000000000\u2026 is not this runner's/],
+      ['none in run.judge', reseal((j) => { delete j.criteria_template_hash; }), /the original records no run\.judge\.criteria_template_hash/],
+    ]) {
+      calls.length = 0;
+      const p = plan({ ...o, receipt }, revised).problems;
+      assert.ok(p.some((x) => why.test(x)), `${what}: ${p.join(' | ')}`);
+      await assert.rejects(lib.regrade.regradeReceipt({ receipt, skill: o.skill, answers: o.answers, judgeModel: 'haiku', samples: OPTS.samples, revised, opts: { trusted: true } }), (e) => why.test(e.message), what);
+      assert.equal(calls.length, 0, `${what}: no call`);
+    }
+  } finally {
+    fs.rmSync(o.dir, { recursive: true, force: true });
+  }
+});
+
+
+test('AC-18 suite prompts rubrics and criterion descriptions require visible letters or digits', () => {
+  for (const blank of ['', ' ', '\u200b', '\u3164', '...!?']) {
+    for (const bad of [{prompt:blank,rubric:'Names red.'},{prompt:'Name a colour.',rubric:blank},{prompt:'Name a colour.',criteria:[{id:'a',weight:1,description:blank}]}]) {
+      assert.throws(()=>lib.skill.normalizeCases([bad]), /prompt|rubric|description/, JSON.stringify(bad));
+    }
+  }
+  assert.throws(()=>lib.skill.normalizeCases([{prompt:'Name a colour.',criteria:[]}]), /rubric/);
+  assert.equal(lib.skill.normalizeCases([{prompt:'字',rubric:'7'}]).length,1);
+});
+
+test('AC-19 stale human output preserves the criteria hash compatibility explanation', () => {
+  const reason='case(s) c record the rubric hash in the form 0.19.0 wrote for a criteria case, which did not cover how each criterion line is rendered';
+  const text=lib.stale.renderText({receipts:[{skill:'fixture',axes:[{axis:'rubric',effect:'regrade',recorded:'old',current:'new',reason}],advisories:[],status:'stale'}],summary:{receipts:1,current:0,stale:1,unknown:0,errors:0},exit_code:1});
+  assert.ok(text.includes(reason),text);
 });

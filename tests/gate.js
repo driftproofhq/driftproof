@@ -7060,9 +7060,30 @@ gate.section('sampling-era cap recalibration (spec 018)');
       } catch (e) { read = 'unplanted'; }
       if (read !== p.expect) capWordWrong018.push(`${p.id} (${p.rel}) reads ${read}, want ${p.expect}`);
     }
-    gate.check('AC-7 (A-018-1): cap inside a longer word is not a cap word; a cap of 124 with no constant named still reads red',
-      scope018.CAP_WORD_PLANTS.length >= 2 && capWordWrong018.length === 0,
+    gate.check('AC-7 (A-018-1, A-018-2): cap inside a longer word is not a cap word; a cap of 124, a cap of 20 and calls capped at 20 with no constant named read red',
+      scope018.CAP_WORD_PLANTS.length >= 4 && capWordWrong018.length === 0,
       { plants: scope018.CAP_WORD_PLANTS.length, wrong: capWordWrong018 });
+
+    // THE PLANTS HOLD THE NUMBER READER (A-018-2, issue 142). "a cap of 124" is
+    // red through the bare three-digit path whatever CAP_NUMBER_WORD holds. Each
+    // A-018-2 plant must read red on the shipped word and green under every
+    // narrowing it names. Shared with the spec gate.
+    const narrowWrong018 = [];
+    const narrowPlants018 = scope018.CAP_WORD_PLANTS.filter((p) => p.greenWhenNarrowed);
+    for (const p of narrowPlants018) {
+      try {
+        const planted = { [p.rel]: scope018.plantCapMutation(SCAN_ROOT, p) };
+        if (!scope018.capLiteralClaims(SCAN_ROOT, planted).claims.length) narrowWrong018.push(`${p.id} reads green on the shipped word`);
+        for (const n of p.greenWhenNarrowed) {
+          const numberWord = (scope018.CAP_NUMBER_WORD_NARROWED || {})[n];
+          if (!numberWord) { narrowWrong018.push(`${p.id} names ${n}, which is not held`); continue; }
+          if (scope018.capLiteralClaims(SCAN_ROOT, planted, { numberWord }).claims.length) narrowWrong018.push(`${p.id} reads red under ${n}`);
+        }
+      } catch (e) { narrowWrong018.push(`${p.id} unplanted: ${e.message}`); }
+    }
+    gate.check('AC-7 (A-018-2): a cap of 20 and calls capped at 20 read red through the cap word in CAP_NUMBER_WORD alone, green when it is narrowed',
+      narrowPlants018.length >= 2 && narrowWrong018.length === 0,
+      { plants: narrowPlants018.map((p) => p.id), wrong: narrowWrong018 });
   }
 }
 
