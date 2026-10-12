@@ -872,8 +872,16 @@
               "pattern": "^[a-f0-9]{64}$",
               "description": "sha256 of the document's bytes."
             },
-            "imported_at": {
+            "comparison_method": {
               "type": "string",
+              "const": "matched-measured-cases/1",
+              "description": "Issue 13. New imports compare admitted matched cases and exclude conflicting reported grading bases. Absent on older calculations, whose recorded figures remain unchanged."
+            },
+            "imported_at": {
+              "type": [
+                "string",
+                "null"
+              ],
               "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}",
               "description": "ISO 8601 UTC: when the import ran. Never the run date."
             },
@@ -907,7 +915,32 @@
                 "minLength": 1
               }
             }
-          }
+          },
+          "anyOf": [
+            {
+              "properties": {
+                "imported_at": {
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "required": [
+                "comparison_method"
+              ],
+              "properties": {
+                "imported_at": {
+                  "type": "null"
+                },
+                "tool": {
+                  "enum": [
+                    "agent-skills-eval",
+                    "skillgrade"
+                  ]
+                }
+              }
+            }
+          ]
         },
         "capture": {
           "type": "object",

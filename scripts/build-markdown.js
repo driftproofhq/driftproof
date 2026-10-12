@@ -97,6 +97,9 @@ function makeCtx(pageUrl) {
   function inline(n, inTable = false) {
     if (n.text !== undefined) return decode(n.text).replace(/\s+/g, ' ');
     if (DROP.has(n.tag)) return '';
+    if (n.attrs?.['data-upstream-value'] === 'true') {
+      return textContent(n).replace(/[&<>\\`*_\[\]()|]/g, c => '&#' + c.codePointAt(0) + ';');
+    }
     const kids = () => n.children.map((c) => inline(c, inTable)).join('');
     switch (n.tag) {
       case 'br': return inTable ? ' ' : '  \n';

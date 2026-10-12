@@ -983,7 +983,8 @@ function patchInteropMd(md, root = ROOT) {
   return md.replace(INTEROP_CONTRACT, `(JSON Schema draft 2020-12, spec v${receiptSchemaVersion(root)})`);
 }
 
-const PATCHES = { 'methodology/index.html': patchMethodology, 'interop.md': patchInteropMd };
+// Issue 13: the served current schema is derived from its source contract.
+const PATCHES = { 'methodology/index.html': patchMethodology, 'interop.md': patchInteropMd, 'spec/receipt.schema.json': () => fs.readFileSync(path.join(ROOT, 'spec', 'receipt.schema.json'), 'utf8') };
 
 // ── How this is built (spec 037 AC-4) ───────────────────────────────────────
 // The method in plain prose, with counts and no record contents. Every count is read
@@ -1031,15 +1032,16 @@ function howBuiltPage() {
 // renders. The Person node in the head is scripts/build-head-tags.js's. The merged-upstream heading and
 // the sentence under it are issue 103's (spec 169 A-169-2): a row marked unreleased has no release-note
 // credit yet, so the heading claims none. The sentence carries its unreleased exception only while a
-// credit has no release note (issue 152, A-169-3), so the next one needs no wording change.
+// absent qualifying GitHub release is observed (issue 195, A-169-7).
 function maintainerPage() {
   const P = JSON.parse(fs.readFileSync(path.join(DOCS, 'data', 'paper.json'), 'utf8'));
   const me = answers.MAINTAINER_PROFILE;
   const a = (href, text) => `<a href="${esc(href)}">${esc(text)}</a>`;
-  // A credit with no release_url is merged and in no release yet (spec 169 A-169-2): its cell is plain words.
-  const rows = answers.UPSTREAM_CREDITS.map((c) => `<tr><td>${esc(c.project)}</td><td>${c.release_url ? a(c.release_url, c.release) : esc(c.release)}</td><td>${c.pulls.map((n) => (c.linked ? a(answers.pullUrl(c.repo, n), `#${n}`) : `#${n}`)).join(', ')}</td></tr>`).join('\n');
-  const unreleased = answers.UPSTREAM_CREDITS.some((c) => !c.release_url);
-  const except = unreleased ? ", except a row marked unreleased, which is merged and waits for that project's next release" : '';
+  // A release link means a visible PR mention. Missing candidates are separately marked.
+  const label = (c) => c.unobserved ? esc(c.release) : `<span data-upstream-value="true">${esc(c.release)}</span>`;
+  const rows = answers.UPSTREAM_CREDITS.map((c) => `<tr><td>${esc(c.project)}</td><td>${c.release_url ? `<a href="${esc(c.release_url)}">${label(c)}</a>` : label(c)}</td><td>${c.pulls.map((n) => (c.linked ? a(answers.pullUrl(c.repo, n), `#${n}`) : `#${n}`)).join(', ')}</td></tr>`).join('\n');
+  const unobserved = answers.UPSTREAM_CREDITS.some((c) => c.unobserved);
+  const except = unobserved ? ' A row without a tag has no qualifying GitHub release observed.' : '';
   const main = `<main class="prose maintainer">
 <h1>Maintainer</h1>
 <p class="lede">Driftproof is maintained by Maverick (${a(me, 'mavericksea-ai')} on GitHub), who also writes its reports and the paper, and does the upstream research on other evaluation tools. Maverick works under this name. Contact: <a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a>.</p>
@@ -1051,7 +1053,7 @@ function maintainerPage() {
 </ul>
 
 <h2 id="merged-upstream">Merged upstream</h2>
-<p>Each project credits its fixes in its release notes${except}.</p>
+<p>Tags name the first qualifying GitHub release after the merge, with commit ancestry verified at observation time. Release links point to notes that mention this PR outside HTML comments.${except}</p>
 <table>
 <thead>
 <tr><th scope="col">Project</th><th scope="col">Release</th><th scope="col">PRs</th></tr>
@@ -1060,7 +1062,7 @@ function maintainerPage() {
 ${rows}
 </tbody>
 </table>
-<p>Open and in review: ${a('https://github.com/pulls?q=is%3Apr+author%3Amavericksea-ai', 'all pull requests by mavericksea-ai')}.</p>
+<p>Open and in review: ${a(answers.UPSTREAM_OPEN_URL, 'all pull requests by mavericksea-ai')}.</p>
 
 <h2 id="how-the-upstream-work-is-done">How the upstream work is done</h2>
 <p>Findings come from reading a tool's scoring code and reproducing the defect, sometimes starting from an outside audit. They are not Driftproof runs, and the project does not claim them as such. Every issue filed on another project ends with a line saying the author maintains Driftproof.</p>
@@ -1087,9 +1089,11 @@ ${rows}
 // September, dated, in the issue's words as the operator approved them on 8 Oct 2026. It is the one
 // part of the page that is not a fact or a label of the paper, and spec 169's gate holds its words;
 // the paper's text, its counts and its data files do not move, and the rest of <main> is spec 127's. The MLflow and Agent Skills links are
-// answer-pages.js's credits, the list /what-is-driftproof/ and /maintainer/ render.
+// pinned historical identities from W-3, independent of the current observation.
 function paperStatus() {
-  const [mlflow, , skills] = answers.UPSTREAM_CREDITS;
+  // Historical note: identity and release URLs are pinned by spec 169 W-3.
+  const mlflow = { repo: 'mlflow/mlflow', project: 'MLflow', release: '3.17.0', release_url: 'https://github.com/mlflow/mlflow/releases/tag/v3.17.0' };
+  const skills = { repo: 'addyosmani/agent-skills' };
   const a = (href, text) => `<a href="${esc(href)}">${esc(text)}</a>`;
   return `<section class="paper-status" id="since-publication">
 <h2 id="paper-status">Since publication (updated 8 October 2026)</h2>
@@ -1385,8 +1389,11 @@ ${noiseFigure(D)}
 </figure>
 </div>`;
   const lede = "Six frontier launch posts and nine public leaderboards, every quoted gap tested against the benchmark's own sampling noise, with a method frozen before the data was collected. Most gaps don't clear it. For 28 of them, the published data isn't even enough to check.";
-  const main = `<main class="prose noise">
+  // The page's own description (spec 171 A-171-5, the operator's option A), read by build-head-tags.js.
+  const description = "Each verdict is about one gap on its own: 20 of 162 quoted gaps are larger than their benchmark's sampling noise at 95%.";
+  const main = `<main class="prose noise" data-description="${esc(description)}">
 <h1>We checked 162 quoted AI benchmark gaps against their own noise. 20 hold up.</h1>
+<p>Each verdict is about one gap on its own. 20 of 162 counts pairwise verdicts; it does not rank any leaderboard.</p>
 <p class="muted">Counts use <a href="${NOISE_SCORE_TYPES}">each benchmark's own published intervals</a> where they exist; where none exists, the gap is marked as not checkable.</p>
 <p class="lede">${lede}</p>
 <p class="byline muted">Written by <a href="/maintainer/">Maverick</a>.</p>
@@ -1410,6 +1417,9 @@ ${minGap}
 <p>Terminal-Bench publishes real 95% intervals. Using them, first place does separate from positions 3 through 15; second place is the only one the test can't tell apart from first. Four gaps that looked unresolved under the simple reading become separated under the source's own bars.* Error bars are not a pedantic garnish; they change the reading both ways.</p>
 <p class="muted">* One of the four, on Chartography, uses an interval read off Chartography's published graphs, not stated numbers.</p>
 <p>Also worth knowing: GPQA Diamond, AIME 2025 and MMLU-Pro, until recently fixtures of every launch post, appear in none of the six. And one result that looked clearly separated compares a lab-run score against a competitor's self-reported one; it is now marked not checkable.</p>
+
+<h2>Scope note, 12 October 2026</h2>
+<p>Every verdict counted in 20 of 162 is pairwise and descriptive: it says whether one gap is larger than its benchmark's sampling noise at 95%, taken on its own. The comparisons with first place in the opening example and in finding three are the same kind of check, read one pair at a time. None of it is a simultaneous claim about a whole leaderboard. Across 118 adjacent pairs each tested at 95%, a few separations would be expected by chance alone, so 9 separated pairs do not mean any table is in the right order. The rule for choosing comparisons was fixed before any score was read: every gap quoted in the six launch posts and every adjacent pair on the nine named leaderboard snapshots. Which pairs that rule picks still depends on the ranking in each snapshot, so the leaderboard half of the count is tied to those snapshots. The snapshot identifiers and the full pair list are in the repo (results.csv and data/), so the same set can be rebuilt after the live leaderboards change. A reader raised this on DEV; it is added as a dated note and no numbers changed.</p>
 
 <h2>Check any gap yourself</h2>
 <p>The <a href="/benchmark-gap/">gap calculator</a> takes two scores and an N and gives the verdict in questions, not percentage points. The data, method, archived-source hashes and every one of the 617 rows are in the ${repo('repo')}. None of this says two models are equal; no separation detected means this benchmark, at this size, with this data, cannot tell.</p>

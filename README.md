@@ -375,6 +375,64 @@ In either mode, an answer that points at a file the judge is not shown, or only
 describes work, is a lost draw and is never scored.
 <!-- spec 145: end -->
 
+## Skill prompt overlap
+
+Run `driftproof overlap <skill-dir>` to report each case's longest consecutive prompt words in one bundled file, with its file and starting line. The searched bytes are the same SKILL.md and bundled files the skill loader accepts, outside evals/. Bundled receipts are searched as bytes; the command does not interpret receipts or consult receipts outside the accepted input.
+
+Files use UTF-8 decoding with replacement for malformed bytes. A leading BOM separates words; UTF-16 is not detected. Unicode letters, combining marks and decimal digits form words. Words use NFC normalization and lowercase comparison. Punctuation and whitespace separate words. Matches may cross lines, never files. Ties use UTF-8 path byte order, then file word position, then prompt word position.
+
+This offline command makes no model call, writes no receipt and moves no verdict. It does not prove contamination or its absence, explain measured lift, or vouch for a suite. A zero count says only that this word comparison found no shared words. Unnamed skills use the loader's directory name, so differently named aliases can change that name.
+
+Required files must be regular. The loader bounds bundled bytes and raw suite bytes before reading. Overlap additionally refuses more than 250,000 bundled words or 1,000,000 prompt words across the suite. A refusal exits 2 with a bounded escaped reason and no report. Successful stdout is JSON with one ordered row per case, including zero results.
+
+## Plan before a run
+
+`driftproof plan` reads your full suite offline. It writes no receipt and moves
+no verdict. With compatible earlier receipts, it reports conditional resolution
+and hypothetical generation draw targets under the verdict's spread rule.
+Spreads held. Recorded provenance must still hold, including generation and
+judge surfaces, harness version, isolation and grading identity. Planning
+cannot certify currentness offline. The runner may stop before any target,
+even a target within its adaptive ceiling. A plan promises no next-run verdict.
+
+Power cannot be judged until spread is measured. Start cheaply with a real
+smoke run, then use its receipt:
+
+~~~sh
+driftproof run ./my-skill --quick --models haiku --judge-model sonnet
+driftproof plan ./my-skill --model haiku --judge-model sonnet --from receipt.json
+driftproof plan ./my-skill --model haiku --judge-model sonnet --from receipt.json --lift 0.05 --draws 10 --samples 2
+~~~
+
+Use the same model and judge as the receipt. Repeat `--from` for separate
+receipts. Every supplied receipt must be sealed, valid and compatible. Each
+case selects the newest paired evidence by generation instant, grading instant,
+then greatest receipt hash. Draws are never pooled across runs or regrades.
+Missing, single or lost draws leave power unknown. Synthetic receipts are
+labelled and do not measure model power. One current case left unknown keeps
+the full-suite power unknown. The observed suite band stays visible; the planner
+does not invent a target number of extra cases or promise that more cases help.
+
+`--samples` sets judge samples per answer.
+`--draws` sets generation draws per case per arm for the projection. It is a planner flag; run keeps its adaptive
+policy. Defaults use run's built-in target, judge sample count, effect floor and
+adaptive draw ceiling. Plan ignores `.driftproofrc` defaults and spending flags.
+A requested `--lift` below the verdict effect floor is unsupported; more draws
+cannot change that rule. Strict draw recommendations are hypothetical with
+spreads held, including when the requested judge sample count differs from the
+evidence. Counts that cannot be represented safely have no numeric target.
+
+Projected calls use the same two-arm cost model as run. Only the default
+policy call ceiling is an upper bound for ordinary adaptive execution under
+that policy.
+
+USD is a rough token-assumption cost estimate at registry API
+prices; actual charges can exceed it. Fixed input/output tokens per call are
+3000/900 with the skill, 250/900 for baseline generation and 1300/200 for each
+judge sample. This is not an invoice or a subscription billing prediction.
+Retries and auxiliary harness calls are excluded. Long prompts can exceed the
+fixed token assumptions. Plan makes no provider or harness call.
+
 ## Receipt anatomy
 
 A receipt is the unit of evidence — one JSON document conforming to
@@ -392,7 +450,7 @@ A receipt is the unit of evidence — one JSON document conforming to
     "model_release_date": "2025-10-01",
     "provider": "anthropic",
     "surface": "claude-cli",
-    "runner_version": "0.20.0",
+    "runner_version": "0.21.0",
     "date_utc": "2026-07-27T…Z",
     "registry": "registered",
     "transcripts": "hashes-only",
@@ -471,7 +529,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: driftproofhq/driftproof@v0.20.0
+      - uses: driftproofhq/driftproof@v0.21.0
         with:
           skill-dir: skills/my-skill
           models: claude-haiku-4-5
@@ -599,7 +657,7 @@ permissions:
   contents: read
   issues: write
 # ...
-      - uses: driftproofhq/driftproof/stale@v0.20.0
+      - uses: driftproofhq/driftproof/stale@v0.21.0
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill
