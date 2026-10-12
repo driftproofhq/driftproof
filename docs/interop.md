@@ -38,6 +38,8 @@ Two structural consequences, both enforced in code and asserted in the gate:
    receipts that honestly say they are `DECLARED`/`UNVERIFIED`. No previously
    issued receipt is invalidated (the revision is additive).
 
+New imported receipts seal `run.import.comparison_method: matched-measured-cases/1`. Both comparison arms use the same admitted case ids. A missing usable arm or conflicting reported grading basis leaves the case in `excluded_cases` with an exact notice. Its admitted samples and counts stay on record. No matched case means null comparison figures and a notice. Receipts without that marker keep their older calculation and recorded figures. Reported compatibility does not establish the same actual grader.
+
 ## Source #1 — `agent-skills-eval` (darkrishabh/agent-skills-eval, MIT)
 
 A TypeScript test runner for **agentskills.io-style skills** — the *same suite
@@ -69,7 +71,7 @@ results JSON (the benchmark artifact with per-eval, per-mode grading):
 | suite (agentskills.io evals) | `suite.format` = `"agentskills.io/evals"` | Same suite lineage; `suite_hash` = `null` (bytes not seen), `case_count` = number of evals. |
 | `target` | `run.model_id` | Provider inferred from the id (`gpt-*`/`o<n>` → openai, else anthropic); registry looked up as usual. |
 | `judge` | per-case `judge.model_id` + `run.judge` | Binary per assertion → `sampling: "external"`, `temperature: null`, and **no** `run.judge.samples` and no `counts`: the benchmark format defines no count of either kind, so none is written until it does (receipt v0.8, spec 043). `rubric_hash: null` (rubric bytes not seen). |
-| per-eval `with_skill`/`without_skill` grading | one case per (eval, mode) | `mean` = fraction of assertions passed (or 1/0 from the eval-level pass when no assertions); `samples` = `[mean]` — the **one** grade their judge actually produced, never resampled; `stddev` = 0; `outcome` = pass/fail from their grading; `threshold` = `null`. |
+| per-eval `with_skill`/`without_skill` grading | one case per (eval, mode) | `mean` = fraction of assertions passed (or 1/0 from the eval-level pass when no assertions and an explicit boolean pass); `samples` = `[mean]` — the **one** grade their judge actually produced, never resampled; `stddev` = 0; `outcome` = pass/fail from an explicit eval verdict, else score; `threshold` = `null`. |
 | rolled-up pass rates | `results.aggregates` + `comparison` | Recomputed from the converted cases; `delta` = with-skill mean − baseline mean. Single-sample: `diff` already flags "no bands". |
 | `timestamp` | `run.date_utc` | Else the import time. |
 
@@ -153,7 +155,7 @@ so several documents imported into one directory never overwrite each other.
 | `arms.with[]` | the `with_skill` case | One run is one generation draw. |
 | `arms.without[]` | the `baseline` case | Absent (`--ablation none`): an empty baseline aggregate and a null comparison, never a zero. |
 | a run's `score` | one entry of `samples` | The weighted fraction of graders the run passed, an `llm` grader passing on 2 of 3 judge votes. `mean`, `stddev` and the outcome are computed from the draws by the rule a Driftproof run uses, with `suite.threshold` as the threshold. No judge-sample count is written. |
-| a run's `error` not null | `excluded_draws`, with the error text, every local path in it replaced by `<local path>` | Kept out of the band: a usage-limit error scores about 0 and reads as a regression. `--count-errored-runs` puts them back, and says so in `run.import.notices`. |
+| a run's `error` not null | `excluded_draws`, with the error text, every local path in it replaced by `<local path>` | Kept out of the band: a usage-limit error scores about 0 and reads as a regression. `--count-errored-runs` retains valid errored scores and counts, but excludes their whole case from comparison and says why in `run.import.notices`. |
 | a run's `aborted` | kept, measured | A mock `expect: abort` is a behaviour failure the suite author defined. |
 | a run's `skippedPaidGraders` true | `excluded_draws` | Its score omits the paid graders. |
 | a grader with `scored` false, `type` `tool_used` on the `Skill` tool | `results.cases[].activation` `{indicator, fired, runs}` | Whether the skill fired: `runs` counts the case's measured with-plugin runs whose result carries the indicator, and `fired` those where it passed. Never part of a score. In a two-arm run every `tool_used: Skill` grader and every `arm: with-only` grader is `scored: false`, and the run's `score` already excludes it. |
@@ -264,3 +266,5 @@ draft 2020-12 validator), and be honest about the level:
   you may claim **`TESTED`** (the schema will hold you to the evidence chain).
 - Converting or asserting results you can't hash → **`DECLARED`**, surface
   `external`, omit the hashes. Exactly what `driftproof import` does.
+
+Imports refuse documents or sidecars above 16 MiB, JSON depth above 32, more than 200000 nodes, arrays or objects above 10000 entries, or strings above 16384 characters. Directory discovery stops above depth 16 or 10000 entries. Case ids must be short nonempty strings or safe integers, and numeric and string spellings of one id cannot be mixed. Scores must be finite numbers in [0,1]. Recorded expectation identities and Format A scored-grader sets, weights and participation must agree across admitted runs. Unknown grading metadata stays unknown. Rejected draws are listed separately and do not enter samples or counts.

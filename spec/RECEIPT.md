@@ -1083,3 +1083,20 @@ test on the aggregate mean. This is the anti-false-positive core: band separatio
    spec may need to declare the baseline condition.
 8. **`editorial_reviews` scope.** Deliberately marked context-only; if it starts
    being treated as evidence, it will need its own trust rules.
+
+## Imported comparison method (issue 13)
+
+New imported receipts carry optional `run.import.comparison_method: matched-measured-cases/1`.
+Its hash seals this marker with the source hash, samples, counts, exclusions and notices.
+Both comparison arms use the same admitted case ids. A missing usable arm, an error override,
+or conflicting recorded grading evidence excludes the case, while admitted samples stay
+on record. Each excluded id appears once, with affected modes and an exact notice.
+No matched case means null scores, delta and band, with `no_cases` and an explanation.
+The marker establishes compatibility of reported evidence, not the same actual grader.
+Receipts without the marker keep their recorded figures and their older calculation.
+
+A legacy in-process importer called without `importedAt` records `run.import.imported_at: null`
+when the source already supplies its run date. If the run date is absent, the importer records
+the clock used for the fallback date. The CLI supplies its import clock. An unknown import time
+never copies the source run date. Null import time is admitted only for a marked legacy
+calculation. An unmarked import still requires its original timestamp field.

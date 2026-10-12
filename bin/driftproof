@@ -8,7 +8,7 @@ const { PROJECT_NAME, RUNNER_VERSION, DEFAULT_JUDGE_SAMPLES, DEV_MAX_USD, DEV_MA
 const { loadSkill, normalizeCases } = require('../lib/skill');
 const { runSkillOnModel, summarizeReceipt, projectCalls, answeredLine, band, uncertaintyStr, transcriptRecord } = require('../lib/run');
 const { SAMPLING } = require('../lib/sampling');
-const { validateReceipt, verifyReceiptHash, duplicateCaseRows, ambiguityLine, listReceipts, receiptBaseName, fileSlug, REGRADE_SIDECAR, SUMMARY_SIDECAR } = require('../lib/receipt');
+const { resolveReceiptValidator, validateReceipt, verifyReceiptHash, duplicateCaseRows, ambiguityLine, listReceipts, receiptBaseName, fileSlug, REGRADE_SIDECAR, SUMMARY_SIDECAR } = require('../lib/receipt');
 const { buildDriftReport, revisionPairProblem } = require('../lib/diff');
 const { surfaceForModel, isSubscriptionSurface, resolveModel, evalUser, evalUserExists } = require('../lib/provider');
 const { PRESET_QUICK, QUICK, SMOKE_LINE, isSmoke, quickConflicts, quickBanner, quickResultLine, selfJudged, selfJudgeLines, isolationPreflight } = require('../lib/firstrun');
@@ -305,15 +305,71 @@ function loadSkillOrRefuse(skillDir, command) {
   }
 }
 
+// Issue 205: parsing is local to plan, so repeated --from never changes other commands.
+function cmdPlan(argv) {
+  const { loadPlanSkill, readPlanReceipts, planOptions, planSkill, formatPlan } = require('../lib/plan');
+  try {
+    const positional = [], flags = {}, files = [];
+    const allowed = new Set(['model', 'judge-model', 'lift', 'samples', 'draws', 'from']);
+    for (let i = 0; i < argv.length; i++) {
+      const arg = argv[i];
+      if (!arg.startsWith('--')) { positional.push(arg); continue; }
+      const eq = arg.indexOf('=');
+      const key = eq > 2 ? arg.slice(2, eq) : arg.slice(2);
+      if (!allowed.has(key)) throw new Error('unknown plan flag --' + key);
+      const value = eq > 2 ? arg.slice(eq + 1) : argv[++i];
+      if (typeof value !== 'string' || !value || value.startsWith('--')) throw new Error('--' + key + ' needs a value');
+      if (key === 'from') files.push(value);
+      else {
+        if (Object.hasOwn(flags, key)) throw new Error('duplicate --' + key);
+        flags[key] = value;
+      }
+    }
+    if (positional.length !== 1) throw new Error('plan needs exactly one skill directory');
+    const options = {};
+    for (const key of ['samples', 'draws']) if (Object.hasOwn(flags, key)) {
+      if (!/^[1-9][0-9]*$/.test(flags[key])) throw new Error(key + ' must be a positive decimal integer');
+      options[key] = Number(flags[key]);
+    }
+    if (Object.hasOwn(flags, 'lift')) {
+      if (!/^(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)$/.test(flags.lift)) throw new Error('lift must be a finite decimal in (0, 1]');
+      options.lift = Number(flags.lift);
+    }
+    if (Object.hasOwn(flags, 'model')) options.model = flags.model;
+    if (Object.hasOwn(flags, 'judge-model')) options.judgeModel = flags['judge-model'];
+    const checked = planOptions(options);
+    const receipts = readPlanReceipts(files);
+    const skill = loadPlanSkill(positional[0]);
+    const plan = planSkill({skill, receipts, ...checked});
+    const rcExists = [path.join(process.cwd(), '.driftproofrc'), path.join(skill.dir, '.driftproofrc')].some(file => fs.existsSync(file));
+    const text = formatPlan(plan) + (rcExists ? '.driftproofrc defaults are ignored by plan. Bundled rc bytes still enter the skill hash. It uses explicit flags and built-in defaults for the full suite.\n' : '');
+    process.stdout.write(text);
+  } catch (e) {
+    console.error('REFUSED (plan): ' + e.message);
+    process.exitCode = 2;
+  }
+}
+
 function usage() {
   console.log(`${PROJECT_NAME} v${RUNNER_VERSION} — continuous verification of agent skills
 
 USAGE
+  driftproof overlap <skill-dir>
+    Offline overlap reports the longest consecutive prompt words in SKILL.md and bundled files outside evals/.
+    UTF-8 replacement decoding, Unicode words, NFC and lowercase; punctuation separates words.
+    Reports file and starting line; ties use UTF-8 path byte order, then file/prompt position.
+    Searches bundled receipt bytes; does not interpret receipts or consult external receipts.
+    Writes no receipt and moves no verdict. Does not prove contamination or its absence,
+    explain measured lift, or vouch for a suite. Zero covers only this comparison.
+    Regular required files and pre-read byte bounds; limits: 250,000 bundled words,
+    1,000,000 prompt words. Unnamed aliases use loader identity. Refusals exit 2, no report.
   ${PROJECT_NAME} init <dir> [--cases FILE [--drafted-from-skill]]  scaffold SKILL.md + evals/evals.json + .driftproofrc, or add the
                                                        suite to a skill that has a SKILL.md
   ${PROJECT_NAME} run <skill-dir> [--models a,b] [--samples N] [--max-cases N] [--max-calls N]
                         [--judge-model M] [--concurrency N] [--max-usd N]
                         [--keep-transcripts] [--out DIR] [--trusted-skill] [--capture text|files] [--quick]
+  ${PROJECT_NAME} plan <skill-dir> [--model ID] [--judge-model ID] [--lift L] [--samples N]
+                        [--draws N] [--from receipt.json]...
   ${PROJECT_NAME} diff <receiptA.json> <receiptB.json> [--out FILE] [--mode release|revision]
   ${PROJECT_NAME} regrade <receipt.json> --skill <dir> --answers <file> --judge-model <id>
                         [--rubric <evals.json>] [--samples N] [--max-calls N] [--max-usd N] [--out DIR] [--trusted-skill]
@@ -338,6 +394,15 @@ ENV
   DRIFTPROOF_EVAL_USER the unix user the isolated hop runs the CLI as (default: driftproof-eval)
 
 NOTES
+  - Planning: plan uses --model, --judge-model, --lift, --draws and repeatable --from receipts.
+    --samples is judge samples per answer; --draws is generation draws per case per arm.
+    Spreads held. Draw targets are hypothetical; the runner may stop before them.
+    Recorded provenance must still hold; this cannot certify currentness offline.
+    It writes no receipt and moves no verdict. It uses the full suite and ignores rc defaults.
+    Rough token-assumption USD cost estimate; actual charges can exceed it.
+    Power cannot be judged until spread is measured. Start with
+    driftproof run <skill-dir> --quick --models ID [--judge-model ID], then
+    driftproof plan <skill-dir> --model ID [--judge-model ID] --from receipt.json.
   - Default models list is 'haiku' only (cheap dev default).
   - --quick is a smoke run: ${QUICK.samples} judge samples, concurrency ${QUICK.concurrency}, at most ${QUICK.maxCases} cases.
     It cannot produce a verdict: its receipt is UNVERIFIED and records run.preset "${PRESET_QUICK}", and
@@ -1207,7 +1272,7 @@ function cmdDecide(positional, flags) {
 function cmdImport(positional, flags) {
   const p = positional[0];
   const from = flags.from;
-  const { IMPORT_TOOLS, importResults } = require('../lib/importers');
+  const { IMPORT_TOOLS, importResults, readImportBytes, importDiagnostic } = require('../lib/importers');
   const { ANTHROPIC_TOOLS, importAnthropic, ImportRefused } = require('../lib/importers-anthropic');
   const tools = [...IMPORT_TOOLS, ...ANTHROPIC_TOOLS];
   if (!p || typeof from !== 'string') {
@@ -1226,8 +1291,14 @@ function cmdImport(positional, flags) {
       process.exit(1);
     }
   } else {
-    const data = JSON.parse(fs.readFileSync(p, 'utf8'));
-    receipt = importResults(data, { from, importedAt: new Date().toISOString() });
+    try {
+      const sourceBytes = readImportBytes(p);
+      const data = JSON.parse(sourceBytes.toString('utf8'));
+      receipt = importResults(data, { from, sourceBytes, importedAt: new Date().toISOString() });
+    } catch (e) {
+      console.error('import refused, nothing written: ' + importDiagnostic(e.message));
+      process.exit(1);
+    }
   }
   const { valid, errors } = validateReceipt(receipt);
   if (!valid || !verifyReceiptHash(receipt)) {
@@ -1280,12 +1351,51 @@ function cmdExport(positional, flags) {
   }
 }
 
+// Spec 182: only this door emits overlap JSON. Refusal values are bounded and
+// JSON-escaped before they reach stderr, including loader errors and paths.
+// Shared with overlap's existing bounded, single-line diagnostic.
+function diagnosticValue(value) {
+  return JSON.stringify(value).replace(/[\u007f-\u009f\u2028\u2029]/g, c => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'));
+}
+
+function checkReceiptValidator() {
+  try { resolveReceiptValidator(); }
+  catch (e) {
+    if (!e || e.code !== 'MODULE_NOT_FOUND') throw e;
+    const home = require('node:os').homedir();
+    const root = path.resolve(__dirname, '..');
+    const display = root === home ? '~' : root.startsWith(home + path.sep) ? '~' + root.slice(home.length) : root;
+    const bounded = display.length > 2048 ? display.slice(0, 1000) + ' [middle omitted] ' + display.slice(-1000) : display;
+    console.error("  ✗ REFUSED (ajv): cannot resolve ajv/dist/2020. Run npm install in the package directory containing this installation's bin/driftproof. Directory (display only): " + diagnosticValue(bounded));
+    process.exit(2);
+  }
+}
+
+function cmdOverlap(args) {
+  if (args.length !== 1 || args[0].startsWith('-')) {
+    console.error('usage: driftproof overlap <skill-dir>; takes one directory argument and no flags');
+    process.exitCode = 2; return;
+  }
+  try {
+    const report = require('../lib/overlap').overlapSkill(args[0]);
+    console.log(JSON.stringify(report, null, 2));
+  } catch (e) {
+    const reason = String(e && e.message || e).slice(0, 2048);
+    const escaped = diagnosticValue(reason);
+    console.error('overlap refused: ' + escaped);
+    process.exitCode = 2;
+  }
+}
+
 async function main() {
   const [, , cmd, ...rest] = process.argv;
+  if (['run', 'regrade', 'import', 'validate', 'badge', 'decide', 'diff', 'export', 'stale', 'view'].includes(cmd)) checkReceiptValidator();
+  if (cmd === 'overlap') return cmdOverlap(rest);
   const { positional, flags } = parseArgs(rest);
   switch (cmd) {
     case 'init': return cmdInit(positional, flags);
     case 'run': return cmdRun(positional, flags);
+    case 'plan': return cmdPlan(rest);
     case 'diff': return cmdDiff(positional, flags);
     case 'regrade': return cmdRegrade(positional, flags);
     case 'stale': return cmdStale(positional, flags);

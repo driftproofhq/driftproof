@@ -397,7 +397,19 @@ const DESC_MIN = 50;
 // 155, the length a search result shows (spec 133 AC-4); site-data.mjs caps a report's card
 // description at the same value, so a report's two descriptions share one cut.
 const DESC_MAX = 155;
+// A PAGE THAT CARRIES ITS OWN DESCRIPTION. Its <main> declares it in data-description, and that is
+// the description, held to the same 50 to 155 characters; one out of bounds throws rather than being
+// cut. Read here, so the head block and every reader of pageDescription take the same words (spec 171
+// A-171-5, issue 250: the leaderboard-noise page opens with its scope qualifier, and the operator
+// wrote the description that states the count with its scope).
+const OWN_DESC = /<main\b[^>]*\sdata-description="([^"]*)"/;
 function pageDescription(html) {
+  const own = OWN_DESC.exec(String(html));
+  if (own) {
+    const d = decode(own[1]);
+    if (d.length < DESC_MIN || d.length > DESC_MAX) throw new Error(`a page's own description is ${d.length} characters, not ${DESC_MIN} to ${DESC_MAX}`);
+    return d;
+  }
   const main = html.slice(Math.max(0, html.indexOf('<main')))
     // Not the TL;DR card: that is chrome this loop injected, and a description
     // derived from it would describe the summary rather than the page.

@@ -311,33 +311,41 @@ function sourceUrl(e, where) {
 // by the operator on 8 Oct 2026, who checked each merge and release note live that day; spec 169 §
 // The credits lists the URLs, and its gate reads the section against them. Each credit is the
 // maintainer's contribution, never a Driftproof run. /what-is-driftproof/ renders the section and
-// /maintainer/ the table, both from this list, so the two cannot name different releases.
+// /maintainer/ the table. Curated identities read the same observed census.
 const MAINTAINER_PROFILE = 'https://github.com/mavericksea-ai';
-const UPSTREAM_CREDITS = [
-  { project: 'MLflow', release: '3.17.0', release_url: 'https://github.com/mlflow/mlflow/releases/tag/v3.17.0', repo: 'mlflow/mlflow', pulls: [26252], linked: true },
-  { project: 'NVIDIA SkillEvaluator', release: 'v0.4.0', release_url: 'https://github.com/NVIDIA/SkillEvaluator/releases/tag/v0.4.0', repo: 'NVIDIA/SkillEvaluator', pulls: [154], linked: true },
-  { project: 'Agent Skills', release: '0.6.10 to 0.6.12', release_url: 'https://github.com/addyosmani/agent-skills/releases', repo: 'addyosmani/agent-skills', pulls: [576, 578, 587, 598, 600, 614, 615], linked: false },
-  // Merged 9 Oct 2026 (issue 103, spec 169 A-169-2), shipped in v0.13.0 and credited in its release notes
-  // (issue 152, A-169-3). Only /maintainer/'s table renders it; the pages above read the first three by
-  // position. A credit merged into no release yet has release_url null and release words that say so.
-  { project: 'alibaba/skill-up', release: 'v0.13.0', release_url: 'https://github.com/alibaba/skill-up/releases/tag/v0.13.0', repo: 'alibaba/skill-up', pulls: [304], linked: true },
-];
+const UPSTREAM_DATA = readJson('docs/data/upstream.json');
+const UPSTREAM_CREDITS = UPSTREAM_DATA.pulls.map((p) => ({
+  project: p.repo, repo: p.repo, pulls: [p.number], linked: true,
+  release: p.release ? p.release.tag : 'No qualifying GitHub release observed (' + UPSTREAM_DATA.read_at.slice(0, 10) + ')',
+  release_url: p.release?.credited ? p.release.url : null,
+  unobserved: p.release === null,
+}));
+const UPSTREAM_OPEN_URL = 'https://github.com/pulls?q=' + encodeURIComponent(UPSTREAM_DATA.open_query);
+
 const pullUrl = (repo, n) => `https://github.com/${repo}/pull/${n}`;
 const pullLink = (repo, n) => `<a href="${esc(pullUrl(repo, n))}">#${n}</a>`;
-// The project label links its release note, which also links every numeral in it (spec 135 AC-6).
-const creditLabel = (c) => `<strong><a href="${esc(c.release_url)}">${esc(`${c.project} ${c.release}`)}</a>:</strong>`;
+// Curated project labels describe historical fixes; current observations live on /maintainer/.
+const creditLabel = (c) => `<strong>${esc(c.project)}:</strong>`;
 function fixesMergedUpstream() {
-  const [mlflow, nvidia, skills] = UPSTREAM_CREDITS;
+  const byIdentity = (repo, number, project) => {
+    const credit = UPSTREAM_CREDITS.find((c) => c.repo === repo && c.pulls.includes(number));
+    if (!credit) throw new Error('curated upstream identity missing: ' + repo + '#' + number);
+    return { ...credit, project };
+  };
+  const mlflow = byIdentity('mlflow/mlflow', 26252, 'MLflow');
+  const nvidia = byIdentity('NVIDIA/SkillEvaluator', 154, 'NVIDIA SkillEvaluator');
+  const skills = byIdentity('addyosmani/agent-skills', 576, 'Agent Skills');
+  for (const n of [578, 587, 598, 600, 614, 615]) byIdentity(skills.repo, n, skills.project);
   const p = (n) => pullLink(skills.repo, n);
   return `<section id="fixes-merged-upstream">
 <h3>Fixes merged into other evaluation tools</h3>
-<p>Driftproof's maintainer, Maverick (<a href="${MAINTAINER_PROFILE}">mavericksea-ai</a> on GitHub), reads the scoring and gating code of other evaluation tools and sends fixes upstream. Nine are merged, and each project credits them in its own release notes:</p>
+<p>Driftproof's maintainer, Maverick (<a href="${MAINTAINER_PROFILE}">mavericksea-ai</a> on GitHub), reads the scoring and gating code of other evaluation tools and sends fixes upstream. Nine are merged. Current GitHub release observations are listed on the maintainer page:</p>
 <ul>
 <li>${creditLabel(mlflow)} relative-change gates now use the baseline's magnitude, so a negative baseline no longer passes a worse model and fails a better one (${pullLink(mlflow.repo, 26252)}).</li>
 <li>${creditLabel(nvidia)} a script earns execution credit only with evidence that it was run, not just read or searched (${pullLink(nvidia.repo, 154)}).</li>
 <li>${creditLabel(skills)} grader results are bound to the expectations they answer (${p(576)}); stale grading is cleared and each run records its identity (${p(587)}); the ADR eval grades what the skill asks for (${p(598)}); the floor-guard reference catches untracked files, deleted tests and raised limits (${p(600)}, ${p(614)}). Two more fixes there are not about evaluation (${p(578)}, ${p(615)}).</li>
 </ul>
-<p>Nine more are open, in DeepEval, DSPy, Harbor, LangSmith, lm-evaluation-harness, Anthropic's skills repository and Superpowers. Six of the defects behind them are written up in the <a href="/paper/">paper</a>. More on who maintains Driftproof: <a href="/maintainer/">Maintainer</a>.</p>
+<p>Open pull requests: <a href="${esc(UPSTREAM_OPEN_URL)}">search GitHub</a>. Six of the defects behind them are written up in the <a href="/paper/">paper</a>. More on who maintains Driftproof: <a href="/maintainer/">Maintainer</a>.</p>
 </section>`;
 }
 
@@ -461,4 +469,4 @@ ${answerList()}
 </div>`;
 }
 
-module.exports = { whatIsPage, questionPage, comparePage, paperQuestion, answerLinks, answerSplit, pageVisibleText: visibleText, UPSTREAM_CREDITS, MAINTAINER_PROFILE, pullUrl };
+module.exports = { whatIsPage, questionPage, comparePage, paperQuestion, answerLinks, answerSplit, pageVisibleText: visibleText, UPSTREAM_CREDITS, UPSTREAM_DATA, UPSTREAM_OPEN_URL, MAINTAINER_PROFILE, pullUrl };

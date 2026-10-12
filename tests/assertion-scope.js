@@ -436,6 +436,8 @@ const BAND_SITE_KIND = {
   'lib/verdict.js': 'comparison',
   // Spec 128: a receipt's sheet draws one test task's two arms side by side, read through bandOf.
   'lib/band-plot.js': 'comparison',
+  // Issue 205, spec 188: conditional planning reads verified generation bands through bandOf.
+  'lib/plan.js': 'comparison',
   'lib/importers.js': 'emission — builds a receipt from an imported result; compares nothing',
   // Spec 049: the two Anthropic formats, the same kind of site as lib/importers.js.
   'lib/importers-anthropic.js': 'emission: builds a receipt from an imported document; compares nothing',

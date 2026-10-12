@@ -8,6 +8,139 @@ makes this one a record.
 
 ---
 
+## v0.21.0 - 2026-10-12
+
+### What's new
+
+- **A new `driftproof plan` command estimates, offline, what a next run would need.** Given a
+  skill's suite and one or more compatible earlier receipts (supplied with `--from`), it reports
+  the conditional resolution and the generation draws a requested lift would need under the
+  measured spread, plus the calls that projection implies and a token-assumption USD estimate. It
+  makes no model or network call, writes no receipt and asserts no verdict. Draw targets are
+  hypothetical; an actual run may still stop earlier under its own adaptive policy.
+- **A new `driftproof overlap <skill-dir>` command measures prompt overlap with a skill's own
+  files.** For every case, it reports the longest run of consecutive prompt words found in one
+  bundled skill file, with that file and starting line. It makes no model or network call and
+  writes nothing; a zero result only says this word comparison found no shared run of words.
+- **The maintainer page's list of merged upstream pull requests now refreshes at every release,**
+  with each credit's release-tag ancestry and note mention checked again before it is shown.
+- **The benchmark-gaps-vs-noise report gained a dated scope note** after a reader's question: every
+  verdict it counts is a pairwise, one-gap-at-a-time check, never a simultaneous ranking of a whole
+  leaderboard. No figure on the page changed.
+
+### What may change for you
+
+- **An imported receipt with evals missing from one side of a comparison, or graded against
+  different expectation totals, now reads a different reported difference,** with those evals
+  named in exclusions and notices. Both sides of the comparison use the same admitted case ids.
+  Recorded expectation identities and Format A scored-grader sets and weights are checked too. No
+  matched case means no numeric comparison. Valid errored scores retained by the override remain
+  recorded but their case cannot enter the comparison. New imports seal the calculation marker
+  `matched-measured-cases/1`; older imported receipts keep their recorded figures and do not assert
+  this method. Unknown grader metadata stays unknown. Input and diagnostic bounds now refuse unsafe
+  identities or oversized documents before writing a receipt. Native archived receipt figures stay
+  unchanged.
+- **A run or import whose raw `evals/evals.json` is larger than 32 MiB is now refused before the
+  suite is read,** the same ceiling already applied to a skill's bundled files, even when every
+  individual case is within its own bounds.
+- **A missing or broken ajv install is now refused in one line instead of a mid-run crash.** `run`,
+  `regrade`, `import`, `validate`, `badge`, `decide`, `diff`, `export`, `stale` and `view` all check
+  this before doing any other work, so a broken install is refused before it can spend a call, with
+  exit code 2 and no stack trace.
+
+### Known issues
+
+- **What is not recorded or compared.** A CLI judge's own settings files (`~/.claude/settings.json`,
+  project settings, `CLAUDE.md` files, codex's config), the eval user's shell profile behind the
+  isolated hop, other proxy, region and credential variables, and the network the call crosses can
+  all change what the judge reads or where its call goes. The receipt holds none of them.
+  `spec/RECEIPT.md` lists them.
+- **The route is recorded as an unsalted hash,** so an address that can be guessed can be recovered
+  from it.
+- **A regrade's raw judge replies are not kept,** only their hashes.
+- **Receipts under-report grading cost.** A receipt counts the judge's cost for the last of a
+  case's runs only. A case runs 3 to 10 times, so its grading cost can read 3 to 10 times low. The
+  cost of running the skill itself is not affected. Tracked as spec 158.
+- **A plain regrade's judge identity is self-reported, not authenticated.** The requested judge's
+  reported id comes from its own reply; it does not authenticate provider identity or measure
+  grading accuracy.
+- **`driftproof overlap` measures word overlap only.** It does not establish that a suite leaked,
+  explain a measured lift, or establish that a skill is free of overlap beyond this one comparison.
+- **`driftproof plan`'s draw targets and USD figure are estimates, not promises.** The USD figure
+  assumes fixed token counts at registry API prices; it is not an invoice or a subscription billing
+  prediction, and a long prompt can exceed it. Retries and auxiliary harness calls are not included,
+  and an actual run may stop before any projected target.
+
+### Upgrade
+
+- npm: `npx driftproof@0.21.0`. The Action: `driftproofhq/driftproof@v0.21.0`, and the stale Action
+  `driftproofhq/driftproof/stale@v0.21.0`.
+- Claude Code plugin: `claude plugin update driftproof@driftproofhq`. The plugin runs `npx
+  driftproof@0.21.0`.
+
+### Engineering log
+
+Two new offline, read-only commands ship this release. `driftproof plan` (issue 205, spec 188,
+PR 233) reports conditional resolution and generation draws for a requested lift from a skill's
+suite and compatible earlier receipts, plus the calls and a token-assumption USD estimate that
+projection implies; it makes no provider or network call and writes no receipt. `driftproof overlap`
+(issue 149, spec 182, PR 230) reports each case's longest consecutive run of prompt words found in
+one bundled skill file; its shared loader change also gives `run` and `import` the 32 MiB raw-suite
+ceiling already applied to bundled skill bytes (spec 026 A-026-41). Spec 235 (issue 235, PR 240) adds
+a single-line, exit-2 refusal when ajv cannot be resolved at startup, before any receipt-validating
+command does other work or spends a call, replacing a stack trace raised mid-run.
+
+Issue 13 (spec 049, PR 231) corrects an imported-receipt defect shipped since 0.11.3: an eval scored
+on only one side of a comparison, or graded against a different expectation total, could change the
+reported comparison without being named. The source summaries never supply per-run observations.
+Issue 253 (spec 125 AC-10, PR 254) then rewords the findings page's write-up of that correction in
+plain words, after the engine terms it used read red against spec 125 AC-10 on `dev`.
+
+Issue 195 (spec 187, PR 227) has the release train refresh the maintainer page's upstream-credit
+census, with each credit's release-tag ancestry and note mention re-checked, before every release's
+page builders run. Issue 250 (spec 171 A-171-5, PR 255) adds a dated scope note to the
+benchmark-gaps-vs-noise report after a reader's question on DEV, clarifying that its count is
+pairwise and descriptive; no figure on the page changed. Issue 257 (spec 199, PR 258) fixes the
+reds the first 0.21.0 release sweep read, each at its cause: `driftproof overlap`'s help and README
+sentence now say it does not "vouch for a suite", in place of wording spec 035 reads as confidence
+language, and the rest is gate and test bookkeeping for the two new commands; no command's
+behaviour changed.
+
+The rest of this release is the release train's own automation, not a change to the published tool:
+issue 221 (spec 186, PR 222) grants `build-public`'s job the `checks: read` permission it needs to
+read the sweep's check-runs result, after a 0.20.0 publish stopped on a 403; issue 223 (spec 183,
+PR 225) adds an eight-hour quiet period on `dev` before an automatic release; issue 224 (PR 228) has
+`build-public`'s lockfile guard compare the release against what the selected green sweep installed;
+issue 226 (spec 183, PR 241) has the train's hourly schedule wait the hours its plugin-branch move and
+auto-cut need; issue 242 (PR 244) fixes an unquoted `if: !cancelled()` that kept `release-train.yml`
+from parsing on `dev`.
+
+#### The v0.21.0 merge list
+
+Thirteen merges since v0.20.0's release merge `d938c4e0`, oldest first:
+
+- issue 221, `build-public` may read the sweep check (PR 222): the release train only.
+- issue 223, an eight-hour quiet period on `dev` before an automatic release (PR 225): the release
+  train only.
+- issue 195, the maintainer page's upstream credits refreshed at every release (spec 187, PR 227):
+  above.
+- issue 149, the `driftproof overlap` command and the shared 32 MiB raw-suite ceiling (spec 182,
+  PR 230): above.
+- issue 13, the imported-receipt comparison correction (spec 049, PR 231): above.
+- issue 224, `build-public`'s lockfile guard compares the release with what the selected green sweep
+  installed (PR 228): the release train only.
+- issue 235, the ajv-missing startup refusal (PR 240): above.
+- issue 226, the release train's hourly schedule waits the hours its plugin-branch move and auto-cut
+  need (PR 241): the release train only.
+- issue 242, `release-train.yml`'s unquoted `if: !cancelled()` fixed (PR 244): the release train
+  only.
+- issue 205, the `driftproof plan` command (spec 188, PR 233): above.
+- issue 253, the findings page's issue-13 write-up reworded in plain words (spec 125 AC-10, PR 254):
+  above.
+- issue 250, the benchmark-gaps-vs-noise report's dated scope note (spec 171 A-171-5, PR 255):
+  above.
+- issue 257, the first 0.21.0 release sweep's reds fixed at their cause (spec 199, PR 258): above.
+
 ## v0.20.0 - 2026-10-11
 
 ### What's new
