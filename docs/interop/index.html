@@ -72,6 +72,7 @@
 <a href="/reports/">Reports</a>
 <a href="/benchmark-gap/">Gap calculator</a>
 <a href="/leaderboard-noise/">Leaderboard noise</a>
+<a href="/skills/">Skills</a>
 <a href="/findings/">Findings</a>
 <a href="/paper/">Paper</a>
 <details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
@@ -121,8 +122,8 @@
   <!--driftproof:anchor--><span id="the-schema" class="toc-anchor"></span><!--/driftproof:anchor--><h2>The schema</h2>
   <div class="card">
     <p>The machine-readable contract is the JSON Schema (draft 2020-12), served at its canonical <code>$id</code>:</p>
-    <p><a href="/spec/receipt.schema.json"><code>https://driftproofhq.com/spec/receipt.schema.json</code></a> - receipt spec v0.12; the interop fields for imported results arrived as an additive revision in v0.3.1, v0.9 added what an imported receipt says about its source: the harness that produced the answers, the imported document and its sha256, and a notice for each thing the source did not record; v0.10 added which answer a run judged, its reply alone or its reply with the files it wrote; and v0.11 adds the preset a smoke run was made under, which no reader gives a verdict</p>
-    <p>The human companion is <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md"><code>spec/RECEIPT.md</code></a>, and the full field-mapping guide for the import/export converters is <a href="/interop.md"><code>interop.md</code></a>. Validate any receipt with <code>driftproof validate &lt;file&gt;</code> or any draft-2020-12 validator. Prior schema versions (v0.1 to v0.11, v0.3.1 among them) are frozen in the repo; a receipt validates against the schema its own <code>schema_version</code> names.</p>
+    <p><a href="/spec/receipt.schema.json"><code>https://driftproofhq.com/spec/receipt.schema.json</code></a> - receipt spec v0.13; the interop fields for imported results arrived as an additive revision in v0.3.1, v0.9 added what an imported receipt says about its source: the harness that produced the answers, the imported document and its sha256, and a notice for each thing the source did not record; v0.10 added which answer a run judged, its reply alone or its reply with the files it wrote; v0.11 added the preset a smoke run was made under, which no reader gives a verdict; and v0.13 adds the figures a source printed, hashed with the repository, the commit and each file read, beside a mark that the source gives aggregates only, so no reader gives that receipt a verdict</p>
+    <p>The human companion is <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md"><code>spec/RECEIPT.md</code></a>, and the full field-mapping guide for the import/export converters is <a href="/interop.md"><code>interop.md</code></a>. Validate any receipt with <code>driftproof validate &lt;file&gt;</code> or any draft-2020-12 validator. Prior schema versions (v0.1 to v0.12, v0.3.1 among them) are frozen in the repo; a receipt validates against the schema its own <code>schema_version</code> names.</p>
   </div>
 
   <!--driftproof:anchor--><span id="declared-vs-tested-the-distinction-that-keeps-receipts-hones" class="toc-anchor"></span><!--/driftproof:anchor--><h2>DECLARED vs TESTED - the distinction that keeps receipts honest</h2>
@@ -137,15 +138,19 @@
 
   <!--driftproof:anchor--><span id="importing-from-neighboring-tools" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Importing from neighboring tools</h2>
   <div class="card">
-    <p>Working converters ship in the CLI for two neighboring skill-eval tools and for Anthropic's two eval formats:</p>
+    <p>Working converters ship in the CLI for two neighboring skill-eval tools, for Anthropic's two eval formats, for Harbor job directories and for NVIDIA's skill benchmark cards:</p>
     <p><code>driftproof import &lt;results.json&gt; --from agent-skills-eval</code><br>
     <code>driftproof import &lt;results.json&gt; --from skillgrade</code><br>
     <code>driftproof import &lt;results-dir or aggregate-result.json&gt; --from claude-plugin-eval</code><br>
-    <code>driftproof import &lt;benchmark.json or iteration-dir&gt; --from skill-creator</code></p>
+    <code>driftproof import &lt;benchmark.json or iteration-dir&gt; --from skill-creator</code><br>
+    <code>driftproof import --from harbor --with &lt;job&gt; --without &lt;job&gt;</code><br>
+    <code>driftproof import &lt;checkout&gt; --from nvidia-cards --commit &lt;sha&gt;</code></p>
     <ul class="method">
       <li><strong><a href="https://github.com/darkrishabh/agent-skills-eval">agent-skills-eval</a></strong> - a test runner for agentskills.io-style skills (the same suite lineage Driftproof consumes). Its with/without-skill, per-assertion binary grading maps onto receipt cases with a real delta; single-grade cases are imported as single-sample (no bands, and the diff says so).</li>
       <li><strong><code>claude plugin eval</code></strong> - Claude Code's own eval command (2.1.269 and later) writes <code>aggregate-result.json</code>. The unit is the plugin, every skill it carries loaded at once. Each run is one draw; errored runs are kept out and listed with their reasons; a skill-fired indicator is recorded beside the score, never inside it.</li>
       <li><strong>skill-creator <code>benchmark.json</code></strong> - the document skill-creator's benchmark mode writes, and skill-up writes one per iteration. Runs are grouped by eval id, and each iteration imports as its own receipt.</li>
+      <li><strong><a href="https://github.com/harbor-framework/harbor">Harbor</a> job directories</strong> - one job run with the skill and one without, as the user declares them. Each trial's own <code>result.json</code> is read, never a file inside a trial folder. Cases are keyed by task id and checksum, the delta is recomputed from the rewards of finished trials that carry one, over the tasks both jobs ran under the same verifier and timeout settings, and every trial or task left out is listed with its reason.</li>
+      <li><strong><a href="https://github.com/NVIDIA/skills">NVIDIA/skills</a> benchmark cards</strong> - a git checkout at the commit given, its <code>benchmarks.json</code> and each <code>BENCHMARK.md</code>. The cards give one score and one uplift per dimension and agent, so each receipt carries those figures as the card prints them, with the commit and each file's git blob sha1, and the mark <code>aggregates_only</code>: no verdict is read from it. Driftproof records the files it read and does not attest the author.</li>
       <li><strong><a href="https://github.com/mgechev/skillgrade">skillgrade</a></strong> - "unit tests for your agent skills": N trials per task, weighted graders, a 0–1 reward. Trials are genuine repeated runs, so per-trial rewards map onto <code>samples[]</code> honestly. skillgrade has <em>no baseline mode</em>, so the imported receipt carries an empty baseline and a <code>null</code> comparison - never a fabricated zero-baseline delta.</li>
     </ul>
     <p>The full field mappings - including what is assumed where the upstream tool documents semantics but not a frozen schema - are in <a href="/interop.md">the interop guide</a>.</p>

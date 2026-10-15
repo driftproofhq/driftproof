@@ -32,6 +32,11 @@ const OUT = [
   'tests/release-freeze-and-cause.test.js',
   // its subjects, pipeline.mjs and release-train.yml, are out, so it is too (spec 183)
   'tests/auto-release.test.js',
+  // the nightly's busy check runs only in nightly.yml, which is out, and its test reads that workflow (spec 278)
+  'scripts/nightly-busy.mjs',
+  'tests/nightly-busy.test.js',
+  // the docs lint runs only in sweep.yml, which is out, and reads specs/, which is out (spec 279)
+  'scripts/docs-lint.mjs',
   'CLAUDE.md',
   'DECISIONS.md',
 ];
@@ -41,6 +46,8 @@ const IN = [
   'release-record.json',
   '.github/workflows/action-selftest.yml',
   '.github/workflows/plugin-selftest.yml',
+  // the Windows self-test runs only on the public repository, so the public tree must carry it (spec 312)
+  '.github/workflows/windows-selftest.yml',
   'scripts/release-body.mjs',
   'scripts/indexnow.mjs',
   'tests/release-body.test.js',

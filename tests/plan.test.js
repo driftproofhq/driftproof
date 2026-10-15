@@ -245,10 +245,20 @@ test('AC-2 calls and every cost component equal run over different models, judge
   }
 });
 
-test('AC-2 default projection equals a real CLI stub run and actual adaptive calls have their own smaller projection', () => {
+// A-188-9 (issue 236): a stub run prints no projected cost, so the oracle run is answered by
+// spec 028's fake claude on the trusted lane. It is not a stub run, and no real model is reachable.
+test('AC-2 default projection equals a real CLI run on the fake model and actual adaptive calls have their own smaller projection', () => {
   const p = planner().planSkill(defaultInput());
   const outDir = path.join(scratch, 'run-out');
-  const out = successful(child(['run', skillDir, '--models', MODEL, '--judge-model', JUDGE, '--samples', '2', '--out', outDir]));
+  const spawnlog = path.join(scratch, 'run-spawns.ndjson');
+  const fakeBin = path.join(ROOT, 'specs/028-claude-code-plugin/probes/bin');
+  const out = successful(spawnSync(process.execPath, [BIN, 'run', skillDir, '--trusted-skill', '--models', MODEL, '--judge-model', JUDGE, '--samples', '2', '--out', outDir], {
+    cwd: scratch, encoding: 'utf8', timeout: 1800000, maxBuffer: 4 * 1024 * 1024,
+    env: { ...env(false), PATH: [fakeBin, path.dirname(process.execPath), '/usr/bin', '/bin'].join(path.delimiter), SPEC028_SPAWNLOG: spawnlog },
+  }));
+  const spawns = fs.readFileSync(spawnlog, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  assert.ok(spawns.length > 0, 'the fake claude answered');
+  assert.ok(spawns.every((s) => s.viaFakeBin === true && s.had_api_key === false), 'every call reached the fake, with no key');
   const calls = /projected calls: (\d+)\/model[^\n]*= (\d+)/.exec(out);
   const dollars = /projected cost: ~\$(\d+\.\d+)/.exec(out);
   assert.ok(calls && dollars, 'run printed both budget projections');

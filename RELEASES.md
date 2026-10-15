@@ -8,6 +8,203 @@ makes this one a record.
 
 ---
 
+## v0.22.0 - 2026-10-15
+
+### What's new
+
+- **A new `driftproof import <dir> --from nvidia-cards --commit <sha>` importer turns NVIDIA's
+  published benchmark cards into a DECLARED receipt.** For each skill or agent with results in a
+  git checkout of NVIDIA/skills at the given commit, the receipt carries the scores and uplifts
+  exactly as that card prints them, hashed in with the repository, the commit, and each source
+  file's path and git blob hash. The source gives aggregates only, so the receipt gets no verdict,
+  band, spread or baseline beyond what the card itself prints; Driftproof records which files it
+  read and at which commit, not who wrote them.
+- **A new `driftproof import --from harbor --with <dir> --without <dir>` importer turns two Harbor
+  job directories into a DECLARED receipt.** Scores are the verifier rewards read from each trial's
+  own `result.json`. A trial's reward counts only when the trial finished, carried a reward, and its
+  task ran under matching verifier and timeout settings in both directories. Every left-out trial
+  and task is listed with its reason, and a notice says when the two directories left out different
+  shares of their trials, since the delta then covers finished trials only.
+- **A new `driftproof lint-suite` command checks a skill's suite, offline, for cases that spend
+  money without adding information.** It flags prompt pairs that repeat words, rubrics or grading
+  fields that quote an expected answer, and, given compatible earlier receipts, cases whose with
+  and without-skill runs never separated pass from fail. It makes no model or network call, writes
+  no receipt and changes no verdict.
+- **`driftproof view`, and `driftproof diff --lift-breakdown`, can now show where a skill's measured
+  lift comes from, case by case.** For a receipt's recorded draws, the breakdown shows each case's
+  measured difference, which cases pull the suite's lift down, and whether removing any single case
+  would leave no positive lift, or states why that cannot be shown. It is derived from the receipt's
+  own sealed draws; it makes no model or network call.
+- **The site has a skill index at `/skills/`:** one "Worth installing?" page per skill, built from
+  this repository's own published receipts and from the new NVIDIA and Harbor imports, in each
+  source's own words. A page for an imported, reported-only receipt reads "Reported, not measured"
+  and carries no verdict, band or baseline beyond what the source itself printed.
+- **The site also has a lookup at `/skill-lookup/`:** paste a skill's GitHub link and the page says
+  whether the skill index already has a page for it. It reads only the published index and sends the
+  pasted link nowhere; it runs no importer and no Driftproof command in the browser.
+
+### What may change for you
+
+- **A receipt's judge cost now counts every draw actually sent to the judge, once each.** Before,
+  a case with more than one judged draw could have most of its judge usage missing from
+  `total_cost_usd`, or have one draw's usage counted twice after a regrade copied it. A receipt's
+  `economics.judge_overhead` now also carries `judged_draws_counted` and `judged_draws_missing_usage`,
+  stating how many judged draws the figure covers and how many had no usage to count. This closes
+  the "Receipts under-report grading cost" issue below. A receipt made the old way keeps its old
+  recorded figure.
+- **A stub run (`DRIFTPROOF_STUB=1`) now says plainly, first, that it is a stub, in both its status
+  text and the Markdown summary written beside its receipt.** Neither shows a projected cost, lift,
+  score, band, case outcome or verdict; a stub measures nothing, and its output no longer prints a
+  figure that could be read as if it did.
+- **`driftproof init`'s next-steps text now says its example cases measure nothing until they are
+  replaced,** instead of leaving that unstated.
+
+### Known issues
+
+- **What is not recorded or compared.** A CLI judge's own settings files (`~/.claude/settings.json`,
+  project settings, `CLAUDE.md` files, codex's config), the eval user's shell profile behind the
+  isolated hop, other proxy, region and credential variables, and the network the call crosses can
+  all change what the judge reads or where its call goes. The receipt holds none of them.
+  `spec/RECEIPT.md` lists them.
+- **The route is recorded as an unsalted hash,** so an address that can be guessed can be recovered
+  from it.
+- **A regrade's raw judge replies are not kept,** only their hashes.
+- **A plain regrade's judge identity is self-reported, not authenticated.** The requested judge's
+  reported id comes from its own reply; it does not authenticate provider identity or measure
+  grading accuracy.
+- **`driftproof overlap` measures word overlap only.** It does not establish that a suite leaked,
+  explain a measured lift, or establish that a skill is free of overlap beyond this one comparison.
+- **`driftproof plan`'s draw targets and USD figure are estimates, not promises.** The USD figure
+  assumes fixed token counts at registry API prices; it is not an invoice or a subscription billing
+  prediction, and a long prompt can exceed it. Retries and auxiliary harness calls are not included,
+  and an actual run may stop before any projected target.
+- **`driftproof lint-suite`'s findings are evidence of risk, not proof of one.** A repeated-word or
+  answer-text finding does not assert semantic equivalence or a dollar saving, and a history finding
+  never says a future run cannot show a score lift. No findings means only that these checks found
+  none; it does not mean the suite is fair, sufficient, cheap or free of causal leakage. Its
+  answer-text check covers grading fields only; it does not check whether the model itself was
+  exposed to an answer.
+- **A `view` or `diff --lift-breakdown` reads recorded scores at the receipt's own sample size.** It
+  predicts neither a skill's future answers nor a causal mechanism, and a legacy receipt without
+  draw records, or a failed arm, yields no breakdown, with the reason stated.
+- **An NVIDIA-cards or Harbor import stays DECLARED.** `diff` reads it as NOT MEASURED, and no
+  Driftproof reader gives it a verdict, a band, a spread or a baseline the source itself did not
+  print or record.
+
+### Upgrade
+
+- npm: `npx driftproof@0.22.0`. The Action: `driftproofhq/driftproof@v0.22.0`, and the stale Action
+  `driftproofhq/driftproof/stale@v0.22.0`.
+- Claude Code plugin: `claude plugin update driftproof@driftproofhq`. The plugin runs `npx
+  driftproof@0.22.0`.
+
+### Engineering log
+
+Three new offline importers and commands land this release, all DECLARED, read-only and
+verdict-free. `driftproof import --from nvidia-cards` (issue 265, spec 265, PR 314) and
+`driftproof import --from harbor` (issue 266, spec 266, PR 289) each turn a named third-party source,
+a NVIDIA benchmark card or a pair of Harbor job directories, into a receipt that carries only the
+figures the source itself recorded. `driftproof lint-suite` (issue 206, spec 189, PR 232) reports,
+offline, prompt pairs that repeat words, grading fields that quote an expected answer, and cases
+with no historical pass/fail separation across compatible receipts. `view` and
+`diff --lift-breakdown` (issue 207, spec 190, PR 271) add a per-case lift breakdown derived from a
+receipt's own sealed draws. Skill index phase 1 then puts the first two in front of a reader: the
+`/skills/` pages (issue 267, spec 267, PR 318) give each skill a "Worth installing?" page built from
+this repository's receipts and the new imports, and `/skill-lookup/` (issue 315, spec 315, PR 325)
+lets a visitor paste a GitHub link and learn whether the index already covers it. Issue 331
+(PR 336) then corrected the new pages before this release, so a NVIDIA-sourced row shows no invented
+uplift figure and the list title no longer reads as "measured" for a row that is only reported.
+
+Issue 317 (spec 317, PR 322), with its companion dev-red fixes for issues 320 (PR 321) and 323
+(PR 324), corrects how a receipt's judge cost is counted: every judged draw is now counted once,
+closing the "Receipts under-report grading cost" known issue carried since spec 158. Issues 236
+(spec 236, PR 284) and 245 (spec 245, PR 286) make a stub run (`DRIFTPROOF_STUB=1`) say first that it
+is a stub, with no projected cost, lift, score or verdict printed in its status text or its written
+summary. Issue 237 (PR 300) rewords `driftproof init`'s next steps to say its example cases measure
+nothing until replaced.
+
+The rest of this release is release-train automation, gate bookkeeping and governance, not a change
+to the published tool. The gate cut (issue 279, spec 279, PR 287, catalogue C-288, C-289, C-291) has
+the sweep read a signed per-gate list, adds a docs linter, and retires two criteria (128 AC-9, 028
+NFR-7); its own follow-ups are issue 299 (PR 302) and issue 290 (PR 298), which also has the
+upstream-credits census name the Harbor sites. The operator's catalogue rulings of this cycle are
+recorded as C-287 (issue 272, PR 273, where a new governance rule is written), C-292 and C-293
+(issue 301, PR 305, on spec 016 AC-8 and spec 035 AC-9), C-294 (issue 265, PR 314, the spec 025
+coupling for one commit), C-295 (issue 267, PR 318) and C-296 (issue 326, PR 328); a further ruling
+holds that a non-blocking finding is noted, not filed, as its own issue (issues 292, 285 and 288,
+PRs 304, 306 and 307). The nightly sweep itself was back on a plain daily schedule at 02:00 SGT,
+skipping a busy night (issue 278, spec 186, PR 281, catalogue C-291), with issues 87 and 88's sweep
+scoping dropped and their tips kept as archive tags (C-290).
+
+The remaining merges are dev-red and release-process fixes with no product change: issue 219 (spec
+025, PR 283) stops the commit reader from echoing git's own "fatal:" line for a page absent at a
+pinned commit, a cosmetic defect since 0.14.0 that never failed a run, and now throws instead of
+reading silent only on a commit it truly cannot read (ships nothing public, no criterion's text
+moved); issue 268 (PR 269), issue 274 (PR 275), issue 277 (PR 280), issue 291 (PR 295), issue 293
+(PR 294), issues 334 and 333's nightly reds after issues 265 and 317 (PRs 338 and 339), issue 335's
+nightly reds (PR 340, including 15 CodeQL results fixed in code), issue 337's nightly reds (PR 341)
+and issues 343 and 345's release fix for this release itself (PR 346) all fix a dev or nightly red at
+its cause, with no behaviour change. Issue 312 adds Windows CI for the package's own gate on the
+public repository (PR 313). Issue 329 (PR 330) has the nightly's decide step list moved commits with
+`git log -n 20` instead of a pipe into `head`. Issue 326 (PR 328) grants the nightly's sweep job the
+permissions `sweep.yml` itself asks for. Issue 282 (PR 297) has a red gate in the release freeze
+reported by its failing rows. Issues 308, 262 and 263 (PRs 309, 310 and 311) are the release
+freeze's own faults and spec 186's sweep plant. Issue 259 (PR 260) removes the three publish-bound
+holds renewed for 0.21.0 (catalogue C-285 carried out, spec 199 A-199-1). Issue 251 (PR 252) raises
+the automatic release cut's quiet period from two hours to eight (catalogue C-273).
+
+#### The v0.22.0 merge list
+
+Forty-two merges since v0.21.0's release merge, oldest first:
+
+- issue 206, `driftproof lint-suite` (spec 189, PR 232): above.
+- issue 251, the automatic cut's quiet period raised to 8 hours (PR 252): the release train only.
+- issue 259, the three publish-bound holds renewed for 0.21.0 removed (spec 199 A-199-1, PR 260):
+  the release train only.
+- issue 268, dev's red since PR 232 fixed (PR 269): a dev-red fix only.
+- issue 272, catalogue C-287 on where a new governance rule is written (PR 273): governance only.
+- issue 207, `view` and `diff --lift-breakdown` (spec 190, PR 271): above.
+- issue 274, dev's 020 AC-22 red since PR 271 fixed (PR 275): a dev-red fix only.
+- issue 277, specs 178 and 190 read on dev again after PR 271 (PR 280): a dev-red fix only.
+- issue 278, the nightly sweep back daily at 02:00 SGT (spec 186, PR 281): the release train only.
+- issue 219, the commit reader stops echoing git's own error line (spec 025, PR 283): a gate-only
+  fix, ships nothing public.
+- issue 236, a stub run says it is a stub first (spec 236, PR 284): above.
+- issue 245, a stub-run summary shows only what the stub did (spec 245, PR 286): above.
+- issue 279, the gate cut (spec 279, PR 287): internal gate infrastructure only.
+- issue 266, `driftproof import --from harbor` (spec 266, PR 289): above.
+- issue 293, dev's red since PR 289 fixed (PR 294): a dev-red fix only.
+- issue 291, dev's committed gate map regenerated (PR 295): a gate-bookkeeping fix only.
+- issue 282, a red gate in the release freeze reported by its failing rows (PR 297): the release
+  train only.
+- issue 237, `driftproof init`'s next steps reworded (PR 300): above.
+- issue 290 and issue 299, the upstream-credits census and the gate cut's follow-ups (PRs 298 and
+  302): internal only.
+- issues 292, 285 and 288, a non-blocking finding is noted, not filed (PRs 304, 306 and 307):
+  governance only.
+- issues 308, 262 and 263, the release freeze's own faults and spec 186's sweep plant (PRs 309, 310
+  and 311): the release train only.
+- issue 301, catalogue C-292 and C-293 (PR 305): governance only.
+- issue 265, `driftproof import --from nvidia-cards`, skill index phase 1 (spec 265, PR 314): above.
+- issue 312, Windows CI for the package's own gate on the public repository (PR 313): the release
+  train only.
+- issue 267, the `/skills/` pages (spec 267, PR 318): above.
+- issue 320, a dev-red fix ahead of issue 317 (PR 321): a dev-red fix only.
+- issue 317, judge cost counts every judged draw once (spec 317, PR 322): above.
+- issue 323, a dev-red fix on issue 317's receipt reading (PR 324): a dev-red fix only.
+- issue 326, the nightly sweep job granted the permissions it asks for (PR 328): the release train
+  only.
+- issue 315, the `/skill-lookup/` page (spec 315, PR 325): above.
+- issue 329, the nightly's decide step reads moved commits with `git log -n 20` (PR 330): the
+  release train only.
+- issue 331, the skill pages drop an invented uplift figure and a "measured" list title (PR 336):
+  above.
+- issue 334, nightly reds after issue 265 fixed (PR 338): a dev-red fix only.
+- issue 333, nightly reds after issue 317 fixed (PR 339): a dev-red fix only.
+- issue 335, nightly reds fixed, including 15 CodeQL results (PR 340): a dev-red fix only.
+- issue 337, nightly reds fixed (PR 341): a dev-red fix only.
+- issues 343 and 345, this release's own release fix (PR 346): a release-process fix only.
+
 ## v0.21.0 - 2026-10-12
 
 ### What's new

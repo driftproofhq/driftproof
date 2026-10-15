@@ -304,7 +304,20 @@ findings ride to backlog and merge; it has never covered a blocking one.
 
 ## The nightly sweep
 
-One full sweep of `dev` runs each night at 20:00 UTC (04:00 SGT), alone on the box
+The pipeline's nightly is `.github/workflows/nightly.yml`, daily at 02:00 SGT (`cron: '0 18 * * *'`),
+by catalogue C-291 (the operator's ruling of 14 Oct 2026, amending C-272; spec 278). Its first job
+skips the night, green with the sweep job absent, in two cases. The box is busy:
+`scripts/nightly-busy.mjs` names a build (a `claude` or `codex` session under `~/work/`, or a
+`build.yml` or `fix-on-red.yml` run not completed), a box run (a spec gate, `tests/gate.js` or
+`boxg.sh`), a sweep (a `sweep.yml`, `nightly.yml` or `release-train.yml` run not completed, or a
+`sweep.mjs` process) or a quiet marker (`/var/tmp/driftproof-*quiet*`). Or no first-parent commit
+reached `dev` in the last 24 hours. The reason is in the run's step summary. A manual run's `force`
+sweeps an unmoved `dev`; it never overrides a busy box. Otherwise the job calls `sweep.yml` on the
+tip of `dev` it read, as a manual run does. The workflow has no other trigger, so enabling it starts
+no run.
+
+The box's own nightly, `scripts/nightly.mjs` on a user timer, is set out below. One full sweep of
+`dev` runs each night at 20:00 UTC (04:00 SGT), alone on the box
 (CONSTITUTION § Proportional oversight, clause 3). `scripts/nightly.mjs` clones the `private`
 remote fresh, checks out `dev` with `main` pinned, and copies in `node_modules` and the ignored run
 bundles from `--inputs-from`. It copies the reference out, the last green nightly or, before the

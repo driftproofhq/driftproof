@@ -39,6 +39,8 @@ const { estimateRunCostUSD, BudgetTracker, perCallCostUSD } = require('../lib/co
 const { verdictFromReceipt, badgeEndpoint, githubOutputLines } = require('../lib/verdict');
 const { scaffoldInit } = require('../lib/init');
 const { normalizeCases } = require('../lib/skill');
+// Spec 312: the one reader of the platform, and the npm and scratch-git forms that run on Windows.
+const { POSIX_ONLY_ROWS, skipPosixOnly, runNpm, SCRATCH_GIT } = require('./portable');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -1516,7 +1518,7 @@ gate.section('publish-tree draft guard');
     const d = fs.mkdtempSync(path.join(os.tmpdir(), 'driftproof-exclusion-'));
     exPlanted.push(d);
     for (const f of files) { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), `planted: ${f}\n`); }
-    const git = (...a) => execFileSync('git', ['-c', 'user.name=gate', '-c', 'user.email=gate@local', '-c', 'commit.gpgsign=false', ...a], { cwd: d, stdio: 'pipe' });
+    const git = (...a) => execFileSync('git', [...SCRATCH_GIT, '-c', 'user.name=gate', '-c', 'user.email=gate@local', '-c', 'commit.gpgsign=false', ...a], { cwd: d, stdio: 'pipe' });
     git('init', '-q', '-b', 'main');
     git('add', '-f', '--', ...files);
     git('commit', '-q', '-m', 'planted');
@@ -2238,7 +2240,7 @@ gate.section('npm pack whitelist');
 {
   let files = null, packErr = null;
   try {
-    const out = execFileSync('npm', ['pack', '--dry-run', '--json'], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    const out = runNpm(['pack', '--dry-run', '--json'], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
     files = JSON.parse(out)[0].files.map((f) => f.path);
   } catch (e) { packErr = e; }
   gate.check('npm pack --dry-run --json succeeds', !!files && files.length > 0, { packErr: packErr && String(packErr).slice(0, 200) });
@@ -2292,7 +2294,7 @@ gate.section('init scaffolding');
   try {
     const dir = path.join(tmp, 'my-skill');
     const r1 = scaffoldInit(dir);
-    const rels = r1.created.map((f) => path.relative(dir, f)).sort();
+    const rels = r1.created.map((f) => path.relative(dir, f).split(path.sep).join('/')).sort();
     gate.check('init creates SKILL.md + evals/evals.json + .driftproofrc', JSON.stringify(rels) === JSON.stringify(['.driftproofrc', 'SKILL.md', 'evals/evals.json'].sort()), { rels });
     gate.check('init reports nothing skipped on a fresh dir', r1.skipped.length === 0, { skipped: r1.skipped });
 
@@ -2328,16 +2330,19 @@ gate.section('packed CLI from outside repo');
 {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'driftproof-pack-'));
   try {
-    execFileSync('npm', ['pack', '--pack-destination', tmp], { cwd: ROOT, stdio: ['ignore', 'ignore', 'ignore'] });
+    runNpm(['pack', '--pack-destination', tmp], { cwd: ROOT, stdio: ['ignore', 'ignore', 'ignore'] });
     const tgz = fs.readdirSync(tmp).find((f) => f.endsWith('.tgz'));
     gate.check('npm pack produced a tarball', !!tgz, { files: fs.readdirSync(tmp) });
     if (tgz) {
       const pkgRoot = path.join(tmp, 'unpacked');
       fs.mkdirSync(pkgRoot, { recursive: true });
-      execFileSync('tar', ['xzf', path.join(tmp, tgz), '-C', pkgRoot], { stdio: 'ignore' });
+      // Relative names from inside tmp: GNU tar under Git Bash reads `C:` in an absolute
+      // Windows path as a remote host (spec 312).
+      execFileSync('tar', ['xzf', tgz, '-C', 'unpacked'], { cwd: tmp, stdio: 'ignore' });
       const pkgDir = path.join(pkgRoot, 'package');
-      // Offline deps: symlink the repo's node_modules into the extracted package.
-      fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(pkgDir, 'node_modules'));
+      // Offline deps: symlink the repo's node_modules into the extracted package. A
+      // junction on Windows needs no privilege; Linux ignores the type (spec 312).
+      fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(pkgDir, 'node_modules'), 'junction');
       const work = path.join(tmp, 'work');
       fs.mkdirSync(work, { recursive: true });
       execFileSync('node', [
@@ -2527,7 +2532,7 @@ gate.section('spec 023 action input hardening');
       const payload = `x"; touch ${tmp}/mark-semi; $(touch ${tmp}/mark-subst); \`touch ${tmp}/mark-tick\`; \ntouch ${tmp}/mark-nl; : "`;
       const r = spawnSync('bash', [path.join(ROOT, 'action', 'run.sh')], {
         cwd: tmp, encoding: 'utf8',
-        env: { PATH: `${shim}:${process.env.PATH}`, HOME: process.env.HOME, GITHUB_ACTION_PATH: ROOT, RUNNER_TEMP: tmp, GITHUB_OUTPUT: path.join(tmp, 'out'),
+        env: { PATH: `${shim}${path.delimiter}${process.env.PATH}`, SystemRoot: process.env.SystemRoot, HOME: process.env.HOME, GITHUB_ACTION_PATH: ROOT, RUNNER_TEMP: tmp, GITHUB_OUTPUT: path.join(tmp, 'out'),
           INPUT_SKILL_DIR: EXAMPLE, INPUT_MODELS: payload, INPUT_MAX_USD: '20', INPUT_MAX_CALLS: '2000', INPUT_FAIL_ON_REGRESSION: 'true' },
       });
       const left = fs.readdirSync(tmp).filter((f) => f.startsWith('mark-') || f === 'node-started');
@@ -2630,7 +2635,7 @@ gate.section('spec 024 runner hostile-input proof');
   const runAssert = (tmp, outcomes) => {
     const rt = path.join(tmp, 'rt'); fs.mkdirSync(rt, { recursive: true });
     const script = path.join(tmp, 'assert.sh'); fs.writeFileSync(script, assertRun);
-    const r = spawnSync('bash', [script], { cwd: ROOT, encoding: 'utf8', env: { PATH: process.env.PATH, HOME: process.env.HOME, DRIFTPROOF_STUB: '1', GITHUB_WORKSPACE: ROOT, RUNNER_TEMP: rt, GITHUB_OUTPUT: path.join(tmp, 'out'), HOSTILE: hostile, ...outcomes } });
+    const r = spawnSync('bash', [script], { cwd: ROOT, encoding: 'utf8', env: { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, HOME: process.env.HOME, DRIFTPROOF_STUB: '1', GITHUB_WORKSPACE: ROOT, RUNNER_TEMP: rt, GITHUB_OUTPUT: path.join(tmp, 'out'), HOSTILE: hostile, ...outcomes } });
     return { status: r.status, out: (r.stdout || '') + (r.stderr || ''), rt };
   };
   const allFail = { O_SKILL_DIR: 'failure', O_MODELS: 'failure', O_MAX_USD: 'failure', O_MAX_CALLS: 'failure', O_FAIL_ON_REGRESSION: 'failure' };
@@ -3347,7 +3352,7 @@ gate.section('interop pages + published schema sync');
     const { checkInteropPage } = require('./interop-page');
     const specDir = path.join(SCAN_ROOT, 'spec');
     const frozen = fs.readdirSync(specDir).map((f) => /^receipt\.v(\d+(?:\.\d+)+)\.schema\.json$/.exec(f)).filter(Boolean).map((m) => m[1]);
-    const tools = [...require('../lib/importers').IMPORT_TOOLS, ...require('../lib/importers-anthropic').ANTHROPIC_TOOLS];
+    const tools = [...require('../lib/importers').IMPORT_TOOLS, ...require('../lib/importers-anthropic').ANTHROPIC_TOOLS, ...require('../lib/importers-harbor').HARBOR_TOOLS, ...require('../lib/importers-nvidia').NVIDIA_TOOLS];
     const r = checkInteropPage({ html: interopHtml, current: JSON.parse(repoSchema).properties.schema_version.const, frozen, tools });
     gate.check('the interop page cites the current receipt version, the frozen range and an import line for every --from value', r.ok, r.ok ? null : { problems: r.problems });
   }
@@ -3367,7 +3372,7 @@ function listFiles(root) {
     const untracked = execFileSync('git', ['ls-files', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8' });
     return [...new Set((tracked + untracked).split('\n').map((s) => s.trim()).filter(Boolean))];
   } catch (_e) {
-    return walk(root).map((p) => path.relative(root, p));
+    return walk(root).map((p) => path.relative(root, p).split(path.sep).join('/'));
   }
 }
 function walk(dir, acc = []) {
@@ -4100,7 +4105,10 @@ gate.section('publish script');
     gate.check('the publish script stores no commit message text', retired.length === 0, { retired });
     gate.check('the publish script performs no push (the push stays a human act)',
       !/git\s[^\n]*push/.test(src), {});
-
+  }
+  // The probes run the script itself under bash. On win32 they are one row, not
+  // applicable with its cause; the static checks above run everywhere (spec 312).
+  if (exists && !skipPosixOnly(gate, POSIX_ONLY_ROWS[0])) {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dp-pub-'));
     // Every invocation below is bounded. An approval run demonstrated that a
     // mutated script can hang the suite, and that the bound has to be on the
@@ -4605,7 +4613,7 @@ gate.section('merge precondition check');
   // committed reader it would only prove that an uncommitted record is invisible,
   // so every REFUSE assertion below would pass for the wrong reason — the vacuity
   // trap this suite exists to catch.
-  const git = (...a) => run('git', a, { cwd: tmp, encoding: 'utf8', stdio: 'pipe' });
+  const git = (...a) => run('git', [...SCRATCH_GIT, ...a], { cwd: tmp, encoding: 'utf8', stdio: 'pipe' });
   git('init', '-q');
   // Not an address: the hygiene scan flags anything email-shaped, and git is
   // happy with an opaque identity string.
@@ -5099,7 +5107,7 @@ gate.section('generation sampling (v0.5)');
     let r; try { r = JSON.parse(fs.readFileSync(p, 'utf8')); } catch { continue; }
     if (!r || !r.schema_version) continue; seen++;
     const v = validateReceipt(r);
-    if (!v.valid || v.version !== r.schema_version || !verifyReceiptHash(r)) broken.push(path.relative(ROOT, p)); } };
+    if (!v.valid || v.version !== r.schema_version || !verifyReceiptHash(r)) broken.push(path.relative(ROOT, p).split(path.sep).join('/')); } };
   walk(path.join(ROOT, 'receipts'));
   gate.check('every published receipt validates against ITS OWN schema version and self-verifies',
     seen >= 20 && broken.length === 0, { seen, broken: broken.slice(0, 4) });
@@ -5318,8 +5326,9 @@ gate.section('publish unblock (generation_sampled, product paths, publish target
   //
   // The REAL script, against a fabricated target that satisfies every earlier
   // target rule, so the refusal that fires is the one under test. It refuses
-  // before `rm -rf`, which is the whole content of F-014-E.
-  {
+  // before `rm -rf`, which is the whole content of F-014-E. On win32 it is one
+  // row, not applicable with its cause: the script runs on the Linux box alone (spec 312).
+  if (!skipPosixOnly(gate, POSIX_ONLY_ROWS[1])) {
     // Local copies: the publish section's helpers are block-scoped there.
     const T_REFUSE = 20000;
     const scrubbedEnv = (extra = {}) => {
@@ -5339,7 +5348,7 @@ gate.section('publish unblock (generation_sampled, product paths, publish target
     const pub = path.join(box, 'driftproof-public');
     fs.mkdirSync(path.join(pub, 'docs'), { recursive: true });
     fs.writeFileSync(path.join(pub, 'README.md'), 'published\n');
-    const g = (...a) => execFileSync('git', ['-c', 'user.name=gate', '-c', 'user.email=gate@local', '-C', pub, ...a], { encoding: 'utf8' });
+    const g = (...a) => execFileSync('git', [...SCRATCH_GIT, '-c', 'user.name=gate', '-c', 'user.email=gate@local', '-C', pub, ...a], { encoding: 'utf8' });
     g('init', '-q', '-b', 'main');
     // Composed, never written out: `git@<host>` is email-shaped and the blocking
     // hygiene scan reads it as an address. build-public.sh splits the host out
@@ -7484,6 +7493,13 @@ gate.section('eval-user isolation: the hop is the default (spec 022)');
 // itself: every commit after it is measured, and c5c45bb is recorded in
 // DECISIONS as a violation of this rule, not exempted from it.
 //
+// ONE COMMIT EXEMPT BY FULL SHA, e22dc96b (A-025-48, the operator's ruling of
+// 14 Oct 2026, issue 265). It moved lib/diff.js, spec/RECEIPT.md and the schema,
+// and 669ca65b moved the page one commit later. The anchor does not move: every
+// commit after c5c45bb other than that one is still measured. The exemption is
+// defined once, as `EXEMPT` beside the predicate, and the rows below pin it to
+// that one commit and prove a later commit moving the same files is still named.
+//
 // A TREE WITHOUT THE ANCHOR measures nothing: the published tree is a fresh
 // git-init with one commit, so the anchor is absent there and the real-commit
 // half is vacuous. That is said out loud in the printed line and in the detail
@@ -7492,7 +7508,8 @@ gate.section('eval-user isolation: the hop is the default (spec 022)');
 // wherever this gate runs.
 gate.section('instrument/documentation coupling (spec 025 A-025-14, in force from the 026 merge, anchor moved past c5c45bb)');
 {
-  const { docsLag } = require('./instrument-coupling');
+  const { docsLag, EXEMPT } = require('./instrument-coupling');
+  const EXEMPT_ONLY = 'e22dc96b5fe656f194cfd62e069090b2dd5f20f2';
   const IN_FORCE_FROM = 'c5c45bbd7459b54f10ec92b969b436a83c2e547e';
   const g = (...a) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   let anchorPresent = false;
@@ -7509,10 +7526,22 @@ gate.section('instrument/documentation coupling (spec 025 A-025-14, in force fro
   }
   const offenders = docsLag(commits);
   // eslint-disable-next-line no-console
-  console.log(`  [coupling] in force from ${IN_FORCE_FROM.slice(0, 7)}: ${anchorPresent ? `${commits.length} commit(s) measured` : 'anchor absent in this repository, 0 commits measured'}`);
+  console.log(`  [coupling] in force from ${IN_FORCE_FROM.slice(0, 7)}: ${anchorPresent ? `${commits.length} commit(s) measured` : 'anchor absent in this repository, 0 commits measured'}; exempt by full SHA: ${Object.keys(EXEMPT).map((s) => s.slice(0, 8)).join(', ')} (A-025-48)`);
   gate.check('no commit since the coupling came into force moves an instrument file without a documentation source',
     offenders.length === 0,
-    { in_force_from: IN_FORCE_FROM, anchor_present: anchorPresent, measured: commits.length, offenders });
+    { in_force_from: IN_FORCE_FROM, anchor_present: anchorPresent, measured: commits.length, exempt: EXEMPT, offenders });
+  gate.check('the recorded exemption is one commit, e22dc96b by its full SHA, and nothing wider (A-025-48)',
+    Object.keys(EXEMPT).length === 1 && Object.keys(EXEMPT)[0] === EXEMPT_ONLY,
+    { exempt: Object.keys(EXEMPT) });
+  // The exempt commit's own file list, under any other SHA, is still named: a
+  // later commit that moves the same three files without the page, and one
+  // whose SHA shares the exempt commit's short prefix, so no prefix matches.
+  const sameFiles = ['lib/diff.js', 'spec/RECEIPT.md', 'spec/receipt.schema.json'];
+  gate.check('MUTATION: a later commit moving the exempt commit\'s files and no documentation source is named (A-025-48)',
+    docsLag([{ sha: 'b'.repeat(40), files: sameFiles }]).length === 1
+      && docsLag([{ sha: `${EXEMPT_ONLY.slice(0, 8)}${'0'.repeat(32)}`, files: sameFiles }]).length === 1);
+  gate.check('CONTROL: the exempt commit\'s files under its own full SHA are not named (A-025-48)',
+    docsLag([{ sha: EXEMPT_ONLY, files: sameFiles }]).length === 0);
   // A guard nobody has seen fire is a guard nobody should believe. Both halves
   // are planted commit lists, so they prove the predicate on every tree, and the
   // control is what stops the mutation passing for the wrong reason.
@@ -7658,7 +7687,7 @@ gate.section('claude code plugin self-test (028)');
     const atBc78063 = head + OLD_PLUGIN_SELFTEST_STEPS;
     const today = atBc78063.replace('run: node specs/028-claude-code-plugin/probes/selftest.mjs', 'run: node tests/gate.js --scan-root .');
     const scan = (text) => wfScope.workflowRunSubjects('/planted', {
-      readDir: () => ['plugin-selftest.yml'], readFile: () => text, exists: (f) => tree.has(path.relative('/planted', f)),
+      readDir: () => ['plugin-selftest.yml'], readFile: () => text, exists: (f) => tree.has(path.relative('/planted', f).split(path.sep).join('/')),
     });
     const red = scan(atBc78063);
     const control = scan(today);
@@ -7688,12 +7717,12 @@ gate.section('claude code plugin self-test (028)');
       return wfScope.workflowRunSubjects('/planted', {
         readDir: () => ['callable.yml', 'main.yml', 'plain.yml'],
         readFile: (f) => {
-          const rel = path.relative('/planted', f);
+          const rel = path.relative('/planted', f).split(path.sep).join('/');
           if (rel === '.github/workflows/main.yml') return main;
           if (other[rel] !== undefined) return other[rel];
           throw Object.assign(new Error(`ENOENT ${rel}`), { code: 'ENOENT' });
         },
-        exists: (f) => tree.has(path.relative('/planted', f)),
+        exists: (f) => tree.has(path.relative('/planted', f).split(path.sep).join('/')),
       });
     };
     const job = (id, steps) => `  ${id}:\n    runs-on: ubuntu-latest\n    steps:\n${steps.join('')}`;
@@ -7802,7 +7831,7 @@ gate.section('case identity and receipt selection (spec 050)');
       const gho = path.join(rt, `gho-${n}`); fs.writeFileSync(gho, '');
       const r = spawnSync('bash', [path.join(ROOT, 'action', 'run.sh')], {
         cwd: ROOT, encoding: 'utf8', timeout: 120000,
-        env: { PATH: process.env.PATH, HOME: rt, TMPDIR: os.tmpdir(), DRIFTPROOF_STUB: '1', GITHUB_ACTION_PATH: ROOT, RUNNER_TEMP: rt, GITHUB_OUTPUT: gho,
+        env: { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, HOME: rt, TMPDIR: os.tmpdir(), DRIFTPROOF_STUB: '1', GITHUB_ACTION_PATH: ROOT, RUNNER_TEMP: rt, GITHUB_OUTPUT: gho,
           INPUT_SKILL_DIR: 'examples/commit-message-conventions', INPUT_MODELS: 'claude-haiku-4-5', INPUT_MAX_USD: '3.53', INPUT_MAX_CALLS: '1200', INPUT_FAIL_ON_REGRESSION: 'true' },
       });
       const text = fs.readFileSync(gho, 'utf8');
@@ -7838,7 +7867,7 @@ gate.section('a merged spec names its Tip (spec 116)');
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gate-116-zero-tip-'));
   try {
     const repo = path.join(tmp, 'repo');
-    const git = (...a) => execFileSync('git', ['-C', repo, '-c', 'user.name=gate', '-c', 'user.email=gate@example.com', '-c', 'commit.gpgsign=false', ...a], { encoding: 'utf8' });
+    const git = (...a) => execFileSync('git', [...SCRATCH_GIT, '-C', repo, '-c', 'user.name=gate', '-c', 'user.email=gate@example.com', '-c', 'commit.gpgsign=false', ...a], { encoding: 'utf8' });
     const put = (rel, text) => { fs.mkdirSync(path.dirname(path.join(repo, rel)), { recursive: true }); fs.writeFileSync(path.join(repo, rel), text); };
     const slot = (tip) => `**Tip:** \`<!--spec_tip-->${tip}<!--/spec_tip-->\`\n`;
     execFileSync('git', ['init', '-q', '-b', 'dev', repo]);
@@ -7872,6 +7901,36 @@ gate.section('every JSON file the CLI writes leaves a receipt directory readable
     idcheck('receipt-dir-writers', 'every JSON writer run into one receipt directory leaves badge <dir> and decide reading as over the receipts alone',
       r.ok, r.ok ? null : { problems: r.problems });
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+}
+
+// Issue 236: the public stub claim is read from both CLI output streams.
+// Base comparisons require the source spec and its private history.
+if (!ROOT_IS_PUBLISHED_TREE) {
+  gate.section('stub output claim and invariants (issue 236)');
+  const r = spawnSync(process.execPath, ['--test', path.join(__dirname, 'stub-output.test.js')], {
+    cwd: ROOT, encoding: 'utf8', timeout: 1800000, maxBuffer: 32 << 20,
+  });
+  gate.check('stub output announces first, projects no cost and presents no synthetic measurement',
+    r.status === 0 && !r.error, {
+      status: r.status,
+      tail: String((r.stdout || '') + (r.stderr || '')).trim().split('\n').slice(-12).join('\n'),
+    });
+}
+
+// Spec 267 AC-23: the skill index's pages are a function of the committed receipts and of the model
+// registry, so a registry change that moves a freshness line (a newer model added, a release date set)
+// turns this red until the pages are built again. The source tree only: the Driftproof identity record
+// is under specs/, which the public build leaves out.
+if (!ROOT_IS_PUBLISHED_TREE) {
+  gate.section('the skill index is the tree its receipts and the registry build (spec 267)');
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'build-skill-index.mjs'), '--check'], {
+    cwd: ROOT, encoding: 'utf8', timeout: 900000, maxBuffer: 32 << 20,
+  });
+  gate.check('node scripts/build-skill-index.mjs --check exits 0: docs/skills is what the committed receipts and the registry build',
+    r.status === 0 && !r.error, {
+      status: r.status,
+      tail: String((r.stdout || '') + (r.stderr || '')).trim().split('\n').slice(-6).join('\n'),
+    });
 }
 
 const summary = gate.summarize();

@@ -413,12 +413,13 @@ fi
 # repository gate builds a scratch tree to hold this (tests/public-exclusion.js).
 # The pipeline files (PUBLIC-PATH CHANGE, the pipeline's Part 3): the private repository's workflows
 # except release.yml and the two selftests, its prompts and issue template, scripts/pipeline.mjs,
-# scripts/sweep-shards.mjs, scripts/runner-setup.sh, tests/pipeline.test.js and
-# tests/sweep-shards.test.js (a test does not ship without its subject) stay out of the public tree.
+# scripts/sweep-shards.mjs, scripts/nightly-busy.mjs (nightly.yml's busy check, spec 278),
+# scripts/docs-lint.mjs (sweep.yml's warn-only docs lint, spec 279), scripts/runner-setup.sh, tests/pipeline.test.js, tests/sweep-shards.test.js and
+# tests/nightly-busy.test.js (a test does not ship without its subject) stay out of the public tree.
 # specs/000-governance/gate-map.json is already out by `^specs/`. release.yml, release-record.json
 # (release.yml reads it), scripts/release-body.mjs and scripts/indexnow.mjs ship. Held by
 # tests/public-pipeline-exclusion.test.js.
-EXCLUDE_RE='^reports/(week-[0-9][^/]*|phase-[0-9][^/]*)\.md$|^tests/gate-results\.json$|(^|/)[^/]*-draft/|^reports/pending-publish\.md$|^reports/interop-outreach\.md$|^(BACKLOG|CLAUDE|CONSTITUTION|DECISIONS)\.md$|^specs/|^state/|^docs/reviews/|^\.github/workflows/(sweep|gates|nightly|build|review|fix-on-red|merge-on-green|queue|release-train|digest|labels)\.yml$|^\.github/prompts/|^\.github/ISSUE_TEMPLATE/spec\.yml$|^scripts/(pipeline|sweep-shards)\.mjs$|^scripts/runner-setup\.sh$|^tests/(pipeline|sweep-shards)\.test\.js$|^tests/release-freeze-and-cause\.test\.js$|^tests/auto-release\.test\.js$'
+EXCLUDE_RE='^reports/(week-[0-9][^/]*|phase-[0-9][^/]*)\.md$|^tests/gate-results\.json$|(^|/)[^/]*-draft/|^reports/pending-publish\.md$|^reports/interop-outreach\.md$|^(BACKLOG|CLAUDE|CONSTITUTION|DECISIONS)\.md$|^specs/|^state/|^docs/reviews/|^\.github/workflows/(sweep|gates|nightly|build|review|fix-on-red|merge-on-green|queue|release-train|digest|labels)\.yml$|^\.github/prompts/|^\.github/ISSUE_TEMPLATE/spec\.yml$|^scripts/(pipeline|sweep-shards|nightly-busy|docs-lint)\.mjs$|^scripts/runner-setup\.sh$|^tests/(pipeline|sweep-shards|nightly-busy)\.test\.js$|^tests/release-freeze-and-cause\.test\.js$|^tests/auto-release\.test\.js$'
 
 # RECURSION BOUND, structural rather than a timeout, and a BACKSTOP rather than
 # the primary mechanism. This script's last act is to run the repo gate against the

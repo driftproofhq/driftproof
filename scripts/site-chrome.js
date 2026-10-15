@@ -88,7 +88,8 @@ const DOCS_LINKS = [
 // THE TOP LEVEL (spec 170): Reports, Gap calculator, Findings, Paper, Docs, GitHub. How it works
 // moves into the Docs menu, where spec 020 AC-12 still finds its href. The current page is marked
 // by docs/tokens.css from the page's own canonical link, so this stays one set of bytes on every page
-// (spec 127 AC-13). Leaderboard noise follows Gap calculator (spec 175).
+// (spec 127 AC-13). Leaderboard noise follows Gap calculator (spec 175). Skills, the skill index's
+// list at /skills/, follows Leaderboard noise (spec 267).
 const NAV = `${NAV_OPEN}<header class="site">
 <a class="brand" href="/"><img class="brand-mark" src="/favicon.svg" alt="" width="28" height="28"><span>Driftproof</span></a>
 <details class="nav-menu"><summary>Menu</summary></details>
@@ -96,6 +97,7 @@ const NAV = `${NAV_OPEN}<header class="site">
 <a href="/reports/">Reports</a>
 <a href="/benchmark-gap/">Gap calculator</a>
 <a href="/leaderboard-noise/">Leaderboard noise</a>
+<a href="/skills/">Skills</a>
 <a href="/findings/">Findings</a>
 <a href="/paper/">Paper</a>
 <details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
@@ -105,6 +107,13 @@ ${DOCS_LINKS.map(([h, t]) => `<a href="${h}">${t}</a>`).join('\n')}
 <a href="https://github.com/driftproofhq/driftproof">GitHub</a>
 </nav>
 </header>${NAV_CLOSE}`;
+
+// THE ARTICLE PAGES, the one list of them (Maverick's ruling of 14 Oct 2026 on spec 267 TBD-8). On the
+// public site the em dash rule applies to articles only: the reports and the other long-form written
+// pieces. Every other page, tables, cells and UI text included, may carry one. Each entry is a
+// docs-relative folder; a page is an article when its path starts with one. Spec 020 AC-35 reads this.
+const ARTICLES = ['reports/', 'findings/', 'paper/', 'writing/', 'leaderboard-noise/', 'agent-skill-evaluation/', 'agent-skill-regression-testing/', 'compare/', 'what-is-driftproof/'];
+const isArticle = (rel) => ARTICLES.some((a) => String(rel).startsWith(a));
 
 // THE ONLY CLIENT SCRIPT ON THIS SITE, besides the analytics beacon: the island
 // loader and the copy button. Both are vanilla, dependency-free and deferred to
@@ -686,7 +695,7 @@ module.exports = {
   plainSummary, summariesData, summaryPoints, FORMATS, answersSummary, applyLayout, factsRail, slugOf, LAYOUT_OPEN, LAYOUT_CLOSE, LAYOUT_END_OPEN, LAYOUT_END_CLOSE,
   splitReportBody,
   stripSiteFooter, SITE_FOOTER_RE,
-  NAV, FOOTER, SCRIPTS, DOCS_LINKS, ORIGIN, esc,
+  NAV, FOOTER, SCRIPTS, DOCS_LINKS, ORIGIN, esc, ARTICLES, isArticle,
   TLDR_OPEN, TLDR_CLOSE, TW_OPEN, TW_CLOSE, SUB_OPEN, SUB_CLOSE,
   ANCHOR_OPEN, ANCHOR_CLOSE, RECEIPTS_ANCHOR,
 };

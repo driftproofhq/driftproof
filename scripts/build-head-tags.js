@@ -372,6 +372,14 @@ function pageTitle(html, rel, rows, own) {
   const rm = /^r\/([0-9a-f]{64})\/index\.html$/.exec(rel);
   if (rm) return receiptTitle(rm[1], own);
   const current = first(html, /<title>([\s\S]*?)<\/title>/);
+  // A SKILL INDEX PAGE KEEPS ITS OWN TITLE (spec 267 AC-13): scripts/build-skill-index.mjs writes it from
+  // its ladder, and its first word is a skill's name as the skill's source writes it, which a capital
+  // would change. Held here to the suffix and the 60 characters.
+  if (/^skills\//.test(rel) && current !== null) {
+    const own = strip(current);
+    if (!own.endsWith(BRAND_SUFFIX) || own.length > TITLE_MAX) throw new Error(`${rel}: the skill index title ${JSON.stringify(own.slice(0, 80))} does not end ${BRAND_SUFFIX.trim()} within ${TITLE_MAX} characters`);
+    return own;
+  }
   let name = current === null ? null : strip(current);
   if (name === null) name = strip(first(html, /<h1[^>]*>([\s\S]*?)<\/h1>/) || rel);
   name = name.replace(/\s*[|\u00b7]\s*Driftproof\s*$/i, '').replace(/^Driftproof\s*[\u2014:|\u00b7-]\s*/i, '').trim();

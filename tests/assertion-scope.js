@@ -412,7 +412,7 @@ function archiveReceipts(root, { schemaVersion = null, verificationLevel = null 
       if (!r || typeof r.schema_version !== 'string' || !r.results || !Array.isArray(r.results.cases)) continue;
       if (schemaVersion && r.schema_version !== schemaVersion) continue;
       if (verificationLevel && r.verification_level !== verificationLevel) continue;
-      out.push({ file: path.relative(root, p), receipt: r });
+      out.push({ file: path.relative(root, p).split(path.sep).join('/'), receipt: r });
     }
   };
   walk(dir);
@@ -436,11 +436,15 @@ const BAND_SITE_KIND = {
   'lib/verdict.js': 'comparison',
   // Spec 128: a receipt's sheet draws one test task's two arms side by side, read through bandOf.
   'lib/band-plot.js': 'comparison',
+  // Issue 207, spec 190: separation reads recomputed sealed draw evidence through bandOf.
+  'lib/view.js': 'comparison',
   // Issue 205, spec 188: conditional planning reads verified generation bands through bandOf.
   'lib/plan.js': 'comparison',
   'lib/importers.js': 'emission — builds a receipt from an imported result; compares nothing',
   // Spec 049: the two Anthropic formats, the same kind of site as lib/importers.js.
   'lib/importers-anthropic.js': 'emission: builds a receipt from an imported document; compares nothing',
+  // Spec 266 (issue 266): Harbor trial results, the same kind of site as lib/importers-anthropic.js.
+  'lib/importers-harbor.js': 'emission: builds a receipt from imported trial results; compares nothing',
   'lib/receipt.js': 'emission — assembles a receipt aggregate',
   'lib/run.js': 'emission — writes the draw set a receipt records',
   // Spec 044: the regrade carries a receipt's draw set and writes new judge fields into it.
@@ -1777,7 +1781,7 @@ function workflowRunSubjects(root, { readDir = fs.readdirSync, readFile = (f) =>
     return !x.candidates.some((c) => exists(path.join(root, c)));
   });
   const problems = [];
-  if (!names.length) problems.push(`no workflow under ${path.relative(root, dir) || dir} was read, so no shipped step was checked`);
+  if (!names.length) problems.push(`no workflow under ${path.relative(root, dir).split(path.sep).join('/') || dir} was read, so no shipped step was checked`);
   else if (!subjects.length) problems.push(`${names.length} workflow(s) read and no file a step runs was found in any of them; a parser that matches nothing must not report a pass`);
   for (const x of missing) {
     if (x.kind === 'workflow') {

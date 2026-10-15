@@ -34,6 +34,8 @@ const { receiptLinksBlock } = require('./receipt-links.js');
 
 const ROOT = path.join(__dirname, '..');
 const { buildReceipt, validateReceipt, verifyReceiptHash , caseFailed } = require('../lib/receipt');
+// Spec 265: a receipt carrying the mark is refused before any direction is read.
+const { receiptAggregatesOnly, AGGREGATES_ONLY_LINE } = require('../lib/verdict');
 const { sha256 } = require('../lib/canonical');
 const { mean, stddev } = require('../lib/stats');
 const { outcomeFor, releaseDateFor, runSkillOnModel } = require('../lib/run');
@@ -198,6 +200,7 @@ function bandsOverlap(m1, s1, m2, s2) { return (m1 - s1) <= (m2 + s2) && (m2 - s
 // its coarse quantization grid, so the effect is a clean grid-step we cannot see
 // finer structure inside, not a false positive (the floor still gates it).
 function substrateDirection(receipt) {
+  if (receiptAggregatesOnly(receipt)) throw new Error(`report 002 refused: ${AGGREGATES_ONLY_LINE}`);
   const by = {};
   for (const c of receipt.results.cases) {
     if (caseFailed(c)) continue;

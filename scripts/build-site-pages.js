@@ -1432,6 +1432,40 @@ ${minGap}
   });
 }
 
+// ── /skill-lookup/ (spec 315) ───────────────────────────────────────────────────────────────────
+// A visitor pastes a GitHub link to a skill and sees whether the skill index has a page for it. The
+// lookup is an island (docs/islands/skill-lookup.js) that reads the published list at /skills/ in the
+// browser; this file writes only the page's fixed texts (spec 315 § The page texts) and the mount
+// point, whose static fallback links to the list. C-4 names the analytics beacon, so it is on the page
+// exactly when the head builder puts the beacon there.
+const SKILL_LOOKUP = {
+  title: 'Look up a skill in the index | Driftproof',
+  h1: 'Look up a skill',
+  lede: 'Paste a GitHub link to an agent skill and see whether the skill index has a page for it. The lookup runs in your browser.',
+  takes: "It takes a github.com link to a repository, a skill's folder or its SKILL.md, or a raw.githubusercontent.com link to a SKILL.md.",
+  h2: 'What it reads and sends',
+  sends: "This page sends the link you paste nowhere. The lookup reads one file from this site, the list at /skills/. Your browser's own features, such as spell check, autofill and page translation, are outside what this page controls.",
+  tokens: 'No model is called, so the lookup spends no tokens.',
+  shows: "A match shows that skill's entry as the list shows it, and nothing more. A link the list has no page for gets a line that says so. Each result names the folder the link was read as: a branch name that holds / is read as its first part.",
+  beacon: "Like every page on this site, this one counts a visit with Cloudflare Web Analytics. The lookup does not write the link into the page's address, title, cookies or storage.",
+};
+function skillLookupPage() {
+  const T = SKILL_LOOKUP;
+  const headTags = require('./build-head-tags.js');
+  const beacon = !!headTags.beaconFor(headTags.siteConfig().cloudflare_analytics_token);
+  const main = `<main class="prose skill-lookup-page">
+<h1>${esc(T.h1)}</h1>
+<p class="lede">${esc(T.lede)}</p>
+<p>${esc(T.takes)}</p>
+<div class="skill-lookup" data-island="skill-lookup"><p>The lookup needs JavaScript. Without it, every skill the index lists is on <a href="/skills/">the list page</a>.</p></div>
+<h2>${esc(T.h2)}</h2>
+<p>${esc(T.sends)}</p>
+<p>${esc(T.tokens)}</p>
+<p>${esc(T.shows)}</p>
+${beacon ? `<p>${esc(T.beacon)}</p>\n` : ''}</main>`;
+  return shell({ title: T.title, description: T.lede, main });
+}
+
 const TARGETS = {
   'index.html': homepage,
   'glossary/index.html': glossaryPage,
@@ -1447,6 +1481,7 @@ const TARGETS = {
   'compare/index.html': answerPage(answers.comparePage),
   'benchmark-gap/index.html': benchmarkGapPage,
   'leaderboard-noise/index.html': leaderboardNoisePage,
+  'skill-lookup/index.html': skillLookupPage,
   '404.html': notFoundPage,
   ...Object.fromEntries(Object.entries(STUBS).map(([slug, label]) => [`${slug}.html`, () => redirectStub(slug, label)])),
 };

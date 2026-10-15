@@ -207,6 +207,36 @@ npx driftproof export receipt.json --to summary-json
 npx driftproof view receipts/ --out results.html
 ```
 
+<!-- issue 207: lift breakdown begin -->
+### Lift by case
+
+driftproof view adds a table to each receipt sheet.
+driftproof diff --lift-breakdown adds separate tables for the two receipts.
+Without the flag, diff output stays unchanged. Each case shows the with-skill and baseline means,
+the sample spread across answers, their difference and the measured and lost
+draw counts. Downward cases are listed when their separation holds under the
+existing rule.
+
+The figures use recorded draw scores and give each included case equal weight.
+Removing a case recomputes both arm means from the remaining cases. The table
+shows the resulting lift. It says a case carries the positive measured lift only
+when removing it leaves zero or negative lift, decided before reporting rounds
+the figures. This describes the retained scores, not future answers.
+
+The breakdown is shown where evidence and eligibility permit; otherwise it
+states why unavailable. Legacy receipts without draw records, failed arms,
+incomplete evidence, contradictory counts and unlike grading cannot supply all
+comparative answers. Lost scores are excluded from the arithmetic and keep their
+existing bounds on separation. A shared lift is not attributed to a single case.
+
+There is no model call, receipt edit or new receipt field. Existing verdicts,
+bands and published numbers stay unchanged. Breakdown work supports receipts
+up to 2 MiB, 128 cases and 64 draws per arm. Identifiers and report labels may use
+up to 256 UTF-8 bytes. Other strings, nesting, node count and rendered sections
+also have limits; unsupported evidence gets an explicit reason. These limits
+apply after existing receipt loading and do not bound folder traversal.
+<!-- issue 207: lift breakdown end -->
+
 Receipts are an **open format** — the JSON Schema is served at its canonical id
 ([driftproofhq.com/spec/receipt.schema.json](https://driftproofhq.com/spec/receipt.schema.json)),
 and any harness is encouraged to emit them. The interop contract (DECLARED vs
@@ -228,6 +258,36 @@ my-skill/
 
 Writing a suite that measures fairly is its own craft — see
 **[AUTHORING.md](AUTHORING.md)** ([site](https://driftproofhq.com/authoring.html)).
+
+### Inspect a suite before a run
+
+`driftproof lint-suite <skill-dir> [--receipts DIR]` reads the same suite as
+`run` and prints an advisory JSON report. It runs offline, makes no model calls
+and writes no receipts or verdicts. Every case appears with its evidence and a
+short explanation. Findings exit 0. Invalid input exits 2; a failed receipt seal
+or schema exits 4.
+
+Prompt advice uses the longest common contiguous Unicode word run, divided by
+the larger prompt word count. It reports identical nonempty sequences, or at
+least five shared words at a ratio of 0.8 or more. Repeated words may repeat
+coverage. This check does not measure semantic equivalence.
+
+Answer advice quotes supplied answer text in rubric or criterion fields, or a
+field that names a possible answer. The loader can use `expected` as a rubric
+fallback. Model exposure was not checked.
+
+With `--receipts`, history requires compatible, sealed TESTED receipts for the
+current skill, suite and rubric. All contributing model and judge identities
+must agree. Both arms need complete measured draws with matching counts and
+thresholds. Missing or contradictory evidence is reported as a notice.
+Ceiling and floor findings mean no recorded pass/fail separation in these
+receipts. Scores may differ; future runs may differ. Regrades are recorded
+observations. A seal shows integrity since sealing, not authenticity.
+
+Without receipts, history is explicitly not checked. No findings means these
+checks found none. Large inputs refuse before reporting, with named file,
+work or output limits. JSON strings escape controls in case names, matches and
+receipt filenames.
 
 ### Providers
 
@@ -441,7 +501,7 @@ A receipt is the unit of evidence — one JSON document conforming to
 
 ```jsonc
 {
-  "schema_version": "0.12",
+  "schema_version": "0.13",
   "skill":  { "name": "commit-message-conventions", "version": "0.2.0",
               "content_hash": "…sha256 over SKILL.md + bundled files…" },
   "suite":  { "format": "agentskills.io/evals", "suite_hash": "…", "case_count": 10 },
@@ -450,7 +510,7 @@ A receipt is the unit of evidence — one JSON document conforming to
     "model_release_date": "2025-10-01",
     "provider": "anthropic",
     "surface": "claude-cli",
-    "runner_version": "0.21.0",
+    "runner_version": "0.22.0",
     "date_utc": "2026-07-27T…Z",
     "registry": "registered",
     "transcripts": "hashes-only",
@@ -529,7 +589,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: driftproofhq/driftproof@v0.21.0
+      - uses: driftproofhq/driftproof@v0.22.0
         with:
           skill-dir: skills/my-skill
           models: claude-haiku-4-5
@@ -657,7 +717,7 @@ permissions:
   contents: read
   issues: write
 # ...
-      - uses: driftproofhq/driftproof/stale@v0.21.0
+      - uses: driftproofhq/driftproof/stale@v0.22.0
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill

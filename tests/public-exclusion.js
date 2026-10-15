@@ -18,6 +18,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { SCRATCH_GIT } = require('./portable');
 
 const LEFT_OUT = 'docs/reviews/2026-09-arch/REGISTER.md';
 const SHIPS = 'docs/reviews.md';
@@ -50,7 +51,7 @@ function reviewsLeftOut({ script, dir, env = process.env, timeout = 150000 }) {
   const pub = path.join(dir, 'public');
   const e = { ...env, ...GIT_ID, DRIFTPROOF_BUILD_DEPTH: '0' };
   for (const k of Object.keys(e)) if (k.startsWith('DRIFTPROOF_') && k !== 'DRIFTPROOF_BUILD_DEPTH') delete e[k];
-  const git = (cwd, args) => spawnSync('git', ['-C', cwd, ...args], { env: e, encoding: 'utf8', timeout });
+  const git = (cwd, args) => spawnSync('git', [...SCRATCH_GIT, '-C', cwd, ...args], { env: e, encoding: 'utf8', timeout });
   for (const [f, body] of Object.entries(PLANTS)) {
     fs.mkdirSync(path.dirname(path.join(src, f)), { recursive: true });
     fs.writeFileSync(path.join(src, f), body);

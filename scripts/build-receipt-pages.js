@@ -73,6 +73,8 @@ const CLAUSES = {
   incomplete: 'its run is marked incomplete',
   smoke: 'it is a smoke run and a smoke run cannot produce a verdict',
   no_readable_case: 'no case in it has two readable arms',
+  // Spec 265: the route of a receipt carrying the mark.
+  aggregates_only: 'it carries the figures its source printed and no per-run scores',
 };
 
 // The states whose whole content is that this receipt could not resolve the question. A lift

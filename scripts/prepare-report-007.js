@@ -217,7 +217,12 @@ function economicsFor(receipt) {
     && rec.with_skill.mean_cost_usd_per_call === e.with_skill.mean_cost_usd_per_call
     && rec.baseline.mean_cost_usd_per_call === e.baseline.mean_cost_usd_per_call
     && rec.skill_incremental_cost_usd_per_1k_calls === e.skill_incremental_cost_usd_per_1k_calls;
-  return { e, rates, trace, recordedNull, reproduces };
+  // Spec 317: the judge cost as published, the receipt's own recorded figure. It counted one draw
+  // per case row; the page keeps it and carries a dated correction under it (spec 161), so the
+  // figure printed is the recorded one, not today's reading over every draw.
+  const judge = rec && rec.judge_overhead;
+  if (!judge || judge.total_cost_usd == null) throw new Error(`${receipt.run.model_id}: the receipt records no judge cost to print as published`);
+  return { e, rates, trace, recordedNull, reproduces, judge };
 }
 
 function readCells() {
@@ -624,7 +629,7 @@ function economicsSection(rows) {
   const armRow = (arm, a, rates) => `      <tr><td>${arm}</td><td>${a.call_count}</td><td>${int(a.mean_input_tokens)}</td><td>${int(a.mean_output_tokens)}</td><td>${usd(a.mean_cost_usd_per_call)}</td><td>${int(a.median_wall_ms)} ms</td><td>${int(a.wall_ms_p25)} / ${int(a.wall_ms_p75)}</td></tr>`;
 
   const cellTable = (r) => {
-    const { e, rates, trace, recordedNull } = r.econ;
+    const { e, rates, trace, recordedNull, judge } = r.econ;
     return `  <h3>${label(r)}</h3>
   <table class="summary">
     <caption class="muted"><strong>Basis.</strong> Subscription <code>claude-cli</code> surface; metered spend <strong>$0.00</strong>. Every dollar is a metered-equivalent derived at build time from <code>draws[].usage</code> at this receipt's own frozen snapshot (input $${rates.input_per_mtok} / Mtok, output $${rates.output_per_mtok} / Mtok, frozen ${esc(String(r.receipt.run.pricing_snapshot.frozen_at))}). Read the incremental row, not the absolute ones. Judge cost is measurement overhead this project imposes and is excluded from every field.</caption>
@@ -635,7 +640,7 @@ ${armRow('baseline', e.baseline, rates)}
       <tr><td><strong>incremental</strong></td><td>n/a</td><td><strong>${intSigned(e.with_skill.mean_input_tokens - e.baseline.mean_input_tokens)}</strong></td><td><strong>${intSigned(e.output_tokens_delta)}</strong></td><td><strong>${usdSigned(e.skill_incremental_cost_usd_per_call)}</strong> <span class="muted">(${usdSigned(e.skill_incremental_cost_usd_per_1k_calls, 3)} per 1k calls)</span></td><td><strong>${fmt(e.median_wall_ms_delta, 1)} ms</strong></td><td>n/a</td></tr>
     </tbody>
   </table>
-  <p class="muted">Judge overhead, excluded: ${usd(e.judge_overhead.total_cost_usd)} over ${e.judge_overhead.case_rows_measured} case rows. Dollars re-derive from the recorded tokens and the frozen rates: <code>dollarsTraceable</code> returns <code>${esc(JSON.stringify(trace))}</code>. Source block: <strong>${recordedNull ? 'the receipt\'s recorded economics block is null; this table is a recomputation from the same committed receipt' : 'present and verified, and the recomputation matches it field for field across both arms and the incremental'}</strong>.</p>`;
+  <p class="muted">Judge overhead, excluded: ${usd(judge.total_cost_usd)} over ${judge.case_rows_measured} case rows. Dollars re-derive from the recorded tokens and the frozen rates: <code>dollarsTraceable</code> returns <code>${esc(JSON.stringify(trace))}</code>. Source block: <strong>${recordedNull ? 'the receipt\'s recorded economics block is null; this table is a recomputation from the same committed receipt' : 'present and verified, and the recomputation matches it field for field across both arms and the incremental'}</strong>.</p>`;
   };
 
   return `  <h2>Economics</h2>

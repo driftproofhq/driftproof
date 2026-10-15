@@ -28,9 +28,9 @@
 // where one of them is not Not measured, so the claim is read from the receipts and not typed.
 //
 // WHERE THE FIGURES COME FROM. The corrected totals are computed here from each receipt's
-// `draws[].judge_usage`, priced at the receipt's own frozen snapshot by the same `computeEconomics`
-// the page's figure comes from, with the one field the defect read (the case-level judge usage,
-// which is the last draw's) replaced by the sum over the draws. They must equal `EXPECTED`, the
+// `draws[].judge_usage`, priced at the receipt's own frozen snapshot by `computeEconomics`, which
+// counts every judged draw since spec 317; the page's figure is the one each receipt recorded, which
+// read the case-level judge usage, one draw's. They must equal `EXPECTED`, the
 // three values the operator gave on 3 Oct 2026; if a computed value differs, this throws and
 // prints neither.
 //
@@ -62,34 +62,24 @@ const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
 // ── the figures ───────────────────────────────────────────────────────────────
 
-// The judge usage of one case row summed over its draws. A row with no per-draw judge usage has
-// nothing to sum: the defect cannot have under-counted it, and it is returned as it was.
-function usageOverDraws(row) {
-  const used = ((row.generation && row.generation.draws) || []).map((d) => d.judge_usage).filter(Boolean);
-  if (!used.length) return row.judge_usage;
-  return {
-    input_tokens: used.reduce((a, u) => a + Number(u.input_tokens || 0), 0),
-    output_tokens: used.reduce((a, u) => a + Number(u.output_tokens || 0), 0),
-  };
-}
-
-// { published, corrected, rows } for one receipt: the figure the page prints, and the total over
-// every draw, each to six places as the page prints its figures.
+// { published, corrected, rows } for one receipt: the figure the page prints, which is the one the
+// receipt recorded, and the total over every draw, each to six places as the page prints its
+// figures. Spec 317 made `computeEconomics` count every judged draw, so its reading of the receipt
+// is the corrected total; the published figure is read from the receipt's own `judge_overhead`.
 function judgeCost(receiptRel, judgeModel) {
   const { computeEconomics } = require('../lib/value');
-  const { caseFailed } = require('../lib/receipt');
   const receipt = JSON.parse(read(receiptRel));
-  const price = {
-    modelId: receipt.run.model_id, judgeModelId: judgeModel, pricingSnapshot: receipt.run.pricing_snapshot,
-    surface: receipt.run.surface, meteredSurface: false,
-  };
-  const published = computeEconomics({ cases: receipt.results.cases, ...price }).judge_overhead;
-  const summed = receipt.results.cases.map((c) => (caseFailed(c) ? c : { ...c, judge_usage: usageOverDraws(c) }));
-  const corrected = computeEconomics({ cases: summed, ...price }).judge_overhead;
+  const published = (receipt.economics || {}).judge_overhead;
+  if (!published || published.total_cost_usd == null) throw new Error(`${receiptRel} records no judge cost`);
+  const corrected = computeEconomics({
+    cases: receipt.results.cases, modelId: receipt.run.model_id, judgeModelId: judgeModel,
+    pricingSnapshot: receipt.run.pricing_snapshot, surface: receipt.run.surface, meteredSurface: false,
+    captureMode: (receipt.run.capture || {}).mode,
+  }).judge_overhead;
   return {
     published: published.total_cost_usd.toFixed(6),
     corrected: corrected.total_cost_usd.toFixed(6),
-    rows: corrected.case_rows_measured,
+    rows: published.case_rows_measured,
   };
 }
 
