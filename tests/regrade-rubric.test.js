@@ -285,6 +285,8 @@ test('AC-8 a driftproof-answers/1 file still regrades by rubric; a receipt resea
     const r = clone(o.receipt);
     r.schema_version = '0.10';
     for (const k of ['harness', 'isolation', 'endpoint', 'code_revision', 'reported_models', 'criteria_template_hash']) delete r.run.judge[k];
+    // A-184-34 (issue 317): the judge overhead's two counts are v0.13's, so a receipt at 0.10 records neither.
+    for (const k of ['judged_draws_counted', 'judged_draws_missing_usage']) delete r.economics.judge_overhead[k];
     delete r.receipt_hash;
     const sealed = sealReceipt(r);
     assert.ok(validateReceipt(sealed).valid, `the resealed receipt validates at 0.10: ${JSON.stringify(validateReceipt(sealed).errors).slice(0, 300)}`);
@@ -940,6 +942,8 @@ test('AC-26 a regraded receipt seals its evidence inside its hash: regraded_from
   assert.equal(v011.properties.schema_version.const, '0.11');
   const older = clone(o.receipt);
   for (const k of ['harness', 'isolation', 'endpoint', 'code_revision', 'reported_models', 'criteria_template_hash']) delete older.run.judge[k];
+  // A-184-34 (issue 317): nor the judge overhead's two counts, which are v0.13's.
+  for (const k of ['judged_draws_counted', 'judged_draws_missing_usage']) delete older.economics.judge_overhead[k];
   older.schema_version = '0.11';
   R('lib/receipt.js').sealReceipt(older);
   const v = validateReceipt(older);
@@ -948,7 +952,8 @@ test('AC-26 a regraded receipt seals its evidence inside its hash: regraded_from
 
 test('AC-27 spec/RECEIPT.md and the methodology page say what a regraded receipt seals, and what the judge\'s setting is (A-184-12, A-184-13)', () => {
   const doc = fs.readFileSync(path.join(RT, 'spec', 'RECEIPT.md'), 'utf8');
-  assert.match(doc.split('\n').slice(0, 3).join('\n'), /spec v0\.12\b/);
+  // A-184-33 (issue 265): v0.13 is current, so the heading reads v0.13.
+  assert.match(doc.split('\n').slice(0, 3).join('\n'), /spec v0\.13\b/);
   const at = doc.indexOf('\n## What v0.12 adds');
   assert.ok(at >= 0, 'spec/RECEIPT.md has no What v0.12 adds section');
   const sec = doc.slice(at + 1, doc.indexOf('\n## ', at + 1)).replace(/\s+/g, ' ');

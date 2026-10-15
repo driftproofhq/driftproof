@@ -123,11 +123,35 @@ export const RECEIPT_PATH = /^\/r\/[0-9a-f]{64}\/$/;
 // A page that is a receipt page and whose state cannot be read is CAPTURED, not
 // dropped: an unreadable page is the one a reader most needs a picture of, and
 // silently omitting it is `absence-vs-unreadable`.
+//
+// A SKILL PAGE IS NARROWED THE SAME WAY (spec 025 A-025-49, issue 267). The skill
+// index writes one page per skill identity, about four hundred of them from one
+// template, so it keeps ONE skill page for each distinct set of row states the
+// index renders. A row's state is its source, its evidence state and its freshness,
+// read off the page's own `skill-row` attributes, which the builder writes and
+// nothing else under docs/ carries. A skill page with no readable row is captured.
+// Every skill page is still measured at both viewports; only the photograph narrows.
+export const SKILL_PATH = /^\/skills\/[^/]+\/[^/]+\/[^/]+\/$/;
+export function skillPageState(html) {
+  const rows = [...String(html || '').matchAll(/<article class="skill-row"[^>]*?\sdata-source="([^"]+)" data-evidence="([^"]+)" data-freshness="([^"]+)"/g)];
+  return rows.length ? [...new Set(rows.map((m) => `${m[1]}/${m[2]}/${m[3]}`))].sort().join('+') : null;
+}
 export function captureSet(root = ROOT) {
   const docs = path.join(root, 'docs');
   const seen = new Set();
+  const seenSkill = new Set();
   const out = [];
   for (const p of pagePaths(root)) {
+    if (SKILL_PATH.test(p)) {
+      let html = null;
+      try { html = fs.readFileSync(path.join(docs, p.replace(/^\//, ''), 'index.html'), 'utf8'); } catch { html = null; }
+      const state = skillPageState(html);
+      if (state === null) { out.push(p); continue; }
+      if (seenSkill.has(state)) continue;
+      seenSkill.add(state);
+      out.push(p);
+      continue;
+    }
     if (!RECEIPT_PATH.test(p)) { out.push(p); continue; }
     let html = null;
     try { html = fs.readFileSync(path.join(docs, p.replace(/^\//, ''), 'index.html'), 'utf8'); } catch { html = null; }

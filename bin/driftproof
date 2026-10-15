@@ -237,24 +237,34 @@ function checkNumericInputs(flags, rc) {
 // boolean word, it is refused, exit 2, naming it, for every command (A-062-3, spec 106):
 // `--trusted-skill=false` and `--trusted-skill false` each turned the same-user lane on.
 // Spec 139: --quick is one more, set by its name alone.
-const NO_VALUE_FLAGS = new Set(['trusted-skill', 'svg', 'count-errored-runs', 'strict', 'no-harness-check', 'keep-transcripts', 'github-output', 'enforce', 'quick', 'drafted-from-skill']);
+const NO_VALUE_FLAGS = new Set(['trusted-skill', 'svg', 'count-errored-runs', 'strict', 'no-harness-check', 'keep-transcripts', 'github-output', 'enforce', 'quick', 'drafted-from-skill', 'lift-breakdown']);
 const BOOLEAN_WORD = /^(true|false|yes|no|on|off|1|0)$/i;
-function refuseValue(key, given) {
+// Issue 337 (spec 106 A-106-9): the stub statement of a run or regrade given an argument, until it is
+// written. A door refusal (an unknown flag, an extra argument) writes it to stderr just before itself, so
+// stdout stays empty (spec 106 AC-3); past the door the command writes it to stdout. Either way it is the
+// first line written (spec 236 AC-1).
+let stubPending = null;
+function stubBeforeRefusal() { if (stubPending) { console.error(stubPending); stubPending = null; } }
+function stubAnnounce() { if (stubPending) { console.log(stubPending); stubPending = null; } }
+
+// Issue 301: `before` writes what must precede the refusal (the stub statement, on stderr).
+function refuseValue(key, given, before) {
+  if (before) before();
   console.error(`  \u2717 REFUSED: --${key} takes no value, and was given one (${given}). Give --${key} alone to set it, or leave it out. Nothing run, no receipt written.`);
   process.exit(2);
 }
-function parseArgs(argv) {
+function parseArgs(argv, beforeRefusal = null) {
   const positional = [];
   const flags = {};
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const eq = a.startsWith('--') ? a.indexOf('=') : -1;
-    if (eq > 2 && NO_VALUE_FLAGS.has(a.slice(2, eq))) refuseValue(a.slice(2, eq), a);
+    if (eq > 2 && NO_VALUE_FLAGS.has(a.slice(2, eq))) refuseValue(a.slice(2, eq), a, beforeRefusal);
     if (eq > 2) { flags[a.slice(2, eq)] = a.slice(eq + 1); continue; }
     if (a.startsWith('--')) {
       const key = a.slice(2);
       const next = argv[i + 1];
-      if (NO_VALUE_FLAGS.has(key) && next !== undefined && BOOLEAN_WORD.test(next)) refuseValue(key, `${a} ${next}`);
+      if (NO_VALUE_FLAGS.has(key) && next !== undefined && BOOLEAN_WORD.test(next)) refuseValue(key, `${a} ${next}`, beforeRefusal);
       if (NO_VALUE_FLAGS.has(key) || next === undefined || next.startsWith('--')) { flags[key] = true; }
       else { flags[key] = next; i++; }
     } else positional.push(a);
@@ -281,6 +291,7 @@ const COMMAND_FLAGS = {
 function refuseUnknownFlags(command, flags) {
   const unknown = Object.keys(flags).filter((k) => !COMMAND_FLAGS[command].includes(k));
   if (!unknown.length) return;
+  stubBeforeRefusal();
   console.error(`  ✗ REFUSED (${command}): unknown flag ${unknown.map((k) => `--${k}`).join(', ')}; ${command} takes ${COMMAND_FLAGS[command].map((k) => `--${k}`).join(', ')}. Nothing run, no receipt written.`);
   process.exit(2);
 }
@@ -291,6 +302,7 @@ function refuseUnknownFlags(command, flags) {
 // dropped with no word.
 function refuseExtraPositionals(command, positional, placeholder) {
   if (positional.length <= 1) return;
+  stubBeforeRefusal();
   console.error(`  ✗ REFUSED (${command}): ${command} takes one argument and was given ${positional.length}: ${positional.join(', ')}. It took ${positional[0]} as ${placeholder}, and would read none of ${positional.slice(1).join(', ')}. A flag that takes no value is given alone. Nothing run, no receipt written.`);
   process.exit(2);
 }
@@ -337,8 +349,9 @@ function cmdPlan(argv) {
     }
     if (Object.hasOwn(flags, 'model')) options.model = flags.model;
     if (Object.hasOwn(flags, 'judge-model')) options.judgeModel = flags['judge-model'];
-    const checked = planOptions(options);
+    // Spec 265 AC-56: the priors are read first, so a marked one is refused before any model is read.
     const receipts = readPlanReceipts(files);
+    const checked = planOptions(options);
     const skill = loadPlanSkill(positional[0]);
     const plan = planSkill({skill, receipts, ...checked});
     const rcExists = [path.join(process.cwd(), '.driftproofrc'), path.join(skill.dir, '.driftproofrc')].some(file => fs.existsSync(file));
@@ -370,7 +383,8 @@ USAGE
                         [--keep-transcripts] [--out DIR] [--trusted-skill] [--capture text|files] [--quick]
   ${PROJECT_NAME} plan <skill-dir> [--model ID] [--judge-model ID] [--lift L] [--samples N]
                         [--draws N] [--from receipt.json]...
-  ${PROJECT_NAME} diff <receiptA.json> <receiptB.json> [--out FILE] [--mode release|revision]
+  ${PROJECT_NAME} lint-suite <skill-dir> [--receipts DIR]  offline advisory checks
+  ${PROJECT_NAME} diff <receiptA.json> <receiptB.json> [--out FILE] [--mode release|revision] [--lift-breakdown]
   ${PROJECT_NAME} regrade <receipt.json> --skill <dir> --answers <file> --judge-model <id>
                         [--rubric <evals.json>] [--samples N] [--max-calls N] [--max-usd N] [--out DIR] [--trusted-skill]
   ${PROJECT_NAME} stale <receipt.json>... [--skill DIR] [--suite FILE] [--model ID] [--judge ID]
@@ -384,6 +398,9 @@ USAGE
                         [--fail-on-underpowered true|false]
   ${PROJECT_NAME} import <results.json> --from agent-skills-eval|skillgrade [--out DIR]
   ${PROJECT_NAME} import <file|dir> --from claude-plugin-eval|skill-creator [--count-errored-runs] [--out DIR]
+  ${PROJECT_NAME} import --from harbor --with <job> --without <job> [--reward KEY] [--skill NAME] [--out DIR]
+  ${PROJECT_NAME} import <job> --from harbor [--arm with-skill|baseline] [--reward KEY] [--skill NAME] [--out DIR]
+  ${PROJECT_NAME} import <dir> --from nvidia-cards --commit <sha> [--only <skill>[,<skill>]] [--out DIR] [--report FILE]
   ${PROJECT_NAME} export <receipt.json> [--to summary-json] [--report-url URL] [--out FILE|DIR]
 
 ENV
@@ -394,6 +411,8 @@ ENV
   DRIFTPROOF_EVAL_USER the unix user the isolated hop runs the CLI as (default: driftproof-eval)
 
 NOTES
+  - diff --lift-breakdown adds recorded draw scores, sample spread and equal weight per case; removing a case recomputes lift.
+    Tables appear where evidence and eligibility permit; unavailable breakdowns give a reason. Without the flag, diff output stays unchanged.
   - Planning: plan uses --model, --judge-model, --lift, --draws and repeatable --from receipts.
     --samples is judge samples per answer; --draws is generation draws per case per arm.
     Spreads held. Draw targets are hypothetical; the runner may stop before them.
@@ -468,6 +487,14 @@ NOTES
     document and refuses none or several. Runs the source recorded an error for are kept
     out of the band and listed (--count-errored-runs puts them back); anything the source
     does not record is written as unknown and named in run.import.notices.
+  - import --from harbor reads Harbor trial results: each trial's own result.json, one folder
+    below a job, never a file inside a trial folder. --with and --without are the user's
+    declaration of the arms. Cases are keyed by task id and checksum; the delta is recomputed
+    from the rewards, and every trial or task left out is listed with its reason.
+  - import --from nvidia-cards reads a git checkout of NVIDIA/skills at --commit, its HEAD:
+    benchmarks.json and each skills/<dir>/BENCHMARK.md. One DECLARED receipt per skill and agent
+    with results carries the card's figures as printed, with the commit and each file's blob
+    sha1, and the mark aggregates_only: no reader reads a verdict from it.
   - stale compares what each receipt recorded (model, harness, capture mode, skill,
     suite, judge, template, each case's rubric) with what would run today, read from
     the flags, then .driftproofrc; a value nobody gives is unknown, never current,
@@ -521,6 +548,7 @@ async function cmdRun(positional, flags) {
   if (!skillDir) { usage(); process.exit(2); }
   refuseUnknownFlags('run', flags);
   refuseExtraPositionals('run', positional, '<skill-dir>');
+  stubAnnounce();
   // Spec 139 (R-2): --quick sets the judge samples, the concurrency and the case cap itself. One of
   // them given beside it is refused, before anything is read or printed: a run that took one from
   // each would not be the preset its receipt names.
@@ -640,9 +668,6 @@ async function cmdRun(positional, flags) {
 
   const regStatuses = models.map((m) => `${m}:${registryStatus(m)}`);
   console.log(`\n${PROJECT_NAME} run — skill "${skill.name}" v${skill.version}`);
-  // Spec 026 AC-1: a stub run says so before it starts, and its receipt says so
-  // after (surface stub, answered_by.kind stub, UNVERIFIED).
-  if (process.env.DRIFTPROOF_STUB === '1') console.log('  STUB RUN (DRIFTPROOF_STUB=1): nothing will answer; the receipt will be UNVERIFIED and measure nothing');
   // Spec 139 (R-4): a smoke run says before its first call that it cannot produce a verdict.
   if (quick) console.log(quickBanner());
   console.log(`  content_hash: ${skill.contentHash.slice(0, 16)}…  suite: ${skill.suite.caseCount} cases (${skill.suite.suiteHash.slice(0, 12)}…)`);
@@ -651,7 +676,9 @@ async function cmdRun(positional, flags) {
   console.log(`  judge: ${[...new Set(cost.judges)].join(', ')}   (${judgeModel ? '--judge-model' : 'the target model itself; set --judge-model to change'})`);
   // Spec 138 (R-9): THE LOUD WARNING, on stderr, before any call, for each target its own judge
   // grades, compared on canonical ids, whether the judge was named or defaulted.
-  for (const m of models) if (selfJudged(m, judgeFor(m))) for (const line of selfJudgeLines(m)) console.error(line);
+  if (!stubRun) {
+    for (const m of models) if (selfJudged(m, judgeFor(m))) for (const line of selfJudgeLines(m)) console.error(line);
+  }
   if (subSurfaces.length) {
     const isolation = trusted ? 'same-user (--trusted-skill: self-authored skill)' : `eval-user (${evalUser()})`;
     console.log(`  isolation: ${isolation}`);
@@ -663,14 +690,15 @@ async function cmdRun(positional, flags) {
     process.exit(2);
   }
   console.log(`  ${captureLine({ mode: capture })}`);
-  console.log(`  projected calls: ${perModelCalls}/model × ${models.length} model(s) = ${totalProjected}   per-model cap: ${maxCalls}`);
-  console.log(`  projected cost: ~$${cost.totalUSD.toFixed(2)} (rough upper bound; budget $${maxUsd.toFixed(2)}, hard-stop $${(maxUsd * 1.25).toFixed(2)})`);
-  if (subSurfaces.length) console.log(`  actual metered spend on ${subSurfaces.join(', ')}: $0.00 (subscription; the $ figure is the estimated-equivalent API cost, counted against the cap identically)`);
+  console.log(`  ${stubRun ? 'stub plan: projected synthetic calls' : 'projected calls'}: ${perModelCalls}/model × ${models.length} model(s) = ${totalProjected}   per-model cap: ${maxCalls}`);
+  if (stubRun) console.log('  No projected cost: no model will be called.');
+  else console.log(`  projected cost: ~$${cost.totalUSD.toFixed(2)} (rough upper bound; budget $${maxUsd.toFixed(2)}, hard-stop $${(maxUsd * 1.25).toFixed(2)})`);
+  if (!stubRun && subSurfaces.length) console.log(`  actual metered spend on ${subSurfaces.join(', ')}: $0.00 (subscription; the $ figure is the estimated-equivalent API cost, counted against the cap identically)`);
 
   // Call-count guard: refuse before spending anything if a single model run
   // would exceed the per-run call cap.
   if (perModelCalls > maxCalls) {
-    console.error(`\n  ✗ ABORT (cost guard): projected ${perModelCalls} calls/model exceeds --max-calls ${maxCalls}.`);
+    console.error(stubRun ? `\n  ✗ ABORT (cost guard): projected ${perModelCalls} calls/model exceeds --max-calls ${maxCalls}. Synthetic stub steps; no model will be called.` : `\n  ✗ ABORT (cost guard): projected ${perModelCalls} calls/model exceeds --max-calls ${maxCalls}.`);
     console.error(`    Lower --samples/--max-cases or raise --max-calls.`);
     process.exit(3);
   }
@@ -678,7 +706,8 @@ async function cmdRun(positional, flags) {
   // attention is not free, so its estimated-equivalent cost is counted against
   // --max-usd identically to metered api spend.
   if (cost.totalUSD > maxUsd) {
-    console.error(`\n  ✗ ABORT (cost guard): projected cost ~$${cost.totalUSD.toFixed(2)} exceeds --max-usd $${maxUsd.toFixed(2)}.`);
+    // Issue 301 (spec 016 A-016-9): the stub refusal names the cap and the planned calls, no dollar figure.
+    console.error(stubRun ? `\n  ✗ ABORT (cost guard): stub plan exceeds --max-usd ${maxUsd}: ${totalProjected} synthetic calls planned; no model will be called.` : `\n  ✗ ABORT (cost guard): projected cost ~$${cost.totalUSD.toFixed(2)} exceeds --max-usd $${maxUsd.toFixed(2)}.`);
     console.error(`    Trim skills/cases or raise --max-usd (do NOT lower --samples for a published run).`);
     process.exit(3);
   }
@@ -702,6 +731,7 @@ async function cmdRun(positional, flags) {
           maxCases, maxCalls, samples, judgeModel, concurrency, budget, keepTranscripts, trusted, capture,
           ...(quick ? { preset: PRESET_QUICK } : {}),
           onProgress: (p) => {
+            if (stubRun) return;
             progress.onProgress(p);
             if (p.phase === 'done') console.log(`  ${p.case} / ${p.mode}: ${p.outcome} (${p.score.toFixed(2)} ± ${(p.stddev || 0).toFixed(2)})`);
           },
@@ -715,7 +745,8 @@ async function cmdRun(positional, flags) {
         process.exit(5);
       }
       if (e && e.code === 'BUDGET_HARDSTOP') {
-        console.error(`\n  ✗ ABORT (budget hard-stop): ${e.message}`);
+        const message = stubRun ? 'synthetic stub work exceeded the budget; no model was called.' : e.message;
+        console.error(`\n  ✗ ABORT (budget hard-stop): ${message}`);
         console.error(`    ${emitted.length} receipt(s) already written to ${path.relative(process.cwd(), outDir)}/.`);
         process.exit(3);
       }
@@ -759,13 +790,14 @@ async function cmdRun(positional, flags) {
     }
     fs.mkdirSync(outDir, { recursive: true });
     fs.writeFileSync(jsonPath, JSON.stringify(receipt, null, 2), { flag: 'wx' });
+    if (stubRun) console.log('  → Stub receipt measures nothing.\n');
     fs.writeFileSync(mdPath, summarizeReceipt(receipt));
     emitted.push(jsonPath);
 
     const cmp = receipt.comparison;
     const aw = receipt.results.aggregates.with_skill;
     const ab = receipt.results.aggregates.baseline;
-    console.log(`  → ${path.relative(process.cwd(), jsonPath)}  (${calls} calls)`);
+    console.log(`  → ${path.relative(process.cwd(), jsonPath)}  (${stubRun ? 'stub work; no model calls' : `${calls} calls`})`);
     console.log(`  → ${answeredLine(receipt)}; verification_level ${receipt.verification_level}`);
     console.log(`  → ${captureLine(receipt.run.capture)}`);
     // Spec 026 AC-8: how many draws were cut at the output cap and excluded.
@@ -774,6 +806,7 @@ async function cmdRun(positional, flags) {
     // Spec 026 AC-6, AC-7: the band rule is named beside the band, and a band
     // the formula could not form prints as n/a, never as 0.000.
     // Spec 139 (R-4): a smoke run prints its two arms and the plain line, and no lift.
+    if (stubRun) continue;
     if (quick) console.log(`${quickResultLine(band(aw.mean_score, aw.stddev), band(ab.mean_score, ab.stddev))}\n`);
     else if (cmp.delta == null) console.log(`  → skill lift n/a (${cmp.delta_uncertainty_unavailable === 'no_cases' ? 'no case was included on an arm' : 'no comparison'})\n`);
     else console.log(`  → skill lift ${cmp.delta >= 0 ? '+' : ''}${cmp.delta.toFixed(3)} ± ${uncertaintyStr(cmp)}  (with ${band(aw.mean_score, aw.stddev)} vs base ${band(ab.mean_score, ab.stddev)}; band = sample stddev of the per-case means)\n`);
@@ -790,6 +823,9 @@ function cmdDiff(positional, flags) {
 
   // Spec 026 AC-20: a side whose hash does not verify is refused, naming it.
   for (const [p, r] of [[aPath, a], [bPath, b]]) refuseUnverified(r, p, 'diff');
+  // Spec 265 AC-53: a marked receipt on either side is refused; no drift report is formed.
+  const { receiptAggregatesOnly, AGGREGATES_ONLY_LINE } = require('../lib/verdict');
+  for (const [p, r] of [[aPath, a], [bPath, b]]) if (receiptAggregatesOnly(r)) { console.error(`  ✗ REFUSED (diff): ${p}: ${AGGREGATES_ONLY_LINE}.`); process.exit(2); }
 
   // --mode revision inverts the axis: the skill text is the variable under test
   // and the substrate is the control. The fields release drift merely warns about
@@ -816,7 +852,7 @@ function cmdDiff(positional, flags) {
 
   const labelA = mode === 'revision' ? `pinned (${dateStamp(a.run.date_utc)})` : dateStamp(a.run.date_utc);
   const labelB = mode === 'revision' ? `current (${dateStamp(b.run.date_utc)})` : dateStamp(b.run.date_utc);
-  const { markdown } = buildDriftReport(a, b, { labelA, labelB, mode });
+  const { markdown } = buildDriftReport(a, b, { labelA, labelB, mode, includeLiftBreakdown: flags['lift-breakdown'] === true });
 
   if (flags.out) {
     fs.writeFileSync(path.resolve(flags.out), markdown);
@@ -921,11 +957,13 @@ function cmdView(positional, flags) {
 // before the projection, and the projection before any call: the receipt's seal,
 // the skill and suite it was run on, and every answer against its hash (AC-4).
 async function cmdRegrade(positional, flags) {
+  const stubRun = process.env.DRIFTPROOF_STUB === '1';
   const receiptPath = positional[0];
   if (!receiptPath) { console.error('  ✗ regrade: a receipt path is required\n'); usage(); process.exit(2); }
   refuseUnknownFlags('regrade', flags);
   refuseExtraPositionals('regrade', positional, '<receipt.json>');
-  const refuse = (why) => { console.error(`  ✗ REFUSED (regrade): ${why}; nothing run, no receipt written.`); process.exit(2); };
+  stubAnnounce();
+  const refuse =(why) => { console.error(`  ✗ REFUSED (regrade): ${why}; nothing run, no receipt written.`); process.exit(2); };
   // Spec 184: --rubric names the revised suite of a rubric regrade, which keeps the original's judge.
   const rubricMode = Object.hasOwn(flags, 'rubric');
   if (rubricMode && (typeof flags.rubric !== 'string' || !flags.rubric)) refuse('--rubric needs the revised suite file, an evals.json');
@@ -965,25 +1003,27 @@ async function cmdRegrade(positional, flags) {
 
   const plan = planRegrade({ receipt, skill, answers, judgeModel, samples, revised, trusted });
   console.log(`\n${PROJECT_NAME} regrade: ${path.basename(receiptPath)}`);
-  if (process.env.DRIFTPROOF_STUB === '1') console.log('  STUB RUN (DRIFTPROOF_STUB=1): nothing will answer the judge; the receipt will be UNVERIFIED and grade nothing');
   console.log(`  model: ${receipt.run.model_id} (generations kept)   judge: ${receipt.run.judge.model_id} → ${judgeModel}   samples/answer: ${samples}`);
   if (read.source.kind === 'legacy-archive') console.log(`  answers: ${Object.keys(answers).length} read from ${read.source.file}/, an archive written before every draw was kept: it holds the last measured draw of each case and mode`);
   if (revised) console.log(`  rubric: ${revised.file} (suite ${String(receipt.suite.suite_hash).slice(0, 12)}… → ${revised.suiteHash.slice(0, 12)}…); no answer is generated`);
   // Spec 138 (R-9): the same loud warning when the new judge is the model whose answers it grades.
-  if (selfJudged(receipt.run.model_id, judgeModel)) for (const line of selfJudgeLines(receipt.run.model_id)) console.error(line);
+  if (!stubRun) {
+    if (selfJudged(receipt.run.model_id, judgeModel)) for (const line of selfJudgeLines(receipt.run.model_id)) console.error(line);
+  }
   if (plan.problems.length) {
     console.error(`\n  ✗ REFUSED (regrade): ${plan.problems.length} problem(s) with the inputs; nothing run, no receipt written.`);
     for (const p of plan.problems.slice(0, 20)) console.error(`    - ${p}`);
     process.exit(2);
   }
-  console.log(`  answers to grade: ${plan.draws}   projected calls: ${plan.calls}   cap: ${maxCalls}`);
-  console.log(`  projected cost: ~$${plan.usd.toFixed(2)} (the runner's per-call judge estimate; budget $${maxUsd.toFixed(2)}, hard-stop $${(maxUsd * 1.25).toFixed(2)})`);
+  console.log(`  ${stubRun ? 'stub plan: saved answers' : 'answers to grade'}: ${plan.draws}   ${stubRun ? 'projected synthetic calls' : 'projected calls'}: ${plan.calls}   cap: ${maxCalls}`);
+  if (stubRun) console.log('  No projected cost: no model will be called.');
+  else console.log(`  projected cost: ~$${plan.usd.toFixed(2)} (the runner's per-call judge estimate; budget $${maxUsd.toFixed(2)}, hard-stop $${(maxUsd * 1.25).toFixed(2)})`);
   if (plan.calls > maxCalls) {
-    console.error(`\n  ✗ ABORT (cost guard): projected ${plan.calls} calls exceeds --max-calls ${maxCalls}.`);
+    console.error(stubRun ? `\n  ✗ ABORT (cost guard): projected ${plan.calls} calls exceeds --max-calls ${maxCalls}. Synthetic stub steps; no model will be called.` : `\n  ✗ ABORT (cost guard): projected ${plan.calls} calls exceeds --max-calls ${maxCalls}.`);
     process.exit(3);
   }
   if (plan.usd > maxUsd) {
-    console.error(`\n  ✗ ABORT (cost guard): projected cost ~$${plan.usd.toFixed(2)} exceeds --max-usd $${maxUsd.toFixed(2)}.`);
+    console.error(stubRun ? `\n  ✗ ABORT (cost guard): stub plan exceeds --max-usd ${maxUsd}: ${plan.calls} synthetic calls planned; no model will be called.` : `\n  ✗ ABORT (cost guard): projected cost ~$${plan.usd.toFixed(2)} exceeds --max-usd $${maxUsd.toFixed(2)}.`);
     process.exit(3);
   }
   let result;
@@ -992,12 +1032,12 @@ async function cmdRegrade(positional, flags) {
       receipt, skill, answers, judgeModel, samples, revised,
       opts: {
         trusted, budget: new BudgetTracker(maxUsd), maxCalls,
-        onProgress: (p) => { if (p.phase === 'done') console.log(`  ${p.case} / ${p.mode}: ${p.outcome} (${p.score.toFixed(2)} ± ${(p.stddev || 0).toFixed(2)})`); },
+        onProgress: (p) => { if (stubRun) return; if (p.phase === 'done') console.log(`  ${p.case} / ${p.mode}: ${p.outcome} (${p.score.toFixed(2)} ± ${(p.stddev || 0).toFixed(2)})`); },
       },
     });
   } catch (e) {
     if (e && e.code === 'SUBSTRATE_MISMATCH') { console.error(`\n  ✗ REFUSED (substrate mismatch): ${e.message}`); process.exit(5); }
-    if (e && e.code === 'BUDGET_HARDSTOP') { console.error(`\n  ✗ ABORT (budget hard-stop): ${e.message}`); process.exit(3); }
+    if (e && e.code === 'BUDGET_HARDSTOP') { console.error(stubRun ? '\n  ✗ ABORT (budget hard-stop): synthetic stub work exceeded the budget; no model was called.' : `\n  ✗ ABORT (budget hard-stop): ${e.message}`); process.exit(3); }
     throw e;
   }
   const out = result.receipt;
@@ -1011,6 +1051,7 @@ async function cmdRegrade(positional, flags) {
   const base = receiptBaseName({ skill: out.skill.name, model: out.run.model_id, tag: revised ? 'regrade-rubric' : `regrade-${fileSlug(judgeModel)}`, date: dateStamp(out.run.date_utc), hash: out.receipt_hash });
   const jsonPath = path.join(outDir, `${base}.json`);
   fs.writeFileSync(jsonPath, JSON.stringify(out, null, 2), { flag: 'wx' });
+  if (stubRun) console.log('  → Stub receipt measures nothing.');
   // Spec 184 A-184-3: the summary says it is a regrade, naming the original receipt and its run date
   // (both kinds: the judge-only regrade of spec 044 is this same code path).
   const regradeOf = { receipt_hash: receipt.receipt_hash, file: path.basename(receiptPath), date_utc: receipt.run.date_utc, kind: revised ? 'rubric' : 'judge', judge: judgeModel };
@@ -1020,8 +1061,8 @@ async function cmdRegrade(positional, flags) {
   // The sidecar's name is lib/receipt.js's, which the directory readers skip by (spec 069).
   const sidecar = `${base}${REGRADE_SIDECAR.suffix}`;
   fs.writeFileSync(path.join(outDir, sidecar), JSON.stringify(provenance, null, 2), { flag: 'wx' });
-  console.log(`  → ${path.relative(process.cwd(), jsonPath)}  (${result.calls} judge calls${revised ? ', no generation call' : ''})`);
-  console.log(`  → a regrade of the saved answers of ${path.basename(receiptPath)} (run ${receipt.run.date_utc}), ${revised ? 'under a revised rubric' : `by the judge ${judgeModel}`}; graded ${out.run.date_utc}`);
+  console.log(`  → ${path.relative(process.cwd(), jsonPath)}  (${stubRun ? 'stub work; no model calls' : `${result.calls} judge calls${revised ? ', no generation call' : ''}`})`);
+  console.log(`  → a ${stubRun ? 'stub regrade' : 'regrade'} of the saved answers of ${path.basename(receiptPath)} (run ${receipt.run.date_utc}), ${revised ? 'under a revised rubric' : `by the judge ${judgeModel}`}; graded ${out.run.date_utc}`);
   console.log(`  → verification_level ${out.verification_level}; provenance: ${sidecar}\n`);
 }
 
@@ -1085,7 +1126,7 @@ function cmdInit(positional, flags = {}) {
   const steps = [];
   if (existingSkill) steps.push(`Your ${rel(path.join(dir, 'SKILL.md'))} was left as it was.`);
   else steps.push(`Edit ${rel(path.join(dir, 'SKILL.md'))} with your skill's instructions.`);
-  if (suiteMade && cases === null) steps.push(`Edit ${rel(path.join(dir, 'evals', 'evals.json'))}: replace the 3 example cases (rubrics anchored at 0.80).`);
+  if (suiteMade && cases === null) steps.push(`Edit ${rel(path.join(dir, 'evals', 'evals.json'))}: replace the 3 example cases (rubrics anchored at 0.80). These generic examples are not grounded in your skill's claims. Their scores do not establish performance on your intended tasks. The CLI still computes scores and verdicts, but these do not validate a skill-specific suite.`);
   if (suiteMade && cases !== null) steps.push(`Read ${rel(path.join(dir, 'evals', 'evals.json'))}: it holds the cases from ${flags.cases}.`);
   steps.push(`driftproof run ${rel(dir)} --quick   (a smoke run: no verdict, a first look)`);
   steps.push(`driftproof run ${rel(dir)} --models claude-haiku-4-5`);
@@ -1272,6 +1313,8 @@ function cmdDecide(positional, flags) {
 function cmdImport(positional, flags) {
   const p = positional[0];
   const from = flags.from;
+  if (from === 'harbor') return cmdImportHarbor(positional, flags);
+  if (from === 'nvidia-cards') return cmdImportNvidia(positional, flags);
   const { IMPORT_TOOLS, importResults, readImportBytes, importDiagnostic } = require('../lib/importers');
   const { ANTHROPIC_TOOLS, importAnthropic, ImportRefused } = require('../lib/importers-anthropic');
   const tools = [...IMPORT_TOOLS, ...ANTHROPIC_TOOLS];
@@ -1323,6 +1366,97 @@ function cmdImport(positional, flags) {
   for (const n of (receipt.run.import && receipt.run.import.notices) || []) console.log(`  notice: ${n}`);
 }
 
+// Spec 266: Harbor job directories. Two jobs declared as the arms (--with, --without), or one job as
+// one arm (--arm). Any flag the import does not take is refused, exit 2, before anything is read.
+const HARBOR_IMPORT_FLAGS = ['from', 'with', 'without', 'arm', 'reward', 'skill', 'out'];
+function cmdImportHarbor(positional, flags) {
+  const usageLine = 'usage: driftproof import --from harbor --with <job> --without <job> [--reward KEY] [--skill NAME] [--out DIR]\n       driftproof import <job> --from harbor [--arm with-skill|baseline] [--reward KEY] [--skill NAME] [--out DIR]';
+  const fail = (why) => { console.error(`${why}\n${usageLine}`); process.exit(2); };
+  for (const k of Object.keys(flags)) if (!HARBOR_IMPORT_FLAGS.includes(k)) fail(`import --from harbor does not take --${k}`);
+  for (const k of ['with', 'without', 'arm', 'reward', 'skill', 'out']) if (flags[k] === true) fail(`--${k} needs a value`);
+  const paired = flags.with !== undefined || flags.without !== undefined;
+  if (paired && (flags.with === undefined || flags.without === undefined)) fail('--with and --without are given together');
+  if (paired && positional.length) fail('give --with and --without, or one job, not both');
+  if (paired && flags.arm !== undefined) fail('--arm is for one job; --with and --without name both arms');
+  if (!paired && positional.length !== 1) fail('give one job directory, or --with and --without');
+  if (flags.arm !== undefined && !['with-skill', 'baseline'].includes(flags.arm)) fail(`--arm ${JSON.stringify(String(flags.arm).slice(0, 80))} is neither with-skill nor baseline`);
+  const { importHarbor, HarborRefused } = require('../lib/importers-harbor');
+  const opts = { reward: flags.reward ?? null, skill: flags.skill ?? null, importedAt: new Date().toISOString() };
+  let imported;
+  try {
+    imported = paired ? importHarbor({ ...opts, withJob: flags.with, withoutJob: flags.without }) : importHarbor({ ...opts, job: positional[0], arm: flags.arm ?? 'with-skill' });
+  } catch (e) {
+    if (!(e instanceof HarborRefused)) throw e;
+    console.error(`✗ import refused, nothing written: ${e.message}`);
+    process.exit(1);
+  }
+  const { receipt, counts } = imported;
+  const { valid, errors } = validateReceipt(receipt);
+  if (!valid || !verifyReceiptHash(receipt)) {
+    console.error('✗ converted receipt failed validation, nothing written:', JSON.stringify(errors, null, 2));
+    process.exit(1);
+  }
+  const outDir = flags.out ? path.resolve(flags.out) : RECEIPTS_DIR;
+  fs.mkdirSync(outDir, { recursive: true });
+  // Spec 266 AC-24: the name ends in the trial files' own hash, as spec 049 names its imports, so two
+  // pairs imported on one day never share a file, and the same pair always names the same one.
+  const base = receiptBaseName({ skill: receipt.skill.name, model: receipt.run.model_id, tag: 'imported-harbor', date: dateStamp(receipt.run.date_utc), hash: receipt.run.import.source_sha256 });
+  const jsonPath = path.join(outDir, `${base}.json`);
+  fs.writeFileSync(jsonPath, JSON.stringify(receipt, null, 2));
+  // Spec 266 AC-26: Harbor declares no figure, so the line says what Driftproof recomputed.
+  console.log(`imported → ${path.relative(process.cwd(), jsonPath)}`);
+  const perArm = ['with_skill', 'baseline'].filter((m) => counts.arms[m]).map((m) => `${m === 'with_skill' ? 'with-skill' : 'baseline'} ${counts.arms[m].read - counts.arms[m].inDelta} of ${counts.arms[m].read}`).join(', ');
+  console.log(`  verification_level: DECLARED (source ${receipt.run.source}): recomputed by Driftproof from ${counts.inDelta} of ${counts.read} trial files read; ${counts.read - counts.inDelta} left out (${perArm}; see notices).`);
+  console.log('  no generation hashes (never fabricated); excluded from drift verdicts unless re-run TESTED. See docs/interop.md.');
+  for (const n of receipt.run.import.notices) console.log(`  notice: ${n}`);
+}
+
+// Spec 265: NVIDIA/skills benchmark cards, from a git checkout at --commit. Every receipt is
+// validated, and every file name checked free, before the first is written; a refusal writes
+// nothing (AC-19, AC-28). Any flag the import does not take is refused, exit 2.
+const NVIDIA_IMPORT_FLAGS = ['from', 'commit', 'only', 'out', 'report'];
+function cmdImportNvidia(positional, flags) {
+  const usageLine = 'usage: driftproof import <dir> --from nvidia-cards --commit <sha> [--only <skill>[,<skill>]] [--out DIR] [--report FILE]';
+  const refuseUsage = (why) => { console.error(`${why}\n${usageLine}`); process.exit(2); }; // nvidia-cards usage
+  for (const k of Object.keys(flags)) if (!NVIDIA_IMPORT_FLAGS.includes(k)) refuseUsage(`import --from nvidia-cards does not take --${k}`);
+  for (const k of ['commit', 'only', 'out', 'report']) if (flags[k] === true) refuseUsage(`--${k} needs a value`);
+  if (flags.commit === undefined) refuseUsage('--commit <sha> is required: the commit of the checkout read, which is its HEAD');
+  if (positional.length !== 1) refuseUsage('give one NVIDIA/skills checkout');
+  const { importNvidiaCards, NvidiaRefused } = require('../lib/importers-nvidia');
+  const refused = (why) => { console.error(`✗ import refused, nothing written: ${why}`); process.exit(1); };
+  let imported;
+  try {
+    imported = importNvidiaCards(positional[0], { commit: String(flags.commit), only: flags.only === undefined ? null : String(flags.only).split(','), importedAt: new Date().toISOString() });
+  } catch (e) {
+    if (!(e instanceof NvidiaRefused)) throw e;
+    refused(e.message);
+  }
+  const { receipts, report } = imported;
+  for (const x of receipts) {
+    const { valid, errors } = validateReceipt(x.receipt);
+    if (!valid || !verifyReceiptHash(x.receipt)) refused(`the receipt of ${x.skill} ${x.agent} failed validation: ${JSON.stringify(errors).slice(0, 2000)}`);
+  }
+  const outDir = flags.out ? path.resolve(flags.out) : RECEIPTS_DIR;
+  const targets = receipts.map((x) => ({ x, file: path.join(outDir, `${x.name}.json`) }));
+  for (const t of targets) if (fs.existsSync(t.file)) refused(`${path.relative(process.cwd(), t.file)} exists: an import never writes over a file`);
+  fs.mkdirSync(outDir, { recursive: true });
+  const written = [];
+  try {
+    for (const t of targets) { fs.writeFileSync(t.file, JSON.stringify(t.x.receipt, null, 2), { flag: 'wx' }); written.push(t.file); }
+  } catch (e) {
+    for (const f of written) fs.rmSync(f, { force: true });
+    refused(e && e.code === 'EEXIST' ? `${path.relative(process.cwd(), e.path || '')} exists: an import never writes over a file` : `a receipt could not be written (${e && e.code})`);
+  }
+  if (flags.report) {
+    const rf = path.resolve(flags.report);
+    fs.mkdirSync(path.dirname(rf), { recursive: true });
+    fs.writeFileSync(rf, JSON.stringify(report, null, 2) + '\n');
+  }
+  console.log(`imported ${receipts.length} receipt(s) → ${path.relative(process.cwd(), outDir) || '.'}`);
+  console.log('  verification_level: DECLARED (source imported/nvidia-cards): the cards\' figures as printed, aggregates only; no verdict is read from these receipts. See docs/interop.md.');
+  for (const [k, v] of Object.entries(report)) console.log(`report ${k}: ${JSON.stringify(v)}`);
+}
+
 // Emit the minimal stable interchange summary for one receipt (interop, Phase 7).
 function cmdExport(positional, flags) {
   const p = positional[0];
@@ -1348,6 +1482,29 @@ function cmdExport(positional, flags) {
     console.log(`summary written to ${shown}  (${summary.verdict}, delta ${delta})`);
   } else {
     console.log(json);
+  }
+}
+
+function cmdLintSuite(args) {
+  const { lintSuite, render, HELP } = require('../lib/lint-suite');
+  try {
+    if (args.length === 1 && ['--help', '-h'].includes(args[0])) { console.log(HELP); return; }
+    const positional = []; let receiptsDir;
+    for (let i = 0; i < args.length; i++) {
+      const arg = args[i];
+      if (arg === '--receipts' || arg.startsWith('--receipts=')) {
+        if (receiptsDir !== undefined) throw new Error('Duplicate --receipts argument.');
+        receiptsDir = arg === '--receipts' ? args[++i] : arg.slice('--receipts='.length);
+        if (!receiptsDir || receiptsDir.startsWith('-')) throw new Error('--receipts requires a directory value.');
+      } else if (arg.startsWith('-')) throw new Error('Unknown flag ' + render(arg) + '.');
+      else positional.push(arg);
+    }
+    if (positional.length !== 1) throw new Error('usage: driftproof lint-suite <skill-dir> [--receipts DIR]; expected one skill operand.');
+    const report = lintSuite(positional[0], { receiptsDir });
+    console.log(render(report));
+  } catch (e) {
+    console.error(render('REFUSED (lint-suite): ' + e.message));
+    process.exitCode = e.exitCode || 2;
   }
 }
 
@@ -1390,8 +1547,19 @@ function cmdOverlap(args) {
 async function main() {
   const [, , cmd, ...rest] = process.argv;
   if (['run', 'regrade', 'import', 'validate', 'badge', 'decide', 'diff', 'export', 'stale', 'view'].includes(cmd)) checkReceiptValidator();
+  // Spec 026 AC-1, issue 236: qualify stub status before parsing or refusing inputs.
+  // Spec 235's dependency refusal runs first and writes nothing to stdout.
+  // Issue 301 (spec 062 AC-12): a flag refused while parsing leaves stdout empty, so the
+  // statement goes to stderr just before that refusal, still first in write order.
+  const stubDoor = process.env.DRIFTPROOF_STUB === '1' && (cmd === 'run' || cmd === 'regrade');
+  const STUB_STATEMENT = 'STUB RUN (DRIFTPROOF_STUB=1): no model will be called; any emitted receipt will be UNVERIFIED and measure nothing.';
   if (cmd === 'overlap') return cmdOverlap(rest);
-  const { positional, flags } = parseArgs(rest);
+  if (cmd === 'lint-suite') return cmdLintSuite(rest);
+  const { positional, flags } = parseArgs(rest, stubDoor ? () => console.error(STUB_STATEMENT) : null);
+  // Issue 337 (spec 106 A-106-9): given an argument, run and regrade write the statement themselves,
+  // once past their door refusals (stubAnnounce); a door refusal writes it to stderr just before itself.
+  if (stubDoor && positional[0]) stubPending = STUB_STATEMENT;
+  else if (stubDoor) console.log(STUB_STATEMENT);
   switch (cmd) {
     case 'init': return cmdInit(positional, flags);
     case 'run': return cmdRun(positional, flags);

@@ -229,6 +229,8 @@ test('AC-3 the frozen v0.9 schema is the Base\'s but for $id, and every tracked 
   const v09 = JSON.parse(JSON.stringify(receipt));
   // Issue 196: and without v0.12's judge fields, which no older schema carries.
   for (const k of ['harness', 'isolation', 'endpoint', 'code_revision', 'reported_models', 'criteria_template_hash']) delete v09.run.judge[k];
+  // A-137-9 (issue 317): and without the judge overhead's two counts, which are v0.13's.
+  for (const k of ['judged_draws_counted', 'judged_draws_missing_usage']) delete v09.economics.judge_overhead[k];
   v09.schema_version = '0.9';
   assert.equal(validateReceipt(v09).valid, false, 'a v0.9 receipt carrying run.capture validated');
   delete v09.run.capture;
@@ -249,8 +251,20 @@ test('AC-3 the frozen v0.9 schema is the Base\'s but for $id, and every tracked 
     const atBase = require(path.join(dir, 'lib', 'receipt.js')).validateReceipt;
     const list = trackedReceipts();
     assert.ok(list.length >= 200, `expected the tracked receipts, read ${list.length}`);
-    const moved = list.filter(({ r }) => validateReceipt(r).valid !== atBase(r).valid).map(({ f }) => f);
+    // A-137-10 (issues 267 and 333): a receipt stamped newer than the Base's own version, read
+    // numerically from the Base's config.js, did not exist at the Base, which refuses a version it
+    // never knew. Such a receipt validates here at its own stamped version, and the Base refuses it.
+    const baseVersion = (/RECEIPT_SCHEMA_VERSION = '([^']+)'/.exec(fs.readFileSync(path.join(dir, 'config.js'), 'utf8')) || [])[1];
+    assert.ok(baseVersion, 'the Base\'s config.js names no RECEIPT_SCHEMA_VERSION');
+    const newer = (v) => {
+      const a = String(v).split('.').map(Number); const b = baseVersion.split('.').map(Number);
+      for (let i = 0; i < Math.max(a.length, b.length); i += 1) if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0);
+      return false;
+    };
+    const moved = list.filter(({ r }) => !newer(r.schema_version) && validateReceipt(r).valid !== atBase(r).valid).map(({ f }) => f);
     assert.deepEqual(moved, []);
+    const unread = list.filter(({ r }) => newer(r.schema_version)).filter(({ r }) => { const v = validateReceipt(r); return !(v.valid && v.version === r.schema_version) || atBase(r).valid; }).map(({ f }) => f);
+    assert.deepEqual(unread, []);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 

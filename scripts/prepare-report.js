@@ -321,4 +321,6 @@ async function main() {
 
 if (require.main === module) main().catch((e) => { console.error('FATAL', e && (e.stack || e.message)); process.exit(1); });
 
-module.exports = { prepareReport, nextReportNumber, TRIM_KEEP };
+// Spec 265 AC-72: skillVerdict is exported so a test can read it; a marked pair never reaches it,
+// since lib/diff.js buildDriftReport refuses the pair.
+module.exports = { prepareReport, nextReportNumber, TRIM_KEEP, skillVerdict };

@@ -41,6 +41,16 @@ const INSTRUMENT = [
 
 const DOC_SOURCES = ['docs/methodology/index.html', 'scripts/build-site-pages.js'];
 
+// RECORDED LOOSENINGS, ONE COMMIT EACH, BY FULL SHA (A-025-48). A commit named
+// here is not read; every other commit is. e22dc96b moved lib/diff.js,
+// spec/RECEIPT.md and spec/receipt.schema.json, and 669ca65b moved the page one
+// commit later. The operator ruled on 14 Oct 2026 (issue 265) that this one
+// commit is exempt. A prefix does not match, so a rebase that re-writes the
+// commit leaves the exemption covering nothing and the check red again.
+const EXEMPT = Object.freeze({
+  e22dc96b5fe656f194cfd62e069090b2dd5f20f2: 'A-025-48, the operator\'s ruling of 14 Oct 2026 (issue 265); 669ca65b moved the page',
+});
+
 // A commit is { sha, files: [path], diffs: { path: text } }. `diffs` is read only
 // for the keys that carry a pattern, so a caller need not fetch diffs it will not
 // be asked for. Returns one message per offending commit, naming the instrument
@@ -48,6 +58,7 @@ const DOC_SOURCES = ['docs/methodology/index.html', 'scripts/build-site-pages.js
 function docsLag(commits) {
   const out = [];
   for (const c of commits) {
+    if (Object.prototype.hasOwnProperty.call(EXEMPT, c.sha)) continue;
     const hit = INSTRUMENT.filter((k) => c.files.includes(k.file)
       && (!k.diff || k.diff.test((c.diffs || {})[k.file] || '')));
     if (!hit.length) continue;
@@ -59,4 +70,4 @@ function docsLag(commits) {
   return out;
 }
 
-module.exports = { INSTRUMENT, DOC_SOURCES, docsLag };
+module.exports = { INSTRUMENT, DOC_SOURCES, EXEMPT, docsLag };

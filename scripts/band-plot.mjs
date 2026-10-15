@@ -36,6 +36,7 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const { bandOf } = require('../lib/reuse.js');
+const { receiptAggregatesOnly } = require('../lib/verdict.js');
 const { EFFECT_FLOOR } = require('../config.js');
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -122,6 +123,8 @@ function arm(receipt, mode) {
 }
 
 export function cellOf(receipt) {
+  // Spec 265 AC-62: a receipt carrying the mark has no band to draw.
+  if (receiptAggregatesOnly(receipt)) return { state: 'refused', baseline: null, skill: null, delta: null };
   const baseline = arm(receipt, 'baseline');
   const skill = arm(receipt, 'with_skill');
   if (!baseline || !skill) return { state: 'refused', baseline, skill, delta: null };

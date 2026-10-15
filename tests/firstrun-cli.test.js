@@ -7,8 +7,8 @@
 //   node --test tests/firstrun-cli.test.js
 //
 // THE MODEL IS SPEC 028'S FAKE `claude` (specs/028-claude-code-plugin/probes/bin/claude), first on
-// PATH, reached on the trusted lane, so the progress run makes real calls to a double. The other
-// runs are stub runs. No credential is in any environment here, and nothing is spent.
+// PATH, reached on the trusted lane, so the progress run makes real calls to a double. Warning assertions also use the fake model surface.
+// Stub assertions require no live warning or progress. No credential is in any environment here, and nothing is spent.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -95,11 +95,15 @@ test('the judge is the target: a loud warning on stderr before the first progres
   assert.ok(w < err.indexOf('progress: call '));
   const root = tmp();
   const dir = skill(root, 1);
-  const other = cli(['run', dir, '--models', MODEL, '--judge-model', 'claude-sonnet-5', '--max-cases', '1', '--samples', '1', '--out', path.join(root, 'o')], root, { DRIFTPROOF_STUB: '1' });
+  const other = cli(['run', dir, '--trusted-skill', '--models', MODEL, '--judge-model', 'claude-sonnet-5', '--max-cases', '1', '--samples', '1', '--out', path.join(root, 'o')], root);
   assert.equal(other.status, 0, other.stderr);
   assert.doesNotMatch(other.stderr, /WARNING: the judge/);
-  const dated = cli(['run', dir, '--models', MODEL, '--judge-model', 'claude-haiku-4-5-20251001', '--max-cases', '1', '--samples', '1', '--out', path.join(root, 'o2')], root, { DRIFTPROOF_STUB: '1' });
+  const dated = cli(['run', dir, '--trusted-skill', '--models', MODEL, '--judge-model', 'claude-haiku-4-5-20251001', '--max-cases', '1', '--samples', '1', '--out', path.join(root, 'o2')], root);
+  assert.equal(dated.status, 0, dated.stderr);
   assert.match(dated.stderr, /WARNING: the judge is the target model, claude-haiku-4-5\./);
+  const stub = cli(['run', dir, '--models', MODEL, '--samples', '1', '--out', path.join(root, 'stub')], root, { DRIFTPROOF_STUB: '1' });
+  assert.equal(stub.status, 0, stub.stderr);
+  assert.doesNotMatch(stub.stderr, /WARNING: the judge|progress: call|model that wrote each answer/i);
 });
 
 // Spec 140 (R-3): a missing isolation account is one plain line, before the skill is read.

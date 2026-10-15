@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Driftproof receipt, spec v0.12
+# Driftproof receipt, spec v0.13
 
 A **receipt** is a **hash-verified**, dated record of running one agent skill's eval suite
 **with** and **without** the skill on one model version, with the judge **sampled**
@@ -12,8 +12,9 @@ The machine-readable contract is [`receipt.schema.json`](./receipt.schema.json)
 (JSON Schema, draft 2020-12). This document is the human companion. Where they
 disagree, the schema wins.
 
-**Versioning.** The current schema is v0.12
+**Versioning.** The current schema is v0.13
 ([`receipt.schema.json`](./receipt.schema.json)). Prior schemas are kept frozen as
+[`receipt.v0.12.schema.json`](./receipt.v0.12.schema.json),
 [`receipt.v0.11.schema.json`](./receipt.v0.11.schema.json),
 [`receipt.v0.10.schema.json`](./receipt.v0.10.schema.json),
 [`receipt.v0.9.schema.json`](./receipt.v0.9.schema.json),
@@ -28,9 +29,10 @@ disagree, the schema wins.
 [`receipt.v0.1.schema.json`](./receipt.v0.1.schema.json); the validator picks the
 schema by the receipt's own `schema_version`, so every earlier receipt still loads and
 validates against its own frozen schema, including every receipt behind the published
-reports, which the gate asserts on each run. v0.12 is additive for a reader: it adds optional
-fields, so a v0.11 receipt restamped `"0.12"` validates; v0.11 is frozen because its version
-constant refuses anything else (see *What v0.12 adds*). v0.11 was additive over v0.10 in the same
+reports, which the gate asserts on each run. v0.13 is additive for a reader: it adds optional
+fields, so a v0.12 receipt restamped `"0.13"` validates; v0.12 is frozen because its version
+constant refuses anything else (see *What v0.13 adds*). v0.12 was additive over v0.11 in the same
+way (see *What v0.12 adds*). v0.11 was additive over v0.10 in the same
 way: it adds one optional field, and v0.10 is frozen for the same reason (see *What v0.11 adds*).
 v0.10 was additive over v0.9
 in the same way: it adds two optional fields (see *What v0.10 adds*). v0.9 was additive in the
@@ -191,6 +193,42 @@ digits, dot, underscore or hyphen. Blank, malformed and non-string ids refuse. T
 the same rule. Input bounds refuse before calling the judge; reply bounds refuse before copying or
 interpolating identity. Bound diagnostics omit hostile input. These limits cover answers and identity
 entering regrade, not provider transport buffering or receipt and suite size.
+
+## What v0.13 adds: figures a source printed, and the mark that reads no verdict from them
+
+Issue 265 (spec 265). An import from a source that publishes aggregates only, one score and one
+uplift per dimension and agent with no per-run score, has figures to carry and nothing a band can be
+formed from. v0.13 adds two optional top-level fields for such a receipt, both inside
+`receipt_hash`, and one optional economics figure. A v0.12 receipt restamped `"0.13"` validates,
+and v0.12 is frozen as [`receipt.v0.12.schema.json`](./receipt.v0.12.schema.json).
+
+- **`uncertainty_unavailable`**: the mark, one value, `aggregates_only`. The source gives aggregates
+  only, so no band, spread or verdict can be formed. A receipt carrying the mark reads no verdict: every
+  reader in the repository reads the mark where it reads `verification_level`
+  (`lib/verdict.js` `receiptAggregatesOnly`), and `receiptVerdict` reads it as `NOT_MEASURED` by its own
+  route, `aggregates_only`.
+- **`source_figures`**: the figures as the source printed them for the receipt's agent: the agent, the
+  skill, the evaluation date as printed (to the day), the evaluator version, environment, dataset
+  digest, task count and attempts per task where printed, one row per row of the results table
+  (`dimension`, the cell as `printed`, `score_pct`, `baseline_pct` only where the cell prints one,
+  `uplift`, `uplift_unit` and `tasks`), and the token row as printed. `uplift_unit` is `points`
+  where the cell says points and `unstated` where it prints a bare percent; no baseline is worked out
+  from an unstated unit.
+- **`source_figures.source`**: `{ repo, commit, files }`, the repository, the commit read (the
+  checkout's HEAD, given by `--commit`), and each file read with its `path` and `git_blob_sha1`, the
+  card first and `benchmarks.json` second. Each blob sha1 is computed from the bytes read and equals
+  the blob the commit holds at that path, so a reader can fetch that commit and check every figure.
+  `receipt_hash` is a hash of the receipt's own fields: it shows the receipt was not edited after it
+  was hashed, not who wrote the source. Driftproof records the files and the commit it read; it
+  does not attest the author.
+- **`economics.<arm>.total_tokens`**: a token total the source reports for the arm, with basis
+  `source-reported`. No mean, cost or call count is worked out from it.
+
+The schema holds the mark to its meaning: `source_figures` needs the mark; a receipt carrying the
+mark is not `TESTED`, its comparison is null with `delta_uncertainty_unavailable: "no_cases"`, its
+case rows carry a `case_status` other than `ok` and no score, mean, spread, samples or counts, its
+aggregates carry no mean or spread, and `run.counts` is absent. The NVIDIA importer that writes these
+receipts is described in [`docs/interop.md`](../docs/interop.md).
 
 ## What v0.12 adds: the judge's setting, and a regrade's evidence sealed
 
@@ -616,7 +654,7 @@ carry a numeric `mean`.
 ## Which schema validates which receipt (the coexistence rule)
 
 - **A producer emits the current version.** `config.js` `RECEIPT_SCHEMA_VERSION`
-  decides it, and at this revision that is **v0.12**.
+  decides it, and at this revision that is **v0.13**.
 - **A reader validates against the receipt's own `schema_version`**, never
   against the newest schema it happens to have. `validateReceipt()` selects the
   schema by that field, which is why a v0.1 receipt from the first report still
@@ -685,6 +723,41 @@ floor, latency always carrying its disclosure — are in
 prepend a large fixed harness preamble we do not control (observed ~25k input
 tokens on `claude-cli`, ~11k on `codex`). It inflates absolute per-call cost, but
 it is identical in the with-skill and baseline arms, so it cancels in every Δ.
+
+## What the judge overhead counts (issue 317)
+
+`economics.judge_overhead` says what grading cost. It is measurement overhead, excluded from every
+value figure above.
+
+- **`total_cost_usd`**: the cost, at the judge model's price in `run.pricing_snapshot`, of the judge
+  usage recorded on every draw sent to the judge, each draw counted once. A draw is sent to the judge
+  when it carries an answer the judge can grade (a `generation_hash`, `truncated` not `true`, and in
+  files capture its `captured_files`) and it was scored, carries `judge_sample_hashes` or
+  `judge_usage`, or records that its judge call timed out. A failed row's draws count as any other's.
+  A row with no draws, v0.4 and earlier, is read from its own `judge_usage`, failed rows out. A draw
+  a regrade could not grade is copied whole from the original, the original judge's usage with it,
+  and is not counted. The figure is null when nothing was priced, never 0.
+- **What a draw's usage holds.** A draw's `judge_usage` is the sum of the usage its answered judge
+  samples reported. Retried attempts, samples that failed, and samples that reported no usage are
+  not in it, though each was a call. So the total is the usage the answered samples reported, a floor
+  on what judging was billed, not the bill.
+- **`case_rows_measured`**: the case rows that contributed judge usage to the total.
+- **`judged_draws_counted`**: the judge usage records summed into the total, one per draw sent to the
+  judge (one per row with no draws).
+- **`judged_draws_missing_usage`**: the draws sent to the judge that carry no readable judge usage,
+  and the rows with no draws and none. A usage is readable when it has an input or output token count
+  and every count it has is a finite number of at least 0. These add nothing to the total, and no
+  count is imputed. When the judge model has no price in the snapshot, nothing is counted, the total
+  is null and `note` says so.
+- **Rounding.** Each counted draw's cost is rounded to six decimal places, the rounded costs are
+  summed in receipt order, and the sum is rounded to six places. A reader who sums unrounded costs
+  can differ in the sixth place.
+
+**Correction, 2026-10-14 (issue 317).** A receipt with draws written before this change counts one draw
+per case row: its `judge_overhead` read only the row's `judge_usage`, a copy of one draw's, and it
+records no `judged_draws_counted`. Its total over every draw re-derives from `draws[].judge_usage` at
+its frozen judge price, by the rule above. Those receipts' bytes are hashed and are not changed; this
+note is their correction. A receipt that records `judged_draws_counted` counts every draw.
 
 ## Interop-additive revision (Phase 7 — receipts as an open format)
 
@@ -790,7 +863,7 @@ The v0.3.1 schema gained an **additive interop revision** so receipts can be
 
 ## Fields
 
-### `schema_version` (string, required): `"0.12"`.
+### `schema_version` (string, required): `"0.13"`.
 
 ### `skill` (object, required)
 | field | type | notes |

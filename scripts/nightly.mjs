@@ -56,6 +56,7 @@ const ROOT = path.resolve(HERE, '..');
 const EMISSION = 'specs/029-scanner-loop/evidence/sweep-run.json';
 const RAW = 'specs/029-scanner-loop/evidence/sweep-raw';
 const HOLDS = 'specs/029-scanner-loop/holds.json';
+const DECISIONS = 'specs/000-governance/gate-decisions.json';
 const MAX_LINES = 40;
 
 const HOME = os.homedir();
@@ -242,10 +243,12 @@ function mergeLines(merges) {
   return out;
 }
 
-// spec 065: the holds come from the tree swept, and "now" is the run's start
+// spec 065: the holds come from the tree swept, and "now" is the run's start; spec 029 A-029-8 (issue 337):
+// so does the gate list, whose retired_criteria are the only retirements the reading sets aside. A-029-9
+// (issue 345): a commit made before the list carries none, and then no retirement is set aside
 async function readRows(reference, emission, tree, startedAt) {
-  const { newReds, readHolds } = await import(pathToFileURL(path.join(ROOT, 'specs/029-scanner-loop/probes/sweep.mjs')).href);
-  return newReds(reference, emission.runs, { holds: readHolds(path.join(tree, HOLDS)), now: startedAt });
+  const { newReds, readHolds, readTreeGateDecisions } = await import(pathToFileURL(path.join(ROOT, 'specs/029-scanner-loop/probes/sweep.mjs')).href);
+  return newReds(reference, emission.runs, { holds: readHolds(path.join(tree, HOLDS)), now: startedAt, decisions: readTreeGateDecisions(path.join(tree, DECISIONS)) });
 }
 
 async function report(r) {

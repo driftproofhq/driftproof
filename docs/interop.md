@@ -8,7 +8,7 @@ the minimal stable summary other tools can consume without parsing full receipts
 
 The machine-readable receipt contract is
 [`spec/receipt.schema.json`](https://driftproofhq.com/spec/receipt.schema.json)
-(JSON Schema draft 2020-12, spec v0.12); the human companion is
+(JSON Schema draft 2020-12, spec v0.13); the human companion is
 [`spec/RECEIPT.md`](https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md).
 
 ## The honesty rule that governs every import
@@ -18,7 +18,7 @@ receipt is stamped with exactly what we know and nothing more:
 
 | receipt field | imported value | why |
 |---|---|---|
-| `verification_level` | **`DECLARED`** — never `TESTED` | `TESTED` means *a Driftproof-controlled suite was executed and judged with sampled bands*. An import is the source tool's **declaration**, converted faithfully. |
+| `verification_level` | **`DECLARED`** — never `TESTED` | `TESTED` means *a Driftproof-controlled suite was executed and judged with sampled bands*. An import is the source tool's **declaration**, converted faithfully. Harbor declares no figure, so a Harbor import is recomputed by Driftproof from the trial files it read, and each trial left out is counted and listed (Source #5). |
 | `run.surface` | **`external`** | The run happened on someone else's harness. |
 | `run.source` | **`imported/<tool>`** | Provenance of the conversion. |
 | `generation_hash`, `judge_sample_hashes` | **omitted** | We never saw the raw generations; hashes are **never fabricated**. |
@@ -203,6 +203,115 @@ driftproof import my-skill-workspace/iteration-1/ --from skill-creator
 The comparison is paired by eval: an eval scored in one arm only, or whose runs carry different
 `result.total` counts of expectations, keeps its rows but is left out of both arms' aggregates and
 the delta, listed in `excluded_cases` and named in a notice.
+
+## Source #5: Harbor job directories
+
+[Harbor](https://github.com/harbor-framework/harbor) runs an agent on tasks and grades each trial
+with the task's own tests. It writes one `result.json` per trial. Harbor has no with-skill and
+without-skill mode, so the user declares the arms: one job run with the skill, one without.
+
+```
+driftproof import --from harbor --with jobs/with-skill --without jobs/baseline [--reward reward] [--skill NAME]
+driftproof import jobs/baseline --from harbor --arm baseline
+```
+
+`--with` and `--without` each take one job, or a folder of jobs (skill-placebo runs one job per
+trial). Given one job, `--arm` says which arm it is, `with-skill` by default; the other arm is
+empty and the comparison is null, never a zero. The receipt is `DECLARED`.
+
+### Which file is read, and why it is trusted
+
+A trial file is a `result.json` at exactly one place: `<job>/<trial>/result.json`, in the folder
+named for the trial (`trial_name`). Harbor writes that file into the trial folder itself and gives
+the agent and the verifier their own subfolders of it, `agent/` and `verifier/`. So nothing inside
+a trial folder is listed or read: a `result.json` a skill or a test script wrote under `agent/` or
+`verifier/` is never taken for a trial. The importer cannot check from the files that the agent
+had no write access to the trial folder itself; that rests on Harbor's layout. A trial folder
+whose name is not its `trial_name` is refused. A job-level `result.json` (its `stats`) is never
+read for any figure. A symbolic link where the importer would open or enter is refused.
+
+### Field mapping (Harbor trial → receipt)
+
+| source | receipt | rule |
+|---|---|---|
+| `task_id`, `task_checksum` | `results.cases[].id` | A case is one pair, `task:` and 16 hex of their sha256. Two tasks sharing a `task_name` stay two cases. The same checksum under a different `task_id` in the two arms is not matched, and a notice counts it. |
+| `task_name` | `results.cases[].label` | Only when it is a plain name. It never keys a case. |
+| `verifier_result.rewards.<key>` | one entry of `samples` | With one numeric key, that key; with several, `--reward` names it. A value outside 0 to 1, or not finite, is refused. No number under the key: listed in `excluded_draws`. |
+| `exception_info` set | `excluded_draws`, with `exception_type` | Left out whatever its reward. The message and traceback are never copied. |
+| `finished_at` not an ISO 8601 UTC time | `excluded_draws` | A trial with no exception whose `finished_at` is not an ISO 8601 UTC time is left out too, and a notice counts it by arm. Only finished trials with a reward enter the delta. |
+| `step_results` set | nothing written | Multi-step trials are refused. |
+| `agent_info.name`, `agent_info.version` | `run.harness` | One harness on every trial, or refused. |
+| `agent_info.model_info.name` | `run.model_id` | One model on every trial, or refused; none recorded on any trial is `unknown`. A notice counts the trials whose `agent_result.model_usage` names another model. |
+| `config`, without `trial_name`, `trials_dir`, `job_id`, `task` and `source_trial` | a notice | The trial's settings: `config.agent`, `config.environment`, `extra_instructions`, the timeout multipliers and the rest. They must be the same on every trial of an arm, or the import is refused. A local path is compared by its sha256, so two different paths stay different. A notice names each key that differs between the arms, never a value. |
+| `verifier_environment_mode`, `config` timeouts and timeout multipliers, `config.verifier` | `excluded_cases` | A case whose admitted trials differ in these leaves the aggregates and the delta. In a one-arm import this holds within the arm. |
+| `agent_result.n_input_tokens`, `n_output_tokens`, `cost_usd` | `economics`, basis `source-list-price-estimate` | Means over the trials in the delta only. One call is one trial: one agent episode that may make many model calls. `n_input_tokens` includes cached tokens. `cost_usd` is the agent's own estimate at list price. |
+| `started_at` | `run.date_utc` | The earliest. |
+| each trial file | `run.import.sidecars`, `run.import.source_sha256` | Each file's path in its job and sha256. The receipt's file name ends in the first 12 hex of `source_sha256`. |
+
+The delta is recomputed from the rewards over the tasks both arms ran: a task one job ran, or a
+task whose arms were graded under other settings, is listed in `excluded_cases`. The import prints
+how many trials each arm left out. When the arms leave out different shares of their trials, a
+notice says so: the delta covers finished trials with a reward only, and a trial left out counts as
+neither a pass nor a failure. A trial file that repeats another apart from its id and name is
+refused. Every notice is one of a fixed set of sentences (spec 266). Harbor records no skill name,
+so `skill.name` is the `--skill` value, or `unknown`.
+
+### skill-placebo, and the placebo arms
+
+Spec 266 is proven on skill-placebo's published Harbor trials. Its METHOD.md compares each skill
+with the one placebo of its bucket and defines no pooling of its five placebo arms. So there is no
+pooled placebo comparison to reproduce, and none is imported: the importer takes no placebo
+option. skill-placebo counts a timed-out trial as a failure; this importer leaves it out and lists it.
+
+## Source #6: NVIDIA benchmark cards (NVIDIA/skills)
+
+[NVIDIA/skills](https://github.com/NVIDIA/skills) publishes a benchmark card for each skill,
+`skills/<skill>/BENCHMARK.md`, and an index of every card's results, `benchmarks.json`. The skills
+and docs there are licensed CC BY 4.0. The cards give aggregates only: one score and one uplift per
+dimension and agent, and no per-run score.
+
+```
+driftproof import <checkout> --from nvidia-cards --commit <sha> [--only <skill>[,<skill>]] [--out DIR] [--report FILE]
+```
+
+`<checkout>` is a git checkout of NVIDIA/skills, and `--commit` is its HEAD, given in full. The
+import reads `benchmarks.json` and each `skills/<skill>/BENCHMARK.md`, nothing else, and refuses a
+checkout whose files are not the commit's: each file's git blob sha1, computed from the bytes read,
+must be the blob the commit holds at that path. Without `--only` every card is read, and a card
+with no index row, or an index row with no card, is refused. `--only` reads the named skills, by
+folder name.
+
+One `DECLARED` receipt is written for each skill and agent that has results (`claude-code` or
+`codex`). A skill in `skills_without_results`, and an agent column the card marks `Not available`
+or `N/A` in every row, get no receipt and are named in the import report, which the command prints
+and `--report` writes as JSON.
+
+### What the receipt carries, and what it does not
+
+The card's figures are carried as printed in `source_figures`, beside the mark
+`uncertainty_unavailable: "aggregates_only"`, both inside the receipt's hash. Each row keeps the
+cell as `printed` with its numbers read out of it. The recorded source is the repository, the
+commit and each file's path and `git_blob_sha1`, so anyone can fetch that commit and check every
+figure. Driftproof records the files and the commit it read; it does not attest the author.
+
+The receipt's case rows carry no figure, its comparison is null, and its aggregates have no mean:
+no verdict is read from it. `badge`, `decide`, `diff`, `view`, `export` and every report builder
+read the mark where they read the verification level, and give the receipt no verdict word, no
+band and no lift. NVIDIA's own verdict, tier status, findings and recommendation are not carried.
+
+| card or index | receipt | rule |
+|---|---|---|
+| a results cell `B% → S% (+U points)` | a row: `score_pct` S, `baseline_pct` B, `uplift` U, `uplift_unit` `points` | Newer cards. A `±` sign is read only where U is zero. |
+| a results cell `S% (+U%)` | a row: `score_pct` S, `uplift` U, `uplift_unit` `unstated`, `baseline_pct` null | Older cards print the uplift with no unit, so the unit stays `unstated` and no baseline is worked out. |
+| a cell that prints a score and says the uplift is unavailable | a row: `score_pct` S, every other figure null | |
+| the `- Agents:` line, or the `## Agents Used` list | `run.model_id`, `run.provider` | The id the card prints for the agent; `unknown`, with a notice, where it prints none. Never guessed from the date. |
+| `- Evaluation date:` | `run.date_utc`, `source_figures.evaluation_date` | The card gives the day, so `run.date_utc` is the start of that day and readers show the day alone. The import time is `run.import.imported_at` only. |
+| the token table's `All cases` row for the agent | `economics`, basis `source-reported`, and `source_figures.tokens` | The two totals as printed, separators removed. No mean, cost or call count is worked out. No row: economics are unknown, with a notice. |
+| `benchmarks.json` `results` | checked, not copied | Every dimension's score and uplift must equal the card's cell, both ways, or the import is refused. |
+
+Every cell, metadata line, agent entry and table header is read by a closed set of shapes; anything
+else refuses the import, naming the skill, the agent and the cell, and writes nothing. Every notice
+is one of a fixed set of sentences (spec 265).
 
 ## The lightweight interchange: `driftproof export --to summary-json`
 

@@ -46,6 +46,8 @@ const { receiptLinksBlock } = require('./receipt-links.js');
 
 const ROOT = path.join(__dirname, '..');
 const { buildReceipt, validateReceipt, verifyReceiptHash , caseFailed } = require('../lib/receipt');
+// Spec 265: a receipt carrying the mark is refused before any direction is read.
+const { receiptAggregatesOnly, AGGREGATES_ONLY_LINE } = require('../lib/verdict');
 const { sha256 } = require('../lib/canonical');
 const { mean, stddev, bandVerdict, WITHIN_NOISE } = require('../lib/stats');
 const { outcomeFor, releaseDateFor, runSkillOnModel, projectCalls } = require('../lib/run');
@@ -166,6 +168,7 @@ async function liveRunSkill(skill, model, budget, nowIso) {
 // effect floor (a case counts only when its with_skill and baseline bands do
 // NOT overlap AND |Δmean| ≥ EFFECT_FLOOR). Point-band drivers flag low-res.
 function tierDirection(receipt) {
+  if (receiptAggregatesOnly(receipt)) throw new Error(`report 004 refused: ${AGGREGATES_ONLY_LINE}`);
   const by = {};
   for (const c of receipt.results.cases) {
     if (caseFailed(c)) continue;

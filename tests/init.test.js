@@ -266,3 +266,141 @@ test('the CLI: --drafted-from-skill labels the cases, and is refused with no --c
   assert.match(suite.origin, /drafted from the skill and approved by the user/);
   assert.equal(suite.cases[0].origin, suite.origin);
 });
+
+
+// Issue 237, spec 139 A-139-16: the generic examples do not establish intended-task performance.
+const EXAMPLE_LIMIT = "These generic examples are not grounded in your skill's claims. Their scores do not establish performance on your intended tasks.";
+const VERDICT_LIMIT = 'The CLI still computes scores and verdicts, but these do not validate a skill-specific suite.';
+const EXAMPLE_WARNING = `${EXAMPLE_LIMIT} ${VERDICT_LIMIT}`;
+
+// The declared output covers the whole message, so appended claims cannot hide beside the warning.
+// Ordinary relative names are the scope. Path quoting and terminal controls are deferred by the spec.
+function initOutput({ target, created = ['SKILL.md', 'evals/evals.json', '.driftproofrc'], skipped = [], existingSkill = false, casesFile = null }) {
+  const dash = String.fromCodePoint(0x2014);
+  const lines = [`driftproof init ${dash} ${target}/`];
+  for (const file of created) lines.push(`  + ${target}/${file}`);
+  for (const file of skipped) lines.push(`  · ${target}/${file} (exists ${dash} left untouched)`);
+  if (!created.length) return `${lines.join('\n')}\n\nNothing to create; every file already existed. init never overwrites.\n`;
+  const steps = [existingSkill
+    ? `Your ${target}/SKILL.md was left as it was.`
+    : `Edit ${target}/SKILL.md with your skill's instructions.`];
+  if (created.includes('evals/evals.json')) {
+    steps.push(casesFile === null
+      ? `Edit ${target}/evals/evals.json: replace the 3 example cases (rubrics anchored at 0.80). ${EXAMPLE_WARNING}`
+      : `Read ${target}/evals/evals.json: it holds the cases from ${casesFile}.`);
+  }
+  steps.push(`driftproof run ${target} --quick   (a smoke run: no verdict, a first look)`);
+  steps.push(`driftproof run ${target} --models claude-haiku-4-5`);
+  return `${lines.join('\n')}\n\nNext:\n${steps.map((s, i) => `  ${i + 1}. ${s}`).join('\n')}\nSee AUTHORING.md for how to write a fair suite.\n`;
+}
+function placeholderNextSteps(stdout, options) {
+  const lines = stdout.split('\n');
+  const edit = lines.findIndex((line) => /^  \d+\. Edit /.test(line) && line.includes(`${options.target}/evals/evals.json:`));
+  assert.ok(edit >= 0, 'the replacement step names the example suite');
+  assert.ok(lines[edit].includes('replace the 3 example cases (rubrics anchored at 0.80).'), 'the replacement instruction and scoring anchor remain');
+  assert.ok(lines[edit].endsWith(EXAMPLE_WARNING), 'the step limits intended-task performance and explains that scores and verdicts are still computed');
+  assert.equal(stdout.split(EXAMPLE_WARNING).length - 1, 1, 'the example warning is said once');
+  const quick = lines.findIndex((line) => line.endsWith(`driftproof run ${options.target} --quick   (a smoke run: no verdict, a first look)`));
+  const full = lines.findIndex((line) => line.endsWith(`driftproof run ${options.target} --models claude-haiku-4-5`));
+  assert.ok(quick > edit && full > quick, 'replace the examples before either suggested run');
+  assert.ok(stdout.includes('See AUTHORING.md for how to write a fair suite.'), 'the fair-suite guide remains');
+  assert.equal(stdout, initOutput(options), 'the entire output has no added or paraphrased contradictory claim');
+}
+function noPlaceholderNextSteps(stdout, options) {
+  assert.doesNotMatch(stdout, /replace the 3 example cases|These generic examples|do not validate a skill-specific suite/);
+  assert.equal(stdout, initOutput(options), 'supplied cases and preserved suites are not misrepresented anywhere in the output');
+}
+function captureInitRoute(route) {
+  const { root, dir } = route === 'existing skill' ? existingSkill() : (() => {
+    const root = tmp();
+    return { root, dir: path.join(root, 'new-skill') };
+  })();
+  const r = cli(['init', dir], root);
+  assert.equal(r.status, 0, r.stderr);
+  const options = { target: path.basename(dir), ...(route === 'existing skill'
+    ? { created: ['evals/evals.json'], skipped: ['SKILL.md'], existingSkill: true }
+    : {}) };
+  return { stdout: r.stdout, options };
+}
+
+for (const route of ['new skill', 'existing skill']) {
+  test(`issue 237: ${route} next steps limit the examples before either run`, () => {
+    const { stdout, options } = captureInitRoute(route);
+    placeholderNextSteps(stdout, options);
+  });
+}
+
+test('issue 237: each route plant removes the warning from captured output while the other route stays clean', () => {
+  const captured = ['new skill', 'existing skill'].map(captureInitRoute);
+  for (const [i, route] of captured.entries()) {
+    placeholderNextSteps(route.stdout, route.options);
+    const control = captured[1 - i];
+    placeholderNextSteps(control.stdout, control.options);
+    assert.ok(route.stdout.includes(EXAMPLE_WARNING), 'the warning is present before planting');
+    assert.throws(() => placeholderNextSteps(route.stdout.replace(EXAMPLE_WARNING, ''), route.options), assert.AssertionError);
+    placeholderNextSteps(control.stdout, control.options);
+  }
+});
+
+test('issue 237: supplied cases, labelled or plain, are not called placeholders', () => {
+  for (const labelled of [false, true]) {
+    const { root, dir } = existingSkill();
+    const draft = path.join(root, 'cases.json');
+    const cases = { cases: [{ id: 'a', prompt: 'Name one file.', rubric: 'Names one file.' }] };
+    fs.writeFileSync(draft, JSON.stringify(cases));
+    const r = cli(['init', dir, '--cases', draft, ...(labelled ? ['--drafted-from-skill'] : [])], root);
+    assert.equal(r.status, 0, r.stderr);
+    const options = { target: path.basename(dir), created: ['evals/evals.json'], skipped: ['SKILL.md'], existingSkill: true, casesFile: draft };
+    noPlaceholderNextSteps(r.stdout, options);
+    for (const plant of [EXAMPLE_WARNING, 'Created three placeholder examples for your supplied suite.', 'The cases you supplied are generic starter tests.']) {
+      assert.throws(() => noPlaceholderNextSteps(`${r.stdout}${plant}\n`, options), assert.AssertionError, plant);
+    }
+  }
+});
+
+test('issue 237: a preserved suite is not called new examples, including when other files are created', () => {
+  for (const missingSkill of [false, true]) {
+    const root = tmp();
+    const dir = path.join(root, 'preserved');
+    fs.mkdirSync(path.join(dir, 'evals'), { recursive: true });
+    const suite = path.join(dir, 'evals', 'evals.json');
+    fs.writeFileSync(suite, SUITE);
+    if (!missingSkill) assert.equal(cli(['init', dir], root).status, 0);
+    const before = stat(suite);
+    const r = cli(['init', dir], root);
+    assert.equal(r.status, 0, r.stderr);
+    assert.equal(fs.readFileSync(suite, 'utf8'), SUITE);
+    assert.deepEqual(stat(suite), before);
+    const options = { target: 'preserved', created: missingSkill ? ['SKILL.md', '.driftproofrc'] : [],
+      skipped: missingSkill ? ['evals/evals.json'] : ['SKILL.md', 'evals/evals.json', '.driftproofrc'] };
+    noPlaceholderNextSteps(r.stdout, options);
+    for (const plant of [EXAMPLE_WARNING, 'Created three example cases for the suite already here.', 'The preserved cases are placeholders to replace.']) {
+      assert.throws(() => noPlaceholderNextSteps(`${r.stdout}${plant}\n`, options), assert.AssertionError, plant);
+    }
+  }
+});
+
+test('issue 237: the output reader rejects claim, order, additive and paraphrased plants beside a compliant control', () => {
+  const options = { target: 'fx' };
+  const control = initOutput(options);
+  placeholderNextSteps(control, options);
+  const plants = [
+    ['missing intended-task limit', control.replace(EXAMPLE_LIMIT, '')],
+    ['missing verdict limit', control.replace(VERDICT_LIMIT, '')],
+    ['claim of measurement', control.replace(EXAMPLE_LIMIT, 'These example cases measure your skill.')],
+    ['late warning', `${control.replace(EXAMPLE_WARNING, '')}${EXAMPLE_WARNING}\n`],
+    ['no replacement instruction', control.replace('replace the 3 example cases', 'keep the 3 example cases')],
+    ['wrong scoring anchor', control.replace('0.80', '0.70')],
+    ['wrong suite path', control.replace('fx/evals/evals.json:', 'fx/other.json:')],
+    ['no quick command', control.replace('driftproof run fx --quick', 'removed')],
+    ['no full command', control.replace('driftproof run fx --models', 'removed')],
+    ['no authoring guide', control.replace('See AUTHORING.md for how to write a fair suite.', '')],
+    ['additive measurement claim', `${control}These examples prove your skill helps with 95% confidence.\n`],
+    ['additive replacement-sufficiency claim', `${control}Just replacing them proves your skill helps.\n`],
+    ['paraphrased measurement claim', `${control}This suite already validates your intended tasks.\n`],
+    ['additive provenance claim', `${control}These cases were tailored to your skill.\n`],
+  ];
+  for (const [name, stdout] of plants) {
+    assert.throws(() => placeholderNextSteps(stdout, options), assert.AssertionError, name);
+  }
+});

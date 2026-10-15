@@ -274,6 +274,15 @@ test('AC-4 (d) the single-key shape writes a receipt byte-identical to the Base\
     assert.ok(added.every((k) => k in back.run.judge), 'this tree records the v0.12 judge fields');
     for (const k of added) delete back.run.judge[k];
     back.schema_version = require(path.join(dir, 'config.js')).RECEIPT_SCHEMA_VERSION;
+    // A-180-6 (issue 317): the judge overhead counts every judged draw, with two counts. The block must
+    // be spec 317's reading of this receipt's own draws, and is taken back to the one the Base's
+    // lib/value.js computes over the same rows.
+    const r317 = require(path.join(REPO, 'specs', '317-judge-cost-draws', 'reading.js'));
+    const jo = back.economics.judge_overhead;
+    const judgeId = back.run.judge.model_id;
+    assert.deepEqual(r317.differences(jo, r317.expected(back.results.cases, r317.priceOf(back, judgeId), r317.captureOf(back))), [], 'the judge overhead is spec 317\'s reading');
+    assert.ok(Number.isInteger(jo.judged_draws_counted) && Number.isInteger(jo.judged_draws_missing_usage), 'both counts are recorded');
+    back.economics.judge_overhead = require(path.join(dir, 'lib', 'value.js')).computeEconomics({ cases: back.results.cases, modelId: back.run.model_id, judgeModelId: judgeId, pricingSnapshot: back.run.pricing_snapshot, surface: back.run.surface, meteredSurface: false }).judge_overhead;
     lib.receipt.sealReceipt(back);
     assert.equal(JSON.stringify(back), JSON.stringify(theirs.receipt));
   } finally {

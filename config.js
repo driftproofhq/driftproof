@@ -9,7 +9,7 @@ const PROJECT_NAME = 'driftproof';
 // Bumped whenever the runner's behaviour or receipt-generation semantics change
 // in a way that could affect results. Recorded into every receipt as
 // run.runner_version so a receipt is reproducible against a known engine.
-const RUNNER_VERSION = '0.21.0';
+const RUNNER_VERSION = '0.22.0';
 
 // The eval format we CONSUME (we deliberately do not invent our own).
 const SUITE_FORMAT = 'agentskills.io/evals';
@@ -45,7 +45,10 @@ const SUITE_FORMAT = 'agentskills.io/evals';
 // v0.12  (issue 196) records the judge's setting in run.judge (harness, isolation, endpoint,
 //        code_revision), and a regrade seals its evidence: run.regraded_from, run.regrade and a
 //        case row's checks_regrade. v0.11 is frozen as receipt.v0.11.schema.json.
-const RECEIPT_SCHEMA_VERSION = '0.12';
+// v0.13  (issue 265) adds the mark uncertainty_unavailable (aggregates_only) and source_figures,
+//        the figures a source printed with the repository, commit and blob sha1 of each file read,
+//        and economics.<arm>.total_tokens. v0.12 is frozen as receipt.v0.12.schema.json.
+const RECEIPT_SCHEMA_VERSION = '0.13';
 
 // Input bounds on the skill loader and the post-checks (spec 026 AC-13, audit
 // A3/A7). lib/skill.js loaded every bundled file with no count, depth, byte,

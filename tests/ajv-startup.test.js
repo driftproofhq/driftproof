@@ -287,6 +287,16 @@ function baselineRuntime() {
   for (const file of ['bin/driftproof', 'lib/receipt.js']) {
     fs.writeFileSync(path.join(dir, file), execFileSync('git', ['show', BASE + ':' + file], { cwd: ROOT, timeout: 1800000 }));
   }
+  // A-235-9: the Base's schema table is replaced by today's, so the Base validator holds every receipt
+  // version today's runtime writes. The table is the only part of the Base's lib/receipt.js that changes.
+  const table = (source) => {
+    const found = source.match(/^const SCHEMA_FILES = \{\n[\s\S]*?^\};$/gm);
+    assert.equal(found && found.length, 1, 'lib/receipt.js holds exactly one schema table');
+    return found[0];
+  };
+  const file = path.join(dir, 'lib', 'receipt.js');
+  const base = fs.readFileSync(file, 'utf8');
+  fs.writeFileSync(file, base.replace(table(base), () => table(fs.readFileSync(path.join(ROOT, 'lib', 'receipt.js'), 'utf8'))));
   return dir;
 }
 function fixedReceipt(w, runtime, outName) {
