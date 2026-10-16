@@ -33,6 +33,10 @@ jobs:
     env:
       DRIFTPROOF_STUB: '1'
     steps:
+      # Before checkout, so git converts no file that carries no text attribute: the root files and
+      # plugin/ check out as stored. The folders' own .gitattributes say the same (spec 312 AC-4).
+      - name: check out the bytes the repository stores
+        run: git config --global core.autocrlf false
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1

@@ -173,6 +173,23 @@ test('AC-9 the sweep reads a scan into a verdict and lines: new is RED, not read
   assert.match(cq.sweepLines({ state: 'clean', summary: summary({ gone: [{ alert: 1 }] }) })[0], /1 baseline entries no longer read/);
 });
 
+test('A-148-8 a new result in test code warns; one in shipped code, or one not read, still stops the sweep (issue 350)', () => {
+  const at = (...files) => ({ state: 'new', summary: { state: 'new', total: 11 + files.length, on_baseline: 11, gone: [], new: files.map((file, i) => ({ rule: 'js/r', file, line: i + 1 })), extracted_files: 312, tool: '2.27.1' } });
+  const testCode = at('tests/a.test.js', 'tests/fixtures/b.js', 'specs/029-scanner-loop/probes/sweep.mjs', 'specs/148-x/fixtures/c.js');
+  assert.equal(cq.sweepVerdict(testCode), null, 'test code alone decides nothing');
+  assert.deepEqual(cq.sweepLines(testCode).slice(1), [
+    '  - js/r tests/a.test.js:1 (test code: a warning)', '  - js/r tests/fixtures/b.js:2 (test code: a warning)',
+    '  - js/r specs/029-scanner-loop/probes/sweep.mjs:3 (test code: a warning)', '  - js/r specs/148-x/fixtures/c.js:4 (test code: a warning)',
+  ]);
+  // Plants: shipped code beside test code, and paths that only look like test code, each stop the sweep.
+  for (const file of ['scripts/site-chrome.js', 'lib/tests/a.js', 'docs/fixtures/a.js', 'testsuite/a.js', 'specs/029-x/probes.js', 'specs/029-x/gate.sh']) {
+    assert.equal(cq.sweepVerdict(at('tests/a.test.js', file)), 'RED', file);
+    assert.doesNotMatch(cq.sweepLines(at(file))[1], /warning/, file);
+  }
+  assert.equal(cq.sweepVerdict({ state: 'new', summary: { ...testCode.summary, new: [] } }), 'RED', 'new with no result listed is not test code');
+  assert.equal(cq.sweepVerdict({ state: 'new' }), 'RED', 'new with no summary is not test code');
+});
+
 const RECORD = [
   'Fixed in 0.13.0: #10 lib/decision.js:375 (spec 111).',
   '',

@@ -1,9 +1,7 @@
-# Every checkout writes the bytes the repository stores, LF, on every platform:
-# a Windows checkout would otherwise write CRLF, and the gate's hashes and byte
-# comparisons would read bytes the repository never held (spec 312). This rule
-# comes first and no later rule sets eol or text.
-* text=auto eol=lf
 # The binary file types this repository tracks, declared by type: one extension per line.
 # Every other tracked file is text, and carries no NUL byte.
+# No rule here sets eol or text: the Claude plugin directory refuses an attribute that
+# rewrites file contents at the root, above the plugin folder or in it. The line-ending
+# rule sits in a .gitattributes in each folder the gate reads (spec 312, A-312-3).
 *.png binary
 *.woff2 binary

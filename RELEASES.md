@@ -8,6 +8,118 @@ makes this one a record.
 
 ---
 
+## v0.22.1 - 2026-10-16
+
+### What's new
+
+- **Driftproof's Claude plugin can be listed in the plugin directory again, so directory users get
+  the same version as npm.** The plugin directory's submission rules refuse a repository that
+  rewrites a tracked file's content at its root or inside the plugin's own folder. The setting that
+  did this moved out of both places and into the folders Driftproof's own checks read instead, so
+  the directory accepts the repository again. Installing the plugin, and what it runs, is unchanged.
+
+### What may change for you
+
+- **Nothing in this release changes a command's output, a receipt, or what the plugin or package
+  runs.** Every change in 0.22.1 is to the repository's own release process, or to a published
+  page's wording; no behaviour, file format or recorded figure moves.
+
+### Known issues
+
+- **What is not recorded or compared.** A CLI judge's own settings files (`~/.claude/settings.json`,
+  project settings, `CLAUDE.md` files, codex's config), the eval user's shell profile behind the
+  isolated hop, other proxy, region and credential variables, and the network the call crosses can
+  all change what the judge reads or where its call goes. The receipt holds none of them.
+  `spec/RECEIPT.md` lists them.
+- **The route is recorded as an unsalted hash,** so an address that can be guessed can be recovered
+  from it.
+- **A regrade's raw judge replies are not kept,** only their hashes.
+- **A plain regrade's judge identity is self-reported, not authenticated.** The requested judge's
+  reported id comes from its own reply; it does not authenticate provider identity or measure
+  grading accuracy.
+- **`driftproof overlap` measures word overlap only.** It does not establish that a suite leaked,
+  explain a measured lift, or establish that a skill is free of overlap beyond this one comparison.
+- **`driftproof plan`'s draw targets and USD figure are estimates, not promises.** The USD figure
+  assumes fixed token counts at registry API prices; it is not an invoice or a subscription billing
+  prediction, and a long prompt can exceed it. Retries and auxiliary harness calls are not included,
+  and an actual run may stop before any projected target.
+- **`driftproof lint-suite`'s findings are evidence of risk, not proof of one.** A repeated-word or
+  answer-text finding does not assert semantic equivalence or a dollar saving, and a history finding
+  never says a future run cannot show a score lift. No findings means only that these checks found
+  none; it does not mean the suite is fair, sufficient, cheap or free of causal leakage. Its
+  answer-text check covers grading fields only; it does not check whether the model itself was
+  exposed to an answer.
+- **A `view` or `diff --lift-breakdown` reads recorded scores at the receipt's own sample size.** It
+  predicts neither a skill's future answers nor a causal mechanism, and a legacy receipt without
+  draw records, or a failed arm, yields no breakdown, with the reason stated.
+- **An NVIDIA-cards or Harbor import stays DECLARED.** `diff` reads it as NOT MEASURED, and no
+  Driftproof reader gives it a verdict, a band, a spread or a baseline the source itself did not
+  print or record.
+
+### Upgrade
+
+- npm: `npx driftproof@0.22.1`. The Action: `driftproofhq/driftproof@v0.22.1`, and the stale Action
+  `driftproofhq/driftproof/stale@v0.22.1`.
+- Claude Code plugin: `claude plugin update driftproof@driftproofhq`. The plugin runs `npx
+  driftproof@0.22.1`.
+
+### Engineering log
+
+0.22.1 is almost entirely a release-process release. Issue 355 (spec 355, PR 359) moves the Windows
+line-ending rule that 0.22.0 had put first in the repository's root `.gitattributes`: the plugin
+directory's own submission checklist refuses that rule at the root, above the plugin's folder or
+inside it, so the rule now lives in a `.gitattributes` in each folder the repository's own gate
+reads, and the Windows CI workflow sets `core.autocrlf false` before checkout to cover the root and
+the plugin folder the same way the per-folder rule covers the rest. Issue 355's release fix (spec
+355r, PR 363), found by this release's own sweep, drops `receipts/` from that folder list: spec 026
+AC-15 holds `receipts/` byte-identical to its base, so it is covered by the workflow's existing
+`core.autocrlf` step instead, the same way `config/` already was.
+
+Issue 327 (spec 317 AC-20, PR 351) corrects the methodology page: "What grading cost" no longer says
+the grader scores every draw, since a truncated, lost, empty or generation-timeout draw is never
+sent to it. The page's other wording and every published figure are unchanged.
+
+The rest is the "over-testing cut" the operator ruled on 15 Oct 2026 (16 Oct SGT), reading that of 98
+new-red readings across the 0.22.0 release sweeps, 5 were real defects and 77 were brittle gates, and
+that no release had passed its first sweep (catalogue C-297). Issue 348 (spec 026 A-026-45, spec 279
+A-279-1, PR 353) stops the repository gate running itself a second time inside specs 007, 008, 026
+and 027, except where a row plants a mutation only the repository gate itself can catch, and leaves
+the release sweep's nine gates signed "nightly only" for the nightly to run instead, reversing C-291
+for release sweeps; the nightly still runs every gate. Issue 349 (spec 026 A-026-46, spec 020, spec
+021, PR 354 and PR 360) has spec 020's README digest read with the tree's own version set aside, so a
+version bump alone no longer turns that check red, and adds a short box check, running specs 021,
+138, 139, 140, 165, 236 and 245, before the release draft dispatches the full sweep. Spec 026's own
+version check (issue 357, PR 360) now compares `RUNNER_VERSION` against `package.json`,
+`release-record.json` and `RELEASES.md`'s own first entry instead of a typed literal duplicated
+across the probe, its message and `gate.sh`, so a release no longer edits that test by hand. Issue
+356 (spec 025 A-025-50, PR 358) stops the release freeze running spec 021's gate a second time inside
+spec 025's own pass, and drops the box check's extra third run, so spec 021 runs once per release;
+the nightly runs it directly, as before. Issue 350 (PR 352) adds the CONSTITUTION rule that a new
+spec's gate reads only the subject it changes, never another spec's prose; has a new CodeQL result
+warn, not block, when it falls only under a spec's `tests/`, `probes/` or `fixtures/`; and has a
+release run that ends cancelled with no reported cost count $0 instead of parking the release in the
+spend journal. Catalogue row C-297 records all seven of these as recorded loosenings.
+
+A direct commit to `DECISIONS.md` (no PR) records 0.22.0's release and this cycle's rulings: issues
+315, 329, 331, 333 to 335, 337 and 345/343 merging, and catalogue row C-297 itself.
+
+#### The v0.22.1 merge list
+
+Nine merges since v0.22.0's release merge `9a154e06`, oldest first:
+
+- issue 327, the methodology page's grading-cost wording corrected (spec 317, PR 351): above.
+- issue 350, the over-testing cut's governance and spend rules (PR 352): above.
+- issue 349, the release draft's box check and the version-bump-safe README digest (PR 354): above.
+- issue 348, the repository gate runs once per sweep and the nightly-only gates move there (PR 353):
+  above.
+- DECISIONS: 0.22.0 released, this cycle's rulings and catalogue row C-297 recorded (direct commit,
+  no PR): above.
+- issue 356, spec 025 stops running spec 021's gate a second time in the freeze (PR 358): above.
+- issue 355, the line-ending rule leaves the root and the plugin's folder (PR 359): above.
+- issue 357, spec 026 checks that the versions agree instead of a typed literal (PR 360): above.
+- issue 355, the release fix dropping `receipts/` from the per-folder line-ending list (PR 363):
+  above.
+
 ## v0.22.0 - 2026-10-15
 
 ### What's new

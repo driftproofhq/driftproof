@@ -174,17 +174,21 @@ function summarize(doc, root, baseline) {
 }
 
 // ── the sweep's lines (scripts/nightly.mjs prints these) ─────────────────────────────────────
+// A new result in test code (tests/, a spec's probes/ or fixtures/) warns; shipped code still stops
+// the sweep (spec 148 A-148-8, issue 350).
+const testCode = (file) => /^(?:tests\/|specs\/[^/]+\/(?:probes|fixtures)\/)/.test(file);
 function sweepLines(cq, max = 5) {
   if (cq.state === 'not-run') return [`CodeQL (local scan): not run, ${cq.why}.`];
   if (cq.state === 'unreadable') return [`CodeQL (local scan): NOT READ, ${cq.why}.`];
   const s = cq.summary;
   const lines = [`CodeQL (local scan, default suite, ${s.tool ? `CLI ${s.tool}, ` : ''}${s.extracted_files} files): ${s.total} results, ${s.on_baseline} on the baseline, ${s.new.length} new${s.gone.length ? `, ${s.gone.length} baseline entries no longer read` : ''}.`];
-  for (const n of s.new.slice(0, max)) lines.push(`  - ${n.rule} ${n.file}:${n.line}`);
+  for (const n of s.new.slice(0, max)) lines.push(`  - ${n.rule} ${n.file}:${n.line}${testCode(n.file) ? ' (test code: a warning)' : ''}`);
   if (s.new.length > max) lines.push(`  - ... and ${s.new.length - max} more in ${cq.out ? 'summary.json' : 'the summary'}`);
   return lines;
 }
 // null when the scan alone does not decide the verdict.
 function sweepVerdict(cq) {
+  if (cq.state === 'new' && cq.summary && cq.summary.new.length && cq.summary.new.every((n) => testCode(n.file))) return null;
   if (cq.state === 'new') return 'RED';
   if (cq.state === 'unreadable') return 'ERROR';
   return null;
