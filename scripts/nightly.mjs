@@ -22,7 +22,8 @@
 //      only: it is never the reference a later check reads.
 //   7. runs the local CodeQL scan over the tree the public build publishes (spec 148) and sets its
 //      results against config/codeql-baseline.json. A result off the baseline makes the sweep RED,
-//      so the release stops before the public push; a scan that cannot be read makes it ERROR, never
+//      so the release stops before the public push, unless every such result is in test code, which
+//      warns (A-148-8, issue 350); a scan that cannot be read makes it ERROR, never
 //      green. A full sweep always scans. A partial sweep (--only) scans only when asked with --codeql,
 //      and says so in its report when it did not.
 // Exit 0 green, 1 red, 2 when it could not sweep.
