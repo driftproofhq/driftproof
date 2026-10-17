@@ -609,16 +609,15 @@ test('AC-21: RECEIPT.md says what v0.13 adds; interop.md has the NVIDIA section;
   assert.ok(nv, 'an NVIDIA section');
   const nvBody = nv.split(/^## /m)[0];
   for (const w of ['--from nvidia-cards', '--commit', '--only', 'benchmarks.json', 'BENCHMARK.md', 'source_figures', 'uncertainty_unavailable', 'git_blob_sha1', 'does not attest', 'unstated', 'source-reported', 'CC BY 4.0', 'no verdict']) assert.ok(nvBody.includes(w), `the NVIDIA section names ${w}`);
-  assert.ok(!/\bconfiden(t|ce)\b|\u2014/i.test(nvBody), 'no confidence language and no em dash in the section');
+  assert.ok(!/\bconfiden(t|ce)\b/i.test(nvBody), 'no confidence language in the section'); // A-265-5: no em dash reading
   assert.match(fs.readFileSync(path.join(ROOT, 'docs', 'interop', 'index.html'), 'utf8'), /--from nvidia-cards/);
 });
 
 // ── AC-22, wording on every line this spec adds ─────────────────────────────
-test('AC-22: the importer writes the cards\' em dash as an escape, and carries no confidence wording', () => {
+// A-265-5 (issue 378): the em dash is no longer read, so the module's own text is not read for it or its escape.
+test('AC-22: the importer carries no confidence wording', () => {
   const src = fs.readFileSync(path.join(ROOT, 'lib', 'importers-nvidia.js'), 'utf8');
-  assert.ok(!src.includes('\u2014'), 'no em dash in lib/importers-nvidia.js');
   assert.ok(!/\bconfiden(t|ce)\b|\bsignifican(t|ce)\b/i.test(src), 'no confidence wording');
-  assert.ok(src.includes('\\u2014'), 'the em dash is written as \\u2014');
 });
 
 // ── AC-23, siblings amended ─────────────────────────────────────────────────
@@ -964,7 +963,9 @@ test('AC-72: scripts/prepare-report.js skillVerdict gives a marked pair no label
 });
 
 // AC-73: the reader list is closed. Every file under the roots whose text matches the pattern is in
-// readers.json, and every entry names a file that exists and criteria the spec states.
+// readers.json, and every entry names a file that exists and criteria the spec states. A-265-4 (issue 381):
+// a reader is executable code, a .js, .mjs or .cjs file or a file under bin/; a data file is never one.
+const isCode = (rel) => /\.(?:js|mjs|cjs)$/.test(rel) || rel.startsWith('bin/');
 function unlisted(root, table) {
   const re = new RegExp(table.pattern);
   const found = [];
@@ -973,7 +974,7 @@ function unlisted(root, table) {
     if (!fs.existsSync(abs)) return;
     const st = fs.lstatSync(abs);
     if (st.isDirectory()) { for (const e of fs.readdirSync(abs).sort()) walk(path.posix.join(rel, e)); return; }
-    if (st.isFile() && re.test(fs.readFileSync(abs, 'utf8'))) found.push(rel);
+    if (st.isFile() && isCode(rel) && re.test(fs.readFileSync(abs, 'utf8'))) found.push(rel);
   };
   for (const r of table.roots) walk(r);
   return found.filter((f) => !Object.hasOwn(table.files, f));
@@ -985,15 +986,27 @@ test('AC-73: every file that reads verification_level, comparison or receiptVerd
   const stated = new Set([...specText.matchAll(/\*\*(AC-\d+)\b|^\| (AC-\d+) \|/gm)].map((m) => m[1] || m[2]));
   for (const [f, e] of Object.entries(table.files)) {
     assert.ok(fs.existsSync(path.join(ROOT, f)), `${f} exists`);
+    assert.ok(isCode(f), `${f} is executable code`);
     assert.ok(['reader', 'writer', 'fixed', 'other'].includes(e.class), `${f}: a class`);
     if (e.class === 'other') assert.ok(typeof e.reason === 'string' && e.reason.length > 10, `${f}: a reason`);
     else { assert.ok(Array.isArray(e.acs) && e.acs.length, `${f}: criteria`); for (const ac of e.acs) assert.ok(stated.has(ac), `${f}: ${ac} is stated in the spec`); }
   }
   // Plants: a new reader in a scratch tree is seen as unlisted; an entry naming AC-99 is seen as unstated.
+  // A-265-3 (issue 377) planted a fourth copy of a sample receipt, read as unlisted. Under A-265-4 a receipt
+  // is data, so the same copy is planted and must be read as no reader at all.
   const scratch = tmp('readers');
   for (const r of table.roots) if (fs.existsSync(path.join(ROOT, r))) copyTree(path.join(ROOT, r), path.join(scratch, r));
   fs.writeFileSync(path.join(scratch, 'lib', 'new-reader.js'), 'module.exports = (receipt) => receipt.verification_level;\n');
-  assert.deepEqual(unlisted(scratch, table), ['lib/new-reader.js']);
+  // A-265-4: a data file carrying the word, here a receipt-shaped .json, is not a reader; a .cjs or a bin/ file is.
+  fs.writeFileSync(path.join(scratch, 'lib', 'sample.json'), '{"verification_level": "imported"}\n');
+  fs.writeFileSync(path.join(scratch, 'lib', 'new-reader.cjs'), 'module.exports = (r) => r.verification_level;\n');
+  fs.writeFileSync(path.join(scratch, 'bin', 'new-door'), 'console.log(r.verification_level);\n');
+  const sample = 'plugin/driftproof/sample/report-014';
+  const copied = `${sample}/run-4/git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json`;
+  fs.mkdirSync(path.join(scratch, sample, 'run-4'), { recursive: true });
+  fs.copyFileSync(path.join(ROOT, sample, 'run-1', 'git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json'), path.join(scratch, copied));
+  assert.ok(/verification_level/.test(fs.readFileSync(path.join(scratch, copied), 'utf8')), 'the copied sample receipt carries the word');
+  assert.deepEqual(unlisted(scratch, table).sort(), ['bin/new-door','lib/new-reader.cjs', 'lib/new-reader.js']);
   assert.equal(stated.has('AC-99'), false);
 });
 

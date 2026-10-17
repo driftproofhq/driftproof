@@ -75,7 +75,7 @@ test('no answered_by in a format that has none: the receipt is said to be record
     assert.notEqual(p.label, plain.LABELS.NOT_MEASURED);
     assert.equal(p.sentence, `${plain.LABELS.PRE_ANSWERED_BY}: this receipt carries no verdict, because it was written in receipt format v${version}, which has no field saying what answered the run.`);
     assert.equal(p.why, p.sentence);
-    assert.doesNotMatch(p.sentence, /—/);
+    // A-145-17 (issue 378): the em dash is no longer read.
   }
 });
 
@@ -120,7 +120,7 @@ test('the key and the lede carry the state, in the order the page counts it', ()
   assert.ok(plain.LEDE_ORDER.includes('PRE_ANSWERED_BY'));
   assert.equal(plain.LEDE.PRE_ANSWERED_BY('<b>1</b>', 1), `<b>1</b> was recorded before answered_by existed`);
   assert.equal(plain.LEDE.PRE_ANSWERED_BY('<b>2</b>', 2), `<b>2</b> were recorded before answered_by existed`);
-  assert.doesNotMatch(plain.KEY.PRE_ANSWERED_BY, /—|\bno model\b|\bnever\b/);
+  assert.doesNotMatch(plain.KEY.PRE_ANSWERED_BY, /\bno model\b|\bnever\b/);
 });
 
 function setDir(receipts) {

@@ -316,11 +316,42 @@ as separate arguments, never as a shell string. What the evaluated agent cannot
 see: your environment (tokens, keys), your home directory (SSH keys, CLI session
 files), your current directory, and your CLI configuration.
 
-**Operator prerequisite, set up once** (see `RUNBOOK.md`): that user exists with a
-mode-700 home and no extra groups, has its own logged-in `claude` and `codex`
-under `~/.local/bin`, and a sudoers rule lets you run commands as it with
-`NOPASSWD`. `DRIFTPROOF_EVAL_USER` names the user (default `driftproof-eval`).
-Without the prerequisite a run fails at once, before any call, and says so.
+**Operator prerequisite, set up once.** The hop is for Linux: the user's home is
+`/home/<name>`, the path driftproof builds from the user name. That user has a
+mode-700 home and no extra groups, its own logged-in `claude` and `codex` under
+`~/.local/bin`, and a sudoers rule that lets you run commands as it, and only as
+it, with `NOPASSWD`. `DRIFTPROOF_EVAL_USER` names the user (default
+`driftproof-eval`); the name must match `^[a-z_][a-z0-9_-]{0,31}$`. Without the
+prerequisite a run fails at once, before any call, and says so. With the default
+name:
+
+1. Create the user with a mode-700 home and no supplementary groups:
+
+   ```sh
+   sudo useradd -m -s /bin/bash driftproof-eval
+   sudo chmod 700 /home/driftproof-eval
+   ```
+
+2. As that user (`sudo -iu driftproof-eval`), install `claude` and `codex` under
+   its `~/.local/bin`. Then run `claude` and complete its login, and run
+   `codex login --device-auth`. Their session files live in that user's home,
+   unreadable to your account, and yours are unreadable to it.
+
+3. Let your account run commands as that user only, with no password:
+
+   ```sh
+   echo "$(id -un) ALL=(driftproof-eval) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/driftproof-eval
+   sudo chmod 440 /etc/sudoers.d/driftproof-eval
+   sudo visudo -cf /etc/sudoers.d/driftproof-eval
+   ```
+
+4. Check the boundary by hand before the first run. From an empty environment
+   the user's `env` must list no variable from your shell, and both CLIs must
+   answer:
+
+   ```sh
+   H=/home/driftproof-eval; sudo -n -u driftproof-eval /usr/bin/env -i HOME=$H PATH=$H/.local/bin:/usr/bin:/bin bash -lc 'env; claude --version; codex --version'
+   ```
 
 **`--trusted-skill`** runs the legacy same-user path instead: your environment,
 your cwd, your CLI login. It exists for exactly one case, a skill you authored
@@ -510,7 +541,7 @@ A receipt is the unit of evidence — one JSON document conforming to
     "model_release_date": "2025-10-01",
     "provider": "anthropic",
     "surface": "claude-cli",
-    "runner_version": "0.22.1",
+    "runner_version": "0.22.2",
     "date_utc": "2026-07-27T…Z",
     "registry": "registered",
     "transcripts": "hashes-only",
@@ -565,7 +596,8 @@ Key ideas:
   figure (`judge_excluded` is `const true`) — measuring the skill is our cost, not
   the skill's.
 - **`receipt_hash`** is a self-hash for tamper-evidence (integrity, not yet a key
-  signature — see the spec's open questions).
+  signature; see the spec's open questions). A hash is not a signature: it does
+  not authenticate who wrote the receipt, and it does not prove a model ran.
 
 ### Drift reports
 
@@ -589,7 +621,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: driftproofhq/driftproof@v0.22.1
+      - uses: driftproofhq/driftproof@v0.22.2
         with:
           skill-dir: skills/my-skill
           models: claude-haiku-4-5
@@ -717,7 +749,7 @@ permissions:
   contents: read
   issues: write
 # ...
-      - uses: driftproofhq/driftproof/stale@v0.22.1
+      - uses: driftproofhq/driftproof/stale@v0.22.2
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill
@@ -903,17 +935,21 @@ Reports #002–#005 have their own runners
 [`scripts/prepare-report-005.js`](scripts/prepare-report-005.js)) following the
 same fetch → run → re-derive shape.
 
-**Model releases are watched daily; reports are published by hand.** A daily timer
-(`deploy/driftproof-release-watch.timer`) runs `scripts/release-watch.js`, which
-by default, without a key, compares the models a public model list names (kept
-by `scripts/refresh-models-cache.js`) with the ones it has already seen. It
-queues each new generative model for review, and marks any other new model seen
-without queuing it. It then tries to prepare a draft report, which needs the
-model registered in `config/models.json` and a run within the cost limit on
-calls; once a model is registered and its run fits the cost limit, that draft
-runs the tests and calls the models.
-Registering a model and publishing a report are done by hand, and
-nothing is published without review.
+**Reports are published by hand, and the release watcher is off.**
+`scripts/release-watch.js` is built to run daily from a timer
+(`deploy/driftproof-release-watch.timer`); that timer is disabled at present, so
+new model releases are not watched automatically. When the watcher runs, by
+default and without a key, it compares the models a public model list names
+(kept by `scripts/refresh-models-cache.js`) with the ones it has already seen.
+That list is a third-party catalogue and can lag a vendor's own announcement by
+hours; a key for the vendor's own model list takes it out of the path. The
+watcher queues each new generative model for review, and marks any other new
+model seen without queuing it. It then tries to prepare a draft report under `TRIGGER_MAX_USD` from [`config.js`](config.js),
+which needs the model registered in `config/models.json` and a run within that
+cost limit on calls;
+once a model is registered and its run fits the cost limit, that draft runs the
+tests and calls the models. Registering a model and publishing a report are done
+by hand, and nothing is published without review.
 
 ## Roadmap
 

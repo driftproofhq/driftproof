@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 'use strict';
-// Rebuilds Report 005's published page in a sandbox, layer by layer, so it can be
-// compared byte for byte with docs/reports/005/index.html (RUNBOOK § Approve and
-// publish a drafted report, step 2; spec 002 AC-8, spec 007 AC-1).
+// An operator check, run by spec 002 AC-8 and spec 007 AC-1 in the source repository:
+// it replays the render and every later layer in a sandbox, and those gates compare
+// the result with the tracked page. It reads files the public tree does not carry
+// (an amendment record under specs/ and state/skill-version-check.json), so it does
+// not run from a public clone (spec 388 A-388-1; a public rebuild is issue 390).
 //
 // The page is the source of truth. It was rendered on 19 Aug 2026 and every later
 // change reached it as a layer applied in place: amendment entries, the site's
@@ -16,11 +18,8 @@
 // gates do) covers all of them. No step makes a model call: the render is
 // --render-only, and every later step is a text transform of the page.
 //
-//   node scripts/rebuild-report-005.js --render-only --published \
-//        --receipts-label 'receipts/report-005/' --run-concurrency 2 --max-usd 40 \
-//        [--out-root <dir>] [--now <iso>]
-//
-// Every argument is passed to the render as given. Without --out-root the rebuild
+// The command line, with its arguments, is in the internal runbook; the gates read it
+// from there. Every argument is passed to the render as given. Without --out-root the rebuild
 // makes a directory under the system temp directory and prints it.
 
 const fs = require('fs');

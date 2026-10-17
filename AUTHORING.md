@@ -195,8 +195,8 @@ rules (scanner-safe fixtures, no secrets, neutral tone).
 ## Writing a change spec
 
 In the source repository, start a change spec from the
-[repository template](specs/000-governance/spec-template.md). It includes the
-conditional "Claim and invariants" section for work that ships a public claim.
-Use CONSTITUTION.md § Quality bar and RUNBOOK.md § The loop, item 2: approvals
-for the claim review before the build. Specs whose change ships no public claim
-are unchanged.
+repository template (specs/000-governance/spec-template.md), which the public
+tree does not carry. It includes the conditional "Claim and invariants" section
+for work that ships a public claim. The source repository's quality bar and its
+approval loop run the claim review before the build. Specs whose change ships no
+public claim are unchanged.

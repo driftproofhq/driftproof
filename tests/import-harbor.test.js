@@ -1197,7 +1197,7 @@ test('AC-17, AC-18: the proving run\'s report lists each skill and states the co
   assert.match(text, /leaves it out/);
   assert.match(text, /no placebo comparison is imported/i);
   assert.match(text, /Opposite directions/);
-  assert.doesNotMatch(text, /—/, 'no em dash');
+  // A-266-1 (issue 378): the em dash is no longer read.
 });
 
 // ── AC-18, AC-21: the docs ──────────────────────────────────────────────────
@@ -1212,7 +1212,7 @@ test('AC-18, AC-21, AC-22: docs/interop.md has a Harbor section with the command
   assert.match(s, /driftproof import --from harbor --with \S+ --without \S+/);
   assert.match(s, /driftproof import \S+ --from harbor --arm (with-skill|baseline)/);
   for (const re of [/task_checksum/, /task_id/, /--reward/, /exception_info/, /step_results/, /agent_info\.version/, /model_info\.name/, /includes cached/i, /METHOD\.md/, /pool/i, /placebo/i, /DECLARED/, /agent\//, /verifier\//, /cannot check/, /one trial/, /config\.agent/, /source_sha256|sha256/, /finished_at/, /extra_instructions/, /model_usage/, /different shares/]) assert.match(s, re);
-  assert.doesNotMatch(s, /—/, 'no em dash');
+  // A-266-1 (issue 378): the em dash is no longer read.
 });
 
 test('AC-18: the importer takes no placebo option; an unknown flag is refused, exit 2', () => {

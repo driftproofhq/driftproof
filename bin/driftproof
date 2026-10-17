@@ -11,7 +11,7 @@ const { SAMPLING } = require('../lib/sampling');
 const { resolveReceiptValidator, validateReceipt, verifyReceiptHash, duplicateCaseRows, ambiguityLine, listReceipts, receiptBaseName, fileSlug, REGRADE_SIDECAR, SUMMARY_SIDECAR } = require('../lib/receipt');
 const { buildDriftReport, revisionPairProblem } = require('../lib/diff');
 const { surfaceForModel, isSubscriptionSurface, resolveModel, evalUser, evalUserExists } = require('../lib/provider');
-const { PRESET_QUICK, QUICK, SMOKE_LINE, isSmoke, quickConflicts, quickBanner, quickResultLine, selfJudged, selfJudgeLines, isolationPreflight } = require('../lib/firstrun');
+const { PRESET_QUICK, QUICK, SMOKE_LINE, isSmoke, quickConflicts, quickBanner, quickResultLine, unmeasuredLines, selfJudged, selfJudgeLines, isolationPreflight } = require('../lib/firstrun');
 const { createProgress } = require('../lib/progress');
 const { CAPTURE_MODES, DEFAULT_CAPTURE, captureLine } = require('../lib/capture');
 const { estimateRunCostUSD, BudgetTracker } = require('../lib/cost');
@@ -423,9 +423,11 @@ NOTES
     driftproof run <skill-dir> --quick --models ID [--judge-model ID], then
     driftproof plan <skill-dir> --model ID [--judge-model ID] --from receipt.json.
   - Default models list is 'haiku' only (cheap dev default).
-  - --quick is a smoke run: ${QUICK.samples} judge samples, concurrency ${QUICK.concurrency}, at most ${QUICK.maxCases} cases.
-    It cannot produce a verdict: its receipt is UNVERIFIED and records run.preset "${PRESET_QUICK}", and
-    --samples, --concurrency and --max-cases are refused beside it.
+  - --quick is a smoke run, a first look: one test task (the first in the suite), ${QUICK.draws} draws per arm,
+    ${QUICK.samples} judge samples, concurrency ${QUICK.concurrency}, at most ${projectCalls(QUICK.maxCases, QUICK.samples, QUICK.draws)} calls per model, and the two answers
+    side by side. It cannot produce a verdict: its receipt is UNVERIFIED and records run.preset
+    "${PRESET_QUICK}", and --samples, --concurrency and --max-cases are refused beside it. It keeps its
+    answers under ./transcripts/, so it is refused from inside the skill folder.
   - run prints a progress line on stderr each time a call, or a draw's judge calls, finish:
     the calls made, the fewest (when every call answers) and the most the run can make, the
     time so far, and the time left as a range.
@@ -434,6 +436,8 @@ NOTES
     where absent and never writes SKILL.md. --cases FILE writes FILE's cases as the suite
     (only when there is none yet). --drafted-from-skill, with --cases, labels the suite and each
     case "drafted from the skill and approved by the user": give it only for cases a person approved.
+  - In Claude Code, the plugin's /driftproof:start is the guided start: it drafts the test cases
+    with you and runs the first look.
   - Sampled judging: each case does 2 generations + 2×samples judge calls.
     Default --samples 5 → 12 calls/case; --samples 1 disables bands AND the
     variance ratio: with one judge sample the per-draw judge spread is zero by
@@ -466,7 +470,7 @@ NOTES
     temp working directory removed after the call. A third-party SKILL.md is
     instructions to an agent with tools; this is what keeps it away from your
     keys, tokens and files. Operator prerequisite: that user, its own logged-in
-    CLIs, and a NOPASSWD sudoers rule (see RUNBOOK.md).
+    CLIs, and a NOPASSWD sudoers rule (see the Isolation section of the README).
   - --capture (or "capture" in the working directory's .driftproofrc; a skill
     directory's is ignored) says which answer is judged. text, the default: on a
     cli surface the child runs with its file-writing tools off, and its reply is
@@ -540,6 +544,18 @@ NOTES
     (driftproof/summary v1) other tools can consume without a receipt parser.`);
 }
 
+// Spec 139 A-139-17 (AC-367-8): `driftproof` with no argument. Five lines, the first naming the one
+// command to run first; the full list is `driftproof --help`.
+function shortHelp() {
+  console.log([
+    'start here: driftproof init <skill-dir> adds evals/evals.json, with 3 example test cases to replace with your own, to your skill folder.',
+    'then: driftproof run <skill-dir> --quick for a first look: one test task, its answer with and without the skill, no verdict.',
+    'then: driftproof run <skill-dir> to measure every test task; the receipt is written to ./receipts/.',
+    'In Claude Code, the plugin\'s /driftproof:start drafts the test cases with you and runs the first look.',
+    'Every command and option: driftproof --help',
+  ].join('\n'));
+}
+
 // An imported receipt whose source records no date carries date_utc null (receipt v0.9).
 function dateStamp(iso) { return iso ? iso.slice(0, 10) : 'undated'; }
 
@@ -556,6 +572,15 @@ async function cmdRun(positional, flags) {
   const clash = quick ? quickConflicts(flags) : [];
   if (clash.length) {
     console.error(`  ✗ REFUSED (run): --quick sets ${clash.map((k) => `--${k}`).join(', ')} itself (${QUICK.samples} judge samples, concurrency ${QUICK.concurrency}, at most ${QUICK.maxCases} cases), and was given ${clash.length === 1 ? 'it' : 'them'} too. Give --quick alone, or leave it out and set them. Nothing run, no receipt written.`);
+    process.exit(2);
+  }
+  // Spec 139 A-139-17 (AC-367-5, RF-47c): a quick run keeps its answers under the working directory,
+  // so from the skill folder or inside it they, and its receipt, would become part of the skill and
+  // move its content hash. Refused before anything is read or written, as start refuses it.
+  const realOf = (p) => { try { return fs.realpathSync(p); } catch (_e) { return path.resolve(p); } };
+  const skillReal = realOf(skillDir); const hereReal = realOf(process.cwd());
+  if (quick && (hereReal === skillReal || hereReal.startsWith(skillReal + path.sep))) {
+    console.error('  ✗ REFUSED (run): --quick keeps its answers under the working directory, which is the skill folder or inside it, so they would become part of the skill. Run it from the folder above the skill. Nothing run, no receipt written.');
     process.exit(2);
   }
 
@@ -589,7 +614,8 @@ async function cmdRun(positional, flags) {
   const samples = quick ? QUICK.samples : checked.samples !== undefined ? parseInt(checked.samples, 10) : DEFAULT_JUDGE_SAMPLES;
   const concurrency = quick ? QUICK.concurrency : checked.concurrency !== undefined ? parseInt(checked.concurrency, 10) : 1;
   const maxUsd = checked['max-usd'] !== undefined ? parseFloat(checked['max-usd']) : DEV_MAX_USD;
-  const keepTranscripts = !!flags['keep-transcripts'];
+  // A-139-17 (AC-367-5): a quick run keeps its answers, so the first look can show them.
+  const keepTranscripts = !!flags['keep-transcripts'] || quick;
   // Spec 137: which answer is judged. --capture, else `capture` in the working directory's
   // .driftproofrc (a skill directory's is dropped by loadRc), else text.
   // Checked here, before the projection and before any call; its own rule, not the input
@@ -647,7 +673,9 @@ async function cmdRun(positional, flags) {
   // projection — the display would say one number and the runner would refuse
   // quoting another. Conservative on purpose: refusing a run that would have fit
   // is recoverable, overspending is not.
-  const perModelCalls = projectCalls(nCases, samples, SAMPLING.max);
+  // A-139-17 (AC-367-1): a quick run draws each arm at most QUICK.draws times, and is projected so.
+  const drawsMax = quick ? QUICK.draws : SAMPLING.max;
+  const perModelCalls = projectCalls(nCases, samples, drawsMax);
   const totalProjected = perModelCalls * models.length;
 
   // Dollar cost guard (Week 3): project the METERED USD cost up front. On the
@@ -659,7 +687,7 @@ async function cmdRun(positional, flags) {
   // fixed haiku; each target is priced with its own judge and the figures summed.
   const targets = models.map((m) => resolveModel(m));
   const judges = models.map((m) => judgeFor(m));
-  const perModelCost = targets.map((t, i) => estimateRunCostUSD({ caseCount: nCases, draws: SAMPLING.max, samples, models: [targets[i]], judgeModel: judges[i] }));
+  const perModelCost = targets.map((t, i) => estimateRunCostUSD({ caseCount: nCases, draws: quick ? QUICK.draws : SAMPLING.max, samples, models: [targets[i]], judgeModel: judges[i] }));
   const cost = { totalUSD: Math.round(perModelCost.reduce((a, c) => a + c.totalUSD, 0) * 1e4) / 1e4, perModel: perModelCost.flatMap((c) => c.perModel), judges };
   // Surface is per-model now (a run may mix an Anthropic and an OpenAI target).
   const surfaces = [...new Set(models.map((m) => surfaceForModel(m)))];
@@ -667,19 +695,27 @@ async function cmdRun(positional, flags) {
   const subSurfaces = surfaces.filter(isSubscriptionSurface);
 
   const regStatuses = models.map((m) => `${m}:${registryStatus(m)}`);
-  console.log(`\n${PROJECT_NAME} run — skill "${skill.name}" v${skill.version}`);
+  // Spec 139 A-139-17 (AC-367-6): a quick run that is not a stub run says what runs in three lines:
+  // the skill, its one test task by id, the models and the judge; the banner; the calls, the
+  // concurrency and the cost. Every other fact is in the receipt, and stderr is as without --quick.
+  const quiet = quick && !stubRun;
+  const tasksRun = skill.suite.cases.slice(0, nCases).map((c) => c.id);
+  if (quiet) console.log(`\n${PROJECT_NAME} run --quick: skill "${skill.name}" v${skill.version}, ${nCases} test task${nCases === 1 ? '' : 's'} (${tasksRun.join(', ')}, the first in the suite), with and without the skill, on ${models.join(', ')}, judged by ${[...new Set(cost.judges)].join(', ')}`);
+  else console.log(`\n${PROJECT_NAME} run — skill "${skill.name}" v${skill.version}`);
   // Spec 139 (R-4): a smoke run says before its first call that it cannot produce a verdict.
   if (quick) console.log(quickBanner());
-  console.log(`  content_hash: ${skill.contentHash.slice(0, 16)}…  suite: ${skill.suite.caseCount} cases (${skill.suite.suiteHash.slice(0, 12)}…)`);
-  console.log(`  surface: ${surface}   models: ${models.join(', ')}   samples/case: ${samples}   concurrency: ${concurrency}`);
-  console.log(`  registry: ${regStatuses.join('  ')}${keepTranscripts ? '   transcripts: retained-local' : ''}`);
-  console.log(`  judge: ${[...new Set(cost.judges)].join(', ')}   (${judgeModel ? '--judge-model' : 'the target model itself; set --judge-model to change'})`);
+  if (!quiet) {
+    console.log(`  content_hash: ${skill.contentHash.slice(0, 16)}…  suite: ${skill.suite.caseCount} cases (${skill.suite.suiteHash.slice(0, 12)}…)`);
+    console.log(`  surface: ${surface}   models: ${models.join(', ')}   samples/case: ${samples}   concurrency: ${concurrency}`);
+    console.log(`  registry: ${regStatuses.join('  ')}${keepTranscripts ? '   transcripts: retained-local' : ''}`);
+    console.log(`  judge: ${[...new Set(cost.judges)].join(', ')}   (${judgeModel ? '--judge-model' : 'the target model itself; set --judge-model to change'})`);
+  }
   // Spec 138 (R-9): THE LOUD WARNING, on stderr, before any call, for each target its own judge
   // grades, compared on canonical ids, whether the judge was named or defaulted.
   if (!stubRun) {
     for (const m of models) if (selfJudged(m, judgeFor(m))) for (const line of selfJudgeLines(m)) console.error(line);
   }
-  if (subSurfaces.length) {
+  if (subSurfaces.length && !quiet) {
     const isolation = trusted ? 'same-user (--trusted-skill: self-authored skill)' : `eval-user (${evalUser()})`;
     console.log(`  isolation: ${isolation}`);
   }
@@ -689,11 +725,15 @@ async function cmdRun(positional, flags) {
     console.error(`  ✗ REFUSED: capture files needs a cli surface, and ${noFiles.join(', ')} has no tools and no working directory. Nothing run, no receipt written.`);
     process.exit(2);
   }
-  console.log(`  ${captureLine({ mode: capture })}`);
-  console.log(`  ${stubRun ? 'stub plan: projected synthetic calls' : 'projected calls'}: ${perModelCalls}/model × ${models.length} model(s) = ${totalProjected}   per-model cap: ${maxCalls}`);
-  if (stubRun) console.log('  No projected cost: no model will be called.');
-  else console.log(`  projected cost: ~$${cost.totalUSD.toFixed(2)} (rough upper bound; budget $${maxUsd.toFixed(2)}, hard-stop $${(maxUsd * 1.25).toFixed(2)})`);
-  if (!stubRun && subSurfaces.length) console.log(`  actual metered spend on ${subSurfaces.join(', ')}: $0.00 (subscription; the $ figure is the estimated-equivalent API cost, counted against the cap identically)`);
+  if (quiet) {
+    console.log(`  projected calls: ${perModelCalls}/model × ${models.length} model(s) = ${totalProjected}, at most (fewer when a draw does not reach the judge)   concurrency: ${concurrency}   projected cost: ~$${cost.totalUSD.toFixed(2)} (estimated API equivalent, rough upper bound; budget $${maxUsd.toFixed(2)})${subSurfaces.length ? `; metered spend on ${subSurfaces.join(', ')}: $0.00` : ''}`);
+  } else {
+    console.log(`  ${captureLine({ mode: capture })}`);
+    console.log(`  ${stubRun ? 'stub plan: projected synthetic calls' : 'projected calls'}: ${perModelCalls}/model × ${models.length} model(s) = ${totalProjected}   per-model cap: ${maxCalls}`);
+    if (stubRun) console.log('  No projected cost: no model will be called.');
+    else console.log(`  projected cost: ~$${cost.totalUSD.toFixed(2)} (rough upper bound; budget $${maxUsd.toFixed(2)}, hard-stop $${(maxUsd * 1.25).toFixed(2)})`);
+    if (!stubRun && subSurfaces.length) console.log(`  actual metered spend on ${subSurfaces.join(', ')}: $0.00 (subscription; the $ figure is the estimated-equivalent API cost, counted against the cap identically)`);
+  }
 
   // Call-count guard: refuse before spending anything if a single model run
   // would exceed the per-run call cap.
@@ -721,7 +761,7 @@ async function cmdRun(positional, flags) {
   for (const model of models) {
     console.log(`── model: ${model} ──`);
     // Spec 138 (R-1): a line on stderr each time a call, or a draw's judge calls, finish.
-    const progress = createProgress({ cases: nCases, samples });
+    const progress = createProgress({ cases: nCases, samples, ...(quick ? { min: QUICK.draws, max: QUICK.draws } : {}) });
     let result;
     try {
       result = await runSkillOnModel({
@@ -729,11 +769,12 @@ async function cmdRun(positional, flags) {
         model,
         opts: {
           maxCases, maxCalls, samples, judgeModel, concurrency, budget, keepTranscripts, trusted, capture,
-          ...(quick ? { preset: PRESET_QUICK } : {}),
+          ...(quick ? { preset: PRESET_QUICK, draws: QUICK.draws } : {}),
           onProgress: (p) => {
             if (stubRun) return;
             progress.onProgress(p);
-            if (p.phase === 'done') console.log(`  ${p.case} / ${p.mode}: ${p.outcome} (${p.score.toFixed(2)} ± ${(p.stddev || 0).toFixed(2)})`);
+            // A-139-17 (AC-367-3): a quick run prints no per-case outcome or score.
+            if (p.phase === 'done' && !quick) console.log(`  ${p.case} / ${p.mode}: ${p.outcome} (${p.score.toFixed(2)} ± ${(p.stddev || 0).toFixed(2)})`);
           },
         },
       });
@@ -807,7 +848,22 @@ async function cmdRun(positional, flags) {
     // the formula could not form prints as n/a, never as 0.000.
     // Spec 139 (R-4): a smoke run prints its two arms and the plain line, and no lift.
     if (stubRun) continue;
-    if (quick) console.log(`${quickResultLine(band(aw.mean_score, aw.stddev), band(ab.mean_score, ab.stddev))}\n`);
+    // A-139-17 (AC-367-1, AC-367-3, AC-367-4): a quick run names each draw that did not reach the
+    // judge, then shows draw 0 of each arm side by side, checked against the sealed hashes, labelled
+    // when not measured, and no score.
+    if (quick) {
+      const { firstLookOf, sideBySide } = require('../lib/view');
+      for (const line of unmeasuredLines(receipt)) console.log(line);
+      const look = firstLookOf(receipt, answersArchive({ receipt, kept: answers }).answers);
+      console.log(`\n  First look at test task ${look.id}: draw 0 of each arm, as it came back.`);
+      for (const [mode, label] of [['with_skill', 'with the skill'], ['baseline', 'without the skill']]) {
+        const a = look.arms[mode];
+        if (a.note) console.log(`  ${label}: ${a.note}`);
+        if (typeof a.text !== 'string') console.log(`  ${label}: ${a.why}`);
+      }
+      console.log(sideBySide(look.arms.with_skill.text || '', look.arms.baseline.text || '').join('\n'));
+      console.log(`${quickResultLine()}\n`);
+    }
     else if (cmp.delta == null) console.log(`  → skill lift n/a (${cmp.delta_uncertainty_unavailable === 'no_cases' ? 'no case was included on an arm' : 'no comparison'})\n`);
     else console.log(`  → skill lift ${cmp.delta >= 0 ? '+' : ''}${cmp.delta.toFixed(3)} ± ${uncertaintyStr(cmp)}  (with ${band(aw.mean_score, aw.stddev)} vs base ${band(ab.mean_score, ab.stddev)}; band = sample stddev of the per-case means)\n`);
   }
@@ -1115,6 +1171,14 @@ function cmdInit(positional, flags = {}) {
     try { normalizeCases(cases); } catch (e) { bad(`the cases in ${flags.cases} are not a suite the runner can read: ${e.message}`); }
   }
   const { dir, created, skipped, existingSkill } = scaffoldInit(target, { cases, drafted: Object.hasOwn(flags, 'drafted-from-skill') });
+  // Spec 139 A-139-17 (AC-367-7): --cases on a skill that exists is the guided start's call. It says
+  // the suite it added, each file it left (AC-5), and one next step, and nothing else.
+  if (existingSkill && cases !== null && created.length) {
+    for (const f of created) console.log(`  + ${rel(f)}`);
+    for (const f of skipped) console.log(`  · ${rel(f)} (exists — left untouched)`);
+    console.log(`Next: driftproof run ${rel(dir)} --quick   (a first look: one test task, no verdict)`);
+    return;
+  }
   console.log(`driftproof init — ${rel(dir)}/`);
   for (const f of created) console.log(`  + ${rel(f)}`);
   for (const f of skipped) console.log(`  · ${rel(f)} (exists — left untouched)`);
@@ -1574,7 +1638,8 @@ async function main() {
     case 'import': return cmdImport(positional, flags);
     case 'export': return cmdExport(positional, flags);
     case 'version': case '--version': case '-v': console.log(RUNNER_VERSION); return;
-    case 'help': case '--help': case '-h': case undefined: return usage();
+    case 'help': case '--help': case '-h': return usage();
+    case undefined: return shortHelp();
     default: console.error(`unknown command: ${cmd}\n`); usage(); process.exit(2);
   }
 }

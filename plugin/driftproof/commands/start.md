@@ -1,5 +1,4 @@
 ---
-disable-model-invocation: true
 description: A guided first run with the pinned Driftproof runner - pick a skill, draft its test cases with the person, run a quick smoke run, and open the results page from disk.
 ---
 
@@ -29,16 +28,38 @@ with your own folder and file.
 ## The steps, in order
 
 1. **Pick a skill.** Run the first line, with no folder, from the folder above
-   the person's skills, never from inside a skill's folder. It lists every folder
-   under this one that holds a `SKILL.md`, and says whether each has test cases
-   yet. Ask the person which skill to start with. If it says this folder is
-   itself a skill folder, move to the folder above it and run it again.
+   the person's skills, never from inside a skill's folder, and run it first even
+   when the person names a skill. It lists every folder under this one, and under
+   `.claude/skills` here, that holds a `SKILL.md`, and says whether each has test
+   cases yet. Ask the person which skill to start with. If it says this folder is
+   itself a skill folder, move to the folder above it and run it again. If it
+   finds no skill, it opens a sample results page from this plugin, with no model
+   call and nothing written: tell the person what it printed, that the page is a
+   sample of a published report's runs and not a result of theirs, and that their
+   own skills are usually in `~/.claude/skills`, so they can type
+   `/driftproof:start` in the folder that holds them. If the listing says there
+   is no git repository here, step 2's question about who wrote the skill comes
+   before any drafting.
 2. **If that skill has test cases**, nothing is added to its folder, but the
    run still writes. Ask the person, in one question, before anything is
    written: a `receipts/` folder will be created in the folder you run start
    from, holding the run's receipt, and a results page, `driftproof-view.html`,
    will be written beside it. After a clear yes, go to step 5. If they say no,
    or do not answer, stop here and run nothing.
+
+   **Where there is no git repository**, as the listing says, ask the person
+   whether they wrote the skill, before any drafting and before step 4, for a
+   skill with test cases and for one without. Ask it as a question of its own,
+   apart from the yes to anything written, and name the skill's real path and the
+   folder you run start from: "Did you write the skill at <real path> yourself?
+   If yes, it runs from <folder>, as you." Say what that means, in these words:
+   it runs as you, with your files and your Claude Code login,
+   with no isolation account between the skill and them. Only a yes to this
+   question gives `--trust-outside-repo`, added to the line you run in step 5.
+   A yes to the write alone never does. If they say no, or do not answer, give
+   the second line without the flag: the door refuses before anything runs and
+   prints the command that runs the skill with the isolation account. Tell the
+   person what it printed, and go no further. Never give `--trust-outside-repo` on your own.
 3. **Draft its test cases together.** Read the skill's `SKILL.md`, its front
    matter's `allowed-tools`, any other files it bundles, and any input it asks
    the person to supply. A run grants only Read, WebFetch and WebSearch, in an
@@ -74,7 +95,9 @@ with your own folder and file.
    counts, and it is the one yes for everything this run writes: nothing in step
    5 asks again. If they say no, or do not answer, stop here and give the third
    line no `--confirm-write`: the door refuses without it, and nothing is
-   written. Never give the flag on your own.
+   written. Never give the flag on your own. Where step 2 asked who wrote the
+   skill, its answer stands: the yes here is to the write alone, and it
+   never adds `--trust-outside-repo`.
 5. **Run it.** Run the third line with the draft file, once the person has said
    yes, or the second line, after the yes of step 2, when the skill already had
    test cases. In order, it
@@ -133,13 +156,13 @@ with your own folder and file.
   before anything is added or run. Tell the person to update the plugin.
 - **No git repository here, or a skill outside it.** Like `/driftproof:run`,
   it runs a skill as the person only when the skill is inside the git
-  repository it runs in. Otherwise it refuses before anything runs, and prints
-  the command that runs the skill with the isolation account instead. Tell the
-  person what it printed; the message may also name
-  `/driftproof:run <skill> --trust-outside-repo`, for a skill the person wrote
-  in a folder with no git repository, which is `/driftproof:run`'s to take
-  after it asks, and never this command's. Do not look for another way to run
-  it.
+  repository it runs in, or, where there is no git repository, when the skill
+  is inside the folder you run start from and the person said yes to step 2's
+  question about who wrote it (`--trust-outside-repo`). Otherwise it refuses
+  before anything runs, and prints the command that runs the skill with the
+  isolation account instead. Tell the person what it printed. Inside a git
+  repository it refuses `--trust-outside-repo`. Do not look for another way to
+  run it.
 
 ## What it will not do
 

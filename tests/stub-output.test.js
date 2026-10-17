@@ -28,6 +28,16 @@ fs.mkdirSync(path.join(baseRoot, 'bin'), { recursive: true });
 fs.writeFileSync(path.join(baseRoot, 'bin/driftproof'),
   execFileSync('git', ['show', BASE + ':bin/driftproof'], { cwd: ROOT }));
 for (const name of ['lib', 'config.js']) fs.symlinkSync(path.join(ROOT, name), path.join(baseRoot, name));
+// A-236-8 (issue 367): the quick scenarios read against the CLI at the Issue 367 hold, which made
+// --quick a first look; every other scenario reads against the Base's CLI, as before.
+const HOLD_367 = /\*\*Issue 367 hold:\*\* \x60([0-9a-f]{40})\x60/.exec(SPEC)[1];
+const quickBaseRoot = path.join(harness, 'base-367');
+fs.mkdirSync(path.join(quickBaseRoot, 'bin'), { recursive: true });
+fs.writeFileSync(path.join(quickBaseRoot, 'bin/driftproof'),
+  execFileSync('git', ['show', HOLD_367 + ':bin/driftproof'], { cwd: ROOT }));
+for (const name of ['lib', 'config.js']) fs.symlinkSync(path.join(ROOT, name), path.join(quickBaseRoot, name));
+const isQuick = (name) => name.endsWith('quick') || name === 'quick-rc';
+const baseFor = (name) => (isQuick(name) ? quickBaseRoot : baseRoot);
 
 const preload = path.join(harness, 'preload.cjs');
 fs.writeFileSync(preload, [
@@ -261,7 +271,12 @@ const MOVED_265 = ['config.js', 'lib/regrade.js', 'lib/run.js', 'spec/receipt.sc
 // A-236-5 (issue 317): the subjects issue 317 moved, held at its commit; issue 265's other three stay at its.
 const HOLD_317 = /\*\*Issue 317 hold:\*\* \x60([0-9a-f]{40})\x60/.exec(SPEC)[1];
 const MOVED_317 = ['lib/regrade.js', 'spec/receipt.schema.json'];
-const AT_265 = MOVED_265.filter((f) => !MOVED_317.includes(f));
+// A-236-8 (issue 367): lib/run.js, moved for the quick preset's draw cap, held at issue 367's commit.
+const MOVED_367 = ['lib/run.js'];
+// A-236-10 (issue 388): lib/provider.js, moved for two refusal messages, held at issue 388's commit.
+const HOLD_388 = /\*\*Issue 388 hold:\*\* \x60([0-9a-f]{40})\x60/.exec(SPEC)[1];
+const MOVED_388 = ['lib/provider.js'];
+const AT_265 = MOVED_265.filter((f) => !MOVED_317.includes(f) && !MOVED_367.includes(f));
 const subject = (file) => SUBJECTS.some((s) => (s.includes('*')
   ? new RegExp('^' + s.split('*').map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('[^/]*') + '$').test(file)
   : file === s || file.startsWith(s + '/')));
@@ -271,16 +286,17 @@ const holdReader = (paths) => assert.deepEqual(paths.filter(subject), [], 'only 
 // A-236-7 (issue 343): a release writes its version into config.js's one RUNNER_VERSION line and into
 // package.json's version. config.js at `cwd` is a release bump of the hold when it is the hold's text with
 // that one line set to package.json's version, and nothing else: any other byte, a second line, a value
-// that is not package.json's, or no package.json is not a bump.
-const RUNNER_LINE = /^const RUNNER_VERSION = '(\d+\.\d+\.\d+)';$/gm;
+// that is not package.json's, or no package.json is not a bump. A-236-9 (issue 382): each side is read by the
+// shared normaliser in scripts/build-report-baselines.mjs, its tree's version from treeVersion and set aside
+// by setAside, so config.js at `cwd` must be the hold's text but for the version its own tree carries.
+const { treeVersion, setAside } = require(path.join(ROOT, 'scripts', 'build-report-baselines.mjs'));
 function releaseBump(cwd, hold) {
-  const was = execFileSync('git', ['show', hold + ':config.js'], { cwd, encoding: 'utf8' });
-  const now = fs.readFileSync(path.join(cwd, 'config.js'), 'utf8');
-  let version;
-  try { version = JSON.parse(fs.readFileSync(path.join(cwd, 'package.json'), 'utf8')).version; } catch { return false; }
-  if (!/^\d+\.\d+\.\d+$/.test(String(version))) return false;
-  const lines = (text) => [...text.matchAll(RUNNER_LINE)].length;
-  return lines(was) === 1 && lines(now) === 1 && now === was.replace(RUNNER_LINE, `const RUNNER_VERSION = '${version}';`);
+  const here = (rel) => (fs.existsSync(path.join(cwd, rel)) ? fs.readFileSync(path.join(cwd, rel), 'utf8') : null);
+  const there = (rel) => { try { return execFileSync('git', ['show', hold + ':' + rel], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }); } catch { return null; } };
+  if (here('config.js') === null) return false;
+  try {
+    return setAside(here('config.js'), treeVersion(here)) === setAside(there('config.js'), treeVersion(there));
+  } catch { return false; }
 }
 // The hold's path: the held subjects of the working tree at `cwd`, against the Lib hold and the Base.
 // A-236-3 (issue 285): plants run this same path on a planted tree, not only holdReader.
@@ -291,12 +307,13 @@ function heldChanges(cwd) {
   for (const s of SUBJECTS) assert.ok(gitIn(cwd, ['ls-files', '--', s]).length > 0, 'held subject names no tracked file: ' + s);
   // A-236-4 (issue 265): the five subjects issue 265 moved are held at its commit, every other one as before.
   // A-236-5 (issue 317): of those, the two issue 317 moved are held at its commit.
-  const moved265 = (paths) => paths.filter((f) => !MOVED_265.includes(f));
+  // A-236-10 (issue 388): lib/provider.js is read against its own hold, so it leaves the earlier reads too.
+  const moved265 = (paths) => paths.filter((f) => !MOVED_265.includes(f) && !MOVED_388.includes(f));
   // A-236-7 (issue 343): config.js, held at the Issue 265 hold, may differ from it by a release bump alone.
   const at265 = () => diffIn(cwd, HOLD_265, null, AT_265).filter((f) => f !== 'config.js' || !releaseBump(cwd, HOLD_265));
-  const changed = [...moved265(diffIn(cwd, LIB_HOLD, null, lib)), ...moved265(diffIn(cwd, BASE, null, rest)), ...at265(), ...diffIn(cwd, HOLD_317, null, MOVED_317)];
+  const changed = [...moved265(diffIn(cwd, LIB_HOLD, null, lib)), ...moved265(diffIn(cwd, BASE, null, rest)), ...at265(), ...diffIn(cwd, HOLD_317, null, MOVED_317), ...diffIn(cwd, HOLD_367, null, MOVED_367), ...diffIn(cwd, HOLD_388, null, MOVED_388)];
   // A-236-2: git's pathspec and this test's matcher agree on the subjects in this tree.
-  assert.deepEqual(changed, [...moved265(diffIn(cwd, LIB_HOLD, null, ['lib'])), ...moved265(diffIn(cwd, BASE, null, ['spec', 'config.js', 'config'])), ...at265(), ...diffIn(cwd, HOLD_317, null, MOVED_317)].filter(subject));
+  assert.deepEqual(changed, [...moved265(diffIn(cwd, LIB_HOLD, null, ['lib'])), ...moved265(diffIn(cwd, BASE, null, ['spec', 'config.js', 'config'])), ...at265(), ...diffIn(cwd, HOLD_317, null, MOVED_317), ...diffIn(cwd, HOLD_367, null, MOVED_367), ...diffIn(cwd, HOLD_388, null, MOVED_388)].filter(subject));
   return changed;
 }
 test('AC-4/AC-5 exported runner, provider, schemas and config stay unchanged', () => {
@@ -325,6 +342,20 @@ test('AC-4/AC-5 exported runner, provider, schemas and config stay unchanged', (
   execFileSync('git', ['merge-base', '--is-ancestor', HOLD_317, 'HEAD'], { cwd: ROOT });
   assert.throws(() => held317([...MOVED_317, 'lib/run.js'].sort()), 'planted third subject move');
   assert.throws(() => assert.deepEqual(diff(HOLD_317 + '^', null, MOVED_317).filter(subject), []), 'a change to a moved subject after the hold');
+  // A-236-8 (issue 367): the Issue 367 hold's own commit moved exactly lib/run.js of the subjects, and
+  // it is this tree's history; a planted second subject, or a change to it after the hold, reads RED.
+  const held367 = (paths) => assert.deepEqual(paths, MOVED_367, 'only issue 367 moved these subjects');
+  held367(diff(HOLD_367 + '^', HOLD_367, SUBJECTS).filter(subject).sort());
+  execFileSync('git', ['merge-base', '--is-ancestor', HOLD_367, 'HEAD'], { cwd: ROOT });
+  assert.throws(() => held367([...MOVED_367, 'lib/stub.js'].sort()), 'planted second subject move');
+  assert.throws(() => assert.deepEqual(diff(HOLD_367 + '^', null, MOVED_367).filter(subject), []), 'a change to a moved subject after the hold');
+  // A-236-10 (issue 388): the Issue 388 hold's own commit moved exactly lib/provider.js of the subjects, and
+  // it is this tree's history; a planted second subject, or a change to it after the hold, reads RED.
+  const held388 = (paths) => assert.deepEqual(paths, MOVED_388, 'only issue 388 moved these subjects');
+  held388(diff(HOLD_388 + '^', HOLD_388, SUBJECTS).filter(subject).sort());
+  execFileSync('git', ['merge-base', '--is-ancestor', HOLD_388, 'HEAD'], { cwd: ROOT });
+  assert.throws(() => held388([...MOVED_388, 'lib/stub.js'].sort()), 'planted second subject move');
+  assert.throws(() => assert.deepEqual(diff(HOLD_388 + '^', null, MOVED_388).filter(subject), []), 'a change to a moved subject after the hold');
   for (const file of ['lib/run.js', 'lib/regrade.js', 'lib/provider.js', 'spec/receipt.schema.json', 'config.js']) {
     assert.throws(() => reader([file]), 'planted source edit: ' + file);
   }
@@ -376,10 +407,22 @@ test('A-236-3 plants: the hold reads planted trees through its real path', () =>
     edit(file);
     assert.deepEqual(heldChanges(box).filter((f) => f === file), [file], 'read against the Issue 317 hold: ' + file);
   }
+  // A-236-8: an edit to lib/run.js in the planted tree reads RED against the Issue 367 hold.
+  for (const file of MOVED_367) {
+    restore();
+    edit(file);
+    assert.deepEqual(heldChanges(box).filter((f) => f === file), [file], 'read against the Issue 367 hold: ' + file);
+  }
+  // A-236-10: an edit to lib/provider.js in the planted tree reads RED against the Issue 388 hold.
+  for (const file of MOVED_388) {
+    restore();
+    edit(file);
+    assert.deepEqual(heldChanges(box).filter((f) => f === file), [file], 'read against the Issue 388 hold: ' + file);
+  }
 });
 
 // A-236-7 (issue 343): a release bump planted through the hold's real path. The bump is release-prepare's
-// own edit, its anchors for config.js and package.json applied by its applyAnchors, to the next minor version.
+// own edit, its anchors for config.js and package.json applied by its applyAnchors, to 9.9.9 (A-236-9, issue 382).
 test('A-236-7 plants: a release bump reads GREEN, any other change to config.js beside it RED', async () => {
   const { BUMP_ANCHORS, applyAnchors } = await import(require('node:url').pathToFileURL(path.join(ROOT, 'scripts/pipeline.mjs')).href);
   const box = tmp();
@@ -390,8 +433,7 @@ test('A-236-7 plants: a release bump reads GREEN, any other change to config.js 
   const write = (file, text) => fs.writeFileSync(path.join(box, file), text);
   restore();
   const from = JSON.parse(read('package.json')).version;
-  const [major, minor] = from.split('.').map(Number);
-  const next = `${major}.${minor + 1}.0`;
+  const next = '9.9.9';
   const bump = (files, version) => {
     const anchors = BUMP_ANCHORS.filter((a) => files.includes(a.file));
     assert.deepEqual([...new Set(anchors.map((a) => a.file))].sort(), [...files].sort(), 'release-prepare bumps ' + files.join(', '));
@@ -427,7 +469,7 @@ test('A-236-7 plants: a release bump reads GREEN, any other change to config.js 
   red('config.js bumped without package.json');
   restore();
   bump(['config.js'], next);
-  bump(['package.json'], `${major}.${minor + 2}.0`);
+  bump(['package.json'], '9.9.8');
   red('config.js and package.json at two versions');
   restore();
   bump(['config.js', 'package.json'], next);
@@ -457,7 +499,7 @@ for (const name of ADMITTED) {
   });
   test('AC-4 unchanged sealed artefacts and readers: ' + name, () => {
     const actual = scenario(ROOT, name);
-    const base = scenario(baseRoot, name);
+    const base = scenario(baseFor(name), name);
     same(actual.artefacts, base.artefacts);
     const dir = name.endsWith('regrade') ? 'regraded' : 'receipts';
     for (const [file, bytes] of Object.entries(actual.artefacts)) {
@@ -471,7 +513,7 @@ for (const name of ADMITTED) {
       assert.equal(verifyReceiptHash(receipt), true);
       for (const command of ['validate', 'badge']) {
         const a = cli(ROOT, actual.work, [command, file]);
-        const b = cli(baseRoot, base.work, [command, file]);
+        const b = cli(baseFor(name), base.work, [command, file]);
         same({ status: a.status, stdout: a.stdout, stderr: a.stderr },
           { status: b.status, stdout: b.stdout, stderr: b.stderr });
         assert.doesNotMatch(output(a), /STUB RUN/);
@@ -550,7 +592,7 @@ for (const command of ['run', 'regrade']) {
 for (const name of ['full', 'quick', 'multiple-model', 'judge-regrade', 'rubric-regrade']) {
   test('AC-6 non-stub output and artefacts unchanged: ' + name, () => {
     const a = scenario(ROOT, name, false);
-    const b = scenario(baseRoot, name, false);
+    const b = scenario(baseFor(name), name, false);
     same({ status: a.r.status, stdout: a.r.stdout, stderr: a.r.stderr, artefacts: a.artefacts },
       { status: b.r.status, stdout: b.r.stdout, stderr: b.r.stderr, artefacts: b.artefacts });
     assert.match(output(a.r), /projected cost: ~\$/);
@@ -765,3 +807,120 @@ for (const [command, plant] of [['run', 'summary-write'], ['regrade', 'summary-w
     assert.throws(() => results(bad, 1), /completion claims equal emitted receipts/);
   });
 }
+
+// A-236-11 (issue 381): spec 301's two readings of its approval's F-2 and F-3, moved here with their
+// plants when spec 301 was deleted. Each runs the real CLI in a copy of the tree, under the stub, with no
+// provider credential; a plant is applied to the copy's bin/driftproof and must be read RED for its reason.
+const STATEMENT_301 = /^STUB RUN \(DRIFTPROOF_STUB=1\):.*UNVERIFIED.*measure nothing/;
+const JUDGE_301 = 'claude-haiku-4-5';
+const CAP_301 = '0.0001';
+const tree301 = (plants = []) => {
+  const d = tmp();
+  for (const rel of ['bin', 'lib', 'spec', 'examples', 'config', 'config.js', 'package.json']) {
+    fs.cpSync(path.join(ROOT, rel), path.join(d, rel), { recursive: true });
+  }
+  fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(d, 'node_modules'));
+  for (const [rel, from, to] of plants) {
+    const p = path.join(d, rel);
+    const src = fs.readFileSync(p, 'utf8');
+    assert.equal(src.split(from).length - 1, 1, `the plant's anchor occurs once in ${rel}: ${from.slice(0, 80)}`);
+    fs.writeFileSync(p, src.split(from).join(to));
+  }
+  return d;
+};
+const cli301 = (dir, args, cwd) => {
+  const env = {};
+  for (const [k, v] of Object.entries(process.env)) {
+    if (/KEY|TOKEN|SECRET|^CLAUDE_|^ANTHROPIC_|^OPENAI_|^DRIFTPROOF_|^NODE_OPTIONS$/.test(k)) continue;
+    env[k] = v;
+  }
+  const r = spawnSync(process.execPath, [path.join(dir, 'bin', 'driftproof'), ...args], {
+    cwd, encoding: 'utf8', timeout: 300000, maxBuffer: 32 << 20,
+    env: { ...env, DRIFTPROOF_STUB: '1', CLAUDE_PROVIDER: 'stub', NODE_NO_WARNINGS: '1' },
+  });
+  if (r.error) throw r.error;
+  return r;
+};
+const receipts301 = (dir) => (fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => /[0-9a-f]{12}\.json$/.test(f)) : []);
+
+// F-2: a stub regrade refused by the dollar guard names the cap as passed and the planned synthetic calls,
+// the draws the planner judges times the samples; it quotes no dollar amount and writes no receipt.
+const readRegrade301 = (dir) => {
+  const work = tmp();
+  const skill = path.join(dir, 'examples', 'commit-message-conventions');
+  const run = cli301(dir, ['run', skill, '--models', JUDGE_301, '--max-cases', '2', '--samples', '1', '--trusted-skill', '--keep-transcripts', '--out', 'receipts'], work);
+  if (run.status !== 0) return [`the stub run that makes the receipt to regrade exited ${run.status}: ${run.stderr.slice(-300)}`];
+  const file = path.join(work, 'receipts', receipts301(path.join(work, 'receipts'))[0]);
+  const receipt = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const answersFile = path.join('transcripts', receipt.receipt_hash, 'answers.json');
+  const { readAnswers, drawsToJudge } = require('../lib/regrade.js');
+  const planned = drawsToJudge(receipt, readAnswers(path.join(work, answersFile)).answers).length * 1;
+  const r = cli301(dir, ['regrade', file, '--skill', skill, '--answers', answersFile, '--judge-model', JUDGE_301, '--samples', '1', '--trusted-skill', '--max-usd', CAP_301, '--out', 'regraded'], work);
+  const out = r.stdout + r.stderr;
+  const problems = [];
+  if (r.status !== 3) problems.push(`expected the cost guard's exit 3, got ${r.status}`);
+  const line = out.split('\n').find((l) => /ABORT \(cost guard\)/.test(l) && /--max-usd/.test(l));
+  if (!line) problems.push('no dollar cost-guard refusal');
+  else {
+    const cap = /exceeds --max-usd ([0-9][0-9.e-]*?)(?=[:;,\s]|$)/.exec(line);
+    if (!cap) problems.push(`the regrade refusal does not name the cap: ${line.trim()}`);
+    else if (Number(cap[1]) !== Number(CAP_301)) problems.push(`the regrade refusal names cap ${cap[1]}, not the ${CAP_301} that was passed`);
+    const calls = /\b([0-9]+) synthetic calls planned\b/.exec(line);
+    if (!calls) problems.push(`the regrade refusal does not name the planned synthetic calls: ${line.trim()}`);
+    else if (Number(calls[1]) !== planned) problems.push(`the regrade refusal names ${calls[1]} planned calls where the plan judges ${planned}`);
+  }
+  if (/\$\s*~?\s*[0-9]/.test(out)) problems.push('the stub regrade quotes a dollar amount');
+  if (receipts301(path.join(work, 'regraded')).length) problems.push('the refused regrade still wrote a receipt');
+  if (planned < 1) problems.push('the plan judges no draw, so the count reads nothing');
+  return problems;
+};
+
+// F-3: a value given to a no-value flag under the stub exits 2 with nothing on stdout, and stderr's first
+// line is the STUB RUN statement, before the refusal naming the flag.
+const readFlags301 = (dir) => {
+  const work = tmp();
+  const skill = path.join(dir, 'examples', 'commit-message-conventions');
+  const problems = [];
+  for (const [flag, args] of [
+    ['trusted-skill', ['run', skill, '--trusted-skill=false']],
+    ['keep-transcripts', ['run', skill, '--keep-transcripts=false']],
+    ['trusted-skill', ['run', skill, '--trusted-skill', 'false']],
+    ['trusted-skill', ['regrade', 'r.json', '--skill', skill, '--answers', 'r.json', '--judge-model', JUDGE_301, '--trusted-skill=false']],
+  ]) {
+    const r = cli301(dir, args, work);
+    const said = `${args[0]} ${args.slice(-2).join(' ')}`;
+    if (r.status !== 2) problems.push(`${said}: exit ${r.status}, not 2`);
+    if (r.stdout !== '') problems.push(`${said}: stdout is not empty`);
+    const lines = r.stderr.split('\n').filter((l) => l.trim());
+    if (!lines.length || !STATEMENT_301.test(lines[0].trim())) problems.push(`${said}: the first line written is not the stub statement`);
+    if (lines.findIndex((l) => /REFUSED/.test(l) && l.includes(`--${flag}`)) < 1) problems.push(`${said}: no refusal naming --${flag} after the statement`);
+  }
+  if (receipts301(path.join(work, 'receipts')).length) problems.push('a refused run wrote a receipt');
+  return problems;
+};
+
+const REGRADE_ANCHOR_301 = 'stub plan exceeds --max-usd ${maxUsd}: ${plan.calls} synthetic calls planned; no model will be called.`';
+const PARSE_ANCHOR_301 = 'parseArgs(rest, stubDoor ? () => console.error(STUB_STATEMENT) : null)';
+
+test('A-236-11 (spec 301 F-2): the stub regrade refusal names the cap and the planned synthetic calls, read back', () => {
+  assert.deepEqual(readRegrade301(tree301()), []);
+});
+
+test('A-236-11 (spec 301 F-2) plants: issue 236\'s regrade refusal and one naming a call more than planned each read RED', () => {
+  const old = readRegrade301(tree301([['bin/driftproof', '`\\n  ✗ ABORT (cost guard): ' + REGRADE_ANCHOR_301,
+    "'\\n  ✗ ABORT (cost guard): stub plan exceeds --max-usd; no model will be called.'"]]));
+  assert.ok(old.some((p) => /does not name the cap/.test(p)), old.join('; '));
+  const more = readRegrade301(tree301([['bin/driftproof', REGRADE_ANCHOR_301, REGRADE_ANCHOR_301.replace('${plan.calls}', '${plan.calls + 1}')]]));
+  assert.ok(more.some((p) => /planned calls where the plan judges/.test(p)), more.join('; '));
+});
+
+test('A-236-11 (spec 301 F-3): a refused no-value flag writes the stub statement first, on stderr, and nothing on stdout', () => {
+  assert.deepEqual(readFlags301(tree301()), []);
+});
+
+test('A-236-11 (spec 301 F-3) plants: the statement left out, and on stdout before parsing, each read RED', () => {
+  const none = readFlags301(tree301([['bin/driftproof', PARSE_ANCHOR_301, 'parseArgs(rest, null)']]));
+  assert.ok(none.some((p) => /first line written is not the stub statement/.test(p)), none.join('; '));
+  const out = readFlags301(tree301([['bin/driftproof', PARSE_ANCHOR_301, '(stubDoor && console.log(STUB_STATEMENT), parseArgs(rest, null))']]));
+  assert.ok(out.some((p) => /stdout is not empty/.test(p)), out.join('; '));
+});

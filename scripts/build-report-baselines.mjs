@@ -54,12 +54,69 @@ export const README_ANCHOR = 'Driftproof **consumes**';
 // package.json's, set aside: a bump alone moves no digest (issue 349). Any other
 // version string in the body, a stale one included, is read as written. That
 // the body carries the new version is spec 020's bump check, not this one's.
-export const README_VERSION = '<package version>';
 export function readmeBody(readme, version) {
   const i = readme.indexOf(README_ANCHOR);
   if (i < 0) return null;
-  const body = readme.slice(i);
-  return version ? body.split(version).join(README_VERSION) : body;
+  return setAside(readme.slice(i), version);
+}
+
+// ── The release version: the one normaliser (issue 382) ─────────────────────
+// A release writes one version, package.json's, into config.js, the plugin
+// manifest, the README's pins and sample, the homepage's pin, the plugin
+// README's pins and every receipt's runner_version. Every reader that compares
+// such bytes reads the version here, two ways apart: versionProblems says
+// whether those surfaces agree, and setAside reads a tree's own version as one
+// placeholder, so a bump alone moves nothing. Any other byte, and any version
+// that is not the tree's, still differs. Each `read(rel)` returns a file's text
+// from the tree being read, or null when the tree does not hold it.
+export const README_VERSION = '<package version>';
+export function setAside(text, version) {
+  return version ? text.split(version).join(README_VERSION) : text;
+}
+
+const RUNNER_LINE = /^const RUNNER_VERSION = '([^']*)';$/gm;
+const VERSION = /^\d+\.\d+\.\d+$/;
+
+// The tree's version: package.json's, which config.js's one RUNNER_VERSION line
+// must carry too when the tree holds config.js. Anything else throws.
+export function treeVersion(read) {
+  const pkg = read('package.json');
+  if (pkg === null) throw new Error('the tree carries no package.json');
+  const { version } = JSON.parse(pkg);
+  if (!VERSION.test(String(version))) throw new Error(`package.json's version ${version} is not x.y.z`);
+  const config = read('config.js');
+  if (config !== null) {
+    const lines = [...config.matchAll(RUNNER_LINE)];
+    if (lines.length !== 1) throw new Error(`config.js carries one RUNNER_VERSION, not ${lines.length}`);
+    if (lines[0][1] !== version) throw new Error(`config.js and package.json carry one version, not ${lines[0][1]} and ${version}`);
+  }
+  return version;
+}
+
+// Every surface release-prepare's BUMP_ANCHORS write the version into, read
+// against package.json's. Each file must carry at least one, or `count` exactly.
+const PIN = '([0-9][0-9A-Za-z.+-]*[0-9A-Za-z])';
+const SURFACES = [
+  { file: 'config.js', what: 'RUNNER_VERSION', re: RUNNER_LINE, count: 1 },
+  { file: 'plugin/driftproof/.claude-plugin/plugin.json', what: 'version', re: /^ {2}"version": "([^"]*)",?$/gm, count: 1 },
+  { file: 'README.md', what: 'Action pin', re: new RegExp(`driftproofhq/driftproof(?:/stale)?@v${PIN}`, 'g') },
+  { file: 'README.md', what: 'sample runner_version', re: /"runner_version":\s*"([^"]*)"/g },
+  { file: 'docs/index.html', what: 'Action pin', re: new RegExp(`driftproofhq/driftproof(?:/stale)?@v${PIN}`, 'g') },
+  { file: 'plugin/driftproof/README.md', what: 'npx pin', re: new RegExp(`\\bdriftproof@${PIN}`, 'g') },
+];
+export function versionProblems(read) {
+  const pkg = read('package.json');
+  if (pkg === null) return ['package.json: missing'];
+  const { version } = JSON.parse(pkg);
+  const problems = VERSION.test(String(version)) ? [] : [`package.json ${version} is not x.y.z`];
+  for (const { file, what, re, count } of SURFACES) {
+    const text = read(file);
+    if (text === null) { problems.push(`${file}: missing`); continue; }
+    const found = [...text.matchAll(re)].map((m) => m[1]);
+    if (found.length === 0 || (count && found.length !== count)) problems.push(`${file}: ${found.length} ${what}(s)`);
+    for (const v of found) if (v !== version) problems.push(`${file} ${what} ${v} != package.json ${version}`);
+  }
+  return problems;
 }
 
 export function reportNumbers() {

@@ -8,6 +8,136 @@ makes this one a record.
 
 ---
 
+## v0.22.2 - 2026-10-17
+
+### What's new
+
+- **Driftproof's first run is shorter: /driftproof:start shows a sample result straight away, and a
+  quick first look at your own skill runs one test task with and without it, side by side.** The
+  plugin's `README` and its command list now point you at `/driftproof:start` to begin. On the
+  command line, typing `driftproof` with no arguments prints five lines starting "start here", and
+  `driftproof init --cases` on a skill that already has cases tells you which file it added and
+  what to try next.
+
+### What may change for you
+
+- **`/driftproof:start` can now run on its own, not only when you type it.** The plugin's command
+  no longer turns off Claude's own use of it, so Claude may start your first run for you; it still
+  asks for your yes before writing anything.
+- **A quick first look now runs one test task, not up to five.** `driftproof run --quick` checks
+  that a skill and its suite run at all against the suite's first task only, two draws and two
+  judge samples on that task, so a first look costs less and finishes sooner than before.
+
+### Known issues
+
+- **What is not recorded or compared.** A CLI judge's own settings files (`~/.claude/settings.json`,
+  project settings, `CLAUDE.md` files, codex's config), the eval user's shell profile behind the
+  isolated hop, other proxy, region and credential variables, and the network the call crosses can
+  all change what the judge reads or where its call goes. The receipt holds none of them.
+  `spec/RECEIPT.md` lists them.
+- **The route is recorded as an unsalted hash,** so an address that can be guessed can be recovered
+  from it.
+- **A regrade's raw judge replies are not kept,** only their hashes.
+- **A plain regrade's judge identity is self-reported, not authenticated.** The requested judge's
+  reported id comes from its own reply; it does not authenticate provider identity or measure
+  grading accuracy.
+- **`driftproof overlap` measures word overlap only.** It does not establish that a suite leaked,
+  explain a measured lift, or establish that a skill is free of overlap beyond this one comparison.
+- **`driftproof plan`'s draw targets and USD figure are estimates, not promises.** The USD figure
+  assumes fixed token counts at registry API prices; it is not an invoice or a subscription billing
+  prediction, and a long prompt can exceed it. Retries and auxiliary harness calls are not included,
+  and an actual run may stop before any projected target.
+- **`driftproof lint-suite`'s findings are evidence of risk, not proof of one.** A repeated-word or
+  answer-text finding does not assert semantic equivalence or a dollar saving, and a history finding
+  never says a future run cannot show a score lift. No findings means only that these checks found
+  none; it does not mean the suite is fair, sufficient, cheap or free of causal leakage. Its
+  answer-text check covers grading fields only; it does not check whether the model itself was
+  exposed to an answer.
+- **A `view` or `diff --lift-breakdown` reads recorded scores at the receipt's own sample size.** It
+  predicts neither a skill's future answers nor a causal mechanism, and a legacy receipt without
+  draw records, or a failed arm, yields no breakdown, with the reason stated.
+- **An NVIDIA-cards or Harbor import stays DECLARED.** `diff` reads it as NOT MEASURED, and no
+  Driftproof reader gives it a verdict, a band, a spread or a baseline the source itself did not
+  print or record.
+- **A quick first look (`driftproof run --quick`) cannot produce a verdict.** It runs a single test
+  task to show that a skill and its suite run at all, and to show that task's two answers side by
+  side; it is not a measurement of lift.
+
+### Upgrade
+
+- npm: `npx driftproof@0.22.2`. The Action: `driftproofhq/driftproof@v0.22.2`, and the stale Action
+  `driftproofhq/driftproof/stale@v0.22.2`.
+- Claude Code plugin: `claude plugin update driftproof@driftproofhq`. The plugin runs `npx
+  driftproof@0.22.2`.
+
+### Engineering log
+
+0.22.2 carries one user-facing change, the shorter first run (issues 367 and 368), and otherwise
+continues 0.22.1's work on the release pipeline itself.
+
+Issue 367 (spec 139, PR 369) narrows `driftproof run --quick` from a smoke run of up to five cases
+to a first look at one task: two draws and two judge samples on that task alone, its two answers
+shown side by side, still no verdict. Issue 368 (specs 138, 139, 140 and 173, PR 370) gives the
+plugin side: `/driftproof:start` with no skill found now opens a bundled sample result (0.11's
+report-014 runs) instead of a dead end, the git and authorship questions move before drafting, and
+`start.md` drops `disable-model-invocation` so Claude may run the command itself, with the one yes
+before any write kept. Spec 016's cost probe (issue 367's own fix, PR 379) is corrected to read the
+quick preset's draw factor. Issue 377 (PR 387) is the sweep's own reaction: seven gates, among them
+specs 035, 131, 133, 235, 265 and 301, read red after 367 and 368 changed what a first run shows,
+and are brought back to green without loosening a check. Issue 372 (specs 139 and 245, PR 373) adds
+two tests that hold the release version itself out of these specs' own checks, so a version bump
+alone cannot turn them red.
+
+The rest hardens the release pipeline that cut 0.22.1. Issue 365 (spec 186, PR 366) lets fix-on-red
+delete a file, adding `Bash(git rm:*)` to its tool list. Issue 374 (spec 183, PR 375) has a release
+draft's own box-check red settle its attempt in the release journal, so a redraft can go instead of
+leaving the attempt open. Issue 383 (spec 183, PR 393) has release preparation touch only the paths
+a release actually changes, and a release candidate refuses a diff outside its own listed paths.
+Issue 384 (specs 183 and 186, PR 395) has a failed release check settle its own attempt and a retry
+read by the kind of failure, so a release fix no longer waits behind a hold it already cleared.
+Issue 386 (specs 183 and 186, PR 397) lets `dev` keep merging while a release sweeps, publishing the
+swept candidate instead of blocking the branch. Issue 382 (specs 021, 026, 139, 161, 235, 236 and
+245, PR 391) gives every reader one shared version normaliser, so a version bump moves every one of
+them the same way. Issue 385 (spec 029, PR 392) has the sweep read current timings and the nightly
+read by the last unswept SHA, and the publication step gets its own nightly self-test. Issue 380
+(specs 051 and 054, PR 389) brings CLAUDE.md, CONSTITUTION.md and RUNBOOK.md current with the
+rulings from 14 to 17 Oct. Issue 388 (new spec 388, PR 396) fixes the same three files per a docs
+review and gives a routine change its own rule: a regression test and an acceptance note, no new
+spec, for an internal change that cannot move a verdict or ship publicly. Issue 400 (PR 401) is the
+first such routine change: `review.yml`'s reviewer may no longer start a sub-agent. Issue 378
+(specs 016, 126, 145, 162 and 236, PR 402) retires the em dash rule from those specs' own gates and
+drops spec 301's now-duplicate probe, leaving one owner for the check instead of many. Issue 403
+(spec 183, PR 404) stops the release-notes step and the reviewer from starting background work of
+their own, after a background session left `RELEASES.md` uncommitted across the 0.22.0, 0.22.1 and
+0.22.2 drafts, and left a background-task directory behind on the box.
+
+A direct commit to `DECISIONS.md` (no PR) records 0.22.1's release: issues 355, 356 and 357 and the
+release fix #363 merging, and catalogue rows C-298 and C-299.
+
+#### The v0.22.2 merge list
+
+Eighteen merges since v0.22.1's release merge `08f40f5e`, oldest first:
+
+- DECISIONS: 0.22.1 released, issues 355, 356 and 357 and the release fix #363 merging, and
+  catalogue rows C-298 and C-299 recorded (direct commit, no PR): above.
+- issue 365, fix-on-red may delete a file (PR 366): above.
+- issue 367, a quick first look narrowed to one task (PR 369): above.
+- issue 368, the plugin's first run gets a sample result and Claude may start it (PR 370): above.
+- issue 372, two tests hold the release version out of specs 139 and 245 (PR 373): above.
+- issue 374, a release draft's box-check red settles its own attempt (PR 375): above.
+- issue 367's probe fix, spec 016's cost probe reads the quick preset's draw factor (PR 379): above.
+- issue 377, seven release-sweep gates fixed after issues 367 and 368 (PR 387): above.
+- issue 380, the rulebook brought current with the 14 to 17 Oct rulings (PR 389): above.
+- issue 382, one version normaliser for every reader a release bump moves (PR 391): above.
+- issue 385, the sweep on current timings and the nightly by unswept SHA (PR 392): above.
+- issue 383, release preparation touches only the paths a release changes (PR 393): above.
+- issue 384, a failed release check settles its own attempt (PR 395): above.
+- issue 386, the swept candidate publishes while dev keeps merging (PR 397): above.
+- issue 400, the reviewer may not start a sub-agent (PR 401): above.
+- issue 388, routine changes take a regression test; the rulebook fixed again (PR 396): above.
+- issue 378, the em dash rule retired to one owner (PR 402): above.
+- issue 403, the release-notes step and the reviewer start no background work (PR 404): above.
+
 ## v0.22.1 - 2026-10-16
 
 ### What's new

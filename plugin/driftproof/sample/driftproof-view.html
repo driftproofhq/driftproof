@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:">
+<meta name="generator" content="driftproof view">
+<title>Driftproof results: sample/report-014</title>
+<style>
+/* driftproof:tokens */
+:root {
+  --paper: #ECE5D5;
+  --paper-2: #FBF8F0;
+  --ink: #1F1D1A;
+  --ink-muted: #625C50;
+  --rule: #CBC1AC;
+  --arm-baseline: var(--ink-muted);
+  --accent: #44CC11;
+  --arm-skill: var(--ink);
+  --accent-ink: #2A3C9E;
+  --refused: #BDB3A0;
+  --state-separated: var(--accent-ink);
+  --state-overlapping: var(--ink-muted);
+  --state-refused: #6F5500;
+  --reg: #9B2C24;
+  --mixed: #6F5500;
+  --sans: "Alegreya Sans", "Gill Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "Courier Prime", ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --values: var(--mono);
+  --t-h1-page: 44px;
+  --t-h3: 22px;
+  --t-body: 18px;
+  --t-verdict: 24px;
+  --t-mono: 15px;
+  --t-mono-sm: 14px;
+  --t-eyebrow: 15px;
+  --t-fine: 15px;
+  --t-receipt-heading: 26px;
+  --t-plot: 12px;
+  --t-plot-lg: 19px;
+  --lh-body: 1.6;
+  --radius: 3px;
+  --w-wide: 1200px;
+  --w-receipt-label: 6rem;
+  --perforation: 2px;
+  --tooth: 12px;
+  --stamp-tilt: -2.5deg;
+  --sheet-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  color-scheme: light;
+}
+/* driftproof:/tokens */
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: var(--t-body); line-height: var(--lh-body); padding: 32px 16px 56px; }
+.wrap { max-width: var(--w-wide); margin: 0 auto; }
+button:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+.eyebrow { font-family: var(--mono); font-size: var(--t-eyebrow); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); margin: 0 0 8px; overflow-wrap: anywhere; }
+h1 { font-family: var(--display); font-weight: 500; font-size: var(--t-h1-page); line-height: 1.1; margin: 0 0 12px; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 500; font-size: var(--t-receipt-heading); margin: 0 0 10px; overflow-wrap: anywhere; }
+.lede { font-family: var(--display); font-size: var(--t-verdict); line-height: 1.4; max-width: 60ch; margin: 0 0 14px; }
+.lede b { font-weight: 500; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: var(--t-fine); color: var(--ink-muted); margin-bottom: 18px; }
+.key { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 10px 22px; font-size: var(--t-fine); color: var(--ink-muted); margin: 0 0 26px; }
+.key p { margin: 0; }
+.key b { color: var(--ink); font-weight: 500; }
+.grid { display: grid; grid-template-columns: minmax(130px, .8fr) repeat(var(--cols), minmax(0, 1fr)); gap: 10px; margin-bottom: 30px; }
+.grid .h { font-family: var(--mono); font-size: var(--t-mono-sm); letter-spacing: .05em; color: var(--ink-muted); align-self: end; padding: 0 4px 2px; overflow-wrap: anywhere; }
+.grid .rowh { font-weight: 500; align-self: center; padding: 0 4px; overflow-wrap: anywhere; }
+.cell { text-align: left; font: inherit; color: inherit; background: var(--paper-2); border: 1px solid var(--rule); border-radius: var(--radius); padding: 10px 12px; cursor: pointer; display: grid; gap: 6px; min-width: 0; }
+.cell.empty { cursor: default; color: var(--ink-muted); font-size: var(--t-fine); }
+.cell[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 1px; }
+.cell > span { min-width: 0; }
+.cell .chip { white-space: normal; }
+.cell .runs { font-size: var(--t-mono-sm); color: var(--ink-muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.nums { font-family: var(--values); font-size: var(--t-mono-sm); font-variant-numeric: tabular-nums; }
+.chip { display: inline-block; font-size: var(--t-mono-sm); font-weight: 500; padding: 1px 8px; border-radius: var(--radius); border: 1.5px solid currentColor; white-space: nowrap; background: var(--paper-2); }
+.dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; border: 1.5px solid currentColor; background: currentColor; }
+@media (max-width: 760px) { .grid { grid-template-columns: 1fr; } .grid .h { display: none; } .grid .rowh { margin-top: 10px; } }
+.sheets { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 34px 26px; align-items: start; margin-bottom: 30px; }
+.sheet { position: relative; background: var(--paper-2); box-shadow: var(--sheet-shadow); padding: 22px 22px 18px; margin-top: var(--tooth); min-width: 0; }
+.sheet::before, .sheet::after { content: ""; position: absolute; left: 0; right: 0; height: var(--tooth); background-color: var(--paper-2);
+  -webkit-mask: conic-gradient(from -45deg at bottom, black 90deg, transparent 0) bottom / calc(2 * var(--tooth)) var(--tooth) repeat-x;
+          mask: conic-gradient(from -45deg at bottom, black 90deg, transparent 0) bottom / calc(2 * var(--tooth)) var(--tooth) repeat-x; }
+.sheet::before { top: calc(-1 * var(--tooth) + 1px); }
+.sheet::after { bottom: calc(-1 * var(--tooth) + 1px);
+  -webkit-mask: conic-gradient(from 135deg at top, black 90deg, transparent 0) top / calc(2 * var(--tooth)) var(--tooth) repeat-x;
+          mask: conic-gradient(from 135deg at top, black 90deg, transparent 0) top / calc(2 * var(--tooth)) var(--tooth) repeat-x; }
+.sheet.timeline { grid-column: 1 / -1; }
+.sheet h3 { font-family: var(--display); font-weight: 400; font-size: var(--t-h3); text-align: center; margin: 0 0 10px; padding-bottom: 10px; border-bottom: var(--perforation) dotted var(--rule); overflow-wrap: anywhere; }
+.center { text-align: center; }
+.stamp { display: inline-block; transform: rotate(var(--stamp-tilt)); font-family: var(--mono); font-weight: 700; font-size: var(--t-mono); letter-spacing: .04em; text-transform: uppercase; padding: 3px 10px; border: 2px solid currentColor; border-radius: var(--radius); margin: 2px 0 10px; mix-blend-mode: multiply; }
+.v-PASSED { color: var(--state-separated); }
+.v-REGRESSED { color: var(--reg); }
+.v-NO_EFFECT { color: var(--ink); }
+.v-UNDERPOWERED { color: var(--state-overlapping); border-style: dashed; }
+.v-INCONCLUSIVE { color: var(--mixed); border-style: dashed; }
+.v-REPORTED, .v-SMOKE { color: var(--state-refused); border-style: dotted; }
+.v-NOT_MEASURED, .v-PRE_ANSWERED_BY, .v-REFUSED { color: var(--state-refused); border-style: dashed; }
+.dot.v-UNDERPOWERED, .dot.v-INCONCLUSIVE, .dot.v-REPORTED, .dot.v-SMOKE, .dot.v-NOT_MEASURED, .dot.v-PRE_ANSWERED_BY, .dot.v-REFUSED { background: transparent; }
+.said { margin: 0 0 10px; }
+.detail, .basis { margin: 0 0 8px; font-size: var(--t-fine); color: var(--ink-muted); }
+.row { display: grid; grid-template-columns: var(--w-receipt-label) 1fr; gap: 0 12px; padding: 6px 0; border-top: 1px dotted var(--rule); font-size: var(--t-fine); }
+.row .k { color: var(--ink-muted); }
+.row .v { font-family: var(--values); font-size: var(--t-mono-sm); overflow-wrap: anywhere; }
+.band svg { display: block; width: 100%; height: auto; margin: 6px 0 8px; }
+.stale { color: var(--state-refused); }
+.note { font-family: var(--mono); font-size: var(--t-mono-sm); color: var(--state-refused); border: 1px dashed var(--state-refused); border-radius: var(--radius); padding: 1px 7px; display: inline-block; }
+.foot { margin-top: 34px; font-size: var(--t-fine); }
+.lift-scroll { overflow-x: auto; max-width: 100%; }
+.lift-scroll table { border-collapse: collapse; font-size: var(--t-fine); }
+.lift-scroll th, .lift-scroll td { padding: 6px; text-align: left; border-bottom: 1px dotted var(--rule); vertical-align: top; }
+.lift-scroll th[scope=row] { overflow-wrap: anywhere; min-width: 12ch; }
+.hatch-defs { position: absolute; width: 0; height: 0; }
+.first-look { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; margin: 0 0 8px; }
+.first-look .basis { grid-column: 1 / -1; }
+.look-col { min-width: 0; border-top: 1px dotted var(--rule); padding-top: 6px; }
+.look-col .k { margin: 0 0 4px; font-size: var(--t-fine); color: var(--ink-muted); }
+.look-col pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--values); font-size: var(--t-mono-sm); }
+</style>
+</head>
+<body>
+<svg class="hatch-defs" aria-hidden="true" focusable="false"><defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+<rect width="6" height="6" fill="var(--refused)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--paper)" stroke-width="2"/>
+</pattern></defs></svg>
+<main class="wrap">
+<p class="eyebrow">Driftproof results · sample/report-014 · three receipts · made 16 Oct 2026 · this page works offline</p>
+<h1>Does the skill help? One skill, one model</h1>
+<p class="lede">Across <b data-count="total">3</b> results, the skill clearly helped in <b data-count="PASSED">1</b>, it made no clear difference in <b data-count="NO_EFFECT">1</b>, and there were too few answers to tell in <b data-count="UNDERPOWERED">1</b>. None showed the skill clearly hurting.</p>
+<div class="meta"><span>Three receipts per skill and model</span><span>One test task per receipt</span><span>Answers scored by claude-opus-5</span></div>
+<div class="key">
+<p><b>Clearly helped</b>: on at least one test task, the average with the skill was higher, the two ranges of scores (the average plus or minus one spread) did not overlap, and the gap was at least 0.05.</p>
+<p><b>No clear difference</b>: there were enough answers to have seen a 0.05 gap, and none was seen.</p>
+<p><b>Too few answers to tell</b>: there were too few answers, or they varied too much, to call it either way. It does not mean the skill does nothing.</p>
+</div>
+<div class="grid" role="group" aria-label="Results by skill and model" style="--cols: 1">
+<div class="h">Skill</div><div class="h">claude-haiku-5-5</div>
+<div class="rowh">git-workflow-and-versioning</div>
+<button type="button" class="cell" data-cell="cell-1" data-label="Too few answers to tell" data-skill="git-workflow-and-versioning" data-model="claude-haiku-5-5" aria-pressed="true"><span><span class="chip v-UNDERPOWERED" data-field="label">Too few answers to tell</span></span><span class="nums">0.848 with · 0.613 without</span><span class="runs">Three receipts: <span class="dot v-PASSED" data-file="run-1/git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json" title="2026-10-07: Clearly helped"></span><span class="dot v-NO_EFFECT" data-file="run-2/git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json" title="2026-10-07: No clear difference"></span><span class="dot v-UNDERPOWERED" data-file="run-3/git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json" title="2026-10-07: Too few answers to tell"></span></span></button>
+</div>
+<section class="sel" data-cell="cell-1">
+<h2>git-workflow-and-versioning with claude-haiku-5-5: three receipts, 2026-10-07</h2>
+<div class="sheets">
+<article class="sheet timeline" data-timeline="cell-1"><h3>Timeline</h3><p class="said">One row per receipt, oldest first.</p><div class="band"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 208" width="100%" role="img" class="bandplot is-rows">
+<title>git-workflow-and-versioning on claude-haiku-5-5. run-1 · 2026-10-07: without the skill 0.300 plus or minus 0.000, with the skill 0.849 plus or minus 0.008. run-2 · 2026-10-07: without the skill 0.849 plus or minus 0.012, with the skill 0.839 plus or minus 0.014. run-3 · 2026-10-07: without the skill 0.613 plus or minus 0.293, with the skill 0.848 plus or minus 0.004.</title>
+<style>/* driftproof:tokens */
+svg {
+  --paper: #ECE5D5;
+  --paper-2: #FBF8F0;
+  --ink: #1F1D1A;
+  --ink-muted: #625C50;
+  --rule: #CBC1AC;
+  --arm-baseline: var(--ink-muted);
+  --accent: #44CC11;
+  --arm-skill: var(--ink);
+  --accent-ink: #2A3C9E;
+  --refused: #BDB3A0;
+  --state-separated: var(--accent-ink);
+  --state-overlapping: var(--ink-muted);
+  --state-refused: #6F5500;
+  --sans: "Alegreya Sans", "Gill Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "Courier Prime", ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --values: var(--mono);
+  --radius: 3px;
+  --t-plot: 12px;
+  --t-plot-lg: 19px;
+}
+/* driftproof:/tokens */
+.bandplot.is-rows text { font-family: var(--sans); font-size: var(--t-plot); font-variant-numeric: tabular-nums lining-nums; }
+.bandplot.is-rows .tick, .bandplot.is-rows .row-label { fill: var(--ink-muted); }
+.bandplot.is-rows .grat { stroke: var(--rule); stroke-width: 1; }
+.bandplot.is-rows .axis { stroke: var(--ink); stroke-width: 1; }
+</style>
+<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+<rect width="6" height="6" fill="var(--refused)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--paper)" stroke-width="2"/>
+</pattern></defs>
+<line class="grat" x1="160.0" y1="10" x2="160.0" y2="182"/>
+<line class="grat" x1="272.0" y1="10" x2="272.0" y2="182"/>
+<line class="grat" x1="384.0" y1="10" x2="384.0" y2="182"/>
+<line class="grat" x1="496.0" y1="10" x2="496.0" y2="182"/>
+<line class="grat" x1="608.0" y1="10" x2="608.0" y2="182"/>
+<line class="axis" x1="160.0" y1="182" x2="608.0" y2="182"/>
+<text class="tick" x="160.0" y="200" text-anchor="start">0</text>
+<text class="tick" x="272.0" y="200" text-anchor="middle">0.25</text>
+<text class="tick" x="384.0" y="200" text-anchor="middle">0.5</text>
+<text class="tick" x="496.0" y="200" text-anchor="middle">0.75</text>
+<text class="tick" x="608.0" y="200" text-anchor="end">1</text>
+<g data-file="run-1/git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json">
+<text class="row-label" x="0" y="34">run-1 · 2026-10-07</text>
+<circle class="band band-baseline point" cx="294.4" cy="20.0" r="6" fill="var(--arm-baseline)" stroke="var(--arm-baseline)" stroke-width="1.5"/>
+<rect class="band band-skill" x="536.9" y="32" width="6.9" height="20" rx="1.5" fill="var(--arm-skill)"/>
+</g>
+<g data-file="run-2/git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json">
+<text class="row-label" x="0" y="90">run-2 · 2026-10-07</text>
+<rect class="band band-baseline" x="535.1" y="66" width="10.5" height="20" rx="1.5" fill="var(--arm-baseline)"/>
+<rect class="band band-skill" x="529.6" y="88" width="12.4" height="20" rx="1.5" fill="var(--arm-skill)"/>
+</g>
+<g data-file="run-3/git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json">
+<text class="row-label" x="0" y="146">run-3 · 2026-10-07</text>
+<rect class="band band-baseline" x="303.4" y="122" width="262.2" height="20" rx="1.5" fill="var(--arm-baseline)"/>
+<rect class="band band-skill" x="538.1" y="144" width="3.4" height="20" rx="1.5" fill="var(--arm-skill)"/>
+</g>
+</svg>
+</div></article>
+<article class="sheet" data-file="run-1/git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json" data-state="PASSED">
+<h3>git-workflow-and-versioning · run-1 · 2026-10-07</h3>
+<div class="center"><span class="stamp v-PASSED" data-field="label">Clearly helped</span></div>
+<p class="said" data-field="sentence">The skill clearly helped: 0.849 with it and 0.300 without, on 1 test task.</p>
+<div class="band"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" width="100%" role="img" class="bandplot is-hero state-separated">
+<title>git-workflow-and-versioning on claude-haiku-5-5, run-1/git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json. separated: the ranges do not overlap and the move clears the floor. Without the skill, 0.300 plus or minus 0.000. With the skill, 0.849 plus or minus 0.008.</title>
+<style>/* driftproof:tokens */
+svg {
+  --paper: #ECE5D5;
+  --paper-2: #FBF8F0;
+  --ink: #1F1D1A;
+  --ink-muted: #625C50;
+  --rule: #CBC1AC;
+  --arm-baseline: var(--ink-muted);
+  --accent: #44CC11;
+  --arm-skill: var(--ink);
+  --accent-ink: #2A3C9E;
+  --refused: #BDB3A0;
+  --state-separated: var(--accent-ink);
+  --state-overlapping: var(--ink-muted);
+  --state-refused: #6F5500;
+  --sans: "Alegreya Sans", "Gill Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "Courier Prime", ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --values: var(--mono);
+  --radius: 3px;
+  --t-plot: 12px;
+  --t-plot-lg: 19px;
+}
+/* driftproof:/tokens */
+.bandplot.is-hero text { font-family: var(--sans); font-size: var(--t-plot-lg); font-variant-numeric: tabular-nums lining-nums; }
+.bandplot.is-hero .tick { fill: var(--ink-muted); }
+.bandplot.is-hero .arm-label { font-style: italic; fill: var(--ink-muted); }
+.bandplot.is-hero .verdict { font-weight: 500; fill: var(--state-separated); }
+.bandplot.is-hero .value { font-weight: 500; fill: var(--ink); }
+.bandplot.is-hero .value.on-band { fill: var(--paper-2); }
+.bandplot.is-hero .grat { stroke: var(--rule); stroke-width: 1; }
+.bandplot.is-hero .floor { stroke: var(--ink-muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.bandplot.is-hero .axis { stroke: var(--ink); stroke-width: 1; }
+</style>
+<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+<rect width="6" height="6" fill="var(--refused)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--paper)" stroke-width="2"/>
+</pattern></defs>
+<line class="grat" x1="28.0" y1="26" x2="28.0" y2="124"/>
+<line class="grat" x1="144.0" y1="26" x2="144.0" y2="124"/>
+<line class="grat" x1="260.0" y1="26" x2="260.0" y2="124"/>
+<line class="grat" x1="376.0" y1="26" x2="376.0" y2="124"/>
+<line class="grat" x1="492.0" y1="26" x2="492.0" y2="124"/>
+<line class="axis" x1="28.0" y1="124" x2="492.0" y2="124"/>
+<text class="tick" x="28.0" y="142" text-anchor="start">0</text>
+<text class="tick" x="144.0" y="142" text-anchor="middle">0.25</text>
+<text class="tick" x="260.0" y="142" text-anchor="middle">0.5</text>
+<text class="tick" x="376.0" y="142" text-anchor="middle">0.75</text>
+<text class="tick" x="492.0" y="142" text-anchor="end">1</text>
+<line class="floor" x1="190.4" y1="26" x2="190.4" y2="124"/>
+<text class="verdict" x="492.0" y="16" text-anchor="end">separated</text>
+<text class="arm-label" x="28.0" y="34">without the skill</text>
+<circle class="band band-baseline point" cx="167.2" cy="50.0" r="6" fill="var(--arm-baseline)" stroke="var(--arm-baseline)" stroke-width="1.5"/>
+<text class="value value-baseline beside" x="178.2" y="56.3" text-anchor="start">0.300</text>
+<text class="arm-label" x="28.0" y="84">with the skill</text>
+<rect class="band band-skill" x="418.3" y="90" width="7.1" height="20" rx="1.5" fill="var(--arm-skill)"/>
+<text class="value value-skill beside" x="432.9" y="106.3" text-anchor="start">0.849</text>
+</svg>
+</div>
+<p class="basis">The bars are the spread of the scores across the answers to its one test task.</p>
+<div class="row"><span class="k">Model</span><span class="v">claude-haiku-5-5</span></div>
+<div class="row"><span class="k">Verification level</span><span class="v" data-field="verification">TESTED</span></div>
+<div class="row"><span class="k">Answers</span><span class="v" data-field="answers">3 with the skill, 3 without; the judge scored each answer 3 times</span></div>
+<div class="row"><span class="k">With / without</span><span class="v">0.849 ± 0.008 / 0.300 ± 0.000</span></div>
+<div class="row"><span class="k">Up to date?</span><span class="v stale" data-field="stale" data-status="unknown">Can&#39;t tell: the receipt records no harness (receipts before v0.9 carry none).</span></div>
+<section data-field="lift-breakdown"><h4>Lift by case</h4><p>Recorded draw scores, with the sample spread across answers. Cases have equal weight. Removing a case recomputes both arm means from the remaining draws. Positivity is decided before reporting rounds the figures. These figures describe this receipt at this sample size; they predict no future result.</p><p>Lift from recorded draws: 0.549. Included cases: 1 of 1.</p><div class="lift-scroll"><table><caption>Recorded draw scores by case</caption><thead><tr><th scope="col">Case</th><th scope="col">With mean</th><th scope="col">With spread</th><th scope="col">Baseline mean</th><th scope="col">Baseline spread</th><th scope="col">Difference</th><th scope="col">With measured</th><th scope="col">With drawn</th><th scope="col">With lost</th><th scope="col">Baseline measured</th><th scope="col">Baseline drawn</th><th scope="col">Baseline lost</th><th scope="col">State</th><th scope="col">Lift without case</th><th scope="col">Carries lift</th><th scope="col">Reason</th></tr></thead><tbody><tr data-lift-case="commit-message-conventional-type"><th scope="row">commit-message-conventional-type</th><td data-lift-value="with-mean">0.849</td><td data-lift-value="with-sd">0.008</td><td data-lift-value="baseline-mean">0.300</td><td data-lift-value="baseline-sd">0.000</td><td data-lift-value="delta">0.549</td><td data-lift-value="with-n">3</td><td data-lift-value="with-drawn">3</td><td data-lift-value="with-lost">0</td><td data-lift-value="baseline-n">3</td><td data-lift-value="baseline-drawn">3</td><td data-lift-value="baseline-lost">0</td><td data-lift-value="state">Helps under the rule</td><td data-lift-value="leave-lift">n/a</td><td data-lift-value="carrier">Not assessed</td><td data-lift-value="reason">Separation detected under the existing rule at this sample size.</td></tr></tbody></table></div><p data-lift-hurts>Downward cases: none.</p></section><div class="row"><span class="k">Run</span><span class="v">2026-10-07T20:29:31.013Z</span></div>
+<div class="row"><span class="k">Receipt</span><span class="v">8b2539f69402… · run-1/git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json</span></div>
+</article>
+<article class="sheet" data-file="run-2/git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json" data-state="NO_EFFECT">
+<h3>git-workflow-and-versioning · run-2 · 2026-10-07</h3>
+<div class="center"><span class="stamp v-NO_EFFECT" data-field="label">No clear difference</span></div>
+<p class="said" data-field="sentence">No clear difference: 0.839 with the skill and 0.849 without, with enough answers to have seen a gap of 0.05.</p>
+<div class="band"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" width="100%" role="img" class="bandplot is-hero state-overlapping">
+<title>git-workflow-and-versioning on claude-haiku-5-5, run-2/git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json. overlapping: no separation detected at this sample size. Without the skill, 0.849 plus or minus 0.012. With the skill, 0.839 plus or minus 0.014.</title>
+<style>/* driftproof:tokens */
+svg {
+  --paper: #ECE5D5;
+  --paper-2: #FBF8F0;
+  --ink: #1F1D1A;
+  --ink-muted: #625C50;
+  --rule: #CBC1AC;
+  --arm-baseline: var(--ink-muted);
+  --accent: #44CC11;
+  --arm-skill: var(--ink);
+  --accent-ink: #2A3C9E;
+  --refused: #BDB3A0;
+  --state-separated: var(--accent-ink);
+  --state-overlapping: var(--ink-muted);
+  --state-refused: #6F5500;
+  --sans: "Alegreya Sans", "Gill Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "Courier Prime", ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --values: var(--mono);
+  --radius: 3px;
+  --t-plot: 12px;
+  --t-plot-lg: 19px;
+}
+/* driftproof:/tokens */
+.bandplot.is-hero text { font-family: var(--sans); font-size: var(--t-plot-lg); font-variant-numeric: tabular-nums lining-nums; }
+.bandplot.is-hero .tick { fill: var(--ink-muted); }
+.bandplot.is-hero .arm-label { font-style: italic; fill: var(--ink-muted); }
+.bandplot.is-hero .verdict { font-weight: 500; fill: var(--state-overlapping); }
+.bandplot.is-hero .value { font-weight: 500; fill: var(--ink); }
+.bandplot.is-hero .value.on-band { fill: var(--paper-2); }
+.bandplot.is-hero .grat { stroke: var(--rule); stroke-width: 1; }
+.bandplot.is-hero .floor { stroke: var(--ink-muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.bandplot.is-hero .axis { stroke: var(--ink); stroke-width: 1; }
+</style>
+<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+<rect width="6" height="6" fill="var(--refused)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--paper)" stroke-width="2"/>
+</pattern></defs>
+<line class="grat" x1="28.0" y1="26" x2="28.0" y2="124"/>
+<line class="grat" x1="144.0" y1="26" x2="144.0" y2="124"/>
+<line class="grat" x1="260.0" y1="26" x2="260.0" y2="124"/>
+<line class="grat" x1="376.0" y1="26" x2="376.0" y2="124"/>
+<line class="grat" x1="492.0" y1="26" x2="492.0" y2="124"/>
+<line class="axis" x1="28.0" y1="124" x2="492.0" y2="124"/>
+<text class="tick" x="28.0" y="142" text-anchor="start">0</text>
+<text class="tick" x="144.0" y="142" text-anchor="middle">0.25</text>
+<text class="tick" x="260.0" y="142" text-anchor="middle">0.5</text>
+<text class="tick" x="376.0" y="142" text-anchor="middle">0.75</text>
+<text class="tick" x="492.0" y="142" text-anchor="end">1</text>
+<line class="floor" x1="445.1" y1="26" x2="445.1" y2="124"/>
+<text class="verdict" x="492.0" y="16" text-anchor="end">overlapping</text>
+<text class="arm-label" x="28.0" y="34">without the skill</text>
+<rect class="band band-baseline" x="416.5" y="40" width="10.9" height="20" rx="1.5" fill="var(--arm-baseline)"/>
+<text class="value value-baseline beside" x="432.9" y="56.3" text-anchor="start">0.849</text>
+<text class="arm-label" x="28.0" y="84">with the skill</text>
+<rect class="band band-skill" x="410.8" y="90" width="12.9" height="20" rx="1.5" fill="var(--arm-skill)"/>
+<text class="value value-skill beside" x="428.7" y="106.3" text-anchor="start">0.839</text>
+</svg>
+</div>
+<p class="basis">The bars are the spread of the scores across the answers to its one test task.</p>
+<div class="row"><span class="k">Model</span><span class="v">claude-haiku-5-5</span></div>
+<div class="row"><span class="k">Verification level</span><span class="v" data-field="verification">TESTED</span></div>
+<div class="row"><span class="k">Answers</span><span class="v" data-field="answers">3 with the skill, 3 without; the judge scored each answer 3 times</span></div>
+<div class="row"><span class="k">With / without</span><span class="v">0.839 ± 0.014 / 0.849 ± 0.012</span></div>
+<div class="row"><span class="k">Up to date?</span><span class="v stale" data-field="stale" data-status="unknown">Can&#39;t tell: the receipt records no harness (receipts before v0.9 carry none).</span></div>
+<section data-field="lift-breakdown"><h4>Lift by case</h4><p>Recorded draw scores, with the sample spread across answers. Cases have equal weight. Removing a case recomputes both arm means from the remaining draws. Positivity is decided before reporting rounds the figures. These figures describe this receipt at this sample size; they predict no future result.</p><p>Lift from recorded draws: -0.010. Included cases: 1 of 1.</p><div class="lift-scroll"><table><caption>Recorded draw scores by case</caption><thead><tr><th scope="col">Case</th><th scope="col">With mean</th><th scope="col">With spread</th><th scope="col">Baseline mean</th><th scope="col">Baseline spread</th><th scope="col">Difference</th><th scope="col">With measured</th><th scope="col">With drawn</th><th scope="col">With lost</th><th scope="col">Baseline measured</th><th scope="col">Baseline drawn</th><th scope="col">Baseline lost</th><th scope="col">State</th><th scope="col">Lift without case</th><th scope="col">Carries lift</th><th scope="col">Reason</th></tr></thead><tbody><tr data-lift-case="commit-message-conventional-type"><th scope="row">commit-message-conventional-type</th><td data-lift-value="with-mean">0.839</td><td data-lift-value="with-sd">0.014</td><td data-lift-value="baseline-mean">0.849</td><td data-lift-value="baseline-sd">0.012</td><td data-lift-value="delta">-0.010</td><td data-lift-value="with-n">3</td><td data-lift-value="with-drawn">3</td><td data-lift-value="with-lost">0</td><td data-lift-value="baseline-n">3</td><td data-lift-value="baseline-drawn">3</td><td data-lift-value="baseline-lost">0</td><td data-lift-value="state">No separation detected</td><td data-lift-value="leave-lift">n/a</td><td data-lift-value="carrier">Not assessed</td><td data-lift-value="reason">No separation detected at this sample size; this is not evidence that nothing changed.</td></tr></tbody></table></div><p data-lift-hurts>Downward cases: none.</p></section><div class="row"><span class="k">Run</span><span class="v">2026-10-07T20:48:24.950Z</span></div>
+<div class="row"><span class="k">Receipt</span><span class="v">5d46e61c93a1… · run-2/git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json</span></div>
+</article>
+<article class="sheet" data-file="run-3/git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json" data-state="UNDERPOWERED">
+<h3>git-workflow-and-versioning · run-3 · 2026-10-07</h3>
+<div class="center"><span class="stamp v-UNDERPOWERED" data-field="label">Too few answers to tell</span></div>
+<p class="said" data-field="sentence">Too few answers to tell: 0.848 with the skill and 0.613 without, but the scores varied too much to call it.</p>
+<p class="detail" data-field="detail">Not enough draws to conclude at this effect floor. Draws needed: no draw count at these spreads (case commit-message-conventional-type: the two arms&#39; spreads sum to 0.297, at or above the 0.05 floor).</p>
+<div class="band"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" width="100%" role="img" class="bandplot is-hero state-overlapping">
+<title>git-workflow-and-versioning on claude-haiku-5-5, run-3/git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json. overlapping: no separation detected at this sample size. Without the skill, 0.613 plus or minus 0.293. With the skill, 0.848 plus or minus 0.004.</title>
+<style>/* driftproof:tokens */
+svg {
+  --paper: #ECE5D5;
+  --paper-2: #FBF8F0;
+  --ink: #1F1D1A;
+  --ink-muted: #625C50;
+  --rule: #CBC1AC;
+  --arm-baseline: var(--ink-muted);
+  --accent: #44CC11;
+  --arm-skill: var(--ink);
+  --accent-ink: #2A3C9E;
+  --refused: #BDB3A0;
+  --state-separated: var(--accent-ink);
+  --state-overlapping: var(--ink-muted);
+  --state-refused: #6F5500;
+  --sans: "Alegreya Sans", "Gill Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "Courier Prime", ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --values: var(--mono);
+  --radius: 3px;
+  --t-plot: 12px;
+  --t-plot-lg: 19px;
+}
+/* driftproof:/tokens */
+.bandplot.is-hero text { font-family: var(--sans); font-size: var(--t-plot-lg); font-variant-numeric: tabular-nums lining-nums; }
+.bandplot.is-hero .tick { fill: var(--ink-muted); }
+.bandplot.is-hero .arm-label { font-style: italic; fill: var(--ink-muted); }
+.bandplot.is-hero .verdict { font-weight: 500; fill: var(--state-overlapping); }
+.bandplot.is-hero .value { font-weight: 500; fill: var(--ink); }
+.bandplot.is-hero .value.on-band { fill: var(--paper-2); }
+.bandplot.is-hero .grat { stroke: var(--rule); stroke-width: 1; }
+.bandplot.is-hero .floor { stroke: var(--ink-muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.bandplot.is-hero .axis { stroke: var(--ink); stroke-width: 1; }
+</style>
+<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+<rect width="6" height="6" fill="var(--refused)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--paper)" stroke-width="2"/>
+</pattern></defs>
+<line class="grat" x1="28.0" y1="26" x2="28.0" y2="124"/>
+<line class="grat" x1="144.0" y1="26" x2="144.0" y2="124"/>
+<line class="grat" x1="260.0" y1="26" x2="260.0" y2="124"/>
+<line class="grat" x1="376.0" y1="26" x2="376.0" y2="124"/>
+<line class="grat" x1="492.0" y1="26" x2="492.0" y2="124"/>
+<line class="axis" x1="28.0" y1="124" x2="492.0" y2="124"/>
+<text class="tick" x="28.0" y="142" text-anchor="start">0</text>
+<text class="tick" x="144.0" y="142" text-anchor="middle">0.25</text>
+<text class="tick" x="260.0" y="142" text-anchor="middle">0.5</text>
+<text class="tick" x="376.0" y="142" text-anchor="middle">0.75</text>
+<text class="tick" x="492.0" y="142" text-anchor="end">1</text>
+<line class="floor" x1="335.6" y1="26" x2="335.6" y2="124"/>
+<text class="verdict" x="492.0" y="16" text-anchor="end">overlapping</text>
+<text class="arm-label" x="28.0" y="34">without the skill</text>
+<rect class="band band-baseline" x="176.6" y="40" width="271.6" height="20" rx="1.5" fill="var(--arm-baseline)"/>
+<text class="value value-baseline on-band" x="312.4" y="56.3" text-anchor="middle">0.613</text>
+<text class="arm-label" x="28.0" y="84">with the skill</text>
+<rect class="band band-skill" x="419.6" y="90" width="3.6" height="20" rx="1.5" fill="var(--arm-skill)"/>
+<text class="value value-skill beside" x="432.4" y="106.3" text-anchor="start">0.848</text>
+</svg>
+</div>
+<p class="basis">The bars are the spread of the scores across the answers to its one test task.</p>
+<div class="row"><span class="k">Model</span><span class="v">claude-haiku-5-5</span></div>
+<div class="row"><span class="k">Verification level</span><span class="v" data-field="verification">TESTED</span></div>
+<div class="row"><span class="k">Answers</span><span class="v" data-field="answers">3 with the skill, 7 without; the judge scored each answer 3 times</span></div>
+<div class="row"><span class="k">With / without</span><span class="v">0.848 ± 0.004 / 0.613 ± 0.293</span></div>
+<div class="row"><span class="k">Up to date?</span><span class="v stale" data-field="stale" data-status="unknown">Can&#39;t tell: the receipt records no harness (receipts before v0.9 carry none).</span></div>
+<section data-field="lift-breakdown"><h4>Lift by case</h4><p>Recorded draw scores, with the sample spread across answers. Cases have equal weight. Removing a case recomputes both arm means from the remaining draws. Positivity is decided before reporting rounds the figures. These figures describe this receipt at this sample size; they predict no future result.</p><p>Lift from recorded draws: 0.235. Included cases: 1 of 1.</p><div class="lift-scroll"><table><caption>Recorded draw scores by case</caption><thead><tr><th scope="col">Case</th><th scope="col">With mean</th><th scope="col">With spread</th><th scope="col">Baseline mean</th><th scope="col">Baseline spread</th><th scope="col">Difference</th><th scope="col">With measured</th><th scope="col">With drawn</th><th scope="col">With lost</th><th scope="col">Baseline measured</th><th scope="col">Baseline drawn</th><th scope="col">Baseline lost</th><th scope="col">State</th><th scope="col">Lift without case</th><th scope="col">Carries lift</th><th scope="col">Reason</th></tr></thead><tbody><tr data-lift-case="commit-message-conventional-type"><th scope="row">commit-message-conventional-type</th><td data-lift-value="with-mean">0.848</td><td data-lift-value="with-sd">0.004</td><td data-lift-value="baseline-mean">0.613</td><td data-lift-value="baseline-sd">0.293</td><td data-lift-value="delta">0.235</td><td data-lift-value="with-n">3</td><td data-lift-value="with-drawn">3</td><td data-lift-value="with-lost">0</td><td data-lift-value="baseline-n">7</td><td data-lift-value="baseline-drawn">7</td><td data-lift-value="baseline-lost">0</td><td data-lift-value="state">Not enough draws to conclude at this effect floor</td><td data-lift-value="leave-lift">n/a</td><td data-lift-value="carrier">Not assessed</td><td data-lift-value="reason">Not enough draws to conclude at this effect floor</td></tr></tbody></table></div><p data-lift-hurts>Downward cases: none.</p></section><div class="row"><span class="k">Run</span><span class="v">2026-10-07T21:14:12.366Z</span></div>
+<div class="row"><span class="k">Receipt</span><span class="v">473b43d59a2a… · run-3/git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json</span></div>
+</article>
+</div>
+</section>
+
+<p class="foot"><span class="note">reported results</span> A receipt below TESTED (imported from another tool, or from a run no model answered) shows its reported numbers under a dotted &quot;Reported, not measured&quot; stamp and gets no verdict, because Driftproof did not measure it. Imported from another tool in this folder: <b data-count="imported">none</b>.</p>
+</main>
+<script>
+(function () {
+  var cells = document.querySelectorAll('button.cell');
+  function pick(b) {
+    cells.forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    document.querySelectorAll('section.sel').forEach(function (s) { s.hidden = s.getAttribute('data-cell') !== b.getAttribute('data-cell'); });
+  }
+  cells.forEach(function (b) { b.addEventListener('click', function () { pick(b); }); });
+})();
+</script>
+</body>
+</html>

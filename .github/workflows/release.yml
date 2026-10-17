@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Release: runs when a tag v* is pushed to this repository, publishes that tag to npm with
-# provenance, creates the GitHub release, and tells IndexNow what changed.
+# provenance, creates the GitHub release, and tells IndexNow what changed once the release is live.
 #
 # Runs on a GitHub-hosted runner only, never a self-hosted one. The job is in the `release`
 # environment, which holds a required reviewer, so nothing publishes until a person approves it.
@@ -47,6 +47,7 @@ jobs:
     permissions:
       contents: write
       id-token: write
+      deployments: read
     env:
       TAG: ${{ github.ref_name }}
       NPM_VERSION: 11.21.0
@@ -182,14 +183,36 @@ jobs:
       - name: Tell IndexNow what changed
         continue-on-error: true
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           PREV="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | awk -v t="$TAG" 'f { print; exit } $0 == t { f = 1 }')"
           if [ -z "$PREV" ]; then
             echo "::warning::no earlier release tag was found, so IndexNow was skipped"; exit 0
           fi
-          if ! ls docs/ | grep -Eq '^[0-9a-f]{32}\.txt$'; then
+          KEY="$(ls docs/ | grep -E '^[0-9a-f]{32}\.txt$' | head -n 1 || true)"
+          if [ -z "$KEY" ]; then
             echo "::warning::no IndexNow key file docs/<32 hex>.txt is in the tree, so IndexNow was skipped"; exit 0
+          fi
+          # Submit only once the release is live: the Pages deployment of the tag's commit reached success, and
+          # the live homepage and the live key file answer 200. Bounded: 20 tries 30 s apart.
+          SHA="$(git rev-parse "$TAG^{commit}")"
+          LIVE=""
+          for i in $(seq 1 20); do
+            ID="$(gh api "repos/$GITHUB_REPOSITORY/deployments?sha=$SHA&environment=github-pages" --jq '.[0].id // empty' 2>/dev/null || true)"
+            STATE=""
+            if [ -n "$ID" ]; then
+              STATE="$(gh api "repos/$GITHUB_REPOSITORY/deployments/$ID/statuses" --jq '.[0].state // empty' 2>/dev/null || true)"
+            fi
+            HOME_CODE="$(curl -s -o /dev/null -w '%{http_code}' https://driftproofhq.com/ || true)"
+            KEY_CODE="$(curl -s -o /dev/null -w '%{http_code}' "https://driftproofhq.com/$KEY" || true)"
+            if [ "$STATE" = success ] && [ "$HOME_CODE" = 200 ] && [ "$KEY_CODE" = 200 ]; then LIVE=yes; break; fi
+            echo "not live yet (try $i of 20): deployment ${ID:-none} ${STATE:-no state}, homepage $HOME_CODE, key file $KEY_CODE"
+            if [ "$i" -lt 20 ]; then sleep 30; fi
+          done
+          if [ -z "$LIVE" ]; then
+            echo "::warning::the Pages deployment of $SHA did not reach success, or the live homepage or key file did not answer 200, after 20 tries; IndexNow was not told. Submit it by hand once the release is live"; exit 0
           fi
           echo "IndexNow range: $PREV to $TAG"
           node scripts/indexnow.mjs --since "$PREV" --until "$TAG" --send

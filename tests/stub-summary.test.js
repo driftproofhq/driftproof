@@ -289,7 +289,7 @@ function wording(md) {
   const text = prose(md).replace(/\s+/g, ' ');
   assert.doesNotMatch(text, /\bconfiden(ce|t)\b|\bstatistically\b|\bsignifican(t|ce)\b/i, 'spec 035 confidence wording');
   for (const { cls, re } of lexicon) assert.equal(re.test(text), false, 'spec 031 lexicon: ' + cls);
-  assert.equal(text.includes('—'), false, 'no em dash on any line of a stub summary');
+  // A-245-9 (issue 378): the em dash is no longer read.
 }
 function stubReader(md, receipt, opts = {}) { first(md); attribution(md, receipt, opts); noResults(md); wording(md); }
 
@@ -497,11 +497,8 @@ test('plants: the no-results reader', () => {
 test('plants: the wording reader', () => {
   wording(CLEAN.text);
   // Issue 301: the lexicon plant is built from the declared literal (spec 031 AC-4).
-  for (const bad of [CLEAN.text + `The change is ${WITHIN_NOISE}.\n`, CLEAN.text + '95% confidence the skill helps.\n',
-    CLEAN.text.replace('; no model graded them', ' — no model graded them'),
-    // Review item 8: an em dash in the regrade line and in the title.
-    CLEAN.text.replace('; no answer was generated', ' — no answer was generated'),
-    CLEAN.text.replace('# `s` receipt summary', '# `s` — receipt summary')]) assert.throws(() => wording(bad));
+  // A-245-9 (issue 378): the three em dash plants are retired with the em dash reading.
+  for (const bad of [CLEAN.text + `The change is ${WITHIN_NOISE}.\n`, CLEAN.text + '95% confidence the skill helps.\n']) assert.throws(() => wording(bad));
 });
 test('plants: a bare file name and a line break let through read RED (AC-8)', () => {
   stubReader(CLEAN.text, CLEAN.receipt, CLEAN.opts);
@@ -584,28 +581,25 @@ function atBaseJudge(data) {
 // version, and every receipt records the tool version as runner_version. A tree's version is the one both
 // files carry; they must agree. A candidate artefact must record its tree's version at every runner_version,
 // each is read back as the Base tree's, and every other byte is compared as before. Any other value reads RED.
+// A-245-8 (issue 382): the tree's version and the setting aside are the shared normaliser's, treeVersion and
+// setAside in scripts/build-report-baselines.mjs; this reader keeps its own check of each runner_version.
+const { treeVersion, setAside, README_VERSION } = require(path.join(ROOT, 'scripts', 'build-report-baselines.mjs'));
 function versionOf(root) {
-  const lines = [...fs.readFileSync(path.join(root, 'config.js'), 'utf8').matchAll(/^const RUNNER_VERSION = '([^']*)';$/gm)];
-  assert.equal(lines.length, 1, 'config.js carries one RUNNER_VERSION: ' + root);
-  const version = lines[0][1];
-  assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version, version, 'config.js and package.json carry one version: ' + root);
-  return version;
+  return treeVersion((rel) => (fs.existsSync(path.join(root, rel)) ? fs.readFileSync(path.join(root, rel), 'utf8') : null));
 }
 const RUNNER_FIELD = /("runner_version":\s*)"([^"]*)"/g;
-function atBaseRelease(data, root = ROOT) {
-  const from = versionOf(baseRoot), to = versionOf(root);
+function atBaseRelease(data, root = ROOT, base = baseRoot) {
+  const from = versionOf(base), to = versionOf(root);
   const artefacts = {};
   for (const [f, bytes] of Object.entries(data.artefacts)) {
-    artefacts[f] = bytes.replace(RUNNER_FIELD, (whole, key, value) => {
-      assert.equal(value, to, 'the artefact records its tree\'s version ' + to + ': ' + f);
-      return key + JSON.stringify(from);
-    });
+    for (const [, , value] of bytes.matchAll(RUNNER_FIELD)) assert.equal(value, to, 'the artefact records its tree\'s version ' + to + ': ' + f);
+    artefacts[f] = setAside(bytes, to).split(README_VERSION).join(from);
   }
   return { ...data, artefacts };
 }
 test('plants: a release bump reads GREEN, any other version or byte beside it RED (A-245-5)', async () => {
   // The bumped tree: this tree's CLI, library, config and schemas, with release-prepare's own edit, its
-  // anchors for config.js and package.json applied by its applyAnchors, to the next minor version.
+  // anchors for config.js and package.json applied by its applyAnchors, to 9.9.9 (A-245-8, issue 382).
   const { BUMP_ANCHORS, applyAnchors } = await import(require('node:url').pathToFileURL(path.join(ROOT, 'scripts/pipeline.mjs')).href);
   const bumped = path.join(harness, 'bumped');
   if (!fs.existsSync(bumped)) {
@@ -613,8 +607,7 @@ test('plants: a release bump reads GREEN, any other version or byte beside it RE
     fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(bumped, 'node_modules'));
   }
   const from = versionOf(ROOT);
-  const [major, minor] = from.split('.').map(Number);
-  const next = `${major}.${minor + 1}.0`;
+  const next = '9.9.9';
   const files = ['config.js', 'package.json'];
   const anchors = BUMP_ANCHORS.filter((a) => files.includes(a.file));
   assert.deepEqual([...new Set(anchors.map((a) => a.file))].sort(), files, 'release-prepare bumps config.js and package.json');
@@ -630,7 +623,7 @@ test('plants: a release bump reads GREEN, any other version or byte beside it RE
     assert.deepEqual(normalized(atBaseJudge(atBaseSchema(atBaseRelease(a, bumped)))), normalized(b));
     // RED: a receipt that records another version than its tree's.
     const file = receipts[0];
-    for (const other of [versionOf(baseRoot), '9.9.9', next + '-rc.1']) {
+    for (const other of [versionOf(baseRoot), '9.9.8', next + '-rc.1']) {
       const bad = a.artefacts[file].replace(`"runner_version": "${next}"`, `"runner_version": "${other}"`);
       assert.notEqual(bad, a.artefacts[file], 'the plant changed the receipt');
       assert.throws(() => atBaseRelease({ ...a, artefacts: { ...a.artefacts, [file]: bad } }, bumped), /records its tree's version/);
@@ -645,6 +638,9 @@ test('plants: a release bump reads GREEN, any other version or byte beside it RE
       assert.throws(() => assert.deepEqual(normalized(atBaseJudge(atBaseSchema(atBaseRelease(moved, bumped)))), normalized(b)));
     }
   }
+  // A-245-8 (issue 382): a quick scenario of the bumped tree reads GREEN against the Issue 367 hold (A-245-7).
+  const quick = Object.keys(SCENARIOS).find((n) => SCENARIOS[n].quick);
+  assert.deepEqual(normalized(atBaseRelease(scenario(bumped, quick), bumped, holdTree())), normalized(scenario(holdTree(), quick)));
   // RED: a tree whose config.js and package.json carry two versions writes no release's version.
   const half = path.join(harness, 'half');
   fs.mkdirSync(half, { recursive: true });
@@ -693,7 +689,35 @@ test('plants: the schema reader rejects another schema_version and a second one 
   const moved = { ...a, artefacts: { ...a.artefacts, [file]: a.artefacts[file].replace('"generation_sampled": true', '"generation_sampled": false') } };
   assert.throws(() => assert.deepEqual(normalized(atBaseJudge(atBaseSchema(atBaseRelease(moved)))), normalized(b)));
 });
-for (const name of Object.keys(SCENARIOS)) {
+// A-245-6 (issue 367): issue 367 made --quick a first look (one case, two draws per arm, answers kept),
+// so the two quick scenarios read against the tree at the Issue 367 hold, which must be this tree's
+// history; every other scenario reads against the Base tree, as before. A-245-7 (issue 372): each
+// runner_version is read with A-245-5's reading, back as the hold tree's version.
+const HOLD_367 = /\*\*Issue 367 hold:\*\* \x60([0-9a-f]{40})\x60/.exec(SPEC)[1];
+let holdRoot = null;
+function holdTree() {
+  if (holdRoot) return holdRoot;
+  execFileSync('git', ['merge-base', '--is-ancestor', HOLD_367, 'HEAD'], { cwd: ROOT });
+  holdRoot = path.join(harness, 'hold-367');
+  fs.mkdirSync(holdRoot);
+  const holdTar = path.join(harness, 'hold-367.tar');
+  execFileSync('git', ['archive', '--format=tar', '-o', holdTar, HOLD_367, 'bin', 'lib', 'config.js', 'config', 'spec', 'package.json'], { cwd: ROOT });
+  execFileSync('tar', ['-xf', holdTar, '-C', holdRoot]);
+  fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(holdRoot, 'node_modules'));
+  return holdRoot;
+}
+for (const name of Object.keys(SCENARIOS).filter((n) => SCENARIOS[n].quick)) {
+  test('AC-7 (A-245-6) quick receipts, transcripts and sidecars equal the Issue 367 hold\'s apart from the revision: ' + name, () => {
+    const a = scenario(ROOT, name), h = scenario(holdTree(), name);
+    assert.deepEqual(normalized(atBaseRelease(a, ROOT, holdTree())), normalized(h));
+    for (const s of a.summaries) assert.equal(s.receipt.run.judge.code_revision, judgeCodeRevision(ROOT));
+    // Plant: a resealed receipt byte after the hold reads RED.
+    const file = a.summaries[0].file;
+    const moved = { ...a, artefacts: { ...a.artefacts, [file]: a.artefacts[file].replace('"preset": "quick"', '"preset": "quick", "planted": 1') } };
+    assert.throws(() => assert.deepEqual(normalized(atBaseRelease(moved, ROOT, holdTree())), normalized(h)));
+  });
+}
+for (const name of Object.keys(SCENARIOS).filter((n) => !SCENARIOS[n].quick)) {
   test('AC-7 receipts, transcripts and sidecars equal the Base tree\'s apart from the revision: ' + name, () => {
     const a = scenario(ROOT, name), b = scenario(baseRoot, name);
     assert.deepEqual(normalized(atBaseJudge(atBaseSchema(atBaseRelease(a)))), normalized(b));

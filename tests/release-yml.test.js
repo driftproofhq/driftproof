@@ -97,8 +97,23 @@ if [ "\${1:-} \${2:-}" = "release view" ]; then
   exit 0
 fi
 [ "\${1:-} \${2:-}" = "release create" ] && exit 0
+# api (spec 388, S6): a deployment's statuses print STUB_GH_STATE, the deployments list STUB_GH_DEPLOY.
+if [ "\${1:-}" = api ]; then
+  case "\${2:-}" in
+    */statuses) [ -z "\${STUB_GH_STATE:-}" ] || printf '%s\\n' "$STUB_GH_STATE" ;;
+    *deployments*) [ -z "\${STUB_GH_DEPLOY:-}" ] || printf '%s\\n' "$STUB_GH_DEPLOY" ;;
+    *) echo "gh stub: unsupported api path: $2" >&2; exit 2 ;;
+  esac
+  exit 0
+fi
 echo "gh stub: unsupported call: $*" >&2
 exit 2
+`,
+  // the live check (spec 388, S6): the key file answers STUB_CURL_KEY, any other URL STUB_CURL_HOME; 200 by default
+  curl: `#!/usr/bin/env bash
+printf '%s\\n' "$*" >> "$STUB_LOG/curl"
+url="\${@: -1}"
+case "$url" in *.txt) printf '%s' "\${STUB_CURL_KEY:-200}" ;; *) printf '%s' "\${STUB_CURL_HOME:-200}" ;; esac
 `,
 };
 
@@ -269,3 +284,44 @@ test('AC-6 no existing release: gh release create once, with --verify-tag; the s
     assert.ok(!re.test(s.run), `the step's script has no ${re}`);
   }
 }));
+
+// Spec 388, the docs review's S6: the IndexNow step submits only after the Pages deployment of the tag's
+// commit reached success and the live homepage and key file answer 200, within a bound, and otherwise warns
+// and sends nothing. The step runs in a scratch repository with two release tags, a key file and a stub
+// scripts/indexnow.mjs that records its arguments.
+function indexnowRun(dir, vars) {
+  const repo = path.join(dir, 'work', 'repo');
+  fs.mkdirSync(path.join(repo, 'docs'), { recursive: true });
+  fs.mkdirSync(path.join(repo, 'scripts'), { recursive: true });
+  fs.writeFileSync(path.join(repo, 'docs', `${'a'.repeat(32)}.txt`), 'a'.repeat(32));
+  fs.writeFileSync(path.join(repo, 'scripts', 'indexnow.mjs'), "import fs from 'node:fs';\nfs.appendFileSync(process.env.STUB_LOG + '/indexnow', process.argv.slice(2).join(' ') + '\\n');\n");
+  const g = (...a) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=nobody', '-c', 'commit.gpgsign=false', '-c', 'tag.gpgsign=false', ...a], { cwd: repo, encoding: 'utf8' });
+  g('init', '-q'); g('add', '-A'); g('commit', '-q', '-m', 'one'); g('tag', 'v9.9.8');
+  fs.writeFileSync(path.join(repo, 'docs', 'page.html'), 'two'); g('add', '-A'); g('commit', '-q', '-m', 'two'); g('tag', 'v9.9.9');
+  const { steps } = workflow();
+  return runStep(dir, step(steps, INDEXNOW), { TAG: 'v9.9.9', GITHUB_REPOSITORY: 'owner/repo', ...vars }, repo);
+}
+
+test('S6 (spec 388) a successful Pages deployment and a live homepage and key file: IndexNow is told the release range once', () => withScratch((dir) => {
+  const r = indexnowRun(dir, { STUB_GH_DEPLOY: '42', STUB_GH_STATE: 'success' });
+  assert.strictEqual(r.status, 0, `exit status\n${r.out}${r.err}`);
+  assert.deepStrictEqual(r.calls('indexnow'), ['--since v9.9.8 --until v9.9.9 --send']);
+  assert.ok(r.calls('gh').some((c) => /deployments\?sha=[0-9a-f]{40}&environment=github-pages/.test(c)), 'the deployments of the tag\'s commit were read');
+  assert.ok(r.calls('curl').some((c) => /a{32}\.txt/.test(c)), 'the live key file was fetched');
+  assert.deepStrictEqual(r.calls('sleep'), []);
+}));
+
+for (const [label, vars] of [
+  ['a deployment that never reaches success', { STUB_GH_DEPLOY: '42', STUB_GH_STATE: 'in_progress' }],
+  ['no deployment of the commit', { STUB_GH_DEPLOY: '', STUB_GH_STATE: 'success' }],
+  ['a key file that does not answer 200', { STUB_GH_DEPLOY: '42', STUB_GH_STATE: 'success', STUB_CURL_KEY: '404' }],
+  ['a homepage that does not answer 200', { STUB_GH_DEPLOY: '42', STUB_GH_STATE: 'success', STUB_CURL_HOME: '503' }],
+]) {
+  test(`S6 (spec 388) ${label}: 20 tries 30 s apart, a warning, exit 0, and nothing sent`, () => withScratch((dir) => {
+    const r = indexnowRun(dir, vars);
+    assert.strictEqual(r.status, 0, `exit status\n${r.out}${r.err}`);
+    assert.deepStrictEqual(r.calls('indexnow'), [], 'IndexNow was not told');
+    assert.strictEqual(r.calls('sleep').length, 19, 'the wait is bounded: 19 sleeps between 20 tries');
+    assert.ok(r.has('::warning::').some((l) => /Pages deployment/.test(l) && /not told/.test(l)), `a warning says IndexNow was not told: ${r.out}`);
+  }));
+}

@@ -170,12 +170,15 @@ test('the flag inside a git repository, with a value, or where git cannot say, i
   assert.equal(npx(sb).length, 0);
 });
 
-test('start outside a repository names /driftproof:run with the flag and never tells start to take it', () => {
+// Spec 139 A-139-18 (issue 368): start takes the flag now, so outside a repository it tells start itself
+// to take it, after the person's yes, and names no route through /driftproof:run.
+test('start outside a repository offers start the flag, and names the skill and the folder it would run from', () => {
   const sb = sandbox({ repo: false });
   const r = doorIn(sb, ['start', 'my-skill']);
   assert.equal(r.status, 2, r.stderr);
-  assert.match(r.stderr, /\/driftproof:run \S+ --trust-outside-repo/);
-  assert.doesNotMatch(r.stderr, /this command again with --trust-outside-repo/);
+  assert.match(r.stderr, /this command again with --trust-outside-repo/);
+  assert.doesNotMatch(r.stderr, /\/driftproof:run \S+ --trust-outside-repo/);
+  assert.match(r.stderr, /npx driftproof@\S+ run /);
   assert.equal(npx(sb).length, 0);
 });
 
