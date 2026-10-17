@@ -345,9 +345,12 @@ A regrade writes no file at all when the receipt it built fails its schema or it
 
 ## What v0.11 adds: a smoke run says so
 
-Spec 139, the first run. `driftproof run --quick` is a smoke run: two judge samples, four
-calls at once, at most five cases, run to see that a skill and its suite run at all. It takes
-too few answers to give a verdict, and its receipt says so.
+Spec 139, the first run. `driftproof run --quick` is a smoke run, a first look: one test task
+(the first in the suite, and no other), 2 draws per arm and 2 judge samples per answer, four calls
+at once, run to see that the skill and that task run and to show the task's two answers side by side
+(A-139-17). Each arm records `n_planned` 2 and stops with `max_reached` at its second draw. It
+takes too few answers to give a verdict, and its receipt says so. A smoke run cannot produce a
+verdict.
 
 - **`run.preset`**: `"quick"` on a smoke run's receipt; absent on every other run. The one
   value is `"quick"`.

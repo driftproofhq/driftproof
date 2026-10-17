@@ -1417,7 +1417,7 @@ gate.section('publish-tree draft guard');
   const exScope = require('./assertion-scope');
   const EX_ROWS = {
     pending: 'published tree excludes reports/pending-publish.md',
-    governance: 'published tree excludes BACKLOG.md, CLAUDE.md, CONSTITUTION.md, DECISIONS.md and specs/',
+    governance: 'published tree excludes BACKLOG.md, CLAUDE.md, CONSTITUTION.md, DECISIONS.md, RUNBOOK.md and specs/',
     state: 'published tree excludes state/',
     internal: 'published tree excludes reports/week-*, reports/phase-* and reports/interop-outreach.md',
   };
@@ -1457,6 +1457,9 @@ gate.section('publish-tree draft guard');
     // carries environment facts that are not for the public tree. It is added by name, as the four
     // were; replacing the enumeration with a class is owed (spec 048 PACKET.md, Owed). Publishing a curated public constitution stays open as a
     // deliberate choice; this guard only prevents it happening by accident.
+    //
+    // RUNBOOK.md ADDED 2026-10-17, the sixth (spec 388, the docs review's J4): the internal
+    // operations manual, whose links target excluded files. A reader's steps moved to README.md.
     row(EX_ROWS.governance, exHits.governance, 'govHits');
 
     // Local machine state must not ride a publish. `state/skill-version-check.json`
@@ -1559,13 +1562,13 @@ gate.section('publish-tree draft guard');
     }
 
     // MUTATION (A-028-36, N-2), THE WHOLE GOVERNANCE SET PLANTED. A published tree
-    // carrying specs/, DECISIONS.md, CONSTITUTION.md, BACKLOG.md and a state/ file,
-    // with its own one-commit history, read without the flag: all four rows assert,
-    // and the governance and state/ rows go red naming their plants. CONTROL: the
-    // same tree with the source history reported present is not applicable on all
-    // four, so the history decides, not the set.
+    // carrying specs/, DECISIONS.md, CONSTITUTION.md, BACKLOG.md, RUNBOOK.md (spec 388)
+    // and a state/ file, with its own one-commit history, read without the flag: all
+    // four rows assert, and the governance and state/ rows go red naming their plants.
+    // CONTROL: the same tree with the source history reported present is not
+    // applicable on all four, so the history decides, not the set.
     {
-      const gov = ['specs/000-planted/spec.md', 'DECISIONS.md', 'CONSTITUTION.md', 'BACKLOG.md'];
+      const gov = ['specs/000-planted/spec.md', 'DECISIONS.md', 'CONSTITUTION.md', 'BACKLOG.md', 'RUNBOOK.md'];
       const d = plantTree([...exBase, ...gov, 'state/seen-models.json']);
       const rows = exclusionRows(exRecorder(), d, null);
       const control = exclusionRows(exRecorder(), d, null, { history: () => ({ present: true, why: 'CONTROL: source history reported present' }) });
@@ -2670,33 +2673,20 @@ gate.section('spec 024 runner hostile-input proof');
 // to be green is a gate that goes red for reasons that are not about the tree.
 gate.section('published version references');
 {
-  const pkgVer = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version;
-  const wantTag = `v${pkgVer}`;
-  const SURFACES = ['README.md', path.join('docs', 'index.html')];
-  const stale = [];
-  const perFile = {};
-  for (const rel of SURFACES) {
-    const f = path.join(SCAN_ROOT, rel);
-    if (!fs.existsSync(f)) { stale.push(`${rel}: missing`); perFile[rel] = 0; continue; }
-    const txt = fs.readFileSync(f, 'utf8');
-    const refs = [...txt.matchAll(/driftproofhq\/driftproof@(v[0-9]+\.[0-9]+\.[0-9]+)/g)];
-    perFile[rel] = refs.length;
-    for (const m of refs) if (m[1] !== wantTag) stale.push(`${rel}: ${m[1]} != ${wantTag}`);
-  }
-  // PER FILE, not a sum. As a sum this passed with docs/index.html carrying no
-  // reference at all, so long as README carried two — the assertion's own label
-  // said "each" while its body said "between them" (approval finding F-2).
-  const barren = SURFACES.filter((rel) => perFile[rel] < 1);
-  gate.check('README + docs/index.html EACH carry a pinned Action reference', barren.length === 0, { perFile, barren });
-  gate.check('every published Action reference names the current package version', stale.length === 0, { wantTag, stale });
-
-  // The README's sample receipt states a runner_version. A reader copies that
-  // block as the shape of a real receipt, so it must not name an engine that is
-  // no longer the one shipping.
-  const { RUNNER_VERSION } = require(path.join(ROOT, 'config.js'));
-  const rd = fs.readFileSync(path.join(SCAN_ROOT, 'README.md'), 'utf8');
-  const rv = [...rd.matchAll(/"runner_version":\s*"([^"]+)"/g)].map((m) => m[1]);
-  gate.check('README sample receipt runner_version equals RUNNER_VERSION', rv.length > 0 && rv.every((v) => v === RUNNER_VERSION), { rv, RUNNER_VERSION });
+  // Issue 382: every surface a release writes its version into, read by the one shared normaliser,
+  // versionProblems in scripts/build-report-baselines.mjs, against package.json's version: config.js's
+  // RUNNER_VERSION, the plugin manifest, the README's Action pins and sample runner_version (a reader
+  // copies that block as the shape of a real receipt), docs/index.html's Action pin and the plugin
+  // README's npx pins. Each file must carry its pins, PER FILE, not as a sum (approval finding F-2).
+  const { versionProblems } = require(path.join(ROOT, 'scripts', 'build-report-baselines.mjs'));
+  const fromRoot = new Set(['package.json', 'config.js']);
+  const readRel = (rel) => {
+    const f = path.join(fromRoot.has(rel) ? ROOT : SCAN_ROOT, rel);
+    return fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : null;
+  };
+  const versionDrift = versionProblems(readRel);
+  gate.check('every surface a release writes its version into carries package.json\'s version (RUNBOOK precondition 3)', versionDrift.length === 0, { versionDrift });
+  const rd = readRel('README.md') || '';
 
   // The sibling, which the first version of this section did not hold. Fixing
   // runner_version alone turned a coherently-STALE sample block (0.4.0/0.3.1,
@@ -2707,11 +2697,6 @@ gate.section('published version references');
   const { RECEIPT_SCHEMA_VERSION } = require(path.join(ROOT, 'config.js'));
   const sv = [...rd.matchAll(/"schema_version":\s*"([^"]+)"/g)].map((m) => m[1]);
   gate.check('README sample receipt schema_version equals RECEIPT_SCHEMA_VERSION', sv.length > 0 && sv.every((v) => v === RECEIPT_SCHEMA_VERSION), { sv, RECEIPT_SCHEMA_VERSION });
-
-  // O-2: RUNBOOK precondition 3 ("versions agree") was silently violable —
-  // package.json could move while config.js stayed put, and §20b would still be
-  // green because it only ever compared the surfaces to package.json.
-  gate.check('package.json version equals RUNNER_VERSION (RUNBOOK precondition 3)', pkgVer === RUNNER_VERSION, { pkgVer, RUNNER_VERSION });
 }
 
 // ── 21. Badge JSON validates against the shields endpoint schema (BLOCKING) ───
@@ -4805,8 +4790,13 @@ blocking_findings: 0
     fs.rmSync(tdir, { recursive: true, force: true });
   }
 
-  gate.check('RUNBOOK wires the check into the spec-branch merge step',
-    /merge-check\.js/.test(fs.readFileSync(path.join(__dirname, '..', 'RUNBOOK.md'), 'utf8')));
+  // Source-only (spec 388, J4): RUNBOOK.md is excluded from the published tree, so
+  // this check runs where the file is (spec 016's named source-only list).
+  const runbookPath = path.join(__dirname, '..', 'RUNBOOK.md');
+  if (fs.existsSync(runbookPath)) {
+    gate.check('RUNBOOK wires the check into the spec-branch merge step',
+      /merge-check\.js/.test(fs.readFileSync(runbookPath, 'utf8')));
+  }
 
   fs.rmSync(tmp, { recursive: true, force: true });
 }
@@ -4863,26 +4853,13 @@ gate.section('essay grounding (typed prose, bound to the pages it cites)');
     // direction (F-016-B4); the register's own probe had the broader pattern all
     // along, and the two disagreeing is exactly the drift this pair of checks
     // exists to stop.
+    // Spec 388 (R1): the quality bar no longer lists the classes; the register is
+    // the one list. A class token the bar does name must still be a register id.
     const namedClasses = [...bar.matchAll(/`([a-z]+(?:-[a-z]+)+)`/g)].map((m) => m[1]);
     const orphanClasses = namedClasses.filter((n) => !registerIds.has(n));
     gate.check('the quality bar binds assertions to a declared scope and a mutation, naming no class the register lacks',
-      /mutation/i.test(bar) && /scope/i.test(bar) && namedClasses.length > 0 && orphanClasses.length === 0,
+      /mutation/i.test(bar) && /scope/i.test(bar) && orphanClasses.length === 0,
       { namedClasses, orphanClasses });
-
-    // AND THE OTHER DIRECTION, which is the one the quality bar's own sentence
-    // asserts: "This enumeration must name every class the register carries."
-    // Only the reverse was held here — the enumeration naming nothing the
-    // register lacks — while completeness was held solely by a probe under
-    // `specs/`, which no build runs (F-010-H). So spec 016's DECISIONS entry
-    // ratified that sentence on the ground that "the gate now holds it" when the
-    // gate did not. It does now.
-    //
-    // An ABSENT CONSTITUTION.md still passes, for #28's recorded reason: the
-    // published tree excludes the file, and failing closed here would refuse
-    // every build made from a published tree.
-    const missingFromBar = [...registerIds].filter((id) => !namedClasses.includes(id));
-    gate.check('the quality bar enumerates EVERY class the register carries, so the list cannot go stale beside it',
-      missingFromBar.length === 0, { missingFromBar, named: namedClasses.length, register: registerIds.size });
   }
 
   // AC-11. A receipt carries a self-verifying hash, which is tamper-evidence,
@@ -5568,35 +5545,71 @@ gate.section('differ honesty (cross-version bands, refusal rendering, cost proje
     // run-report-001.js and prepare-report-002.js sat outside a criterion whose
     // subject was every report script (spec 015 round-2 finding 1).
     const { SAMPLING } = require('../lib/sampling');
-    const sites = []; const bad = [];
-    for (const dir of ['bin', 'scripts']) {
-      for (const f of fs.readdirSync(path.join(ROOT, dir))) {
-        const rel = `${dir}/${f}`;
-        const p = path.join(ROOT, rel);
-        if (!fs.statSync(p).isFile()) continue;
-        const src = fs.readFileSync(p, 'utf8');
-        if (!src.includes('estimateRunCostUSD(')) continue;
+    // Spec 016 A-016-11 (issue 367): a run under the quick preset is guarded at the preset's draws
+    // (lib/run.js caps them only for a run that names it). A site whose expression reads `quick` is
+    // evaluated both ways: with quick false it must pass SAMPLING.max, with quick true QUICK.draws.
+    const { QUICK } = require('../lib/firstrun');
+    // Issue 381 (review item D2-5): this is the one evaluator of the cost sites. Spec 016's probe kept a
+    // copy, and the copy read a site the CLI got right as passing no factor (A-016-13). Its plants are here.
+    const auditCostSites = (files) => {
+      const sites = []; const bad = [];
+      for (const [rel, src] of files) {
         const re = /estimateRunCostUSD\s*\(/g; let m;
         while ((m = re.exec(src))) {
           let i = re.lastIndex, depth = 1;
           while (i < src.length && depth > 0) { if (src[i] === '(') depth++; else if (src[i] === ')') depth--; i++; }
           const expr = src.slice(m.index, i);
           sites.push(rel);
-          const calls = [];
-          const fixtures = { estimateRunCostUSD: (a) => { calls.push(a); return { totalUSD: 0, perModel: [] }; },
-            SAMPLING, models: ['a'], nCasesTotal: 70, nCases: 70, nC: 70, samples: 5,
-            pair: { new: 'a', old: 'b' }, judgeModel: 'j', require: () => ({ resolveModel: (x) => x }) };
-          const proxy = new Proxy(fixtures, { has: () => true, get: (t, k) => (k in t ? t[k] : 7) });
-          try { new Function('scope', `with (scope) { return (${expr}); }`)(proxy); }
+          const evalWith = (extra) => {
+            const calls = [];
+            const fixtures = { estimateRunCostUSD: (a) => { calls.push(a); return { totalUSD: 0, perModel: [] }; },
+              SAMPLING, models: ['a'], nCasesTotal: 70, nCases: 70, nC: 70, samples: 5,
+              pair: { new: 'a', old: 'b' }, judgeModel: 'j', require: () => ({ resolveModel: (x) => x }), quick: false, QUICK, ...extra };
+            const proxy = new Proxy(fixtures, { has: () => true, get: (t, k) => (k in t ? t[k] : 7) });
+            new Function('scope', `with (scope) { return (${expr}); }`)(proxy);
+            return calls;
+          };
+          let plainCalls; let quickCalls = [];
+          try { plainCalls = evalWith({}); if (/\bquick\b/.test(expr)) quickCalls = evalWith({ quick: true }); }
           catch (e) { bad.push(`${rel}: unevaluable`); continue; }
-          for (const a of calls) if (a.draws !== SAMPLING.max) bad.push(`${rel}: draws=${a.draws}`);
+          for (const a of plainCalls) if (a.draws == null) bad.push(`${rel}: passes no draw factor`); else if (a.draws !== SAMPLING.max) bad.push(`${rel}: draws=${a.draws}`);
+          for (const a of quickCalls) if (a.draws == null) bad.push(`${rel}: passes no draw factor under quick`); else if (a.draws !== QUICK.draws) bad.push(`${rel}: quick draws=${a.draws}`);
         }
       }
+      return { sites, bad };
+    };
+    const costFiles = [];
+    for (const dir of ['bin', 'scripts']) {
+      for (const f of fs.readdirSync(path.join(ROOT, dir))) {
+        const rel = `${dir}/${f}`;
+        const p = path.join(ROOT, rel);
+        if (!fs.statSync(p).isFile()) continue;
+        const src = fs.readFileSync(p, 'utf8');
+        if (src.includes('estimateRunCostUSD(')) costFiles.push([rel, src]);
+      }
     }
+    const { sites, bad } = auditCostSites(costFiles);
     const files = [...new Set(sites)];
     gate.check('every site that projects a run cost passes the draw factor the runner uses, and the set includes every cost-projecting script',
       bad.length === 0 && files.includes('scripts/run-report-001.js') && files.includes('scripts/prepare-report-002.js') && files.includes('bin/driftproof'),
       { files: files.length, sites: sites.length, bad: bad.slice(0, 4) });
+    // MUTATION. Three planted sites, each read by the same evaluator: one that names the constant in a
+    // comment and passes no factor, one whose quick branch passes SAMPLING.max, and one whose normal
+    // branch passes QUICK.draws. Each must be named, and only for what it is.
+    const plantSite = (draws) => [['scripts/PLANTED.js', `
+      // projects at SAMPLING.max draws per arm
+      const proj = estimateRunCostUSD({ caseCount: nCasesTotal, samples: 5, models, judgeModel${draws ? `, draws: ${draws}` : ''} });
+    `]];
+    const noFactor = auditCostSites(plantSite(null)).bad;
+    const quickWrong = auditCostSites(plantSite('quick ? SAMPLING.max : SAMPLING.max')).bad;
+    const plainWrong = auditCostSites(plantSite('quick ? QUICK.draws : QUICK.draws')).bad;
+    const bothRight = auditCostSites(plantSite('quick ? QUICK.draws : SAMPLING.max')).bad;
+    gate.check('MUTATION: a cost site with no draw factor, one whose quick branch passes SAMPLING.max and one whose normal branch passes QUICK.draws each read red; the right expression reads clean',
+      noFactor.length === 1 && /passes no draw factor$/.test(noFactor[0])
+        && quickWrong.length === 1 && /quick draws=/.test(quickWrong[0])
+        && plainWrong.length === 1 && /: draws=/.test(plainWrong[0])
+        && bothRight.length === 0,
+      { noFactor, quickWrong, plainWrong, bothRight });
   }
 }
 
@@ -6217,21 +6230,8 @@ if (SCAN_ROOT_ARG) {
     const hashForm8 = files8.filter(([, t]) => /#00[0-9]\b/.test(t)).map(([f]) => f);
     gate.check('report 008: new prose writes "Report 007", never the "#007" hash form',
       hashForm8.length === 0 && /Report 007/.test(page8), { offenders: hashForm8 });
-
-    // NO EM DASH IN THE NEW FILES, with ONE declared exception: the differ's
-    // verdict line is quoted verbatim and contains one, and quoting a tool's
-    // output faithfully outranks a house punctuation rule. The exception is
-    // narrow by construction, because the allowance is the differ's own string
-    // rather than a character class, so an em dash anywhere else still takes
-    // this red.
-    const emOffenders8 = [];
-    for (const [rel, text] of files8) {
-      let stripped = text;
-      for (const r of rows8) stripped = stripped.split(esc008(r.drift.verdictLine)).join('').split(r.drift.verdictLine).join('');
-      if (/—|&mdash;/.test(stripped)) emOffenders8.push(rel);
-    }
-    gate.check('report 008: no em dash in the files this report adds, outside the differ verdict lines it quotes verbatim',
-      emOffenders8.length === 0, { offenders: emOffenders8 });
+    // Spec 031 A-031-32 (issue 378, the operator's ruling of 17 Oct 2026, "remove the em dashes rule
+    // everywhere"): the check that the files this report adds carry no em dash is retired.
   }
 
   // 7. THE RUN RECORD IS A RECORD, NOT A MEASUREMENT. The page states timing,
@@ -6352,7 +6352,8 @@ if (SCAN_ROOT_ARG) {
       if (!top || !label || Number(label[1]) !== top[0] || Number(label[2]) !== top[1] + 1) out.push(`the entry is not labelled one past the labels before it (${label ? `v${label[1]}.${label[2]}` : 'no label'} after ${top ? `v${top.join('.')}` : 'none'})`);
       for (const q of want8.quotes) if (!card.includes(`&ldquo;${q.replace(/\.$/, '').replace(/'/g, '&rsquo;').replace(/<\/?em>/g, '')}&rdquo;`)) out.push(`the entry does not quote: ${q.slice(0, 60)}`);
       for (const f of want8.figures) if (!card.includes(f)) out.push(`the entry does not print ${f}`);
-      if (/—|&mdash;|confiden|significan|certain(?:ty|ly)/i.test(card)) out.push('the entry carries an em dash or confidence language');
+      // A-031-32 (issue 378): confidence language only; the em dash is no longer read.
+      if (/confiden|significan|certain(?:ty|ly)/i.test(card)) out.push('the entry carries confidence language');
       return out;
     };
     const problems8 = entryProblems8(onDisk8);
@@ -7462,7 +7463,8 @@ gate.section('eval-user isolation: the hop is the default (spec 022)');
     !rb.error && rb.calls.length === 1 && !rbArgv.includes('-o') && !rbArgv.includes('--output-last-message') && rb.planted.length === 0, { error: rb.error, planted: rb.planted });
   gate.check('codex lane: the generation is the stream agent_message; a symlink planted at the read-back path to an operator secret never reaches it',
     rb.text === 'stream answer' && !JSON.stringify(rb).includes(rbSecret), { text: rb.text });
-  const help = execFileSync(process.execPath, [path.join(ROOT, 'bin', 'driftproof')], { encoding: 'utf8' });
+  // Spec 022 v1.8 (issue 367): the full usage is `driftproof --help`; a bare `driftproof` prints five lines.
+  const help = execFileSync(process.execPath, [path.join(ROOT, 'bin', 'driftproof'), '--help'], { encoding: 'utf8' });
   gate.check('bin/driftproof usage documents --trusted-skill as self-authored-skills-only and the isolation default',
     /--trusted-skill/.test(help) && /FOR SKILLS YOU AUTHORED/.test(help) && /ISOLATION \(default\)/.test(help) && /DRIFTPROOF_EVAL_USER/.test(help));
 }

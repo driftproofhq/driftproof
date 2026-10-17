@@ -277,6 +277,13 @@ const EXAMPLE_WARNING = `${EXAMPLE_LIMIT} ${VERDICT_LIMIT}`;
 // Ordinary relative names are the scope. Path quoting and terminal controls are deferred by the spec.
 function initOutput({ target, created = ['SKILL.md', 'evals/evals.json', '.driftproofrc'], skipped = [], existingSkill = false, casesFile = null }) {
   const dash = String.fromCodePoint(0x2014);
+  // Issue 367 (A-139-17, AC-367-7): --cases on a skill that exists, the guided start's call, prints
+  // the suite it added, a line per file it left, and one next step, and nothing else.
+  if (existingSkill && casesFile !== null && created.length) {
+    return [...created.map((file) => `  + ${target}/${file}`),
+      ...skipped.map((file) => `  · ${target}/${file} (exists ${dash} left untouched)`),
+      `Next: driftproof run ${target} --quick   (a first look: one test task, no verdict)`].join('\n') + '\n';
+  }
   const lines = [`driftproof init ${dash} ${target}/`];
   for (const file of created) lines.push(`  + ${target}/${file}`);
   for (const file of skipped) lines.push(`  · ${target}/${file} (exists ${dash} left untouched)`);
@@ -402,5 +409,26 @@ test('issue 237: the output reader rejects claim, order, additive and paraphrase
   ];
   for (const [name, stdout] of plants) {
     assert.throws(() => placeholderNextSteps(stdout, options), assert.AssertionError, name);
+  }
+});
+
+// Issue 367 (A-139-17, AC-367-7): the guided start's init is quiet, and still reports each file it left.
+test('issue 367: init --cases on a skill that exists prints the suite, each file left, and one next step', () => {
+  for (const withRc of [false, true]) {
+    const { root, dir } = existingSkill();
+    if (withRc) fs.writeFileSync(path.join(dir, '.driftproofrc'), '{}\n');
+    const draft = path.join(root, 'cases.json');
+    fs.writeFileSync(draft, JSON.stringify({ cases: [{ id: 'a', prompt: 'Name one file.', rubric: 'Names one file.' }] }));
+    const r = cli(['init', dir, '--cases', draft, '--drafted-from-skill'], root);
+    assert.equal(r.status, 0, r.stderr);
+    const options = { target: path.basename(dir), created: ['evals/evals.json'], skipped: withRc ? ['SKILL.md', '.driftproofrc'] : ['SKILL.md'], existingSkill: true, casesFile: draft };
+    noPlaceholderNextSteps(r.stdout, options);
+    assert.equal(r.stdout.trim().split('\n').length, 2 + options.skipped.length, 'the suite, a line per file left, one next step');
+    const plants = [
+      `${r.stdout}Next: driftproof run ${options.target} --models claude-haiku-4-5\n`,
+      r.stdout.replace(/^ {2}· [^\n]*SKILL\.md[^\n]*\n/m, ''),
+      `${r.stdout}${EXAMPLE_WARNING}\n`,
+    ];
+    for (const plant of plants) assert.throws(() => noPlaceholderNextSteps(plant, options), assert.AssertionError);
   }
 });

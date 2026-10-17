@@ -314,7 +314,7 @@ ${published ? '' : '<meta name="robots" content="noindex">'}
 <header class="site"><a class="brand" href="../../index.html">Driftproof</a><nav><a href="../../index.html">Home</a><a href="../../methodology.html">Methodology</a><a href="../../neutrality.html">Neutrality</a></nav></header>
 <main class="report">
 ${published ? '' : `  <div class="card" style="border:2px solid var(--mixed);">
-    <strong>⚠ DRAFT — not published.</strong> ${stub ? 'This is a <strong>stub dry run</strong>: the receipts are deterministic synthetic placeholders (zero model calls) proving the pipeline end to end. ' : ''}It is <em>not</em> linked from the index and has <em>not</em> been pushed to the public tree. A human must review and run the approve-and-publish sequence in <code>RUNBOOK.md</code> before this becomes a real report.
+    <strong>⚠ DRAFT — not published.</strong> ${stub ? 'This is a <strong>stub dry run</strong>: the receipts are deterministic synthetic placeholders (zero model calls) proving the pipeline end to end. ' : ''}It is <em>not</em> linked from the index and has <em>not</em> been pushed to the public tree. A human must review it and run the operator's approve-and-publish procedure before this becomes a real report.
   </div>
 `}  <h1>Report #005 — what does a skill cost to run?</h1>
   <p class="report-type">Value report — three axes (accuracy, cost, latency), held across ${models.length} substrates. The substrate does not move under the skill here; the <em>axes</em> widen.</p>
@@ -390,7 +390,7 @@ function appendPending(pendingPath, entry) {
     head = '<!-- SPDX-License-Identifier: Apache-2.0 -->\n# Pending-publish queue\n\n'
       + 'Auto-prepared / staged draft reports awaiting human review + publish. Each entry\n'
       + 'is a notification, NOT a published report. To approve and publish one, follow the\n'
-      + 'approve-and-publish sequence in [RUNBOOK.md](../RUNBOOK.md). Remove the entry once\n'
+      + 'operator\'s approve-and-publish procedure. Remove the entry once\n'
       + 'published.\n\n';
   }
   // UPSERT, not append. Verifying a draft means re-rendering it, and every
@@ -545,7 +545,7 @@ async function prepareReport005(opts = {}) {
     if (renderOnly) {
       throw new Error(`--render-only: no valid receipt for ${s.slug} (${model}) in ${path.relative(outRoot, receiptsDir)}/. `
         + 'Re-render reads receipts, it never produces them. Run this BEFORE moving the receipts out of -draft '
-        + '(RUNBOOK step 2); if they are genuinely missing, this is not a re-render.');
+        + '(promotion is one step: render, move, retire); if they are genuinely missing, this is not a re-render.');
     }
     const r = stub ? stubReceipt(s, i, model, mIdx, nowIso) : await liveRunSkill(s, model, budget, nowIso);
     const v = validateReceipt(r);
@@ -804,7 +804,7 @@ async function prepareReport005(opts = {}) {
     + `- Substrates: ${surfaceList}; judge \`${REPORT_005_JUDGE_MODEL}\` (n=5)\n`
     + (notMeasured.length ? `- NOT MEASURED: ${notMeasured.map((n) => `${n.slug}/${n.model} (${n.failed} failed)`).join(', ')}\n` : '')
     + (stub ? `- To run the real report: \`${goCommand}\`, then ` : '- To publish: ')
-    + `follow RUNBOOK.md § "Approve and publish a drafted report".\n`;
+    + `follow the operator's approve-and-publish procedure.\n`;
   // A published render is not a queue notification. The queue exists to tell a
   // human a draft is waiting; re-adding an entry while publishing would undo
   // RUNBOOK step 5 on every re-render.
@@ -903,9 +903,9 @@ async function main(argv = process.argv.slice(2)) {
   }
   if (res.stub) {
     console.log(`\nThis was a STUB dry run — NO model was called. To execute the real Report #005:\n\n    ${res.goCommand}\n`);
-    console.log('Then review the draft and follow RUNBOOK.md § "Approve and publish a drafted report".');
+    console.log('Then review the draft and follow the operator\'s approve-and-publish procedure.');
   } else {
-    console.log('\nNOT published — review the draft + write the QA record, then follow RUNBOOK.md to approve.');
+    console.log('\nNOT published — review the draft + write the QA record, then follow the operator\'s approve-and-publish procedure.');
   }
 }
 

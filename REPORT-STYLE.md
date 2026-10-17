@@ -201,7 +201,7 @@ page is re-derived from those receipts.
 
 While drafting, a report lives at `docs/reports/NNN-draft/` (gitignored), carries
 a `noindex` meta tag and a "DRAFT — not published" banner, and is queued in
-`reports/pending-publish.md`. On approval it is promoted out of `-draft` (see
-[RUNBOOK.md](RUNBOOK.md) § "Approve and publish a drafted report"): the draft
+`reports/pending-publish.md`. On approval it is promoted out of `-draft`, after
+its QA record and through a reviewed pull request: the draft
 markers are removed, the title drops "(DRAFT)", the footer reads "Report #NNN",
 and it is linked from the index nav and the "Latest report" section.

@@ -67,8 +67,20 @@ const PINNED = MANIFEST.version;
 const CONTRACT = readJson(path.join(PLUGIN_ROOT, 'input-contract.json'));
 const GUARD = readJson(path.join(PLUGIN_ROOT, 'version-guard.json'));
 
-function say(line) { process.stdout.write(MARK + ' ' + line + '\n'); }
+// Spec 139 A-139-18 (issue 368): `start` holds its own setup lines back. On success they give way to one
+// line, before the runner's first (setupLine); a refusal prints every held line, then itself, whole.
+const HELD = [];
+let holding = false;
+function say(line) {
+  if (holding) { HELD.push(line); return; }
+  process.stdout.write(MARK + ' ' + line + '\n');
+}
+function flushHeld() {
+  holding = false;
+  for (const line of HELD.splice(0)) process.stdout.write(MARK + ' ' + line + '\n');
+}
 function refuse(line) {
+  flushHeld();
   process.stderr.write(MARK + ' REFUSED: ' + line + '\n');
   process.exit(2);
 }
@@ -195,6 +207,7 @@ function versionGuard(step) {
     say('runner ' + found + ' meets ' + command + '\'s own minimum ' + need + ' (' + own + ' in version-guard.json)');
   }
   say('runner ' + found + ' meets the minimum ' + String(min) + ' recorded in version-guard.json');
+  state.runner = found;
   return found;
 }
 
@@ -587,30 +600,58 @@ function recheckTranscripts(receiptPath) {
 // whether it has test cases, and spawns nothing. Four levels down, past
 // node_modules and dot folders, and at most fifty, so a large tree is not walked
 // whole. Read only.
+//
+// SPEC 139 A-139-18 (issue 368, the claim review's B1): the walk also reads ./.claude/skills, where
+// Claude Code keeps a project's skills, and follows a link to a folder or to a SKILL.md, reading each
+// folder once by its real path, so a cycle of links ends. Only a walk that read every folder it would
+// read and saw no SKILL.md is "no skill", and only then is the sample opened. A folder it could not
+// read, or a walk stopped at its depth or its count, says so and opens nothing.
 const LIST_DEPTH = 4;
 const LIST_MAX = 50;
+const HOME_SKILLS = '~/.claude/skills';
+const kindOf = (p) => { try { const s = fs.statSync(p); return s.isDirectory() ? 'dir' : s.isFile() ? 'file' : null; } catch (e) { return null; } };
 function listSkills() {
   const root = process.cwd();
   const found = [];
+  const seen = new Set();
   let here = false;
-  (function walk(d, depth) {
-    if (found.length >= LIST_MAX) return;
-    let entries;
-    try { entries = fs.readdirSync(d, { withFileTypes: true }); } catch (e) { return; }
-    if (entries.some((e) => e.isFile() && e.name === 'SKILL.md')) {
+  let short = null;
+  const followed = (d, e) => e.isSymbolicLink() && kindOf(path.join(d, e.name));
+  function walk(d, depth) {
+    if (kindOf(d) !== 'dir') return;
+    if (found.length >= LIST_MAX) { short = short || 'it stopped at ' + LIST_MAX + ' skills'; return; }
+    let real = d;
+    try { real = fs.realpathSync(d); } catch (e) { real = d; }
+    if (seen.has(real)) return;
+    seen.add(real);
+    let entries = null;
+    try { entries = fs.readdirSync(d, { withFileTypes: true }); } catch (e) { entries = null; }
+    if (!entries) { short = short || 'it could not read ' + d; return; }
+    if (entries.some((e) => e.name === 'SKILL.md' && (e.isFile() || followed(d, e) === 'file'))) {
       // The working directory itself is not listed: start refuses to run from inside a skill
       // folder (outsideSkill), so the person is told to move up instead.
       if (depth === 0) here = true; else found.push(d);
     }
-    if (depth >= LIST_DEPTH) return;
-    for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
-      if (!e.isDirectory() || e.name === 'node_modules' || e.name.startsWith('.')) continue;
-      walk(path.join(d, e.name), depth + 1);
-    }
-  })(root, 0);
+    const subs = entries
+      .filter((e) => (e.isDirectory() || followed(d, e) === 'dir') && e.name !== 'node_modules' && !e.name.startsWith('.'))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    if (depth >= LIST_DEPTH) { if (subs.length) short = short || 'it looked ' + LIST_DEPTH + ' folders down and no further'; return; }
+    for (const e of subs) walk(path.join(d, e.name), depth + 1);
+  }
+  const DOT_SKILLS = path.join(root, '.claude', 'skills');
+  walk(root, 0);
+  walk(DOT_SKILLS, 1);
   if (here) say('this folder holds a SKILL.md, so it is a skill folder: run start from the folder above it, so the receipts and the page are not written into the skill.');
   if (!found.length) {
-    say('no SKILL.md found under ' + root + ' (looked ' + LIST_DEPTH + ' folders down, past node_modules and dot folders).');
+    if (here) return;
+    if (short) {
+      say('no SKILL.md found under ' + root + ', but the walk did not read every folder (' + short + '), so this is not read as a folder with no skill, and no sample is opened.'
+        + ' Type /driftproof:start in the folder that holds your skills, such as ' + HOME_SKILLS + '.');
+      return;
+    }
+    say('no SKILL.md found under ' + root + ' (looked ' + LIST_DEPTH + ' folders down, past node_modules and dot folders, and in .claude/skills).'
+      + ' Your own skills are usually in ' + HOME_SKILLS + ': type /driftproof:start in the folder that holds your skills.');
+    openSample();
     return;
   }
   say('skills under ' + root + ':');
@@ -619,6 +660,44 @@ function listSkills() {
     const has = fs.existsSync(path.join(d, 'evals', 'evals.json'));
     process.stdout.write('  ' + rel + '  (' + (has ? 'has test cases' : 'no test cases yet') + ')\n');
   }
+  repoNote();
+}
+
+// SPEC 139 A-139-18: the git check, before any drafting. Where there is no repository a skill runs as
+// the person only on --trust-outside-repo, which start.md has Claude give only after the person's own
+// yes to a question of its own, so the listing says so before the cases are drafted.
+function repoNote() {
+  const repo = repoState();
+  if (repo.root) return;
+  if (repo.unknown) {
+    say('git could not say whether there is a git repository here (' + repo.unknown + '). Until it can, start runs no skill from this folder, with --trust-outside-repo or without it.');
+    return;
+  }
+  say('there is no git repository here, so a skill here runs as you, with your files and your Claude Code login, only if you wrote it.'
+    + ' Before any drafting, Claude asks you that as a question of its own, naming the skill\'s real path, and gives --trust-outside-repo only after your clear yes to it.'
+    + ' A skill you did not write runs with the isolation account instead: npx driftproof@' + PINNED + ' run <skill-dir> --models <model>');
+}
+
+// SPEC 139 A-139-18: the sample, opened from this plugin's own folder by its path. Its receipts are
+// every run one published report holds for one skill on one model, and its page is the CLI's view of
+// them (tests/start.test.js holds both). What the line says is read from the receipts here, never typed.
+const SAMPLE = path.join(PLUGIN_ROOT, 'sample');
+const SAMPLE_PAGE = path.join(SAMPLE, 'driftproof-view.html');
+function openSample() {
+  const report = fs.readdirSync(SAMPLE).find((f) => /^report-\d+$/.test(f));
+  const runs = [];
+  (function walk(d) {
+    for (const e of fs.readdirSync(d, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) walk(p); else if (e.name.endsWith('.json')) runs.push(readJson(p));
+    }
+  })(path.join(SAMPLE, report));
+  const num = report.slice('report-'.length);
+  const dates = [...new Set(runs.map((r) => String((r.run || {}).date_utc).slice(0, 10)))].sort();
+  say('a sample results page, opened from this plugin with no model call and nothing written: report ' + num + ' holds ' + runs.length + ' runs of '
+    + String((runs[0].skill || {}).name) + ' on ' + String((runs[0].run || {}).model_id) + ', run ' + dates.join(', ') + ', and the page shows every one.'
+    + ' It is a sample of report ' + num + '\'s runs, not a result for a skill of yours.');
+  openView(SAMPLE_PAGE);
 }
 
 // Where start writes its own outputs (spec 139, the pre-review's F-3). The run writes receipts/
@@ -739,14 +818,21 @@ function confirmFull() {
   if (INPUTS['full'] !== true) return;
   const dir = path.join(process.cwd(), 'receipts');
   const quick = quickReceiptIn(dir);
-  if (quick) { say('a quick run\'s receipt is in ' + dir + ' (' + quick + '), so this full run follows it.'); return; }
+  if (quick) {
+    state.fullNote = 'the small full run, after the quick run\'s receipt in ' + dir + ' (' + quick + ')';
+    say('a quick run\'s receipt is in ' + dir + ' (' + quick + '), so this full run follows it.');
+    return;
+  }
   const none = 'there is no quick run\'s receipt in ' + dir + ', so this full run comes with no offer before it';
   if (!tty.isatty(0)) {
+    state.fullNote = 'the small full run: ' + none + ', and the yes for it is the one start.md has Claude ask the person for, in the conversation, before it gives --full';
     say(none + '. There is no terminal here to ask in: the yes for it is the one start.md has Claude ask the person for, in the conversation, before it gives --full.');
     return;
   }
   const answer = askLine(none + ' (after a quick run, the view offers it with its calls and its time). Run the small full run now?');
+  state.fullNote = 'the small full run, because you said yes at the terminal';
   if (!/^y(es)?$/i.test(answer.trim())) {
+    flushHeld();
     say('not run: the answer was not yes. Nothing was spawned and nothing was written.');
     process.exit(0);
   }
@@ -844,6 +930,22 @@ function openView(file) {
   if (r.error || r.status !== 0) say('could not open it with ' + opener + '; open that file in a browser.');
 }
 
+// SPEC 139 A-139-18: start's one line before the runner's first, in place of the lines it held. It still
+// says what the held lines said that a person must hear: the skill runs as them, why, and the one file
+// a confirmed draft adds, by its full path.
+function setupLine() {
+  holding = false;
+  HELD.length = 0;
+  const dir = state.resolvedTarget;
+  const why = state.outsideRepo
+    ? 'you confirmed with --trust-outside-repo that you wrote it, where there is no git repository'
+    : 'it resolves inside this git repository';
+  say(command + ': ' + dir + ' runs as you, with your files and your Claude Code login, because ' + why + ' (--trusted-skill); runner '
+    + state.runner + ', model ' + (INPUTS['models'] || state.defaultModel)
+    + (INPUTS['cases'] !== undefined ? '; adding one new file, ' + path.join(dir, 'evals', 'evals.json') + ', because you said yes (--confirm-write), and nothing else in the folder' : '')
+    + (state.fullNote ? '; ' + state.fullNote : '') + '.');
+}
+
 // ── the step interpreter ─────────────────────────────────────────────────────
 function stepsFor(command) {
   const md = fs.readFileSync(path.join(PLUGIN_ROOT, 'commands', command + '.md'), 'utf8');
@@ -862,12 +964,13 @@ const INPUTS = {};
 // by the contract. Spec 139: run takes --quick, and start takes a model and the drafted
 // cases. Spec 140: run takes --trust-outside-repo and init takes --confirm-write. Spec 165: init takes
 // the draft and a model too, for the guided run it leads a skill that exists into, and refuses them elsewhere. Spec 173:
-// start takes --full. A flag in NO_VALUE is set by its name alone, as the CLI's are.
+// start takes --full. A flag in NO_VALUE is set by its name alone, as the CLI's are. Spec 139 A-139-18
+// (issue 368): start takes --trust-outside-repo, on spec 140's lane, given after the person's own yes.
 const ACCEPTS = {
   init: ['confirm-write', 'cases', 'models'],
   run: ['models', 'max-calls', 'max-usd', 'samples', 'concurrency', 'max-cases', 'quick', 'trust-outside-repo'],
   badge: [],
-  start: ['models', 'cases', 'confirm-write', 'full'],
+  start: ['models', 'cases', 'confirm-write', 'full', 'trust-outside-repo'],
 };
 const NO_VALUE = new Set(['quick', 'confirm-write', 'trust-outside-repo', 'full']);
 const QUICK_SETS = ['samples', 'concurrency', 'max-cases'];
@@ -982,7 +1085,8 @@ function buildVector(args, state) {
 
 const command = parseArgv(process.argv.slice(2));
 const steps = stepsFor(command);
-const state = { resolvedTarget: null, defaultModel: null, rendered: null, outsideRepo: false, adding: false, hadSuite: false };
+const state = { resolvedTarget: null, defaultModel: null, rendered: null, outsideRepo: false, adding: false, hadSuite: false, runner: null, fullNote: null };
+holding = command === 'start';
 
 for (let at = 0; at < steps.length; at++) {
   const step = steps[at];
@@ -992,6 +1096,7 @@ for (let at = 0; at < steps.length; at++) {
     if (INPUTS['skill-dir'] !== undefined) continue;
     const given = Object.keys(INPUTS).filter((k) => INPUTS[k] !== undefined);
     if (given.length) refuse(command + ' was given ' + given.map((k) => '--' + k).join(', ') + ' and no skill folder, and lists the skills only when given nothing. Name the folder first (' + command + ' <dir> ...), or give ' + command + ' alone to list the skills. Nothing was spawned.');
+    flushHeld();
     listSkills();
     process.exit(0);
   }
@@ -1040,6 +1145,7 @@ for (let at = 0; at < steps.length; at++) {
     // marked `unless` an input runs only when it was not (start's quick run, which --full replaces).
     if (step.when && INPUTS[step.when] === undefined) continue;
     if (step.unless && INPUTS[step.unless] !== undefined) continue;
+    if (holding) setupLine();
     const vector = buildVector(step.args, state);
     const r = runCli(vector, { capture: !!step.capture });
     if (step.capture) {

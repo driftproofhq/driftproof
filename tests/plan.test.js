@@ -586,7 +586,8 @@ test('AC-11 exact sentence and forbidden-prose plants fail the independent wordi
     assert.throws(() => oracle.readPowerWords(line + '. ' + QUALIFICATIONS + ' This proves the skill improves scores.', driver));
     assert.throws(() => oracle.readPowerWords('With the spreads held.', driver));
     // The shipped gate reads this verdict value from the same declared source.
-    for (const bad of ['\u2014', 'with confidence', 'statistically significant', require('../lib/stats').WITHIN_NOISE]) {
+    // A-188-10 (issue 378): the em dash plant is retired; the oracle no longer reads it.
+    for (const bad of ['with confidence', 'statistically significant', require('../lib/stats').WITHIN_NOISE]) {
       assert.throws(() => oracle.readPowerWords(line + '. ' + QUALIFICATIONS + ' ' + bad, driver), /public wording|spec 031 band lexicon/);
     }
   }

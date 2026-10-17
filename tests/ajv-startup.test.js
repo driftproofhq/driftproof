@@ -6,7 +6,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { spawnSync, execFileSync } = require('node:child_process');
+const { spawnSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const TMP = fs.mkdtempSync(path.join(process.env.TMPDIR || '/var/tmp', 'spec235-test-'));
@@ -233,8 +233,8 @@ test('A-235-3 transitive loading failure is explicitly outside the resolution gu
   assert.ok(r.events.some((e) => e.kind === 'load-failed'));
 });
 
-function copyRuntime(dir) {
-  fs.cpSync(RUNTIME, dir, { recursive: true, verbatimSymlinks: true });
+function copyRuntime(dir, from = RUNTIME) {
+  fs.cpSync(from, dir, { recursive: true, verbatimSymlinks: true });
   return dir;
 }
 test('A-235-4 hostile package paths remain display text, single-line and bounded', () => {
@@ -280,34 +280,31 @@ test('A-235-5 audit detects external, configuration, Buffer, URL and promise rea
 });
 
 // Compare every byte, including receipt_hash, under the same fixed clock and stub inputs.
-// Only the two production files in this issue's scope are replaced with baseline bytes.
-const BASE = 'b7b4d009276515dfeed57d28392cc5aca1cfbfe3';
-function baselineRuntime() {
-  const dir = copyRuntime(path.join(TMP, 'baseline'));
-  for (const file of ['bin/driftproof', 'lib/receipt.js']) {
-    fs.writeFileSync(path.join(dir, file), execFileSync('git', ['show', BASE + ':' + file], { cwd: ROOT, timeout: 1800000 }));
-  }
-  // A-235-9: the Base's schema table is replaced by today's, so the Base validator holds every receipt
-  // version today's runtime writes. The table is the only part of the Base's lib/receipt.js that changes.
-  const table = (source) => {
-    const found = source.match(/^const SCHEMA_FILES = \{\n[\s\S]*?^\};$/gm);
-    assert.equal(found && found.length, 1, 'lib/receipt.js holds exactly one schema table');
-    return found[0];
-  };
-  const file = path.join(dir, 'lib', 'receipt.js');
-  const base = fs.readFileSync(file, 'utf8');
-  fs.writeFileSync(file, base.replace(table(base), () => table(fs.readFileSync(path.join(ROOT, 'lib', 'receipt.js'), 'utf8'))));
+// A-235-11 (issue 382): the baseline is the same runtime with the dependency check's one call taken out of
+// main() and nothing else changed, so the comparison holds what the check moves and no later CLI change.
+const CHECK_CALL = /^ {2}if \(\[[^\]]*\]\.includes\(cmd\)\) checkReceiptValidator\(\);\n/gm;
+function baselineRuntime(from = RUNTIME, name = 'baseline') {
+  const dir = copyRuntime(path.join(TMP, name), from);
+  const file = path.join(dir, 'bin', 'driftproof');
+  const source = fs.readFileSync(file, 'utf8');
+  assert.equal((source.match(CHECK_CALL) || []).length, 1, 'bin/driftproof calls the dependency check once, in main()');
+  fs.writeFileSync(file, source.replace(CHECK_CALL, ''));
   return dir;
 }
+// A-235-10 (issue 377): a default run, without --quick. Issue 367 changed the quick preset's receipt on
+// purpose (spec 139 A-139-17), and spec 139 holds that receipt; the dependency check is read on the ordinary path.
+// A-235-11 (issue 382): each run has a working directory of its own; the skill and every other input are the same.
 function fixedReceipt(w, runtime, outName) {
   const out = path.join(w.cwd, outName);
-  const r = invoke(['run', w.skill, '--quick', '--out', out], { ...w, runtime, block: false, fixed: true });
+  const cwd = path.join(w.cwd, outName + '-cwd');
+  fs.mkdirSync(cwd);
+  const r = invoke(['run', w.skill, '--out', out], { ...w, cwd, runtime, block: false, fixed: true });
   assert.equal(r.status, 0, r.stderr);
   const files = fs.readdirSync(out).filter((f) => f.endsWith('.json') && !/\.(summary|regrade)\.json$/.test(f));
   assert.equal(files.length, 1);
   return fs.readFileSync(path.join(out, files[0]), 'utf8');
 }
-test('A-235-6 installed receipt bytes match the baseline; a resealed score mutation is detected', () => {
+test('A-235-6 installed receipt bytes match the baseline; a resealed score mutation is detected', async () => {
   const w = work();
   const expected = fixedReceipt(w, baselineRuntime(), 'baseline-out');
   const actual = fixedReceipt(w, RUNTIME, 'candidate-out');
@@ -324,4 +321,16 @@ test('A-235-6 installed receipt bytes match the baseline; a resealed score mutat
   assert.equal(validateReceipt(doc).valid, true, 'the mutant must remain schema-valid');
   assert.equal(verifyReceiptHash(doc), true, 'the mutant must be resealed');
   assert.notEqual(changed, expected, 'a resealed score mutation survived the byte comparison');
+  // A-235-11 (issue 382): release-prepare's own bump, its BUMP_ANCHORS for config.js and package.json applied
+  // by its applyAnchors, to 9.9.9 in a copy of the runtime: the copy and its baseline still write the same bytes.
+  const { BUMP_ANCHORS, applyAnchors } = await import(require('node:url').pathToFileURL(path.join(ROOT, 'scripts', 'pipeline.mjs')).href);
+  const bumped = copyRuntime(path.join(TMP, 'bumped'));
+  const files = ['config.js', 'package.json'];
+  const from = JSON.parse(fs.readFileSync(path.join(bumped, 'package.json'), 'utf8')).version;
+  const { out, problems } = applyAnchors(new Map(files.map((f) => [f, fs.readFileSync(path.join(bumped, f), 'utf8')])), BUMP_ANCHORS.filter((a) => files.includes(a.file)), from, '9.9.9');
+  assert.deepEqual(problems, []);
+  for (const [f, text] of out) fs.writeFileSync(path.join(bumped, f), text);
+  const bumpedReceipt = fixedReceipt(w, bumped, 'bumped-out');
+  assert.ok(bumpedReceipt.includes('"runner_version": "9.9.9"'), 'the bumped runtime records 9.9.9');
+  assert.equal(bumpedReceipt, fixedReceipt(w, baselineRuntime(bumped, 'bumped-baseline'), 'bumped-baseline-out'));
 });

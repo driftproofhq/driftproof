@@ -822,7 +822,9 @@ const CAP_MUTATIONS = [
   { id: 'two-digit-budget', rel: 'README.md', anchor: '### Cost guard\n',
     says: 'DEV_MAX_USD itself: two digits, no currency symbol',
     replace: '### Cost guard\n\nDriftproof refuses if the run exceeds the dollar budget, default 20.\n' },
-  { id: 'trigger-cap', rel: 'RUNBOOK.md', anchor: 'under `TRIGGER_MAX_USD` from [`config.js`](config.js)',
+  // Spec 388 (J4): RUNBOOK.md left the published tree, so the shape is planted in README.md's
+  // sentence about the same constant, which the published-tree scan still reads.
+  { id: 'trigger-cap', rel: 'README.md', anchor: 'under `TRIGGER_MAX_USD` from [`config.js`](config.js)',
     says: 'F-018-D\'s live violation: a cap constant with no phrase in the old hand list',
     replace: 'under the $25 trigger cap' },
 ];
@@ -1230,7 +1232,7 @@ function pipefailQuietGrepCheck(root) {
 // WHY NOT "ANY EXCLUDED PATH PRESENT FAILS". The source repository tracks files in
 // all four sets, so that rule turns its own gate red unless something tells the
 // gate it is the source, which is an argv selector again.
-const PUBLISH_GOVERNANCE_SET = ['specs', 'DECISIONS.md', 'CONSTITUTION.md', 'BACKLOG.md'];
+const PUBLISH_GOVERNANCE_SET = ['specs', 'DECISIONS.md', 'CONSTITUTION.md', 'BACKLOG.md', 'RUNBOOK.md'];
 const SOURCE_ROOT_COMMIT = '98fa132878bd44b1c70cefa00fb24bc04ec7f871';
 function sourceHistory(root) {
   const git = (...a) => require('child_process').spawnSync('git', a, { cwd: root, encoding: 'utf8' });
@@ -1260,7 +1262,7 @@ const isInternalNarrative = (f) => /^reports\/(week-[0-9]|phase-[0-9])[^/]*\.md$
 function publishExclusionHits(files) {
   return {
     pending: files.filter((f) => f === 'reports/pending-publish.md'),
-    governance: files.filter((f) => /^specs\//.test(f) || f === 'BACKLOG.md' || f === 'CLAUDE.md' || f === 'CONSTITUTION.md' || f === 'DECISIONS.md'),
+    governance: files.filter((f) => /^specs\//.test(f) || f === 'BACKLOG.md' || f === 'CLAUDE.md' || f === 'CONSTITUTION.md' || f === 'DECISIONS.md' || f === 'RUNBOOK.md'),
     state: files.filter((f) => /^state\//.test(f)),
     internal: files.filter(isInternalNarrative),
   };
