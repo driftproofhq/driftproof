@@ -309,16 +309,20 @@ function answersSummary(r, html) {
   // A sentence across the runs (spec 134 R-9) names every receipt it counts; any other, its one.
   const li = (x, cls) => (x.across
     ? `<li class="${cls} across" data-receipts="${esc(x.rels.join(' '))}">${x.html}</li>`
-    : `<li class="${cls}" data-receipt="${esc(x.rel)}">${x.html}</li>`);
+    : `<li class="${cls}" data-receipt="${esc(x.rel)}">${x.explanation ? `<div class="answer-sentence">${x.html}</div>${x.explanation}` : x.html}</li>`);
   // The native harness's results, on a report that compares two harnesses (the operator's ruling of
   // 2 Oct 2026): not an answer read from a receipt, so it names the evidence files it reads, and it
   // stands before the limit sentence, which stays last.
   const harness = got.harness ? [`<li class="harness" data-sources="${esc(got.harness.files.join(' '))}">${got.harness.html}</li>`] : [];
-  return `<section class="plain-summary" aria-labelledby="${summaryId(r.number.value)}">${summaryHeading(r.number.value)}<ul>
+  return `<section class="plain-summary" aria-labelledby="${summaryId(r.number.value)}">${summaryHeading(r.number.value)}${got.preface || ''}<ul>
 ${[...got.answers.map((x) => li(x, 'answer')), ...harness, li(got.limit, 'answer limit')].join('\n')}
 </ul></section>`;
 }
 
+function dedicatedReceiptDirectory(paths) {
+ const dirs=[...new Set(paths.map(p=>p.replace(/\/[^/]+$/,'')))];
+ return dirs.length===1 && fs.existsSync(path.join(ROOT,dirs[0])) && JSON.stringify(fs.readdirSync(path.join(ROOT,dirs[0])).filter(f=>f.endsWith('.json')&&!f.startsWith('_')).sort())===JSON.stringify(paths.map(p=>path.basename(p)).sort());
+}
 function tldrCard(r, html = null) {
   const models = r.model_ids.map((m) => `<code>${esc(m.value)}</code>`).join(' ');
   // The same field, as prose in the title line. It is derived here rather than
@@ -347,8 +351,9 @@ function tldrCard(r, html = null) {
   // card counts, so it stays the destination and those cards stay byte-identical.
   const rpaths = r.receipt_paths.map((p) => (typeof p === 'string' ? p : p.value));
   const dirs = [...new Set(rpaths.map((p) => p.replace(/\/[^/]+$/, '')))];
+  const dedicated = dedicatedReceiptDirectory(rpaths);
   const receipts = rpaths.length
-    ? (dirs.length > 1
+    ? (!dedicated
       ? `<a href="#${RECEIPTS_ANCHOR}">${rpaths.length} linked receipts</a>`
       : `<a href="https://github.com/driftproofhq/driftproof/tree/main/${esc(dirs[0])}/">${rpaths.length} receipts</a>`)
     : 'no receipts linked';
@@ -413,7 +418,7 @@ function applyNavFooter(html) {
   let out = stripBetween(html, NAV_OPEN, NAV_CLOSE);
   out = stripBetween(out, FOOT_OPEN, FOOT_CLOSE);
   out = out.replace(/<header class="site">[\s\S]*?<\/header>/, NAV);
-  if (!out.includes(NAV_OPEN)) out = out.replace(/<body>/, `<body>\n${NAV}`);
+  if (!out.includes(NAV_OPEN)) out = out.replace(/<body\b[^>]*>/, (body) => `${body}\n${NAV}`);
 
   const end = out.lastIndexOf('</main>');
   // THE FOOTER IS RELOCATED, NOT REPLACED IN PLACE (spec 025 D-1). Everything
@@ -625,11 +630,13 @@ function applyChrome(html, rel, data) {
       if (h >= 0 && (e < 0 || h < e)) out = `${out.slice(0, h + 5)}${card}\n${out.slice(h + 5)}`;
       else out = out.replace(/(<main[^>]*>\s*)/, (m0) => `${m0}${card}\n`);
       const rp = row.receipt_paths.map((x) => (typeof x === 'string' ? x : x.value));
-      out = receiptsAnchor(out, new Set(rp.map((x) => x.replace(/\/[^/]+$/, ''))).size > 1);
+      out = receiptsAnchor(out, rp.length > 0 && !dedicatedReceiptDirectory(rp));
     }
   }
   out = wrapTables(out);
   out = applyLayout(out, rel, data);
+  // Issue 408: an explicit route boundary keeps the measurement theme local.
+  if ((rel.startsWith('skills/') && rel.endsWith('/index.html')) || rel === 'skills/index.html' || rel === 'reports/015/index.html') out = out.replace('<body>', '<body class="measurement-ui">');
   return out;
 }
 

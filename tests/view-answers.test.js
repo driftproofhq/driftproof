@@ -7,8 +7,10 @@
 //
 //   node --test tests/view-answers.test.js
 //
-// No model is called. The receipt is a stub quick run's (DRIFTPROOF_STUB=1), made by this checkout's
-// bin/driftproof in a folder under the system temp directory, removed after, and reshaped to that run's
+// No model is called. A four-task stub run (DRIFTPROOF_STUB=1) is marked as the legacy quick
+// fixture before reshaping and sealing. Today's --quick selects one task, so it cannot supply the
+// four-task historical fixture. The checkout's CLI runs under the temp directory, removed after.
+// The receipt is reshaped to that run's
 // draws: the sampling rule draws 3 to 10 answers per test task per arm, and the quick preset sets the
 // judge samples only.
 
@@ -38,10 +40,13 @@ function cleanEnv() {
     if (/API_KEY|TOKEN|SECRET|^CLAUDE_|^ANTHROPIC_|^OPENAI_|^DRIFTPROOF_|^SOURCE_DATE_EPOCH$/.test(k)) continue;
     env[k] = v;
   }
-  return { ...env, DRIFTPROOF_STUB: '1' };
+  return { ...env, DRIFTPROOF_STUB: '1',
+    ...(process.env.ANTHROPIC_BASE_URL ? { ANTHROPIC_BASE_URL: process.env.ANTHROPIC_BASE_URL } : {}),
+    ...(process.env.OPENAI_BASE_URL ? { OPENAI_BASE_URL: process.env.OPENAI_BASE_URL } : {}),
+  };
 }
 
-// A stub quick run over a skill of four test tasks.
+// A four-task stub fixture for the historical quick receipt. Expectations stay 25 and 14.
 let quick = null;
 function quickReceipt() {
   if (quick) return structuredClone(quick);
@@ -51,11 +56,12 @@ function quickReceipt() {
   fs.writeFileSync(path.join(sk, 'SKILL.md'), '---\nname: fx\nversion: 1.0.0\n---\n\n# fx\n\nAnswer in one short sentence.\n');
   fs.writeFileSync(path.join(sk, 'evals', 'evals.json'), JSON.stringify({ cases: [1, 2, 3, 4].map((i) => ({ id: `c${i}`, prompt: `Question ${i}?`, rubric: 'One short sentence scores 0.80.' })) }));
   const out = path.join(dir, 'out');
-  const r = spawnSync(process.execPath, [BIN, 'run', sk, '--models', MODEL, '--quick', '--out', out], { cwd: dir, env: cleanEnv(), encoding: 'utf8', timeout: 120000 });
+  const r = spawnSync(process.execPath, [BIN, 'run', sk, '--models', MODEL, '--samples', String(require('../lib/firstrun').QUICK.samples), '--out', out], { cwd: dir, env: cleanEnv(), encoding: 'utf8', timeout: 120000 });
   assert.equal(r.status, 0, r.stderr);
   const files = fs.readdirSync(out).filter((f) => f.endsWith('.json'));
   assert.equal(files.length, 1);
   quick = JSON.parse(fs.readFileSync(path.join(out, files[0]), 'utf8'));
+  quick.run.preset = require('../lib/firstrun').PRESET_QUICK;
   return structuredClone(quick);
 }
 

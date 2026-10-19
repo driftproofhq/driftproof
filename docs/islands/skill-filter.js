@@ -39,11 +39,21 @@ export function mount(el) {
     form.append(wrap, ' ');
     return select;
   });
+  const searchLabel = document.createElement('label');
+  searchLabel.textContent = 'Find a skill or repository';
+  const search = document.createElement('input'); search.type = 'search'; search.name = 'skill';
+  searchLabel.append(search); form.prepend(searchLabel);
+  const reset = document.createElement('button'); reset.type = 'button'; reset.textContent = 'Clear filters';
+  const status = document.createElement('p'); status.setAttribute('role', 'status');
+  form.append(reset, status);
   const apply = () => {
     for (const li of entries) {
-      li.hidden = !selects.every((s) => !s.value || (li.dataset[s.name] || '').split(' ').includes(s.value));
+      li.hidden = !(li.dataset.page || '').toLowerCase().includes(search.value.trim().toLowerCase()) || !selects.every((s) => !s.value || (li.dataset[s.name] || '').split(' ').includes(s.value));
     }
+    status.textContent = entries.some(li => !li.hidden) ? '' : 'No skills match these filters.';
   };
+  search.addEventListener('input', apply);
+  reset.addEventListener('click', () => { search.value = ''; selects.forEach(s => { s.value = ''; }); apply(); });
   form.addEventListener('change', apply);
   form.addEventListener('submit', (e) => e.preventDefault());
   el.append(form);

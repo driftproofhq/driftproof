@@ -468,9 +468,12 @@ NOTES
     runs as a dedicated unprivileged unix user (DRIFTPROOF_EVAL_USER) through
     sudo, from an EMPTY environment (only HOME and PATH, constructed), in a fresh
     temp working directory removed after the call. A third-party SKILL.md is
-    instructions to an agent with tools; this is what keeps it away from your
-    keys, tokens and files. Operator prerequisite: that user, its own logged-in
-    CLIs, and a NOPASSWD sudoers rule (see the Isolation section of the README).
+    instructions to an agent with tools. Without --trusted-skill, and with your
+    home closed (step 4 of the Isolation section of the README), this is what
+    keeps it away from your keys, tokens and files. Operator prerequisite: that
+    user, its own logged-in CLIs, a NOPASSWD sudoers rule, and your own home
+    closed to other users (see the Isolation section of the README). The runner
+    checks that the user exists, but not that your home is closed.
   - --capture (or "capture" in the working directory's .driftproofrc; a skill
     directory's is ignored) says which answer is judged. text, the default: on a
     cli surface the child runs with its file-writing tools off, and its reply is

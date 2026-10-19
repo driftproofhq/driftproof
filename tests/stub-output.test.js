@@ -276,6 +276,20 @@ const MOVED_367 = ['lib/run.js'];
 // A-236-10 (issue 388): lib/provider.js, moved for two refusal messages, held at issue 388's commit.
 const HOLD_388 = /\*\*Issue 388 hold:\*\* \x60([0-9a-f]{40})\x60/.exec(SPEC)[1];
 const MOVED_388 = ['lib/provider.js'];
+// A-236-12 (issue 406): lib/provider.js, moved for the eval-user refusals, held at issue 406's commit in place of 388's.
+const HOLD_406 = /\*\*Issue 406 hold:\*\* \x60([0-9a-f]{40})\x60/.exec(SPEC)[1];
+const MOVED_406 = ['lib/provider.js'];
+// A-236-13 (issue 408): the operator-selected registry is held byte for byte.
+const HOLD_408 = /\*\*Issue 408 hold:\*\* \x60([0-9a-f]{40})\x60/.exec(SPEC)[1];
+const MOVED_408 = ['config/models.json'];
+// A-236-14 (issue 408): the optional reply observer's exact reviewed runner bytes.
+const RUN_408_SHA = /\*\*Issue 408 runner sha256:\*\* \x60([0-9a-f]{64})\x60/.exec(SPEC)[1];
+const run408Hash = (bytes) => require('node:crypto').createHash('sha256').update(bytes).digest('hex');
+function run408Changes(cwd) {
+  try { return run408Hash(fs.readFileSync(path.join(cwd, 'lib/run.js'))) === RUN_408_SHA ? [] : ['lib/run.js']; }
+  catch { return ['lib/run.js']; }
+}
+
 const AT_265 = MOVED_265.filter((f) => !MOVED_317.includes(f) && !MOVED_367.includes(f));
 const subject = (file) => SUBJECTS.some((s) => (s.includes('*')
   ? new RegExp('^' + s.split('*').map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('[^/]*') + '$').test(file)
@@ -308,12 +322,13 @@ function heldChanges(cwd) {
   // A-236-4 (issue 265): the five subjects issue 265 moved are held at its commit, every other one as before.
   // A-236-5 (issue 317): of those, the two issue 317 moved are held at its commit.
   // A-236-10 (issue 388): lib/provider.js is read against its own hold, so it leaves the earlier reads too.
-  const moved265 = (paths) => paths.filter((f) => !MOVED_265.includes(f) && !MOVED_388.includes(f));
+  // A-236-12 (issue 406): that hold is now the Issue 406 hold.
+  const moved265 = (paths) => paths.filter((f) => !MOVED_265.includes(f) && !MOVED_388.includes(f) && !MOVED_408.includes(f));
   // A-236-7 (issue 343): config.js, held at the Issue 265 hold, may differ from it by a release bump alone.
   const at265 = () => diffIn(cwd, HOLD_265, null, AT_265).filter((f) => f !== 'config.js' || !releaseBump(cwd, HOLD_265));
-  const changed = [...moved265(diffIn(cwd, LIB_HOLD, null, lib)), ...moved265(diffIn(cwd, BASE, null, rest)), ...at265(), ...diffIn(cwd, HOLD_317, null, MOVED_317), ...diffIn(cwd, HOLD_367, null, MOVED_367), ...diffIn(cwd, HOLD_388, null, MOVED_388)];
+  const changed = [...moved265(diffIn(cwd, LIB_HOLD, null, lib)), ...moved265(diffIn(cwd, BASE, null, rest)), ...at265(), ...diffIn(cwd, HOLD_317, null, MOVED_317), ...run408Changes(cwd), ...diffIn(cwd, HOLD_406, null, MOVED_406), ...diffIn(cwd, HOLD_408, null, MOVED_408)];
   // A-236-2: git's pathspec and this test's matcher agree on the subjects in this tree.
-  assert.deepEqual(changed, [...moved265(diffIn(cwd, LIB_HOLD, null, ['lib'])), ...moved265(diffIn(cwd, BASE, null, ['spec', 'config.js', 'config'])), ...at265(), ...diffIn(cwd, HOLD_317, null, MOVED_317), ...diffIn(cwd, HOLD_367, null, MOVED_367), ...diffIn(cwd, HOLD_388, null, MOVED_388)].filter(subject));
+  assert.deepEqual(changed, [...moved265(diffIn(cwd, LIB_HOLD, null, ['lib'])), ...moved265(diffIn(cwd, BASE, null, ['spec', 'config.js', 'config'])), ...at265(), ...diffIn(cwd, HOLD_317, null, MOVED_317), ...run408Changes(cwd), ...diffIn(cwd, HOLD_406, null, MOVED_406), ...diffIn(cwd, HOLD_408, null, MOVED_408)].filter(subject));
   return changed;
 }
 test('AC-4/AC-5 exported runner, provider, schemas and config stay unchanged', () => {
@@ -326,6 +341,7 @@ test('AC-4/AC-5 exported runner, provider, schemas and config stay unchanged', (
   }
   const reader = holdReader;
   reader(heldChanges(ROOT));
+  assert.notEqual(run408Hash(execFileSync('git', ['show', HOLD_367 + ':lib/run.js'], { cwd: ROOT })), RUN_408_SHA, 'A-236-14: old runner bytes are not admitted');
   // A-236-4 (issue 265): between the earlier holds and issue 265's, exactly those five subjects moved, and
   // its hold is this tree's history; a planted sixth, or a change to one of the five after the hold, reads RED.
   const lib = SUBJECTS.filter((s) => s.startsWith('lib/'));
@@ -356,6 +372,19 @@ test('AC-4/AC-5 exported runner, provider, schemas and config stay unchanged', (
   execFileSync('git', ['merge-base', '--is-ancestor', HOLD_388, 'HEAD'], { cwd: ROOT });
   assert.throws(() => held388([...MOVED_388, 'lib/stub.js'].sort()), 'planted second subject move');
   assert.throws(() => assert.deepEqual(diff(HOLD_388 + '^', null, MOVED_388).filter(subject), []), 'a change to a moved subject after the hold');
+  // A-236-12 (issue 406): the Issue 406 hold's own commit moved exactly lib/provider.js of the subjects, and
+  // it is this tree's history; a planted second subject, or a change to it after the hold, reads RED.
+  const held406 = (paths) => assert.deepEqual(paths, MOVED_406, 'only issue 406 moved these subjects');
+  held406(diff(HOLD_406 + '^', HOLD_406, SUBJECTS).filter(subject).sort());
+  execFileSync('git', ['merge-base', '--is-ancestor', HOLD_406, 'HEAD'], { cwd: ROOT });
+  assert.throws(() => held406([...MOVED_406, 'lib/stub.js'].sort()), 'planted second subject move');
+  assert.throws(() => assert.deepEqual(diff(HOLD_406 + '^', null, MOVED_406).filter(subject), []), 'a change to a moved subject after the hold');
+  // A-236-13: only the registry moved; retain history and second-subject plants.
+  const held408 = (paths) => assert.deepEqual(paths, MOVED_408, 'only issue 408 moved these subjects');
+  held408(diff(HOLD_408 + '^', HOLD_408, SUBJECTS).filter(subject).sort());
+  execFileSync('git', ['merge-base', '--is-ancestor', HOLD_408, 'HEAD'], { cwd: ROOT });
+  assert.throws(() => held408([...MOVED_408, 'lib/stub.js'].sort()), /only issue 408 moved these subjects/);
+  assert.throws(() => reader(diff(HOLD_408 + '^', null, MOVED_408)), /only CLI wording may move/);
   for (const file of ['lib/run.js', 'lib/regrade.js', 'lib/provider.js', 'spec/receipt.schema.json', 'config.js']) {
     assert.throws(() => reader([file]), 'planted source edit: ' + file);
   }
@@ -381,7 +410,7 @@ test('A-236-3 plants: the hold reads planted trees through its real path', () =>
   const head = gitIn(ROOT, ['rev-parse', 'HEAD'])[0];
   execFileSync('git', ['clone', '--quiet', '--shared', '--no-checkout', ROOT, box]);
   // A-236-7 (issue 343): package.json is checked out too, as the release bump reader reads it.
-  const restore = () => execFileSync('git', ['checkout', '--quiet', head, '--', 'lib', 'spec', 'config', 'config.js', 'package.json'], { cwd: box });
+  const restore = () => { execFileSync('git', ['checkout', '--quiet', head, '--', 'lib', 'spec', 'config', 'config.js', 'package.json'], { cwd: box }); fs.copyFileSync(path.join(ROOT, 'lib/run.js'), path.join(box, 'lib/run.js')); };
   const edit = (file) => fs.appendFileSync(path.join(box, file), '\n');
   restore();
   holdReader(heldChanges(box));
@@ -401,6 +430,11 @@ test('A-236-3 plants: the hold reads planted trees through its real path', () =>
   fs.writeFileSync(path.join(box, 'spec/planted.schema.json'), '{}\n');
   execFileSync('git', ['add', 'spec/planted.schema.json'], { cwd: box });
   assert.throws(() => holdReader(heldChanges(box)), /only CLI wording may move/, 'a new tracked schema');
+  restore();
+  fs.writeFileSync(path.join(box, 'lib/run.js'), execFileSync('git', ['show', HOLD_367 + ':lib/run.js'], { cwd: ROOT }));
+  assert.throws(() => holdReader(heldChanges(box)), /only CLI wording may move/, 'A-236-14: old runner bytes');
+  restore(); fs.unlinkSync(path.join(box, 'lib/run.js'));
+  assert.throws(() => holdReader(heldChanges(box)), /only CLI wording may move/, 'A-236-14: missing runner');
   // A-236-5: an edit to one of issue 317's two in the planted tree reads RED against its hold.
   for (const file of MOVED_317) {
     restore();
@@ -413,11 +447,11 @@ test('A-236-3 plants: the hold reads planted trees through its real path', () =>
     edit(file);
     assert.deepEqual(heldChanges(box).filter((f) => f === file), [file], 'read against the Issue 367 hold: ' + file);
   }
-  // A-236-10: an edit to lib/provider.js in the planted tree reads RED against the Issue 388 hold.
-  for (const file of MOVED_388) {
+  // A-236-10, A-236-12: an edit to lib/provider.js in the planted tree reads RED against the Issue 406 hold.
+  for (const file of [...MOVED_406, ...MOVED_408]) {
     restore();
     edit(file);
-    assert.deepEqual(heldChanges(box).filter((f) => f === file), [file], 'read against the Issue 388 hold: ' + file);
+    assert.deepEqual(heldChanges(box).filter((f) => f === file), [file], 'read against its own issue hold: ' + file);
   }
 });
 
@@ -428,7 +462,7 @@ test('A-236-7 plants: a release bump reads GREEN, any other change to config.js 
   const box = tmp();
   const head = gitIn(ROOT, ['rev-parse', 'HEAD'])[0];
   execFileSync('git', ['clone', '--quiet', '--shared', '--no-checkout', ROOT, box]);
-  const restore = () => execFileSync('git', ['checkout', '--quiet', head, '--', 'lib', 'spec', 'config', 'config.js', 'package.json'], { cwd: box });
+  const restore = () => { execFileSync('git', ['checkout', '--quiet', head, '--', 'lib', 'spec', 'config', 'config.js', 'package.json'], { cwd: box }); fs.copyFileSync(path.join(ROOT, 'lib/run.js'), path.join(box, 'lib/run.js')); };
   const read = (file) => fs.readFileSync(path.join(box, file), 'utf8');
   const write = (file, text) => fs.writeFileSync(path.join(box, file), text);
   restore();

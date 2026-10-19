@@ -378,7 +378,21 @@ const decodeAttr = (s) => String(s).replace(/&quot;/g, '"').replace(/&lt;/g, '<'
 // gives it.
 function answersFor(row, body, { esc, root = ROOT } = {}) {
   const got = driftproofAnswers(row, body, { esc, root });
+  if (got && row.scope_title) for (const answer of got.answers) {
+    const id=path.basename(answer.rel, ".json");
+    if (!/^[a-f0-9]{64}$/.test(id)) throw new Error("scoped answer has no campaign identity");
+    const match=new RegExp('<section class="campaign-result" data-result="'+id+'">([\\s\\S]*?)<details class="result-evidence">').exec(body);
+    if (!match) throw new Error("scoped answer has no adjacent task explanation");
+    const result=new RegExp('<section class="campaign-result" data-result="'+id+'">([\\s\\S]*?)</section>').exec(body);
+    const disclosure=[...result[1].matchAll(/<p class="result-(?:scope|isolation|router)">[\s\S]*?<\/p>/g)].map(m=>m[0]).join('');
+    answer.explanation='<div class="answer-explanation" data-result="'+id+'">'+match[1]+disclosure+'</details></div>';
+  }
   if (!got) return got;
+  if(row.scope_title){
+    const tally=/<div class="campaign-tally">[\s\S]*?<\/div>/.exec(body),rule=/<p class="example-selection">[\s\S]*?<\/p>/.exec(body);
+    if(!tally||!rule)throw new Error('scoped report has no full tally or selection disclosure');
+    got.preface=tally[0]+rule[0];
+  }
   if (got.across) { const { across, ...rest } = got; return rest; }
   // an instrument comparison report shows the native harness's results too (not for a run-across report)
   const harness = nativeOf(row, new Set(numeralsIn(textOf(body))), { esc, root });
@@ -415,7 +429,13 @@ function driftproofAnswers(row, body, { esc, root = ROOT } = {}) {
   const full = names.filter((s) => bySkill.get(s).size === models.length);
   const rest = names.filter((s) => bySkill.get(s).size !== models.length).sort((a, b) => bySkill.get(b).size - bySkill.get(a).size || (a < b ? -1 : 1));
   const picked = [];
-  for (const s of [...full, ...rest]) {
+  if(row.scope_title){
+    const ordered=names.flatMap(s=>models.filter(m=>bySkill.get(s).has(m)).map(m=>bySkill.get(s).get(m))),states=new Set();
+    for(const x of ordered){const state=plainOf(x.receipt).state;if(!states.has(state)){picked.push(x);states.add(state);}}
+    for(const model of models)if(!picked.some(x=>x.model===model))picked.push(ordered.find(x=>x.model===model));
+    if(picked.length>MAX_ANSWERS)throw new Error('scoped report cannot represent every verdict and model in four examples');
+    picked.sort((a,b)=>ordered.indexOf(a)-ordered.indexOf(b));
+  }else for (const s of [...full, ...rest]) {
     const group = models.filter((m) => bySkill.get(s).has(m)).map((m) => bySkill.get(s).get(m));
     if (picked.length && picked.length + group.length > MAX_ANSWERS) break;
     picked.push(...group.slice(0, MAX_ANSWERS - picked.length));

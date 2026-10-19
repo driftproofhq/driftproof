@@ -90,53 +90,39 @@ const HAND_MANIFEST = { receipts: [
 // strip, and the island shares no code with it (issue 335).
 const decode = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&#x27;|&apos;/g, "'").replace(/&amp;/g, '&');
 const { tokenize, htmlToText } = require('../scripts/html-text');
-// The tags spec 267's entry markup holds: its link and its row spans. Anything else is markup beside them.
-const entryTag = (t) => (t.type === 'end' && (t.name === 'a' || t.name === 'span'))
-  || (t.type === 'start' && t.name === 'a' && t.attrs.length === 1 && t.attrs[0][0] === 'href')
-  || (t.type === 'start' && t.name === 'span' && t.attrs.length === 1 && t.attrs[0][0] === 'class' && t.attrs[0][1] === 'skill-entry-row');
-function parseList(html) {
-  const start = html.indexOf('<ul class="skill-list">');
-  const end = start < 0 ? -1 : html.indexOf('</ul>', start);
-  if (start < 0 || end < 0) return null;
-  const out = [];
-  for (const m of html.slice(start, end).matchAll(/<li class="skill-entry"([^>]*)>([\s\S]*?)<\/li>/g)) {
-    const attrs = Object.fromEntries([...m[1].matchAll(/\s([a-z-]+)="([^"]*)"/g)].map((a) => [a[1], decode(a[2])]));
-    const a = /<a href="([^"]*)">([\s\S]*?)<\/a>/.exec(m[2]);
-    const page = attrs['data-page'] || '';
-    const [owner, repo, name] = page.split('/');
-    out.push({
-      owner, repo, name, page, path: attrs['data-path'],
-      href: a ? decode(a[1]) : null, text: a ? decode(a[2]) : null,
-      rows: [...m[2].matchAll(/<span class="skill-entry-row">([\s\S]*?)<\/span>/g)].map((r) => decode(r[1])),
-      liText: htmlToText(m[2], { decode, collapse: true }),
-      markup: tokenize(m[2]).filter((t) => t.type !== 'text' && !entryTag(t)).map((t) => t.raw),
-    });
-  }
-  return out;
-}
-const shape = (e) => ({ owner: e.owner, repo: e.repo, path: e.path, href: e.href, text: e.text, rows: e.rows });
+// Independent HTML tokenizer and tree reader; the island has its own strict data parser.
+const {dom,all}=require('../specs/408-skill-measurements/page-reader.cjs');
 const collapse = (s) => String(s).replace(/\s+/g, ' ').trim();
-
-// The independent whole read (AC-3, AC-5 of spec 315 § Claim and invariants, AC-6): every reason
-// the list is unreadable. An empty array means the list was read whole.
-function wholeHits(html) {
-  const start = html.indexOf('<ul class="skill-list">');
-  if (start < 0) return ['no <ul class="skill-list">'];
-  const end = html.indexOf('</ul>', start);
-  if (end < 0) return ['no </ul> after the list'];
-  const hits = [];
-  if (html.indexOf('<li class="skill-entry"', end) >= 0) hits.push('an entry after the </ul> the read closed on');
-  const es = parseList(html);
-  if (!es.length) hits.push('no entry');
-  for (const e of es) {
-    if (e.path === undefined) hits.push(`${e.page}: no data-path`);
-    if (!/^[^/]+\/[^/]+\/[^/]+\/$/.test(e.page)) hits.push(`${e.page}: data-page is not owner/repo/name/`);
-    if (e.href !== `/skills/${e.page}`) hits.push(`${e.page}: href ${e.href} is not /skills/ plus data-page`);
-    if (!e.rows.length) hits.push(`${e.page}: no row`);
-    if (e.liText !== collapse([e.text, ...e.rows].join(' '))) hits.push(`${e.page}: its text is not the link text and its rows`);
-    if (e.markup.length) hits.push(`${e.page}: markup beside its link and rows: ${e.markup.join(' ')}`);
-  }
-  return hits;
+const shape = (e) => ({ owner:e.owner,repo:e.repo,path:e.path,href:e.href,text:e.text,rows:e.rows });
+const listDom=html=>{const d=dom(html);return {d,list:all(d,n=>n.tag==='ul'&&n.attrs.class==='skill-list')[0]};};
+const entryNodes=html=>{const {list}=listDom(html);return list?.children.filter(n=>n.tag==='li'&&n.attrs.class==='skill-entry')||[];};
+const words=(html,n)=>htmlToText(html.slice(n.start,n.end),{decode,collapse:true,tagText:' '});
+function parseList(html){
+ return entryNodes(html).map(n=>{
+  const parts=n.children.filter(x=>x.tag),a=parts[0],page=n.attrs['data-page']||'', [owner,repo,name]=page.split('/');
+  const rows=parts.slice(1).filter(x=>x.attrs.class==='skill-entry-row'||x.attrs.class==='skill-repository').map(x=>words(html,x));
+  return {owner,repo,name,page,path:n.attrs['data-path'],href:a?.tag==='a'?a.attrs.href:null,text:a?.tag==='a'?words(html,a):null,rows,liText:words(html,n)};
+ });
+}
+function wholeHits(html){
+ const {d,list}=listDom(html);if(!list)return ['no skill list'];
+ const nodes=entryNodes(html),es=parseList(html),hits=[];
+ if(!nodes.length)hits.push('no entry');
+ if(all(d,n=>n.attrs?.class==='skill-entry').length!==nodes.length)hits.push('entry outside the list');
+ if(list.children.some(n=>n.tag&&n.attrs.class!=='skill-entry'||n.text?.trim()))hits.push('extra list content');
+ const tags=new Set(['li','a','span','div','p','section','data','details','summary','ul','time']);
+ const attrs=new Set(['class','href','value','datetime','data-page','data-source','data-evidence','data-freshness','data-path','data-task','data-driver','data-result','data-at','data-cost','data-src','data-fn','data-dp','data-receipt-link','data-receipt-path','data-manifest','data-build-date']);
+ for(const [i,e]of es.entries()){
+  if(e.path===undefined)hits.push(e.page+': no data-path');
+  if(!/^[^/]+\/[^/]+\/[^/]+\/$/.test(e.page))hits.push(e.page+': bad identity');
+  if(e.href!=='/skills/'+e.page)hits.push(e.page+': bad href');
+  const parts=nodes[i].children.filter(n=>n.tag),rows=parts.slice(1).filter(n=>n.attrs.class==='skill-entry-row');
+  if(!rows.length)hits.push(e.page+': no row');
+  if(nodes[i].children.some(n=>n.text?.trim())||parts.slice(1).some(n=>!['skill-repository','skill-entry-row'].includes(n.attrs.class)))hits.push(e.page+': extra content');
+  if(e.liText!==collapse([e.text,...e.rows].join(' ')))hits.push(e.page+': unread text');
+  for(const n of all(nodes[i],n=>n.tag))if(!tags.has(n.tag)||Object.keys(n.attrs).some(k=>!attrs.has(k)))hits.push(e.page+': unexpected markup');
+ }
+ return hits;
 }
 // Lists AC-3 calls unreadable, each built from the hand-made list.
 const BAD_LISTS = {
@@ -318,8 +304,8 @@ function pathHits(html, manifest) {
   for (const e of parseList(html) || []) {
     if (e.path === undefined) { hits.push(`${e.page}: no data-path`); continue; }
     const name = e.path ? e.path.split('/').pop() : e.repo;
-    const found = ids.some((x) => x.owner === e.owner && x.repo === e.repo && x.path === e.path);
-    if (!found || name !== e.name) hits.push(`${e.page}: data-path "${e.path}" is no identity's path in the manifest`);
+    const found = manifest.receipts.some((r) => r.identity.owner === e.owner && r.identity.repo === e.repo && r.identity.path === e.path && r.name === e.name);
+    if (!found) hits.push(`${e.page}: data-path "${e.path}" is no identity's path in the manifest`);
   }
   return hits;
 }
@@ -353,6 +339,12 @@ test('AC-4: an entry\'s data-path is its identity\'s path, and every identity no
   const html = fs.readFileSync(LIST, 'utf8');
   assert.ok(parseList(html).length > 0, 'the committed list page has no entry');
   const manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
+  // A-315-2: measured campaign identities are a second published source.
+  const campaign = JSON.parse(fs.readFileSync(path.join(ROOT,'receipts/skill-measurements/published/campaign.json'),'utf8'));
+  for (const attempt of campaign.roster) {
+    const p=attempt.protocol,[owner,repo]=p.repository.split('/');
+    manifest.receipts.push({name:p.skill,identity:{owner,repo,path:p.skill_path.replace(/\/?SKILL\.md$/,''),unit:'skill'}});
+  }
   assert.deepEqual(pathHits(html, manifest), []);
   // The held identities are spec 267's ruling, read from its builder at the list page's build date.
   const date = /<time data-build-date datetime="(\d{4}-\d{2}-\d{2})">/.exec(html);
@@ -690,4 +682,12 @@ test('AC-13: sibling readings move only by their own amendments, each naming iss
   const file = path.join(SPEC, 'siblings.json');
   assert.ok(fs.existsSync(file), 'specs/315-skill-lookup/siblings.json is not written yet (the build writes it)');
   assert.deepEqual(siblingHits(JSON.parse(fs.readFileSync(file, 'utf8')).siblings, readSpec), []);
+});
+
+test('issue 414: nested scoreboard entries are read whole and unsafe or truncated rows refuse', async () => {
+ const {readList}=await freshIsland();
+ const rich=handList([HAND[0]]).replace('<a href=', '<a class="skill-name" href=').replace('</a> ', '</a> <span class="skill-repository">owner-a/repo-a</span> ').replace(/<span class="skill-entry-row">[\s\S]*<\/span><\/li>/, '<div class="skill-entry-row"><p>Measured result.</p><details><summary>Why?</summary><ul><li>First task.</li><li>Last task.</li></ul></details></div></li>');
+ const got=readList(rich);assert.equal(got.ok,true);assert.equal(got.entries.length,1);
+ assert.deepEqual(got.entries[0].rows,['owner-a/repo-a','Measured result. Why? First task. Last task.']);
+ for(const plant of [rich.replace('</details>',''),rich.replace('Last task.','<script></script>Last task.'),rich.replace('<p>Measured','<p onclick="bad()">Measured'),rich.replace('</div></li>','</div> extra</li>')])assert.equal(readList(plant).ok,false);
 });

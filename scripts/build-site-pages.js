@@ -316,7 +316,7 @@ cat receipts/*.summary.md              # read the receipt + human summary</code>
 <h2>Latest report</h2>
 ${reportCard(latest, HOME_CARD_STAT, { counts: false })}
 <p><a href="/reports/">All <span data-stat="reports_published">${esc(V('reports_published'))}</span> reports</a></p>
-<p class="writing">Writing: <a href="/writing/three-releases/">${esc(latest.essay_links[0].title.value)}</a>, the launch essay, revised to read all ${esc(V('reports_published_word'))} reports together on what a moving model does to encoded expertise.</p>
+<p class="writing">Writing: <a href="/writing/three-releases/">${esc(latest.essay_links[0].title.value)}</a>, the launch essay reading all ${esc(V('reports_published_word'))} reports on what a moving model does to encoded expertise.</p>
 </section>
 
 <section id="subscribe" class="screen is-text">
@@ -490,7 +490,7 @@ ${r.plot ? `${chrome.inlinePlot(r.plot.value, 'card-plot', `Band plot for the fi
 // The newest report of that type. reports.json is newest first, so `find` is the
 // selection rather than a scan with a preference bolted on.
 function typeExample(type, R) {
-  return R.find((r) => r.type.value === type) || R[0];
+  return R.find((r) => r.type.value === type && !r.scope_title) || R[0];
 }
 
 function reportsIndex() {

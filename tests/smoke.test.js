@@ -17,6 +17,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { documentationText } = require('../.github/windows-ci/common.cjs');
 const crypto = require('crypto');
 const { validateReceipt, sealReceipt } = require('../lib/receipt');
 const { receiptVerdict } = require('../lib/verdict');
@@ -705,7 +706,7 @@ test('issue 367 AC-367-9: the help, the receipt spec and the methodology page sa
   const docs = { help: full };
   for (const f of ['spec/RECEIPT.md', 'docs/methodology/index.html', 'docs/methodology/index.md', 'docs/llms-full.txt']) docs[f] = fs.readFileSync(path.join(ROOT, f), 'utf8');
   for (const [name, text] of Object.entries(docs)) {
-    const flat = text.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ');
+    const flat = documentationText(text);
     assert.doesNotMatch(flat, /at most (?:5|five) cases/i, `${name} still says at most five cases`);
     assert.ok(flat.includes('one test task'), `${name} says one test task`);
     assert.doesNotMatch(flat, /its test tasks run|its suite run/, `${name} says the run checks more tasks than it runs`);

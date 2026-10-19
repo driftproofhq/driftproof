@@ -183,7 +183,8 @@ test('an ambiguous receipt is no result', () => {
 
 function setDir(receipts) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'plain-test-'));
-  for (const r of receipts) fs.writeFileSync(path.join(dir, `${r.skill.name}-${r.run.model_id}-2026-09-29.json`), JSON.stringify(r));
+  // Metadata can contain control characters; the fixture filename must be valid on Windows.
+  receipts.forEach((r, i) => fs.writeFileSync(path.join(dir, `receipt-${i}.json`), JSON.stringify(r)));
   return dir;
 }
 

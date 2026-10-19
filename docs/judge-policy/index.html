@@ -131,9 +131,30 @@
   <h2 id="the-precise-judge-policy">The precise policy</h2>
   <details class="fold precise"><summary>The judge policy in full, with its terms</summary>
   <h3>The judge is deliberately fixed and cheap.</h3>
-  <p class="lede">Driftproof grades every generation with an LLM judge. That judge is <strong>fixed at <code>claude-haiku-4-5</code></strong> and changed only rarely. This page says why, and states the limitations plainly - a judge you can't inspect is not evidence.</p>
+  <p class="lede">Driftproof grades every generation with an LLM judge. That judge is <strong>fixed at <code>claude-haiku-5-5</code></strong> and changed only rarely. This page says why, and states the limitations plainly - a judge you can't inspect is not evidence.</p>
   <p>The fixed Haiku judge applies to the reports Driftproof publishes; a receipt you produce records whichever judge its surface and configuration ran, in <code>run.judge</code>. In the installed tool the judge follows your own configuration rather than this pin, and the receipt records which judge ran.</p>
 
+  <p>On 18 October 2026 the operator changed the published campaign judge to Haiku 5.5: <q>we want atleast haiku 5.5 as the judge</q>. Issue 408 holds that judge fixed while Sonnet 5.5 and Opus 5.5 answer the same suites. The change resets comparison with results graded by another judge. Earlier reports retain the judges they actually ran.</p>
+  <!-- issue408:historical-judges:start -->
+<h3>Judges in published reports</h3>
+<p>These are historical records, not replacements under the new policy. Report 010 has separate configuration records.</p>
+<!--driftproof:tw--><div class="table-wrap"><table><thead><tr><th>Report</th><th>Recorded judge</th></tr></thead><tbody>
+<tr><td><a href="/reports/001/">001</a></td><td>claude-haiku-4-5</td></tr>
+<tr><td><a href="/reports/002/">002</a></td><td>claude-haiku-4-5</td></tr>
+<tr><td><a href="/reports/003/">003</a></td><td>claude-haiku-4-5</td></tr>
+<tr><td><a href="/reports/004/">004</a></td><td>claude-haiku-4-5</td></tr>
+<tr><td><a href="/reports/005/">005</a></td><td>claude-haiku-4-5</td></tr>
+<tr><td><a href="/reports/006/">006</a></td><td>claude-haiku-4-5</td></tr>
+<tr><td><a href="/reports/007/">007</a></td><td>claude-haiku-4-5</td></tr>
+<tr><td><a href="/reports/008/">008</a></td><td>claude-haiku-4-5</td></tr>
+<tr><td><a href="/reports/009/">009</a></td><td>claude-opus-5</td></tr>
+<tr><td><a href="/reports/010/">010</a></td><td>Configuration A: unknown. Configuration B: claude-opus-5.</td></tr>
+<tr><td><a href="/reports/011/">011</a></td><td>claude-opus-5</td></tr>
+<tr><td><a href="/reports/013/">013</a></td><td>claude-opus-5</td></tr>
+<tr><td><a href="/reports/014/">014</a></td><td>claude-opus-5</td></tr>
+<tr><td><a href="/reports/015/">015</a></td><td>claude-haiku-5-5</td></tr>
+</tbody></table></div><!--/driftproof:tw-->
+  <!-- issue408:historical-judges:end -->
   <!--driftproof:anchor--><span id="why-a-fixed-cheap-judge" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Why a fixed, cheap judge</h2>
   <div class="card">
     <p>Driftproof measures how a skill's effect <em>moves</em> as the model under it changes. If the <em>judge</em> also moved from report to report, a change in the verdict could come from the skill, the target model, or the grader - three variables, one number. Pinning the judge removes one of them: <strong>the judge is held constant so the target model is the only thing that varies</strong> across a drift comparison.</p>
@@ -151,7 +172,7 @@
     <ul>
       <li>the change is <strong>announced</strong> in the report that first uses the new judge;</li>
       <li>it <strong>resets cross-report comparability</strong> - verdicts graded by different judges are not directly comparable, and reports say so;</li>
-      <li>the eligibility is encoded in the model registry: only a model with <code>judge_eligible: true</code> in <a href="https://github.com/driftproofhq/driftproof/blob/main/config/models.json"><code>config/models.json</code></a> may serve as the judge. Today that is the Haiku judge alone.</li>
+      <li>the eligibility is encoded in the model registry: only a model with <code>judge_eligible: true</code> in <a href="https://github.com/driftproofhq/driftproof/blob/main/config/models.json"><code>config/models.json</code></a> may serve as the judge. The eligible entries are Haiku 5.5 and the existing Haiku 4.5 entries. Sonnet and Opus entries remain ineligible.</li>
     </ul>
   </div>
 

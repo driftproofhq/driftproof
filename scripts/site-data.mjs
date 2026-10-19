@@ -196,7 +196,7 @@ const { verdictFromReceipt } = require('../lib/verdict.js');
 // taken from the SAME derivation the repo gate checks it against rather than
 // from a second one that could be right about a different number.
 const prep007 = require('./prepare-report-007.js');
-const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen'];
+const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen'];
 const exampleVerdict = verdictFromReceipt(EXAMPLE);
 
 const reportDirs = () => fs.readdirSync(path.join(DOCS, 'reports'), { withFileTypes: true })
@@ -218,7 +218,7 @@ function methodologyPath() {
 }
 
 function buildStats() {
-  const receipts = receiptFiles(ROOT);
+  const receipts = require('./build-receipt-pages.js').uniqueReceipts(receiptFiles(ROOT).map(f=>({rel:f,receipt:JSON.parse(fs.readFileSync(f,'utf8'))})).filter(x=>x.receipt.results && x.receipt.receipt_hash)).map(x=>x.rel);
   const models = new Set();
   let cases = 0;
   let refusals = 0;
@@ -368,7 +368,8 @@ export function reportRow(n, opts = {}) {
 
     // The receipt paths the PAGE itself links, so the list is what a reader can
     // reach from the report rather than what happens to sit in a directory.
-    const linked = [...new Set([...html.matchAll(/href="[^"]*?(receipts\/[^"]+\.json)"/g)].map((m) => m[1]))].sort();
+    const markedReceipts=[...html.matchAll(/<a data-receipt-link="true" href="\/([^"]+\.json)"/g)].map(m=>'docs/'+m[1]);
+    const linked = markedReceipts.length ? [...new Set(markedReceipts)].sort() : [...new Set([...html.matchAll(/href="[^"]*?(receipts\/[^"]+\.json)"/g)].map((m) => m[1]))].sort();
     // A PAGE THAT NAMES ITS RECEIPTS WITHOUT LINKING THEM (spec 039). Report 009
     // lists its evidence copies as paths, not links, so `linked` is empty and the
     // card said "no receipts linked" over a report that publishes three. Then the
@@ -382,6 +383,7 @@ export function reportRow(n, opts = {}) {
       number: F(n, pageRel),
       type: F(type, pageRel),
       title: F(h1, pageRel),
+      ...(/<h1 data-scope-title>/.test(html) ? { scope_title: F(h1, pageRel) } : {}),
       what_moved: F(moved, pageRel),
       model_ids: models,
       date: F(date.d, date.f),

@@ -94,7 +94,7 @@ function phraseLines() {
 function reportLines(root) {
   const rows = readJson(root, 'docs/data/reports.json').reports;
   const summaries = readJson(root, 'docs/data/report-summaries.json');
-  return rows.map((r) => ({ number: r.number.value, line: `- [Report ${r.number.value}: ${r.what_moved.value}](${ORIGIN}/reports/${r.number.value}/): ${finding(summaries, r.number.value)} Models: ${r.model_ids.map((m) => humanModelName(m.value)).join(', ')}.` }));
+  return rows.map((r) => ({ number: r.number.value, line: `- [Report ${r.number.value}: ${r.scope_title?.value || r.what_moved.value}](${ORIGIN}/reports/${r.number.value}/): ${finding(summaries, r.number.value)} Models: ${r.model_ids.map((m) => humanModelName(m.value)).join(', ')}.${r.scope_title ? ' Driftproof wrote the text-task suites from the pinned skill descriptions and READMEs. Both model sets use Haiku 5.5 as judge. The eval account’s configuration was read and found clean before and after each run, not during it.' : ''}` }));
 }
 
 // How many kinds of report the site lists, said as /report-types/ says it: the distinct report types
