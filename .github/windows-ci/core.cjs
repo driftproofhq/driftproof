@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
+const { pathToFileURL } = require('node:url');
 const c = require('./common.cjs');
 const inventory = require('./row-inventory.json');
 const CORE_FILES = ['tests/init.test.js', 'tests/firstrun.test.js', 'tests/progress.test.js',
@@ -39,7 +40,7 @@ function assertResults(results) {
   }
 }
 function collectFile(file, actual = path.join(c.ROOT, file), extra = []) {
-  const result = c.run(process.execPath, ['--test', '--test-reporter', path.join(__dirname, 'row-reporter.cjs'), ...extra, actual]);
+  const result = c.run(process.execPath, ['--test', '--test-reporter', pathToFileURL(path.join(__dirname, 'row-reporter.cjs')).href, ...extra, actual]);
   const rows = [], fields = [];
   for (const line of result.stdout.trim().split('\n').filter(Boolean)) {
     const record = JSON.parse(line);

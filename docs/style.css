@@ -318,3 +318,84 @@ main.receipt-page { min-width: 0; overflow-wrap: anywhere; margin: 2.6rem auto 3
 .measurement-ui .scoreboard-paper .campaign-tally > p:first-child .tally-outcome { flex-direction: row-reverse; align-items: center; gap: var(--s-1); font-size: var(--t-measure-small); }
 .measurement-ui .scoreboard-paper .campaign-tally > p:first-child .tally-outcome data { font-size: var(--t-measure-fine); }
 .measurement-ui .skill-table-scroll .result-context { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+
+/* Skill lookup (A-315-4, issue 423): the scoreboard's wide desk and paper workspace.
+   Scope the layout here so reading pages keep their measure and shared chrome. */
+.page-grid:has(> .skill-lookup-page) { max-width: var(--w-measure-wide); grid-template-columns: minmax(0,1fr); }
+.page-grid > main.skill-lookup-page { max-width: none; min-width: 0; overflow-wrap: anywhere; padding-block: var(--s-4) var(--s-5); font-family: var(--sans); }
+.page-grid:has(> .skill-lookup-page) > .page-toc { display: none; }
+.skill-lookup-page h1 { font-size: var(--t-measure-title); line-height: 1.04; margin: 0 0 var(--s-2); }
+.skill-lookup-page > .lede { font-size: var(--t-measure-body); color: var(--shell-muted); margin: 0 0 var(--s-3); max-width: none; }
+.skill-lookup { background: var(--sheet); color: var(--ink); border-radius: var(--radius); box-shadow: var(--sheet-shadow); padding: var(--s-3); min-width: 0; }
+.page-grid .skill-lookup-page :is(p,li) { max-width: none; }
+.skill-lookup > p a { color: var(--ink); }
+.skill-lookup > p a:hover { color: var(--accent-ink); }
+.skill-lookup-page :is(h2,h3) { color: var(--ink); font-family: var(--sans); font-weight: 500; }
+.skill-lookup-page h2 { font-size: var(--t-measure-section); line-height: 1.15; margin: var(--s-1) 0; }
+.skill-lookup-page h3 { font-size: var(--t-measure-body); line-height: 1.2; margin: 0 0 var(--s-1); }
+.skill-lookup-page p { margin: 0 0 var(--s-1); line-height: 1.4; }
+.skill-lookup-page :is(a,summary,button,input):focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 3px; }
+.skill-lookup-form { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: var(--s-2); }
+.skill-lookup-form label { display: block; min-width: 0; font-size: var(--t-measure-fine); font-weight: 500; }
+.skill-lookup-form input { appearance: none; display: block; width: 100%; min-width: 0; min-height: var(--touch); padding: var(--s-1) var(--s-2); margin-top: var(--s-1); font-size: var(--t-measure-fine); background: var(--paper-2); color: var(--ink); border: 1px solid var(--ink-muted); }
+.skill-lookup-form input::placeholder { color: var(--ink-muted); opacity: 1; }
+.skill-lookup-form button { min-height: var(--touch); padding: var(--s-1) var(--s-3); cursor: pointer; background: var(--ink); color: var(--sheet); border: 1px solid var(--ink); border-radius: var(--radius); font-size: var(--t-measure-fine); font-weight: 500; }
+.skill-lookup .lookup-form-note { font-size: var(--t-measure-small); color: var(--ink-muted); margin: var(--s-1) 0 var(--s-2); }
+.skill-lookup-result { border-top: 1px solid var(--rule); padding-top: var(--s-2); }
+.lookup-preview h2 { font-family: var(--display); }
+.lookup-paths { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: var(--s-3); margin-top: var(--s-3); }
+.lookup-paths > div { border-left: 3px solid var(--ink-muted); padding-left: var(--s-2); }
+.lookup-paths p { font-size: var(--t-measure-fine); color: var(--ink-muted); }
+.lookup-paths .lookup-preview-label { color: var(--ink); font-size: var(--t-measure-body); font-weight: 500; }
+.lookup-summary .lookup-status { display: inline-flex; align-items: center; gap: var(--s-1); margin-bottom: var(--s-1); font-size: var(--t-measure-fine); font-weight: 600; }
+.lookup-status::before { content: ''; width: var(--s-1); height: var(--s-1); border: 2px solid currentColor; border-radius: var(--radius); }
+.lookup-match .lookup-status::before { background: var(--ink); }
+.lookup-summary .lookup-scope, .lookup-summary .lookup-identity { color: var(--ink-muted); font-size: var(--t-measure-small); overflow-wrap: anywhere; }
+.lookup-summary .lookup-identity { font-family: var(--mono); margin-block: var(--s-2); }
+.lookup-summary .lookup-outcome { font-size: var(--t-measure-fine); max-width: var(--w-measure-read); }
+.lookup-steps { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: var(--s-3); list-style: none; padding: 0; margin: var(--s-3) 0 var(--s-2); }
+.lookup-steps > li { display: grid; grid-template-columns: var(--s-4) minmax(0,1fr); align-items: start; gap: var(--s-1); min-width: 0; border-top: 1px solid var(--rule); padding-top: var(--s-2); }
+.lookup-step-number { display: grid; place-items: center; height: var(--s-4); border: 1px solid var(--ink-muted); border-radius: var(--radius); font-family: var(--mono); font-size: var(--t-measure-fine); }
+.lookup-steps p { font-size: var(--t-measure-fine); color: var(--ink-muted); }
+.lookup-steps pre { margin: var(--s-2) 0 0; padding: var(--s-2); background: var(--deep); color: var(--shell-text); border: 1px solid var(--deep); border-radius: var(--radius); overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--t-measure-small); }
+.lookup-steps pre code { white-space: inherit; overflow-wrap: inherit; font-size: var(--t-measure-small); }
+.lookup-steps button { cursor: pointer; min-height: var(--touch); min-width: var(--touch); padding: var(--s-1) var(--s-2); margin: var(--s-1) 0; background: var(--paper-2); color: var(--ink); border: 1px solid var(--ink-muted); border-radius: var(--radius); font-size: var(--t-measure-fine); }
+.lookup-steps .lookup-pick { font-size: var(--t-measure-small); }
+.lookup-summary .lookup-cost { border-top: 1px solid var(--rule); padding-top: var(--s-2); margin-top: var(--s-2); max-width: var(--w-measure-read); font-size: var(--t-measure-small); color: var(--ink-muted); }
+.lookup-summary .lookup-cache { font-size: var(--t-measure-small); color: var(--ink-muted); margin: var(--s-2) 0 var(--s-1); }
+.lookup-primary { display: inline-flex; align-items: center; min-height: var(--touch); padding: var(--s-1) var(--s-2); margin-top: var(--s-2); background: var(--ink); color: var(--sheet); border-radius: var(--radius); font-size: var(--t-measure-body); overflow-wrap: anywhere; text-decoration: underline; }
+.lookup-primary:hover { color: var(--sheet); text-decoration-thickness: 2px; }
+.lookup-record { border-top: 1px solid var(--rule); margin-top: var(--s-1); font-size: var(--t-measure-fine); overflow-wrap: anywhere; }
+.skill-lookup-page summary { cursor: pointer; min-height: var(--touch); align-content: center; font-family: var(--sans); font-size: var(--t-measure-fine); font-weight: 500; }
+.lookup-record > p { max-width: var(--w-measure-read); margin: var(--s-2) 0; }
+.lookup-record a { color: var(--ink); }
+.lookup-record .skill-entry-row { display: block; margin-top: var(--s-1); }
+.skill-lookup-page > .lookup-privacy { color: var(--shell-muted); font-size: var(--t-measure-fine); border-top: 1px solid var(--border); margin-top: var(--s-2); }
+.lookup-privacy > p { max-width: var(--w-measure-read); margin-block: var(--s-2); }
+.skill-lookup-page > .lookup-privacy :focus-visible { outline-color: var(--shell-accent); }
+@media (max-width: 640px) {
+ .page-grid > main.skill-lookup-page { padding-block: var(--s-3); }
+ .skill-lookup { padding: var(--s-2); }
+ .skill-lookup-form { grid-template-columns: minmax(0,1fr); gap: var(--s-1); }
+ .skill-lookup-form button { justify-self: start; }
+ .lookup-steps, .lookup-paths { grid-template-columns: minmax(0,1fr); gap: var(--s-2); }
+ .lookup-steps > li { grid-template-columns: var(--s-3) minmax(0,1fr); }
+ .lookup-step-number { height: var(--s-3); }
+}
+
+/* Issue 426: one optional request on the no-page result. */
+.lookup-request { border-top: 1px solid var(--rule); margin-top: var(--s-2); }
+.lookup-request-form { display: grid; gap: var(--s-2); padding-block: var(--s-2); max-width: var(--w-measure-read); font-size: var(--t-measure-fine); }
+.lookup-request-form label { display: block; min-width: 0; }
+.lookup-request-form :is(input[type="text"],textarea) { display: block; box-sizing: border-box; width: 100%; min-width: 0; min-height: var(--touch); margin-top: var(--s-1); padding: var(--s-1); background: var(--paper-2); color: var(--ink); border: 1px solid var(--ink-muted); font-family: var(--sans); font-size: var(--t-measure-fine); resize: vertical; }
+.lookup-request-form textarea { min-height: var(--s-8); }
+.lookup-request-form .lookup-request-choice { display: flex; align-items: center; gap: var(--s-1); }
+.lookup-request-choice input { flex: 0 0 var(--touch); width: var(--touch); height: var(--touch); accent-color: var(--ink); }
+.lookup-request-form :is(button,a) { display: inline-flex; align-items: center; justify-self: start; min-width: var(--touch); min-height: var(--touch); padding: var(--s-1) var(--s-2); border-radius: var(--radius); font-family: var(--sans); font-size: var(--t-measure-fine); }
+.lookup-request-form button { cursor: pointer; background: var(--ink); color: var(--sheet); border: 1px solid var(--ink); }
+.lookup-request-form a { color: var(--ink); }
+.lookup-request-form :is(input,textarea,button,a):focus { outline: 2px solid var(--accent-ink); outline-offset: 3px; }
+.lookup-request-form [hidden] { display: none; }
+.lookup-request-form .lookup-request-disclosure { color: var(--ink-muted); font-size: var(--t-measure-small); }
+.lookup-request-manual { min-width: 0; }

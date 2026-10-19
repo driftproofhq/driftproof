@@ -3,11 +3,11 @@
 // docs/islands/skill-lookup.js - the skill lookup at /skill-lookup/, as an island (spec 315, spec 020
 // AC-32).
 //
-// A visitor pastes a GitHub link to a skill and the lookup says whether the skill index has a page
-// for the folder the link reads as. It reads one file, the list page at /skills/, and only when a
+// A visitor pastes a GitHub link to a skill and the lookup says whether the list loaded for this visit has
+// a page for the folder the link reads as. It reads one file, the list page at /skills/, and only when a
 // link it reads is submitted. The pasted link is read as text and sent nowhere: the one request is
 // a constant URL with no query, no body and no header taken from the input. A match shows the
-// list's own entry for that skill, its link and its rows copied as text, and nothing more. No model
+// list's own entry for that skill, its link and its rows copied as text, with compact navigation. No model
 // is called.
 //
 // The page is complete before this runs: its mount point holds a static fallback that links to the
@@ -18,14 +18,30 @@ const MAX = 2048;
 const TX = {
   label: 'GitHub link to a skill',
   button: 'Look up',
-  M1: (id) => `The skill index has a page for ${id}:`,
+  M1: (id) => `The list loaded for this visit has a page for ${JSON.stringify(id)} (read from your link):`,
   M2: 'Each row on that page links to its receipt and names the skill commit it measured, where the source recorded one. The link you pasted may point at another version of the skill.',
-  N1: (id) => `The skill index has no page for ${id}.`,
-  N2: (owner, repo) => `It has a page for the repository ${owner}/${repo} as a whole:`,
-  N3: (owner, repo) => `It lists skills in ${owner}/${repo} by folder. Paste the link to one skill's folder.`,
-  N4: 'To measure a skill yourself: npx driftproof run <skill-dir> --models <model-id>. It calls a model, so it spends tokens. How to write its test tasks:',
+  N1: (id) => `The list loaded for this visit has no page for ${JSON.stringify(id)} (read from your link).`,
+  N2: (owner, repo) => `That list has a page for the repository ${owner}/${repo} as a whole:`,
+  N3: (owner, repo) => `That list names skills in ${owner}/${repo} by folder. Paste the link to one skill's folder.`,
+  R1: 'This lookup keeps the list loaded for this visit. Reload this page to read the list again.',
+  N4: (identity) => {
+    const folder = identity.path;
+    return [
+      folder ? `Guided first run in Claude Code. Folder in the pasted link: ${JSON.stringify(folder)}. You need a local copy of a skill and Node.js 22 or later.`
+        : 'Guided first run in Claude Code. You need a local copy of a skill and Node.js 22 or later.',
+      'To add the Driftproof plugin, run these two commands in your terminal:',
+      'claude plugin marketplace add driftproofhq/driftproof',
+      'claude plugin install driftproof@driftproofhq',
+      folder ? 'If that folder contains a skill, open Claude Code in the folder above your local copy, then type /driftproof:start. Pick the matching local folder by its full path. Its local name may differ from the link. If names repeat, check the repository and path before choosing.'
+        : 'Open Claude Code in the folder that holds your local skills, then type /driftproof:start. Pick the local skill folder you want to test by its full path. If names repeat, check the repository and path before choosing.',
+      'It helps you draft test tasks and, after you agree, runs one test task with and without the skill. You see the answers side by side on your machine. This first look cannot produce a verdict.',
+      'By default, the run uses your Claude Code account. Your target model, grader and provider settings decide which account or API key is used and where the tasks and answers are sent. It calls a model, so it spends tokens.',
+      'If a completed search finds no local skill, it opens a sample result instead. That sample calls no model and is not a measurement of your skill. If the search is incomplete, it stops without opening a sample. Move to the folder that holds your skills and try again.',
+      'For the command line: npx driftproof run <skill-dir> --models <model-id>. Replace <skill-dir> with the local skill folder and <model-id> with the model to run. It calls a model, so it spends tokens. How to write its test tasks:',
+    ];
+  },
   N4link: { href: '/authoring/', text: 'Writing a fair set of test tasks' },
-  U1: (id) => `The skill index could not be read, so this lookup says nothing about ${id}.`,
+  U1: (id) => `The skill index could not be read, so this lookup says nothing about ${JSON.stringify(id)} (read from your link).`,
   X1: "This lookup does not read that link. It takes a github.com link to a repository, a skill's folder or its SKILL.md, or a raw.githubusercontent.com link to a SKILL.md.",
 };
 
@@ -134,7 +150,7 @@ function entryOf(n){
     rows.push(collapse(nodeText(row)));
   }
   const [owner,repo]=page.split('/');
-  return {owner,repo,path:p,href:link.attrs.href,text:collapse(nodeText(link)),rows};
+  return {owner,repo,path:p,evidence:n.attrs['data-evidence'],href:link.attrs.href,text:collapse(nodeText(link)),rows};
 }
 export function readList(html){
   const s=String(html),open='<ul class="skill-list">',start=s.indexOf(open);
@@ -189,13 +205,14 @@ export function resultParts(result) {
   if (r.kind === 'refused') return [{ text: TX.X1 }];
   const id = idText(r.identity);
   if (r.kind === 'unreadable') return [{ text: TX.U1(id) }];
-  if (r.kind === 'match') return [{ text: TX.M1(id) }, ...r.entries.map(entryPart), { text: TX.M2 }];
+  if (r.kind === 'match') return [{ text: TX.M1(id) }, ...r.entries.map(entryPart), { text: TX.M2 }, { text: TX.R1 }];
   const repository = r.repository || [];
   return [
     { text: TX.N1(id) },
     ...(repository.length ? [{ text: TX.N2(r.identity.owner, r.identity.repo) }, ...repository.map(entryPart)] : []),
     ...(r.byFolder ? [{ text: TX.N3(r.identity.owner, r.identity.repo) }] : []),
-    { text: TX.N4 },
+    { text: TX.R1 },
+    ...TX.N4(r.identity).map((text) => ({ text })),
     { href: TX.N4link.href, text: TX.N4link.text },
   ];
 }
@@ -222,6 +239,218 @@ function nodeOf(part) {
   return p;
 }
 
+// The compact view adds navigation and actions. The complete original record stays available.
+const VIEW = {
+  cache: 'List loaded for this visit. Reload this page to check again.',
+  outcome: 'One test task, with and without the skill. Answers side by side. A first look, no verdict.',
+  cost: 'Calls a model and spends tokens. Your Claude Code account is the default. Target, grader and provider settings choose the account or API key and destination.',
+};
+function append(parent, ...children) {
+  for (const child of children) parent.append(child, ' ');
+}
+function paragraph(text, className = '') {
+  const p = document.createElement('p');
+  p.className = className;
+  p.textContent = text;
+  return p;
+}
+function heading(text) {
+  const h = document.createElement('h2');
+  h.textContent = text;
+  return h;
+}
+function recordOf(result, title) {
+  const details = document.createElement('details');
+  details.className = 'lookup-record';
+  const summary = document.createElement('summary');
+  summary.textContent = title;
+  append(details, summary, ...resultParts(result).map(nodeOf));
+  return details;
+}
+function stepOf(number, title, note, command, copyLabel, after) {
+  const li = document.createElement('li');
+  const marker = document.createElement('span');
+  marker.className = 'lookup-step-number';
+  marker.textContent = number;
+  const body = document.createElement('div');
+  const h = document.createElement('h3');
+  h.textContent = title;
+  const pre = document.createElement('pre');
+  const code = document.createElement('code');
+  code.textContent = command;
+  pre.append(code);
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.dataset.copy = command;
+  button.textContent = copyLabel;
+  append(body, h, paragraph(note), pre, button);
+  if (after) append(body, paragraph(after, 'lookup-pick'));
+  append(li, marker, body);
+  return li;
+}
+
+// A-315-5, issue 426: an explicit request is separate from the private lookup.
+const REQUEST_REPO = 'https://github.com/driftproofhq/driftproof/issues/new';
+const REQUEST = {
+  limits: 'No promise of testing or timing. The operator chooses whether and when to run a public batch.',
+  tasks: 'Driftproof reviews and may edit maintainer tasks. Any published result names who wrote the tasks.',
+  disclosure: 'Submitting sends the link, note and maintainer choice to GitHub.',
+  status: 'Submit the issue on GitHub to finish.',
+  manual: 'This request is too long for a GitHub link. Copy the request below, then open the template. No data was sent.',
+};
+function requestData(data) {
+  if (!data || typeof data.link !== 'string' || typeof data.note !== 'string' || typeof data.maintainer !== 'boolean') return null;
+  if (data.note.length > 1000 || !data.note.isWellFormed()) return null;
+  const identity = readLink(data.link);
+  if (!identity.ok) return null;
+  return { link: data.link.trim(), note: data.note.trim(), maintainer: data.maintainer, identity };
+}
+function literalBlock(text) {
+  return text.replace(/\r\n?/g, '\n').split('\n').map(line => '    ' + line).join('\n');
+}
+export function requestIssueBody(data) {
+  const d = requestData(data);
+  if (!d) return null;
+  return '## Skill link\n\n' + literalBlock(d.link) + '\n\n## Note\n\n' + literalBlock(d.note || 'None.') +
+    '\n\n## Maintainer\n' + (d.maintainer ? 'I maintain this skill and can send test tasks.' : 'Not selected.') +
+    '\n\n## Request terms\n' + REQUEST.limits + '\n' + REQUEST.tasks;
+}
+export function requestIssueUrl(data) {
+  const d = requestData(data);
+  if (!d) return null;
+  const url = new URL(REQUEST_REPO);
+  url.search = new URLSearchParams({ template: 'skill-request.md', title: 'Skill request: ' + idText(d.identity), body: requestIssueBody(d) }).toString();
+  return new TextEncoder().encode(url.href).byteLength <= 8192 ? url.href : null;
+}
+function requestLink(href, text) {
+  const a = linkOf(href, text);
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  return a;
+}
+function requestField(labelText, field) {
+  const label = document.createElement('label');
+  label.append(labelText, ' ', field);
+  return label;
+}
+function requestOf(originalLink) {
+  const details = document.createElement('details');
+  details.className = 'lookup-request';
+  const summary = document.createElement('summary');
+  summary.textContent = 'Request a public test';
+  const form = document.createElement('form');
+  form.className = 'lookup-request-form';
+  const link = document.createElement('input');
+  link.type = 'text'; link.readOnly = true; link.value = originalLink; link.dataset.requestLink = '';
+  link.autocomplete = 'off'; link.spellcheck = false;
+  const note = document.createElement('textarea');
+  note.dataset.requestNote = ''; note.maxLength = 1000; note.rows = 2;
+  note.autocomplete = 'off'; note.spellcheck = false;
+  const maintainer = document.createElement('input');
+  maintainer.type = 'checkbox'; maintainer.dataset.requestMaintainer = '';
+  maintainer.autocomplete = 'off'; maintainer.spellcheck = false;
+  const choice = requestField('', maintainer);
+  choice.className = 'lookup-request-choice';
+  choice.append('I maintain this skill and can send test tasks.');
+  const submit = document.createElement('button');
+  submit.type = 'submit'; submit.textContent = 'Request and open GitHub';
+  const github = requestLink('', 'Continue on GitHub');
+  github.dataset.requestGithub = '';
+  const status = paragraph('');
+  status.dataset.requestStatus = ''; status.setAttribute('aria-live', 'polite');
+  const manual = document.createElement('div');
+  manual.className = 'lookup-request-manual';
+  const data = () => ({ link: originalLink, note: note.value, maintainer: maintainer.checked });
+  function refresh() {
+    const d = data(), url = requestIssueUrl(d), body = requestIssueBody(d);
+    github.hidden = !url; submit.disabled = !url || opening;
+    manual.replaceChildren();
+    if (url) { github.href = url; return url; }
+    status.textContent = body ? REQUEST.manual : 'Check the request fields before continuing.';
+    if (body) {
+      const text = document.createElement('textarea');
+      text.value = body; text.readOnly = true; text.rows = 6; text.dataset.requestManual = '';
+      text.autocomplete = 'off'; text.spellcheck = false;
+      const copy = document.createElement('button');
+      copy.type = 'button'; copy.textContent = 'Copy request'; copy.dataset.copy = body; copy.dataset.requestCopy = '';
+      const blank = requestLink(REQUEST_REPO + '?template=skill-request.md', 'Open GitHub template');
+      blank.dataset.requestTemplate = '';
+      append(manual, requestField('Request text', text), copy, blank);
+    }
+    return null;
+  }
+  let opening = false;
+  note.addEventListener('input', () => { status.textContent = ''; refresh(); });
+  maintainer.addEventListener('change', () => { status.textContent = ''; refresh(); });
+  github.addEventListener('click', e => { if (!refresh()) e.preventDefault(); });
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    if (opening || !refresh()) return;
+    opening = true; submit.disabled = true; status.textContent = REQUEST.status;
+    github.click();
+    queueMicrotask(() => { opening = false; refresh(); });
+  });
+  append(form, requestField('Skill link', link), requestField('Note (optional)', note), choice,
+    paragraph(REQUEST.limits), paragraph(REQUEST.tasks), paragraph(REQUEST.disclosure, 'lookup-request-disclosure'),
+    submit, github, status, manual);
+  append(details, summary, form);
+  refresh();
+  return details;
+}
+
+function compactResult(r, originalLink) {
+  const section = document.createElement('section');
+  section.className = 'lookup-summary lookup-' + r.kind;
+  if (r.kind === 'refused' || r.kind === 'unreadable') {
+    append(section, heading(r.kind === 'refused' ? 'Check the link' : 'List unavailable'), ...resultParts(r).map(nodeOf));
+    return section;
+  }
+  if (r.kind === 'match') {
+    const measured = r.entries.every(e => e.evidence === 'measured');
+    append(section, paragraph(measured ? 'Measured results' : 'Page found', 'lookup-status'),
+      paragraph('In the list loaded for this visit', 'lookup-scope'),
+      heading('Open the skill page'), paragraph('Read its results and test records.'));
+    for (const entry of r.entries) {
+      const a = linkOf(entry.href, entry.text);
+      a.className = 'lookup-primary';
+      append(section, a);
+    }
+    append(section, paragraph(VIEW.cache, 'lookup-cache'), recordOf(r, 'Results and limits from the loaded list'));
+    return section;
+  }
+  const x = r.identity, guide = TX.N4(x);
+  // Both setup commands and the start command are the artefact-checked N-4 commands.
+  const setup = guide[2] + '\n' + guide[3];
+  const start = /type ([^ ]+)\./.exec(guide[4])[1];
+  const folder = x.path ? 'Folder in the pasted link: ' + JSON.stringify(x.path)
+    : 'Repository in the pasted link: ' + JSON.stringify(x.owner + '/' + x.repo);
+  append(section, paragraph("Not in this visit's list", 'lookup-status'), heading('Try one task on your machine'),
+    paragraph(folder, 'lookup-identity'), paragraph(VIEW.outcome, 'lookup-outcome'));
+  const steps = document.createElement('ol');
+  steps.className = 'lookup-steps';
+  append(steps,
+    stepOf('1', 'Add the plugin', 'In your terminal. Node.js 22 or later.', setup, 'Copy setup'),
+    stepOf('2', 'Start in Claude Code', 'Open the folder above your local skill.', start, 'Copy start',
+      x.path ? 'If the linked folder is a skill, pick the matching local folder by its full path.'
+        : 'Pick the local skill folder you want to test by its full path.'));
+  append(section, steps, paragraph(VIEW.cost, 'lookup-cost'), paragraph(VIEW.cache, 'lookup-cache'),
+    recordOf(r, 'Run details, sample result and CLI'), requestOf(originalLink));
+  return section;
+}
+function previewOf() {
+  const section = document.createElement('section');
+  section.className = 'lookup-preview';
+  append(section, heading('Find a page. Or try a first run.'));
+  const paths = document.createElement('div');
+  paths.className = 'lookup-paths';
+  const found = document.createElement('div');
+  const missing = document.createElement('div');
+  append(found, paragraph('In the list', 'lookup-preview-label'), paragraph('Read results and test records.'));
+  append(missing, paragraph('No page for this folder', 'lookup-preview-label'), paragraph('Try one test task on your machine.'));
+  append(paths, found, missing);
+  append(section, paths);
+  return section;
+}
 export function mount(el) {
   if (el.dataset.mounted) return;
   el.dataset.mounted = 'true';
@@ -232,22 +461,26 @@ export function mount(el) {
   input.type = 'text';
   input.setAttribute('autocomplete', 'off');
   input.spellcheck = false;
+  input.placeholder = 'https://github.com/owner/repo/tree/main/skills/…';
   label.append(TX.label, ' ', input);
   const button = document.createElement('button');
   button.type = 'submit';
   button.textContent = TX.button;
   form.append(label, ' ', button);
+  const note = paragraph('Browser lookup. No model call. No tokens.', 'lookup-form-note');
   const area = document.createElement('div');
   area.className = 'skill-lookup-result';
   area.setAttribute('aria-live', 'polite');
+  area.append(previewOf());
   // Only the latest submit's result is written: an earlier one that resolves later is dropped.
   let latest = 0;
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const n = ++latest;
-    lookup(input.value).then((r) => {
-      if (n === latest) area.replaceChildren(...resultParts(r).map(nodeOf));
+    const submittedLink = input.value.trim();
+    lookup(submittedLink).then((r) => {
+      if (n === latest) area.replaceChildren(compactResult(r, submittedLink));
     });
   });
-  el.replaceChildren(form, area);
+  el.replaceChildren(form, note, area);
 }

@@ -33,22 +33,39 @@ const SPEC = path.join(ROOT, 'specs', '315-skill-lookup');
 const TX = {
   T1: 'Look up a skill in the index | Driftproof',
   H1: 'Look up a skill',
-  P1: 'Paste a GitHub link to an agent skill and see whether the skill index has a page for it. The lookup runs in your browser.',
+  P1: "Paste a GitHub skill link. Find its page in this visit's list, or try a guided first run.",
   P2: "It takes a github.com link to a repository, a skill's folder or its SKILL.md, or a raw.githubusercontent.com link to a SKILL.md.",
+  F2: 'Request a public test on GitHub.',
   F1: 'The lookup needs JavaScript. Without it, every skill the index lists is on the list page.',
   H2: 'What it reads and sends',
-  C1: "This page sends the link you paste nowhere. The lookup reads one file from this site, the list at /skills/. Your browser's own features, such as spell check, autofill and page translation, are outside what this page controls.",
+  C1: "Looking up a link sends it nowhere. Requests are optional. Submitting a request sends only the skill link, note and maintainer choice to GitHub. The lookup reads one file from this site, the list at /skills/. Your browser's own features, such as spell check, autofill and page translation, are outside what this page controls.",
   C2: 'No model is called, so the lookup spends no tokens.',
-  C3: "A match shows that skill's entry as the list shows it, and nothing more. A link the list has no page for gets a line that says so. Each result names the folder the link was read as: a branch name that holds / is read as its first part.",
+  C3: "A match shows the skill's entry from the list loaded for this visit, and nothing more. A link that list has no page for gets a line that says so. Reload this page to read the list again. Each result names the folder the link was read as: a branch name that holds / is read as its first part.",
   C4: "Like every page on this site, this one counts a visit with Cloudflare Web Analytics. The lookup does not write the link into the page's address, title, cookies or storage.",
-  M1: (id) => `The skill index has a page for ${id}:`,
+  M1: (id) => `The list loaded for this visit has a page for ${JSON.stringify(id)} (read from your link):`,
   M2: 'Each row on that page links to its receipt and names the skill commit it measured, where the source recorded one. The link you pasted may point at another version of the skill.',
-  N1: (id) => `The skill index has no page for ${id}.`,
-  N2: (owner, repo) => `It has a page for the repository ${owner}/${repo} as a whole:`,
-  N3: (owner, repo) => `It lists skills in ${owner}/${repo} by folder. Paste the link to one skill's folder.`,
-  N4: 'To measure a skill yourself: npx driftproof run <skill-dir> --models <model-id>. It calls a model, so it spends tokens. How to write its test tasks:',
+  N1: (id) => `The list loaded for this visit has no page for ${JSON.stringify(id)} (read from your link).`,
+  N2: (owner, repo) => `That list has a page for the repository ${owner}/${repo} as a whole:`,
+  N3: (owner, repo) => `That list names skills in ${owner}/${repo} by folder. Paste the link to one skill's folder.`,
+  R1: 'This lookup keeps the list loaded for this visit. Reload this page to read the list again.',
+  N4: (identity) => {
+    const folder = identity.path;
+    return [
+      folder ? `Guided first run in Claude Code. Folder in the pasted link: ${JSON.stringify(folder)}. You need a local copy of a skill and Node.js 22 or later.`
+        : 'Guided first run in Claude Code. You need a local copy of a skill and Node.js 22 or later.',
+      'To add the Driftproof plugin, run these two commands in your terminal:',
+      'claude plugin marketplace add driftproofhq/driftproof',
+      'claude plugin install driftproof@driftproofhq',
+      folder ? 'If that folder contains a skill, open Claude Code in the folder above your local copy, then type /driftproof:start. Pick the matching local folder by its full path. Its local name may differ from the link. If names repeat, check the repository and path before choosing.'
+        : 'Open Claude Code in the folder that holds your local skills, then type /driftproof:start. Pick the local skill folder you want to test by its full path. If names repeat, check the repository and path before choosing.',
+      'It helps you draft test tasks and, after you agree, runs one test task with and without the skill. You see the answers side by side on your machine. This first look cannot produce a verdict.',
+      'By default, the run uses your Claude Code account. Your target model, grader and provider settings decide which account or API key is used and where the tasks and answers are sent. It calls a model, so it spends tokens.',
+      'If a completed search finds no local skill, it opens a sample result instead. That sample calls no model and is not a measurement of your skill. If the search is incomplete, it stops without opening a sample. Move to the folder that holds your skills and try again.',
+      'For the command line: npx driftproof run <skill-dir> --models <model-id>. Replace <skill-dir> with the local skill folder and <model-id> with the model to run. It calls a model, so it spends tokens. How to write its test tasks:',
+    ];
+  },
   N4_LINK: { href: '/authoring/', text: 'Writing a fair set of test tasks' },
-  U1: (id) => `The skill index could not be read, so this lookup says nothing about ${id}.`,
+  U1: (id) => `The skill index could not be read, so this lookup says nothing about ${JSON.stringify(id)} (read from your link).`,
   X1: "This lookup does not read that link. It takes a github.com link to a repository, a skill's folder or its SKILL.md, or a raw.githubusercontent.com link to a SKILL.md.",
   G6: 'Have a GitHub link to a skill? Look it up.',
 };
@@ -203,12 +220,12 @@ const entryPart = (e) => ({ entry: { href: e.href, text: e.text, rows: e.rows } 
 function expectedParts(text, readId, want) {
   if (want.kind === 'refused') return [{ text: TX.X1 }];
   if (want.kind === 'unreadable') return [{ text: TX.U1(idText(readId)) }];
-  if (want.kind === 'match') return [{ text: TX.M1(idText(readId)) }, ...want.entries.map((k) => entryPart(HAND_BY_KEY[k])), { text: TX.M2 }];
+  if (want.kind === 'match') return [{ text: TX.M1(idText(readId)) }, ...want.entries.map((k) => entryPart(HAND_BY_KEY[k])), { text: TX.M2 }, { text: TX.R1 }];
   return [
     { text: TX.N1(idText(readId)) },
     ...(want.repository ? [{ text: TX.N2(readId.owner, readId.repo) }, entryPart(HAND_BY_KEY[want.repository])] : []),
     ...(want.byFolder ? [{ text: TX.N3(readId.owner, readId.repo) }] : []),
-    { text: TX.N4 }, { ...TX.N4_LINK },
+    { text: TX.R1 }, ...TX.N4(readId).map((text) => ({ text })), { ...TX.N4_LINK },
   ];
 }
 
@@ -406,7 +423,7 @@ test('AC-6: no page is said only after the whole list was read', async () => {
   const asNone = (L) => async (t) => { const r = await L(t); return r.kind === 'unreadable' ? { ...r, kind: 'none', entries: [] } : r; };
   assert.notDeepEqual(await resultHits(asNone, same, unreadable.slice(0, 1), broken['a 404']), [], 'plant: a 404 read as no page');
   // Plant: N-1 that does not name the folder the link was read as (C-3).
-  const noId = (P) => (r) => P(r).map((p) => (p.text && p.text.startsWith('The skill index has no page for ') ? { text: 'The skill index has no page for this link.' } : p));
+  const noId = (P) => (r) => P(r).map((p) => (p.text && p.text.startsWith('The list loaded for this visit has no page for ') ? { text: 'The skill index has no page for this link.' } : p));
   assert.notDeepEqual(await resultHits(same, noId, [rowOf(30)], listHandler), [], 'plant: N-1 without its {id}');
 });
 
@@ -436,17 +453,17 @@ const FORBIDDEN = [
   ['Object.assign', /\bObject\.assign\b/], ['a static import', /^\s*import\b/m],
 ];
 // The elements the island may build: its form and its result (spec 315 § The page texts).
-const ELEMENTS = new Set(['form', 'label', 'input', 'button', 'div', 'p', 'span', 'a']);
+const ELEMENTS = new Set(['form', 'label', 'input', 'button', 'div', 'p', 'span', 'a', 'section', 'h2', 'h3', 'ol', 'li', 'pre', 'code', 'details', 'summary', 'textarea']);
 function sourceHits(src) {
-  const code = stripComments(src);
+  const code = stripComments(src).replaceAll("a.rel = 'noopener noreferrer';",'');
   const hits = FORBIDDEN.filter(([, re]) => re.test(code)).map(([name]) => name);
   const made = [...code.matchAll(/\bcreateElement(NS)?\s*\(/g)].length;
-  const named = [...code.matchAll(/\bcreateElement\s*\(\s*(['"])([a-z]+)\1\s*\)/g)].map((m) => m[2]);
+  const named = [...code.matchAll(/\bcreateElement\s*\(\s*(['"])([a-z]+|h[23])\1\s*\)/g)].map((m) => m[2]);
   if (made !== named.length) hits.push('an element made from a name that is not a literal');
   for (const t of named) if (!ELEMENTS.has(t)) hits.push(`createElement('${t}')`);
   // One fetch, its first argument /skills/ and its second exactly { cache: 'no-cache' }.
   const fetches = [...code.matchAll(/\bfetch\s*\(([^)]*)\)/g)].map((m) => m[1].trim());
-  if (fetches.length !== 1 || [...code.matchAll(/\bfetch\b/g)].length !== 1) hits.push(`${fetches.length} fetch calls`);
+  if (fetches.length !== 1 || [...code.matchAll(/\bfetch\b/g)].length !== 1) hits.push('fetch count differs from one');
   for (const args of fetches) {
     const m = /^([^,]*?)\s*,\s*\{\s*cache\s*:\s*(['"])no-cache\2\s*\}$/.exec(args);
     if (!m) { hits.push(`fetch(${args}) without { cache: 'no-cache' }`); continue; }
@@ -599,7 +616,7 @@ async function wordHits(texts) {
   return hits;
 }
 function mainTextHits(mainText, hasBeacon) {
-  const want = [TX.H1, TX.P1, TX.P2, TX.F1, TX.H2, TX.C1, TX.C2, TX.C3, ...(hasBeacon ? [TX.C4] : [])].join(' ');
+  const want = [TX.H1, TX.P1, TX.F1, TX.F2, TX.H2, TX.P2, TX.C1, TX.C2, TX.C3, ...(hasBeacon ? [TX.C4] : [])].join(' ');
   return mainText === want ? [] : [`<main> reads ${JSON.stringify(mainText.slice(0, 120))}...`];
 }
 function commandHits(n4, help) {
@@ -611,10 +628,10 @@ test('AC-11: the page\'s words are its fixed texts, and each is true of the page
   const { beaconFor, siteConfig } = require('../scripts/build-head-tags.js');
   const hasBeacon = !!beaconFor(siteConfig().cloudflare_analytics_token);
   const help = spawnSync(process.execPath, [path.join(ROOT, 'bin', 'driftproof'), '--help'], { encoding: 'utf8' }).stdout;
-  assert.deepEqual(commandHits(TX.N4, help), [], 'the spec\'s own N-4 against the CLI');
-  assert.notDeepEqual(commandHits(TX.N4.replace('--models', '--model'), help), [], 'plant: N-4 reading --model');
-  assert.notDeepEqual(mainTextHits([TX.H1, TX.P1, TX.P2, TX.F1, TX.H2, TX.C1, TX.C2, TX.C3, TX.C4].join(' '), false), [], 'plant: C-4 on a page with no beacon');
-  const fixed = [TX.T1, TX.H1, TX.P1, TX.P2, TX.F1, TX.H2, TX.C1, TX.C2, TX.C3, TX.C4, TX.M1('o/r/p'), TX.M2, TX.N1('o/r/p'), TX.N2('o', 'r'), TX.N3('o', 'r'), TX.N4, TX.N4_LINK.text, TX.U1('o/r/p'), TX.X1, TX.G6];
+  assert.deepEqual(commandHits(TX.N4(id('o', 'r', 'skills/alpha')).join(' '), help), [], 'the spec\'s own N-4 against the CLI');
+  assert.notDeepEqual(commandHits(TX.N4(id('o', 'r', 'skills/alpha')).join(' ').replace('--models', '--model'), help), [], 'plant: N-4 reading --model');
+  assert.notDeepEqual(mainTextHits([TX.H1, TX.P1, TX.F1, TX.F2, TX.H2, TX.P2, TX.C1, TX.C2, TX.C3, TX.C4].join(' '), false), [], 'plant: C-4 on a page with no beacon');
+  const fixed = [TX.R1, TX.T1, TX.H1, TX.P1, TX.P2, TX.F1, TX.F2, TX.H2, TX.C1, TX.C2, TX.C3, TX.C4, TX.M1('o/r/p'), TX.M2, TX.N1('o/r/p'), TX.N2('o', 'r'), TX.N3('o', 'r'), ...TX.N4(id('o', 'r', 'skills/alpha')), TX.N4_LINK.text, TX.U1('o/r/p'), TX.X1, TX.G6];
   assert.deepEqual(await wordHits(fixed), [], 'the fixed texts');
   assert.notDeepEqual(await wordHits([TX.C3.replace('nothing more', 'nothing more, at 95% confidence')]), [], 'plant: confidence language in C-3');
   assert.notDeepEqual(await wordHits([`${TX.M2} Clearly helped.`]), [], 'plant: a verdict word in M-2');
@@ -690,4 +707,567 @@ test('issue 414: nested scoreboard entries are read whole and unsafe or truncate
  const got=readList(rich);assert.equal(got.ok,true);assert.equal(got.entries.length,1);
  assert.deepEqual(got.entries[0].rows,['owner-a/repo-a','Measured result. Why? First task. Last task.']);
  for(const plant of [rich.replace('</details>',''),rich.replace('Last task.','<script></script>Last task.'),rich.replace('<p>Measured','<p onclick="bad()">Measured'),rich.replace('</div></li>','</div> extra</li>')])assert.equal(readList(plant).ok,false);
+});
+
+// A-315-3 (issue 423): the guide is fixed public wording. The independent expectation above
+// remains separate from the island. Run plants before the live comparison so the red round
+// proves the readers reject every missing promise, wrong command and invented identity.
+function guideHits(parts, identity) {
+  const want = [...TX.N4(identity).map((text) => ({ text })), { ...TX.N4_LINK }];
+  return JSON.stringify(parts.map(partShape)) === JSON.stringify(want) ? [] : ['N-4 differs from the complete guided route'];
+}
+const guideParts = (identity) => [...TX.N4(identity).map((text) => ({ text })), { ...TX.N4_LINK }];
+const changeText = (parts, from, to) => parts.map((p) => ({ ...p, text: p.text.replace(from, to) }));
+
+test('AC-423-1, AC-423-2 and AC-423-4: the named guided route precedes the CLI and states its scope and cost', async () => {
+  const identity = { owner: 'owner-z', repo: 'repo-z', path: 'skills/Alpha' };
+  const good = guideParts(identity);
+  assert.deepEqual(guideHits(good, identity), []);
+  const plants = {
+    'the guide omitted': good.slice(-2),
+    'the marketplace command omitted': good.filter((_, i) => i !== 2),
+    'the install command omitted': good.filter((_, i) => i !== 3),
+    'the CLI first': [good[8], ...good.slice(0, 8), good[9]],
+    'two tasks promised': changeText(good, 'runs one test task', 'runs two test tasks'),
+    'a verdict promised': changeText(good, 'cannot produce a verdict', 'produces a verdict'),
+    'a sample promised on every run': changeText(good, 'If a completed search finds no local skill, it opens', 'It first opens'),
+    'an API key required': changeText(good, 'By default, the run uses your Claude Code account. Your target model, grader and provider settings decide which account or API key is used and where the tasks and answers are sent.', 'The run requires your own API key.'),
+    'token cost omitted': changeText(good, 'It calls a model, so it spends tokens.', ''),
+    'with and without omitted': changeText(good, 'with and without the skill', 'with the skill'),
+    'skill lowercased': changeText(good, 'Alpha', 'alpha'),
+    'ref included in skill name': changeText(good, 'Alpha', 'main/Alpha'),
+  };
+  for (const [why, parts] of Object.entries(plants)) {
+    assert.notDeepEqual(parts, good, why + ': the plant changes the subject');
+    assert.notDeepEqual(guideHits(parts, identity), [], 'plant: ' + why);
+  }
+  const repository = { ...identity, path: '' };
+  assert.deepEqual(guideHits(guideParts(repository), repository), []);
+  const guessed = changeText(guideParts(repository), 'Guided first run in Claude Code.', 'Guided first run in Claude Code for repo-z.');
+  assert.notDeepEqual(guideHits(guessed, repository), [], 'plant: repository guessed as a skill');
+  const { resultParts } = await freshIsland();
+  // Explicit names include markup, whitespace and mixed case; all remain text parts.
+  for (const x of [identity, repository, { ...identity, path: 'v2/skills/alpha' }, { ...identity, path: 'skills/<img src=x>' }, { ...identity, path: 'skills/long skill name' }]) {
+    const parts = resultParts({ kind: 'none', identity: x, entries: [], repository: [], byFolder: false });
+    assert.deepEqual(guideHits(parts.slice(2), x), [], 'the complete guide for ' + idText(x));
+  }
+});
+
+test('AC-423-1: matches, refusals and unreadable lists gain no guided-run claims', async () => {
+  const { resultParts } = await freshIsland();
+  for (const kind of ['match', 'refused', 'unreadable']) {
+    const readId = { owner: 'owner-a', repo: 'repo-a', path: 'skills/alpha' };
+    const result = { kind, identity: kind === 'refused' ? null : readId, entries: kind === 'match' ? [HAND_BY_KEY.A] : [], repository: [], byFolder: false };
+    const expected = expectedParts('', readId, { kind, entries: ['A'] });
+    const hits = (ps) => JSON.stringify(ps.map(partShape)) === JSON.stringify(expected) ? [] : ['non-none result changed'];
+    assert.notDeepEqual(hits([...expected, ...guideParts(readId)]), [], 'plant: guide added to ' + kind);
+    assert.deepEqual(hits(resultParts(result)), [], kind);
+  }
+});
+
+function guidedCommandHits(paragraphs, artefacts) {
+  const { marketplace, plugin, start, help } = artefacts;
+  const repo = new URL(plugin.repository).pathname.replace(/^\//, '');
+  const hits = [];
+  const expected = [
+    'claude plugin marketplace add ' + repo,
+    'claude plugin install ' + plugin.name + '@' + marketplace.name,
+  ];
+  expected.forEach((command, i) => { if (paragraphs[i + 2] !== command) hits.push('plugin command ' + (i + 1)); });
+  if (!marketplace.plugins.some((p) => p.name === plugin.name && p.source === './plugin/' + plugin.name)) hits.push('marketplace does not ship this plugin');
+  const slash = /^# (\/[^\s]+)$/m.exec(start)?.[1];
+  if (!slash || typeof paragraphs[4] !== 'string' || !paragraphs[4].includes('type ' + slash + '.')) hits.push('slash command');
+  return [...hits, ...commandHits(paragraphs.join(' '), help)];
+}
+test('AC-423-3: both plugin commands and the slash command agree with the shipped artefacts', async () => {
+  const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
+  const artefacts = {
+    marketplace: JSON.parse(read('.claude-plugin/marketplace.json')),
+    plugin: JSON.parse(read('plugin/driftproof/.claude-plugin/plugin.json')),
+    start: read('plugin/driftproof/commands/start.md'),
+    help: spawnSync(process.execPath, [path.join(ROOT, 'bin/driftproof'), '--help'], { encoding: 'utf8' }).stdout,
+  };
+  const identity = { owner: 'o', repo: 'r', path: 'skills/alpha' };
+  const paragraphs = TX.N4(identity);
+  assert.deepEqual(guidedCommandHits(paragraphs, artefacts), []);
+  for (const [from, to] of [
+    ['driftproofhq/driftproof', 'other/driftproof'], ['driftproof@driftproofhq', 'other@driftproofhq'],
+    ['driftproof@driftproofhq', 'driftproof@other'], ['/driftproof:start', '/driftproof:begin'], ['--models', '--model'],
+  ]) {
+    const planted = paragraphs.map((p) => p.replace(from, to));
+    assert.notDeepEqual(planted, paragraphs, 'command plant changes the subject');
+    assert.notDeepEqual(guidedCommandHits(planted, artefacts), [], 'plant: ' + to);
+  }
+  const { resultParts } = await freshIsland();
+  const live = resultParts({ kind: 'none', identity, entries: [], repository: [], byFolder: false }).slice(2, -1).map((p) => p.text);
+  assert.deepEqual(guidedCommandHits(live, artefacts), [], 'the commands shown by the island');
+});
+
+test('AC-423-4 and AC-423-5: the scope has an artefact basis and new prose obeys the wording rules', async () => {
+  const { QUICK } = require('../lib/firstrun');
+  const start = fs.readFileSync(path.join(ROOT, 'plugin/driftproof/commands/start.md'), 'utf8');
+  const steps = JSON.parse(/```driftproof-steps\s*([\s\S]*?)```/.exec(start)[1]);
+  assert.equal(QUICK.maxCases, 1, 'the guided first look runs one test task');
+  assert.ok(steps.some((s) => s.op === 'cli' && s.unless === 'full' && s.args.includes('--quick')));
+  assert.ok(steps.some((s) => s.op === 'confirm-write'), 'the guided path waits for agreement');
+  const access = fs.readFileSync(path.join(ROOT, 'plugin/driftproof/README.md'), 'utf8');
+  assert.ok(access.includes('your own Claude Code account'));
+  assert.ok(access.includes('CLAUDE_PROVIDER') && access.includes('ANTHROPIC_API_KEY'));
+  const paragraphs = TX.N4({ owner: 'o', repo: 'r', path: 'skills/alpha' });
+  assert.deepEqual(await wordHits(paragraphs), []);
+  assert.notDeepEqual(await wordHits([paragraphs[5] + ' At 95% confidence.']), [], 'plant: confidence added to N-4');
+});
+
+// Issue 423 claim review: execute the shipped door and runner with all process boundaries
+// intercepted. No package manager or model is called. Mutations live only in fixture copies.
+const FIXTURES423 = [];
+test.after(() => { for (const d of FIXTURES423) fs.rmSync(d, { recursive: true, force: true }); });
+function startFixture423({ doorEdit = (s) => s, stepEdit = (s) => s } = {}) {
+  const root = fs.mkdtempSync('/var/tmp/spec423-start-'); FIXTURES423.push(root);
+  const plugin = path.join(root, 'plugin');
+  for (const dir of ['lib', '.claude-plugin', 'commands', 'config']) fs.mkdirSync(path.join(plugin, dir), { recursive: true });
+  for (const f of ['input-contract.json', 'version-guard.json', '.claude-plugin/plugin.json', 'config/models.json']) fs.copyFileSync(path.join(ROOT, 'plugin/driftproof', f), path.join(plugin, f));
+  fs.symlinkSync(path.join(ROOT, 'plugin/driftproof/sample'), path.join(plugin, 'sample'));
+  fs.writeFileSync(path.join(plugin, 'lib/door.mjs'), doorEdit(fs.readFileSync(path.join(ROOT, 'plugin/driftproof/lib/door.mjs'), 'utf8')));
+  const md = fs.readFileSync(path.join(ROOT, 'plugin/driftproof/commands/start.md'), 'utf8');
+  const steps = JSON.parse(/```driftproof-steps\s*([\s\S]*?)```/.exec(md)[1]);
+  fs.writeFileSync(path.join(plugin, 'commands/start.md'), md.replace(/(```driftproof-steps\s*)[\s\S]*?(```)/, (_, a, b) => a + JSON.stringify(stepEdit(steps)) + '\n' + b));
+  const work = path.join(root, 'work'); fs.mkdirSync(work);
+  const log = path.join(root, 'events.jsonl'), hook = path.join(root, 'intercept.cjs');
+  fs.writeFileSync(hook, `
+    const fs = require('node:fs'), cp = require('node:child_process'), path = require('node:path');
+    const realSpawn = cp.spawnSync;
+    const record = x => fs.appendFileSync(process.env.SPEC423_EVENTS, JSON.stringify(x)+'\\n');
+    const ok = (stdout='') => ({status:0,stdout,stderr:'',signal:null});
+    cp.spawnSync = (cmd, args=[], opts={}) => {
+      record({cmd,args});
+      if(cmd==='git') return ok(args.includes('--show-toplevel') ? process.env.SPEC423_WORK+'\\n' : '0'.repeat(40)+'\\n');
+      if(cmd==='npx') return realSpawn(process.execPath,['--require',__filename,path.join(process.env.SPEC423_ROOT,'bin/driftproof'),...args.slice(1)],{...opts,env:{...opts.env,DRIFTPROOF_STUB:'1',SPEC423_RUNNER:'1'},encoding:'utf8',timeout:1800000});
+      if(['open','xdg-open','cmd'].includes(cmd)) return ok();
+      if(['claude','codex'].includes(cmd) && args.includes('--version')) return ok('fixture harness\\n');
+      throw Error('unexpected process: '+cmd);
+    };
+    if(process.env.SPEC423_UNREADABLE) {
+      const read=fs.readdirSync;
+      fs.readdirSync=(p,...args)=>{if(String(p)===process.env.SPEC423_UNREADABLE){const e=new Error('fixture unreadable');e.code='EACCES';throw e;}return read(p,...args);};
+    }
+    require('node:module').syncBuiltinESMExports();
+    if(process.env.SPEC423_RUNNER) {
+      const provider=require(path.join(process.env.SPEC423_ROOT,'lib/provider'));
+      const surface=provider.surfaceForModel;
+      provider.surfaceForModel=(model)=>{const result=surface(model);record({surface:result,model});return result;};
+      if(process.env.SPEC423_TWO_TASKS) {
+        const f=require.resolve(path.join(process.env.SPEC423_ROOT,'lib/firstrun'));
+        const value=require(f);require.cache[f].exports={...value,QUICK:{...value.QUICK,maxCases:2}};
+      }
+    }
+  `);
+  return { root, plugin, work, log, hook };
+}
+function runStart423(fx, args = [], extra = {}) {
+  const env = {};
+  for (const [k,v] of Object.entries(process.env)) if (!/API_KEY|TOKEN|SECRET|^CLAUDE_|^OPENAI_|^ANTHROPIC_|^DRIFTPROOF_|^SPEC|^NODE_OPTIONS$|^GIT_/.test(k)) env[k]=v;
+  Object.assign(env, { TMPDIR:'/var/tmp', SPEC423_EVENTS:fx.log, SPEC423_WORK:fx.work, SPEC423_ROOT:ROOT, ...extra });
+  fs.writeFileSync(fx.log, '');
+  const run = spawnSync(process.execPath, ['--require', fx.hook, path.join(fx.plugin,'lib/door.mjs'), 'start', ...args], { cwd:fx.work, env, encoding:'utf8', timeout:1800000 });
+  const events=fs.readFileSync(fx.log,'utf8').trim().split('\n').filter(Boolean).map(l=>JSON.parse(l));
+  const dir=path.join(fx.work,'receipts');
+  const receipts=fs.existsSync(dir) ? fs.readdirSync(dir).filter(f=>f.endsWith('.json')&&!f.endsWith('.summary.json')).map(f=>JSON.parse(fs.readFileSync(path.join(dir,f),'utf8'))) : [];
+  return { ...run, events, receipts, page:fs.existsSync(path.join(fx.work,'driftproof-view.html')) ? fs.readFileSync(path.join(fx.work,'driftproof-view.html'),'utf8') : '' };
+}
+function putSkill423(fx, name, { suite = false } = {}) {
+  const dir=path.join(fx.work,name);fs.mkdirSync(dir,{recursive:true});
+  fs.writeFileSync(path.join(dir,'SKILL.md'),'---\nname: fixture\nversion: 1.0.0\n---\n\nBe brief.\n');
+  const draft=path.join(fx.root,'draft.json');
+  fs.writeFileSync(draft, JSON.stringify({cases:[{id:'first',prompt:'Say hello.',rubric:'Says hello.'},{id:'second',prompt:'Say goodbye.',rubric:'Says goodbye.'}]}));
+  if(suite){fs.mkdirSync(path.join(dir,'evals'));fs.copyFileSync(draft,path.join(dir,'evals/evals.json'));}
+  return {dir,draft};
+}
+const runnerCalls423 = r => r.events.filter(e=>e.cmd==='npx').map(e=>e.args.slice(1));
+const opens423 = r => r.events.filter(e=>['open','xdg-open','cmd'].includes(e.cmd));
+function sampleHits423(r, shouldOpen) {
+  const hits=[];
+  if(r.status!==0) hits.push('search failed unexpectedly');
+  if(runnerCalls423(r).length || r.receipts.length || r.page) hits.push('search ran or wrote');
+  if(opens423(r).length !== (shouldOpen?1:0)) hits.push('wrong sample open count');
+  if(shouldOpen && !/sample results page/.test(r.stdout)) hits.push('sample not disclosed');
+  if(!shouldOpen && !/walk did not read every folder/.test(r.stdout)) hits.push('incomplete search not disclosed');
+  return hits;
+}
+test('AC-423-4: only a completed empty search opens the sample; incomplete searches disclose and stop', () => {
+  assert.deepEqual(sampleHits423(runStart423(startFixture423()),true),[]);
+  const deep=startFixture423();fs.mkdirSync(path.join(deep.work,'a/b/c/d/e'),{recursive:true});
+  assert.deepEqual(sampleHits423(runStart423(deep),false),[]);
+  const unreadable=startFixture423(), blocked=path.join(unreadable.work,'blocked');fs.mkdirSync(blocked);
+  assert.deepEqual(sampleHits423(runStart423(unreadable,[],{SPEC423_UNREADABLE:blocked}),false),[]);
+  const suppressed=startFixture423({doorEdit:s=>s.replace('    openSample();\n    return;', '    return;')});
+  assert.notDeepEqual(sampleHits423(runStart423(suppressed),true),[],'plant: completed-empty sample suppressed');
+  for(const unread of [false,true]) {
+    const admitted=startFixture423({doorEdit:s=>s.replace('    if (short) {', '    if (false && short) {')});
+    const bad=path.join(admitted.work,unread?'blocked':'a/b/c/d/e');fs.mkdirSync(bad,{recursive:true});
+    assert.notDeepEqual(sampleHits423(runStart423(admitted,[],unread?{SPEC423_UNREADABLE:bad}:{}),false),[],'plant: incomplete search opens sample');
+  }
+});
+function firstRunHits423(r) {
+  const hits=[];
+  if(r.status!==0) hits.push('guided run failed: '+r.stderr.slice(-500));
+  if(JSON.stringify(runnerCalls423(r).map(a=>a[0]))!==JSON.stringify(['--version','init','run','view'])) hits.push('ordered steps not reached');
+  if(r.receipts.length!==1) return [...hits,'not exactly one receipt'];
+  const receipt=r.receipts[0];
+  if(receipt.run.preset!=='quick') hits.push('not the quick preset');
+  if(receipt.verification_level!=='UNVERIFIED') hits.push('smoke level changed');
+  const rows=receipt.results.cases;
+  if(new Set(rows.map(c=>c.id)).size!==1 || rows.some(c=>c.id!=='first')) hits.push('not exactly the first task');
+  if(JSON.stringify([...new Set(rows.map(c=>c.mode))].sort())!==JSON.stringify(['baseline','with_skill'])) hits.push('not both arms');
+  if(require('../lib/verdict').receiptVerdict(receipt).verdict!=='NOT_MEASURED') hits.push('a verdict admitted');
+  if(!r.page.includes('Smoke run, no verdict') || !r.page.includes('With the skill') || !r.page.includes('Without the skill')) hits.push('local comparison or no-verdict disclosure missing');
+  if(opens423(r).length!==1) hits.push('comparison not opened');
+  return hits;
+}
+test('AC-423-4: approved draft reaches init, one-task quick comparison and local open; behavioural plants fail', () => {
+  const run=(options={},extra={})=>{const fx=startFixture423(options), sk=putSkill423(fx,'local-skill');return runStart423(fx,['local-skill','--cases',sk.draft,'--confirm-write'],extra);};
+  const baseline=run();assert.deepEqual(firstRunHits423(baseline),[]);
+  const skipped=run({stepEdit:steps=>steps.map(s=>s.op==='cli'&&s.unless==='full'?{...s,when:'never-given'}:s)});
+  assert.equal(runnerCalls423(skipped).some(a=>a[0]==='run'),false,'the planted quick step is unreachable');
+  assert.notDeepEqual(firstRunHits423(skipped),[],'plant: quick step unreachable');
+  assert.ok(firstRunHits423(run({}, {SPEC423_TWO_TASKS:'1'})).includes('not exactly the first task'),'plant: two-task preset');
+  assert.ok(firstRunHits423(run({stepEdit:steps=>steps.map(s=>s.op==='cli'&&s.unless==='full'?{...s,args:s.args.filter(a=>a!=='--quick')}:s)})).includes('not the quick preset'),'plant: --quick removed');
+  const verdictFx=startFixture423();const skill=putSkill423(verdictFx,'local-skill');
+  fs.appendFileSync(verdictFx.hook, `\nif(process.env.SPEC423_RUNNER){const f=require.resolve(require('node:path').join(process.env.SPEC423_ROOT,'lib/plain'));const v=require(f);require.cache[f].exports={...v,plainOf:r=>({...v.plainOf(r),state:'PASSED',label:'Clearly helped',sentence:'Clearly helped.'})};}\n`);
+  const verdict=runStart423(verdictFx,['local-skill','--cases',skill.draft,'--confirm-write']);
+  assert.equal(verdict.status,0,verdict.stderr.slice(-800));
+  assert.ok(verdict.page.includes('Clearly helped'),'the planted renderer actually emitted a verdict');
+  assert.ok(firstRunHits423(verdict).includes('local comparison or no-verdict disclosure missing'),'plant: renderer admits a verdict');
+});
+test('AC-423-4: no draft write or runner step precedes agreement; late confirmation is rejected', () => {
+  function subject(stepEdit) {
+    const fx=startFixture423({stepEdit});const sk=putSkill423(fx,'local-skill');
+    const r=runStart423(fx,['local-skill','--cases',sk.draft]);
+    return {r,wrote:fs.existsSync(path.join(sk.dir,'evals/evals.json'))};
+  }
+  const hits=({r,wrote})=>r.status===2 && /--confirm-write/.test(r.stderr) && runnerCalls423(r).length===0 && !wrote && !r.page && !r.receipts.length ? [] : ['work before agreement'];
+  assert.deepEqual(hits(subject(s=>s)),[]);
+  const late=subject(steps=>[...steps.filter(s=>s.op!=='confirm-write'),...steps.filter(s=>s.op==='confirm-write')]);
+  assert.notDeepEqual(hits(late),[],'plant: confirm-write after all CLI work');
+  assert.ok(late.wrote || runnerCalls423(late.r).length>0,'the order plant crossed a work boundary');
+});
+
+// These are observations of local paths, never an attempt to resolve a GitHub folder to a
+// local name. The guide must leave that correspondence with the person using the listing.
+test('AC-423-2: non-skill, renamed and duplicate-name folders keep selection conditional', async () => {
+  const fx=startFixture423();
+  putSkill423(fx,'first-repository/skills/alpha');
+  putSkill423(fx,'second-repository/skills/alpha');
+  putSkill423(fx,'renamed-local-copy');
+  fs.mkdirSync(path.join(fx.work,'references'));
+  const listing=runStart423(fx);
+  assert.equal(listing.status,0,listing.stderr);
+  const rows=listing.stdout.split('\n').filter(l=>/^  .*  \(no test cases yet\)$/.test(l));
+  assert.deepEqual(rows.map(l=>l.trim().split('  ')[0]).sort(),['first-repository/skills/alpha','renamed-local-copy','second-repository/skills/alpha']);
+  assert.equal(rows.some(l=>/^  references /.test(l)),false,'a non-skill folder is not selectable');
+  const { resultParts }=await freshIsland();
+  for(const folder of ['skills/alpha/references','skills/alpha']) {
+    const identity={owner:'owner-z',repo:'repo-z',path:folder};
+    const good=guideParts(identity);
+    for(const choose of ['Choose references.','Choose alpha.','Choose renamed-local-copy.','Choose first-repository/skills/alpha.']) {
+      const bad=good.map((p,i)=>i===4?{text:choose}:p);
+      assert.notDeepEqual(guideHits(bad,identity),[],'plant: guessed selection '+choose);
+    }
+    assert.deepEqual(guideHits(resultParts({kind:'none',identity,entries:[]}).slice(2),identity),[]);
+  }
+});
+
+async function publicationHits423(L, P) {
+  const identity={owner:'owner-z',repo:'repo-z',path:'skills/new-skill'};
+  const link='https://github.com/owner-z/repo-z/tree/main/skills/new-skill';
+  let published=false;
+  return withFetch(()=>respond(published?handList([...HAND,{page:'owner-z/repo-z/new-skill',path:identity.path,rows:['A new published entry.']}]):handList()),async(calls)=>{
+    const first=await L(link);published=true;
+    const again=await L(link), ps=P(again).map(partShape);
+    const want=expectedParts(link,identity,{kind:'none'});
+    const hits=[];
+    if(first.kind!=='none'||again.kind!=='none'||calls.length!==1)hits.push('the visit did not keep its first list');
+    if(JSON.stringify(ps)!==JSON.stringify(want))hits.push('cached absence not scoped or no reload instruction');
+    const fresh=await freshIsland();
+    const afterReload=await fresh.lookup(link);
+    if(afterReload.kind!=='match'||calls.length!==2)hits.push('fresh visit did not read publication');
+    return hits;
+  });
+}
+test('AC-423-6: a publication between lookups keeps a scoped cached absence until reload', async () => {
+  for(const plant of ['index-now','no-reload']) {
+    const island=await freshIsland();
+    const P=r=>island.resultParts(r).filter(p=>plant!=='no-reload'||p.text!==TX.R1).map(p=>plant==='index-now'&&p.text?.startsWith('The list loaded for this visit has no page')?{text:'The skill index has no page for this link.'}:p);
+    assert.notDeepEqual(await publicationHits423(island.lookup,P),[],'plant: '+plant);
+  }
+  const {lookup,resultParts}=await freshIsland();
+  assert.deepEqual(await publicationHits423(lookup,resultParts),[]);
+});
+
+function authoredParts423(parts, result) {
+  const quoted=JSON.stringify(idText(result.identity));
+  return parts.filter(p=>!p.entry).map((p,i)=>{
+    if(i===0 && ['none','match','unreadable'].includes(result.kind)) {
+      const fixed=result.kind==='none'?TX.N1(idText(result.identity)):result.kind==='match'?TX.M1(idText(result.identity)):TX.U1(idText(result.identity));
+      // Extra words are left in the scan. Only an exact attributed slot is exempt.
+      if(p.text===fixed)return p.text.replace(quoted,'[pasted identity]');
+    }
+    if(result.kind==='none' && result.identity.path && p.text===TX.N4(result.identity)[0])return p.text.replace(JSON.stringify(result.identity.path),'[pasted folder]');
+    return p.text;
+  });
+}
+test('AC-423-2 and AC-423-5: hostile names are delimited attributed input; adjacent claims are still rejected', async()=>{
+  const {readLink,resultParts}=await freshIsland();
+  for(const name of ['Clearly helped.','95% confidence','significantly','a "quoted" folder','<img src=x>']) {
+    const r=readLink('https://github.com/owner-z/repo-z/tree/main/skills/'+encodeURIComponent(name));
+    assert.equal(r.ok,true);
+    const result={kind:'none',identity:r,entries:[]}, parts=resultParts(result);
+    const good=[{text:TX.N1(idText(r))},{text:TX.R1},...guideParts(r)];
+    assert.deepEqual(await wordHits(authoredParts423(good,result)),[]);
+    const unquoted=good.map((p,i)=>i===2?{text:p.text.replace(JSON.stringify(r.path),r.path)}:p);
+    assert.notDeepEqual(guideHits(unquoted.slice(2),r),[],'plant: folder delimiters lost');
+    const editorial=good.map((p,i)=>i===2?{text:p.text+' At 95% confidence.'}:p);
+    assert.notDeepEqual(await wordHits(authoredParts423(editorial,result)),[],'plant: adjacent editorial claim');
+    assert.deepEqual(parts.map(partShape),good,'verbatim, attributed hostile folder '+name);
+    assert.deepEqual(await wordHits(authoredParts423(parts,result)),[]);
+  }
+});
+
+test('AC-423-4a: configured target and grader choose their own surfaces, including Codex and API destinations', () => {
+  const registry=JSON.parse(fs.readFileSync(path.join(ROOT,'plugin/driftproof/config/models.json'),'utf8'));
+  const priced=registry.models.filter(m=>m.provider==='anthropic').sort((a,b)=>(a.input_price+a.output_price)-(b.input_price+b.output_price)||a.id.localeCompare(b.id));
+  const target=priced[0].id, grader=registry.models.find(m=>m.provider==='openai').id;
+  const fx=startFixture423();putSkill423(fx,'local-skill',{suite:true});
+  fs.writeFileSync(path.join(fx.work,'.driftproofrc'),JSON.stringify({judge_model:grader}));
+  const r=runStart423(fx,['local-skill'],{OPENAI_SURFACE:'cli'});
+  assert.equal(r.status,0,r.stderr.slice(-800));
+  assert.equal(r.receipts[0].run.model_id,target);
+  assert.equal(r.receipts[0].run.judge.model_id,grader,'the runner read the configured grader');
+  const surfaces=r.events.filter(e=>e.surface);
+  const hits=events=>events.some(e=>e.model===target&&e.surface==='claude-cli')&&events.some(e=>e.model===grader&&e.surface==='openai-cli')?[]:['configured target or grader route missing'];
+  assert.deepEqual(hits(surfaces),[]);
+  fs.writeFileSync(path.join(fx.work,'.driftproofrc'),'{}');
+  const ignored=runStart423(fx,['local-skill'],{OPENAI_SURFACE:'cli'});
+  assert.equal(ignored.status,0,ignored.stderr.slice(-800));
+  assert.notDeepEqual(hits(ignored.events.filter(e=>e.surface)),[],'plant: configured grader ignored');
+  fs.writeFileSync(path.join(fx.work,'.driftproofrc'),JSON.stringify({judge_model:grader}));
+  const forcedFx=startFixture423();putSkill423(forcedFx,'local-skill',{suite:true});
+  fs.writeFileSync(path.join(forcedFx.work,'.driftproofrc'),JSON.stringify({judge_model:grader}));
+  const hook=fs.readFileSync(forcedFx.hook,'utf8');
+  assert.ok(hook.includes('const surface=provider.surfaceForModel;'));
+  fs.writeFileSync(forcedFx.hook,hook.replace('const surface=provider.surfaceForModel;',"const surface=()=> 'claude-cli';"));
+  const forced=runStart423(forcedFx,['local-skill'],{OPENAI_SURFACE:'cli'});
+  assert.equal(forced.status,0,forced.stderr.slice(-800));
+  assert.notDeepEqual(hits(forced.events.filter(e=>e.surface)),[],'plant: provider forced to default');
+  const api=runStart423(fx,['local-skill'],{OPENAI_SURFACE:'api',CLAUDE_PROVIDER:'api',OPENAI_BASE_URL:'https://configured.invalid/v1',ANTHROPIC_BASE_URL:'https://configured.invalid'});
+  assert.equal(api.status,0,api.stderr.slice(-800));
+  assert.ok(api.events.some(e=>e.model===target&&e.surface==='api'));
+  assert.ok(api.events.some(e=>e.model===grader&&e.surface==='openai-api'));
+  const prose=TX.N4({path:'skills/alpha'})[6];
+  const routeProseHits=s=>s===TX.N4({path:''})[6]?[]:['model routing disclosure changed'];
+  assert.deepEqual(routeProseHits(prose),[]);
+  assert.notDeepEqual(routeProseHits('The run always uses your Claude Code account.'),[]);
+  // Read the complete published disclosure as the basis, not isolated account/key words.
+  const readme=fs.readFileSync(path.join(ROOT,'plugin/driftproof/README.md'),'utf8');
+  const section=readme.split('## What it sends, and where\n')[1];
+  assert.ok(section && section.split('\n').some(l=>l.startsWith('- Some settings change this.') && /OpenAI model.*codex.*OPENAI_SURFACE.*CLAUDE_PROVIDER.*judge_model/.test(l)));
+  assert.deepEqual(registry.providers.openai.surfaces,['api','cli']);
+});
+
+// A-315-4, issue 423 design: the explanations remain real native content, with the same fallback.
+function staticDesignHits423(html) {
+  const {dom,all}=require('../specs/408-skill-measurements/page-reader.cjs');
+  const tree=dom(html),fold=all(tree,n=>n.tag==='details'&&n.attrs.class==='lookup-privacy')[0];
+  const hits=[];
+  if(!fold || fold.attrs.open!==undefined)hits.push('privacy is not a closed native disclosure');
+  if(fold && !html.slice(fold.start,fold.end).includes(TX.C1))hits.push('privacy disclosure lost C-1');
+  if(!html.includes('<main class="skill-lookup-page">'))hits.push('lookup still takes the prose layout');
+  if(!html.includes('data-island="skill-lookup"'))hits.push('loader mount absent');
+  return hits;
+}
+test('AC-423-D1: a full workspace and native privacy fold keep every static disclosure and fallback',()=>{
+  const good='<main class="skill-lookup-page"><div data-island="skill-lookup"></div><details class="lookup-privacy"><summary>What it reads and sends</summary><p>'+TX.C1+'</p></details></main>';
+  assert.deepEqual(staticDesignHits423(good),[]);
+  assert.notDeepEqual(staticDesignHits423(good.replace('<details','<div').replace('</details>','</div>')),[],'plant: no native privacy disclosure');
+  assert.notDeepEqual(staticDesignHits423(good.replace('class="skill-lookup-page"','class="prose skill-lookup-page"')),[],'plant: old prose layout');
+  assert.notDeepEqual(staticDesignHits423(good.replace(TX.C1,'')),[],'plant: dropped privacy claim');
+  assert.deepEqual(staticDesignHits423(fs.readFileSync(PAGE,'utf8')),[]);
+});
+
+// A-315-4: status comes from the list's evidence attribute, never from a skill's name or prose.
+test('A-315-4: the list evidence attribute survives reading, with a dropped-evidence plant',async()=>{
+  const {readList}=await freshIsland();
+  const html=handList();
+  const published=fs.readFileSync(LIST,'utf8');
+  assert.deepEqual(readList(published).entries.map(e=>e.evidence),entryNodes(published).map(n=>n.attrs['data-evidence']));
+  const read=f=>f(html).entries.map(e=>e.evidence);
+  assert.deepEqual(read(readList),['measured','measured','measured']);
+  assert.notDeepEqual(read(h=>({...readList(h),entries:readList(h).entries.map(e=>({...e,evidence:undefined}))})),['measured','measured','measured'],'plant: evidence dropped');
+  const changed=html.replaceAll('data-evidence="measured"','data-evidence="recomputed"');
+  assert.deepEqual(readList(changed).entries.map(e=>e.evidence),['recomputed','recomputed','recomputed']);
+});
+
+test('A-315-4: headings remain in the exact literal element set, with rejected literal and dynamic plants',()=>{
+  const request="fetch('/skills/', { cache: 'no-cache' });";
+  assert.deepEqual(sourceHits(request+"document.createElement('h2');document.createElement('h3');"),[]);
+  assert.notDeepEqual(sourceHits(request+"document.createElement('h4');"),[],'plant: unapproved literal');
+  assert.notDeepEqual(sourceHits(request+"document.createElement('h' + '2');"),[],'plant: computed element');
+});
+
+
+function literal426(s){return s.replace(/\r\n?/g,'\n').split('\n').map(line=>'    '+line).join('\n');}
+// A-315-5, issue 426. Independent request contract. None of these helpers is product code.
+const REQUEST426 = {
+  repo: 'https://github.com/driftproofhq/driftproof/issues/new',
+  label: 'skill-request', template: 'skill-request.md',
+  limits: 'No promise of testing or timing. The operator chooses whether and when to run a public batch.',
+  tasks: 'Driftproof reviews and may edit maintainer tasks. Any published result names who wrote the tasks.',
+  status: 'Submit the issue on GitHub to finish.',
+};
+function requestBody426({link,note,maintainer}) {
+  return '## Skill link\n\n'+literal426(link.trim())+'\n\n## Note\n\n'+literal426(note.trim()||'None.')+
+    '\n\n## Maintainer\n'+(maintainer?'I maintain this skill and can send test tasks.':'Not selected.')+
+    '\n\n## Request terms\n'+REQUEST426.limits+'\n'+REQUEST426.tasks;
+}
+function requestUrlFixture426(data,identity='owner-z/repo-z/skills/alpha') {
+  const u=new URL(REQUEST426.repo);
+  u.search=new URLSearchParams({template:REQUEST426.template,
+    title:'Skill request: '+identity,body:requestBody426(data)}).toString();
+  return u.href;
+}
+function draftHits426(value,data,identity='owner-z/repo-z/skills/alpha') {
+  let u;try{u=new URL(value);}catch{return ['no draft URL'];}
+  const hits=[];
+  if(u.origin+u.pathname!==REQUEST426.repo||u.hash||u.username||u.password)hits.push('wrong public destination');
+  const params=[...u.searchParams.keys()].sort();
+  if(JSON.stringify(params)!==JSON.stringify(['body','template','title']))hits.push('missing, repeated or extra draft parameters');
+  if(u.searchParams.get('template')!==REQUEST426.template)hits.push('missing template');
+  if(u.searchParams.has('labels'))hits.push('privileged labels parameter');
+  if(u.searchParams.get('title')!=='Skill request: '+identity)hits.push('wrong identity in title');
+  if(u.searchParams.get('body')!==requestBody426(data))hits.push('request fields or terms changed');
+  return hits;
+}
+const DATA426={link:'https://github.com/owner-z/repo-z/tree/release-v1/skills/alpha?tab=readme#source',note:'',maintainer:false};
+test('AC-426-1 and AC-426-6: draft readers reject wrong destinations, data loss, attribution loss and parameter injection',()=>{
+  const good=requestUrlFixture426(DATA426);
+  assert.deepEqual(draftHits426(good,DATA426),[]);
+  const plants={
+    repository:u=>u.pathname='/driftproofhq/driftproof-source/issues/new',
+    label:u=>u.searchParams.set('labels','skill-request'),
+    template:u=>u.searchParams.delete('template'),
+    title:u=>u.searchParams.set('title','Skill request: guessed folder'),
+    ref:u=>u.searchParams.set('body',u.searchParams.get('body').replace('/tree/release-v1/','/tree/main/')),
+    maintainer:u=>u.searchParams.set('body',u.searchParams.get('body').replace('Not selected.','I maintain this skill and can send test tasks.')),
+    attribution:u=>u.searchParams.set('body',u.searchParams.get('body').replace(REQUEST426.tasks,'')),
+    timing:u=>u.searchParams.set('body',u.searchParams.get('body').replace(REQUEST426.limits,'We will test it tomorrow.')),
+    injection:u=>u.search+='&labels=run-now',
+  };
+  for(const [name,mutate]of Object.entries(plants)){
+    const u=new URL(good);mutate(u);assert.notDeepEqual(draftHits426(u.href,DATA426),[],'plant: '+name);
+  }
+});
+test('AC-426-1: the real draft preserves the original link, optional values and hostile text, and refuses invalid input',async()=>{
+  const island=await freshIsland();
+  assert.equal(typeof island.requestIssueUrl,'function','requestIssueUrl is not built');
+  for(const note of ['', 'A short task offer.', 'Symbols &labels=run-now #hash ?x=1\nUnicode: café 🧪 <img src=/leak>']){
+    for(const maintainer of [false,true]){
+      const data={...DATA426,link:'  '+DATA426.link+'  ',note,maintainer};
+      const got=await withFetch(()=>{throw Error('a draft helper must not fetch');},async calls=>{
+        const value=island.requestIssueUrl(data);assert.equal(calls.length,0);return value;
+      });
+      assert.deepEqual(draftHits426(got,data),[]);
+      if(note){const u=new URL(got);u.searchParams.set('body',u.searchParams.get('body').replace(literal426(note),literal426('None.')));assert.notDeepEqual(draftHits426(u.href,data),[],'plant: lost note');}
+    }
+  }
+  for(const patch of [{link:'https://example.org/skill'},{link:'https://github.com/o/r/issues/1'},
+    {link:'x'.repeat(2049)},{note:'x'.repeat(1001)},{maintainer:'yes'},{maintainer:1}]){
+    assert.equal(island.requestIssueUrl({...DATA426,...patch}),null,'invalid request '+JSON.stringify(Object.keys(patch)));
+  }
+  assert.notEqual(island.requestIssueUrl({...DATA426,note:'x'.repeat(1000)}),null,'boundary note accepted');
+  // Root, raw SKILL.md, uppercase identity and slash-bearing refs retain the original URL text.
+  for(const [link,identity]of [
+    ['https://github.com/owner-z/repo-z','owner-z/repo-z'],
+    ['https://raw.githubusercontent.com/OWNER-Z/repo-z/refs/heads/main/skills/alpha/SKILL.md','OWNER-Z/repo-z/skills/alpha'],
+    ['github.com/owner-z/repo-z/tree/release/v2/skills/alpha','owner-z/repo-z/v2/skills/alpha'],
+  ]){
+    const data={...DATA426,link};assert.deepEqual(draftHits426(island.requestIssueUrl(data),data,identity),[]);
+  }
+});
+function templateHits426(text,buildSource){
+  const hits=[];
+  const front=/^---\r?\n([\s\S]*?)\r?\n---/.exec(text)?.[1]||'';
+  if(!/^labels:\s*['"]?skill-request['"]?\s*$/m.test(front))hits.push('template label missing');
+  for(const title of ['Skill link','Note','Maintainer','Request terms'])if(!text.includes('## '+title+'\n'))hits.push('template section missing: '+title);
+  for(const terms of [REQUEST426.limits,REQUEST426.tasks])if(!text.includes(terms))hits.push('request terms missing');
+  const exclude=/^EXCLUDE_RE='([^']*)'/m.exec(buildSource)?.[1];
+  if(!exclude)hits.push('public tree filter not read');
+  else if(new RegExp(exclude).test('.github/ISSUE_TEMPLATE/skill-request.md'))hits.push('template excluded from public tree');
+  return hits;
+}
+test('AC-426-6 and AC-426-7: the public template records request limits and task authorship and survives the build filter',async()=>{
+  const build=fs.readFileSync(path.join(ROOT,'scripts/build-public.sh'),'utf8');
+  const fixture='---\nname: Request a public test\nabout: Offer a skill for a future public batch\ntitle: "Skill request: "\nlabels: skill-request\n---\n\n'+requestBody426(DATA426)+'\n';
+  assert.deepEqual(templateHits426(fixture,build),[]);
+  for(const [name,text,source]of [
+    ['label',fixture.replace('labels: skill-request','labels: other'),build],
+    ['link',fixture.replace('## Skill link','## Something else'),build],
+    ['limits',fixture.replace(REQUEST426.limits,''),build],
+    ['authorship',fixture.replace(REQUEST426.tasks,''),build],
+    ['excluded',fixture,"EXCLUDE_RE='^\\.github/ISSUE_TEMPLATE/'"],
+  ])assert.notDeepEqual(templateHits426(text,source),[],'plant: '+name);
+  const template=path.join(ROOT,'.github/ISSUE_TEMPLATE/skill-request.md');
+  assert.ok(fs.existsSync(template),'public skill-request template is not built');
+  const live=fs.readFileSync(template,'utf8');
+  assert.deepEqual(templateHits426(live,build),[]);
+  assert.deepEqual(await wordHits([live.split('\n').filter(l=>!l.startsWith('    ')).join('\n')]),[]);
+  assert.notDeepEqual(await wordHits(['Your skill clearly helped, at 95% confidence. Testing is guaranteed tomorrow.']),[],'reviewer wording plant');
+});
+
+
+function boundary426(){
+  for(let n=100;n<600;n++){
+    const data={...DATA426,note:'x',link:'https://github.com/owner-z/repo-z/tree/main/skills/'+'界'.repeat(n)};
+    const identity='owner-z/repo-z/skills/'+'界'.repeat(n);
+    const bytes=Buffer.byteLength(requestUrlFixture426(data,identity));
+    if(bytes<=8192&&bytes>=7192)return {data:{...data,note:'x'.repeat(1+8192-bytes)},identity};
+  }
+  throw Error('no independent boundary fixture');
+}
+function literalHits426(body,data){
+  const hits=[], headings=body.split('\n').filter(l=>/^## /.test(l));
+  if(JSON.stringify(headings)!==JSON.stringify(['## Skill link','## Note','## Maintainer','## Request terms']))hits.push('reader content became an authored section');
+  for(const [name,value,next]of [['Skill link',data.link.trim(),'Note'],['Note',data.note.trim()||'None.','Maintainer']]){
+    const block=body.split('## '+name+'\n\n')[1]?.split('\n\n## '+next+'\n')[0];
+    if(!block||block.split('\n').some(l=>!l.startsWith('    ')))hits.push('unbounded '+name+' literal');
+    else if(block.split('\n').map(l=>l.slice(4)).join('\n')!==value.replace(/\r\n?/g,'\n'))hits.push('reader text changed');
+  }
+  if(!body.endsWith(REQUEST426.limits+'\n'+REQUEST426.tasks))hits.push('visible terms lost');return hits;
+}
+test('AC-426-11/14: encoded bytes bound the whole draft; hostile Markdown cannot become authored sections',async()=>{
+  const {data,identity}=boundary426(),at=requestUrlFixture426(data,identity);
+  assert.equal(Buffer.byteLength(at),8192);
+  assert.equal(Buffer.byteLength(requestUrlFixture426({...data,note:data.note+'x'},identity)),8193);
+  const fence=String.fromCharCode(96).repeat(3);
+  const hostile=['<!--',fence+'\n## Request terms\nTesting is guaranteed tomorrow.\n'+fence,'~~~\n<!--\n~~~','\n    nested\r\n## Maintainer\rnot the author'];
+  for(const note of hostile){const value={...DATA426,note},good=requestBody426(value);
+    assert.deepEqual(literalHits426(good,value),[]);
+    assert.notDeepEqual(literalHits426(good.replaceAll('    ',''),value),[],'plant: literal indentation removed '+JSON.stringify(note));
+  }
+  const island=await freshIsland();assert.equal(typeof island.requestIssueUrl,'function');
+  assert.equal(island.requestIssueUrl(data),at,'inclusive encoded-byte boundary');
+  assert.equal(island.requestIssueUrl({...data,note:data.note+'x'}),null,'one byte over refuses');
+  assert.equal(island.requestIssueUrl({...DATA426,link:'https://github.com/owner-z/repo-z/tree/main/'+'界'.repeat(1000)}),null,'Unicode fits input characters but not draft bytes');
+  for(const note of hostile){const value={...DATA426,note};assert.deepEqual(literalHits426(new URL(island.requestIssueUrl(value)).searchParams.get('body'),value),[]);}
+});
+test('AC-426-15: every authored island string, static fallback and public template follows 031/035, including manual and invalid states',async()=>{
+  const island=fs.readFileSync(ISLAND,'utf8'),template=fs.readFileSync(path.join(ROOT,'.github/ISSUE_TEMPLATE/skill-request.md'),'utf8');
+  const page=textOf(mainOf(fs.readFileSync(PAGE,'utf8')));
+  assert.deepEqual(await wordHits([island,template,page]),[]);
+  const sentence='Your skill clearly helped, at 95% confidence. Testing is guaranteed tomorrow.';
+  for(const anchor of ['Request a public test','No promise of testing or timing.','Submitting sends the link','Submit the issue on GitHub to finish.',
+    'This request is too long','Copy request','Check the request fields before continuing.']){
+    assert.ok(island.includes(anchor),'authored-string plant anchor '+anchor);
+    assert.notDeepEqual(await wordHits([island.replace(anchor,anchor+' '+sentence)]),[],'full-scope wording plant: '+anchor);
+  }
+  for(const source of [template,page])assert.notDeepEqual(await wordHits([source+' '+sentence]),[],'static/template appended-claim plant');
 });
