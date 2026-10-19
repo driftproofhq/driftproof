@@ -98,9 +98,9 @@ const TX = {
   L1: (source, model, label) => `${source}, ${model}: ${label}.`,
   G1: (verb, name) => `${name}: worth installing? ${verb} results`,
   G2: (verb, id) => (id.path ? `Skill ${id.path} in ${id.owner}/${id.repo}.` : id.unit === 'plugin' ? `Plugin ${id.owner}/${id.repo}, ${verb.toLowerCase()} as one bundle.` : `Skill at the root of ${id.owner}/${id.repo}.`),
-  G3: 'One row per receipt. No figure on this page combines two rows.',
+  G3: 'Each result has its own test record. Results are not combined.',
   G4: 'Worth installing?',
-  G5: 'One entry per skill. Each entry links to a page with one row per receipt.',
+  G5: 'Browse skills and open their test results.',
   G6: 'Have a GitHub link to a skill? Look it up.',
   // G-6 as this file's page reader reads it: a tag is read as a space, so the link's closing tag
   // stands before the full stop (A-267-6).
@@ -112,7 +112,7 @@ const TX = {
   B1: (date) => `Built on ${date} from committed receipts.`,
   P1: (verb, name, id, sources) => `${verb} results for ${name} (${id.owner}/${id.repo}) from ${sources}, one row per receipt, in plain words.`,
   P2: 'Agent skills: worth installing? | Driftproof',
-  P3: 'Does an agent skill help, and on which model? One page per skill, each row read from a committed receipt, with the newer models since.',
+  P3: 'We test AI skills on written tasks. See what helped, what hurt, and where more answers are needed.',
   NVLABEL: 'NVIDIA\'s figures',
   noCommit: 'skill commit not recorded',
 };
@@ -128,8 +128,8 @@ const BANNED = /\b(bad|broken|useless|fails)\b/i;
 const FRESH_WORDS = /\b(current|up to date|latest)\b/i;
 // A-267-5: the first field reads "Measured by" on a TESTED row and "Reported by" on any other.
 const byField = (verb) => `${verb} by`;
-const FIELDS_DP = (verb) => [byField(verb), 'Model', 'Harness', 'Date', 'Tasks and runs', 'Result', 'Tokens', 'Freshness', 'Skill commit', 'Receipt'];
-const FIELDS_SP = (verb) => [byField(verb), 'Model', 'Harness', 'Date', 'Tasks and runs', 'Result', 'Source\'s verdict', 'Tokens', 'Freshness', 'Skill commit', 'Receipt'];
+const FIELDS_DP = (verb) => [byField(verb), 'Model', 'Date', 'Result', 'Tasks and runs', 'Receipt', 'Harness', 'Tokens', 'Freshness', 'Skill commit'];
+const FIELDS_SP = (verb) => [byField(verb), 'Model', 'Date', 'Result', 'Tasks and runs', 'Receipt', 'Source\'s verdict', 'Harness', 'Tokens', 'Freshness', 'Skill commit'];
 const SETS = { source: ['driftproof', 'skill-placebo', 'nvidia'], evidence: ['measured', 'recomputed', 'aggregates-only'], freshness: ['newer', 'no-newer', 'unknown'] };
 
 // ── inputs ────────────────────────────────────────────────────────────────────────────────────
@@ -332,7 +332,7 @@ function rowsOf(html) {
   return rows;
 }
 // The text a row carries outside its <dt>/<dd> pairs (AC-5a): none.
-const rowLoose = (row) => textOf(row.inner.replace(PAIR, ' '));
+const rowLoose = (row) => textOf(row.inner.replace(PAIR, ' ').replace('<summary>Receipt metadata</summary>', ' '));
 function entriesOf(html) {
   return [...html.matchAll(/(<li\b[^>]*class="skill-entry"[^>]*>)([\s\S]*?)<\/li>/g)].map((m) => ({ tag: m[1], html: m[0], text: textOf(m[2]), page: dataOf(m[1], 'page'), source: dataOf(m[1], 'source'), evidence: dataOf(m[1], 'evidence'), freshness: dataOf(m[1], 'freshness'),
     // A-267-6 (issue 315): the identity's path, and each L-1 in its own <span class="skill-entry-row">.
@@ -353,9 +353,10 @@ const SKELETON = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-
 const mainOf = (html) => { const m = /<main\b[^>]*>([\s\S]*)<\/main>/.exec(html); return m ? m[1] : null; };
 const outsideMain = (html) => textOf(html.replace(/<head>[\s\S]*?<\/head>/i, ' ').replace(/<main\b[\s\S]*<\/main>/, ' '));
 // What the chrome alone writes at a path: outside <main>, and inside an empty <main>.
-function chromeOf(p) {
-  const h = applyChrome(SKELETON, `skills/${p}`);
-  return { outside: outsideMain(h), inside: textOf(mainOf(h) || '') };
+function chromeOf(p, headings = []) {
+  const fixture = headings.map(x=>'<h2>'+x+'</h2>').join('');
+  const h = applyChrome(SKELETON.replace('<main></main>','<main>'+fixture+'</main>'), `skills/${p}`);
+  return { outside: outsideMain(h), inside: textOf((mainOf(h) || '').replace(/<h2\b[^>]*>[\s\S]*?<\/h2>/g,'')) };
 }
 
 // ── what each row and page should say, rebuilt from the receipt, the manifest and the registry ──
@@ -413,6 +414,7 @@ function expectedRow(entry, r, ctx) {
     out['Tasks and runs'] = TX.K3(sf.tasks);
     const parts = [nvidiaHead(sf)];
     if (sf.rows.some((x) => x.uplift_unit === 'unstated')) parts.push(TX.R7);
+    parts.push('Dimension Printed cell');
     for (const x of sf.rows) parts.push(`${x.dimension}: ${x.printed}`);
     out.Result = parts.join(' ');
     out.Tokens = sf.tokens ? TX.T3(sf.tokens.with_skill, sf.tokens.without_skill) : TX.T4;
@@ -420,7 +422,7 @@ function expectedRow(entry, r, ctx) {
     const k = tasksAndRuns(r);
     out['Tasks and runs'] = TX.K1(k.tasks, k.w, k.b) + (k.left ? TX.K2(k.left) : '');
     const p = plainOf(r);
-    if (r.verification_level === 'TESTED') out.Result = [p.sentence, ...(p.state === 'UNDERPOWERED' ? [p.detail] : [])].join(' ');
+    if (r.verification_level === 'TESTED') out.Result = [p.sentence, p.detail, p.why].filter(Boolean).join(' ');
     else out.Result = [`${LABELS.REPORTED}.`, TX.R2(n3(r.comparison.with_skill_score), n3(r.comparison.baseline_score), k.tasks)].join(' ');
     if (src === 'skill-placebo') out['Source\'s verdict'] = TX.R3(ctx.verdicts.comparisons[entry.verdict_key].verdict);
     const e = r.economics;
@@ -460,7 +462,7 @@ function pageTexts(ws, p, buildDate = BUILD_DATE) {
   const id = entries[0].identity;
   const ids = [...new Set(entries.map((e) => e.source))];
   const verb = pageVerb(ws, entries);
-  return [TX.G1(verb, pageName(id)), TX.P1(verb, pageName(id), id, sourceNames(ws, ids)), TX.G2(verb, id), TX.G3, ...attributionTexts(ws, ids), TX.D1, TX.B1(buildDate)];
+  return ['Worth installing?', pageName(id), TX.P1(verb, pageName(id), id, sourceNames(ws, ids)), TX.G2(verb, id), TX.G3, verb+' results', ...attributionTexts(ws, ids), TX.D1, TX.B1(buildDate)];
 }
 function mainRest(html) {
   let rest = mainOf(html) || '';
@@ -736,7 +738,7 @@ test('AC-5, AC-5a: every number traces field by field and page by page; a row is
     for (const en of entriesOf(html)) {
       const files = ws.manifest.receipts.filter((e) => `${pagePath(e.identity).replace(/index\.html$/, '')}` === en.page);
       const lits = [...idLits, ...files.map((e) => readJson(ws.file(e.file)).run.model_id)];
-      const nums = new Set(files.flatMap((e) => [...allow.get(e.file).Model.nums]));
+      const nums = new Set(files.flatMap((e) => [...allow.get(e.file).Model.nums,...allow.get(e.file).Result.nums]));
       stray.push(...strayNumbers(en.text, lits, nums).map((n) => `entry ${en.page}: ${n}`));
     }
     const known = p === 'index.html' || entries.length > 0;
@@ -754,8 +756,10 @@ test('AC-5, AC-5a: every number traces field by field and page by page; a row is
   // AC-5a: rows hold only their fields; <main> is the page texts; outside <main> is the chrome.
   for (const p of pages) {
     const html = out.pages.get(p);
-    for (const row of rowsOf(html)) { assert.equal(rowLoose(row), '', `${p} ${row.receipt}: text outside the fields`); assert.match(row.inner, /^\s*<dl>[\s\S]*<\/dl>\s*$/, `${p} ${row.receipt}: one <dl>`); }
-    const ch = chromeOf(p);
+    for (const row of rowsOf(html)) { assert.equal(rowLoose(row), '', `${p} ${row.receipt}: text outside the fields`); assert.match(row.inner, /^\s*<dl>[\s\S]*<\/dl>\s*<details class="receipt-metadata"><summary>Receipt metadata<\/summary><dl>[\s\S]*<\/dl><\/details>\s*$/, `${p} ${row.receipt}: result fields then metadata`); }
+    const es = ws.manifest.receipts.filter(e=>pagePath(e.identity)===p);
+    const heads=p==='index.html'?[]:[pageVerb(ws,es)+' results',...rowOrder(ws,es).map(f=>{const e=entryOf(ws,f),r=readJson(ws.file(f));return expectedRow(e,r,{aliases:ws.manifest.model_aliases,verdicts}).Result && expectedRow(e,r,{aliases:ws.manifest.model_aliases,verdicts})[byField(verbOf(r))];})];
+    const ch = chromeOf(p,heads);
     const rest = ch.inside ? mainRest(html).split(ch.inside).join(' ') : mainRest(html);
     assert.equal(rest.replace(/\s+/g, ' ').trim(), pageTexts(ws, p).join(' '), `${p}: the page texts`);
     assert.equal(outsideMain(html), ch.outside, `${p}: the chrome`);
@@ -925,9 +929,9 @@ test('AC-12: the list page names every identity with its scripts stripped, each 
     const files = rowOrder(ws, es);
     const rs = files.map((f) => ({ e: entryOf(ws, f), r: readJson(ws.file(f)) }));
     const id = es[0].identity;
-    const rows = rs.map(({ e, r }) => TX.L1(ws.manifest.sources.find((s) => s.id === e.source).name, modelOf(r, ws.manifest.model_aliases), labelOf(r)));
+    const rows = rs.map(({ e, r }) => TX.L1(ws.manifest.sources.find((s) => s.id === e.source).name, modelOf(r, ws.manifest.model_aliases), labelOf(r))+' '+expectedRow(e,r,{aliases:ws.manifest.model_aliases,verdicts:readJson(ws.file(ws.manifest.sources.find(s=>s.id==='skill-placebo').verdicts.file))}).Result);
     return {
-      text: [`${id.owner}/${id.repo}/${pageName(id)}`, ...rows].join(' '),
+      text: [pageName(id), `${id.owner}/${id.repo}${id.unit==='plugin'?' (plugin bundle)':''}`, ...rows].join(' '),
       rows,
       path: id.path,
       source: ordered(SETS.source, rs.map(({ e }) => e.source)),
@@ -986,7 +990,8 @@ test('AC-13: titles by the ladder within spec 133 AC-3, descriptions of the fixe
     const verb = pageVerb(ws, ws.manifest.receipts.filter((x) => pagePath(x.identity) === p));
     assert.equal(d, TX.P1(verb, name, e.identity, sourceNames(ws, ids)), p);
     assert.ok([`${name}: worth installing? | Driftproof`, `${name} by ${e.identity.owner}: worth installing? | Driftproof`, `${name} | Driftproof`, `${name} by ${e.identity.owner} | Driftproof`].includes(t), `${p}: ${t}`);
-    assert.match(html, new RegExp(`<h1>${escapeRegExp(name)}: worth installing\\? ${verb} results</h1>`));
+    assert.match(html, new RegExp(`<h1>${escapeRegExp(name)}</h1>`));
+    assert.ok(html.includes(`<h2>${verb} results</h2>`));
   }
   // Two identities with one name under two owners: two titles, both unique.
   const two = await build(workspace({ arms: (list) => { for (const [a, owner] of [[list[0], 'owner-x'], [list[2], 'owner-y']]) { a.identity = { owner, repo: 'shared', path: '', unit: 'skill' }; a.name = 'shared'; } } }));
@@ -1051,7 +1056,7 @@ test('AC-14, AC-14a: no banned word, confidence language or band lexicon phrasin
   assert.ok(dRow.fields.Result.text.includes(`Overall: ${DASH}`), dRow.fields.Result.text);
   assert.deepEqual(cellsOf(dRow), [DASH, DASH]);
   assert.deepEqual(scan(dPage), []);
-  assert.deepEqual(scan(dPage.replace(TX.G3, TX.G3.replace('One row per receipt.', 'One row per receipt — always.'))), []);
+  assert.deepEqual(scan(dPage.replace(TX.G3, TX.G3.replace('Each result has its own test record.', 'Each result has its own test record — always.'))), []);
   // A barred word inside a quoted cell is still read.
   assert.notDeepEqual(scan(dPage.replace('<q class="card-cell">', '<q class="card-cell">fails </q><q class="card-cell">')), []);
   // AC-14a: a slot is escaped where it is written.
@@ -1084,7 +1089,7 @@ function verbFaults(html, verb, rowVerb) {
   if (rows.length) {
     const h1 = textOf((/<h1>([\s\S]*?)<\/h1>/.exec(html) || [null, ''])[1]);
     const d = descOf(html) || '';
-    if (!h1.endsWith(`: worth installing? ${verb} results`)) faults.push(`h1: ${h1}`);
+    if (!h1 || !html.includes(`<h2>${verb} results</h2>`)) faults.push(`result heading: ${h1}`);
     if (!d.startsWith(`${verb} results for `)) faults.push(`description: ${d}`);
   }
   for (const row of rows) {
@@ -1125,7 +1130,7 @@ test('AC-24: a page whose rows are all reported says "measured" nowhere, and a p
   const nvP = pagePath(NV[0].identity);
   const nvPage = out.pages.get(nvP);
   assert.equal(pageVerb(ws, entriesAt(nvP)), 'Reported');
-  assert.notDeepEqual(verbFaults(nvPage.replace(TX.G1('Reported', NV[0].name), TX.G1('Measured', NV[0].name)), 'Reported', rowVerb), []);
+  assert.notDeepEqual(verbFaults(nvPage.replace('<h2>Reported results</h2>', '<h2>Measured results</h2>'), 'Reported', rowVerb), []);
   assert.notDeepEqual(verbFaults(nvPage.replace('<dt>Reported by</dt>', '<dt>Measured by</dt>'), 'Reported', rowVerb), []);
   assert.notDeepEqual(verbFaults(nvPage.replace('Reported on ', 'Measured on '), 'Reported', rowVerb), []);
   // A skill-placebo page reads green with its label "Reported, not measured", and red with the word

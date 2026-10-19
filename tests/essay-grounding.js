@@ -20,7 +20,7 @@ const fs = require('fs');
 const path = require('path');
 const scope = require('./assertion-scope.js');
 
-const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen'];
+const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen'];
 const ESSAY_REL = path.join('docs', 'writing', 'three-releases', 'index.html');
 const PUBLISHED_ON = '2026-08-11'; // the essay's publication date, as printed on it
 
@@ -297,6 +297,15 @@ function liftTablePairs(html) {
   return [...counts.entries()].map(([label, n]) => pair(n, label));
 }
 
+// Issue 408: one receipt verdict per cell in the frozen campaign table.
+function campaignTablePairs(html) {
+ const t=html.match(/<section class="campaign-summary">([\s\S]*?)<\/table>/);if(!t)return null;
+ const states=[...t[1].matchAll(/<data value="(PASSED|REGRESSED|UNDERPOWERED|NO_EFFECT|INCONCLUSIVE)" data-at="verdict">/g)].map(m=>m[1]);
+ const labels={PASSED:'clearly helped',REGRESSED:'clearly hurt',UNDERPOWERED:'too few answers to tell',NO_EFFECT:'no clear difference',INCONCLUSIVE:'inconclusive'};
+ if(!states.length)return null;const tally=new Map();for(const state of states)tally.set(labels[state],(tally.get(labels[state])||0)+1);
+ return [...tally].map(([label,n])=>pair(n,label));
+}
+
 function valuePairs(text) {
   const a = text.match(/In (\d+) of (\d+) skill × substrate pairs/);
   const b = text.match(/(\d+) cleared the floor on aggregate: (\d+) carry a price and (\d+) report a saving/);
@@ -317,7 +326,7 @@ function derive(root) {
   for (const id of publishedReportIds(root)) {
     const html = fs.readFileSync(path.join(root, 'docs', 'reports', id, 'index.html'), 'utf8');
     const text = stripTags(html);
-    const pairs = valuePairs(text) || tallyLinePairs(text) || verdictCellPairs(html) || refusalTablePairs(html) || instrumentComparisonPairs(html) || runTablePairs(html) || comparisonTablePairs(html) || liftTablePairs(html) || underTheRulePairs(html);
+    const pairs = valuePairs(text) || tallyLinePairs(text) || verdictCellPairs(html) || refusalTablePairs(html) || instrumentComparisonPairs(html) || runTablePairs(html) || comparisonTablePairs(html) || liftTablePairs(html) || campaignTablePairs(html) || underTheRulePairs(html);
     if (!pairs) throw new Error(`no tally derivable from report ${id}`);
     // A count derived from the page (#002's verdict cells) is a figure the page
     // supports though it never spells it out, so it joins the page's numbers.

@@ -316,6 +316,7 @@ function reportRungs(row) {
   return [`Report ${n}: ${type}, ${models}`, `Report ${n}: ${models}`, `Report ${n}: ${row.what_moved.value}`].map((t) => `${t}${BRAND_SUFFIX}`);
 }
 function reportTitle(row) {
+  if(row.scope_title) return `${row.scope_title.value}${BRAND_SUFFIX}`;
   const rungs = reportRungs(row);
   return rungs.find((t) => t.length <= TITLE_MAX) || rungs[2];
 }
@@ -773,7 +774,7 @@ function block(html, rel, title, description, rows, cfg) {
 // truth for the head block and leaves the invariant exactly as strong as it was.
 // A receipt page's renderer passes its receipt as `own`, so a receipt outside the archive still
 // takes a title (spec 133 Amendment 1).
-function applyHeadTags(html, rel, config, own) {
+function applyHeadTags(html, rel, config, own, reportRows) {
   validatePageInput(html);
   qaValues(html);
   // The config is read here when a caller does not supply one, so every switch
@@ -784,7 +785,7 @@ function applyHeadTags(html, rel, config, own) {
   // puts a TL;DR card at the top of every report; doing both here rather than in
   // a second sweep is what keeps report 007's renderer, which already calls this,
   // emitting the finished page and its byte-identity assertion green.
-  html = chrome.applyChrome(html, rel);
+  html = chrome.applyChrome(html, rel, reportRows);
   // Strip what a previous run left, so this replaces rather than appends.
   let out = html
     .replace(new RegExp(`${OPEN}[\\s\\S]*?${CLOSE}\\n?`, 'g'), '')
@@ -797,7 +798,7 @@ function applyHeadTags(html, rel, config, own) {
   out = out.replace(/[ \t]*<meta\s+name="description"[^>]*>\n?/g, '');
   out = out.replace(/[ \t]*<link rel="stylesheet" href="(?:\.\.\/)*tokens\.css">\n?/g, '');
 
-  const rows = reportsData();
+  const rows = reportRows || reportsData();
   const title = pageTitle(out, rel, rows, own);
   const row = rowFor(rel, rows);
   const description = (row && rel === `reports/${row.number.value}/index.html` && modelsDescription(row))

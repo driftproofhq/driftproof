@@ -31,7 +31,7 @@ const ORIGIN = 'https://driftproofhq.com';
 // gate reads these bounds against the ruling in the brief.
 const PAGES = ['what-is-driftproof', 'agent-skill-evaluation', 'agent-skill-regression-testing', 'compare', 'methodology', 'paper'];
 const COPIED_REPORTS = { from: '009', to: '013' };
-const copied = (n) => String(n) >= COPIED_REPORTS.from && String(n) <= COPIED_REPORTS.to;
+const copied = (n) => String(n) >= COPIED_REPORTS.from && String(n) <= COPIED_REPORTS.to || String(n) === '015';
 const reportRows = (root) => JSON.parse(fs.readFileSync(path.join(root, 'docs', 'data', 'reports.json'), 'utf8')).reports;
 function pageSet(root = ROOT) {
   return [...PAGES.map((p) => `${p}/index.html`), ...reportRows(root).filter((r) => copied(r.number.value)).map((r) => `reports/${r.number.value}/index.html`)];
@@ -118,7 +118,9 @@ function makeCtx(pageUrl) {
       case 'strong': case 'b': { const t = kids(); return t.trim() ? `**${t.trim()}**${/\s$/.test(t) ? ' ' : ''}` : t; }
       case 'em': case 'i': case 'cite': case 'dfn': { const t = kids(); return t.trim() ? `*${t.trim()}*${/\s$/.test(t) ? ' ' : ''}` : t; }
       case 'q': return `“${kids()}”`;
-      default: return kids();
+      // Table cells flatten blocks onto one Markdown line, but their boundaries
+      // must still separate words. Inline markup keeps its exact joins.
+      default: return inTable && !INLINE.has(n.tag) ? ` ${kids()} ` : kids();
     }
   }
 

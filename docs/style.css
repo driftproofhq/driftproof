@@ -80,8 +80,10 @@ main.skill-index { overflow-wrap: anywhere; }
    edges), so the grain never sits under its figures. The verdict is a stamp in the ink of its
    state; UNDERPOWERED keeps a dashed rule around its block, not an alarm colour. Long commands
    and hashes wrap rather than widen the page. */
-main.receipt-page { margin: 2.6rem auto 3.4rem; padding: 2.4rem 2.2rem 2.2rem; }
-.receipt-page code { overflow-wrap: anywhere; }
+main.receipt-page { min-width: 0; overflow-wrap: anywhere; margin: 2.6rem auto 3.4rem; padding: 2.4rem 2.2rem 2.2rem; }
+.receipt-page code { overflow-wrap: anywhere; white-space: normal; }
+.receipt-page .copy-cta { max-width: 100%; min-width: 0; }
+.receipt-page .copy-cta code { min-width: 0; }
 .receipt-page section { border-top: 1px dashed var(--rule); padding-top: 1.2rem; margin-top: 1.6rem; }
 .receipt-meta { color: var(--ink-muted); }
 .receipt-verdict { padding: 1.2rem 0 0.4rem; margin: 1.4rem 0; }
@@ -109,3 +111,210 @@ main.receipt-page { margin: 2.6rem auto 3.4rem; padding: 2.4rem 2.2rem 2.2rem; }
 .install-label { font-weight: 600; margin-bottom: 0.25rem; }
 .hero-links { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; }
 .states li { margin: 0.5rem 0; }
+
+/* Issue 408: skill evidence uses the existing paper/ink contrast pairs. */
+.skill-index h1 { font-size: var(--t-h1-page); }
+.skill-row, .campaign-summary, .skill-entry { background: var(--sheet); color: var(--ink); border-radius: var(--radius); box-shadow: var(--sheet-shadow); padding: var(--s-3); margin-block: var(--s-3); }
+.skill-row a, .campaign-summary a, .skill-entry a { color: var(--accent-ink); }
+.skill-row h2, .skill-row h3, .campaign-summary h2, .campaign-summary h3, .skill-entry h2, .skill-entry h3 { color: var(--ink); }
+.skill-row p, .skill-row dd, .campaign-result { max-width: var(--w-read); }
+.skill-row dl, .skill-row dd, .skill-list { margin: 0; padding: 0; }
+.skill-row dt { color: var(--ink-muted); margin-top: var(--s-2); }
+.skill-row dd, .model-identity, .verdict-basis li { font-family: var(--mono); }
+.skill-row dd h2 { font-family: var(--display); }
+.skill-list { list-style: none; }
+.skill-name { display: block; font-size: var(--t-h3); }
+.skill-repository, .skill-entry-row { display: block; margin-block: var(--s-1); }
+.skill-row details { margin-top: var(--s-3); }
+.skill-table-scroll { overflow-x: auto; max-width: 100%; min-width: 0; }
+.campaign-summary, .campaign-record, .campaign-result, .answer-explanation { min-width: 0; overflow-wrap: anywhere; }
+.campaign-record, .campaign-summary { max-width: 100%; box-sizing: border-box; }
+.skill-table-scroll table { width: 100%; color: var(--ink); background: var(--sheet); }
+.skill-table-scroll th, .skill-table-scroll td { text-align: left; vertical-align: top; padding: var(--s-2); border-bottom: 1px solid var(--rule); }
+.skill-filters { display: grid; gap: var(--s-2); padding-block: var(--s-3); }
+.skill-filters label { display: grid; gap: var(--s-1); }
+.skill-filters input, .skill-filters select, .skill-filters button { min-height: var(--touch); font: inherit; color: var(--shell-text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius); padding-inline: var(--s-2); }
+.skill-row :focus-visible, .campaign-summary :focus-visible, .skill-entry :focus-visible { outline-color: var(--accent-ink); }
+@media (max-width: 640px) { .skill-index h1 { font-size: var(--t-h1-page); } .skill-row, .skill-entry { padding: var(--s-2); } .skill-row dl, .skill-row dd { margin-left: 0; } }
+
+/* Issue 408: concept A, the selected scoreboard. Shared chrome stays unchanged. */
+.measurement-ui { background: var(--desk); color: var(--shell-text); }
+.measurement-ui .page-grid, .measurement-ui .page-grid.has-facts { max-width: var(--w-measure-wide); grid-template-columns: minmax(0,1fr); grid-template-rows: auto; }
+.measurement-ui .page-grid > main, .measurement-ui .page-grid.has-facts > main { grid-column: 1; grid-row: auto; min-width: 0; padding-top: var(--s-5); }
+.measurement-ui .page-grid > :is(.page-toc,.facts-rail), .measurement-ui .page-grid.has-facts > .facts-rail { grid-column: 1; grid-row: auto; padding-top: var(--s-3); }
+.measurement-ui .page-grid > .page-toc { display: none; }
+.measurement-ui .facts-rail .rail-in { position: static; max-height: none; }
+.measurement-ui :is(p,li,dd) { overflow-wrap: anywhere; }
+.measurement-ui :is(h1,h2,h3,h4) { font-family: var(--display); font-weight: 500; letter-spacing: -.035em; }
+.measurement-ui :is(main h1,.skill-index h1) { font-size: var(--t-measure-title); line-height: 1.04; max-width: var(--w-measure-read); }
+.measurement-ui main h2 { font-size: var(--t-measure-section); line-height: 1.15; }
+.measurement-ui a { color: var(--shell-accent); }
+.measurement-ui :focus-visible { outline-color: var(--shell-accent); }
+.measurement-ui :is(.skill-row,.skill-entry,.plain-summary,.headline,.campaign-record,.scoreboard-paper) { background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: var(--radius); box-shadow: none; padding: var(--s-4); margin-block: var(--s-3); }
+.measurement-ui :is(.skill-row,.skill-entry,.plain-summary,.headline,.campaign-record,.scoreboard-paper,.skill-table-scroll) :is(a,summary) { color: var(--accent-ink); }
+.measurement-ui :is(.skill-row,.skill-entry,.plain-summary,.headline,.campaign-record,.scoreboard-paper,.skill-table-scroll) :is(h2,h3,h4,dt) { color: var(--ink); }
+.measurement-ui :is(.skill-row,.skill-entry,.plain-summary,.headline,.campaign-record,.scoreboard-paper,.skill-table-scroll) :focus-visible { outline-color: var(--accent-ink); }
+.measurement-ui .scoreboard-hero { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.07fr); gap: var(--s-5); align-items: center; margin-block: var(--s-4); }
+.measurement-ui .scoreboard-eyebrow { color: var(--shell-muted); font-size: var(--t-measure-small); text-transform: none; letter-spacing: .07em; margin: 0 0 var(--s-3); }
+.measurement-ui .scoreboard-paper { margin: 0; padding: var(--s-4); }
+.measurement-ui .scoreboard-paper .scoreboard-eyebrow { color: var(--ink-muted); }
+.measurement-ui .scoreboard-paper h2 { margin: 0; max-width: var(--w-measure-chart); }
+.measurement-ui .skill-lede, .measurement-ui .skill-intro { font-size: var(--t-measure-dek); line-height: 1.4; max-width: var(--w-measure-read); margin-block: var(--s-3); }
+.measurement-ui .skill-intro { max-width: var(--w-measure-intro); }
+.measurement-ui .scoreboard-button { display: inline-flex; align-items: center; min-height: var(--touch); padding: var(--s-2) var(--s-3); color: var(--desk); background: var(--shell-accent); border-radius: var(--radius); font-weight: 600; text-decoration: none; }
+.measurement-ui .scoreboard-source { font-size: var(--t-measure-fine); color: var(--shell-muted); line-height: 1.45; margin-top: var(--s-3); }
+.measurement-ui .campaign-tally { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: var(--s-3); margin-block: var(--s-3); color: var(--ink); background: var(--sheet); border-radius: var(--radius); padding: var(--s-3); }
+.measurement-ui .campaign-tally > p { min-width: 0; max-width: none; margin: 0; }
+.measurement-ui .campaign-tally > p:first-child { grid-column: 1 / -1; border-bottom: 1px solid var(--rule); padding-bottom: var(--s-3); }
+.measurement-ui .tally-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); font-size: var(--t-h3); font-weight: 600; }
+.measurement-ui .tally-total { font-size: var(--t-measure-fine); font-weight: 400; color: var(--ink-muted); }
+.measurement-ui .tally-total data { font: inherit; }
+.measurement-ui .tally-grid { display: grid; gap: var(--s-2); margin-top: var(--s-2); }
+.measurement-ui .tally-outcome { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(0,1.6fr) 3ch; align-items: center; gap: var(--s-2); font-size: var(--t-measure-fine); }
+.measurement-ui .tally-outcome > data { font-family: var(--mono); font-size: var(--t-measure-count); text-align: right; white-space: nowrap; line-height: 1.2; }
+.measurement-ui .tally-outcome[data-state="PASSED"] { color: var(--accent-ink); }
+.measurement-ui .tally-outcome[data-state="REGRESSED"] { color: var(--reg); }
+.measurement-ui .tally-outcome[data-state="UNDERPOWERED"] { color: var(--state-refused); }
+.measurement-ui .tally-bar { display: block; height: var(--measure-bar); background: var(--sheet-rule); border-radius: var(--radius); overflow: hidden; }
+.measurement-ui .tally-bar svg { display: block; width: 100%; height: 100%; }
+.measurement-ui .tally-bar rect { fill: currentColor; }
+.measurement-ui .campaign-tally > p:first-child .tally-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.measurement-ui .campaign-tally > p:first-child .tally-outcome { display: flex; flex-direction: column-reverse; align-items: start; gap: 0; }
+.measurement-ui .tally-scope { display: block; color: var(--ink-muted); font-size: var(--t-measure-small); margin-top: var(--s-2); }
+.measurement-ui .scoreboard-paper .campaign-tally { display: flex; flex-direction: column; padding: 0; gap: var(--s-4); margin-bottom: 0; }
+.measurement-ui .scoreboard-paper .campaign-tally > p:first-child { order: 3; border-top: 1px solid var(--rule); border-bottom: 0; padding-top: var(--s-2); padding-bottom: 0; }
+.measurement-ui .scoreboard-paper .campaign-tally > p:first-child .tally-heading { font-size: var(--t-measure-fine); }
+.measurement-ui .scoreboard-paper .tally-scope { margin-top: var(--s-2); }
+.measurement-ui .measurement-jumps { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-4); padding-block: var(--s-2); margin-block: var(--s-3); border-block: 1px solid var(--border); }
+.measurement-ui .measurement-jumps a { min-height: var(--touch); display: inline-flex; align-items: center; }
+.measurement-ui .skill-lookup-link { font-size: var(--t-measure-fine); color: var(--shell-muted); }
+.measurement-ui .campaign-summary { padding: 0; margin-block: var(--s-5); background: none; box-shadow: none; color: var(--shell-text); }
+.measurement-ui .comparison-heading { display: flex; justify-content: space-between; align-items: end; gap: var(--s-3); }
+.measurement-ui .comparison-heading h2 { color: var(--shell-text); margin: 0; }
+.measurement-ui .comparison-heading .scoreboard-eyebrow { margin-bottom: var(--s-1); }
+.measurement-ui .comparison-heading > p { font-size: var(--t-measure-fine); color: var(--shell-muted); margin: 0; }
+.measurement-ui .comparison-scope, .measurement-ui .skill-about { border-block: 1px solid var(--border-strong); padding-block: var(--s-2); margin-block: var(--s-3); color: var(--shell-muted); font-size: var(--t-measure-fine); }
+.measurement-ui :is(.comparison-scope,.skill-about) > summary { color: var(--shell-text); }
+.measurement-ui .comparison-scope p { max-width: var(--w-measure-read); }
+.measurement-ui .skill-table-scroll { overflow: visible; }
+.measurement-ui .skill-table-scroll .table-wrap { margin: 0; box-shadow: none; background: none; overflow: visible; }
+.measurement-ui .skill-table-scroll table { border-collapse: separate; border-spacing: 0; width: 100%; table-layout: fixed; color: var(--ink); background: var(--sheet); box-shadow: none; border-radius: var(--radius); overflow: hidden; }
+.measurement-ui .skill-table-scroll caption { color: var(--shell-muted); background: var(--desk); text-align: left; font-size: var(--t-measure-fine); padding: 0 0 var(--s-3); }
+.measurement-ui .comparison-tasks { display: block; margin-top: var(--s-1); }
+.measurement-ui .skill-table-scroll :is(th,td) { vertical-align: top; white-space: normal; padding: var(--s-3); border-bottom: 1px solid var(--rule); min-width: 0; font-family: var(--sans); }
+.measurement-ui .skill-table-scroll thead th { background: var(--paper); color: var(--ink); font-size: var(--t-h3); font-weight: 600; }
+.measurement-ui .skill-table-scroll thead th:first-child { width: 38%; }
+.measurement-ui .skill-table-scroll thead th > span { display: block; font-size: var(--t-measure-fine); font-weight: 400; color: var(--ink-muted); }
+.measurement-ui .comparison-skill { display: flex; gap: var(--s-2); }
+.measurement-ui .comparison-skill a { font-weight: 600; color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
+.measurement-ui .comparison-rank { font-family: var(--mono); font-size: var(--t-measure-small); color: var(--ink-muted); width: 2ch; flex: none; padding-top: var(--s-1); }
+.measurement-ui .comparison-repository { display: block; font-size: var(--t-measure-small); font-weight: 400; color: var(--ink-muted); margin-top: var(--s-1); overflow-wrap: anywhere; }
+.measurement-ui .campaign-result, .measurement-ui .answer-explanation { display: block; max-width: none; min-width: 0; }
+.measurement-ui .campaign-result > p { margin: var(--s-2) 0; }
+.measurement-ui .campaign-result .result-lead { margin: 0; font-size: var(--t-h3); font-family: var(--sans); font-weight: 600; line-height: 1.25; border: 0; padding: 0; }
+.measurement-ui .result-lead data { font: inherit; }
+.measurement-ui .result-lead:has(data[value="PASSED"]) { color: var(--accent-ink); }
+.measurement-ui .result-lead:has(data[value="REGRESSED"]) { color: var(--reg); }
+.measurement-ui .result-lead:has(data[value="UNDERPOWERED"]) { color: var(--state-refused); }
+.measurement-ui .result-context { display: block; color: var(--ink-muted); font-size: var(--t-measure-fine); font-weight: 400; margin-bottom: var(--s-2); }
+.measurement-ui .result-guide { font-size: var(--t-measure-body); line-height: 1.4; color: var(--ink-muted); }
+.measurement-ui .result-record { font-size: var(--t-measure-fine); }
+.measurement-ui .result-record a { min-height: var(--touch); display: inline-flex; align-items: center; }
+.measurement-ui details { min-width: 0; }
+.measurement-ui summary { cursor: pointer; min-height: var(--touch); align-content: center; font-family: var(--sans); font-size: var(--t-measure-fine); font-weight: 500; }
+.measurement-ui .result-reading { margin: 0; border: 0; padding: 0; font-size: var(--t-measure-fine); }
+.measurement-ui .result-reading > summary { color: var(--ink-muted); }
+.measurement-ui .result-reading :is(p,li) { max-width: none; }
+.measurement-ui .result-sentence { font-size: var(--t-measure-body); }
+.measurement-ui :is(.result-detail,.result-why,.result-drivers,.result-scope,.result-isolation,.result-router,.result-evidence,.verdict-basis,.attempt-history,.retry-authorization) { font-size: var(--t-measure-fine); }
+.measurement-ui .result-drivers { border: 0; padding: 0; }
+.measurement-ui .result-drivers [data-driver] { display: block; margin-top: var(--s-1); }
+.measurement-ui .score-prompt { display: block; color: var(--accent-ink); text-decoration: underline; }
+.measurement-ui .result-links { display: flex; gap: var(--s-1); flex-wrap: wrap; }
+.measurement-ui .result-links a { display: inline-flex; align-items: center; min-height: var(--touch); }
+.measurement-ui .attempt-history { background: var(--sheet-rule); padding: var(--s-2); }
+.measurement-ui .attempt-history ul { padding-left: var(--s-3); }
+.measurement-ui .skill-eyebrow { color: var(--shell-muted); font-size: var(--t-measure-fine); margin-bottom: var(--s-2); }
+.measurement-ui :is(.skill-where,.skill-note,.skill-built,.skill-source) { font-size: var(--t-measure-fine); color: var(--shell-muted); }
+.measurement-ui .skill-results { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); align-items: start; gap: var(--s-3); margin-block: var(--s-3); }
+.measurement-ui .skill-results > article { min-width: 0; margin: 0; border-top: 4px solid var(--accent-ink); }
+.measurement-ui .skill-results > article:only-child { grid-column: 1 / -1; }
+.measurement-ui .skill-results > article:has(data[value="REGRESSED"]) { border-top-color: var(--reg); }
+.measurement-ui .skill-results > article:has(data[value="UNDERPOWERED"]) { border-top-color: var(--state-refused); }
+.measurement-ui .skill-row > h2 { font-family: var(--sans); font-size: var(--t-measure-small); color: var(--ink-muted); margin: 0 0 var(--s-3); text-transform: none; letter-spacing: .06em; }
+.measurement-ui .model-identity { font-family: var(--sans); font-size: var(--t-measure-body); }
+.measurement-ui .skill-results .model-identity span { display: block; }
+.measurement-ui .skill-results .model-identity small { display: block; font-family: var(--sans); font-size: var(--t-measure-small); color: var(--ink-muted); }
+.measurement-ui .skill-results .model-identity strong { display: block; font-family: var(--display); font-size: var(--t-measure-section); font-weight: 500; margin-block: var(--s-1); }
+.measurement-ui .skill-results .model-identity span + span { font-size: var(--t-measure-fine); color: var(--ink-muted); }
+.measurement-ui .skill-results .campaign-result { margin-top: var(--s-4); }
+.measurement-ui .skill-results .result-lead { font-size: var(--t-measure-section); }
+.measurement-ui .skill-results .result-reading { border-top: 1px solid var(--rule); padding-top: var(--s-2); }
+.measurement-ui .verdict-basis li { font-family: var(--sans); }
+.measurement-ui :is(code,pre) { overflow-wrap: anywhere; white-space: pre-wrap; }
+.measurement-ui .skill-entry-row { padding-block: var(--s-2); border-top: 1px solid var(--rule); }
+.measurement-ui .skill-list > li { max-width: none; }
+.measurement-ui .skill-filters { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: var(--radius); padding: var(--s-3); }
+.measurement-ui .skill-filters label:first-child { grid-column: 1 / -1; }
+.measurement-ui .skill-filters :is(input,select,button) { width: 100%; min-width: 0; color: var(--ink); background: var(--sheet); border-color: var(--ink-muted); }
+.measurement-ui .test-explainer { margin-block: var(--s-5); }
+.measurement-ui .test-explainer > p { max-width: var(--w-measure-read); }
+.measurement-ui .test-journey { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.4fr) minmax(0,1fr); list-style: none; padding: 0; gap: 0; border: 1px solid var(--border-strong); border-radius: var(--radius); overflow: hidden; margin-block: var(--s-3); }
+.measurement-ui .test-journey li { min-width: 0; padding: var(--s-3); margin: 0; background: var(--surface); }
+.measurement-ui .test-journey li + li { border-left: 1px solid var(--border-strong); }
+.measurement-ui .test-step { display: block; color: var(--shell-accent); font-size: var(--t-measure-small); margin-bottom: var(--s-2); }
+.measurement-ui .test-journey strong { display: block; font: inherit; font-family: var(--display); font-size: var(--t-h3); margin-bottom: var(--s-2); }
+.measurement-ui .test-journey p, .measurement-ui .test-boundary { color: var(--shell-muted); font-size: var(--t-measure-fine); }
+.measurement-ui .test-prompt, .measurement-ui .test-judge { border: 1px solid var(--border-strong); padding: var(--s-2); border-radius: var(--radius); text-align: center; margin-block: var(--s-3); }
+.measurement-ui .test-arms { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: var(--s-2); margin-block: var(--s-3); }
+.measurement-ui .test-path { min-width: 0; display: flex; flex-direction: column; gap: var(--s-3); text-align: center; }
+.measurement-ui .test-path span { display: block; font-size: var(--t-measure-fine); }
+.measurement-ui .test-path span:first-child { font-weight: 600; }
+.measurement-ui .test-path span + span { position: relative; border: 1px solid var(--border-strong); padding: var(--s-2); border-radius: var(--radius); }
+.measurement-ui .test-path span + span::before { content: ""; position: absolute; width: var(--s-1); height: var(--s-1); left: calc(50% - var(--s-1) / 2); top: calc(-1 * var(--s-2)); border-left: 2px solid var(--shell-accent); border-bottom: 2px solid var(--shell-accent); transform: rotate(-45deg); }
+.measurement-ui .page-grid:not(.is-reading) .plain-summary { display: block; }
+.measurement-ui .plain-summary { border-top: 3px solid var(--accent-ink); }
+.measurement-ui .plain-summary h2.eyebrow { color: var(--ink); margin-top: 0; font-size: var(--t-h3); }
+.measurement-ui .plain-summary :is(.tldr-type,.tldr-what,.tldr-headline,.tldr-verdict) { font-family: var(--sans); }
+.measurement-ui .page-grid:not(.is-reading) .plain-summary ul { grid-template-columns: repeat(2,minmax(0,1fr)); gap: var(--s-3); }
+.measurement-ui .plain-summary li { max-width: none; border: 1px solid var(--rule); padding: var(--s-3); border-radius: var(--radius); }
+.measurement-ui .plain-summary li.limit { grid-column: 1 / -1; }
+.measurement-ui .example-selection { color: var(--shell-muted); font-size: var(--t-measure-fine); }
+.measurement-ui .plain-summary .example-selection { color: var(--ink-muted); }
+.measurement-ui .campaign-record { font-size: var(--t-measure-fine); }
+.measurement-ui .campaign-record h2 { margin-top: 0; }
+.measurement-ui .report.shaped .headline { background: var(--sheet); color: var(--ink); }
+.measurement-ui .card a { color: var(--accent-ink); }
+@media (min-width: 641px) {
+ .measurement-ui .skill-table-scroll .comparison-model, .measurement-ui .skill-table-scroll .result-context { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+@media (max-width: 900px) { .measurement-ui .scoreboard-hero { gap: var(--s-3); } }
+@media (max-width: 640px) {
+ .measurement-ui .page-grid { padding-inline: var(--s-3); }
+ .measurement-ui .page-grid > main { padding-top: var(--s-3); }
+ .measurement-ui .scoreboard-hero { display: block; margin-top: var(--s-3); }
+ .measurement-ui .scoreboard-paper { margin-top: var(--s-4); }
+ .measurement-ui :is(.skill-row,.skill-entry,.plain-summary,.headline,.campaign-record,.scoreboard-paper) { padding: var(--s-3); }
+ .measurement-ui .campaign-tally, .measurement-ui .skill-results, .measurement-ui .skill-filters, .measurement-ui .page-grid:not(.is-reading) .plain-summary ul { grid-template-columns: minmax(0,1fr); }
+ .measurement-ui .comparison-heading { display: block; }
+ .measurement-ui .comparison-heading > p { margin-top: var(--s-2); }
+ .measurement-ui .skill-table-scroll table, .measurement-ui .skill-table-scroll tbody { display: block; width: 100%; }
+ .measurement-ui .skill-table-scroll thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+ .measurement-ui .skill-table-scroll tr { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); margin-bottom: var(--s-3); background: var(--sheet); border-radius: var(--radius); }
+ .measurement-ui .skill-table-scroll table { background: none; }
+ .measurement-ui .skill-table-scroll th[scope="row"] { grid-column: 1 / -1; background: var(--paper); padding: var(--s-2); border: 0; }
+ .measurement-ui .skill-table-scroll td { padding: var(--s-2); border: 0; }
+ .measurement-ui .skill-table-scroll td + td { border-left: 1px solid var(--rule); }
+ .measurement-ui .skill-table-scroll caption { display: block; width: 100%; box-sizing: border-box; }
+ .measurement-ui .comparison-model { font-size: var(--t-measure-small); color: var(--ink-muted); margin: 0 0 var(--s-2); }
+ .measurement-ui .skill-table-scroll .result-context { display: block; font-size: var(--t-measure-small); }
+ .measurement-ui .skill-table-scroll .result-lead { font-size: var(--t-measure-body); }
+ .measurement-ui .test-journey { grid-template-columns: minmax(0,1fr); }
+ .measurement-ui .test-journey li + li { border-left: 0; border-top: 1px solid var(--border-strong); }
+}
+
+.measurement-ui main.report h1 { font-size: var(--t-h1-page); }
+.measurement-ui .scoreboard-paper .campaign-tally > p:first-child .tally-grid { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-2); }
+.measurement-ui .scoreboard-paper .campaign-tally > p:first-child .tally-outcome { flex-direction: row-reverse; align-items: center; gap: var(--s-1); font-size: var(--t-measure-small); }
+.measurement-ui .scoreboard-paper .campaign-tally > p:first-child .tally-outcome data { font-size: var(--t-measure-fine); }
+.measurement-ui .skill-table-scroll .result-context { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

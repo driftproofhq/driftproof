@@ -24,14 +24,15 @@ measures a skill in your repository and writes its receipt. It runs on your
 Claude Code subscription. You need Node.js 22 or later.
 [Other ways to install](#install) · [Measure your own skill](#quickstart-receipt-for-your-own-skill)
 
-**Latest finding** · [Report 014](https://driftproofhq.com/reports/014/), 7 Oct
-2026: on Claude Haiku 5.5 no skill clearly helped in two or more of three
-repeats.
+**Latest finding** · [Report 015](https://driftproofhq.com/reports/015/), 18 Oct
+2026: for the Skills.sh snapshot 2026-10-17: text tasks by Driftproof; Haiku 5.5
+judge; eval account checked before/after runs, not during: Sonnet 5.5 12 helped,
+4 hurt, 4 too few answers; Opus 5.5 12 helped, 2 hurt, 6 too few answers.
 
 [![driftproof](https://img.shields.io/endpoint?url=https://driftproofhq.com/badges/commit-message-conventions.json)](https://driftproofhq.com)
 live badge for the bundled example, generated from its own receipt.
 
-[All thirteen reports](#reports) · [driftproofhq.com](https://driftproofhq.com)
+[All fourteen reports](#reports) · [driftproofhq.com](https://driftproofhq.com)
 
 ![The page driftproof view makes from Report 013's receipts: three skills by three models, each result in plain words: clearly helped, no clear difference, or too few answers to tell.](https://driftproofhq.com/assets/view-report-013.png)
 The page `npx driftproof view` makes from [Report 013's
@@ -312,18 +313,24 @@ empty environment:
 Only `HOME` and `PATH` reach the child, both constructed from the user name, none
 copied from your shell. The working directory is a fresh temp directory made for
 that one call and removed after it, including on timeout. The CLI argv is passed
-as separate arguments, never as a shell string. What the evaluated agent cannot
-see: your environment (tokens, keys), your home directory (SSH keys, CLI session
-files), your current directory, and your CLI configuration.
+as separate arguments, never as a shell string. With the prerequisite below done,
+including step 4, which closes your home to other users, and without
+`--trusted-skill`, the evaluated agent cannot see your environment (tokens,
+keys), anything stored under your home directory (SSH keys, CLI session files,
+CLI configuration kept there), or your current directory when it is inside your
+home.
 
 **Operator prerequisite, set up once.** The hop is for Linux: the user's home is
 `/home/<name>`, the path driftproof builds from the user name. That user has a
 mode-700 home and no extra groups, its own logged-in `claude` and `codex` under
 `~/.local/bin`, and a sudoers rule that lets you run commands as it, and only as
-it, with `NOPASSWD`. `DRIFTPROOF_EVAL_USER` names the user (default
-`driftproof-eval`); the name must match `^[a-z_][a-z0-9_-]{0,31}$`. Without the
-prerequisite a run fails at once, before any call, and says so. With the default
-name:
+it, with `NOPASSWD`. Your own home is closed to other users. `DRIFTPROOF_EVAL_USER`
+names the user (default `driftproof-eval`); the name must match
+`^[a-z_][a-z0-9_-]{0,31}$`, and it must not be root or your own account. Without
+that account a run fails at once, before any call, and says so. A name that is
+root or your own account is refused the same way. The runner does not check that
+your home is closed: step 4 closes it and step 5 checks it, by hand. With the
+default name:
 
 1. Create the user with a mode-700 home and no supplementary groups:
 
@@ -335,7 +342,8 @@ name:
 2. As that user (`sudo -iu driftproof-eval`), install `claude` and `codex` under
    its `~/.local/bin`. Then run `claude` and complete its login, and run
    `codex login --device-auth`. Their session files live in that user's home,
-   unreadable to your account, and yours are unreadable to it.
+   unreadable to your account, and yours are unreadable to it once step 4 has
+   closed your home.
 
 3. Let your account run commands as that user only, with no password:
 
@@ -345,12 +353,37 @@ name:
    sudo visudo -cf /etc/sudoers.d/driftproof-eval
    ```
 
-4. Check the boundary by hand before the first run. From an empty environment
+4. Close your own home to other users. Run it as yourself, not with `sudo`,
+   after `echo ~` prints your own home directory: with `HOME` unset or set to
+   `/`, `chmod` would change the wrong directory.
+
+   ```sh
+   echo ~
+   chmod 700 ~
+   ```
+
+   Other local users, the eval user among them, can no longer list your home or
+   open anything in it; you keep full access. Files stored outside your home are
+   not covered, and neither is the target of a symlink in your home that points
+   outside it. Keep SSH keys and CLI configuration under your home, or close
+   them where they are.
+
+5. Check the boundary by hand before the first run. From an empty environment
    the user's `env` must list no variable from your shell, and both CLIs must
    answer:
 
    ```sh
    H=/home/driftproof-eval; sudo -n -u driftproof-eval /usr/bin/env -i HOME=$H PATH=$H/.local/bin:/usr/bin:/bin bash -lc 'env; claude --version; codex --version'
+   ```
+
+   Then check, as the eval user, that your home is closed. Your shell expands
+   `"$HOME"` to your home before `sudo` runs, and `LC_ALL=C` keeps the error in
+   English. Each command must fail and print `Permission denied`. If either one
+   lists anything, step 4 is not in effect.
+
+   ```sh
+   sudo -n -u driftproof-eval env LC_ALL=C ls "$HOME"
+   sudo -n -u driftproof-eval env LC_ALL=C ls -d "$HOME/."
    ```
 
 **`--trusted-skill`** runs the legacy same-user path instead: your environment,
@@ -541,7 +574,7 @@ A receipt is the unit of evidence — one JSON document conforming to
     "model_release_date": "2025-10-01",
     "provider": "anthropic",
     "surface": "claude-cli",
-    "runner_version": "0.22.2",
+    "runner_version": "0.22.3",
     "date_utc": "2026-07-27T…Z",
     "registry": "registered",
     "transcripts": "hashes-only",
@@ -621,7 +654,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: driftproofhq/driftproof@v0.22.2
+      - uses: driftproofhq/driftproof@v0.22.3
         with:
           skill-dir: skills/my-skill
           models: claude-haiku-4-5
@@ -749,7 +782,7 @@ permissions:
   contents: read
   issues: write
 # ...
-      - uses: driftproofhq/driftproof/stale@v0.22.2
+      - uses: driftproofhq/driftproof/stale@v0.22.3
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill
@@ -796,7 +829,7 @@ site, so it reflects a real dated run, not a hand-set color.
 
 ## Reports
 
-Thirteen reports are published, spanning seven report types. A report page lives at a
+Fourteen reports are published, spanning seven report types. A report page lives at a
 draft path — `docs/reports/NNN-draft/` — until the publish sequence renames it, and
 `scripts/build-public.sh` excludes every `*-draft/` path from the published tree
 (see the roll below, and
@@ -807,7 +840,7 @@ under [`receipts/`](receipts/)
 Report #010 takes no Driftproof measurement and has no receipts: it is re-derived
 from the upstream harness's output files, published beside its page.
 
-📊 **Thirteen published reports** (each re-derived from committed files, nothing
+📊 **Fourteen published reports** (each re-derived from committed files, nothing
 hand-entered: Driftproof's receipts, or for Report #010 the upstream harness's own
 output), spanning seven published report types, the newest being instrument
 comparison. The twelve that measure with Driftproof read its own arms by one
@@ -912,8 +945,12 @@ instrument itself; or, in the instrument comparison, in which instrument measure
   `claude-opus-5`, which departs from the judge policy; its figures compare with Reports
   #009, #011 and #013, not with Reports #001 to #008.
 
+<!--driftproof:campaign-readme-->
+- **[Report #015: Skills.sh snapshot 2026-10-17: text tasks](https://driftproofhq.com/reports/015/)**: three text tasks per skill, written by Driftproof from the pinned skill descriptions. Both model sets use Haiku 5.5 as judge. Each receipt carries its per-task verdict and the report names the tasks behind it. The eval account was checked before and after each run, not during it.
+<!--/driftproof:campaign-readme-->
+
 ✍️ The launch essay, **[Three model releases later: what actually happens to agent
-skills](https://driftproofhq.com/writing/three-releases/)**, reads all thirteen reports
+skills](https://driftproofhq.com/writing/three-releases/)**, reads all fourteen reports
 together: what moves underneath a skill, what the skill costs to run, and what a
 corrected instrument did to three published results. Revised 2026-10-07; every
 figure in it is gate-checked against the report page it cites.

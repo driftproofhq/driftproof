@@ -109,7 +109,7 @@ const n3 = (x) => Number(x).toFixed(3);
 function receipts() {
   const out = [];
   (function walk(d) {
-    for (const e of fs.readdirSync(d, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+    for (const e of fs.readdirSync(d, { withFileTypes: true }).sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0)) {
       const p = path.join(d, e.name);
       if (e.isDirectory()) { if (/-draft$/.test(e.name)) continue; walk(p); continue; }
       if (!e.name.endsWith('.json') || e.name.startsWith('_')) continue;
@@ -118,7 +118,14 @@ function receipts() {
       out.push({ rel: path.relative(ROOT, p).split(path.sep).join('/'), receipt: j });
     }
   })(path.join(ROOT, 'receipts'));
-  return out;
+  return uniqueReceipts(out);
+}
+function uniqueReceipts(all) {
+  const seen=new Map();
+  const rank=x=>x.rel.includes('/skill-measurements/published/')?0:1;
+  const cmp=(a,b)=>rank(a)-rank(b)||(a.rel<b.rel?-1:a.rel>b.rel?1:0);
+  for(const x of [...all].sort(cmp)){const h=x.receipt.receipt_hash,old=seen.get(h);if(old){if(!verifyReceiptHash(x.receipt)||!verifyReceiptHash(old.receipt)||JSON.stringify(x.receipt)!==JSON.stringify(old.receipt))throw new Error('RECEIPT_COPY_MISMATCH');}else seen.set(h,x);}
+  return [...seen.values()];
 }
 
 // WHERE A RECEIPT SITS, read from its path under receipts/ (spec 133): the report it belongs to and,
@@ -379,5 +386,5 @@ function main() {
 
 // EXPORTED BEFORE THE BUILD RUNS: the head builder asks this module for the receipt titles while
 // main() is writing pages (spec 133 R-3), so the exports have to exist already.
-module.exports = { receipts, page, indexPage, receiptPlace, receiptTitles, ownTitle, titleRungs, LABELS, CLAUSES, honestLine, pageLabel, cardLabels, CASES_PAGE };
+module.exports = { uniqueReceipts, receipts, page, indexPage, receiptPlace, receiptTitles, ownTitle, titleRungs, LABELS, CLAUSES, honestLine, pageLabel, cardLabels, CASES_PAGE };
 if (require.main === module) main();

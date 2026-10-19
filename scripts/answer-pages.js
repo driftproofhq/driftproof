@@ -140,7 +140,7 @@ function linkBare(text, href) {
   const e = esc(text);
   const to = (num) => esc(typeof href === 'function' ? href(num.replace(/\u00d7$/, '')) : href);
   // A date, "17 September 2026", is one figure and one link.
-  const re = new RegExp(`(${IDENT_RE})|(^|[\\s(])([+\\-\\u2212]?)(\\d{1,2} ${MONTH_RE} \\d{4}|\\d+(?:[.,]\\d+)*(?:\\u00d7)?)|(\\d+(?:[.,]\\d+)*(?:\\u00d7)?)`, 'g');
+  const re = new RegExp(`(${IDENT_RE})|(^|[\\s(])([+\\-\\u2212]?)(\\d{4}-\\d{2}-\\d{2}|\\d{1,2} ${MONTH_RE} \\d{4}|\\d+(?:[.,]\\d+)*(?:\\u00d7)?)|(\\d+(?:[.,]\\d+)*(?:\\u00d7)?)`, 'g');
   return e.replace(re, (m, ident, pre, sign, num, bare) => {
     if (ident !== undefined) return ident;
     if (bare !== undefined) return `<a href="${to(bare)}">${bare}</a>`;

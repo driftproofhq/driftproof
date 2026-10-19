@@ -85,69 +85,66 @@ export function readLink(text) {
 // ── reading the list page whole (AC-3, AC-6) ──────────────────────────────────────────────────────
 const decode = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&#x27;|&apos;/g, "'").replace(/&amp;/g, '&');
 const collapse = (s) => String(s).replace(/\s+/g, ' ').trim();
-const ENTRY = /<li class="skill-entry"([^>]*)>([\s\S]*?)<\/li>/g;
-const ATTR = /\s([a-z-]+)="([^"]*)"/g;
-// One part of an entry, read where the last one ended: the white space before it, then its link
-// (href, text) or one of its rows (text).
-const PART = /(\s*)(?:<a href="([^"]*)">([^<]*)<\/a>|<span class="skill-entry-row">([^<]*)<\/span>)/y;
-const PAGE = /^([^/]+)\/([^/]+)\/([^/]+)\/$/;
-
-// An entry's parts, in order, when it holds nothing else but white space; null otherwise. It is read
-// part by part from its start and no tag is ever stripped, so any other markup (a <script>, or
-// <scr<script>ipt>) leaves the entry unread (issue 335).
-function partsOf(inner) {
-  const parts = [];
-  let at = 0;
-  for (;;) {
-    PART.lastIndex = at;
-    const m = PART.exec(inner);
-    if (!m) break;
-    parts.push(m);
-    at = PART.lastIndex;
+// This is a data parser, not a browser document. Never instantiate the fetched markup.
+const TAGS = new Set(['ul','li','a','span','div','p','section','data','details','summary','time']);
+const ATTRS = new Set(['class','href','value','datetime','data-page','data-source','data-evidence','data-freshness','data-path','data-task','data-driver','data-result','data-at','data-cost','data-src','data-fn','data-dp','data-receipt-link','data-receipt-path','data-manifest','data-build-date']);
+function listTree(source) {
+  const root={tag:'root',children:[]},stack=[root];
+  const token=/<\/[a-z]+\s*>|<[a-z]+(?:\s+[a-z-]+="[^"<>]*")*\s*>|[^<]+/y;
+  let at=0;
+  while(at<source.length){
+    token.lastIndex=at;const m=token.exec(source);if(!m)return null;at=token.lastIndex;
+    const raw=m[0];
+    if(raw[0]!=='<'){stack.at(-1).children.push({text:decode(raw)});continue;}
+    const tag=/^<\/?([a-z]+)/.exec(raw)[1];if(!TAGS.has(tag))return null;
+    if(raw[1]==='/'){
+      if(stack.length===1||stack.at(-1).tag!==tag)return null;
+      stack.pop();if(stack.length===1)return {node:root.children[0],end:at};
+    }else{
+      const attrs={};
+      for(const x of raw.matchAll(/\s([a-z-]+)="([^"]*)"/g)){
+        if(!ATTRS.has(x[1])||Object.hasOwn(attrs,x[1]))return null;
+        attrs[x[1]]=decode(x[2]);
+      }
+      if(attrs.class==='skill-entry'&&stack.length!==2)return null;
+      const n={tag,attrs,children:[]};stack.at(-1).children.push(n);stack.push(n);
+    }
   }
-  return inner.slice(at).trim() === '' ? parts : null;
+  return null;
 }
-
-function readEntry(attrText, inner) {
-  const attrs = {};
-  for (const m of attrText.matchAll(ATTR)) attrs[m[1]] = decode(m[2]);
-  const page = attrs['data-page'];
-  const path = attrs['data-path'];
-  if (page === undefined || path === undefined) return null;
-  const pm = PAGE.exec(page);
-  if (!pm) return null;
-  // The entry is its one link, then its rows, and nothing else.
-  const parts = partsOf(inner);
-  if (!parts || parts.length < 2 || parts[0][2] === undefined) return null;
-  if (parts.slice(1).some((m) => m[4] === undefined)) return null;
-  const href = decode(parts[0][2]);
-  const text = decode(parts[0][3]);
-  if (href !== `${LIST}${page}`) return null;
-  const rows = parts.slice(1).map((m) => decode(m[4]));
-  // The entry's whole text is its link text and its rows: no word beside them.
-  const whole = collapse(decode(parts.map((m) => m[1] + (m[2] === undefined ? m[4] : m[3])).join('')));
-  if (whole !== collapse([text, ...rows].join(' '))) return null;
-  return { owner: pm[1], repo: pm[2], path, href, text, rows };
-}
-
-export function readList(html) {
-  const s = String(html);
-  const open = '<ul class="skill-list">';
-  const start = s.indexOf(open);
-  if (start < 0) return NO;
-  const end = s.indexOf('</ul>', start);
-  if (end < 0) return NO;
-  if (s.indexOf('<li class="skill-entry"', end) >= 0) return NO;
-  const body = s.slice(start + open.length, end);
-  const entries = [];
-  for (const m of body.matchAll(ENTRY)) {
-    const e = readEntry(m[1], m[2]);
-    if (!e) return NO;
-    entries.push(e);
+const nodeText=n=>n.text!==undefined?n.text:n.children.map(nodeText).join(' ');
+const hasClass=(n,c)=>n.attrs?.class===c;
+function entryOf(n){
+  if(n.tag!=='li'||!hasClass(n,'skill-entry'))return null;
+  const page=n.attrs['data-page'],p=n.attrs['data-path'];
+  if(typeof p!=='string'||!/^([^/]+)\/([^/]+)\/([^/]+)\/$/.test(page))return null;
+  if(n.children.some(x=>x.text!==undefined&&x.text.trim()))return null;
+  const parts=n.children.filter(x=>x.tag),link=parts.shift();
+  if(!link||link.tag!=='a'||link.attrs.href!==LIST+page||link.children.some(x=>x.tag))return null;
+  if(Object.keys(link.attrs).some(k=>k!=='href'&&k!=='class')||(link.attrs.class&&link.attrs.class!=='skill-name'))return null;
+  const rows=[];
+  if(parts[0]?.tag==='span'&&hasClass(parts[0],'skill-repository')){
+    const context=parts.shift();if(context.children.some(x=>x.tag))return null;
+    rows.push(collapse(nodeText(context)));
   }
-  // Nothing in the list but its entries.
-  if (!entries.length || body.replace(ENTRY, '').trim() !== '') return NO;
-  return { ok: true, entries };
+  if(!parts.length)return null;
+  for(const row of parts){
+    if(!['span','div'].includes(row.tag)||!hasClass(row,'skill-entry-row'))return null;
+    if(row.tag==='span'&&row.children.some(x=>x.tag))return null;
+    rows.push(collapse(nodeText(row)));
+  }
+  const [owner,repo]=page.split('/');
+  return {owner,repo,path:p,href:link.attrs.href,text:collapse(nodeText(link)),rows};
+}
+export function readList(html){
+  const s=String(html),open='<ul class="skill-list">',start=s.indexOf(open);
+  if(start<0||s.indexOf(open,start+open.length)>=0)return NO;
+  const tree=listTree(s.slice(start));if(!tree)return NO;
+  if(s.slice(start+tree.end).includes('<li class="skill-entry"'))return NO;
+  if(tree.node.children.some(n=>n.text!==undefined&&n.text.trim()))return NO;
+  const entries=tree.node.children.filter(n=>n.tag).map(entryOf);
+  if(!entries.length||entries.some(e=>!e))return NO;
+  return {ok:true,entries};
 }
 
 // ── matching (AC-2): owner and repository ignoring ASCII case, the path exactly ───────────────────

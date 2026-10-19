@@ -443,6 +443,9 @@ const MEASURE = () => {
       wrapOverflowX: el.closest('.table-wrap') ? cs(el.closest('.table-wrap')).overflowX : null,
     })),
     fonts: {
+      body: cs(document.body).fontFamily,
+      heading: one('main h1') ? cs(one('main h1')).fontFamily : null,
+      used: [...new Set(all('body *').filter(el => !el.closest('svg,script,style') && vis(el) && [...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())).map(el => cs(el).fontFamily.split(',')[0].trim().replace(/^['"]|['"]$/g, '')))],
       loaded: [...document.fonts].filter((f) => f.status === 'loaded').map((f) => `${f.family} ${f.weight}`),
       status: document.fonts.status,
     },
@@ -520,10 +523,10 @@ export async function run({ out, screens, limit, passes, docs, pages, viewports,
           // layout reads can start a face that only a closed fold uses (the authoring guide's
           // italic <em>, folded by spec 125): every face then reads loaded while the set's status
           // still reads loading for one more task. A face that never loads still reads so here.
-          m.fonts = await page.evaluate(async () => {
+          Object.assign(m.fonts, await page.evaluate(async () => {
             await document.fonts.ready;
             return { loaded: [...document.fonts].filter((f) => f.status === 'loaded').map((f) => `${f.family} ${f.weight}`), status: document.fonts.status };
-          });
+          }));
           if (m.playground) {
             // A-025-17: the default toggle draws the dispersion band, whose mean
             // marker only that mode paints; the "point" toggle draws the

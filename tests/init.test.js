@@ -111,7 +111,7 @@ test('the CLI: init run again on a skill it scaffolded says all three files were
   const r = cli(['init', dir], root);
   assert.equal(r.status, 0, r.stderr);
   for (const f of ['SKILL.md', 'evals/evals.json', '.driftproofrc']) {
-    assert.match(r.stdout, new RegExp(`· .*${escapeRegExp(f)} \\(exists`), `${f} reported as left untouched`);
+    assert.match(r.stdout, new RegExp(`· .*${escapeRegExp(path.join(...f.split('/')))} \\(exists`), `${f} reported as left untouched`);
   }
   assert.match(r.stdout, /Nothing to create/);
   assert.deepEqual(tree(dir), before);
@@ -280,21 +280,21 @@ function initOutput({ target, created = ['SKILL.md', 'evals/evals.json', '.drift
   // Issue 367 (A-139-17, AC-367-7): --cases on a skill that exists, the guided start's call, prints
   // the suite it added, a line per file it left, and one next step, and nothing else.
   if (existingSkill && casesFile !== null && created.length) {
-    return [...created.map((file) => `  + ${target}/${file}`),
-      ...skipped.map((file) => `  · ${target}/${file} (exists ${dash} left untouched)`),
+    return [...created.map((file) => `  + ${path.join(target, file)}`),
+      ...skipped.map((file) => `  · ${path.join(target, file)} (exists ${dash} left untouched)`),
       `Next: driftproof run ${target} --quick   (a first look: one test task, no verdict)`].join('\n') + '\n';
   }
   const lines = [`driftproof init ${dash} ${target}/`];
-  for (const file of created) lines.push(`  + ${target}/${file}`);
-  for (const file of skipped) lines.push(`  · ${target}/${file} (exists ${dash} left untouched)`);
+  for (const file of created) lines.push(`  + ${path.join(target, file)}`);
+  for (const file of skipped) lines.push(`  · ${path.join(target, file)} (exists ${dash} left untouched)`);
   if (!created.length) return `${lines.join('\n')}\n\nNothing to create; every file already existed. init never overwrites.\n`;
   const steps = [existingSkill
-    ? `Your ${target}/SKILL.md was left as it was.`
-    : `Edit ${target}/SKILL.md with your skill's instructions.`];
+    ? `Your ${path.join(target, 'SKILL.md')} was left as it was.`
+    : `Edit ${path.join(target, 'SKILL.md')} with your skill's instructions.`];
   if (created.includes('evals/evals.json')) {
     steps.push(casesFile === null
-      ? `Edit ${target}/evals/evals.json: replace the 3 example cases (rubrics anchored at 0.80). ${EXAMPLE_WARNING}`
-      : `Read ${target}/evals/evals.json: it holds the cases from ${casesFile}.`);
+      ? `Edit ${path.join(target, 'evals', 'evals.json')}: replace the 3 example cases (rubrics anchored at 0.80). ${EXAMPLE_WARNING}`
+      : `Read ${path.join(target, 'evals', 'evals.json')}: it holds the cases from ${casesFile}.`);
   }
   steps.push(`driftproof run ${target} --quick   (a smoke run: no verdict, a first look)`);
   steps.push(`driftproof run ${target} --models claude-haiku-4-5`);
@@ -302,7 +302,7 @@ function initOutput({ target, created = ['SKILL.md', 'evals/evals.json', '.drift
 }
 function placeholderNextSteps(stdout, options) {
   const lines = stdout.split('\n');
-  const edit = lines.findIndex((line) => /^  \d+\. Edit /.test(line) && line.includes(`${options.target}/evals/evals.json:`));
+  const edit = lines.findIndex((line) => /^  \d+\. Edit /.test(line) && line.includes(`${path.join(options.target, 'evals', 'evals.json')}:`));
   assert.ok(edit >= 0, 'the replacement step names the example suite');
   assert.ok(lines[edit].includes('replace the 3 example cases (rubrics anchored at 0.80).'), 'the replacement instruction and scoring anchor remain');
   assert.ok(lines[edit].endsWith(EXAMPLE_WARNING), 'the step limits intended-task performance and explains that scores and verdicts are still computed');
@@ -398,7 +398,7 @@ test('issue 237: the output reader rejects claim, order, additive and paraphrase
     ['late warning', `${control.replace(EXAMPLE_WARNING, '')}${EXAMPLE_WARNING}\n`],
     ['no replacement instruction', control.replace('replace the 3 example cases', 'keep the 3 example cases')],
     ['wrong scoring anchor', control.replace('0.80', '0.70')],
-    ['wrong suite path', control.replace('fx/evals/evals.json:', 'fx/other.json:')],
+    ['wrong suite path', control.replace(path.join('fx', 'evals', 'evals.json') + ':', path.join('fx', 'other.json') + ':')],
     ['no quick command', control.replace('driftproof run fx --quick', 'removed')],
     ['no full command', control.replace('driftproof run fx --models', 'removed')],
     ['no authoring guide', control.replace('See AUTHORING.md for how to write a fair suite.', '')],

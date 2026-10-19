@@ -8,6 +8,132 @@ makes this one a record.
 
 ---
 
+## v0.22.3 - 2026-10-19
+
+### What's new
+
+- **Driftproof now publishes its own results for 20 popular skills from the Skills.sh snapshot of
+  17 Oct 2026. Each skill was tested with Sonnet 5.5 and Opus 5.5 answering and Haiku 5.5 judging.
+  Report 015 links all 40 receipts.** The skills index now carries a scoreboard of all 20 skills,
+  and each skill's own "Worth installing?" page shows this measured result next to any result it
+  imported.
+
+### What may change for you
+
+- **Running an evaluation now needs one more setup step, and the eval account can no longer be your
+  own account or root.** The README's Isolation section adds a step that closes your home directory
+  to other local users (`chmod 700 ~`) and a check that the eval account cannot read it;
+  `DRIFTPROOF_EVAL_USER` now refuses a name that is `root` or your own account, failing before any
+  call.
+- **A results page that holds only a quick first look's smoke answers now shows one key line, not
+  the full list of possible verdicts.** A page with any scored result still shows the full key.
+
+### Known issues
+
+- **What is not recorded or compared.** A CLI judge's own settings files (`~/.claude/settings.json`,
+  project settings, `CLAUDE.md` files, codex's config), the eval user's shell profile behind the
+  isolated hop, other proxy, region and credential variables, and the network the call crosses can
+  all change what the judge reads or where its call goes. The receipt holds none of them.
+  `spec/RECEIPT.md` lists them.
+- **The route is recorded as an unsalted hash,** so an address that can be guessed can be recovered
+  from it.
+- **A regrade's raw judge replies are not kept,** only their hashes.
+- **A plain regrade's judge identity is self-reported, not authenticated.** The requested judge's
+  reported id comes from its own reply; it does not authenticate provider identity or measure
+  grading accuracy.
+- **`driftproof overlap` measures word overlap only.** It does not establish that a suite leaked,
+  explain a measured lift, or establish that a skill is free of overlap beyond this one comparison.
+- **`driftproof plan`'s draw targets and USD figure are estimates, not promises.** The USD figure
+  assumes fixed token counts at registry API prices; it is not an invoice or a subscription billing
+  prediction, and a long prompt can exceed it. Retries and auxiliary harness calls are not included,
+  and an actual run may stop before any projected target.
+- **`driftproof lint-suite`'s findings are evidence of risk, not proof of one.** A repeated-word or
+  answer-text finding does not assert semantic equivalence or a dollar saving, and a history finding
+  never says a future run cannot show a score lift. No findings means only that these checks found
+  none; it does not mean the suite is fair, sufficient, cheap or free of causal leakage. Its
+  answer-text check covers grading fields only; it does not check whether the model itself was
+  exposed to an answer.
+- **A `view` or `diff --lift-breakdown` reads recorded scores at the receipt's own sample size.** It
+  predicts neither a skill's future answers nor a causal mechanism, and a legacy receipt without
+  draw records, or a failed arm, yields no breakdown, with the reason stated.
+- **An NVIDIA-cards or Harbor import stays DECLARED.** `diff` reads it as NOT MEASURED, and no
+  Driftproof reader gives it a verdict, a band, a spread or a baseline the source itself did not
+  print or record.
+- **A quick first look (`driftproof run --quick`) cannot produce a verdict.** It runs a single test
+  task to show that a skill and its suite run at all, and to show that task's two answers side by
+  side; it is not a measurement of lift.
+- **A skill's Driftproof-measured result covers three text-only tasks against the recorded skill
+  bytes, model and environment only.** It does not establish general usefulness, installation
+  success, external service quality, performance on other models, or equivalence to an imported
+  benchmark. External tools, generated media and deployed services are not exercised, and a router's
+  result describes its own written answer, not the skill it delegates to.
+- **Closing your home directory (`chmod 700 ~`) stops other local users, including the eval
+  account, from reading it, but it does not cover files stored outside your home, or the target of
+  a symlink inside your home that points outside it.**
+
+### Upgrade
+
+- npm: `npx driftproof@0.22.3`. The Action: `driftproofhq/driftproof@v0.22.3`, and the stale Action
+  `driftproofhq/driftproof/stale@v0.22.3`.
+- Claude Code plugin: `claude plugin update driftproof@driftproofhq`. The plugin runs `npx
+  driftproof@0.22.3`.
+
+### Engineering log
+
+0.22.3 carries one user-facing feature, Driftproof's own results for 20 popular skills (issue 408),
+and two smaller user-facing changes: the closed-home isolation step and eval-account refusal (issue
+406), and a quieter key on a smoke-only results page (part of issue 409). The rest fixes the release
+sweep itself.
+
+Issue 406 (specs 388, 126, 145 and 236, PR 407) adds a step to the README's Isolation section that
+closes the operator's own home to other local users (`chmod 700 ~`) and a step that checks the
+closure by hand, and has `evalUser()` in `lib/provider.js` refuse a `DRIFTPROOF_EVAL_USER` that
+names root or the caller's own account. Spec 145 reads one UNREADABLE row on this box, as on `dev`,
+from its probe's argv exceeding the 128 KB limit; it is excluded from the sweep for that reason, not
+from this change.
+
+A direct commit to `DECISIONS.md` (no PR) records 0.22.2's release: issues 365 to 388, 400, 403 and
+406 merging, and catalogue rows C-300 to C-307.
+
+Issue 409 (specs 128, 139 and 312, PR 410) adds a Windows CI workflow that runs the packed first run
+and seven core test suites on a Windows runner from the public tree, checked against an independent
+66-row inventory, with no secret and provider endpoints pointed at a closed port. It also gives
+`lib/view.js` a product fix: a results page holding only smoke answers now keys on "Smoke" alone
+instead of the full verdict legend (spec 128's A-128-13).
+
+Issue 408 (new spec 408, PR 412) measures the 20 most installed Skills.sh skills (snapshot 17 Oct
+2026) with Sonnet 5.5 and Opus 5.5 answering and Haiku 5.5 judging, publishing the 40 receipts,
+Report 015, the skills-index scoreboard and each skill's own "Worth installing?" page. A
+fresh-context report QA approved it with findings, none blocking.
+
+Issue 414 (specs 011, 021, 026, 028, 031, 035, 052, 134, 146, 163, 174, 189, 236, 267, 315 and 408,
+PR 415) fixes eleven release-sweep gates that read red after issue 408's own changes and after
+bindings that broke on the version bump, with amendments A-011-7, A-146-5, A-174-5 and A-052-4.
+
+Issue 417 (spec 408, PR 418) has `gate.sh` print a summary line the sweep can read, instead of
+reading a passing spec 408 as having no figure.
+
+Issue 420 (specs 139 and 312, PR 421) tokenizes HTML in the test helpers that stripped tags with a
+regex, clearing five CodeQL alerts the sweep raised against `.github/windows-ci/common.cjs` and the
+start and smoke test suites, with adversarial regressions in `review.test.js` and acceptance notes
+in specs 139 and 312.
+
+#### The v0.22.3 merge list
+
+Seven merges since v0.22.2's release merge `3acecec9df`, oldest first:
+
+- issue 406, the operator's own home closes and the eval account refuses root or your own account
+  (PR 407): above.
+- DECISIONS: 0.22.2 released, issues 365 to 388, 400, 403 and 406 merging, and catalogue rows C-300
+  to C-307 recorded (direct commit, no PR): above.
+- issue 409, Windows CI runs the packed first run and core tests, and a smoke-only page's key
+  narrows to one line (PR 410): above.
+- issue 408, Driftproof's own results for 20 popular skills, a scoreboard and Report 015 (PR 412):
+  above.
+- issue 414, eleven release-sweep gates fixed after issue 408 and the version bump (PR 415): above.
+- issue 417, `gate.sh` prints a summary line the sweep reads (PR 418): above.
+- issue 420, HTML tokenized in test helpers, five CodeQL alerts cleared (PR 421): above.
+
 ## v0.22.2 - 2026-10-17
 
 ### What's new

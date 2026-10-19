@@ -27,6 +27,7 @@ const require = createRequire(import.meta.url);
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..');
 
+const { publication: campaignPublication } = require('../specs/408-skill-measurements/campaign.cjs');
 const { plainOf, LABELS } = require('../lib/plain');
 const { armOf, receiptAggregatesOnly } = require('../lib/verdict');
 const { bandOf } = require('../lib/reuse');
@@ -108,16 +109,16 @@ const TX = {
   F5: 'Model not stated. Freshness unknown.',
   L1: (source, model, label) => `${source}, ${model}: ${label}.`,
   G1: (verb, name) => `${name}: worth installing? ${verb} results`,
-  G3: 'One row per receipt. No figure on this page combines two rows.',
+  G3: 'Each result has its own test record. Results are not combined.',
   G4: 'Worth installing?',
-  G5: 'One entry per skill. Each entry links to a page with one row per receipt.',
+  G5: 'Browse skills and open their test results.',
   // G-6 (A-267-6, issue 315): the list page's link to the skill lookup, *Look it up* linked.
   G6: ['Have a GitHub link to a skill? ', 'Look it up', '.'],
   D1: 'Disagree, or want a re-run?',
   P1: (verb, name, id, sources) => `${verb} results for ${name} (${id.owner}/${id.repo}) from ${sources}, one row per receipt, in plain words.`,
   // P-2 (A-267-7, issue 331): one title, no verb, since most entries are reported only.
   P2: 'Agent skills: worth installing? | Driftproof',
-  P3: 'Does an agent skill help, and on which model? One page per skill, each row read from a committed receipt, with the newer models since.',
+  P3: 'We test AI skills on written tasks. See what helped, what hurt, and where more answers are needed.',
   NVLABEL: 'NVIDIA\'s figures',
   noCommit: 'skill commit not recorded',
 };
@@ -125,7 +126,7 @@ const G2 = (verb, id) => (id.path ? `Skill ${id.path} in ${id.owner}/${id.repo}.
 // The verb a row or page carries (A-267-5): "Measured" only where a row is TESTED, a receipt Driftproof
 // measured; "Reported" where every row is DECLARED, figures a source reported.
 const verbOf = (measured) => (measured ? 'Measured' : 'Reported');
-const FIELDS = ['by', 'Model', 'Harness', 'Date', 'Tasks and runs', 'Result', 'Source\'s verdict', 'Tokens', 'Freshness', 'Skill commit', 'Receipt'];
+const FIELDS = ['by', 'Model', 'Date', 'Result', 'Tasks and runs', 'Receipt', 'Source\'s verdict', 'Harness', 'Tokens', 'Freshness', 'Skill commit'];
 const SETS = { source: SOURCES, evidence: ['measured', 'recomputed', 'aggregates-only'], freshness: ['newer', 'no-newer', 'unknown'] };
 
 // ── slots (AC-14a): text a fixed text takes from a source, bounded, read for barred words, escaped ──
@@ -367,15 +368,15 @@ function rowOf(e, r, ctx) {
     put('Tasks and runs', TX.K3(sf.tasks));
     const cells = sf.rows.map((x, i) => ({ dim: slot(f, `source_figures.rows[${i}].dimension`, x.dimension), printed: slot(f, `source_figures.rows[${i}].printed`, x.printed) }));
     const head = [nvidiaHead(f, sf), ...(sf.rows.some((x) => x.uplift_unit === 'unstated') ? [TX.R7] : [])];
-    put('Result', [...head, ...cells.map((c) => `${c.dim}: ${c.printed}`)].join(' '),
-      [...head.map(esc), ...cells.map((c) => `${esc(c.dim)}: <q class="card-cell">${esc(c.printed)}</q>`)].join(' '));
+    put('Result', [...head, 'Dimension Printed cell', ...cells.map((c) => `${c.dim}: ${c.printed}`)].join(' '),
+      head.map(esc).join(' ') + '<div class="skill-table-scroll"><table><thead><tr><th scope="col">Dimension</th><th scope="col">Printed cell</th></tr></thead><tbody>' + cells.map((c) => `<tr><th scope="row">${esc(c.dim)}:</th><td><q class="card-cell">${esc(c.printed)}</q></td></tr>`).join('') + '</tbody></table></div>');
     const tk = sf.tokens;
     put('Tokens', tk ? TX.T3(slot(f, 'source_figures.tokens.with_skill', tk.with_skill), slot(f, 'source_figures.tokens.without_skill', tk.without_skill)) : TX.T4);
   } else {
     const k = tasksAndRuns(r);
     put('Tasks and runs', TX.K1(k.tasks, k.w, k.b) + (k.left ? TX.K2(k.left) : ''));
     const p = plainOf(r);
-    if (evidence === 'measured') put('Result', [p.sentence, ...(p.state === 'UNDERPOWERED' ? [p.detail] : [])].join(' '));
+    if (evidence === 'measured') put('Result', [p.sentence, p.detail, p.why].filter(Boolean).join(' '));
     else {
       if (p.label !== LABELS.REPORTED) refuse(`${f}: a receipt below TESTED reads ${shown(p.label)}, not ${LABELS.REPORTED}`);
       put('Result', [`${LABELS.REPORTED}.`, TX.R2(n3(r.comparison.with_skill_score), n3(r.comparison.baseline_score), k.tasks)].join(' '));
@@ -401,12 +402,16 @@ function rowOf(e, r, ctx) {
   const href = e.source === 'driftproof' ? `/r/${r.receipt_hash}/` : `/skills/receipts/${e.source}/${base}`;
   put('Receipt', base, `<a href="${esc(href)}">${esc(base)}</a>`);
   const order = FIELDS.filter((k) => Object.hasOwn(fields, k));
+  const pair = k => `<dt>${esc(k === 'by' ? `${verb} by` : k)}</dt><dd>${k === 'by' ? `<h2>${html[k]}</h2>` : html[k]}</dd>`;
+  const leading=order.filter(k=>['by','Model','Date','Result','Tasks and runs','Receipt',"Source's verdict"].includes(k));
+  const metadata=order.filter(k=>!leading.includes(k));
   const markup = `<article class="skill-row" data-receipt="${esc(f)}" data-source="${esc(e.source)}" data-evidence="${evidence}" data-freshness="${fresh.value}">
 <dl>
-${order.map((k) => `<dt>${esc(k === 'by' ? `${verb} by` : k)}</dt><dd>${html[k]}</dd>`).join('\n')}
+${leading.map(pair).join('\n')}
 </dl>
+<details class="receipt-metadata"><summary>Receipt metadata</summary><dl>${metadata.map(pair).join('\n')}</dl></details>
 </article>`;
-  return { markup, source: e.source, evidence, freshness: fresh.value, label: e.source === 'nvidia' ? TX.NVLABEL : plainOf(r).label, model: fields.Model, hash: r.receipt_hash, file: f, srcName: src.name };
+  return { markup, source: e.source, evidence, freshness: fresh.value, label: e.source === 'nvidia' ? TX.NVLABEL : plainOf(r).label, model: fields.Model, hash: r.receipt_hash, file: f, srcName: src.name, date: r.run.date_utc, summary: fields.Result };
 }
 
 // ── the page texts ────────────────────────────────────────────────────────────────────────────
@@ -544,24 +549,47 @@ export function buildSkillIndex({ root = REPO, buildDate } = {}) {
     if (!pages.has(x.id.page)) pages.set(x.id.page, { id: x.id, rows: [] });
     pages.get(x.id.page).rows.push(rowOf(x.e, x.r, ctx));
   }
+  // Issue 408: the same admission path serves CLI and exported builds.
+  let campaign;
+  try { campaign = campaignPublication(root); } catch (e) { refuse(e.code || 'CAMPAIGN_REFUSED'); }
+  for (const x of campaign.rows) {
+    if (heldPages.has(x.id.page)) refuse('CAMPAIGN_HELD_IDENTITY');
+    const old = idents.get(x.id.page.toLowerCase());
+    if (old && (old.page !== x.id.page || old.path !== x.id.path || old.unit !== x.id.unit)) refuse('CAMPAIGN_IDENTITY_COLLISION');
+    if (!pages.has(x.id.page)) pages.set(x.id.page, { id: x.id, rows: [] });
+    pages.get(x.id.page).rows.push(x.row);
+  }
+  for(const p of pages.values())p.rows.sort((a,b)=>SOURCES.indexOf(a.source)-SOURCES.indexOf(b.source)||Date.parse(b.date||'1970-01-01')-Date.parse(a.date||'1970-01-01')||byCodeUnit(a.file,b.file));
   const ordered = [...pages.values()].sort((a, b) => byCodeUnit(`${a.id.page}/index.html`, `${b.id.page}/index.html`));
   const title = titles(ordered.map((p) => p.id));
-  const out = [];
+  const out = [...campaign.files];
   for (const p of ordered) {
     const id = p.id;
     const ids = SOURCES.filter((s) => p.rows.some((x) => x.source === s));
     const verb = verbOf(p.rows.some((x) => x.evidence === 'measured'));
-    const desc = TX.P1(verb, id.name, id, joinNames(ids.map((s) => sources.get(s).name)));
+    const ownCampaign=p.rows.some(x=>x.summary?.startsWith('<section'));
+    const desc = ownCampaign ? id.name+': '+campaign.description : TX.P1(verb, id.name, id, joinNames(ids.map((s) => sources.get(s).name)));
     if (desc.length > DESC_MAX) refuse(`${id.page}: its description is ${desc.length} characters, over ${DESC_MAX}`);
     const url = `${ORIGIN}/skills/${id.page}/`;
-    // P-1 is the page's first paragraph as well as its description, so the description opens the
-    // page's own words (spec 020 AC-14, spec 133 AC-4).
-    const main = [
-      `<h1>${esc(TX.G1(verb, id.name))}</h1>`,
+    // Keep the exact scoped description as the first paragraph, inside the native
+    // context control before campaign results. Other pages keep P-1 first.
+    const context = [
       `<p class="skill-lede">${esc(desc)}</p>`,
+      ...(ownCampaign?['<p><a href="/reports/015/">Report 015: '+esc(campaign.title)+'</a></p>']:[]),
       `<p class="skill-where">${esc(G2(verb, id))}</p>`,
       `<p class="skill-note">${esc(TX.G3)}</p>`,
+    ];
+    const main = [
+      ...(ownCampaign?['<div class="scoreboard-eyebrow">'+esc(campaign.title)+'</div>']:[]),
+      `<div class="skill-eyebrow">Worth installing?</div><h1>${esc(id.name)}</h1>`,
+      ...(ownCampaign?['<div class="skill-intro">Here is what happened when we tested its written answers, with and without the skill.</div>']:context),
+      ...(ownCampaign?['<details class="skill-about"><summary>About this test</summary>',...context,'</details>']:[]),
+      `<h2>${verb} results</h2>`,
+      ...(p.rows.filter(x=>x.summary?.startsWith('<section')).length===2?['<p>Both model sets use Haiku 5.5 as judge.</p>']:[]),
+      '<div class="skill-results">',
       ...p.rows.map((x) => x.markup),
+      '</div>',
+      ...(ownCampaign?[campaign.journey]:[]),
       ...ids.map((s) => attribution(sources.get(s))),
       dispute(`Skill index: ${id.page}`, url, p.rows),
       built(buildDate),
@@ -576,12 +604,15 @@ export function buildSkillIndex({ root = REPO, buildDate } = {}) {
   // AC-34); the full list follows it, readable with JavaScript off. Each entry carries its identity's
   // path in data-path, which the lookup matches a pasted link against (A-267-6, spec 315 AC-4).
   const listMain = [
-    `<h1>${esc(TX.G4)}</h1>`,
+    ...(campaign.table?['<section class="scoreboard-hero"><div class="scoreboard-intro"><div class="scoreboard-eyebrow">'+esc(campaign.title)+'</div><h1>Do popular AI skills help?</h1>']:['<h1>'+esc(TX.G4)+'</h1>']),
     `<p class="skill-lede">${esc(TX.P3)}</p>`,
+    ...(campaign.table?['<a class="scoreboard-button" href="#measured-comparison">Explore all measured skills</a><p class="scoreboard-source">Driftproof wrote the tasks. Haiku 5.5 judged the answers. The eval account was checked before and after each run, not during it.</p></div><div class="scoreboard-paper"><p class="scoreboard-eyebrow">What happened in the text tests?</p><h2>Same skills. Two answering models.</h2>',campaign.overview,'</div></section>']:[]),
     `<p class="skill-lookup-link">${esc(TX.G6[0])}<a href="/skill-lookup/">${esc(TX.G6[1])}</a>${esc(TX.G6[2])}</p>`,
+    ...(campaign.table?['<nav class="measurement-jumps" aria-label="Skill index sections"><a href="#measured-comparison">Measured skills</a><a href="#how-we-test">How we test</a><a href="#all-skills">Browse all skills</a><a href="/reports/015/">Read the report</a></nav>',campaign.table,campaign.journey,campaign.history]:[]),
+    ...(campaign.table?['<h2 id="all-skills">Browse all skills</h2>']:[]),
     `<div class="skill-filter" data-island="skill-filter"><p>${esc(TX.G5)}</p></div>`,
     '<ul class="skill-list">',
-    ...ordered.map((p) => `<li class="skill-entry" data-page="${esc(p.id.page)}/" data-source="${set('source', p.rows)}" data-evidence="${set('evidence', p.rows)}" data-freshness="${set('freshness', p.rows)}" data-path="${esc(p.id.path)}"><a href="/skills/${esc(p.id.page)}/">${esc(p.id.page)}</a> ${p.rows.map((x) => `<span class="skill-entry-row">${esc(TX.L1(x.srcName, x.model, x.label))}</span>`).join(' ')}</li>`),
+    ...ordered.map((p) => `<li class="skill-entry" data-page="${esc(p.id.page)}/" data-source="${set('source', p.rows)}" data-evidence="${set('evidence', p.rows)}" data-freshness="${set('freshness', p.rows)}" data-path="${esc(p.id.path)}"><a class="skill-name" href="/skills/${esc(p.id.page)}/">${esc(p.id.name)}</a> <span class="skill-repository">${esc(p.id.owner+'/'+p.id.repo)}${p.id.unit==='plugin'?' (plugin bundle)':''}</span> ${p.rows.map((x) => x.summary?.startsWith('<section') ? `<div class="skill-entry-row"><p class="model-identity">${esc(x.summaryLead)}</p>${x.summary}</div>` : `<span class="skill-entry-row">${esc(TX.L1(x.srcName, x.model, x.label))} ${esc(x.summary)}</span>`).join(' ')}</li>`),
     '</ul>',
     ...SOURCES.map((s) => attribution(sources.get(s))),
     dispute('Skill index', `${ORIGIN}/skills/`, []),
@@ -631,7 +662,7 @@ function main(argv) {
     if (!d) { process.stderr.write(`STALE: ${rel(root, list)} carries no build date to check against\n`); return 1; }
     buildDate = d[1];
   }
-  if (buildDate === null) buildDate = new Date().toISOString().slice(0, 10);
+  if (buildDate === null) { process.stderr.write('--build-date YYYY-MM-DD is required\n'); return 2; }
   let r;
   try { r = buildSkillIndex({ root, buildDate }); } catch (e) {
     if (!(e instanceof SkillIndexRefused)) throw e;

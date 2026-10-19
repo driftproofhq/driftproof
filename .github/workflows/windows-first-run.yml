@@ -1,0 +1,41 @@
+# Spec 312 A-312-4, issue 409. This check covers the packed stub first run,
+# the real plugin's model-free paths and the seven inventoried core suites.
+# It does not claim real-provider behaviour or general Windows support.
+name: 'windows: first run and core tests (stubbed)'
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  first-run:
+    name: 'windows: first run and core tests (stubbed)'
+    if: github.repository == 'driftproofhq/driftproof'
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      DRIFTPROOF_STUB: '1'
+    steps:
+      - name: check out stored bytes
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: install dependencies
+        shell: pwsh
+        run: node .github/windows-ci/setup.cjs
+      - name: first-run
+        shell: pwsh
+        run: node .github/windows-ci/first-run.cjs
+      - name: plugin-start
+        shell: pwsh
+        run: node .github/windows-ci/plugin-start.cjs
+      - name: core
+        shell: pwsh
+        run: node .github/windows-ci/core.cjs

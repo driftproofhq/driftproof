@@ -111,3 +111,11 @@ test('AC-6 the tree is the same one the page has: attributes with ">", comments,
     '',
   ].join('\n'));
 });
+
+// Issue 408: a table cell must retain boundaries between paragraphs and disclosures.
+test('AC-5 nested table evidence keeps words apart and preserves inline joins', () => {
+  const out=md('<table><tr><th>Model</th></tr><tr><td><p>Answering model: Example</p><section><p>Clearly helped.</p><details><summary>Why this result?</summary><p>A task improved.</p><ul><li>One task.</li><li>Another task.</li></ul></details></section></td></tr></table>');
+  assert.ok(out.includes('| Answering model: Example Clearly helped. Why this result? A task improved. One task. Another task. |'),out);
+  const inline=md('<table><tr><td>pre<b>fix</b>: <data>0</data>.<data>75</data>, <a href="/record">record</a>.</td></tr></table>');
+  assert.ok(inline.includes('| pre**fix**: 0.75, [record](https://driftproofhq.com/record). |'),inline);
+});

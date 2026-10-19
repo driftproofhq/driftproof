@@ -63,3 +63,42 @@ Paper objects:
   collapses to its menu button.
 - Touch targets are at least 44px. A wide table scrolls inside its paper card.
 - Running text holds the reading measure, `--w-read`, on every surface, the paper sheet included.
+
+## Measurement pages: issue 408
+
+The operator ruled "Lift the rules for codex" on 18 Oct 2026 at about 20:10 SGT. Skills pages, the skills index and Report 015 use a light, flat measurement workspace. The dark desk rules above continue on other pages. This boundary is explicit: the shared chrome builder adds body.measurement-ui only to those routes. Receipt pages and sealed plots keep their own colours.
+
+| Token | Value | Use |
+|---|---|---|
+| --measure-ground | #F5F7FA | quiet page ground |
+| --measure-card | #FFFFFF | evidence cards |
+| --measure-text | #172B3A | headings and body |
+| --measure-muted | #495B6A | secondary explanations |
+| --measure-link | #174BB8 | links and focus |
+| --measure-rule | #D8E0E8 | grouping borders, never text |
+| --measure-control | #6D7F8E | control edges |
+| --measure-positive | #146044 | helped label |
+| --measure-negative | #9F3036 | hurt label |
+| --measure-caution | #765310 | too-few-answers label |
+
+System UI sans-serif sets these pages. Body is 17px with 1.6 line height; supporting text is at least 15px. Titles range from 32px to 48px, section headings are 28px. Reading paragraphs stop at 68ch. The page is capped at 1280px. Cards have a 12px radius, a thin border, no tilt and no shadow. The existing spacing scale and 44px touch targets remain.
+
+Comparison rows keep the frozen list order, each with the skill name and two explicitly labelled model cells. Below 640px the cells stack. The result, reader wording, driver-task bands, scope, isolation, router limit, links and earlier failures stay visible. Only the complete task-basis list folds under a native summary. Colour supplements the written state; it never replaces it. Report tallies are the first summary content. An index jump link reaches the full searchable catalogue without traversing every measured row.
+
+Every new text pair is declared and must clear 4.5:1. Long names and hashes wrap; the document never scrolls sideways on a phone. Focus stays visible. No animations, images or provider calls are added.
+
+## Issue 408: return to the site palette
+
+The operator ruled on 18 Oct 2026 at about 21:15 SGT: "keep the theme colors same as the main website. Remaining it has free will." This supersedes the light measurement palette above. Skills pages and Report 015 use the dark desk and navigation, paper evidence cards, existing ink and link tokens, Newsreader headings, Alegreya Sans prose and Courier Prime values. Measurement colour tokens are aliases of the main palette. No sealed plot changes.
+
+The comparison is a compact table, in popularity order, with both answering models side by side. Each cell keeps its scoped result, unchanged plain wording and a named task reason. The adjacent task-score control explains the exact bands. Further evidence uses a native disclosure. Shared test limits remain visible above the table; every result retains its own full limits, links and task basis. Earlier failures and retry authorization stay visible. Phone columns stack inside the viewport. Radius declarations use the existing radius token. Text contrast stays at least 4.5:1.
+
+## Issue 408: plain result cards
+
+Operator ruling, 18 Oct 2026 about 22:00 SGT. Keep the main-site desk, paper, ink and accent palette. Lead each measurement with its scoped plain result and a short explanation of that state. Put the verbatim statistical reading, task bands, provenance and earlier attempts inside adjacent native disclosures. A visible test-record link gives a direct route to the evidence. The comparison remains in popularity order and uses the same model columns. A visual same-task, with-skill/without-skill sequence sits between the overview and comparison. No script is needed to read any evidence. Colour supplements written states, never replaces them. Keep 4.5:1 text contrast and no document overflow at 390px, even when details are open.
+
+## Issue 408: the scoreboard
+
+Operator ruling, 18 Oct 2026 about 23:45 SGT: "A lets go with i like it". Concept A replaces the evidence wall. Use the main dark desk, full shared navigation, paper cards, original ink and accent palette. Lead the skills index with a large question and a paper scoreboard: labelled horizontal count bars for each answering model, with the exact count and total in text. Bars count receipts, not effect sizes. The all-record tally remains available, including before Report 015's examples.
+
+The comparison is a native table in frozen popularity order, with the skill name, repository and two answering-model columns. Show the plain result and a direct test-record link. Put the short guide and complete unchanged reading inside Why this result? on compact cells. Skill cards keep the guide visible, along with the model, judge and date. Each reading retains its adjacent driver tasks, bands, limits, history and links. Shared limits may fold into a named native control. The how-we-test diagram follows the comparison on the index and remains on skill pages and the report. No evidence depends on JavaScript. Keep text contrast at 4.5:1 and no sideways scroll at 390px, including with every control open.

@@ -18,6 +18,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { htmlOutsideScriptBodies } = require('../.github/windows-ci/common.cjs');
 
 const ROOT = path.join(__dirname, '..');
 const DOOR = path.join(ROOT, 'plugin', 'driftproof', 'lib', 'door.mjs');
@@ -565,7 +566,7 @@ test('AC-368-3 to AC-368-5: with no skill, start opens the sample by its path al
   const page = fs.readFileSync(path.join(PLUGIN, 'sample', SAMPLE_PAGE), 'utf8');
   const csp = /<meta http-equiv="Content-Security-Policy" content="([^"]*)">/.exec(page);
   assert.ok(csp && /default-src 'none'/.test(csp[1]), 'the sample page carries no default-src \'none\'');
-  assert.doesNotMatch(page.replace(/<script>[\s\S]*?<\/script>/g, ''), /(?:src|href)="(?:https?:)?\/\/|@import|url\((?!#|data:)/);
+  assert.doesNotMatch(htmlOutsideScriptBodies(page), /(?:src|href)="(?:https?:)?\/\/|@import|url\((?!#|data:)/);
   for (const [name, edits, re] of [
     ['the sample rendered through the CLI', [['lib/door.mjs', 'openView(SAMPLE_PAGE);', "runCli(['view', path.join(PLUGIN_ROOT, 'sample'), '--out', 'driftproof-view.html']); openView(SAMPLE_PAGE);"]], /spawned npx|changed the working folder/],
     ['a line that drops the word sample', [['lib/door.mjs', "'a sample results page", "'a results page"]], /does not call it a sample/],
