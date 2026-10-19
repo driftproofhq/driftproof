@@ -574,7 +574,7 @@ A receipt is the unit of evidence — one JSON document conforming to
     "model_release_date": "2025-10-01",
     "provider": "anthropic",
     "surface": "claude-cli",
-    "runner_version": "0.22.3",
+    "runner_version": "0.22.4",
     "date_utc": "2026-07-27T…Z",
     "registry": "registered",
     "transcripts": "hashes-only",
@@ -654,7 +654,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: driftproofhq/driftproof@v0.22.3
+      - uses: driftproofhq/driftproof@v0.22.4
         with:
           skill-dir: skills/my-skill
           models: claude-haiku-4-5
@@ -782,7 +782,7 @@ permissions:
   contents: read
   issues: write
 # ...
-      - uses: driftproofhq/driftproof/stale@v0.22.3
+      - uses: driftproofhq/driftproof/stale@v0.22.4
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill

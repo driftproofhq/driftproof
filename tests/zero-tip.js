@@ -28,9 +28,10 @@ function mergedZeroTips(root) {
   const out = { specs_read: 0, history: false, zero: [], merged: [], not_in_history: [], unreadable: [] };
   if (!fs.existsSync(specs)) return out;
   try {
-    const top = execFileSync('git', ['-C', root, 'rev-parse', '--show-toplevel'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    const prefix = execFileSync('git', ['-C', root, 'rev-parse', '--show-prefix'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
     execFileSync('git', ['-C', root, 'rev-parse', '--verify', '-q', 'HEAD'], { stdio: 'ignore' });
-    out.history = fs.realpathSync(top) === fs.realpathSync(root);
+    // Git's prefix avoids comparing absolute paths whose case can differ on Windows.
+    out.history = prefix === '';
   } catch (_e) { out.history = false; }
   for (const name of fs.readdirSync(specs).sort()) {
     const md = path.join(specs, name, 'spec.md');

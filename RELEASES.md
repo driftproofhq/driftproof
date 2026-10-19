@@ -8,6 +8,121 @@ makes this one a record.
 
 ---
 
+## v0.22.4 - 2026-10-19
+
+### What's new
+
+- **When the skill lookup finds no result for a skill, it now shows how to test it yourself in two
+  steps, and lets you ask for it to be considered for a future public test batch.** The result leads
+  with two steps: add the Driftproof plugin, then run `/driftproof:start`. That runs one test task
+  with and without your skill and shows the answers side by side on your machine; it's a first look,
+  not a verdict. It also names which account and model settings the run uses: by default your own
+  Claude Code account, with your target, grader and provider settings deciding which account or API
+  key is used and where the task is sent, and it spends tokens. If your skill isn't in the list, you
+  can also open a pre-filled GitHub issue with its link and an optional note, asking for it to be
+  considered for a future public test batch; submitting it does not promise that it will be tested,
+  or when.
+
+### What may change for you
+
+- **A skill lookup result that matches the published list now opens with a short status and a link,
+  not the full entry.** Open the disclosure next to it to read the complete entry, its rows and the
+  reload note, exactly as before.
+
+### Known issues
+
+- **What is not recorded or compared.** A CLI judge's own settings files (`~/.claude/settings.json`,
+  project settings, `CLAUDE.md` files, codex's config), the eval user's shell profile behind the
+  isolated hop, other proxy, region and credential variables, and the network the call crosses can
+  all change what the judge reads or where its call goes. The receipt holds none of them.
+  `spec/RECEIPT.md` lists them.
+- **The route is recorded as an unsalted hash,** so an address that can be guessed can be recovered
+  from it.
+- **A regrade's raw judge replies are not kept,** only their hashes.
+- **A plain regrade's judge identity is self-reported, not authenticated.** The requested judge's
+  reported id comes from its own reply; it does not authenticate provider identity or measure
+  grading accuracy.
+- **`driftproof overlap` measures word overlap only.** It does not establish that a suite leaked,
+  explain a measured lift, or establish that a skill is free of overlap beyond this one comparison.
+- **`driftproof plan`'s draw targets and USD figure are estimates, not promises.** The USD figure
+  assumes fixed token counts at registry API prices; it is not an invoice or a subscription billing
+  prediction, and a long prompt can exceed it. Retries and auxiliary harness calls are not included,
+  and an actual run may stop before any projected target.
+- **`driftproof lint-suite`'s findings are evidence of risk, not proof of one.** A repeated-word or
+  answer-text finding does not assert semantic equivalence or a dollar saving, and a history finding
+  never says a future run cannot show a score lift. No findings means only that these checks found
+  none; it does not mean the suite is fair, sufficient, cheap or free of causal leakage. Its
+  answer-text check covers grading fields only; it does not check whether the model itself was
+  exposed to an answer.
+- **A `view` or `diff --lift-breakdown` reads recorded scores at the receipt's own sample size.** It
+  predicts neither a skill's future answers nor a causal mechanism, and a legacy receipt without
+  draw records, or a failed arm, yields no breakdown, with the reason stated.
+- **An NVIDIA-cards or Harbor import stays DECLARED.** `diff` reads it as NOT MEASURED, and no
+  Driftproof reader gives it a verdict, a band, a spread or a baseline the source itself did not
+  print or record.
+- **A quick first look (`driftproof run --quick`) cannot produce a verdict.** It runs a single test
+  task to show that a skill and its suite run at all, and to show that task's two answers side by
+  side; it is not a measurement of lift.
+- **A skill's Driftproof-measured result covers three text-only tasks against the recorded skill
+  bytes, model and environment only.** It does not establish general usefulness, installation
+  success, external service quality, performance on other models, or equivalence to an imported
+  benchmark. External tools, generated media and deployed services are not exercised, and a router's
+  result describes its own written answer, not the skill it delegates to.
+- **Closing your home directory (`chmod 700 ~`) stops other local users, including the eval
+  account, from reading it, but it does not cover files stored outside your home, or the target of
+  a symlink inside your home that points outside it.**
+- **Asking for a future public test does not promise that it happens, or when.** The GitHub issue it
+  opens only queues a request; whether and when a skill is tested in a future public batch is the
+  operator's call, and any maintainer tasks you offer may be edited and are reviewed before use.
+- **The guided first run's local search can come back incomplete.** If it cannot finish searching
+  your folder for a matching skill, it stops and asks you to move to the folder that holds your
+  skills, rather than guessing or showing a sample result.
+
+### Upgrade
+
+- npm: `npx driftproof@0.22.4`. The Action: `driftproofhq/driftproof@v0.22.4`, and the stale Action
+  `driftproofhq/driftproof/stale@v0.22.4`.
+- Claude Code plugin: `claude plugin update driftproof@driftproofhq`. The plugin runs `npx
+  driftproof@0.22.4`.
+
+### Engineering log
+
+0.22.4 carries one user-facing feature, the skill lookup's guided first run and its public-test
+request for a skill not yet in the list (issues 423 and 426), and fixes one release-sweep issue, the
+public Windows CI gate (issue 424). No number already published changes.
+
+Issue 424 (specs 116 and 312, PR 425) fixes the public Windows CI workflow, which ran red on its
+first run at v0.22.3: `.github/windows-ci/core.cjs` passed its test reporter a raw `D:\` path, which
+the ESM loader refuses on Windows, and spec 116's zero-Tip plant read a Windows runner's `history`
+setting as false regardless of path. The reporter now passes a file URL and `tests/zero-tip.js`
+detects history path-independently, with a new reproduction in `review.test.js`.
+
+Issue 423 (spec 315, PR 428) has the skill lookup lead a result with no page in the list loaded for
+this visit with a compact, two-step guided first run ahead of the CLI route: add the Driftproof
+plugin, then run `/driftproof:start`, which runs one test task with and without the matching local
+skill and shows the answers side by side with no verdict. The result attributes the folder in the
+pasted link without choosing a local skill for the reader, names the account and provider settings
+the run uses, and keeps the original canonical wording, every list entry row and the CLI route inside
+a native disclosure. A matched result now leads with a short status, Measured results or Page found,
+and the indexed link, with its full entry in the same kind of disclosure. Amendments A-315-3 and
+A-315-4.
+
+Issue 426 (spec 315, PR 429) adds a Request a public test disclosure to a no-page lookup result: it
+opens a pre-filled GitHub issue (template skill-request) carrying the pasted link, an optional note
+and an optional offer to help with maintainer tasks, with no background transmission, stored request,
+scheduled batch or model call, and says plainly that this is not a promise of testing or timing. A
+live check of the originally planned copy-to-clipboard fallback got a Cloudflare challenge (HTTP
+403), so this round ships the GitHub route only; the copy fallback is future work. Amendment A-315-5.
+
+#### The v0.22.4 merge list
+
+Three merges since v0.22.3's release merge `e2a2b1fcb3`, oldest first:
+
+- issue 424, the public Windows CI reporter path and spec 116's history check fixed (PR 425): above.
+- issue 423, the skill lookup's no-page result leads with a two-step guided first run and a matched
+  result leads with a short status (PR 428): above.
+- issue 426, a no-page result can ask for a future public test on GitHub (PR 429): above.
+
 ## v0.22.3 - 2026-10-19
 
 ### What's new
