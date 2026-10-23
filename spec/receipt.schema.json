@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://driftproofhq.com/spec/receipt.schema.json",
   "title": "driftproof receipt",
-  "description": "Receipt spec v0.13: over v0.12, an import may carry figures a source printed, hashed into the receipt with a mark that the source gives aggregates only (issue 265, spec/RECEIPT.md § What v0.13 adds). `uncertainty_unavailable` is the mark, one value, `aggregates_only`; `source_figures` holds the printed figures, the repository, the commit and each source file's path and git blob sha1. A receipt carrying the mark is DECLARED, carries no case score, no aggregate mean and a null comparison, so no reader reads a verdict from it. `economics.<arm>.total_tokens` carries a token total a source reports. v0.12: over v0.11, the judge's setting is recorded and a regrade seals its evidence (issue 196, spec/RECEIPT.md § What v0.12 adds). `run.judge` may carry `harness` (the judge's own harness and version), `isolation` (the judge's spawn path), `endpoint` (whether a custom endpoint was set, and a sha256 of it, never the address) and `code_revision` (the revision of the code that reads the judge's reply and decides which answers reach it). A regrade's receipt carries `run.regraded_from` (the original receipt's hash and run date, the canonical sha256 of the answers it read, the revised suite file's sha256 in a rubric regrade, and the original's judge block) and `run.regrade` (judge or rubric, the draws graded and carried, the judge calls made, and in a rubric regrade each case changed), inside its hash; and a case row whose check results were carried, or dropped, says so in `checks_regrade`. Every field is optional, so a receipt that does not regrade is v0.11's shape but for the judge fields. v0.11 is frozen as receipt.v0.11.schema.json. Over v0.10, v0.11 said: a smoke run says so (spec 139, spec/RECEIPT.md § What v0.11 adds). `run.preset` is optional and names the preset a run was made under; the one preset is `quick`, a smoke run, which cannot produce a verdict, and a receipt that names a preset cannot read TESTED. v0.10 is frozen as receipt.v0.10.schema.json. Over v0.9, v0.10 said: the receipt says which answer was judged (spec 137, spec/RECEIPT.md § What v0.10 adds). `run.capture.mode` is `text` (on a CLI surface the child ran with its file-writing tools off, and its reply is the answer) or `files` (the regular files the child wrote in its own working directory were collected and judged with its reply), and a draw in files capture may list them in `captured_files`, each with its path, its size in bytes and whether it was included. Both are optional: `run.capture` is written by every run and carried by a regrade when the original records it, and a draw's `captured_files` only in files capture. v0.9 is frozen as receipt.v0.9.schema.json. Over v0.8, v0.9 said: imported receipts say what produced them (spec 049, spec/RECEIPT.md § What v0.9 adds). Every field it adds is optional: `run.harness` (the agent harness that produced the answers), `run.import` (the imported document: tool, format, format version, sha256, the import time, any sidecar file read, and a notice for each thing the source did not establish), `skill.unit` (a skill, or a plugin measured whole), and per case `activation` (whether the skill fired, never a score), `excluded_draws` (runs kept out of the band, with their reasons) and `label` (the source's display name). `economics.basis` adds `source-list-price-estimate` and `source-reported`, an arm may carry `mean_total_tokens`, `run.provider` may be `unknown`, and `run.date_utc` may be null on an external receipt whose source records no date. v0.8 is frozen as receipt.v0.8.schema.json. Over v0.7, v0.8 said: counts and clocks (spec 043, spec/RECEIPT.md § What v0.8 adds). `run.judge.samples` is optional, so an absent count stays absent; generation and judge counts are separate optional fields, `generations_per_arm` and `judge_samples_per_generation`, held in a `counts` object at the narrowest honest scope (`run.counts`, `run.arms.<mode>.counts`, `results.cases[].counts`); `run.arms.<mode>` may name an archived arm's own `model_id` and `generated_at`; `run.generated_at` is when generation began, and `run.judged_at` with `run.grader_revision` record a re-judge and appear together or not at all; a case may be `no_observations`. v0.7 is frozen as receipt.v0.7.schema.json. A hash-verified, dated record of running one agent skill eval suite with and without the skill on one model version, with the GENERATION sampled n times per arm and the judge sampled k times inside each draw. Over v0.6, v0.7 said: the fields are unchanged and the verdict a reader derives gains UNDERPOWERED: a case the band rule does not separate whose spreads and measured draws cannot resolve a shift of the effect floor (spec 035, spec/RECEIPT.md § What v0.7 adds). Over v0.5, as v0.6 said, the receipt says what answered it: `run.answered_by` (kind model|stub|external, whether the surface echoed a model id and which, and which spawn path produced it); `run.surface` and `run.judge.surface` may read `stub` (nothing answered; the text was canned) and a TESTED receipt requires answered_by.kind model; `run.judge.model_id` and `run.judge.prompt_template_hash` say which judge ran; every draw records its `stop_reason` and whether it was `truncated` (a truncated draw is unmeasured, never judged) and the case counts `n_truncated`; `case_status` gains `failed_unmeasured` (every draw of the arm was unmeasured for a reason that is not a timeout), recorded without fabricated samples or hashes exactly as a timeout is; `results.aggregates.band_rule` states the formula the aggregate band is derived by; an aggregate `stddev` is null only when its arm has fewer than two cases and `comparison.delta_uncertainty` is null only beside `delta_uncertainty_unavailable`. Every prior receipt still validates against its own frozen schema (v0.1, v0.2, v0.3, v0.3.1, v0.4, v0.5, v0.6).",
+  "description": "Receipt spec v0.15: over v0.14, every receipt names what its subject was and the delivery its run was configured with (spec 438, spec/RECEIPT.md § What v0.15 adds). `skill.unit` is required and gains `context_file`: a context file, any Markdown file such as a CLAUDE.md or an AGENTS.md, run on the injection path, whose `content_hash` is the sha256 of the file's bytes. `run.delivery` is required: `injected` (the runner puts the subject text into each with-skill request it builds), `installed` (a harness loaded the subject from where it was installed; only an import says this) or `unknown` (an imported source does not say). The field records the configured delivery, not that a request was sent. A TESTED receipt is `injected`, and its unit is `skill` or `context_file`. `run.model_id` holds no line break. Every run writes v0.15, a placebo run included. v0.14 is frozen as receipt.placebo.schema.json and v0.13 as receipt.v0.13.schema.json. Over v0.13, v0.14 said: over v0.13, a run with --placebo answers every case a third time with a same-length placebo in the skill text's place (spec 440, spec/RECEIPT.md § The placebo arm (v0.14)). Its rows carry mode `placebo`, and the top-level `placebo` block records what the placebo was, the corpus it was drawn from, and the figures over the paired cases. A receipt carries the block exactly when it carries a placebo row. A run without --placebo still writes v0.13. Everything else is as v0.13: Receipt spec v0.13: over v0.12, an import may carry figures a source printed, hashed into the receipt with a mark that the source gives aggregates only (issue 265, spec/RECEIPT.md § What v0.13 adds). `uncertainty_unavailable` is the mark, one value, `aggregates_only`; `source_figures` holds the printed figures, the repository, the commit and each source file's path and git blob sha1. A receipt carrying the mark is DECLARED, carries no case score, no aggregate mean and a null comparison, so no reader reads a verdict from it. `economics.<arm>.total_tokens` carries a token total a source reports. v0.12: over v0.11, the judge's setting is recorded and a regrade seals its evidence (issue 196, spec/RECEIPT.md § What v0.12 adds). `run.judge` may carry `harness` (the judge's own harness and version), `isolation` (the judge's spawn path), `endpoint` (whether a custom endpoint was set, and a sha256 of it, never the address) and `code_revision` (the revision of the code that reads the judge's reply and decides which answers reach it). A regrade's receipt carries `run.regraded_from` (the original receipt's hash and run date, the canonical sha256 of the answers it read, the revised suite file's sha256 in a rubric regrade, and the original's judge block) and `run.regrade` (judge or rubric, the draws graded and carried, the judge calls made, and in a rubric regrade each case changed), inside its hash; and a case row whose check results were carried, or dropped, says so in `checks_regrade`. Every field is optional, so a receipt that does not regrade is v0.11's shape but for the judge fields. v0.11 is frozen as receipt.v0.11.schema.json. Over v0.10, v0.11 said: a smoke run says so (spec 139, spec/RECEIPT.md § What v0.11 adds). `run.preset` is optional and names the preset a run was made under; the one preset is `quick`, a smoke run, which cannot produce a verdict, and a receipt that names a preset cannot read TESTED. v0.10 is frozen as receipt.v0.10.schema.json. Over v0.9, v0.10 said: the receipt says which answer was judged (spec 137, spec/RECEIPT.md § What v0.10 adds). `run.capture.mode` is `text` (on a CLI surface the child ran with its file-writing tools off, and its reply is the answer) or `files` (the regular files the child wrote in its own working directory were collected and judged with its reply), and a draw in files capture may list them in `captured_files`, each with its path, its size in bytes and whether it was included. Both are optional: `run.capture` is written by every run and carried by a regrade when the original records it, and a draw's `captured_files` only in files capture. v0.9 is frozen as receipt.v0.9.schema.json. Over v0.8, v0.9 said: imported receipts say what produced them (spec 049, spec/RECEIPT.md § What v0.9 adds). Every field it adds is optional: `run.harness` (the agent harness that produced the answers), `run.import` (the imported document: tool, format, format version, sha256, the import time, any sidecar file read, and a notice for each thing the source did not establish), `skill.unit` (a skill, or a plugin measured whole), and per case `activation` (whether the skill fired, never a score), `excluded_draws` (runs kept out of the band, with their reasons) and `label` (the source's display name). `economics.basis` adds `source-list-price-estimate` and `source-reported`, an arm may carry `mean_total_tokens`, `run.provider` may be `unknown`, and `run.date_utc` may be null on an external receipt whose source records no date. v0.8 is frozen as receipt.v0.8.schema.json. Over v0.7, v0.8 said: counts and clocks (spec 043, spec/RECEIPT.md § What v0.8 adds). `run.judge.samples` is optional, so an absent count stays absent; generation and judge counts are separate optional fields, `generations_per_arm` and `judge_samples_per_generation`, held in a `counts` object at the narrowest honest scope (`run.counts`, `run.arms.<mode>.counts`, `results.cases[].counts`); `run.arms.<mode>` may name an archived arm's own `model_id` and `generated_at`; `run.generated_at` is when generation began, and `run.judged_at` with `run.grader_revision` record a re-judge and appear together or not at all; a case may be `no_observations`. v0.7 is frozen as receipt.v0.7.schema.json. A hash-verified, dated record of running one agent skill eval suite with and without the skill on one model version, with the GENERATION sampled n times per arm and the judge sampled k times inside each draw. Over v0.6, v0.7 said: the fields are unchanged and the verdict a reader derives gains UNDERPOWERED: a case the band rule does not separate whose spreads and measured draws cannot resolve a shift of the effect floor (spec 035, spec/RECEIPT.md § What v0.7 adds). Over v0.5, as v0.6 said, the receipt says what answered it: `run.answered_by` (kind model|stub|external, whether the surface echoed a model id and which, and which spawn path produced it); `run.surface` and `run.judge.surface` may read `stub` (nothing answered; the text was canned) and a TESTED receipt requires answered_by.kind model; `run.judge.model_id` and `run.judge.prompt_template_hash` say which judge ran; every draw records its `stop_reason` and whether it was `truncated` (a truncated draw is unmeasured, never judged) and the case counts `n_truncated`; `case_status` gains `failed_unmeasured` (every draw of the arm was unmeasured for a reason that is not a timeout), recorded without fabricated samples or hashes exactly as a timeout is; `results.aggregates.band_rule` states the formula the aggregate band is derived by; an aggregate `stddev` is null only when its arm has fewer than two cases and `comparison.delta_uncertainty` is null only beside `delta_uncertainty_unavailable`. Every prior receipt still validates against its own frozen schema (v0.1, v0.2, v0.3, v0.3.1, v0.4, v0.5, v0.6).",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -17,7 +17,7 @@
   ],
   "allOf": [
     {
-      "description": "TESTED tightening — the interop relaxations (null hashes, external surface, null comparison, transcripts 'none') are ONLY available to receipts below TESTED. A TESTED receipt must carry the full evidence chain, exactly as before the interop revision. v0.6: a TESTED receipt was answered by a model (answered_by.kind model), its judge template is recorded, and its comparison is numeric except where delta_uncertainty_unavailable names why a band could not form.",
+      "description": "TESTED tightening — the interop relaxations (null hashes, external surface, null comparison, transcripts 'none') are ONLY available to receipts below TESTED. A TESTED receipt must carry the full evidence chain, exactly as before the interop revision. v0.6: a TESTED receipt was answered by a model (answered_by.kind model), its judge template is recorded, and its comparison is numeric except where delta_uncertainty_unavailable names why a band could not form. v0.15: a TESTED receipt is injected, and its unit is skill or context_file.",
       "if": {
         "required": [
           "verification_level"
@@ -34,6 +34,12 @@
             "properties": {
               "content_hash": {
                 "type": "string"
+              },
+              "unit": {
+                "enum": [
+                  "skill",
+                  "context_file"
+                ]
               }
             }
           },
@@ -76,6 +82,9 @@
                     "type": "string"
                   }
                 }
+              },
+              "delivery": {
+                "const": "injected"
               }
             }
           },
@@ -429,12 +438,64 @@
           }
         }
       }
+    },
+    {
+      "description": "Spec 440: the placebo block and the placebo rows travel together; a receipt carries both or neither.",
+      "if": {
+        "required": [
+          "placebo"
+        ]
+      },
+      "then": {
+        "properties": {
+          "results": {
+            "properties": {
+              "cases": {
+                "contains": {
+                  "type": "object",
+                  "required": [
+                    "mode"
+                  ],
+                  "properties": {
+                    "mode": {
+                      "const": "placebo"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "results": {
+            "properties": {
+              "cases": {
+                "items": {
+                  "not": {
+                    "type": "object",
+                    "required": [
+                      "mode"
+                    ],
+                    "properties": {
+                      "mode": {
+                        "const": "placebo"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   ],
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "0.13"
+      "const": "0.15"
     },
     "skill": {
       "type": "object",
@@ -442,7 +503,8 @@
       "required": [
         "name",
         "version",
-        "content_hash"
+        "content_hash",
+        "unit"
       ],
       "properties": {
         "name": {
@@ -458,7 +520,7 @@
             "string",
             "null"
           ],
-          "description": "sha256 (hex) over SKILL.md + all bundled files in canonical path-sorted order. Null ONLY on an imported (DECLARED) receipt whose skill bytes were never seen; a TESTED receipt must carry the hash (see the TESTED tightening).",
+          "description": "sha256 (hex): for a skill, over SKILL.md + all bundled files in canonical path-sorted order; for a context file, of the file's bytes, the value sha256sum prints. Null ONLY on an imported (DECLARED) receipt whose subject bytes were never seen; a TESTED receipt must carry the hash (see the TESTED tightening).",
           "pattern": "^[a-f0-9]{64}$"
         },
         "tokens": {
@@ -470,9 +532,10 @@
           "type": "string",
           "enum": [
             "skill",
-            "plugin"
+            "plugin",
+            "context_file"
           ],
-          "description": "v0.9 (optional). What was measured: one skill, or a plugin loaded whole with every skill it carries (a claude plugin eval import). Absent means a skill."
+          "description": "v0.9, required from v0.15. What was measured: one skill, a plugin loaded whole with every skill it carries (a claude plugin eval import), or a context file (spec 438): any Markdown file, such as a CLAUDE.md or an AGENTS.md, run on the injection path."
         }
       }
     },
@@ -521,12 +584,14 @@
         "judge",
         "registry",
         "transcripts",
-        "answered_by"
+        "answered_by",
+        "delivery"
       ],
       "properties": {
         "model_id": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "pattern": "^[^\\r\\n]*$"
         },
         "model_release_date": {
           "description": "ISO date (YYYY-MM-DD) of the model release if known, else null.",
@@ -949,6 +1014,24 @@
                   "$ref": "#/$defs/counts"
                 }
               }
+            },
+            "placebo": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Spec 440 (optional). The placebo arm's own counts, placed as the other arms' are.",
+              "properties": {
+                "model_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "generated_at": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
+                },
+                "counts": {
+                  "$ref": "#/$defs/counts"
+                }
+              }
             }
           }
         },
@@ -1251,6 +1334,15 @@
               }
             }
           ]
+        },
+        "delivery": {
+          "type": "string",
+          "enum": [
+            "injected",
+            "installed",
+            "unknown"
+          ],
+          "description": "v0.15, required (spec 438). The delivery the run was configured with. `injected`: the runner puts the subject text into each with-skill request it builds (the system prompt on the API, an argument appended to the harness's system prompt on claude-cli, before the task on standard input on codex). `installed`: a harness loaded the subject itself from where it was installed, and Driftproof put none of its text in a request; only an import says this, the claude plugin eval. `unknown`: an imported source that does not say how its subject reached the model. The field says nothing about whether a request was sent: a stub run sends none."
         }
       },
       "dependentRequired": {
@@ -1438,7 +1530,8 @@
                 "type": "string",
                 "enum": [
                   "with_skill",
-                  "baseline"
+                  "baseline",
+                  "placebo"
                 ]
               },
               "case_status": {
@@ -2642,6 +2735,189 @@
             }
           ],
           "description": "The agent's All cases row of the token table, each cell as printed, or null."
+        }
+      }
+    },
+    "placebo": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Spec 440: the placebo arm. The placebo is a text of exactly the skill text's length in UTF-8 bytes, drawn from a fixed corpus of sentences chosen without reference to any task; a case can still ask about something the corpus mentions. A reader rebuilds it from `bytes`, `seed` and `corpus` and checks it against `sha256`, and checks `corpus_hash` against the pinned hash of `revision`.",
+      "required": [
+        "revision",
+        "length_measure",
+        "skill_bytes",
+        "bytes",
+        "seed",
+        "corpus",
+        "corpus_hash",
+        "sha256",
+        "skill_tokens_estimate",
+        "tokens_estimate",
+        "aggregates",
+        "comparison"
+      ],
+      "properties": {
+        "revision": {
+          "const": 1,
+          "description": "The placebo revision. A revision's corpus never changes; a new corpus is a new revision."
+        },
+        "length_measure": {
+          "const": "utf8_bytes",
+          "description": "The one length the placebo matches: UTF-8 bytes of the skill text the with-skill arm sends."
+        },
+        "skill_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 262144,
+          "description": "The skill text's length in UTF-8 bytes."
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 262144,
+          "description": "The placebo's length in UTF-8 bytes; equal to skill_bytes."
+        },
+        "seed": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "The seed of the placebo's sentence order: the receipt's skill.content_hash."
+        },
+        "corpus": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160,
+            "pattern": "^[\\x20-\\x7e]+$"
+          },
+          "description": "The corpus of the revision, in order, as the placebo was drawn from it."
+        },
+        "corpus_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "sha256 hex of JSON.stringify(corpus); the pinned hash of the revision."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "sha256 hex of the placebo text."
+        },
+        "skill_tokens_estimate": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "A figure: the skill text's estimated token count. The placebo matches bytes, not tokens."
+        },
+        "tokens_estimate": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "A figure: the placebo's estimated token count."
+        },
+        "aggregates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "with_skill",
+            "placebo",
+            "band_rule"
+          ],
+          "description": "The two arms over the paired cases, by the band rule every receipt states, the placebo standing in the baseline's place.",
+          "properties": {
+            "with_skill": {
+              "$ref": "#/$defs/modeAggregate"
+            },
+            "placebo": {
+              "$ref": "#/$defs/modeAggregate"
+            },
+            "band_rule": {
+              "type": "string"
+            },
+            "excluded_cases": {
+              "type": "array",
+              "maxItems": 10000,
+              "description": "Cases the verdict reads that the placebo reading could not pair, each with its reason. Any case here makes the placebo reading not measured.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "modes",
+                  "reason"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "modes": {
+                    "type": "array",
+                    "items": {
+                      "const": "placebo"
+                    },
+                    "minItems": 1,
+                    "maxItems": 1
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "comparison": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "with_skill_score",
+            "placebo_score",
+            "delta",
+            "delta_uncertainty"
+          ],
+          "description": "The aggregate figures over the paired cases: a figure apart from the case rule, which reads cases one by one and can point the other way.",
+          "properties": {
+            "with_skill_score": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1
+            },
+            "placebo_score": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1
+            },
+            "delta": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": -1,
+              "maximum": 1,
+              "description": "with_skill_score minus placebo_score."
+            },
+            "delta_uncertainty": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "delta_uncertainty_unavailable": {
+              "enum": [
+                "no_cases",
+                "single_case"
+              ]
+            }
+          }
         }
       }
     }

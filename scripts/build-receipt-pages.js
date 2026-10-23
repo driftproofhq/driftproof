@@ -38,6 +38,8 @@ const { badgeSvg } = require('../lib/badge-svg');
 const chrome = require('./site-chrome');
 const { applyHeadTags } = require('./build-head-tags');
 const { humanModelName, shortModelName } = require('./model-names');
+// Spec 077: the skill's token cost in the verdict section, when the one predicate shows it.
+const { skillTokenCost, costSentence } = require('../lib/skillCost');
 
 const ROOT = path.join(__dirname, '..');
 const DOCS = path.join(ROOT, 'docs');
@@ -194,10 +196,13 @@ function armRow(receipt, mode, name) {
   return `      <tr><td>${name}</td><td><span class="arm-mean">${n3(mean)}</span></td><td>${esc(spread)}</td><td>${esc(cases)}</td></tr>`;
 }
 
+const report015Policy = require('../lib/report-015-publication');
 function page({ rel, receipt: r }) {
+  const limit = report015Policy.routerLimit(r);
   const v = receiptVerdict(r);
-  const label = pageLabel(v);
-  const honest = honestLine(v);
+  const cost = skillTokenCost(r);
+  const label = limit ? limit.label : pageLabel(v);
+  const honest = limit ? limit.reason : honestLine(v);
   const run = r.run || {};
   const date = String(run.date_utc || '').slice(0, 10);
   const url = `${ORIGIN}/r/${r.receipt_hash}/`;
@@ -210,13 +215,13 @@ function page({ rel, receipt: r }) {
   // page used to print "Lift +0.128, ± 0.362" under a label reading "Not measured", which is
   // the badge's defect on a larger surface: the most precise-looking figure on the page
   // answering the question the label above it had just said this receipt cannot answer.
-  const effect = NO_LIFT.has(v.verdict)
+  const effect = limit ? 'These arm summaries describe the recorded answers. They do not measure the delegated skill.' : NO_LIFT.has(v.verdict)
     ? 'No lift is stated for a state that did not measure one.'
     : `Lift ${lift === null ? 'not recorded' : esc(lift)}, ${esc(unc)}.`;
   const verified = verifyReceiptHash(r)
     ? `receipt_hash verified when this page was built from ${rel}; ${run.transcripts ? `run.transcripts records ${run.transcripts}` : 'this receipt does not record run.transcripts'}.`
     : `receipt_hash did not verify when this page was built from ${rel}.`;
-  const plot = plotFor(rel);
+  const plot = limit ? null : plotFor(rel);
   const snippet = `[![driftproof](${url}badge.svg)](${url})`;
   const curl = `curl -fsSLO ${RAW}/${rel}`;
   const validate = `npx driftproof@${VERSION} validate ${file}`;
@@ -231,10 +236,10 @@ function page({ rel, receipt: r }) {
   <h1><code>${esc((r.skill || {}).name)}</code> on <span data-field="model">${esc(run.model_id)}</span></h1>
   <p class="receipt-meta">Run on <span data-field="date">${esc(date)}</span>, runner ${esc(run.runner_version || 'not recorded')}, surface ${esc(run.surface || 'not recorded')}, verification level <code>${esc(r.verification_level || 'not recorded')}</code>.</p>
 
-  <section class="receipt-verdict state-${v.verdict.toLowerCase().replace(/_/g, '-')}">
+  <section class="receipt-verdict state-${limit ? 'scope-limit' : v.verdict.toLowerCase().replace(/_/g, '-')}">
     <p class="receipt-label" data-field="label">${esc(label)}</p>
-    <p class="receipt-honest" data-field="honest">${esc(honest)}</p>
-${v.verdict === 'NO_EFFECT' && isOneCase(r) ? `    <p class="receipt-cases" data-field="cases">${esc(ONE_CASE_LINE)}</p>\n` : ''}${v.verdict === 'UNDERPOWERED' ? `    <p class="receipt-draws">${esc(drawsLine(v.drawsNeeded))}</p>\n` : ''}${v.verdict === 'INCONCLUSIVE' && v.lostDraws ? `    <p class="receipt-draws">${esc(lostDrawsLine(v.lostDraws))}</p>\n` : ''}    <p><img class="receipt-badge" src="badge.svg" alt="${esc(`driftproof badge: ${label.toLowerCase()} on ${run.model_id}, ${date}`)}"></p>
+    <p class="receipt-honest" data-field="honest">${esc(honest)}${limit ? ` <a href="${limit.amendment}">Report 015 Amendment 1</a>.` : ''}</p>
+${!limit && v.verdict === 'NO_EFFECT' && isOneCase(r) ? `    <p class="receipt-cases" data-field="cases">${esc(ONE_CASE_LINE)}</p>\n` : ''}${!limit && v.verdict === 'UNDERPOWERED' ? `    <p class="receipt-draws">${esc(drawsLine(v.drawsNeeded))}</p>\n` : ''}${!limit && v.verdict === 'INCONCLUSIVE' && v.lostDraws ? `    <p class="receipt-draws">${esc(lostDrawsLine(v.lostDraws))}</p>\n` : ''}${cost.shown ? `    <p data-field="cost">${esc(costSentence(cost.text))}</p>\n` : ''}    <p><img class="receipt-badge" src="badge.svg" alt="${esc(`driftproof badge: ${label.toLowerCase()} on ${run.model_id}, ${date}${limit ? '. '+limit.reason : ''}`)}"></p>
   </section>
 
   <section class="receipt-arms">
@@ -246,10 +251,10 @@ ${armRow(r, 'with_skill', 'with the skill')}
 ${armRow(r, 'baseline', 'without the skill')}
       </tbody>
     </table>
-    <p class="muted">${effect} A spread is the sample standard deviation of the per-case means: a descriptive spread with no coverage probability. The verdict above reads each case's two bands, not these aggregates.</p>
+    <p class="muted">${effect} A spread is the sample standard deviation of the per-case means: a descriptive spread with no coverage probability. ${limit ? 'No verdict is assigned to these text tasks.' : "The verdict above reads each case's two bands, not these aggregates."}</p>
 ${plot ? `    ${chrome.inlinePlot(plot, '', 'The two arms of this receipt drawn as ranges, with the effect floor marked.')}\n` : ''}  </section>
 
-  <section class="receipt-verify">
+${limit ? '  <p class="result-links"><a href="/skills/receipts/issue-408/'+limit.attempt+'.json">Receipt JSON</a> · <a href="/skills/receipts/issue-408/suites/'+limit.evals_sha256+'.json">Suite</a> · <a href="/skills/receipts/issue-408/'+limit.attempt+'-answers.json">Retained answers</a></p>\n' : ''}  <section class="receipt-verify">
     <h2>What was verified</h2>
     <p>${esc(verified)}</p>
     <p>Receipt hash: <code class="receipt-hash">${esc(r.receipt_hash)}</code></p>
@@ -285,7 +290,7 @@ ${chrome.FOOTER}
 }
 
 function card({ receipt: r }, label, outDir) {
-  return execFileSync('python3', [path.join(__dirname, 'build-og-card.py'), '--receipt', r.receipt_hash.slice(0, 16), '--skill', (r.skill || {}).name, '--model', (r.run || {}).model_id, '--date', String((r.run || {}).date_utc || '').slice(0, 10), '--label', label, '--out-dir', outDir], { encoding: 'utf8' }).trim();
+  return execFileSync('python3', [path.join(__dirname, 'build-og-card.py'), '--receipt', r.receipt_hash.slice(0, 16), '--skill', (r.skill || {}).name, '--model', (r.run || {}).model_id, '--date', String((r.run || {}).date_utc || '').slice(0, 10), '--label', label, '--out-dir', outDir, ...(report015Policy.routerLimit(r)?.compatibilityCard ? ['--compatibility-name', report015Policy.routerLimit(r).compatibilityCard] : [])], { encoding: 'utf8' }).trim();
 }
 
 // THE RECEIPTS INDEX, docs/r/index.html (spec 133 R-7). Every receipt page, by the report it
@@ -346,7 +351,7 @@ ${chrome.FOOTER}
 
 // Each receipt's card label, by its receipt_hash: the page's own label, so a card says what its page
 // says (spec 143, approval F-1).
-const cardLabels = (all) => new Map(all.map((x) => [x.receipt.receipt_hash, pageLabel(receiptVerdict(x.receipt))]));
+const cardLabels = (all) => new Map(all.map((x) => [x.receipt.receipt_hash, report015Policy.routerLimit(x.receipt)?.label || pageLabel(receiptVerdict(x.receipt))]));
 
 function main() {
   const check = process.argv.includes('--check');

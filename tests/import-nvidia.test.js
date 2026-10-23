@@ -210,7 +210,8 @@ test('AC-6: the mark and source_figures sit inside receipt_hash', () => {
 // ── AC-7, the schema holds the mark to its meaning ──────────────────────────
 test('AC-7: v0.13 refuses the mark where it would not mean what it says', () => {
   const r = receiptOf(runImport(BASE()), 'amc-setup-calibration-stack', 'codex');
-  assert.equal(r.schema_version, '0.13');
+  // A-265-6 (issue 438): the importer stamps the current version, 0.15.
+  assert.equal(r.schema_version, '0.15');
   assert.equal(validateReceipt(r).valid, true, JSON.stringify(validateReceipt(r).errors));
   const plants = {
     'source_figures without the mark': (x) => { delete x.uncertainty_unavailable; },
@@ -570,8 +571,9 @@ test('AC-28: a name collision or an existing file refuses and writes nothing', (
 // ── AC-20, receipt v0.13 is additive, and nothing loosens ───────────────────
 test('AC-20: v0.12 is frozen; v0.13 is v0.12 plus the added fields and rules only', () => {
   const cfg = require('../config');
-  assert.equal(cfg.RECEIPT_SCHEMA_VERSION, '0.13');
-  const v13 = JSON.parse(fs.readFileSync(path.join(ROOT, 'spec', 'receipt.schema.json'), 'utf8'));
+  // A-265-6 (issue 438): 0.15 is current, and v0.13 is frozen as receipt.v0.13.schema.json, byte for byte.
+  assert.equal(cfg.RECEIPT_SCHEMA_VERSION, '0.15');
+  const v13 = JSON.parse(fs.readFileSync(path.join(ROOT, 'spec', 'receipt.v0.13.schema.json'), 'utf8'));
   const v12 = JSON.parse(fs.readFileSync(path.join(ROOT, 'spec', 'receipt.v0.12.schema.json'), 'utf8'));
   const base = JSON.parse(spawnSync('git', ['-C', ROOT, 'show', 'd76e13da4f9a8c8d93a41a03b6a8cf6721f04091:spec/receipt.schema.json'], { encoding: 'utf8' }).stdout);
   const noId = (s) => { const x = clone(s); delete x.$id; return x; };
@@ -590,16 +592,20 @@ test('AC-20: v0.12 is frozen; v0.13 is v0.12 plus the added fields and rules onl
   const wide = clone(cut); wide.properties.verification_level.enum = [...(wide.properties.verification_level.enum || []), 'X'];
   assert.notDeepEqual(undesc(wide), undesc(b));
   const h = require('../lib/importers-harbor').importHarbor({ withJob: path.join(__dirname, 'fixtures', 'harbor', 'skill-placebo', 'trials', 'skill-caveman'), withoutJob: path.join(__dirname, 'fixtures', 'harbor', 'skill-placebo', 'trials', 'baseline'), importedAt: AT }).receipt;
-  assert.equal(validateReceipt(sealReceipt({ ...clone(h), schema_version: '0.12' })).valid, true, 'v0.12 receipt');
-  assert.equal(validateReceipt(sealReceipt({ ...clone(h), schema_version: '0.13' })).valid, true, 'restamped 0.13');
-  assert.equal(validateReceipt(sealReceipt({ ...clone(receiptOf(runImport(BASE()), 'doca-aes-gcm', 'codex')), schema_version: '0.12' })).valid, false, 'the mark is refused at v0.12');
+  // A-265-6: taken back below 0.15 without run.delivery, which is v0.15's, so the mark alone is refused at v0.12.
+  const before15 = (r, v) => { const x = clone(r); delete x.run.delivery; x.schema_version = v; return x; };
+  assert.equal(validateReceipt(sealReceipt(before15(h, '0.12'))).valid, true, 'v0.12 receipt');
+  assert.equal(validateReceipt(sealReceipt(before15(h, '0.13'))).valid, true, 'restamped 0.13');
+  assert.equal(validateReceipt(sealReceipt(before15(receiptOf(runImport(BASE()), 'doca-aes-gcm', 'codex'), '0.13'))).valid, true, 'the marked receipt at v0.13');
+  assert.equal(validateReceipt(sealReceipt(before15(receiptOf(runImport(BASE()), 'doca-aes-gcm', 'codex'), '0.12'))).valid, false, 'the mark is refused at v0.12');
   assert.equal(fs.readFileSync(path.join(ROOT, 'docs', 'spec', 'receipt.v0.12.schema.json'), 'utf8'), fs.readFileSync(path.join(ROOT, 'spec', 'receipt.v0.12.schema.json'), 'utf8'), 'the served frozen copy');
 });
 
 // ── AC-21, the docs ─────────────────────────────────────────────────────────
 test('AC-21: RECEIPT.md says what v0.13 adds; interop.md has the NVIDIA section; the interop page has the import line', () => {
   const receiptMd = fs.readFileSync(path.join(ROOT, 'spec', 'RECEIPT.md'), 'utf8');
-  assert.match(receiptMd, /^# Driftproof receipt, spec v0\.13$/m);
+  // A-265-6 (issue 438): the heading names the current version; the v0.13 section is read as before.
+  assert.match(receiptMd, /^# Driftproof receipt, spec v0\.15$/m);
   const sec = receiptMd.split(/^## What v0\.13 adds/m)[1];
   assert.ok(sec, 'a What v0.13 adds section');
   const body = sec.split(/^## /m)[0];
@@ -1195,3 +1201,99 @@ test('AC-29: no reader works out a baseline, a spread, a relative uplift or a un
 });
 
 module.exports = { CARDS, AT };
+
+
+// A-265-7, issue 437: imported activation evidence stays external. The same
+// readers judge the live module and deliberately unsafe in-memory module copies.
+test('AC-77: activation drift refuses aggregate imports and labels supported imports; admission and claim plants read RED', () => {
+  const file = path.join(ROOT, 'lib', 'activation-drift.js');
+  const live = require(file), src = fs.readFileSync(file, 'utf8');
+  const compile = text => {
+    const Module = require('node:module'), m = new Module(file, module);
+    m.filename = file; m.paths = Module._nodeModulePaths(path.dirname(file));
+    m._compile(text, file); return m.exports;
+  };
+  const bind = (before, after) => ({ before, after, issuedAt: after.run.date_utc,
+    context: { axis: 'model', inventory: before.results.cases.filter(r => r.mode === 'with_skill').map(r => ({ id: r.id, indicators: ['fixture-fired'] })),
+      ...Object.fromEntries([['before', before], ['after', after]].map(([side, r]) => [side, {
+        receipt_hash: r.receipt_hash, plugin_sha256: 'a'.repeat(64), suite_sha256: 'b'.repeat(64), environment_sha256: 'c'.repeat(64),
+      }])) },
+  });
+  const importedPlugin = (model, date) => {
+    const d = tmp('activation-source'), input = path.join(d, 'source.json');
+    fs.writeFileSync(input, JSON.stringify({ schemaVersion: 1, startedAt: date, claudeVersion: 'fixture-runtime',
+      suite: { modelOverride: model, judgeModel: 'fixture-judge', ablation: 'none', runsPerCase: 20, plugins: [{ name: 'fixture-plugin', version: '1.0.0' }] },
+      cases: [{ name: 'fixture-case', graders: [{ name: 'fixture-fired', type: 'tool_used', config: { tool: 'Skill' } }],
+        arms: { with: Array.from({ length: 20 }, () => ({ score: 1, graders: [{ name: 'fixture-fired', scored: false, passed: true }] })) } }],
+    }));
+    const r = require('../lib/importers-anthropic').importAnthropic(input, { from: 'claude-plugin-eval', importedAt: AT }).receipt;
+    assert.equal(validateReceipt(r).valid, true); assert.equal(verifyReceiptHash(r), true);
+    return r;
+  };
+  const control = bind(importedPlugin('fixture-model-before', '2026-10-12T00:00:00.000Z'), importedPlugin('fixture-model-after', '2026-10-13T00:00:00.000Z'));
+  const readLabels = api => {
+    const receipt = api.buildActivationDrift(control), text = api.renderActivationDrift(receipt);
+    assert.equal(receipt.verification_level, 'DECLARED', 'external activation stays DECLARED');
+    assert.equal(receipt.kind, 'activation-drift'); assert.equal(verifyReceiptHash(receipt), true);
+    for (const limitation of ['Declared external evidence; fixed setup is operator-declared.', 'Recorded firing rates do not establish persistence, cause or answer quality.']) {
+      assert.ok(receipt.limitations.includes(limitation), 'external-evidence limitation in JSON');
+      assert.ok(text.split('\n').includes(limitation), 'external-evidence limitation in summary');
+    }
+    assert.doesNotMatch(text, TOKENS);
+    return receipt;
+  };
+  const good = readLabels(live);
+  const pair = r => {
+    const after = clone(r);
+    after.run.model_id += '-fixture-next';
+    after.run.date_utc = new Date(Date.parse(r.run.date_utc) + 86400000).toISOString();
+    return bind(r, sealReceipt(after));
+  };
+  const readRefusal = (api, request) => {
+    const d = tmp('activation-refusal'), out = path.join(d, 'out');
+    const forged = sealReceipt({ ...clone(good), evidence: { before: request.before, after: request.after }, context: request.context, issued_at: request.issuedAt });
+    assert.throws(() => api.buildActivationDrift(request), undefined, 'aggregate evidence must refuse');
+    assert.throws(() => api.renderActivationDrift(forged));
+    assert.throws(() => api.serializeActivationDrift(forged));
+    assert.throws(() => api.writeActivationDrift(forged, out));
+    assert.equal(fs.existsSync(out), false, 'no output directory');
+    return { d, out, forged };
+  };
+  const requests = [];
+  for (const subject of subjects()) {
+    const both = pair(subject.r);
+    if (subject.name.startsWith('imported')) {
+      assert.equal(validateReceipt(both.before).valid, true); assert.equal(validateReceipt(both.after).valid, true);
+    }
+    requests.push(both);
+    for (const placement of ['before', 'after', 'both']) {
+      const request = placement === 'both' ? both : bind(placement === 'before' ? both.before : control.before, placement === 'after' ? both.after : control.after);
+      const { d, out, forged } = readRefusal(live, request);
+      for (const [name, value] of Object.entries({ before: request.before, after: request.after, context: request.context, envelope: forged })) fs.writeFileSync(path.join(d, name + '.json'), JSON.stringify(value));
+      for (const args of [
+        ['activation-drift', path.join(d, 'before.json'), path.join(d, 'after.json'), '--context', path.join(d, 'context.json'), '--issued-at', request.issuedAt, '--out', out],
+        ['activation-drift', '--receipt', path.join(d, 'envelope.json'), '--out', out],
+      ]) {
+        const result = cli(args);
+        assert.equal(result.status, 2, result.stderr); assert.equal(result.stdout, '');
+        assert.match(result.stderr, /^activation-drift refused: /); assert.ok(result.stderr.length <= 2100);
+        assert.equal(fs.existsSync(out), false);
+      }
+    }
+  }
+  // Remove the actual input admission block. Remaining count and inventory code
+  // then builds an envelope from a real NVIDIA aggregate import, so this plant
+  // exercises the admission reader rather than an unreachable mutant.
+  const start = src.indexOf('  if (!receipt || !HASH.test(receipt.receipt_hash');
+  const end = src.indexOf('  const rows = new Map()', start);
+  assert.ok(start >= 0 && end > start, 'unique admission block is present');
+  assert.equal(src.indexOf('  if (!receipt || !HASH.test(receipt.receipt_hash', start + 1), -1);
+  const unsafe = compile(src.slice(0, start) + src.slice(end));
+  readLabels(unsafe);
+  assert.equal(unsafe.buildActivationDrift(requests[0]).kind, 'activation-drift', 'admission plant reaches an unsafe acceptance');
+  assert.throws(() => readRefusal(unsafe, requests[0]), /aggregate evidence must refuse/, 'the same refusal reader reads RED');
+  const limitation = 'Declared external evidence; fixed setup is operator-declared.';
+  assert.equal(src.split(limitation).length, 2, 'unique limitation plant');
+  const mislabelled = compile(src.replace(limitation, 'Driftproof measured evidence.'));
+  assert.throws(() => readLabels(mislabelled), /external-evidence limitation/, 'the same claim reader reads RED');
+});

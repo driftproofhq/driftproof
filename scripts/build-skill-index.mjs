@@ -29,12 +29,13 @@ const REPO = path.resolve(HERE, '..');
 
 const { publication: campaignPublication } = require('../specs/408-skill-measurements/campaign.cjs');
 const { plainOf, LABELS } = require('../lib/plain');
-const { armOf, receiptAggregatesOnly } = require('../lib/verdict');
+const { armOf, receiptAggregatesOnly, receiptVerdict } = require('../lib/verdict');
 const { bandOf } = require('../lib/reuse');
 const { advisories } = require('../lib/stale');
 const { loadRegistry } = require('../lib/models');
 const { validateReceipt, verifyReceiptHash } = require('../lib/receipt');
 const { opposedToPublished } = require('../lib/importers-harbor');
+const { skillTokenCost, costSentence } = require('../lib/skillCost');
 const { humanModelName, shortModelName } = require('./model-names.js');
 const { applyHeadTags } = require('./build-head-tags.js');
 
@@ -202,6 +203,7 @@ function checkFile(root, e, sources) {
   const v = validateReceipt(r);
   if (!v.valid) refuse(`${f}: it does not validate against schema ${shown(r.schema_version)}: ${(v.errors || []).slice(0, 2).map((x) => `${x.instancePath || ''} ${x.message || ''}`.trim()).join('; ')}`);
   if (!verifyReceiptHash(r)) refuse(`${f}: its receipt_hash does not verify against its content`);
+  if (e.source === 'driftproof' && receiptVerdict(r).verdict === 'NOT_MEASURED') refuse(f + ': a Driftproof receipt does not carry a measured result');
   return r;
 }
 
@@ -209,7 +211,10 @@ function checkSources(m) {
   if (!isObject(m) || !Array.isArray(m.sources) || !Array.isArray(m.receipts)) refuse('index-receipts/sources.json: sources and receipts are lists');
   const ids = m.sources.map((s) => s && s.id);
   if (JSON.stringify(ids) !== JSON.stringify(SOURCES)) refuse(`index-receipts/sources.json: the sources are ${SOURCES.join(', ')}, in that order`);
+  const provenance = { driftproof: ['Driftproof', 'driftproofhq/driftproof'], 'skill-placebo': ['skill-placebo', 'simonether/skill-placebo'], nvidia: ['NVIDIA', 'NVIDIA/skills'] };
   for (const s of m.sources) {
+    if (s.name !== provenance[s.id][0] || s.repo !== provenance[s.id][1]) refuse('index-receipts/sources.json: source attribution does not match ' + s.id);
+    slot('index-receipts/sources.json', 'source attribution', s.name);
     if (s.licence !== LICENCES[s.id]) refuse(`index-receipts/sources.json: ${s.id}'s licence is ${LICENCES[s.id]}`);
     if (typeof s.name !== 'string' || !s.name || typeof s.repo !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._-]*$/.test(s.repo)) refuse(`index-receipts/sources.json: ${s.id} names no name and repository`);
     if (s.id === 'driftproof' ? s.commit !== null : !HEX40.test(String(s.commit))) refuse(`index-receipts/sources.json: ${s.id}'s commit is ${s.id === 'driftproof' ? 'null' : '40 lowercase hex'}`);
@@ -387,12 +392,16 @@ function rowOf(e, r, ctx) {
     }
     const ec = r.economics;
     const fig = ec && ec.with_skill && ec.baseline ? [ec.with_skill.mean_input_tokens, ec.with_skill.mean_output_tokens, ec.baseline.mean_input_tokens, ec.baseline.mean_output_tokens] : [null];
-    if (fig.some((x) => !num(x))) put('Tokens', TX.T4);
+    // T-5 (spec 077, A-267-21): a row with a Driftproof verdict ends the field with the skill's token
+    // cost, in the words of the one predicate, when it shows one.
+    const cost = evidence === 'measured' ? skillTokenCost(r) : null;
+    const T5 = cost && cost.shown ? [costSentence(cost.text)] : [];
+    if (fig.some((x) => !num(x))) put('Tokens', [TX.T4, ...T5].join(' '));
     else {
       const cw = ec.with_skill.mean_cost_usd_per_call; const cb = ec.baseline.mean_cost_usd_per_call;
       const costs = num(cw) && num(cb);
       if (costs && !Object.hasOwn(TX.basis, ec.basis)) refuse(`${f}: economics.basis ${shown(ec.basis)} has no fixed text`);
-      put('Tokens', [TX.T1(...fig.map((x) => String(Math.round(x)))), ...(costs ? [TX.T2(cw.toFixed(4), cb.toFixed(4), TX.basis[ec.basis])] : [])].join(' '));
+      put('Tokens', [TX.T1(...fig.map((x) => String(Math.round(x)))), ...(costs ? [TX.T2(cw.toFixed(4), cb.toFixed(4), TX.basis[ec.basis])] : []), ...T5].join(' '));
     }
   }
   const fresh = freshnessOf(r, ctx.aliases, verb);
@@ -428,14 +437,14 @@ function dispute(title, url, rows) {
   return `<p class="skill-dispute"><a href="${esc(`${DISPUTE}?${q}`)}">${esc(TX.D1)}</a></p>`;
 }
 const built = (d) => `<p class="skill-built">Built on <time data-build-date datetime="${d}">${d}</time> from committed receipts.</p>`;
-function shell(title, description, main) {
+function shell(title, description, main, reported = false) {
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
-<link rel="stylesheet" href="/style.css">
+${reported ? '<meta name="robots" content="noindex, follow">\n<meta name="twitter:title" content="' + esc(title) + '">\n' : ''}<link rel="stylesheet" href="/style.css">
 </head>
 <body>
 <main class="skill-index" data-description="${esc(description)}">
@@ -447,15 +456,23 @@ ${main}
 }
 
 // ── the title ladder (spec 267 § Title ladder, TBD-1 (b)) ─────────────────────────────────────
-function titles(idents) {
+function hasOwnMeasurement(rows) {
+  return rows.some((row) => row.source === 'driftproof' && row.evidence === 'measured');
+}
+function titles(pages, sources) {
+  const idents = pages.map((p) => p.id);
   const count = new Map();
   for (const x of idents) count.set(x.name.toLowerCase(), (count.get(x.name.toLowerCase()) || 0) + 1);
   const out = new Map();
   const seen = new Map();
-  for (const x of idents) {
+  for (const p of pages) {
+    const x = p.id;
     const unique = count.get(x.name.toLowerCase()) === 1;
     const rungs = unique ? [`${x.name}: worth installing? | Driftproof`, `${x.name} | Driftproof`] : [`${x.name} by ${x.owner}: worth installing? | Driftproof`, `${x.name} by ${x.owner} | Driftproof`];
-    const t = rungs.find((r) => r.length <= TITLE_MAX);
+    const measured = hasOwnMeasurement(p.rows);
+    const reporters = SOURCES.filter((source) => p.rows.some((row) => row.source === source)).map((source) => sources.get(source).name);
+    const attributed = (unique ? x.name : x.name + ' by ' + x.owner) + ': ' + joinNames(reporters) + "'s reported results | Driftproof";
+    const t = measured ? rungs.find((r) => r.length <= TITLE_MAX) : slot(x.page, 'reported title', attributed);
     if (!t) refuse(`${x.page}: no title rung fits ${TITLE_MAX} characters (spec 267 § Title ladder; the shortest is ${rungs[rungs.length - 1].length})`);
     if (seen.has(t.toLowerCase())) refuse(`${x.page} and ${seen.get(t.toLowerCase())}: the title ${shown(t)} is not unique`);
     seen.set(t.toLowerCase(), x.page);
@@ -553,6 +570,8 @@ export function buildSkillIndex({ root = REPO, buildDate } = {}) {
   let campaign;
   try { campaign = campaignPublication(root); } catch (e) { refuse(e.code || 'CAMPAIGN_REFUSED'); }
   for (const x of campaign.rows) {
+    const { doc: receipt } = readJsonAt(root, x.row.file, 'the admitted campaign receipt');
+    if (receiptVerdict(receipt).verdict === 'NOT_MEASURED') refuse(x.row.file + ': a Driftproof receipt does not carry a measured result');
     if (heldPages.has(x.id.page)) refuse('CAMPAIGN_HELD_IDENTITY');
     const old = idents.get(x.id.page.toLowerCase());
     if (old && (old.page !== x.id.page || old.path !== x.id.path || old.unit !== x.id.unit)) refuse('CAMPAIGN_IDENTITY_COLLISION');
@@ -561,12 +580,12 @@ export function buildSkillIndex({ root = REPO, buildDate } = {}) {
   }
   for(const p of pages.values())p.rows.sort((a,b)=>SOURCES.indexOf(a.source)-SOURCES.indexOf(b.source)||Date.parse(b.date||'1970-01-01')-Date.parse(a.date||'1970-01-01')||byCodeUnit(a.file,b.file));
   const ordered = [...pages.values()].sort((a, b) => byCodeUnit(`${a.id.page}/index.html`, `${b.id.page}/index.html`));
-  const title = titles(ordered.map((p) => p.id));
+  const title = titles(ordered, sources);
   const out = [...campaign.files];
   for (const p of ordered) {
     const id = p.id;
     const ids = SOURCES.filter((s) => p.rows.some((x) => x.source === s));
-    const verb = verbOf(p.rows.some((x) => x.evidence === 'measured'));
+    const verb = verbOf(hasOwnMeasurement(p.rows));
     const ownCampaign=p.rows.some(x=>x.summary?.startsWith('<section'));
     const desc = ownCampaign ? id.name+': '+campaign.description : TX.P1(verb, id.name, id, joinNames(ids.map((s) => sources.get(s).name)));
     if (desc.length > DESC_MAX) refuse(`${id.page}: its description is ${desc.length} characters, over ${DESC_MAX}`);
@@ -581,7 +600,7 @@ export function buildSkillIndex({ root = REPO, buildDate } = {}) {
     ];
     const main = [
       ...(ownCampaign?['<div class="scoreboard-eyebrow">'+esc(campaign.title)+'</div>']:[]),
-      `<div class="skill-eyebrow">Worth installing?</div><h1>${esc(id.name)}</h1>`,
+      `<div class="skill-eyebrow">${verb === 'Measured' ? 'Worth installing?' : esc(slot(id.page, 'reported eyebrow', joinNames(ids.map((source) => sources.get(source).name)) + "'s reported results"))}</div><h1>${esc(id.name)}</h1>`,
       ...(ownCampaign?['<div class="skill-intro">Here is what happened when we tested its written answers, with and without the skill.</div>']:context),
       ...(ownCampaign?['<details class="skill-about"><summary>About this test</summary>',...context,'</details>']:[]),
       `<h2>${verb} results</h2>`,
@@ -594,7 +613,7 @@ export function buildSkillIndex({ root = REPO, buildDate } = {}) {
       dispute(`Skill index: ${id.page}`, url, p.rows),
       built(buildDate),
     ].join('\n');
-    out.push({ path: `${id.page}/index.html`, bytes: Buffer.from(applyHeadTags(shell(title.get(id.page), desc, main), `skills/${id.page}/index.html`)) });
+    out.push({ path: `${id.page}/index.html`, bytes: Buffer.from(applyHeadTags(shell(title.get(id.page), desc, main, verb === 'Reported'), `skills/${id.page}/index.html`)) });
   }
   // The list page.
   const set = (k, rows) => SETS[k].filter((v) => rows.some((x) => x[k] === v)).join(' ');
@@ -625,7 +644,7 @@ export function buildSkillIndex({ root = REPO, buildDate } = {}) {
   const names = new Set();
   for (const x of out) { if (names.has(x.path)) refuse(`${x.path}: two files would be written at one path`); names.add(x.path); }
   out.sort((a, b) => byCodeUnit(a.path, b.path));
-  return { files: out, held };
+  return { files: out, held, indexability: ordered.map(({ id, rows }) => ({ path: `skills/${id.page}/index.html`, measured: hasOwnMeasurement(rows) })) };
 }
 
 // ── the CLI ───────────────────────────────────────────────────────────────────────────────────

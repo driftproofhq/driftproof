@@ -541,7 +541,29 @@ function normalized(data) {
 // every other byte is compared as before. Any other value, or the line twice, reads RED.
 const SCHEMA_265 = { from: '0.12', to: '0.13' };
 const schemaLine = (v) => `{\n  "schema_version": "${v}",\n`;
-function atBaseSchema(data) {
+// A-245-10 (issue 438): receipt v0.15 moves every receipt's schema_version from 0.13 to 0.15 and adds two
+// lines, skill.unit and run.delivery. A candidate receipt must carry 0.15 once, as its schema_version line,
+// and each of the two lines once, at a skill run's values; the version is read back as 0.13 and the two
+// lines are taken out, and every other byte is compared as before. Any other value, a line missing or a
+// line twice, reads RED. Issue 265's reading then runs on the result, as before.
+const SCHEMA_438 = { from: '0.13', to: '0.15' };
+const SUBJECT_438 = ['    "unit": "skill",\n', '    "delivery": "injected",\n'];
+function atSubjectSchema(data) {
+  const artefacts = {};
+  for (const [f, bytes] of Object.entries(data.artefacts)) {
+    if (!isReceiptFile(f)) { artefacts[f] = bytes; continue; }
+    assert.ok(bytes.startsWith(schemaLine(SCHEMA_438.to)), 'the receipt carries schema_version ' + SCHEMA_438.to + ': ' + f);
+    let out = schemaLine(SCHEMA_438.from) + bytes.slice(schemaLine(SCHEMA_438.to).length);
+    for (const line of SUBJECT_438) {
+      assert.equal(out.split(line).length, 2, 'the receipt carries ' + line.trim() + ' once: ' + f);
+      out = out.replace(line, '');
+    }
+    artefacts[f] = out;
+  }
+  return { ...data, artefacts };
+}
+function atBaseSchema(given) {
+  const data = atSubjectSchema(given);
   const artefacts = {};
   for (const [f, bytes] of Object.entries(data.artefacts)) {
     if (!isReceiptFile(f)) { artefacts[f] = bytes; continue; }
@@ -640,7 +662,8 @@ test('plants: a release bump reads GREEN, any other version or byte beside it RE
   }
   // A-245-8 (issue 382): a quick scenario of the bumped tree reads GREEN against the Issue 367 hold (A-245-7).
   const quick = Object.keys(SCENARIOS).find((n) => SCENARIOS[n].quick);
-  assert.deepEqual(normalized(atBaseRelease(scenario(bumped, quick), bumped, holdTree())), normalized(scenario(holdTree(), quick)));
+  // A-245-10 (issue 438): with issue 438's reading first, as every quick scenario takes it.
+  assert.deepEqual(normalized(atSubjectSchema(atBaseRelease(scenario(bumped, quick), bumped, holdTree()))), normalized(scenario(holdTree(), quick)));
   // RED: a tree whose config.js and package.json carry two versions writes no release's version.
   const half = path.join(harness, 'half');
   fs.mkdirSync(half, { recursive: true });
@@ -671,19 +694,24 @@ test('plants: the judge overhead reader rejects another figure and a block witho
   assert.notEqual(moved.artefacts[file], a.artefacts[file], 'the plant changed the receipt');
   assert.throws(() => assert.deepEqual(normalized(atBaseJudge(atBaseSchema(atBaseRelease(moved)))), normalized(b)));
 });
-test('A-245-2: the Base emits schema_version 0.12 and this tree 0.13, read from each tree\'s config.js', () => {
+test('A-245-2: the Base emits schema_version 0.12 and this tree 0.15 (A-245-10), read from each tree\'s config.js', () => {
   assert.equal(require(path.join(baseRoot, 'config.js')).RECEIPT_SCHEMA_VERSION, SCHEMA_265.from);
-  assert.equal(require(path.join(ROOT, 'config.js')).RECEIPT_SCHEMA_VERSION, SCHEMA_265.to);
+  assert.equal(require(path.join(ROOT, 'config.js')).RECEIPT_SCHEMA_VERSION, SCHEMA_438.to);
 });
-test('plants: the schema reader rejects another schema_version and a second one (A-245-2)', () => {
+test('plants: the schema reader rejects another schema_version, a second one, and a missing or other subject line (A-245-2, A-245-10)', () => {
   const a = scenario(ROOT, 'stub-run');
   const file = Object.keys(a.artefacts).find(isReceiptFile);
   atBaseSchema(a);
   for (const bad of [
-    a.artefacts[file].replace(schemaLine(SCHEMA_265.to), schemaLine(SCHEMA_265.from)),
-    a.artefacts[file].replace(schemaLine(SCHEMA_265.to), schemaLine('0.14')),
-    a.artefacts[file].replace('\n}', ',\n  "schema_version": "0.13"\n}'),
-  ]) assert.throws(() => atBaseSchema({ ...a, artefacts: { ...a.artefacts, [file]: bad } }));
+    a.artefacts[file].replace(schemaLine(SCHEMA_438.to), schemaLine(SCHEMA_265.to)),
+    a.artefacts[file].replace(schemaLine(SCHEMA_438.to), schemaLine('0.14')),
+    a.artefacts[file].replace('\n}', ',\n  "schema_version": "0.15"\n}'),
+    a.artefacts[file].replace(SUBJECT_438[0], ''),
+    a.artefacts[file].replace(SUBJECT_438[1], '    "delivery": "installed",\n'),
+  ]) {
+    assert.notEqual(bad, a.artefacts[file], 'the plant changed the receipt');
+    assert.throws(() => atBaseSchema({ ...a, artefacts: { ...a.artefacts, [file]: bad } }));
+  }
   // A changed byte beside the moved line still reads RED against the Base.
   const b = scenario(baseRoot, 'stub-run');
   const moved = { ...a, artefacts: { ...a.artefacts, [file]: a.artefacts[file].replace('"generation_sampled": true', '"generation_sampled": false') } };
@@ -709,12 +737,13 @@ function holdTree() {
 for (const name of Object.keys(SCENARIOS).filter((n) => SCENARIOS[n].quick)) {
   test('AC-7 (A-245-6) quick receipts, transcripts and sidecars equal the Issue 367 hold\'s apart from the revision: ' + name, () => {
     const a = scenario(ROOT, name), h = scenario(holdTree(), name);
-    assert.deepEqual(normalized(atBaseRelease(a, ROOT, holdTree())), normalized(h));
+    // A-245-10 (issue 438): the hold writes 0.13, so only issue 438's reading runs before the comparison.
+    assert.deepEqual(normalized(atSubjectSchema(atBaseRelease(a, ROOT, holdTree()))), normalized(h));
     for (const s of a.summaries) assert.equal(s.receipt.run.judge.code_revision, judgeCodeRevision(ROOT));
     // Plant: a resealed receipt byte after the hold reads RED.
     const file = a.summaries[0].file;
     const moved = { ...a, artefacts: { ...a.artefacts, [file]: a.artefacts[file].replace('"preset": "quick"', '"preset": "quick", "planted": 1') } };
-    assert.throws(() => assert.deepEqual(normalized(atBaseRelease(moved, ROOT, holdTree())), normalized(h)));
+    assert.throws(() => assert.deepEqual(normalized(atSubjectSchema(atBaseRelease(moved, ROOT, holdTree()))), normalized(h)));
   });
 }
 for (const name of Object.keys(SCENARIOS).filter((n) => !SCENARIOS[n].quick)) {

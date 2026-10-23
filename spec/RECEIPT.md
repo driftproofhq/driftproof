@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Driftproof receipt, spec v0.13
+# Driftproof receipt, spec v0.15
 
 A **receipt** is a **hash-verified**, dated record of running one agent skill's eval suite
 **with** and **without** the skill on one model version, with the judge **sampled**
@@ -12,8 +12,10 @@ The machine-readable contract is [`receipt.schema.json`](./receipt.schema.json)
 (JSON Schema, draft 2020-12). This document is the human companion. Where they
 disagree, the schema wins.
 
-**Versioning.** The current schema is v0.13
+**Versioning.** The current schema is v0.15
 ([`receipt.schema.json`](./receipt.schema.json)). Prior schemas are kept frozen as
+[`receipt.placebo.schema.json`](./receipt.placebo.schema.json) (v0.14),
+[`receipt.v0.13.schema.json`](./receipt.v0.13.schema.json),
 [`receipt.v0.12.schema.json`](./receipt.v0.12.schema.json),
 [`receipt.v0.11.schema.json`](./receipt.v0.11.schema.json),
 [`receipt.v0.10.schema.json`](./receipt.v0.10.schema.json),
@@ -29,7 +31,9 @@ disagree, the schema wins.
 [`receipt.v0.1.schema.json`](./receipt.v0.1.schema.json); the validator picks the
 schema by the receipt's own `schema_version`, so every earlier receipt still loads and
 validates against its own frozen schema, including every receipt behind the published
-reports, which the gate asserts on each run. v0.13 is additive for a reader: it adds optional
+reports, which the gate asserts on each run. v0.15 is not additive for a writer: it requires
+`skill.unit` and `run.delivery`, so a v0.14 or v0.13 receipt restamped `"0.15"` does not validate,
+and both are frozen (see *What v0.15 adds*). v0.13 is additive for a reader: it adds optional
 fields, so a v0.12 receipt restamped `"0.13"` validates; v0.12 is frozen because its version
 constant refuses anything else (see *What v0.13 adds*). v0.12 was additive over v0.11 in the same
 way (see *What v0.12 adds*). v0.11 was additive over v0.10 in the same
@@ -193,6 +197,102 @@ digits, dot, underscore or hyphen. Blank, malformed and non-string ids refuse. T
 the same rule. Input bounds refuse before calling the judge; reply bounds refuse before copying or
 interpolating identity. Bound diagnostics omit hostile input. These limits cover answers and identity
 entering regrade, not provider transport buffering or receipt and suite size.
+
+## What v0.15 adds: what the subject was, and how the run was configured to deliver it
+
+Issue 438 (spec 438). Every receipt from v0.15 on names its subject's kind in `skill.unit` and the
+delivery its run was configured with in `run.delivery`. Both are required and both are inside
+`receipt_hash`. Every writer moves to v0.15, the runner, a regrade, every importer, and a run with
+`--placebo`; v0.14 is frozen as `receipt.placebo.schema.json` and v0.13 as
+`receipt.v0.13.schema.json`, byte for byte.
+
+**Kind.** `skill.unit` is `skill`, `plugin` or `context_file`. A context file is any Markdown file,
+such as a CLAUDE.md, an AGENTS.md or a shared rules file, given to `driftproof run FILE --suite
+FILE` in place of a skill directory. It is run on the injection path as a skill is: its exact bytes
+are the with-skill system text, `skill.content_hash` is their sha256 (the value `sha256sum FILE`
+prints), `skill.name` is the file's base name, and everything else about the run is a skill run's.
+A file that is a link, is not UTF-8, holds a NUL or holds no letter or digit is refused before any
+call, and so is one past what the run's surface can carry: one argument of the spawned command on
+claude-cli, 32,000,000 bytes of request body on the API.
+
+**Delivery.** `run.delivery` is one of three values.
+
+- `injected`: the runner puts the subject text into each with-skill request it builds. On the API
+  it is the system prompt; on claude-cli it is appended to the harness's system prompt; on codex it
+  goes before the task on standard input. Every runner version has been configured so.
+- `installed`: a harness loaded the subject itself from where it was installed, and Driftproof put
+  none of its text in a request. Only an import says this: the claude plugin eval.
+- `unknown`: an imported source that does not say how its subject reached the model. Every other
+  importer writes it, as no source field is invented.
+
+The field records the configured delivery, not that a request was sent: a stub run sends none, and
+a run whose every with-skill request failed completed none. A context file's summary says which,
+from the with-skill draws whose answers came back. A TESTED receipt is `injected`, and its unit is
+`skill` or `context_file`. `run.model_id` holds no line break.
+
+**An older receipt** reads by one rule (`lib/receipt.js` `kindOf` and `deliveryOf`), never marked
+recorded: an absent unit is a skill (v0.9's rule); a receipt an importer wrote is `installed` when
+the claude plugin eval wrote it and `unknown` otherwise; every other receipt was written by the
+runner and is `injected`. A reader that shows a derived value marks it `(derived)`.
+
+**Readers.** `diff` forms per-case verdicts only across subjects of known, equal kind and known,
+equal delivery, and otherwise names each side's two values. `stale` and `triage` read both in the
+`skill` axis: a kind or a delivery that is unknown, or differs from today's, means reuse of the
+with-skill answers is not established. A regrade keeps the original's kind and delivery, and
+refuses a receipt that is not a skill injected.
+
+## The placebo arm (v0.14)
+
+Issue 440 (spec 440). `driftproof run --placebo` answers every case a third time, with a placebo in
+the skill text's place. The placebo is a text of exactly the skill text's length in UTF-8 bytes,
+drawn from a fixed corpus of sentences about landscape, weather and village life, chosen without
+reference to any task. A case can still ask about something the corpus mentions, so the placebo is
+not shown to carry no information about a task. It is the only length measure; the receipt records
+token estimates as figures beside it.
+
+Under spec 440, a run without `--placebo` wrote v0.13, byte for byte as before, and a run with it
+wrote v0.14, which validates against `spec/receipt.placebo.schema.json`: v0.13 with these additions.
+From v0.15 (issue 438) every run writes v0.15, a run with `--placebo` included, which carries the
+same additions under the same rules; v0.14 is frozen and still read (see *What v0.15 adds*).
+
+- Rows with `mode` `placebo` in `results.cases`, recorded like the other two arms. The placebo arm is
+  graded by the same judge, samples, template, rubric, criteria and checks, and draws by the same
+  sampling rule. No other block of the receipt reads its rows: `results.aggregates`, `comparison`,
+  `economics` (but for the judge overhead, which counts every judged draw) and the verdict are what
+  they would be without it.
+- A top-level `placebo` block, inside `receipt_hash`: `revision`, `length_measure` (`utf8_bytes`),
+  `skill_bytes`, `bytes`, `seed` (the receipt's `skill.content_hash`), `corpus` (the revision's
+  sentences), `corpus_hash`, `sha256` (of the placebo text), two token estimates, and `aggregates` and
+  `comparison` over the paired cases. A receipt carries the block exactly when it carries a placebo
+  row.
+
+A reader rebuilds the placebo from `bytes`, `seed` and `corpus`, and checks its hash, the corpus hash
+against the pinned hash of the revision, and the figures against the rows. The text is the corpus's
+first sentence, then the others in an order drawn from a sha256 chain seeded by the revision and the
+seed, a blank line after every fourth sentence, cut to `bytes`. A revision's corpus never changes. Every
+bound is checked before anything is built: `bytes` from 1 to 262,144, at most 64 sentences of at most
+160 printable ASCII characters.
+
+**The placebo reading** (`lib/verdict.js` `placeboReading`) is given beside the verdict, never in its
+place. It is the verdict's own case rule applied to the with-skill arm against the placebo arm, on the
+cases the verdict reads. The summary says it in these words:
+
+| reading | the words |
+|---|---|
+| `ABOVE_PLACEBO` | case rule: at least one case scored above the same-length placebo, and none below |
+| `BELOW_PLACEBO` | case rule: at least one case scored below the same-length placebo |
+| `INCONCLUSIVE` | case rule: inconclusive against the same-length placebo |
+| `UNDERPOWERED` | case rule: then the verdict's plain line for that state |
+| `NO_DIFFERENCE` | case rule: no case differed from the same-length placebo at this effect floor |
+| `NOT_MEASURED` | not measured against the placebo, with every route that fired |
+
+The case rule reads cases one by one, and the aggregate difference of means can point the other way:
+one case at 0.60 against 0.50 and nine at 0.46 against 0.50 read `ABOVE_PLACEBO` with an aggregate
+difference of -0.026. So the summary gives the aggregate on its own line, labelled as apart from the
+case rule. The reading is `NOT_MEASURED` wherever the verdict is, with no placebo arm
+(`no_placebo`), when the block does not check from the receipt (`placebo_unverified`), and when a case
+the verdict reads has no paired placebo result (`placebo_cases_differ`). It compares two arms and
+says nothing about why a skill helps. A receipt with a placebo arm is not regraded.
 
 ## What v0.13 adds: figures a source printed, and the mark that reads no verdict from them
 
@@ -657,7 +757,7 @@ carry a numeric `mean`.
 ## Which schema validates which receipt (the coexistence rule)
 
 - **A producer emits the current version.** `config.js` `RECEIPT_SCHEMA_VERSION`
-  decides it, and at this revision that is **v0.13**.
+  decides it, and at this revision that is **v0.15**.
 - **A reader validates against the receipt's own `schema_version`**, never
   against the newest schema it happens to have. `validateReceipt()` selects the
   schema by that field, which is why a v0.1 receipt from the first report still
@@ -866,15 +966,15 @@ The v0.3.1 schema gained an **additive interop revision** so receipts can be
 
 ## Fields
 
-### `schema_version` (string, required): `"0.13"`.
+### `schema_version` (string, required): `"0.15"`.
 
 ### `skill` (object, required)
 | field | type | notes |
 |---|---|---|
-| `name` | string | From SKILL.md front-matter or its H1. |
+| `name` | string | From SKILL.md front-matter or its H1. **v0.15:** for a context file, the file's base name. |
 | `version` | string | Skill's declared version. |
-| `content_hash` | sha256 hex | Over `SKILL.md` + every bundled file (the `evals/` dir is **excluded** — hashed separately as `suite_hash`), path + content, path-sorted. |
-| `unit` | `"skill"` \| `"plugin"` | **v0.9**, optional. `"plugin"` when a plugin was measured whole (a `claude plugin eval` import). |
+| `content_hash` | sha256 hex | Over `SKILL.md` + every bundled file (the `evals/` dir is **excluded** — hashed separately as `suite_hash`), path + content, path-sorted. **v0.15:** for a context file, the sha256 of the file's bytes. |
+| `unit` | `"skill"` \| `"plugin"` \| `"context_file"` | **v0.9**, optional; **v0.15**, required, and `"context_file"` added. `"plugin"` when a plugin was measured whole (a `claude plugin eval` import). See *What v0.15 adds*. |
 | `tokens` | integer | **v0.3.1, optional.** Estimated SKILL.md token size (coarse `chars/4` proxy) for the value-per-token axis. |
 
 ### `suite` (object, required)
@@ -891,6 +991,7 @@ The v0.3.1 schema gained an **additive interop revision** so receipts can be
 | `model_release_date` | ISO date or `null` | Release date **if known**, else `null`. |
 | `provider` | `"anthropic"` \| `"openai"` \| `"unknown"` | **v0.3.1.** The two-axis provider (registry `provider`, else inferred from the id). **v0.9:** `"unknown"` on an imported receipt whose source records no model. |
 | `surface` | `"api"` \| `"claude-cli"` \| `"openai-api"` \| `"openai-cli"` | `api` = Anthropic Messages API; `claude-cli` = spawned `claude -p` (subscription); `openai-api` = Chat-Completions-compatible API (base_url configurable); `openai-cli` = Codex subscription (`codex exec`). |
+| `delivery` | `"injected"` \| `"installed"` \| `"unknown"` | **v0.15**, required. The delivery the run was configured with. See *What v0.15 adds*. |
 | `surface_overhead_note` | string | **v0.3.1, optional.** On `openai-cli`: the fixed Codex base-instruction preamble (~12–15k input tokens/call) the harness prepends and does not control. |
 | `runner_version` | string | Runner version, for reproducibility. |
 | `date_utc` | ISO 8601 UTC | As `lib/run.js` writes it: when the run's calls finished if the CLI stamps it, or the stamp a caller passes, which for a batch is one stamp shared by every receipt in the batch. For when generation began, read `generated_at` (v0.8). Before v0.8 this row said *when the run finished*, which was true of the CLI and not of a batch. **v0.9:** null only on an `external` receipt whose source records no date. |

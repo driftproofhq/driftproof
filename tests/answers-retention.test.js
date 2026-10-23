@@ -184,6 +184,22 @@ test('AC-3 run --keep-transcripts writes answers.json beside index.json, and col
   assert.equal(g.status, 0, g.stderr);
 });
 
+// The diagnostic names a filesystem path, so its separator follows the host.
+function assertTakenDirectory(stderr, directory) {
+  assert.match(stderr.replaceAll('\\', '/'), new RegExp('(?:^|[\\s/])transcripts/' + directory + '(?= already exists;)'), 'it names the directory that is taken');
+}
+
+test('AC-14 the taken-directory assertion accepts both separators and rejects a different or missing directory (issue 431)', () => {
+  const directory = 'a'.repeat(64);
+  for (const separator of ['/', '\\']) {
+    const message = '  ✗ transcripts' + separator + directory + ' already exists; nothing is written over, so nothing is written for fixture\n';
+    assert.doesNotThrow(() => assertTakenDirectory(message, directory));
+    for (const bad of [message.replace(directory, 'b'.repeat(64)), message.replace(directory, directory + '0'), message.replace('transcripts', 'other'), 'already exists; nothing is written']) {
+      assert.throws(() => assertTakenDirectory(bad, directory), /it names the directory that is taken/);
+    }
+  }
+});
+
 test('AC-14 when the transcripts directory is already taken, the run writes nothing: no receipt beside a partial archive', () => {
   const work = tmp('taken');
   const skill = skillDir();
@@ -207,7 +223,7 @@ test('AC-14 when the transcripts directory is already taken, the run writes noth
   const second = cli(['run', skill, '--samples', '2', '--keep-transcripts', '--trusted-skill', '--out', path.join(work, 'r2')], work, env);
   assert.deepEqual(fs.readdirSync(path.join(work, 'transcripts')), dirs, 'the second run sealed the same receipt, so it names the same directory');
   assert.notEqual(second.status, 0, 'the second run does not report success');
-  assert.match(second.stderr, new RegExp(`transcripts/${dirs[0]}`), 'it names the directory that is taken');
+  assertTakenDirectory(second.stderr, dirs[0]);
   const r2 = path.join(work, 'r2');
   assert.deepEqual(fs.existsSync(r2) ? fs.readdirSync(r2) : [], [], 'no receipt is written beside the taken archive');
   const after = Object.fromEntries(fs.readdirSync(archive).map((f) => [f, fs.readFileSync(path.join(archive, f), 'utf8')]));

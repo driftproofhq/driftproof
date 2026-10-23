@@ -284,6 +284,14 @@ const HOLD_408 = /\*\*Issue 408 hold:\*\* \x60([0-9a-f]{40})\x60/.exec(SPEC)[1];
 const MOVED_408 = ['config/models.json'];
 // A-236-14 (issue 408): the optional reply observer's exact reviewed runner bytes.
 const RUN_408_SHA = /\*\*Issue 408 runner sha256:\*\* \x60([0-9a-f]{64})\x60/.exec(SPEC)[1];
+// A-236-16 (issue 440): the three subjects issue 440 moved beside lib/run.js, held at its commit.
+const HOLD_440 = /\*\*Issue 440 hold:\*\* \x60([0-9a-f]{40})\x60/.exec(SPEC)[1];
+const MOVED_440 = ['lib/regrade.js', 'lib/stub.js', 'spec/receipt.placebo.schema.json'];
+// A-236-17 (issue 438): the six subjects issue 438 moved beside lib/run.js, held at its commit; config.js may
+// differ from it by a release bump alone. Each leaves the earlier reads that held it.
+const HOLD_438 = /\*\*Issue 438 hold:\*\* \x60([0-9a-f]{40})\x60/.exec(SPEC)[1];
+const MOVED_438 = ['config.js', 'lib/provider.js', 'lib/regrade.js', 'spec/receipt.schema.json', 'spec/receipt.v0.13.schema.json', 'spec/stale.v1.schema.json'];
+const not438 = (list) => list.filter((f) => !MOVED_438.includes(f));
 const run408Hash = (bytes) => require('node:crypto').createHash('sha256').update(bytes).digest('hex');
 function run408Changes(cwd) {
   try { return run408Hash(fs.readFileSync(path.join(cwd, 'lib/run.js'))) === RUN_408_SHA ? [] : ['lib/run.js']; }
@@ -323,12 +331,18 @@ function heldChanges(cwd) {
   // A-236-5 (issue 317): of those, the two issue 317 moved are held at its commit.
   // A-236-10 (issue 388): lib/provider.js is read against its own hold, so it leaves the earlier reads too.
   // A-236-12 (issue 406): that hold is now the Issue 406 hold.
-  const moved265 = (paths) => paths.filter((f) => !MOVED_265.includes(f) && !MOVED_388.includes(f) && !MOVED_408.includes(f));
+  // A-236-16 (issue 440): its three subjects leave the earlier reads and are read against its own hold.
+  // A-236-17 (issue 438): its six subjects leave the earlier reads and are read against its own hold. A read
+  // whose list empties reads nothing (an empty pathspec would name the whole tree).
+  const moved265 = (paths) => paths.filter((f) => !MOVED_265.includes(f) && !MOVED_388.includes(f) && !MOVED_408.includes(f) && !MOVED_440.includes(f) && !MOVED_438.includes(f));
+  const diffOf = (from, list) => (list.length ? diffIn(cwd, from, null, list) : []);
+  const at317 = () => not438(diffIn(cwd, HOLD_317, null, MOVED_317).filter((f) => !MOVED_440.includes(f)));
   // A-236-7 (issue 343): config.js, held at the Issue 265 hold, may differ from it by a release bump alone.
-  const at265 = () => diffIn(cwd, HOLD_265, null, AT_265).filter((f) => f !== 'config.js' || !releaseBump(cwd, HOLD_265));
-  const changed = [...moved265(diffIn(cwd, LIB_HOLD, null, lib)), ...moved265(diffIn(cwd, BASE, null, rest)), ...at265(), ...diffIn(cwd, HOLD_317, null, MOVED_317), ...run408Changes(cwd), ...diffIn(cwd, HOLD_406, null, MOVED_406), ...diffIn(cwd, HOLD_408, null, MOVED_408)];
+  const at265 = () => diffOf(HOLD_265, not438(AT_265)).filter((f) => f !== 'config.js' || !releaseBump(cwd, HOLD_265));
+  const at438 = () => diffOf(HOLD_438, MOVED_438).filter((f) => f !== 'config.js' || !releaseBump(cwd, HOLD_438));
+  const changed = [...moved265(diffIn(cwd, LIB_HOLD, null, lib)), ...moved265(diffIn(cwd, BASE, null, rest)), ...at265(), ...at317(), ...run408Changes(cwd), ...diffOf(HOLD_406, not438(MOVED_406)), ...diffIn(cwd, HOLD_408, null, MOVED_408), ...diffOf(HOLD_440, not438(MOVED_440)), ...at438()];
   // A-236-2: git's pathspec and this test's matcher agree on the subjects in this tree.
-  assert.deepEqual(changed, [...moved265(diffIn(cwd, LIB_HOLD, null, ['lib'])), ...moved265(diffIn(cwd, BASE, null, ['spec', 'config.js', 'config'])), ...at265(), ...diffIn(cwd, HOLD_317, null, MOVED_317), ...run408Changes(cwd), ...diffIn(cwd, HOLD_406, null, MOVED_406), ...diffIn(cwd, HOLD_408, null, MOVED_408)].filter(subject));
+  assert.deepEqual(changed, [...moved265(diffIn(cwd, LIB_HOLD, null, ['lib'])), ...moved265(diffIn(cwd, BASE, null, ['spec', 'config.js', 'config'])), ...at265(), ...at317(), ...run408Changes(cwd), ...diffOf(HOLD_406, not438(MOVED_406)), ...diffIn(cwd, HOLD_408, null, MOVED_408), ...diffOf(HOLD_440, not438(MOVED_440)), ...at438()].filter(subject));
   return changed;
 }
 test('AC-4/AC-5 exported runner, provider, schemas and config stay unchanged', () => {
@@ -385,6 +399,20 @@ test('AC-4/AC-5 exported runner, provider, schemas and config stay unchanged', (
   execFileSync('git', ['merge-base', '--is-ancestor', HOLD_408, 'HEAD'], { cwd: ROOT });
   assert.throws(() => held408([...MOVED_408, 'lib/stub.js'].sort()), /only issue 408 moved these subjects/);
   assert.throws(() => reader(diff(HOLD_408 + '^', null, MOVED_408)), /only CLI wording may move/);
+  // A-236-16 (issue 440): the Issue 440 hold's own commit moved exactly its three subjects and lib/run.js
+  // (held by digest), and it is this tree's history; a planted fifth, or a change to one after the hold, reads RED.
+  const held440 = (paths) => assert.deepEqual(paths, [...MOVED_440, 'lib/run.js'].sort(), 'only issue 440 moved these subjects');
+  held440(diff(HOLD_440 + '^', HOLD_440, SUBJECTS).filter(subject).sort());
+  execFileSync('git', ['merge-base', '--is-ancestor', HOLD_440, 'HEAD'], { cwd: ROOT });
+  assert.throws(() => held440([...MOVED_440, 'lib/run.js', 'lib/provider.js'].sort()), /only issue 440 moved these subjects/);
+  assert.throws(() => reader(diff(HOLD_440 + '^', null, MOVED_440)), /only CLI wording may move/);
+  // A-236-17 (issue 438): the Issue 438 hold's own commit moved exactly its six subjects and lib/run.js (held by
+  // digest), and it is this tree's history; a planted eighth, or a change to one after the hold, reads RED.
+  const held438 = (paths) => assert.deepEqual(paths, [...MOVED_438, 'lib/run.js'].sort(), 'only issue 438 moved these subjects');
+  held438(diff(HOLD_438 + '^', HOLD_438, SUBJECTS).filter(subject).sort());
+  execFileSync('git', ['merge-base', '--is-ancestor', HOLD_438, 'HEAD'], { cwd: ROOT });
+  assert.throws(() => held438([...MOVED_438, 'lib/run.js', 'lib/stub.js'].sort()), /only issue 438 moved these subjects/);
+  assert.throws(() => reader(diff(HOLD_438 + '^', null, MOVED_438)), /only CLI wording may move/);
   for (const file of ['lib/run.js', 'lib/regrade.js', 'lib/provider.js', 'spec/receipt.schema.json', 'config.js']) {
     assert.throws(() => reader([file]), 'planted source edit: ' + file);
   }
@@ -448,7 +476,9 @@ test('A-236-3 plants: the hold reads planted trees through its real path', () =>
     assert.deepEqual(heldChanges(box).filter((f) => f === file), [file], 'read against the Issue 367 hold: ' + file);
   }
   // A-236-10, A-236-12: an edit to lib/provider.js in the planted tree reads RED against the Issue 406 hold.
-  for (const file of [...MOVED_406, ...MOVED_408]) {
+  // A-236-16: an edit to each of issue 440's three reads RED against the Issue 440 hold.
+  // A-236-17: and each of issue 438's six against the Issue 438 hold, each read once.
+  for (const file of [...new Set([...MOVED_406, ...MOVED_408, ...MOVED_440, ...MOVED_438])]) {
     restore();
     edit(file);
     assert.deepEqual(heldChanges(box).filter((f) => f === file), [file], 'read against its own issue hold: ' + file);
@@ -654,8 +684,15 @@ for (const command of ['run', 'regrade']) {
           '--judge-model', 'haiku', '--trusted-skill'];
       const a = cli(ROOT, o.work, [...args, ...flags], false);
       const before = cli(baseRoot, b.work, [...args, ...flags], false);
+      // A-236-16 (issue 440): run takes --placebo, and its unknown-flag refusal names it after --quick.
+      // That one insertion is the only difference from the Base's refusal; its anchor must be there.
+      const ANCHOR = '--capture, --quick';
+      const placebo = command === 'run' && label === 'unknown flag';
+      if (placebo) assert.equal(before.stderr.split(ANCHOR).length, 2, 'the Base refusal carries the anchor once');
+      // A-236-17 (issue 438): and --suite after --placebo, for a context file's suite; the same one insertion.
+      const want = placebo ? before.stderr.replace(ANCHOR, `${ANCHOR}, --placebo, --suite`) : before.stderr;
       same({ status: a.status, stdout: a.stdout, stderr: a.stderr },
-        { status: before.status, stdout: before.stdout, stderr: before.stderr });
+        { status: before.status, stdout: before.stdout, stderr: want });
       assert.equal(a.status, status);
       assert.equal(a.events.filter((e) => e.kind === 'synthetic' || e.kind === 'model').length, 0);
     });

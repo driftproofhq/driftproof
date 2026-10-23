@@ -11,7 +11,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { spawnSync } = require('node:child_process');
-const { RUNNER_VERSION } = require('../config');
+const { RUNNER_VERSION, RECEIPT_SCHEMA_VERSION } = require('../config');
 const { BAND_RULE } = require('../lib/receipt');
 const { registryStatus } = require('../lib/models');
 
@@ -175,14 +175,16 @@ function oracle(dir, only, { importedAt, commit }) {
       if (unstated) notices.push(T.unit);
       notices.push(tok ? fill(T.tokens, { agent }) : card.hasTokenTable ? fill(T.noTokenRow, { agent }) : T.noTokens, T.verdict, fill(T.unknown, { fields: UNKNOWN_FIELDS }));
       const receipt = {
-        schema_version: '0.13',
-        skill: { name: card.meta.skill, version: 'unknown', content_hash: null },
+        // A-265-6 (issue 438): the current version, and v0.15's skill.unit and run.delivery.
+        schema_version: RECEIPT_SCHEMA_VERSION,
+        skill: { name: card.meta.skill, version: 'unknown', content_hash: null, unit: 'skill' },
         suite: { format: 'nvidia/benchmark-card', suite_hash: null, case_count: dims.length },
         run: {
           model_id: modelId,
           model_release_date: null,
           provider: model === null ? 'unknown' : providerOf(model),
           surface: 'external',
+          delivery: 'unknown',
           source: 'imported/nvidia-cards',
           runner_version: RUNNER_VERSION,
           date_utc: `${card.meta.evaluation_date}T00:00:00Z`,

@@ -47,7 +47,7 @@
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Node.js 22+",
   "url": "https://driftproofhq.com/",
-  "softwareVersion": "0.22.4",
+  "softwareVersion": "0.23.1",
   "downloadUrl": "https://www.npmjs.com/package/driftproof",
   "author": {
     "@id": "https://driftproofhq.com/#organization"
@@ -123,7 +123,7 @@
 <p class="install-label">Install in Claude Code</p>
 <span class="copy-cta"><code>claude plugin marketplace add driftproofhq/driftproof</code><button type="button" data-copy="claude plugin marketplace add driftproofhq/driftproof">Copy</button></span>
 <span class="copy-cta"><code>claude plugin install driftproof@driftproofhq</code><button type="button" data-copy="claude plugin install driftproof@driftproofhq">Copy</button></span>
-<p class="muted">Then run <code>/driftproof:run</code> on a skill in your repository. For CI, <a href="#ci">npx and the GitHub Action</a> are further down.</p>
+<p class="muted">Then run <code>/driftproof:start</code> on a skill in your repository. For CI, <a href="#ci">npx and the GitHub Action</a> are further down.</p>
 </div>
 <p class="hero-links"><a class="cta" href="/r/fad883d1018d3a4b3c75bc60b1eaec50032256cbf69fba3299999edf7978589c/">See a receipt</a> <a href="/findings/">Read the findings</a> <a href="/reports/015/">Read the latest report</a></p>
 <p class="gap-line">A piece by Maverick: <a href="/leaderboard-noise/">quoted AI benchmark gaps, checked against their own sampling noise</a>.</p>
@@ -280,7 +280,7 @@ svg {
 <p><span class="copy-cta"><code>claude plugin marketplace add driftproofhq/driftproof</code><button type="button" data-copy="claude plugin marketplace add driftproofhq/driftproof">Copy</button></span></p>
 <p><span class="copy-cta"><code>claude plugin install driftproof@driftproofhq</code><button type="button" data-copy="claude plugin install driftproof@driftproofhq">Copy</button></span></p>
 <p>That installs <code>/driftproof:start</code>, <code>/driftproof:init</code>, <code>/driftproof:run</code> and <code>/driftproof:badge</code>. The plugin hands your arguments to the pinned runner and writes the receipt that runner would have written; <code>/driftproof:run</code> spends your Claude Code subscription rather than an API key. It measures and never changes a skill's instructions. The one file it adds is a new <code>evals/evals.json</code>, from <code>/driftproof:start</code> or <code>/driftproof:init</code>, to a skill that has none, after you say yes in the run.</p>
-<p>Start with a skill you already have. In Claude Code, from the folder above it, in a git repository, run <code>/driftproof:init path/to/your-skill</code>. Claude reads your <code>SKILL.md</code> and drafts test cases with you, aimed at outcomes you would check. It adds them only after you say yes, labelled as drafted from the skill and approved by you, then runs a quick check and opens a results page: your first receipt. A quick check is a first look and cannot produce a verdict. <code>/driftproof:run</code> on a skill with no test cases offers the same draft. For a new skill, scaffold one with <code>npx driftproof init my-skill</code>, as the next section shows.</p>
+<p>Start with a skill you already have. In Claude Code, from the folder above it, in a git repository, run <code>/driftproof:start</code>. Claude lists your skills and asks which to check. If the skill has no test cases, Claude reads your <code>SKILL.md</code> and drafts test cases with you, aimed at outcomes you would check. It writes only after you say yes, then runs a quick check and opens a results page: your first receipt. Drafted cases are labelled as drafted from the skill and approved by you. A quick check is a first look and cannot produce a verdict. For a direct measurement, use <code>/driftproof:run path/to/your-skill</code>. On a skill with no test cases, it offers the same draft. For a new skill, scaffold one with <code>npx driftproof init my-skill</code>, as the next section shows.</p>
 <p>Driftproof is tested on Linux and macOS. In an outside retest on macOS the shipped gate failed only in the publishing helper, which needs GNU <code>realpath -m</code>. Windows is untested: from Node's source the plugin would not find <code>npx</code> there, but that failure has never been observed. A CI matrix across Linux, macOS and Windows is planned, and <a href="/findings/">the findings page</a> has the figures.</p>
 </section>
 
@@ -293,7 +293,7 @@ export CLAUDE_PROVIDER=api
 read -rsp "Anthropic API key: " ANTHROPIC_API_KEY &amp;&amp; export ANTHROPIC_API_KEY
 npx driftproof run my-skill --models claude-haiku-4-5
 cat receipts/*.summary.md              # read the receipt + human summary</code></pre>
-<p>Wire it into a repository with the <a href="https://github.com/driftproofhq/driftproof#verification-in-ci-github-action--badge">GitHub Action</a> (<code>uses: driftproofhq/driftproof@v0.22.4</code>): it re-runs the suite on every push, uploads the receipts, and fails the job when a case separated downward. <code>driftproof badge</code> turns a receipt into a badge that carries the model and the date it was measured.</p>
+<p>Wire it into a repository with the <a href="https://github.com/driftproofhq/driftproof#verification-in-ci-github-action--badge">GitHub Action</a> (<code>uses: driftproofhq/driftproof@v0.23.1</code>): it re-runs the suite on every push, uploads the receipts, and fails the job when a case separated downward. <code>driftproof badge</code> turns a receipt into a badge that carries the model and the date it was measured.</p>
 <p><img alt="driftproof badge: passing on claude-haiku-4-5" src="https://img.shields.io/endpoint?url=https://driftproofhq.com/badges/commit-message-conventions.json"></p>
 </section>
 
@@ -336,7 +336,7 @@ cat receipts/*.summary.md              # read the receipt + human summary</code>
 <section id="roadmap" class="screen is-text">
 <h2>Roadmap</h2>
 <ul>
-<li>Next: activation checks.</li>
+<li>Activation drift receipts compare recorded Skill-tool firing rates across one model or runtime version change. Fixed setup is operator-declared.</li>
 <li>Planned, not scheduled: a sandboxed execution harness for tool-execution skills (document renderers, diagram and asset generators), which <a href="/reports/001/">Report <span data-stat="first_report_number">001</span></a> scopes out.</li>
 </ul>
 </section>

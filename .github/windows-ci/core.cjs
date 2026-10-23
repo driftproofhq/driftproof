@@ -21,23 +21,31 @@ function assertRows(rows, expected) {
   assert.equal(new Set(actual).size, actual.length, 'AC-16 duplicate row identity');
   assert.deepEqual(actual.sort(), wanted.sort(), 'AC-16 missing or unexpected row inventory identity');
 }
-function assertResults(results) {
-  assert.deepEqual(results.map((r) => r.file).sort(), [...CORE_FILES].sort(), 'AC-16 completed file set');
-  for (const result of results) {
-    c.success(result, 'AC-16 ' + result.file);
-    assertRows(result.rows, inventory[result.file]);
-    const counts = {};
-    for (const line of result.stdout.split(/\r?\n/)) {
-      const match = /^# (tests|pass|fail|cancelled|skipped|todo) (\d+)$/.exec(line);
-      if (!match) continue;
-      assert.ok(!Object.hasOwn(counts, match[1]), 'AC-16 unique summary field'); counts[match[1]] = Number(match[2]);
-    }
-    assert.deepEqual(Object.keys(counts).sort(), ['cancelled', 'fail', 'pass', 'skipped', 'tests', 'todo'], 'AC-16 complete summary');
-    assert.ok(counts.tests > 0, 'AC-16 nonempty test file');
-    assert.equal(counts.tests, inventory[result.file].length, 'AC-16 summary equals row inventory');
-    assert.equal(counts.pass, counts.tests, 'AC-16 every row passed');
-    for (const field of ['fail', 'cancelled', 'skipped', 'todo']) assert.equal(counts[field], 0, 'AC-16 ' + field);
+function assertFileResult(result) {
+  c.success(result, 'AC-16 ' + result.file);
+  assertRows(result.rows, inventory[result.file]);
+  const counts = {};
+  for (const line of result.stdout.split(/\r?\n/)) {
+    const match = /^# (tests|pass|fail|cancelled|skipped|todo) (\d+)$/.exec(line);
+    if (!match) continue;
+    assert.ok(!Object.hasOwn(counts, match[1]), 'AC-16 unique summary field'); counts[match[1]] = Number(match[2]);
   }
+  assert.deepEqual(Object.keys(counts).sort(), ['cancelled', 'fail', 'pass', 'skipped', 'tests', 'todo'], 'AC-16 complete summary');
+  assert.ok(counts.tests > 0, 'AC-16 nonempty test file');
+  assert.equal(counts.tests, inventory[result.file].length, 'AC-16 summary equals row inventory');
+  assert.equal(counts.pass, counts.tests, 'AC-16 every row passed');
+  for (const field of ['fail', 'cancelled', 'skipped', 'todo']) assert.equal(counts[field], 0, 'AC-16 ' + field);
+}
+function assertResults(results) {
+  const failures = [];
+  try {
+    assert.deepEqual(results.map((r) => r.file).sort(), [...CORE_FILES].sort(), 'AC-16 completed file set');
+  } catch (error) { failures.push(error.message); }
+  for (const result of results) {
+    try { assertFileResult(result); }
+    catch (error) { failures.push(result.file + ': ' + error.message); }
+  }
+  assert.equal(failures.length, 0, 'AC-16 core: ' + failures.length + ' failing check(s)\n' + failures.join('\n'));
 }
 function collectFile(file, actual = path.join(c.ROOT, file), extra = []) {
   const result = c.run(process.execPath, ['--test', '--test-reporter', pathToFileURL(path.join(__dirname, 'row-reporter.cjs')).href, ...extra, actual]);
@@ -75,7 +83,13 @@ function rowMutationTests() {
 }
 function runCore() {
   c.prepare(); const plant = c.plantArg(['row']);
-  const results = CORE_FILES.map((file) => collectFile(file));
+  const results = CORE_FILES.map((file) => {
+    try { return collectFile(file); }
+    catch (error) {
+      // Preserve a collection failure as this file's red result, then run the rest.
+      return { file, status: null, stdout: '', stderr: 'collection failed: ' + error.message, rows: [] };
+    }
+  });
   // Actual collection boundary: mutate after the real reporter has returned.
   if (plant === 'row') results[0].rows.pop();
   assertResults(results);

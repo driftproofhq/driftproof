@@ -303,6 +303,8 @@ function trace(receipt, o) {
     [/^skill\.name$/, (v) => v === (o.skill ?? 'unknown')],
     [/^skill\.version$/, (v) => v === 'unknown'],
     [/^skill\.content_hash$/, (v) => v === null],
+    [/^skill\.unit$/, (v) => v === 'skill'],
+    [/^run\.delivery$/, (v) => v === 'unknown'],
     [/^suite\.format$/, (v) => v === 'harbor/task'],
     [/^suite\.suite_hash$/, (v) => v === null],
     [/^suite\.case_count$/, (v) => v === o.cases.length],
@@ -379,6 +381,9 @@ function trace(receipt, o) {
     [/^economics\.judge_excluded$/, (v) => v === true],
     [/^receipt_hash$/, () => verifyReceiptHash(receipt)],
   ];
+  for (const [section, key] of [['skill', 'unit'], ['run', 'delivery']]) {
+    if (!Object.hasOwn(receipt[section] || {}, key)) problems.push('missing ' + section + '.' + key);
+  }
   for (const [p, v] of flatten(receipt)) {
     const rule = R.find(([re]) => re.test(p));
     if (!rule) { problems.push(`no rule derives ${p}`); continue; }
@@ -518,6 +523,13 @@ test('AC-11: the derivation table fails a planted extra field, a changed value a
   const receipt = importPair(withJob, BASELINE);
   const o = oracle({ withJob, withoutJob: BASELINE });
   assert.deepEqual(trace(receipt, o), []);
+  // A-266-2 (issue 447): every required subject field is derived, never merely admitted.
+  for (const [section, key, wrong] of [['skill', 'unit', 'plugin'], ['run', 'delivery', 'injected']]) {
+    assert.notDeepEqual(trace(doctor(receipt, (r) => { r[section][key] = wrong; }), o), []);
+    const missing = doctor(receipt, (r) => { delete r[section][key]; });
+    assert.notDeepEqual(trace(missing, o), []);
+    assert.equal(validateReceipt(missing).valid, false);
+  }
   assert.notDeepEqual(trace(doctor(receipt, (r) => { r.run.import.lift = 0.2; }), o), []);
   assert.notDeepEqual(trace(doctor(receipt, (r) => { r.results.cases[0].samples[0] = 1 - r.results.cases[0].samples[0]; }), o), []);
   assert.notDeepEqual(trace(doctor(receipt, (r) => { r.run.source_delta = r.comparison.delta; delete r.comparison.delta; }), o), []);

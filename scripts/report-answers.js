@@ -105,6 +105,7 @@ function meaningOf(receipt) {
 function readingOf(rel, root = ROOT) {
   let r;
   try { r = JSON.parse(fs.readFileSync(path.join(root, rel), 'utf8')); } catch { return null; }
+  if (r && require('../lib/report-015-publication').routerLimit(r)) return null;
   if (!r || typeof r.receipt_hash !== 'string' || !/^[0-9a-f]{64}$/.test(r.receipt_hash)) return null;
   if (!fs.existsSync(path.join(root, 'docs', 'r', r.receipt_hash, 'index.html'))) return null;
   const run = r.run || {};

@@ -288,7 +288,8 @@ function cardFor(rel) {
   const rm = /^r\/([0-9a-f]{64})\/index\.html$/.exec(rel);
   if (rm && fs.existsSync(dir)) {
     const want = new RegExp(`^receipt-${rm[1].slice(0, 16)}\\.[0-9a-f]{8}\\.png$`);
-    const hit = fs.readdirSync(dir).find((n) => want.test(n));
+    // Compatibility URLs keep their old suffix. Metadata must name the current bytes.
+    const hit = fs.readdirSync(dir).find((n) => want.test(n) && require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(dir, n))).digest('hex').slice(0, 8) === n.split('.').at(-2));
     return hit ? `${ORIGIN}/cards/${hit}` : CARD();
   }
   if (!m || !fs.existsSync(dir)) return CARD();
@@ -375,10 +376,11 @@ function pageTitle(html, rel, rows, own) {
   const current = first(html, /<title>([\s\S]*?)<\/title>/);
   // A SKILL INDEX PAGE KEEPS ITS OWN TITLE (spec 267 AC-13): scripts/build-skill-index.mjs writes it from
   // its ladder, and its first word is a skill's name as the skill's source writes it, which a capital
-  // would change. Held here to the suffix and the 60 characters.
+  // would change. Keep the suffix; indexable titles stay within 60 characters.
   if (/^skills\//.test(rel) && current !== null) {
     const own = strip(current);
-    if (!own.endsWith(BRAND_SUFFIX) || own.length > TITLE_MAX) throw new Error(`${rel}: the skill index title ${JSON.stringify(own.slice(0, 80))} does not end ${BRAND_SUFFIX.trim()} within ${TITLE_MAX} characters`);
+    const noindex = /<meta\s+name="robots"\s+content="[^"]*\bnoindex\b/i.test(html);
+    if (!own.endsWith(BRAND_SUFFIX) || (!noindex && own.length > TITLE_MAX)) throw new Error(`${rel}: the skill index title ${JSON.stringify(own.slice(0, 80))} does not end ${BRAND_SUFFIX.trim()} within ${TITLE_MAX} characters`);
     return own;
   }
   let name = current === null ? null : strip(current);
