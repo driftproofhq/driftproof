@@ -231,6 +231,8 @@ test('AC-3 the frozen v0.9 schema is the Base\'s but for $id, and every tracked 
   for (const k of ['harness', 'isolation', 'endpoint', 'code_revision', 'reported_models', 'criteria_template_hash']) delete v09.run.judge[k];
   // A-137-9 (issue 317): and without the judge overhead's two counts, which are v0.13's.
   for (const k of ['judged_draws_counted', 'judged_draws_missing_usage']) delete v09.economics.judge_overhead[k];
+  // A-137-11 (issue 438): and without run.delivery, which is v0.15's; skill.unit skill is v0.9's own.
+  delete v09.run.delivery;
   v09.schema_version = '0.9';
   assert.equal(validateReceipt(v09).valid, false, 'a v0.9 receipt carrying run.capture validated');
   delete v09.run.capture;

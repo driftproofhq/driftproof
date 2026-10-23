@@ -273,6 +273,11 @@ test('AC-4 (d) the single-key shape writes a receipt byte-identical to the Base\
     const back = JSON.parse(JSON.stringify(mine.receipt));
     assert.ok(added.every((k) => k in back.run.judge), 'this tree records the v0.12 judge fields');
     for (const k of added) delete back.run.judge[k];
+    // A-180-7 (issue 447): assert the required v0.15 fields before the historical projection.
+    assert.equal(back.skill.unit, 'skill');
+    assert.equal(back.run.delivery, 'injected');
+    delete back.skill.unit;
+    delete back.run.delivery;
     back.schema_version = require(path.join(dir, 'config.js')).RECEIPT_SCHEMA_VERSION;
     // A-180-6 (issue 317): the judge overhead counts every judged draw, with two counts. The block must
     // be spec 317's reading of this receipt's own draws, and is taken back to the one the Base's

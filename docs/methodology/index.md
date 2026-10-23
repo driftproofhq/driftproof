@@ -130,9 +130,13 @@ A case may also list weighted criteria in place of a free-text rubric, at most 5
 
 ### The value-per-token axis
 
-A skill is not free: its SKILL.md is prepended to every generation. A +0.10 lift for 400 skill tokens is a very different proposition from +0.10 for 6,000. So Driftproof reports each skill's lift **both raw and normalized per 1,000 skill tokens**: `delta ÷ (skill_tokens ÷ 1000)`.
+A skill is not free: its SKILL.md is prepended to every generation call. So each verdict on a receipt page, a skill index row, a skill measurement result, the `decide` job summary and the `driftproof view` page states the skill's token cost beside it, read from that receipt alone. The run's console and summary, the drift report, the badge, the Action outputs and published report bodies carry no cost.
 
-**Method.** `skill_tokens` is a coarse `ceil(chars ÷ 4)` estimate of the SKILL.md size - the standard rough proxy for English text, *not* a model tokenizer (no `tiktoken` dependency). It is a consistent yardstick for comparing skills to one another, not a billing figure, and it is recorded in the receipt (`skill.tokens`, spec v0.3.1). Value-per-token surfaces the skills that earn their context budget.
+**The figure.** For each of the two arms, with the skill and without it, Driftproof takes the mean input tokens and the mean output tokens per generation call over the arm's measured draws, as the answering surface reported them, each mean rounded to two places and then to a whole token. The cost is the with-skill figure minus the without figure, input and output apart, so it is the difference of separately rounded arm means: means of 10.4 and 5.6 tokens give a cost of 4, not 4.8. Grading is not in it, and nor is a placebo arm. On a CLI surface both arms carry the same harness preamble, so it cancels in the difference.
+
+**When there is no figure.** A draw with missing or unreadable usage leaves its arm with no figure, and nothing is averaged over the rest. A receipt whose seal does not verify, or whose usage is outside the limits the reader holds, states no figure. A stub run states its cost as simulated, with no figure. A receipt that does not record a model answering, or whose arms form no figure, gives the estimate below, named as one, or says the cost was not measured. No lift-per-token ratio is printed beside a verdict: a ratio over a banded quantity would read as a ranking the band rule does not support.
+
+**The estimate.** `skill_tokens` is a coarse `ceil(chars ÷ 4)` estimate of the SKILL.md size - the standard rough proxy for English text, *not* a model tokenizer (no `tiktoken` dependency). It is a consistent yardstick, not a billing figure, and it is recorded in the receipt (`skill.tokens`, spec v0.3.1).
 
 ### Providers, surfaces, and neutrality
 

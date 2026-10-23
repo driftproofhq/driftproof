@@ -5,10 +5,19 @@
 const fs = require('fs');
 const path = require('path');
 const { PROJECT_NAME, RUNNER_VERSION, DEFAULT_JUDGE_SAMPLES, DEV_MAX_USD, DEV_MAX_CALLS } = require('../config');
-const { loadSkill, normalizeCases } = require('../lib/skill');
-const { runSkillOnModel, summarizeReceipt, projectCalls, answeredLine, band, uncertaintyStr, transcriptRecord } = require('../lib/run');
+const { loadSkill, normalizeCases, loadSubject, SUBJECT_CODES } = require('../lib/skill');
+// Spec 438: a name or path escaped for the terminal.
+const { invisibleShown, termText } = require('../lib/names');
+// Spec 438: whether `run`'s argument is a context file, by lib/skill.js loadSubject's own rule: anything
+// but a directory, or a path that is not there and does not end in .md or .markdown.
+function subjectIsFile(p) {
+  let st = null;
+  try { st = fs.statSync(p); } catch (_e) { st = null; }
+  return st ? !st.isDirectory() : /\.(md|markdown)$/i.test(String(p));
+}
+const { runSkillOnModel, summarizeReceipt, projectCalls, answeredLine, band, uncertaintyStr, transcriptRecord, assertSubjectFits } = require('../lib/run');
 const { SAMPLING } = require('../lib/sampling');
-const { resolveReceiptValidator, validateReceipt, verifyReceiptHash, duplicateCaseRows, ambiguityLine, listReceipts, receiptBaseName, fileSlug, REGRADE_SIDECAR, SUMMARY_SIDECAR } = require('../lib/receipt');
+const { resolveReceiptValidator, validateReceipt, verifyReceiptHash, duplicateCaseRows, ambiguityLine, listReceipts, receiptBaseName, fileSlug, REGRADE_SIDECAR, SUMMARY_SIDECAR, readReceiptFile, boundedErrors } = require('../lib/receipt');
 const { buildDriftReport, revisionPairProblem } = require('../lib/diff');
 const { surfaceForModel, isSubscriptionSurface, resolveModel, evalUser, evalUserExists } = require('../lib/provider');
 const { PRESET_QUICK, QUICK, SMOKE_LINE, isSmoke, quickConflicts, quickBanner, quickResultLine, unmeasuredLines, selfJudged, selfJudgeLines, isolationPreflight } = require('../lib/firstrun');
@@ -17,6 +26,7 @@ const { CAPTURE_MODES, DEFAULT_CAPTURE, captureLine } = require('../lib/capture'
 const { estimateRunCostUSD, BudgetTracker } = require('../lib/cost');
 const { registryStatus, assertRegistered, REGISTRY_PATH } = require('../lib/models');
 const { verdictFromReceipt, badgeEndpoint, githubOutputLines, drawsLine, underpoweredLine, lostDrawsLine } = require('../lib/verdict');
+const { placeboReading, placeboLine } = require('../lib/verdict');
 const decision = require('../lib/decision');
 const { scaffoldInit } = require('../lib/init');
 const { planRegrade, regradeReceipt, answersArchive, readAnswers, readRevisedSuite, ANSWERS_ARCHIVE } = require('../lib/regrade');
@@ -237,7 +247,7 @@ function checkNumericInputs(flags, rc) {
 // boolean word, it is refused, exit 2, naming it, for every command (A-062-3, spec 106):
 // `--trusted-skill=false` and `--trusted-skill false` each turned the same-user lane on.
 // Spec 139: --quick is one more, set by its name alone.
-const NO_VALUE_FLAGS = new Set(['trusted-skill', 'svg', 'count-errored-runs', 'strict', 'no-harness-check', 'keep-transcripts', 'github-output', 'enforce', 'quick', 'drafted-from-skill', 'lift-breakdown']);
+const NO_VALUE_FLAGS = new Set(['trusted-skill', 'svg', 'count-errored-runs', 'strict', 'no-harness-check', 'keep-transcripts', 'github-output', 'enforce', 'quick', 'drafted-from-skill', 'lift-breakdown', 'placebo']);
 const BOOLEAN_WORD = /^(true|false|yes|no|on|off|1|0)$/i;
 // Issue 337 (spec 106 A-106-9): the stub statement of a run or regrade given an argument, until it is
 // written. A door refusal (an unknown flag, an extra argument) writes it to stderr just before itself, so
@@ -277,7 +287,8 @@ function parseArgs(argv, beforeRefusal = null) {
 // used to be read by nothing, and the run went ahead with the default cap. The
 // `node:util` parseArgs rewrite, one table per command, is later work.
 const COMMAND_FLAGS = {
-  run: ['models', 'samples', 'max-cases', 'max-calls', 'judge-model', 'concurrency', 'max-usd', 'keep-transcripts', 'out', 'trusted-skill', 'capture', 'quick'],
+  // Spec 438: and the suite of a context file.
+  run: ['models', 'samples', 'max-cases', 'max-calls', 'judge-model', 'concurrency', 'max-usd', 'keep-transcripts', 'out', 'trusted-skill', 'capture', 'quick', 'placebo', 'suite'],
   // Spec 139: init takes the cases a suite is written from. Spec 165: and the label for cases a person
   // approved after they were drafted from the skill, which needs those cases.
   init: ['cases', 'drafted-from-skill'],
@@ -305,6 +316,16 @@ function refuseExtraPositionals(command, positional, placeholder) {
   stubBeforeRefusal();
   console.error(`  ✗ REFUSED (${command}): ${command} takes one argument and was given ${positional.length}: ${positional.join(', ')}. It took ${positional[0]} as ${placeholder}, and would read none of ${positional.slice(1).join(', ')}. A flag that takes no value is given alone. Nothing run, no receipt written.`);
   process.exit(2);
+}
+
+// Spec 438 (§ The receipt entry points): a receipt file a command reads, through lib/receipt.js
+// readReceiptFile, or a refusal naming it, bounded and escaped, exit 2.
+function readReceiptOrRefuse(file, command) {
+  try { return readReceiptFile(file); } catch (e) {
+    if (!e || !/^RECEIPT_/.test(e.code || '')) throw e;
+    console.error(`  ✗ REFUSED (${command}): the receipt is unreadable: ${invisibleShown(e.message)}. Nothing read.`);
+    process.exit(2);
+  }
 }
 
 // A skill that cannot be loaded because a link stands where it is read (spec 062,
@@ -381,6 +402,7 @@ USAGE
   ${PROJECT_NAME} run <skill-dir> [--models a,b] [--samples N] [--max-cases N] [--max-calls N]
                         [--judge-model M] [--concurrency N] [--max-usd N]
                         [--keep-transcripts] [--out DIR] [--trusted-skill] [--capture text|files] [--quick]
+                        [--placebo]
   ${PROJECT_NAME} plan <skill-dir> [--model ID] [--judge-model ID] [--lift L] [--samples N]
                         [--draws N] [--from receipt.json]...
   ${PROJECT_NAME} lint-suite <skill-dir> [--receipts DIR]  offline advisory checks
@@ -401,6 +423,11 @@ USAGE
   ${PROJECT_NAME} import --from harbor --with <job> --without <job> [--reward KEY] [--skill NAME] [--out DIR]
   ${PROJECT_NAME} import <job> --from harbor [--arm with-skill|baseline] [--reward KEY] [--skill NAME] [--out DIR]
   ${PROJECT_NAME} import <dir> --from nvidia-cards --commit <sha> [--only <skill>[,<skill>]] [--out DIR] [--report FILE]
+  ${PROJECT_NAME} activation-drift before.json after.json --context context.json --issued-at UTC [--out DIR]
+  ${PROJECT_NAME} activation-drift --receipt activation-drift.json [--out DIR]
+    Offline declared activation counts; fixed setup is operator-declared.
+    Context binds receipt hashes, plugin/suite/environment fingerprints and a complete case/indicator inventory.
+    Fewer than 20 observed runs per version is too few for this descriptive reporting policy.
   ${PROJECT_NAME} export <receipt.json> [--to summary-json] [--report-url URL] [--out FILE|DIR]
 
 ENV
@@ -589,7 +616,8 @@ async function cmdRun(positional, flags) {
 
   // Per-project defaults from .driftproofrc (if any); CLI flags override these.
   // Spec 139: a quick run uses none of the three the preset sets from an rc, and says so below.
-  const rc = loadRc(skillDir);
+  // Spec 438: a context file has no directory of its own, so only the working directory's rc is read.
+  const rc = loadRc(subjectIsFile(skillDir) ? null : skillDir);
   // The contract, at the door (spec 026 AC-9): every input checked against
   // its rule before the projection and before any call. A value that fails
   // its shape is refused naming the input and the value; nothing is defaulted.
@@ -655,13 +683,26 @@ async function cmdRun(positional, flags) {
   const outDir = flags.out ? path.resolve(flags.out) : RECEIPTS_DIR;
 
   let skill;
-  try { skill = loadSkillOrRefuse(skillDir, 'run'); } catch (e) {
-    // Spec 050 AC-1: a suite whose case ids collide is refused before the projection and
-    // before any call, naming the suite file, like the empty suite below.
-    if (!e || e.code !== 'DUPLICATE_CASE_ID') throw e;
-    console.error(`  ✗ REFUSED: the suite at ${path.join(path.resolve(skillDir), 'evals', 'evals.json')}: ${e.message}. Nothing measured, no receipt written.`);
-    process.exit(2);
+  // Spec 438: a context file, any Markdown file, is a subject too, with its suite given by --suite. Its
+  // refusals name their code, escaped for the terminal, before the projection and any call; a skill
+  // directory's are said as before.
+  const suiteFlag = Object.hasOwn(flags, 'suite') ? flags.suite : undefined;
+  if (subjectIsFile(skillDir) || suiteFlag !== undefined) {
+    try { skill = loadSubject(skillDir, { suite: suiteFlag === true ? '' : suiteFlag }); } catch (e) {
+      if (!e || !SUBJECT_CODES.includes(e.code)) throw e;
+      console.error(`  ✗ REFUSED (run, ${e.code}): ${invisibleShown(e.message)}. Nothing measured, no receipt written.`);
+      process.exit(2);
+    }
+  } else {
+    try { skill = loadSkillOrRefuse(skillDir, 'run'); } catch (e) {
+      // Spec 050 AC-1: a suite whose case ids collide is refused before the projection and
+      // before any call, naming the suite file, like the empty suite below.
+      if (!e || e.code !== 'DUPLICATE_CASE_ID') throw e;
+      console.error(`  ✗ REFUSED: the suite at ${path.join(path.resolve(skillDir), 'evals', 'evals.json')}: ${e.message}. Nothing measured, no receipt written.`);
+      process.exit(2);
+    }
   }
+  const contextFile = skill.unit === 'context_file';
   const nCases = maxCases ? Math.min(maxCases, skill.suite.caseCount) : skill.suite.caseCount;
   // Spec 026 AC-5 (F2): a suite with no cases measures nothing, and a receipt
   // over nothing is a receipt about nothing. Refused here, before the
@@ -669,6 +710,15 @@ async function cmdRun(positional, flags) {
   if (nCases < 1) {
     console.error(`  ✗ REFUSED: the suite at ${path.join(path.resolve(skillDir), 'evals', 'evals.json')} has no cases${maxCases ? ` (after --max-cases ${maxCases})` : ''}; nothing to measure, no receipt written.`);
     process.exit(2);
+  }
+  // Spec 438 (§ The transport bound): each model's with-skill requests, as its surface builds them,
+  // against the surface's bound, before the projection is printed and before any call.
+  for (const m of models) {
+    try { assertSubjectFits({ skill, cases: skill.suite.cases.slice(0, nCases), modelId: resolveModel(m), trusted, capture }); } catch (e) {
+      if (!e || e.code !== 'SUBJECT_TRANSPORT') throw e;
+      console.error(`  ✗ REFUSED (run, SUBJECT_TRANSPORT): ${invisibleShown(e.message)}`);
+      process.exit(2);
+    }
   }
   // v0.5 draws the generation up to SAMPLING.max times per arm, so BOTH the
   // printed projection and the dollar guard below must be scaled by it. Left at
@@ -678,7 +728,10 @@ async function cmdRun(positional, flags) {
   // is recoverable, overspending is not.
   // A-139-17 (AC-367-1): a quick run draws each arm at most QUICK.draws times, and is projected so.
   const drawsMax = quick ? QUICK.draws : SAMPLING.max;
-  const perModelCalls = projectCalls(nCases, samples, drawsMax);
+  // Spec 440 AC-12: --placebo answers every case a third time, and is projected and priced so.
+  const placebo = !!flags.placebo;
+  const arms = placebo ? 3 : 2;
+  const perModelCalls = projectCalls(nCases, samples, drawsMax, arms);
   const totalProjected = perModelCalls * models.length;
 
   // Dollar cost guard (Week 3): project the METERED USD cost up front. On the
@@ -690,7 +743,7 @@ async function cmdRun(positional, flags) {
   // fixed haiku; each target is priced with its own judge and the figures summed.
   const targets = models.map((m) => resolveModel(m));
   const judges = models.map((m) => judgeFor(m));
-  const perModelCost = targets.map((t, i) => estimateRunCostUSD({ caseCount: nCases, draws: quick ? QUICK.draws : SAMPLING.max, samples, models: [targets[i]], judgeModel: judges[i] }));
+  const perModelCost = targets.map((t, i) => estimateRunCostUSD({ caseCount: nCases, draws: quick ? QUICK.draws : SAMPLING.max, samples, models: [targets[i]], judgeModel: judges[i], arms }));
   const cost = { totalUSD: Math.round(perModelCost.reduce((a, c) => a + c.totalUSD, 0) * 1e4) / 1e4, perModel: perModelCost.flatMap((c) => c.perModel), judges };
   // Surface is per-model now (a run may mix an Anthropic and an OpenAI target).
   const surfaces = [...new Set(models.map((m) => surfaceForModel(m)))];
@@ -703,7 +756,10 @@ async function cmdRun(positional, flags) {
   // concurrency and the cost. Every other fact is in the receipt, and stderr is as without --quick.
   const quiet = quick && !stubRun;
   const tasksRun = skill.suite.cases.slice(0, nCases).map((c) => c.id);
-  if (quiet) console.log(`\n${PROJECT_NAME} run --quick: skill "${skill.name}" v${skill.version}, ${nCases} test task${nCases === 1 ? '' : 's'} (${tasksRun.join(', ')}, the first in the suite), with and without the skill, on ${models.join(', ')}, judged by ${[...new Set(cost.judges)].join(', ')}`);
+  // Spec 438: a context file is named as one, its name escaped for the terminal.
+  const subjectWords = contextFile ? `context file "${termText(skill.name)}"` : `skill "${skill.name}" v${skill.version}`;
+  if (quiet) console.log(`\n${PROJECT_NAME} run --quick: ${subjectWords}, ${nCases} test task${nCases === 1 ? '' : 's'} (${tasksRun.join(', ')}, the first in the suite), with and without the ${contextFile ? 'file' : 'skill'}, on ${models.join(', ')}, judged by ${[...new Set(cost.judges)].join(', ')}`);
+  else if (contextFile) console.log(`\n${PROJECT_NAME} run, ${subjectWords}`);
   else console.log(`\n${PROJECT_NAME} run — skill "${skill.name}" v${skill.version}`);
   // Spec 139 (R-4): a smoke run says before its first call that it cannot produce a verdict.
   if (quick) console.log(quickBanner());
@@ -764,7 +820,7 @@ async function cmdRun(positional, flags) {
   for (const model of models) {
     console.log(`── model: ${model} ──`);
     // Spec 138 (R-1): a line on stderr each time a call, or a draw's judge calls, finish.
-    const progress = createProgress({ cases: nCases, samples, ...(quick ? { min: QUICK.draws, max: QUICK.draws } : {}) });
+    const progress = createProgress({ cases: nCases, samples, ...(placebo ? { arms } : {}), ...(quick ? { min: QUICK.draws, max: QUICK.draws } : {}) });
     let result;
     try {
       result = await runSkillOnModel({
@@ -773,6 +829,7 @@ async function cmdRun(positional, flags) {
         opts: {
           maxCases, maxCalls, samples, judgeModel, concurrency, budget, keepTranscripts, trusted, capture,
           ...(quick ? { preset: PRESET_QUICK, draws: QUICK.draws } : {}),
+          ...(placebo ? { placebo: true } : {}),
           onProgress: (p) => {
             if (stubRun) return;
             progress.onProgress(p);
@@ -793,6 +850,11 @@ async function cmdRun(positional, flags) {
         console.error(`\n  ✗ ABORT (budget hard-stop): ${message}`);
         console.error(`    ${emitted.length} receipt(s) already written to ${path.relative(process.cwd(), outDir)}/.`);
         process.exit(3);
+      }
+      // Spec 440: a placebo that cannot be made for this skill text is refused before any call.
+      if (e && ['PLACEBO_EMPTY', 'PLACEBO_TOO_LONG', 'PLACEBO_LENGTH', 'PLACEBO_OVERLAP'].includes(e.code)) {
+        console.error(`\n  ✗ REFUSED (${e.code}): ${e.message}`);
+        process.exit(2);
       }
       throw e;
     }
@@ -847,6 +909,8 @@ async function cmdRun(positional, flags) {
     // Spec 026 AC-8: how many draws were cut at the output cap and excluded.
     const nTruncated = receipt.results.cases.reduce((a, c) => a + (((c.generation || {}).n_truncated) || 0), 0);
     if (nTruncated) console.log(`  → ${nTruncated} draw(s) truncated at the output cap: unmeasured, never judged, excluded from every band`);
+    // Spec 440 AC-13: the placebo reading, in the summary's words, beside the run's result.
+    if (receipt.placebo) console.log(`  → same-length placebo (${receipt.placebo.bytes} bytes): ${placeboLine(placeboReading(receipt))}`);
     // Spec 026 AC-6, AC-7: the band rule is named beside the band, and a band
     // the formula could not form prints as n/a, never as 0.000.
     // Spec 139 (R-4): a smoke run prints its two arms and the plain line, and no lift.
@@ -877,8 +941,8 @@ async function cmdRun(positional, flags) {
 function cmdDiff(positional, flags) {
   const [aPath, bPath] = positional;
   if (!aPath || !bPath) { usage(); process.exit(2); }
-  const a = JSON.parse(fs.readFileSync(aPath, 'utf8'));
-  const b = JSON.parse(fs.readFileSync(bPath, 'utf8'));
+  const a = readReceiptOrRefuse(aPath, 'diff');
+  const b = readReceiptOrRefuse(bPath, 'diff');
 
   // Spec 026 AC-20: a side whose hash does not verify is refused, naming it.
   for (const [p, r] of [[aPath, a], [bPath, b]]) refuseUnverified(r, p, 'diff');
@@ -945,7 +1009,8 @@ function cmdStale(positional, flags) {
     jsonOut = flags.json;
   }
   if (!files.length) return bad('no receipt given');
-  if (flags.skill) { try { loadSkill(flags.skill); } catch (e) { return bad(`--skill ${flags.skill}: ${e.message}`); } }
+  // Spec 438: a context file is checked with its --suite, a skill directory as before.
+  if (flags.skill) { try { (subjectIsFile(flags.skill) ? loadSubject(flags.skill, { suite: flags.suite }) : loadSkill(flags.skill)); } catch (e) { return bad(`--skill ${invisibleShown(flags.skill)}: ${invisibleShown(e.message)}`); } }
   if (flags.suite) { try { JSON.parse(fs.readFileSync(flags.suite, 'utf8')); } catch (e) { return bad(`--suite ${flags.suite}: ${e.message}`); } }
   const rc = loadRc(flags.skill || null);
   // Spec 146: the mode today is checked as `run` checks it, before anything is read: one refusal for the flag and the rc.
@@ -983,7 +1048,8 @@ function cmdView(positional, flags) {
   if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) bad(`${dir} is not a directory`);
   const out = flags.out || 'driftproof-view.html';
   if (fs.existsSync(out) && !isViewPage(out)) bad(`--out ${out} names an existing file this command did not write; nothing is written over it`);
-  if (flags.skill) { try { loadSkill(flags.skill); } catch (e) { bad(`--skill ${flags.skill}: ${e.message}`); } }
+  // Spec 438: a context file is checked with its --suite, a skill directory as before.
+  if (flags.skill) { try { (subjectIsFile(flags.skill) ? loadSubject(flags.skill, { suite: flags.suite }) : loadSkill(flags.skill)); } catch (e) { bad(`--skill ${invisibleShown(flags.skill)}: ${invisibleShown(e.message)}`); } }
   if (flags.suite) { try { JSON.parse(fs.readFileSync(flags.suite, 'utf8')); } catch (e) { bad(`--suite ${flags.suite}: ${e.message}`); } }
   const epoch = process.env.SOURCE_DATE_EPOCH;
   const now = epoch && /^\d+$/.test(epoch) ? new Date(Number(epoch) * 1000) : new Date();
@@ -1031,7 +1097,7 @@ async function cmdRegrade(positional, flags) {
   }
   if (rubricMode && Object.hasOwn(flags, 'judge-model') && (typeof flags['judge-model'] !== 'string' || !flags['judge-model'])) refuse('--judge-model needs a model id');
   const checked = checkNumericInputs(flags, {});
-  const receipt = JSON.parse(fs.readFileSync(receiptPath, 'utf8'));
+  const receipt = readReceiptOrRefuse(receiptPath, 'regrade');
   const origJudge = receipt.run && receipt.run.judge && receipt.run.judge.model_id;
   if (rubricMode && !flags['judge-model'] && !origJudge) refuse('the receipt records no judge, so a rubric regrade has no judge to keep; pass --judge-model');
   const judgeModel = resolveModel(flags['judge-model'] || origJudge);
@@ -1097,6 +1163,7 @@ async function cmdRegrade(positional, flags) {
   } catch (e) {
     if (e && e.code === 'SUBSTRATE_MISMATCH') { console.error(`\n  ✗ REFUSED (substrate mismatch): ${e.message}`); process.exit(5); }
     if (e && e.code === 'BUDGET_HARDSTOP') { console.error(stubRun ? '\n  ✗ ABORT (budget hard-stop): synthetic stub work exceeded the budget; no model was called.' : `\n  ✗ ABORT (budget hard-stop): ${e.message}`); process.exit(3); }
+    if (e && e.code === 'PLACEBO_REGRADE') { console.error(`\n  ✗ REFUSED (regrade): ${e.message}`); process.exit(2); }
     throw e;
   }
   const out = result.receipt;
@@ -1128,11 +1195,12 @@ async function cmdRegrade(positional, flags) {
 function cmdValidate(positional) {
   const p = positional[0];
   if (!p) { usage(); process.exit(2); }
-  const receipt = JSON.parse(fs.readFileSync(p, 'utf8'));
+  const receipt = readReceiptOrRefuse(p, 'validate');
   const { valid, errors } = validateReceipt(receipt);
   const hashOk = verifyReceiptHash(receipt);
   console.log(`schema: ${valid ? 'VALID' : 'INVALID'}   receipt_hash: ${hashOk ? 'VERIFIED' : 'MISMATCH'}`);
-  if (!valid) console.log(JSON.stringify(errors, null, 2));
+  // Spec 438: at most 20 errors, each string in them bounded.
+  if (!valid) console.log(JSON.stringify(boundedErrors(errors), null, 2));
   process.exit(valid && hashOk ? 0 : 1);
 }
 
@@ -1212,7 +1280,7 @@ function cmdBadge(positional, flags) {
   // exactly what it always did - lib/verdict.js is untouched and still answers
   // the one-receipt question, which AC-3's control asserts.
   if (fs.existsSync(p) && fs.statSync(p).isDirectory()) return cmdBadgeSet(p, flags);
-  const receipt = JSON.parse(fs.readFileSync(p, 'utf8'));
+  const receipt = readReceiptOrRefuse(p, 'badge');
   refuseUnverified(receipt, p, 'badge');
   refuseAmbiguous(receipt, p, 'badge');
   refuseInvalid(receipt, p, 'badge');
@@ -1531,7 +1599,7 @@ function cmdExport(positional, flags) {
   if (!p) { console.error('usage: driftproof export <receipt.json> [--to summary-json] [--report-url URL] [--out FILE|DIR]'); process.exit(2); }
   if (to !== 'summary-json') { console.error(`unknown export target "${to}" — supported: summary-json`); process.exit(2); }
   const { toSummaryJson } = require('../lib/export');
-  const receipt = JSON.parse(fs.readFileSync(p, 'utf8'));
+  const receipt = readReceiptOrRefuse(p, 'export');
   refuseUnverified(receipt, p, 'export');
   refuseAmbiguous(receipt, p, 'export');
   const summary = toSummaryJson(receipt, { reportUrl: typeof flags['report-url'] === 'string' ? flags['report-url'] : null });
@@ -1611,6 +1679,37 @@ function cmdOverlap(args) {
   }
 }
 
+
+function cmdActivationDrift(argv) {
+  try {
+    const { buildActivationDrift, readActivationInput, writeActivationDrift } = require('../lib/activation-drift');
+    const allowed = new Set(['context', 'issued-at', 'out', 'receipt']), flags = {}, positional = [];
+    for (let i = 0; i < argv.length; i++) {
+      const value = argv[i];
+      if (value.startsWith('-')) {
+        const key = value.slice(2);
+        if (!value.startsWith('--') || !allowed.has(key) || Object.hasOwn(flags, key) || !argv[i + 1] || argv[i + 1].startsWith('-')) throw new Error('invalid, repeated or missing activation option');
+        flags[key] = argv[++i];
+      } else positional.push(value);
+    }
+    let receipt;
+    if (flags.receipt) {
+      if (positional.length || flags.context || flags['issued-at']) throw new Error('--receipt takes only an optional --out');
+      receipt = readActivationInput(flags.receipt, 'envelope');
+    } else {
+      if (positional.length !== 2 || !flags.context || !flags['issued-at']) throw new Error('two imported receipts, --context and --issued-at are required');
+      receipt = buildActivationDrift({ before: readActivationInput(positional[0]), after: readActivationInput(positional[1]), context: readActivationInput(flags.context, 'context'), issuedAt: flags['issued-at'] });
+    }
+    writeActivationDrift(receipt, flags.out || path.join(process.cwd(), 'activation-receipts'));
+    console.log('Activation drift receipt: ' + receipt.receipt_hash);
+  } catch (error) {
+    const { importDiagnostic } = require('../lib/importers');
+    const reason = error instanceof SyntaxError ? 'invalid JSON input' : error.code ? 'filesystem refusal (' + error.code + ')' : error.message;
+    console.error('activation-drift refused: ' + importDiagnostic(reason, 2048 - 26));
+    process.exitCode = 2;
+  }
+}
+
 async function main() {
   const [, , cmd, ...rest] = process.argv;
   if (['run', 'regrade', 'import', 'validate', 'badge', 'decide', 'diff', 'export', 'stale', 'view'].includes(cmd)) checkReceiptValidator();
@@ -1620,6 +1719,7 @@ async function main() {
   // statement goes to stderr just before that refusal, still first in write order.
   const stubDoor = process.env.DRIFTPROOF_STUB === '1' && (cmd === 'run' || cmd === 'regrade');
   const STUB_STATEMENT = 'STUB RUN (DRIFTPROOF_STUB=1): no model will be called; any emitted receipt will be UNVERIFIED and measure nothing.';
+  if (cmd === 'activation-drift') return cmdActivationDrift(rest);
   if (cmd === 'overlap') return cmdOverlap(rest);
   if (cmd === 'lint-suite') return cmdLintSuite(rest);
   const { positional, flags } = parseArgs(rest, stubDoor ? () => console.error(STUB_STATEMENT) : null);

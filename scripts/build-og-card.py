@@ -223,12 +223,13 @@ def _draw_default(img):
         ly += 42
 
 
-def _write_hashed(img, out_dir, stem):
+def _write_hashed(img, out_dir, stem, compatibility_names=()):
     """Write a PNG whose FILENAME carries a hash of its own bytes.
 
     The name cannot be known until the bytes exist, so the image is encoded to
     memory first. Any previous hash for the same stem is removed, so the
-    directory never accumulates orphans a page no longer references.
+    directory never accumulates orphans a page no longer references. Explicit
+    compatibility names keep previously published URLs resolving with current bytes.
     """
     buf = io.BytesIO()
     img.save(buf, "PNG", optimize=True)
@@ -237,10 +238,15 @@ def _write_hashed(img, out_dir, stem):
     name = "%s.%s.png" % (stem, digest)
     os.makedirs(out_dir, exist_ok=True)
     for stale in os.listdir(out_dir):
-        if re.match(r"^%s\.[0-9a-f]{8}\.png$" % re.escape(stem), stale) and stale != name:
+        if re.match(r"^%s\.[0-9a-f]{8}\.png$" % re.escape(stem), stale) and stale != name and stale not in compatibility_names:
             os.remove(os.path.join(out_dir, stale))
     with open(os.path.join(out_dir, name), "wb") as fh:
         fh.write(data)
+    for alias in compatibility_names:
+        if not re.match(r"^%s\.[0-9a-f]{8}\.png$" % re.escape(stem), alias):
+            raise SystemExit("invalid compatibility image basename")
+        with open(os.path.join(out_dir, alias), "wb") as fh:
+            fh.write(data)
     return name
 
 
@@ -298,7 +304,7 @@ def build_report(out_dir, number, rtype, models, counts):
     return _write_hashed(img, out_dir, "report-%s" % number)
 
 
-def build_receipt(out_dir, hash16, skill, model, date, label):
+def build_receipt(out_dir, hash16, skill, model, date, label, compatibility_names=()):
     """One card per receipt (spec 036 AC-5).
 
     The skill, the model, the date and the state's label, as the receipt page shows
@@ -306,6 +312,26 @@ def build_receipt(out_dir, hash16, skill, model, date, label):
     the label is regenerated here from the same receipt and compared byte for byte.
     Content-hashed like the report cards, so a changed card is a new URL.
     """
+    if label == "No verdict: delegated skill not tested":
+        img = Image.new("RGB", (W, H), PAPER)
+        d = ImageDraw.Draw(img)
+        small = load_fonts(76, 30)[1]
+        title = display_font(72, FONTS_ARG[0])
+        d.text((MARGIN, 70), "Driftproof receipt", font=small, fill=MUTED)
+        ly = 145
+        for line in wrap(d, skill, title, W - 2 * MARGIN):
+            d.text((MARGIN, ly), line, font=title, fill=INK)
+            ly += 85
+        for line in [model, date, label]:
+            d.text((MARGIN, ly + 16), line, font=small, fill=INK)
+            ly += 46
+        reason = "These text tasks test the router's written response, not the delegated skill."
+        for line in wrap(d, reason, small, W - 2 * MARGIN):
+            d.text((MARGIN, ly + 28), line, font=small, fill=INK)
+            ly += 42
+        d.text((MARGIN, ly + 48), "Report 015 Amendment 1: driftproofhq.com/reports/015/#amendment-1", font=load_fonts(76, 22)[1], fill=INK)
+        return _write_hashed(img, out_dir, "receipt-%s" % hash16, compatibility_names)
+
     img = Image.new("RGB", (W, H), PAPER)
     d = ImageDraw.Draw(img)
     bold = display_font(84, FONTS_ARG[0])
@@ -377,6 +403,8 @@ def main():
     ap.add_argument("--date", default="")
     ap.add_argument("--label", default="")
     ap.add_argument("--out-dir", default=os.path.join(docs, "cards"))
+    ap.add_argument("--compatibility-name", action="append", default=[],
+                    help="retain an original published receipt image URL with current qualified bytes")
     args = ap.parse_args()
     FONTS_ARG[0] = args.fonts_dir
 
@@ -387,7 +415,7 @@ def main():
     if args.receipt:
         if not re.match(r"^[0-9a-f]{16}$", args.receipt):
             raise SystemExit("--receipt takes the first 16 hex characters of a receipt_hash")
-        print(build_receipt(os.path.abspath(args.out_dir), args.receipt, args.skill, args.model, args.date, args.label))
+        print(build_receipt(os.path.abspath(args.out_dir), args.receipt, args.skill, args.model, args.date, args.label, args.compatibility_name))
         return 0
 
     if args.report:

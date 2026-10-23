@@ -432,6 +432,10 @@ test('AC-5 a suite with no criteria case writes a receipt byte-identical to the 
     assert.deepEqual(r317.differences(jo, r317.expected(back.results.cases, r317.priceOf(back, judgeId), r317.captureOf(back))), [], 'the judge overhead is spec 317\'s reading');
     assert.ok(Number.isInteger(jo.judged_draws_counted) && Number.isInteger(jo.judged_draws_missing_usage), 'both counts are recorded');
     back.economics.judge_overhead = require(path.join(dir, 'lib', 'value.js')).computeEconomics({ cases: back.results.cases, modelId: back.run.model_id, judgeModelId: judgeId, pricingSnapshot: back.run.pricing_snapshot, surface: back.run.surface, meteredSurface: false }).judge_overhead;
+    // A-185-24 (issue 438): receipt v0.15 records the subject's kind and delivery; asserted at a skill
+    // run's values, then taken back with the version.
+    assert.deepEqual([back.skill.unit, back.run.delivery], ['skill', 'injected'], 'this tree records the v0.15 subject fields');
+    delete back.skill.unit; delete back.run.delivery;
     lib.receipt.sealReceipt(back);
     assert.equal(JSON.stringify(back), JSON.stringify(theirs.receipt));
   } finally {

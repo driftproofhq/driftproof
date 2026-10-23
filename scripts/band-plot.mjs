@@ -284,6 +284,15 @@ ${bar(g.b, 'bar-b', 22)}
 `;
 }
 
+// Issue 435: the cell primitive is unchanged; publication knows which receipt it presents.
+export function renderPublicationPlot(receipt, options = {}) {
+  const policy = require('../lib/report-015-publication');
+  if (!policy.routerLimit(receipt)) return renderCell(cellOf(receipt), options);
+  const size = options.size || 'hero', g = SIZES[size];
+  const reason = policy.REASON;
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+g.W+' '+g.H+'" width="100%" role="img" class="scope-notice is-'+size+'"><title>'+esc(policy.LABEL+'. '+reason)+'</title><style>'+tokenBlock(options.root || ROOT).split('\n').filter(line=>!line.startsWith('  --')||/^  --(paper|ink|sans):/.test(line)).join('\n')+'\n.scope-label {fill:var(--ink);font-family:var(--sans)} .scope-stock {fill:var(--paper)}</style><a href="https://driftproofhq.com'+policy.AMENDMENT+'"><rect class="scope-stock" width="'+g.W+'" height="'+g.H+'"/><text class="scope-label" x="12" y="'+g.H*.25+'" font-size="'+(size==='card'?11:16)+'">'+(size==='card'?'No verdict: delegated skill</text><text class="scope-label" x="12" y="'+g.H*.43+'" font-size="11">not tested':esc(policy.LABEL))+'</text><text class="scope-label" x="12" y="'+g.H*(size==='card'?.66:.5)+'" font-size="'+(size==='card'?10:14)+'">These text tasks test the router&#39;s</text><text class="scope-label" x="12" y="'+g.H*(size==='card'?.88:.73)+'" font-size="'+(size==='card'?10:14)+'">written response, not the delegated skill.</text></a></svg>\n';
+}
+
 function main() {
   if (process.argv.includes('--glyphs')) {
     const dir = path.join(ROOT, 'docs', 'assets');
@@ -294,20 +303,24 @@ function main() {
   }
   const i = process.argv.indexOf('--out');
   const outDir = i > -1 ? path.resolve(process.argv[i + 1]) : path.join(ROOT, 'docs', 'plots');
-  fs.mkdirSync(outDir, { recursive: true });
-  for (const stale of fs.readdirSync(outDir)) if (stale.endsWith('.svg')) fs.unlinkSync(path.join(outDir, stale));
+  const check=process.argv.includes('--check'),staleFiles=[];
+  if(!check)fs.mkdirSync(outDir, { recursive: true });
+  if(!check)for (const stale of fs.readdirSync(outDir)) if (stale.endsWith('.svg')) fs.unlinkSync(path.join(outDir, stale));
   let n = 0;
   for (const f of receiptFiles()) {
     const receipt = JSON.parse(fs.readFileSync(f, 'utf8'));
     const key = keyOf(f);
+    const baseFile=f.replace(/-answers\.json$/, '.json');
+    const presented=f.endsWith('-answers.json')&&fs.existsSync(baseFile)?JSON.parse(fs.readFileSync(baseFile,'utf8')):receipt;
+    const limited=require('../lib/report-015-publication').routerLimit(presented);
     const cell = cellOf(receipt);
     for (const size of Object.keys(SIZES)) {
-      fs.writeFileSync(path.join(outDir, `${key}.${size}.svg`),
-        renderCell(cell, { title: key.replace(/--/g, ' '), size }));
+      const output=path.join(outDir, `${key}.${size}.svg`),bytes=limited?renderPublicationPlot(presented,{title:key.replace(/--/g,' '),size}):renderCell(cell, { title: key.replace(/--/g, ' '), size });
+      if(check){if(!fs.existsSync(output)||fs.readFileSync(output,'utf8')!==bytes)staleFiles.push(path.basename(output));}else fs.writeFileSync(output,bytes);
       n++;
     }
   }
-  console.log(`${n} band plots written to ${path.relative(ROOT, outDir)}`);
+  if(check&&staleFiles.length){console.error('stale band plots: '+staleFiles.join(', '));process.exitCode=1;}else console.log(check?`${n} band plots match their publication inputs`:`${n} band plots written to ${path.relative(ROOT, outDir)}`);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

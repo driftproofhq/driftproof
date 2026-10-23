@@ -41,6 +41,7 @@ const { htmlToText } = require('./html-text.js');
 
 const ROOT = path.join(__dirname, '..');
 const ORIGIN = 'https://driftproofhq.com';
+const compare = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 
 function excludeRe() {
   const src = fs.readFileSync(path.join(ROOT, 'scripts', 'build-public.sh'), 'utf8');
@@ -55,7 +56,7 @@ function pageFiles() {
   const out = [];
   (function walk(dir) {
     if (!fs.existsSync(dir)) return;
-    for (const e of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => compare(a.name, b.name))) {
       const f = path.join(dir, e.name);
       if (e.isDirectory()) { walk(f); continue; }
       if (!e.name.endsWith('.html')) continue;
@@ -124,12 +125,12 @@ function mainWords(html) {
   }
   return htmlToText(chrome.stripSiteFooter(m), { skip: ['script', 'style'], tagText: ' ', commentText: ' ', decode: decodeWords, collapse: true });
 }
-// Every version of each file under docs/ on the first-parent line from `rev`, less what `stop`
-// reaches, newest first: path -> [{ sha, date, parents }].
-function versions(root, rev = 'HEAD', stop = null) {
+// Every version of each file under docs/ on the first-parent line from `rev`, newest first:
+// path -> [{ sha, date, parents }].
+function versions(root, rev = 'HEAD') {
   const out = new Map();
   let cur = null;
-  const log = execFileSync('git', ['-C', root, 'log', '--first-parent', '--diff-merges=first-parent', '--format=@@%H %as %P', '--name-only', rev, ...(stop ? [`^${stop}`] : []), '--', 'docs/'], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+  const log = execFileSync('git', ['-C', root, 'log', '--first-parent', '--diff-merges=first-parent', '--format=@@%H %as %P', '--name-only', rev, '--', 'docs/'], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
   for (const line of log.split('\n')) {
     if (line.startsWith('@@')) { const [sha, date, ...parents] = line.slice(2).split(' '); cur = { sha, date, parents }; continue; }
     if (!line || !cur) continue;
@@ -157,7 +158,7 @@ function blobs(root, specs) {
 const DATES = 'docs/data/page-dates.json';
 function contentDates({ root = ROOT, rels, today = new Date().toISOString().slice(0, 10) }) {
   const logs = new Map();
-  const log = (rev, stop) => { const k = `${rev} ${stop || ''}`; if (!logs.has(k)) logs.set(k, versions(root, rev, stop)); return logs.get(k); };
+  const log = (rev) => { if (!logs.has(rev)) logs.set(rev, versions(root, rev)); return logs.get(rev); };
   const seen = new Map();
   const words = (specs) => {
     const need = [...new Set(specs.filter((s) => !seen.has(s)))];
@@ -169,11 +170,11 @@ function contentDates({ root = ROOT, rels, today = new Date().toISOString().slic
     if (!recorded.has(rev)) { const t = blobs(root, [`${rev}:${DATES}`])[0]; let d = {}; try { d = (t && JSON.parse(t).dates) || {}; } catch { d = {}; } recorded.set(rev, d); }
     return recorded.get(rev);
   };
-  // The newest commit on `rev`'s first-parent line, less what `stop` reaches, whose version of `p`
-  // says other words than its parent's; a merge whose words one of its other parents carries is
-  // followed into that parent's line.
-  const wordsCommit = (p, rev, stop, depth) => {
-    const vs = log(rev, stop).get(p) || [];
+  // The newest commit on `rev`'s first-parent line whose version of `p` says other words than
+  // its parent's. Follow matching merge parents through their complete history: the words may
+  // come from a shared ancestor, before the branches diverged (issue 455).
+  const wordsCommit = (p, rev, depth) => {
+    const vs = log(rev).get(p) || [];
     if (!vs.length) return null;
     const texts = words([...vs.map((v) => `${v.sha}:${p}`), `${vs[vs.length - 1].sha}^:${p}`]);
     const i = vs.findIndex((_v, k) => texts[k] !== texts[k + 1]);
@@ -182,7 +183,7 @@ function contentDates({ root = ROOT, rels, today = new Date().toISOString().slic
     if (depth < 64) {
       for (const q of c.parents.slice(1)) {
         if (words([`${q}:${p}`])[0] !== texts[i]) continue;
-        const inner = wordsCommit(p, q, c.parents[0], depth + 1);
+        const inner = wordsCommit(p, q, depth + 1);
         if (inner) return inner;
       }
     }
@@ -193,7 +194,7 @@ function contentDates({ root = ROOT, rels, today = new Date().toISOString().slic
     const p = `docs/${rel}`;
     const file = path.join(root, p);
     const now = fs.existsSync(file) ? mainWords(fs.readFileSync(file, 'utf8')) : null;
-    const c = now !== words([`HEAD:${p}`])[0] ? null : wordsCommit(p, 'HEAD', null, 0);
+    const c = now !== words([`HEAD:${p}`])[0] ? null : wordsCommit(p, 'HEAD', 0);
     if (!c) { out[rel] = today; continue; }
     const mine = entries(c.sha)[rel];
     const was = c.parents.length ? entries(`${c.sha}^`)[rel] : undefined;
@@ -206,7 +207,7 @@ function contentDates({ root = ROOT, rels, today = new Date().toISOString().slic
 function datesFile() {
   const rels = pageFiles().map(relOf);
   const dates = contentDates({ rels });
-  return `${JSON.stringify({ _what: 'Derived at build by scripts/build-sitemap.js: each published page\'s last commit that changed its words (spec 133 R-6). Read by the sitemaps and by a report\'s dateModified. Do not hand-edit.', dates: Object.fromEntries(Object.entries(dates).sort(([a], [b]) => a.localeCompare(b))) }, null, 2)}\n`;
+  return `${JSON.stringify({ _what: 'Derived at build by scripts/build-sitemap.js: each published page\'s last commit that changed its words (spec 133 R-6). Read by the sitemaps and by a report\'s dateModified. Do not hand-edit.', dates: Object.fromEntries(Object.entries(dates).sort(([a], [b]) => compare(a, b))) }, null, 2)}\n`;
 }
 
 // Indexable pages, split: editorial pages and receipt pages (spec 133 AC-8).
@@ -214,7 +215,7 @@ function entries(dates) {
   return pageFiles()
     .filter((f) => !isStub(f) && !isNoindex(f))
     .map((f) => ({ rel: relOf(f), loc: urlOf(f), lastmod: dates[relOf(f)] || null }))
-    .sort((a, b) => a.loc.localeCompare(b.loc));
+    .sort((a, b) => compare(a.loc, b.loc));
 }
 
 // ── the other three derived files ───────────────────────────────────────────

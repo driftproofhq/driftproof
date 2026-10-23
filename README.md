@@ -26,8 +26,8 @@ Claude Code subscription. You need Node.js 22 or later.
 
 **Latest finding** · [Report 015](https://driftproofhq.com/reports/015/), 18 Oct
 2026: for the Skills.sh snapshot 2026-10-17: text tasks by Driftproof; Haiku 5.5
-judge; eval account checked before/after runs, not during: Sonnet 5.5 12 helped,
-4 hurt, 4 too few answers; Opus 5.5 12 helped, 2 hurt, 6 too few answers.
+judge; eval account checked before/after runs, not during: Sonnet 5.5 10 helped,
+2 hurt, 4 too few answers; Opus 5.5 11 helped, 1 hurt, 4 too few answers.
 
 [![driftproof](https://img.shields.io/endpoint?url=https://driftproofhq.com/badges/commit-message-conventions.json)](https://driftproofhq.com)
 live badge for the bundled example, generated from its own receipt.
@@ -565,7 +565,7 @@ A receipt is the unit of evidence — one JSON document conforming to
 
 ```jsonc
 {
-  "schema_version": "0.13",
+  "schema_version": "0.15",
   "skill":  { "name": "commit-message-conventions", "version": "0.2.0",
               "content_hash": "…sha256 over SKILL.md + bundled files…" },
   "suite":  { "format": "agentskills.io/evals", "suite_hash": "…", "case_count": 10 },
@@ -574,7 +574,7 @@ A receipt is the unit of evidence — one JSON document conforming to
     "model_release_date": "2025-10-01",
     "provider": "anthropic",
     "surface": "claude-cli",
-    "runner_version": "0.22.4",
+    "runner_version": "0.23.1",
     "date_utc": "2026-07-27T…Z",
     "registry": "registered",
     "transcripts": "hashes-only",
@@ -654,7 +654,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: driftproofhq/driftproof@v0.22.4
+      - uses: driftproofhq/driftproof@v0.23.1
         with:
           skill-dir: skills/my-skill
           models: claude-haiku-4-5
@@ -782,7 +782,7 @@ permissions:
   contents: read
   issues: write
 # ...
-      - uses: driftproofhq/driftproof/stale@v0.22.4
+      - uses: driftproofhq/driftproof/stale@v0.23.1
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill
@@ -946,7 +946,7 @@ instrument itself; or, in the instrument comparison, in which instrument measure
   #009, #011 and #013, not with Reports #001 to #008.
 
 <!--driftproof:campaign-readme-->
-- **[Report #015: Skills.sh snapshot 2026-10-17: text tasks](https://driftproofhq.com/reports/015/)**: three text tasks per skill, written by Driftproof from the pinned skill descriptions. Both model sets use Haiku 5.5 as judge. Each receipt carries its per-task verdict and the report names the tasks behind it. The eval account was checked before and after each run, not during it.
+- **[Report #015: Skills.sh snapshot 2026-10-17: text tasks](https://driftproofhq.com/reports/015/)**: three text tasks per skill, written by Driftproof from the pinned skill descriptions. Both model sets use Haiku 5.5 as judge. Eligible receipts carry their per-task verdicts and the report names the tasks behind them. The four router subjects have no verdict in this revision; the report amendment explains why. The eval account was checked before and after each run, not during it.
 <!--/driftproof:campaign-readme-->
 
 ✍️ The launch essay, **[Three model releases later: what actually happens to agent

@@ -224,7 +224,7 @@ function homepage() {
 <div class="install-first">
 <p class="install-label">Install in Claude Code</p>
 ${plugin.map(copy).join('\n')}
-<p class="muted">Then run <code>/driftproof:run</code> on a skill in your repository. For CI, <a href="#ci">npx and the GitHub Action</a> are further down.</p>
+<p class="muted">Then run <code>/driftproof:start</code> on a skill in your repository. For CI, <a href="#ci">npx and the GitHub Action</a> are further down.</p>
 </div>
 <p class="hero-links"><a class="cta" href="/r/${esc(exampleHash)}/">See a receipt</a> <a href="/findings/">Read the findings</a> <a href="/reports/${esc(V('latest_report_number'))}/">Read the latest report</a></p>
 <p class="gap-line">A piece by Maverick: <a href="/leaderboard-noise/">quoted AI benchmark gaps, checked against their own sampling noise</a>.</p>
@@ -295,7 +295,7 @@ ${statCards}
 <h2>Install in Claude Code</h2>
 ${plugin.map((c) => `<p>${copy(c)}</p>`).join('\n')}
 <p>That installs <code>/driftproof:start</code>, <code>/driftproof:init</code>, <code>/driftproof:run</code> and <code>/driftproof:badge</code>. The plugin hands your arguments to the pinned runner and writes the receipt that runner would have written; <code>/driftproof:run</code> spends your Claude Code subscription rather than an API key. It measures and never changes a skill's instructions. The one file it adds is a new <code>evals/evals.json</code>, from <code>/driftproof:start</code> or <code>/driftproof:init</code>, to a skill that has none, after you say yes in the run.</p>
-<p>Start with a skill you already have. In Claude Code, from the folder above it, in a git repository, run <code>/driftproof:init path/to/your-skill</code>. Claude reads your <code>SKILL.md</code> and drafts test cases with you, aimed at outcomes you would check. It adds them only after you say yes, labelled as drafted from the skill and approved by you, then runs a quick check and opens a results page: your first receipt. A quick check is a first look and cannot produce a verdict. <code>/driftproof:run</code> on a skill with no test cases offers the same draft. For a new skill, scaffold one with <code>npx driftproof init my-skill</code>, as the next section shows.</p>
+<p>Start with a skill you already have. In Claude Code, from the folder above it, in a git repository, run <code>/driftproof:start</code>. Claude lists your skills and asks which to check. If the skill has no test cases, Claude reads your <code>SKILL.md</code> and drafts test cases with you, aimed at outcomes you would check. It writes only after you say yes, then runs a quick check and opens a results page: your first receipt. Drafted cases are labelled as drafted from the skill and approved by you. A quick check is a first look and cannot produce a verdict. For a direct measurement, use <code>/driftproof:run path/to/your-skill</code>. On a skill with no test cases, it offers the same draft. For a new skill, scaffold one with <code>npx driftproof init my-skill</code>, as the next section shows.</p>
 <p>Driftproof is tested on Linux and macOS. In an outside retest on macOS the shipped gate failed only in the publishing helper, which needs GNU <code>realpath -m</code>. Windows is untested: from Node's source the plugin would not find <code>npx</code> there, but that failure has never been observed. A CI matrix across Linux, macOS and Windows is planned, and <a href="/findings/">the findings page</a> has the figures.</p>
 </section>
 
@@ -332,7 +332,7 @@ ${answers.answerLinks()}
 <section id="roadmap" class="screen is-text">
 <h2>Roadmap</h2>
 <ul>
-<li>Next: activation checks.</li>
+<li>Activation drift receipts compare recorded Skill-tool firing rates across one model or runtime version change. Fixed setup is operator-declared.</li>
 <li>Planned, not scheduled: a sandboxed execution harness for tool-execution skills (document renderers, diagram and asset generators), which <a href="/reports/${esc(V('first_report_number'))}/">Report <span data-stat="first_report_number">${esc(V('first_report_number'))}</span></a> scopes out.</li>
 </ul>
 </section>
@@ -676,6 +676,11 @@ const TERMS = [
   // nowhere to look it up.
   ['generation sampling', 'Running each arm more than once, so that a band measures the model writing a different answer and not only the judge re-reading one. A receipt that ran no generation sampling carries a legacy band, and one that ran it carries a generation band.', BANDS, 'where a band comes from'],
   ['band source (legacy, generation)', 'The label a report table puts beside a band, saying which instrument produced it. A legacy band is the judge re-scoring a single generation; a generation band is the across-draw spread of several.', BANDS, 'where a band comes from'],
+  // Spec 440 (spec 025 A-025-14): the arm spec/RECEIPT.md v0.14 adds, in spec 440's own words.
+  ['placebo arm', 'An optional third arm, answered with a text of exactly the skill text\'s length in bytes in the skill\'s place, drawn from a fixed corpus chosen without reference to any task, which can by chance bear on a case. Its reading is the verdict\'s own case rule applied to the skill against that text, given beside the verdict and never in its place.', RECEIPT_SPEC, 'the receipt specification'],
+  // Spec 438 (spec 025 A-025-14): the two fields spec/RECEIPT.md v0.15 adds, in spec 438's own words.
+  ['context file', 'Any Markdown file, such as a CLAUDE.md, an AGENTS.md or a shared rules file, measured as a subject in place of a skill. Its exact bytes are the with-skill system text and their sha256 is its content hash; the receipt records its kind as context_file.', RECEIPT_SPEC, 'the receipt specification'],
+  ['delivery', 'How a run was configured to deliver its subject, recorded on every receipt: injected, the runner puts the subject text into each with-skill request it builds; installed, a harness loaded the subject from where it was installed, which only an import says; unknown, an imported source that does not say. It records the configuration, not that a request was sent.', RECEIPT_SPEC, 'the receipt specification'],
 ];
 
 // THE QUOTED RULE IS A SENTENCE, and the template does not add to it (fix pass

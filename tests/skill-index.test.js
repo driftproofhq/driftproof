@@ -173,13 +173,15 @@ const ALIASES = { 'aws/anthropic/bedrock-claude-opus-4-8': 'claude-opus-4-8', 'o
 // its case rows left out of both arms by the shared calculation, sealed so its hash verifies and
 // validated against v0.13 (spec 267 AC-1). `skill` is the card's printed `- Skill:` value and
 // `folder` its catalog folder (spec 267 A-267-2: the identity is the folder).
+const NV_SCHEMA = readJson(path.join(ROOT, 'spec', 'receipt.v0.13.schema.json'));
+const NV_SCHEMA_VERSION = NV_SCHEMA.properties.schema_version.const;
 const NV_REASON = 'aggregates only: the source carries no per-run scores for this case, so no band can be formed';
 function draftNvidia({ skill, folder = skill, agent, model, date, tasks, attempts, rows, tokens }) {
   const dims = rows.filter((r) => r.dimension !== 'Overall');
   const cases = dims.flatMap((d) => ['with_skill', 'baseline'].map((mode) => ({ id: `dimension:${d.dimension.toLowerCase()}`, mode, label: d.dimension, case_status: 'no_observations' })));
   const calculated = comparisonOf(cases, { reasons: Object.fromEntries(cases.map((_, i) => [i, NV_REASON])) });
   const r = {
-    schema_version: RECEIPT_SCHEMA_VERSION,
+    schema_version: NV_SCHEMA_VERSION,
     skill: { name: skill, version: 'unknown', content_hash: null },
     suite: { format: 'nvidia/benchmark-card', suite_hash: null, case_count: dims.length },
     run: {
@@ -432,6 +434,9 @@ function expectedRow(entry, r, ctx) {
       const cw = e.with_skill.mean_cost_usd_per_call; const cb = e.baseline.mean_cost_usd_per_call;
       out.Tokens = [TX.T1(...fig.map((x) => String(Math.round(x)))), ...(typeof cw === 'number' && typeof cb === 'number' ? [TX.T2(cw.toFixed(4), cb.toFixed(4), TX.basis[e.basis])] : [])].join(' ');
     }
+    // A-267-21 (issue 439): T-5, a row with a Driftproof verdict ends the field with spec 077's cost
+    // sentence for its receipt, read from spec 077's oracle, when that reading shows one.
+    if (evidenceOf(r) === 'measured') { const t5 = T5(r); if (t5) out.Tokens = `${out.Tokens} ${t5}`; }
   }
   out.Freshness = freshnessOf(r, ctx.aliases, ctx.advisories).text;
   out['Skill commit'] = entry.skill_commit || TX.noCommit;
@@ -439,6 +444,15 @@ function expectedRow(entry, r, ctx) {
   return out;
 }
 const evidenceOf = (r) => (marked(r) ? 'aggregates-only' : r.verification_level === 'TESTED' ? 'measured' : 'recomputed');
+// A-267-21 (issue 439): T-5 is spec 077's capitalised cost sentence, from its oracle, given the two
+// outside facts that oracle names (the seal, and a Report 015 scope limit).
+const COST077 = require('../specs/077-cost-next-to-lift/reading.js');
+function T5(r) {
+  const sealed = (() => { try { return require('../lib/receipt').verifyReceiptHash(r); } catch { return false; } })();
+  const router = (() => { try { return !!require('../lib/report-015-publication').routerLimit(r); } catch { return 'throws'; } })();
+  const e = COST077.expected(r, { sealed, router });
+  return e.shown ? COST077.sentence(e.text) : null;
+}
 // A-267-5: a row's verb is "Measured" only on a TESTED receipt; a page's is "Measured" when any of its
 // receipts is, else "Reported".
 const verbOf = (r) => (evidenceOf(r) === 'measured' ? 'Measured' : 'Reported');
@@ -462,7 +476,7 @@ function pageTexts(ws, p, buildDate = BUILD_DATE) {
   const id = entries[0].identity;
   const ids = [...new Set(entries.map((e) => e.source))];
   const verb = pageVerb(ws, entries);
-  return ['Worth installing?', pageName(id), TX.P1(verb, pageName(id), id, sourceNames(ws, ids)), TX.G2(verb, id), TX.G3, verb+' results', ...attributionTexts(ws, ids), TX.D1, TX.B1(buildDate)];
+  return [verb === 'Measured' ? 'Worth installing?' : sourceNames(ws, ids)+"'s reported results", pageName(id), TX.P1(verb, pageName(id), id, sourceNames(ws, ids)), TX.G2(verb, id), TX.G3, verb+' results', ...attributionTexts(ws, ids), TX.D1, TX.B1(buildDate)];
 }
 function mainRest(html) {
   let rest = mainOf(html) || '';
@@ -542,6 +556,35 @@ test('fixtures: the Driftproof receipts verify and tie to Report 009\'s record, 
   }
   for (const a of SP_ARMS) assert.match(a.sha, /^[0-9a-f]{40}$/);
   assert.match(SP_COMMIT, /^[0-9a-f]{40}$/);
+});
+
+// A-267-20: historical fixtures retain the schema that defines their shape.
+test('AC-1 A-267-20: NVIDIA fixtures use the frozen v0.13 schema; version and missing-field plants', () => {
+  const Ajv = require('ajv/dist/2020');
+  const frozen = new Ajv({ allErrors: true, strict: false }).compile(NV_SCHEMA);
+  for (const n of NV) {
+    const r = n.receipt();
+    assert.equal(r.schema_version, NV_SCHEMA_VERSION, n.file + ': frozen fixture version');
+    assert.equal(Object.hasOwn(r.skill, 'unit'), false);
+    assert.equal(Object.hasOwn(r.run, 'delivery'), false);
+    assert.equal(frozen(r), true, JSON.stringify(frozen.errors));
+    assert.equal(validateReceipt(r).valid, true, n.file + ': version dispatch');
+    assert.ok(verifyReceiptHash(r));
+    const missing = structuredClone(r);
+    delete missing.run.answered_by;
+    sealReceipt(missing);
+    const old = validateReceipt(missing);
+    assert.equal(old.valid, false, 'v0.13 still requires answered_by');
+    assert.ok(old.errors.some(e => e.instancePath === '/run' && e.params?.missingProperty === 'answered_by'));
+    const restamped = structuredClone(r);
+    restamped.schema_version = RECEIPT_SCHEMA_VERSION;
+    sealReceipt(restamped);
+    assert.ok(verifyReceiptHash(restamped));
+    const current = validateReceipt(restamped);
+    assert.equal(current.valid, false, 'a current-version label cannot admit a legacy shape');
+    for (const [at, field] of [['/skill', 'unit'], ['/run', 'delivery']])
+      assert.ok(current.errors.some(e => e.instancePath === at && e.params?.missingProperty === field), field + ' remains required');
+  }
 });
 
 // ══ AC-1 ═════════════════════════════════════════════════════════════════════════════════════
@@ -978,7 +1021,7 @@ test('AC-13: titles by the ladder within spec 133 AC-3, descriptions of the fixe
   const titles = new Set(); const descs = new Set();
   for (const [p, html] of out.pages) {
     const t = titleOf(html); const d = descOf(html);
-    assert.ok(t.endsWith(' | Driftproof') && t.length <= 60, `${p}: ${t}`);
+    assert.ok(t.endsWith(' | Driftproof') && (/name="robots" content="noindex, follow"/.test(html) || t.length <= 60), `${p}: ${t}`);
     assert.doesNotMatch(t, MODEL_ID_RE); assert.doesNotMatch(d, MODEL_ID_RE);
     assert.ok(d.length <= 155, `${p}: ${d.length}`);
     assert.ok(!titles.has(t.toLowerCase()) && !descs.has(d), `${p}: unique`);
@@ -989,7 +1032,11 @@ test('AC-13: titles by the ladder within spec 133 AC-3, descriptions of the fixe
     const ids = ws.manifest.sources.filter((s) => ws.manifest.receipts.some((x) => x.source === s.id && pagePath(x.identity) === p)).map((s) => s.id);
     const verb = pageVerb(ws, ws.manifest.receipts.filter((x) => pagePath(x.identity) === p));
     assert.equal(d, TX.P1(verb, name, e.identity, sourceNames(ws, ids)), p);
-    assert.ok([`${name}: worth installing? | Driftproof`, `${name} by ${e.identity.owner}: worth installing? | Driftproof`, `${name} | Driftproof`, `${name} by ${e.identity.owner} | Driftproof`].includes(t), `${p}: ${t}`);
+    if (verb === 'Reported') {
+      const named = [...out.pages.keys()].filter(k=>k !== 'index.html' && k.split('/')[2]===name).length > 1 ? name+' by '+e.identity.owner : name;
+      assert.equal(t,named+': '+sourceNames(ws,ids)+"'s reported results | Driftproof",p);
+      assert.match(html,/<meta name="robots" content="noindex, follow">/);
+    } else assert.ok([`${name}: worth installing? | Driftproof`, `${name} by ${e.identity.owner}: worth installing? | Driftproof`, `${name} | Driftproof`, `${name} by ${e.identity.owner} | Driftproof`].includes(t), `${p}: ${t}`);
     assert.match(html, new RegExp(`<h1>${escapeRegExp(name)}</h1>`));
     assert.ok(html.includes(`<h2>${verb} results</h2>`));
   }
@@ -997,21 +1044,21 @@ test('AC-13: titles by the ladder within spec 133 AC-3, descriptions of the fixe
   const two = await build(workspace({ arms: (list) => { for (const [a, owner] of [[list[0], 'owner-x'], [list[2], 'owner-y']]) { a.identity = { owner, repo: 'shared', path: '', unit: 'skill' }; a.name = 'shared'; } } }));
   const tt = ['owner-x', 'owner-y'].map((o) => titleOf(two.pages.get(`${o}/shared/shared/index.html`)).toLowerCase());
   assert.notEqual(tt[0], tt[1]);
-  // A name of 50 characters fits no rung; an identity that puts P-1 at 156 characters: each refused.
+  // Import titles retain attribution; oversized descriptions still refuse both entry points.
   const long = 'x'.repeat(50);
-  await refusesBoth(workspace({ arms: (list) => { list[0].identity = { ...list[0].identity, repo: long }; list[0].name = long; } }), /title/);
+  await refusesBoth(workspace({ arms: (list) => { list[0].identity = { ...list[0].identity, repo: long }; list[0].name = long; } }), /description/);
   const owner = 'o'.repeat(156 - TX.P1('Reported', 'nm', { owner: '', repo: 'nm' }, 'skill-placebo').length);
   assert.equal(TX.P1('Reported', 'nm', { owner, repo: 'nm' }, 'skill-placebo').length, 156);
   await refusesBoth(workspace({ arms: (list) => { list[0].identity = { owner, repo: 'nm', path: '', unit: 'skill' }; list[0].name = 'nm'; } }), /description/);
 });
 
-test('AC-13: every committed page under docs/skills is in the sitemap', () => {
-  const sm = fs.readFileSync(path.join(ROOT, 'docs', 'sitemap-pages.xml'), 'utf8');
+test('AC-13 A-267-18: every indexable skill page is listed and every noindex skill page is absent from all sitemap children', () => {
+  const sm = ['sitemap-pages.xml','sitemap-receipts.xml'].map(p=>fs.readFileSync(path.join(ROOT,'docs',p),'utf8')).join('\n');
   const dir = path.join(ROOT, 'docs', 'skills');
   const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : e.name === 'index.html' ? [path.join(d, e.name)] : []));
   const pages = walk(dir);
   assert.ok(pages.length > 0, 'docs/skills holds pages');
-  for (const f of pages) assert.ok(sm.includes(`<loc>https://driftproofhq.com/skills/${path.relative(dir, path.dirname(f)).split(path.sep).join('/')}${path.dirname(f) === dir ? '' : '/'}</loc>`), f);
+  for (const f of pages) assert.equal(sm.includes(`<loc>https://driftproofhq.com/skills/${path.relative(dir, path.dirname(f)).split(path.sep).join('/')}${path.dirname(f) === dir ? '' : '/'}</loc>`), !/<meta name="robots" content="noindex, follow">/.test(fs.readFileSync(f,'utf8')), f);
 });
 
 // ══ AC-14, AC-14a ════════════════════════════════════════════════════════════════════════════

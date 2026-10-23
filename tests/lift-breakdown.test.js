@@ -84,8 +84,21 @@ function preservedView(h, r) {
     assert.equal((re.exec(html) || [])[0], re.exec(base)[0], name + ': differs from dev rendering');
   }
   assert.equal((html.match(LIFT_SECTION) || []).length, (base.match(/<article class="sheet" data-file=[^>]*data-state="(?!ERROR)/g) || []).length, 'one lift section per dev sheet');
-  assert.equal(pageBody(html).replace(LIFT_SECTION, ''), pageBody(base), 'page body differs from dev rendering');
+  // A-190-19 (issue 439): spec 077's Token cost row follows the lift section. It is read here against spec
+  // 077's oracle, once where that reading shows a cost and never where it does not, and set aside with it.
+  const want = cost077(r);
+  assert.deepEqual((html.match(TOKEN_ROW) || []).map((x) => x.replace(/^[\s\S]*data-field="token-cost">|<\/span><\/div>\n$/g, '')), want === null ? [] : [escView(want)], 'spec 077 token cost row');
+  assert.equal(pageBody(html).replace(LIFT_SECTION, '').replace(TOKEN_ROW, ''), pageBody(base), 'page body differs from dev rendering');
   return html;
+}
+const TOKEN_ROW = /<div class="row"><span class="k">Token cost<\/span><span class="v" data-field="token-cost">[^<]*<\/span><\/div>\n/g;
+const escView = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+function cost077(r) {
+  const C077 = require('../specs/077-cost-next-to-lift/reading.js');
+  let sealed = false; try { sealed = require('../lib/receipt').verifyReceiptHash(r); } catch { sealed = false; }
+  let router = false; try { router = !!require('../lib/report-015-publication').routerLimit(r); } catch { router = 'throws'; }
+  const e = C077.expected(r, { sealed, router });
+  return e.shown ? e.figure : null;
 }
 // The original diff fields, with the opted-in sections taken off, equal dev's.
 function preservedReport(h, a, b, opts = {}) {

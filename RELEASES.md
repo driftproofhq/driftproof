@@ -8,6 +8,248 @@ makes this one a record.
 
 ---
 
+## v0.23.1 - 2026-10-23
+
+### What's new
+
+- **`driftproof activation-drift` compares two receipts you already have to flag a skill whose
+  activation itself has drifted after a model or Claude Code update.** Give it a before and an after
+  receipt for the same plugin, case set and fixed setup, and it reports how often each case's
+  indicators fired on each side and the change in percentage points. It reads the two receipts only
+  and makes no new call; a side with fewer than 20 observed runs reads as too few to call, never a
+  verdict, however large the difference looks.
+- **A run can now add a placebo arm.** Pass `--placebo` to `driftproof run` and its receipt reads,
+  beside the skill's verdict and never folded into it, the same judge and cases applied to answers
+  given when the skill was replaced by a text of its exact length drawn from a fixed, task-blind
+  corpus. A placebo result is not shown to prove the placebo carried no information about the task,
+  and it does not explain why a skill helps when it does.
+- **Driftproof can now measure a plain Markdown file — a `CLAUDE.md`, an `AGENTS.md` or any shared
+  rules file — the same way it measures a skill.** Run `driftproof run FILE.md --suite FILE` to test
+  it on the same injection path a skill uses. Its receipt now names what kind of subject it measured
+  (skill, plugin or context file) and how it was delivered (injected, installed or unknown); `diff`,
+  `stale` and `triage` no longer treat two receipts, or a receipt and a fresh run, as one measurement
+  once their kind or delivery differs or is unknown. A report comparing rules files across projects
+  is not part of this release.
+
+### What may change for you
+
+- **A skill's measured token cost per call now sits beside its verdict.** The `decide` job summary,
+  the `driftproof view` page, every receipt page, every skill index row with a measured verdict, and
+  each skill's own result now show the mean extra input and output tokens the skill's answers cost
+  per call, next to the lift. It is not yet shown on the `run` console, the `regrade` summary,
+  `driftproof diff`, the badge, the Action's outputs, the check title, or any published report,
+  Report 015 included.
+- **The homepage and setup pages now point a new user at `/driftproof:start` first, everywhere, not
+  `:run` or `:init`.** `:run` stays available as the direct measurement command. A skill page that
+  carries only an imported result, with no Driftproof measurement of its own, now leads with
+  "`<skill>`: `<source>`'s reported results", stays linked from the skills list, but leaves search
+  indexing and the sitemap until Driftproof measures that skill itself, at which point its page and
+  indexing return automatically.
+- **Report 015's four router results (find-skills, agent-browser, hyperframes and
+  hyperframes-registry, on both tested models) now carry no verdict anywhere they're published.**
+  Each now says it has no verdict because the delegated skill was not tested, with a link to the amendment. The counts
+  themselves — 32 results: 21 clearly helped, 3 clearly hurt, 8 too few to tell (Sonnet 5.5 10/2/4,
+  Opus 5.5 11/1/4) — are unchanged.
+- **The maintainer page's upstream credits refresh to record NVIDIA/SkillEvaluator's first
+  qualifying release, v0.6.0 (2026-10-20).** The other eleven upstream credits are unchanged.
+
+### Known issues
+
+- **What is not recorded or compared.** A CLI judge's own settings files (`~/.claude/settings.json`,
+  project settings, `CLAUDE.md` files, codex's config), the eval user's shell profile behind the
+  isolated hop, other proxy, region and credential variables, and the network the call crosses can
+  all change what the judge reads or where its call goes. The receipt holds none of them.
+  `spec/RECEIPT.md` lists them.
+- **The route is recorded as an unsalted hash,** so an address that can be guessed can be recovered
+  from it.
+- **A regrade's raw judge replies are not kept,** only their hashes.
+- **A plain regrade's judge identity is self-reported, not authenticated.** The requested judge's
+  reported id comes from its own reply; it does not authenticate provider identity or measure
+  grading accuracy.
+- **`driftproof overlap` measures word overlap only.** It does not establish that a suite leaked,
+  explain a measured lift, or establish that a skill is free of overlap beyond this one comparison.
+- **`driftproof plan`'s draw targets and USD figure are estimates, not promises.** The USD figure
+  assumes fixed token counts at registry API prices; it is not an invoice or a subscription billing
+  prediction, and a long prompt can exceed it. Retries and auxiliary harness calls are not included,
+  and an actual run may stop before any projected target.
+- **`driftproof lint-suite`'s findings are evidence of risk, not proof of one.** A repeated-word or
+  answer-text finding does not assert semantic equivalence or a dollar saving, and a history finding
+  never says a future run cannot show a score lift. No findings means only that these checks found
+  none; it does not mean the suite is fair, sufficient, cheap or free of causal leakage. Its
+  answer-text check covers grading fields only; it does not check whether the model itself was
+  exposed to an answer.
+- **A `view` or `diff --lift-breakdown` reads recorded scores at the receipt's own sample size.** It
+  predicts neither a skill's future answers nor a causal mechanism, and a legacy receipt without
+  draw records, or a failed arm, yields no breakdown, with the reason stated.
+- **An NVIDIA-cards or Harbor import stays DECLARED.** `diff` reads it as NOT MEASURED, and no
+  Driftproof reader gives it a verdict, a band, a spread or a baseline the source itself did not
+  print or record.
+- **A quick first look (`driftproof run --quick`) cannot produce a verdict.** It runs a single test
+  task to show that a skill and its suite run at all, and to show that task's two answers side by
+  side; it is not a measurement of lift.
+- **A skill's Driftproof-measured result covers three text-only tasks against the recorded skill
+  bytes, model and environment only.** It does not establish general usefulness, installation
+  success, external service quality, performance on other models, or equivalence to an imported
+  benchmark. External tools, generated media and deployed services are not exercised, and a router's
+  result describes its own written answer, not the skill it delegates to.
+- **Closing your home directory (`chmod 700 ~`) stops other local users, including the eval
+  account, from reading it, but it does not cover files stored outside your home, or the target of
+  a symlink inside your home that points outside it.**
+- **Asking for a future public test does not promise that it happens, or when.** The GitHub issue it
+  opens only queues a request; whether and when a skill is tested in a future public batch is the
+  operator's call, and any maintainer tasks you offer may be edited and are reviewed before use.
+- **The guided first run's local search can come back incomplete.** If it cannot finish searching
+  your folder for a matching skill, it stops and asks you to move to the folder that holds your
+  skills, rather than guessing or showing a sample result.
+- **`driftproof activation-drift` only reads what its two input receipts declare.** It does not
+  attest what plugin bundle, model or environment was actually installed or executed, only that the
+  two sides' operator-declared fingerprints match; a receipt hash establishes integrity since
+  sealing, not authenticity.
+- **A placebo arm's text is drawn from a fixed corpus chosen without reference to any task, but it
+  can still bear on a case by chance.** The reading does not establish that the placebo carried no
+  information about the task.
+- **A context file's receipt only establishes that its exact bytes were sent on the injection path;
+  it does not establish that injection is how any file is loaded in real use, or that a context file
+  helps or harms.**
+
+### Upgrade
+
+- npm: `npx driftproof@0.23.1`. The Action: `driftproofhq/driftproof@v0.23.1`, and the stale Action
+  `driftproofhq/driftproof/stale@v0.23.1`.
+- Claude Code plugin: `claude plugin update driftproof@driftproofhq`. The plugin runs `npx
+  driftproof@0.23.1`.
+
+### Engineering log
+
+0.23.1 carries three user-facing features: `driftproof activation-drift`, which compares two
+already-recorded receipts across a model or runtime change (issue 437); an optional placebo arm on
+`run` (issue 440); and context files — any Markdown file — as a measurable subject with a delivery
+field on every receipt (issue 438). It changes two things about numbers already published: Report
+015's four router results now carry no verdict (issue 435, catalogue row C-312) and the maintainer
+page's upstream credits refresh to record NVIDIA/SkillEvaluator's first qualifying release, v0.6.0
+(issue 451, routine data refresh). A skill's measured token cost now sits beside its verdict on five
+surfaces (issue 439), and the homepage now points a new user at `/driftproof:start` first, with
+import-only pages retitled and out of search until Driftproof measures them itself (issue 434). The
+rest fixes the release sweep and its own tooling; no other number already published changes.
+
+A direct commit to `DECISIONS.md` (no PR) records 0.22.3 and 0.22.4's release: issues 408, 409, 414,
+417, 420, 423, 424 and 426 merging, and catalogue rows C-308 to C-310.
+
+Issue 431 (PR 432) fixes the public Windows CI core job, which stopped on
+`tests/answers-retention.test.js` matching `transcripts/<dir>` while Windows names it
+`transcripts\<dir>`: the test's matcher now accepts either separator, and the core job collects
+every inventoried file and reports all failures instead of stopping at the first.
+
+Issue 440 (spec 440, PR 441) adds the placebo arm described above, in receipt format 0.14
+(`receipt.placebo.schema.json`). Spec 408 also starts verifying published results against sha-pinned
+frozen copies of the judging code (A-408-14, operator ruling 21 Oct 2026).
+
+Issue 435 (spec 435, PR 442) is Report 015 Amendment 1, described above: the eight router results
+(find-skills, agent-browser, hyperframes, hyperframes-registry; both models) carry no verdict on any
+public surface, with the amendment linked. No receipt and no verdict rule changed.
+
+Issue 438 (spec 438, PR 443) adds context files as a measurable subject, described above, in receipt
+format 0.15. Part (b) of issue 438, a report comparing rules files across projects, needs paid runs
+and ships separately.
+
+Issue 434 (spec 434, PR 444) has the homepage, setup section and generated pages name
+`/driftproof:start` as the first run everywhere, never `:run` or `:init`, and retitles an
+import-only skill page to "`<skill>`: `<source>`'s reported results", with noindex and out of the
+sitemap while staying linked from `/skills/`; the next build after Driftproof measures that skill
+itself restores its "Worth installing?" title and indexing.
+
+Issue 439 (spec 077, PR 446) shows a skill's measured token cost (mean extra input and output tokens
+per call, with-skill minus baseline, grading and any third arm left out) beside its verdict on the
+`decide` job summary, the `driftproof view` page, every receipt page, every skill index row with a
+verdict, and each skill's own result. The `run` console and summary, `regrade` summary,
+`driftproof diff`, the badge, the Action's outputs, the check title and any published report,
+Report 015 included, state no figure; those surfaces are a follow-up, by operator ruling (22 Oct
+2026), because spec 408 pins `bin/driftproof` and `lib/run.js` byte for byte.
+
+A direct commit to `DECISIONS.md` (no PR) records catalogue row C-311, the issue 437 and 447
+recorded loosenings (PR 448 approval F-1, F-2).
+
+Issue 437 (spec 437, PR 448) adds `driftproof activation-drift`, described above: an offline receipt
+that compares two already-sealed DECLARED receipts' Skill-tool firing rates across one model or
+runtime-version change, for the same declared plugin, cases and fixed setup, with a sealed policy
+(`recorded-fired-rate/1`, minimum 20 runs per side).
+
+A direct commit to `DECISIONS.md` (no PR) records catalogue row C-312, spec 435's output manifest
+narrowing to Report 015's surfaces (issue 447).
+
+Issue 447 (PR 449) fixes the dev reds the 21 Oct nightly found after issues 438, 440 and 435 merged
+(specs 014, 024, 050, 051, 106, 138, 143, 173, 180 and 266, plus spec 435 `--final`). Spec 435's
+output manifest now byte-holds only Report 015's surfaces and every router carrier (catalogue row
+C-312), and binds issue 437's committed runner plan. No public page, receipt or verdict changes.
+
+A direct commit to `DECISIONS.md` (no PR) records catalogue row C-313, spec 435 AC-1 binding the
+live grading code to issue 435's delivery.
+
+Issue 246 (PR 452) has `release-message` refuse (exit 2, naming the missing input) instead of
+printing "The public push succeeded." when it was never given an explicit, valid `--result`. Every
+workflow caller already passed a result.
+
+Issue 450 (PR 453) rebinds spec 435 AC-1's preservation hold, which read PRESERVATION_BASE on plain
+dev because it compared against dev's own moving tip: it now reads issue 435's delivery against its
+first parent, as catalogue row C-313 rules, fixing a false red.
+
+Issue 451 (PR 454) is the routine upstream-credits refresh described above: the 22 Oct 2026
+observation finds the same 12 merged upstream pull requests, with NVIDIA/SkillEvaluator #190 now
+naming its first qualifying release, v0.6.0. No code, gate or spec changes; no product guarantee
+moved.
+
+Issue 455 (PR 457) has `build-sitemap.js` trace a page's words through shared merge history, so a
+merge commit that does not change a page's content leaves its date alone; before, issue 447's merge
+had left dev's page dates stale. Routine change, regression test `tests/build-sitemap.test.js`.
+
+Issue 456 (PR 458) rebinds spec 434 AC-6's preservation hold the same way as issue 450 above: it now
+reads issue 434's delivery against its first parent instead of dev's moving tip, fixing a false red.
+
+A direct commit to `DECISIONS.md` (no PR) records catalogue row C-314, the 23 Oct nightly deletions
+and the loosening rule (issue 459).
+
+Issue 459 (PR 460) fixes the 23 Oct nightly's five new reds: by Maverick's ruling (catalogue row
+C-314), it deletes spec 077's Base comparisons and spec 182 AC-19's line-range count, fixes spec
+440's placebo match to ignore output paths, and makes gates 434 and 435 print a pass/fail figure. The
+loosening rule in `CLAUDE.md` and the pipeline README now reads: nothing loosens without Maverick's
+ruling; with it, a catalogue row is enough; a builder never loosens on its own.
+
+#### The v0.23.1 merge list
+
+Nineteen merges since v0.22.4's release merge `73e107db66`, oldest first:
+
+- DECISIONS: 0.22.3 and 0.22.4 released, issues 408, 409, 414, 417, 420, 423, 424 and 426 merging,
+  and catalogue rows C-308 to C-310 recorded (direct commit, no PR): above.
+- issue 431, the public Windows CI core job reports every failing file and accepts either path
+  separator (PR 432): above.
+- issue 440, the placebo arm (PR 441): above.
+- issue 435, Report 015 Amendment 1, router results carry no verdict (PR 442): above.
+- issue 438, context files as a measurable subject and delivery on every receipt (PR 443): above.
+- issue 434, first-run guidance to `/driftproof:start` and import-only pages out of search (PR 444):
+  above.
+- issue 439, a skill's token cost shown beside its verdict (PR 446): above.
+- DECISIONS: catalogue row C-311, the issue 437 and 447 recorded loosenings (direct commit, no PR):
+  above.
+- issue 437, `driftproof activation-drift` (PR 448): above.
+- DECISIONS: catalogue row C-312, spec 435's output manifest narrowed to Report 015's surfaces
+  (direct commit, no PR): above.
+- issue 447, the dev reds from the 21 Oct nightly fixed (PR 449): above.
+- DECISIONS: catalogue row C-313, spec 435 AC-1 bound to issue 435's delivery (direct commit, no
+  PR): above.
+- issue 246, `release-message` states a push outcome only from an explicit, valid `--result` (PR
+  452): above.
+- issue 450, spec 435 AC-1's preservation hold bound to issue 435's delivery (PR 453): above.
+- issue 451, the maintainer page's upstream credits refreshed (PR 454): above.
+- issue 455, a content-unchanged merge commit leaves every page date alone (PR 457): above.
+- issue 456, spec 434 AC-6's preservation hold bound to issue 434's delivery (PR 458): above.
+- DECISIONS: catalogue row C-314, the 23 Oct nightly deletions and the loosening rule (direct
+  commit, no PR): above.
+- issue 459, the 23 Oct nightly reds and the loosening rule fixed (PR 460): above.
+
+**Merged from dev by a refresh, after the draft.** `release-prepare --stage refresh` lists every merge on dev between `4451009d66b8` and `7b95cb37f5b9`, the commit the refresh merged, so this release ships each of them, and `release-record.json`'s `source_commit` moves to `7b95cb37f5b9`, where the next release's list starts.
+
+- PR 464, merge `7b95cb37`: fix(463): version-bump couplings in 434, 435, 437, 438, 440
+
 ## v0.22.4 - 2026-10-19
 
 ### What's new

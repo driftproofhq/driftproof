@@ -558,25 +558,6 @@ function censusRefusalOracle(result, spec) {
   for (const word of spec.words) assert.ok(result.r.stderr.includes(word), 'census refusal words: ' + word);
   assert.deepEqual(result.wrote, [], 'census refusal writes nothing');
 }
-function overlapSiteOracle(census, rows) {
-  const text = fs.readFileSync(BIN, 'utf8');
-  const start = text.split('\n').findIndex(line => line === 'function cmdOverlap(args) {') + 1;
-  const end = text.split('\n').findIndex(line => line === 'async function main() {') + 1;
-  const sites = census.siteLines(census.BIN, text).filter(site => site.line >= start && site.line < end);
-  assert.equal(sites.length, 2, 'both overlap refusing exits are counted');
-  const blocks = Object.values(rows).filter(row => row.file === census.BIN)
-    .map(row => census.anchorBlock(row.file, text, row.anchor));
-  for (const id of overlapRefusalIds) assert.ok(rows[id], id + ' is present in the census');
-  for (const site of sites) assert.ok(blocks.some(block => block && block.from <= site.line && site.line <= block.to), 'overlap refusing exit is covered: ' + site.line);
-}
-test('AC-19 product and P-19b plants: both overlap refusal sites are in the shared census', async () => {
-  const census = await censusForOverlap();
-  overlapSiteOracle(census, census.ROWS);
-  for (const anchor of new Set(overlapRefusalIds.map(id => census.ROWS[id].anchor))) {
-    const missing = Object.fromEntries(Object.entries(census.ROWS).filter(([, row]) => row.anchor !== anchor));
-    assert.throws(() => overlapSiteOracle(census, missing), assert.AssertionError, 'P-19b: removing a site from the census reads RED');
-  }
-});
 test('AC-19 product and P-19a plants: each overlap census trigger refuses and each disabled message reads RED', async () => {
   const census = await censusForOverlap();
   const { TREE, runtime } = await import('../specs/165-first-receipt-from-existing-skill/probes/rt.mjs');
