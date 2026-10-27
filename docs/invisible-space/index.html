@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The invisible space AI graders got backwards | Driftproof</title>
+<link rel="stylesheet" href="/style.css">
+<!-- driftproof:card-tags -->
+<link rel="stylesheet" href="/tokens.css">
+<link rel="canonical" href="https://driftproofhq.com/invisible-space/">
+<link rel="alternate" type="application/atom+xml" title="Driftproof reports" href="/feed.xml">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-italic.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-medium.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-regular.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/courier-prime-regular.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/newsreader-variable.woff2" crossorigin="anonymous">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png" sizes="180x180">
+<link rel="icon" href="/icon-512.png" sizes="512x512" type="image/png">
+<meta name="description" content="Below are two answers to the same coding question. One is right. We showed them to the Claude graders inside three popular open-source evaluation tools…">
+<meta property="og:site_name" content="Driftproof">
+<meta property="og:title" content="The invisible space AI graders got backwards | Driftproof">
+<meta property="og:description" content="Below are two answers to the same coding question. One is right. We showed them to the Claude graders inside three popular open-source evaluation tools…">
+<meta property="og:image" content="https://driftproofhq.com/cards/page-invisible-space.28052fd5.png">
+<meta property="og:url" content="https://driftproofhq.com/invisible-space/">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "The invisible space AI graders got backwards | Driftproof",
+  "description": "Below are two answers to the same coding question. One is right. We showed them to the Claude graders inside three popular open-source evaluation tools…",
+  "url": "https://driftproofhq.com/invisible-space/",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Driftproof",
+    "url": "https://driftproofhq.com/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://driftproofhq.com/#organization",
+  "name": "Driftproof",
+  "alternateName": "driftproofhq",
+  "url": "https://driftproofhq.com/",
+  "logo": "https://driftproofhq.com/icon-512.png",
+  "description": "Driftproof (driftproofhq): open-source agent skill evaluation and regression testing across model releases",
+  "sameAs": [
+    "https://github.com/driftproofhq",
+    "https://dev.to/driftproofhq",
+    "https://www.npmjs.com/package/driftproof",
+    "https://skillsllm.com/skill/driftproof"
+  ],
+  "founder": {
+    "@id": "https://driftproofhq.com/maintainer/#maverick"
+  }
+}
+</script>
+<!-- /driftproof:card-tags -->
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "d78764dd442f49cb9bb203bd6302e9b4"}'></script><!-- End Cloudflare Web Analytics -->
+</head>
+<body>
+<!--driftproof:nav--><header class="site">
+<a class="brand" href="/"><img class="brand-mark" src="/favicon.svg" alt="" width="28" height="28"><span>Driftproof</span></a>
+<details class="nav-menu"><summary>Menu</summary></details>
+<nav class="site-nav" aria-label="Site">
+<a href="/reports/">Reports</a>
+<a href="/benchmark-gap/">Gap calculator</a>
+<a href="/leaderboard-noise/">Leaderboard noise</a>
+<a href="/skills/">Skills</a>
+<a href="/findings/">Findings</a>
+<a href="/paper/">Paper</a>
+<details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
+<a href="/#how-it-works">How it works</a>
+<a href="/methodology/">Methodology</a>
+<a href="/neutrality/">Neutrality</a>
+<a href="/interop/">Interop</a>
+<a href="/authoring/">Authoring</a>
+<a href="/judge-policy/">Judge policy</a>
+<a href="/findings/">Findings</a>
+<a href="/how-this-is-built/">How this is built</a>
+<a href="/glossary/">Glossary</a>
+<a href="/report-types/">Report types</a>
+</div></details>
+<a href="https://github.com/driftproofhq/driftproof">GitHub</a>
+</nav>
+</header><!--/driftproof:nav-->
+<!--driftproof:layout--><div class="page-grid is-reading">
+<nav class="page-toc" aria-label="On this page"><div class="rail-in"><p class="eyebrow">On this page</p><ol>
+<li><a href="#which-answer-is-correct">Which answer is correct?</a></li>
+<li><a href="#what-the-graders-did">What the graders did</a></li>
+<li><a href="#how-driftproof-found-it">How Driftproof found it</a></li>
+<li><a href="#three-tools-the-same-mistake">Three tools, the same mistake</a></li>
+<li><a href="#the-fix-say-what-s-there">The fix: say what's there</a></li>
+<li><a href="#did-it-hold-up">Did it hold up?</a></li>
+<li><a href="#before-you-reply">Before you reply</a></li>
+<li><a href="#what-we-changed">What we changed</a></li>
+<li><a href="#where-the-fixes-stand">Where the fixes stand</a></li>
+</ol></div></nav><!--/driftproof:layout-->
+<main class="prose invisible">
+<h1>The invisible&nbsp;space that AI graders got backwards</h1>
+<p class="lede">Below are two answers to the same coding question. One is right. We showed them to the Claude graders inside three popular open-source evaluation tools and Claude Code's own eval command, and they usually failed the right one and passed the wrong one, each time with a plausible-sounding reason. Try it yourself before you read on.</p>
+<p class="byline muted">Found by Driftproof (driftproofhq), 27&nbsp;October 2026</p>
+
+<!--driftproof:anchor--><span id="which-answer-is-correct" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Which answer is correct?</h2>
+<div class="card grader" data-island="grader-quiz">
+<div class="grader-task"><p class="grader-task-label">The task</p></div>
+<p class="grader-rule">Write a Python function <code>accepts(s: str) -&gt; bool</code>. It must return True exactly when <code>s</code> consists of zero or more ordinary ASCII spaces (U+0020), then the ASCII text "42", then zero or more ordinary ASCII spaces (U+0020). Every other string must return False. Other whitespace characters are not permitted.</p>
+<div class="grader-answer">
+<h3>Answer A</h3>
+<pre><code>def accepts(s: str) -&gt; bool:
+    return s.strip(" ") == "42"
+
+assert accepts("42") is True
+assert accepts(" 42 ") is True
+assert accepts("&nbsp;42&nbsp;") is False
+assert accepts("43") is False</code></pre>
+</div>
+<div class="grader-answer">
+<h3>Answer B</h3>
+<pre><code>def accepts(s: str) -&gt; bool:
+    return s.strip(" &nbsp;") == "42"
+
+assert accepts("42") is True
+assert accepts(" 42 ") is True
+assert accepts("&nbsp;42&nbsp;") is True
+assert accepts("43") is False</code></pre>
+</div>
+<div class="grader-controls" hidden>
+<p>Your verdict</p>
+<button type="button" data-pick="a" aria-pressed="false">A is correct</button>
+<button type="button" data-pick="b" aria-pressed="false">B is correct</button>
+</div>
+<div class="grader-verdict" hidden aria-live="polite"></div>
+<div class="grader-xray" hidden><label><input type="checkbox"> X-ray this page</label> <span class="grader-xray-count" aria-live="polite"></span></div>
+<p class="grader-copy" hidden><button type="button">Copy the task and both answers</button> <span>Paste it into any chatbot and see what it says.</span></p>
+<details class="grader-answer-key"><summary>Show the answer</summary>
+<p><strong>A is correct.</strong> The third test in each answer does not use ordinary spaces. It uses no-break spaces (Unicode U+00A0), which look exactly the same on screen. The task says to refuse them. A refuses them, so its test says False. B accepts them. A only looked as if it contradicted itself.</p>
+</details>
+</div>
+<p>If you picked B, you're in good company. Both answers' own tests pass when you run them. The difference is a character you can't see: a <strong>no-break space</strong>, the one typesetters use to keep "28&nbsp;October" or "Haiku&nbsp;5.5" on one line. This page has several of them in its own text, which is perfectly normal. Flip the X-ray switch above to find them. In the quiz, one of them decides the answer.</p>
+
+<!--driftproof:anchor--><span id="what-the-graders-did" class="toc-anchor"></span><!--/driftproof:anchor--><h2>What the graders did</h2>
+<p>Many evaluation tools use a second AI as the grader: it reads an answer and decides pass or fail. We gave these two answers to the graders inside three popular open-source tools, LangChain's OpenEvals, Promptfoo and NVIDIA's SkillEvaluator, with Claude Haiku&nbsp;5.5 and Claude Sonnet&nbsp;5.5 doing the grading. We ran each tool's real grading code, routed to Claude through Claude Code rather than the tool's own Anthropic connector.</p>
+<figure class="card verdict-grid">
+<div class="vg-row"><p class="vg-label">Reading the answers as written</p><div class="vg-cells" role="img" aria-label="4 right, 32 wrong"><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span></div><p class="vg-count"><strong>4</strong> of 36 right</p></div>
+<div class="vg-row"><p class="vg-label">With a list of the hidden characters</p><div class="vg-cells" role="img" aria-label="34 right, 2 wrong"><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-wrong"></span><span class="vg-cell is-wrong"></span></div><p class="vg-count"><strong>34</strong> of 36 right</p></div>
+<div class="vg-row"><p class="vg-label">Allowed to run the code</p><div class="vg-cells" role="img" aria-label="12 right, 0 wrong"><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span><span class="vg-cell is-right"></span></div><p class="vg-count"><strong>12</strong> of 12 right</p></div>
+<figcaption class="vg-key"><span class="vg-cell is-right"></span> right call <span class="vg-cell is-wrong"></span> wrong call. One square per grading decision. Top two rows: OpenEvals, Promptfoo and NVIDIA SkillEvaluator, two Claude graders, both answers, three tries each. Bottom row: Anthropic's skill-creator grader, same models, answers as written.</figcaption>
+</figure>
+<p>In the explanations we read, a common pattern was this: the grader saw two tests in A that seemed to check the same thing and expect opposite results, and decided A contradicted itself. Promptfoo's grader, with Sonnet, rejected A because its tests used "identical visible inputs", and said running them would raise an error. Running them works fine. OpenEvals' grader, with Haiku, passed B, describing the characters B strips as ordinary spaces and dismissing the third test as a duplicate.</p>
+<p>The one grader that got every as-written trial right was different. Anthropic's skill-creator grader, driven by the same two Claude models, is allowed to run code. It checked the actual file by running it, and the computer, unlike a model reading the text, could tell the two spaces apart.</p>
+
+<!--driftproof:anchor--><span id="how-driftproof-found-it" class="toc-anchor"></span><!--/driftproof:anchor--><h2>How Driftproof found it</h2>
+<p>Driftproof measures whether the instructions people give AI coding assistants actually make them better. Before any paid run, we do a small practice round to check our own grader. In the practice round for our next report, one coding question turned on this exact distinction.</p>
+<p>Our graders, Claude Haiku and Claude Sonnet, got it backwards every time: 0 of 6 correct calls each. They failed the correct answer and passed the wrong one. When we added a list of the unusual characters after the answer, Sonnet got 6 of 6 and Haiku 5 of 6. In a later run with a fuller list, Haiku got it wrong again, so our grader is now Sonnet, and we score by running tests. Everything else in the same run, including the ordinary-space cases, was graded correctly. The problem was this one character.</p>
+<p>We checked whether Claude Code itself drops the character. In a captured request from the command-line tool, it arrived byte for byte. That rules out the obvious culprit, though we haven't yet captured our own original pipeline end to end. We then rebuilt the question from scratch, the version in the quiz above, to see whether the tools other people use behave the same way.</p>
+
+<!--driftproof:anchor--><span id="three-tools-the-same-mistake" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Three tools, the same mistake</h2>
+<!--driftproof:tw--><div class="table-wrap"><table class="summary">
+<thead><tr><th scope="col">Grader</th><th scope="col">As written</th><th scope="col">With the list</th></tr></thead>
+<tbody>
+<tr><td>OpenEvals (LangChain)</td><td><span class="v v-regressed">0 of 12</span></td><td><span class="v v-improved">12 of 12</span></td></tr>
+<tr><td>Promptfoo</td><td><span class="v v-regressed">1 of 12</span></td><td><span class="v v-improved">12 of 12</span></td></tr>
+<tr><td>NVIDIA SkillEvaluator</td><td><span class="v v-regressed">3 of 12</span></td><td>10 of 12</td></tr>
+<tr><td>Anthropic skill-creator, running the code</td><td><span class="v v-improved">12 of 12</span></td><td>10 of 10 valid*</td></tr>
+</tbody>
+</table></div><!--/driftproof:tw-->
+<p class="caption">Correct calls. Each tool graded both answers three times with each model. NVIDIA's grader with Sonnet failed both answers rather than flipping them; with Haiku, two errors remained even with the list. *Two of skill-creator's twelve replies with the list broke its output format and are not counted. Every tool also graded two simple control answers without the special character correctly, 16 of 16 in all.</p>
+<p>We also read how eight popular evaluation tools hand an answer to their grader. In the grading paths we read, none adds a note pointing these characters out. A few trim the start and end of the text first, which can delete such a character when it sits at an edge.</p>
+<p>Anthropic's own eval command has the same blind spot. Claude Code's built-in <code>claude plugin eval</code> grader, judging the same two answers, got 0 of 6 right with Haiku 5.5 and 1 of 6 with Sonnet 5.5. We then wrote the identical code with the no-break space spelled out as <code>&#92;u00a0</code>, which Python reads as exactly the same program. Both graders got 6 of 6. The only thing that changed was whether the grader could see the character. Anthropic's skill-creator grader, which runs the code, got it right; this one only reads it. (<a href="https://github.com/anthropics/claude-code/issues/105497">claude-code #105497</a>)</p>
+
+<!--driftproof:anchor--><span id="the-fix-say-what-s-there" class="toc-anchor"></span><!--/driftproof:anchor--><h2>The fix: say what's there</h2>
+<p>The fix is deliberately small. Alongside the answer, after it, a short note is added that lists any unusual spaces and invisible characters, with their exact position. For answer A it reads, simplified:</p>
+<pre><code>Character facts (not a verdict):
+line 6, column 17: U+00A0 NO-BREAK SPACE
+line 6, column 20: U+00A0 NO-BREAK SPACE</code></pre>
+<p>The answer itself is never changed, and the note doesn't say the character is wrong, because sometimes it is exactly right. It only stops the grader mistaking one character for another. In all three proposed fixes it is opt-in, so nobody's existing results change unless they turn it on.</p>
+
+<!--driftproof:anchor--><span id="did-it-hold-up" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Did it hold up?</h2>
+<p>We tested the actual fix, as submitted to OpenEvals, through OpenEvals' own code:</p>
+<!--driftproof:tw--><div class="table-wrap"><table class="summary">
+<thead><tr><th scope="col">Grader</th><th scope="col">No help</th><th scope="col">General warning</th><th scope="col">The list</th></tr></thead>
+<tbody>
+<tr><td>Haiku 5.5</td><td><span class="v v-regressed">0 of 6</span></td><td><span class="v v-regressed">0 of 6</span></td><td><span class="v v-improved">6 of 6</span></td></tr>
+<tr><td>Sonnet 5.5</td><td><span class="v v-regressed">0 of 6</span></td><td>3 of 6</td><td><span class="v v-improved">6 of 6</span></td></tr>
+</tbody>
+</table></div><!--/driftproof:tw-->
+<p>A general warning about Unicode helped little: Haiku stayed at 0 of 6 and Sonnet reached 3 of 6. The exact list got both to 6 of 6. We also ran 72 control checks, including cases where unusual characters are legitimate and must be kept, and all 72 stayed correct. In these controls, the list caused no false alarms.</p>
+<p>In NVIDIA SkillEvaluator we checked whether it moves a real score. On a separate but similar question, two answers generated fresh by Claude both wrongly accepted the no-break space. NVIDIA's unmodified verifier passed both answers with both graders, with overall scores of 1.00 (Haiku) and 0.99 (Sonnet). With the list, all four false passes became correct rejections and both scores dropped to 0.75. A general warning left all four passes in place. That was one grading per combination, on replayed answers rather than a full benchmark run.</p>
+<p>It is not a cure-all. In a wider test with ten different tricky questions, written in JavaScript with different prompts, the graders got most cases right even without the list. The list fixed Haiku on the no-break space question, but it also made Haiku pass one answer that wrongly deleted a different invisible character, a case it had graded correctly without the list. And Sonnet often failed to reply in the required format, most of all with the list: 27 of 60 replies were unusable. The issues linked below set out these limits.</p>
+
+<!--driftproof:anchor--><span id="before-you-reply" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Before you reply</h2>
+<p><strong>"Just normalise the text first."</strong> Compatibility normalisation (NFKC), or collapsing whitespace, turns the no-break space into an ordinary space, and then the wrong answer looks right. On a question like this one, that throws away the evidence.</p>
+<p><strong>"A human can't see it either."</strong> Exactly. That is why a model reading text is the wrong tool for this check, and why a simple list from code helps so much.</p>
+<p><strong>"So coding benchmarks are broken?"</strong> No. The big ones, like HumanEval and SWE-bench, grade by running code against tests, and tests catch this when they include the character. It matters where an AI grader reads the code, as in MT-Bench, where 10 of the 80 questions are coding questions graded by a model.</p>
+<p><strong>"How often does this happen?"</strong> We don't know how often it changes a grade. The characters themselves are rare: none in HumanEval or MBPP, and no no-break spaces in 2,415 chatbot answers from AlpacaEval. Translation is the exception: 39 of 300 French translations in one real dataset contained them.</p>
+<p><strong>"Is this just Claude?"</strong> We tested Claude graders only. Other models may do better or worse.</p>
+
+<!--driftproof:anchor--><span id="what-we-changed" class="toc-anchor"></span><!--/driftproof:anchor--><h2>What we changed</h2>
+<p>For our next report, Driftproof grades coding answers mainly by running them against hidden tests, and those tests include the tricky characters themselves. The AI grader only covers what a test can't check. It is also what <a href="https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents">Anthropic's own guide to building evaluations</a> recommends for coding tasks.</p>
+<p>This is why Driftproof runs a practice round before every paid run: to catch the instrument being wrong before it produces a number anyone relies on.</p>
+
+<!--driftproof:anchor--><span id="where-the-fixes-stand" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Where the fixes stand</h2>
+<!--driftproof:tw--><div class="table-wrap"><table class="summary">
+<thead><tr><th scope="col">Project</th><th scope="col">Fix</th><th scope="col">Status</th></tr></thead>
+<tbody>
+<tr><td>NVIDIA SkillEvaluator</td><td><a href="https://github.com/NVIDIA/SkillEvaluator/pull/242">#242</a></td><td>Approved, not merged</td></tr>
+<tr><td>OpenEvals (LangChain)</td><td><a href="https://github.com/langchain-ai/openevals/pull/293">#293</a></td><td>Awaiting review</td></tr>
+<tr><td>Promptfoo</td><td><a href="https://github.com/promptfoo/promptfoo/pull/12005">#12005</a></td><td>Awaiting review</td></tr>
+<tr><td>Claude Code (Anthropic)</td><td><a href="https://github.com/anthropics/claude-code/issues/105497">issue #105497</a></td><td>Reported, no fix proposed</td></tr>
+</tbody>
+</table></div><!--/driftproof:tw-->
+<p class="caption">Status on 27&nbsp;October 2026. Each fix links to an issue (<a href="https://github.com/NVIDIA/SkillEvaluator/issues/241">NVIDIA #241</a>, <a href="https://github.com/langchain-ai/openevals/issues/292">OpenEvals #292</a>, <a href="https://github.com/promptfoo/promptfoo/issues/12004">Promptfoo #12004</a>) with the steps to reproduce it and the limits of what we showed.</p>
+<p>Driftproof is an open-source tool that measures whether the instructions you give an AI assistant actually help, and keeps the evidence open for anyone to check. <a href="/">See how it works</a>, or read <a href="/findings/">the problems we've found in our own tool</a>.</p>
+</main>
+<!--driftproof:layout-end--></div><!--/driftproof:layout-end-->
+<!--driftproof:foot--><footer class="site">
+<p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
+<p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/maintainer/">Maintainer</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+</footer><!--/driftproof:foot-->
+<!--driftproof:scripts--><script src="/copy-button.js" defer></script>
+<script type="module" src="/islands/loader.js"></script><!--/driftproof:scripts-->
+</body>
+</html>

@@ -8,6 +8,19 @@ makes this one a record.
 
 ---
 
+## Site push: the invisible-space article - 2026-10-27
+
+**The site moved and the package did not.** A standalone article at `/invisible-space/`, "The
+invisible space that AI graders got backwards", with its quiz, share card and a homepage link. No
+version change, no npm publish and no tag: `package.json` reads 0.23.1 and nothing under `lib/`,
+`bin/`, `spec/`, `config.js`, `config/models.json` or `package.json` differs from v0.23.1. The
+public tree is built from the v0.23.1 source plus this article only; later unreleased work on the
+source `dev` is not in it (`DECISIONS.md`, 2026-10-27, the site-only push).
+
+**No verdict, receipt field or published figure changes.**
+
+---
+
 ## v0.23.1 - 2026-10-23
 
 ### What's new

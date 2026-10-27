@@ -292,6 +292,14 @@ function cardFor(rel) {
     const hit = fs.readdirSync(dir).find((n) => want.test(n) && require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(dir, n))).digest('hex').slice(0, 8) === n.split('.').at(-2));
     return hit ? `${ORIGIN}/cards/${hit}` : CARD();
   }
+  // A standalone article's own card, when one has been drawn for it: docs/cards/page-<slug>.<hash8>.png
+  // for docs/<slug>/index.html. Every other page keeps the default card.
+  const pm = /^([a-z0-9-]+)\/index\.html$/.exec(rel);
+  if (pm && fs.existsSync(dir)) {
+    const pwant = new RegExp(`^page-${pm[1]}\\.[0-9a-f]{8}\\.png$`);
+    const phit = fs.readdirSync(dir).find((n) => pwant.test(n));
+    if (phit) return `${ORIGIN}/cards/${phit}`;
+  }
   if (!m || !fs.existsSync(dir)) return CARD();
   const want = new RegExp(`^report-${m[1]}\\.[0-9a-f]{8}\\.png$`);
   const hit = fs.readdirSync(dir).find((n) => want.test(n));

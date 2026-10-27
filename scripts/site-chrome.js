@@ -566,6 +566,10 @@ ${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('\n')}
 const SHEET_PAGES = new Set(['methodology/index.html', 'what-is-driftproof/index.html', 'maintainer/index.html',
   'glossary/index.html', 'authoring/index.html', 'paper/index.html']);
 
+// Long reads that live outside writing/ (the essay grounding allows one essay there) and still take
+// the reading column with the contents rail beside it.
+const READING_PAGES = new Set(['invisible-space/index.html']);
+
 function applyLayout(html, rel, data) {
   let out = stripBetween(html, LAYOUT_OPEN, LAYOUT_CLOSE);
   out = stripBetween(out, LAYOUT_END_OPEN, LAYOUT_END_CLOSE);
@@ -578,7 +582,7 @@ function applyLayout(html, rel, data) {
   const row = m ? (data || reportsData()).find((r) => String(r.number.value) === m[1]) : null;
   const mainTag = /<main\b([^>]*)>/.exec(out)[1];
   const cls = (/\bclass="([^"]*)"/.exec(mainTag) || [null, ''])[1].split(/\s+/);
-  const reading = (cls.includes('report') && !cls.includes('shaped')) || /^writing\//.test(rel);
+  const reading = (cls.includes('report') && !cls.includes('shaped')) || /^writing\//.test(rel) || READING_PAGES.has(rel);
   const gridCls = ['page-grid', reading ? 'is-reading' : '', cls.includes('screens') ? 'is-screens' : '', row ? 'has-facts' : '', SHEET_PAGES.has(rel) ? 'is-sheet' : ''].filter(Boolean).join(' ');
   const terms = heads.length >= 2 ? [] : termsFor(out);
   const reports = heads.length >= 2 || terms.length >= 2 || !/^writing\//.test(rel) ? [] : reportsFor(out);
