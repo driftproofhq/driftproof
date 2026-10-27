@@ -566,9 +566,10 @@ ${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('\n')}
 const SHEET_PAGES = new Set(['methodology/index.html', 'what-is-driftproof/index.html', 'maintainer/index.html',
   'glossary/index.html', 'authoring/index.html', 'paper/index.html']);
 
-// Long reads that live outside writing/ (the essay grounding allows one essay there) and still take
-// the reading column with the contents rail beside it.
-const READING_PAGES = new Set(['invisible-space/index.html']);
+// Long reads that live outside writing/ (the essay grounding allows one essay there), and prose-only
+// pages with no table, card or figure, take the reading column with the contents rail beside it.
+const READING_PAGES = new Set(['invisible-space/index.html', 'how-this-is-built/index.html',
+  'agent-skill-evaluation/index.html', 'agent-skill-regression-testing/index.html']);
 
 function applyLayout(html, rel, data) {
   let out = stripBetween(html, LAYOUT_OPEN, LAYOUT_CLOSE);
