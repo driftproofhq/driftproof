@@ -45,6 +45,7 @@
    paper-2 on accent-ink
    paper-2 on ink
    paper-2 on arm-skill
+   paper-2 on reg
    state-separated on paper
    state-separated on paper-2
    state-overlapping on paper
@@ -1204,3 +1205,75 @@ h1 code { font-size: var(--t-h3); vertical-align: 0.2em; }
     animation: hero-band-draw 600ms ease-out 1 both;
   }
 }
+
+/* ── "You be the grader" (/invisible-space/, docs/islands/grader-quiz.js) ─────────────
+   Two answers on paper, stacked at the reading measure. The buttons, the X-ray switch and the
+   verdict exist only once the island mounts; without it the page reads as a plain example. */
+.grader { margin: var(--s-4) 0; }
+.grader-rule { font-family: var(--sans); font-weight: 500; font-size: var(--t-h3); line-height: 1.35; margin: 0 0 var(--s-2); }
+.grader-answer { margin: 0 0 var(--s-3); }
+.grader-answer h3 { font-family: var(--sans); font-size: var(--t-body); font-weight: 500; margin: 0 0 var(--s-1); }
+.grader-answer pre { margin: 0; white-space: pre; overflow-x: auto; }
+.grader-answer pre code { font-size: var(--t-mono); line-height: 1.7; }
+.grader-controls { display: flex; flex-wrap: wrap; gap: var(--s-2); align-items: center; margin: var(--s-3) 0 var(--s-2); }
+.grader-controls p { margin: 0; flex-basis: 100%; font-weight: 500; }
+.grader-controls button {
+  font: inherit; font-family: var(--sans); font-weight: 500; font-size: var(--t-body); cursor: pointer;
+  min-height: var(--touch); padding: 0 var(--s-3); border-radius: var(--radius);
+  background: var(--paper-2); color: var(--ink); border: 1px solid var(--ink-muted);
+}
+.grader-controls button:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
+.grader-controls button[aria-pressed="true"] { background: var(--ink); color: var(--paper-2); border-color: var(--ink); }
+.grader-task-label { margin: 0 0 var(--s-1); font-size: var(--t-fine); color: var(--ink-muted); }
+.grader-xray { margin: var(--s-3) 0 0; font-size: var(--t-fine); color: var(--ink-muted); }
+.grader-xray label { display: inline-flex; align-items: center; gap: var(--s-1); font-weight: 500; color: var(--ink); cursor: pointer; min-height: var(--touch); }
+.grader-xray-count { display: block; }
+.grader-xray input { width: 20px; height: 20px; accent-color: var(--accent-ink); margin: 0; }
+.grader-verdict { margin: var(--s-3) 0 0; padding: var(--s-2) var(--s-3); border-left: 4px solid var(--ink-muted); background: var(--paper-2); }
+.grader-verdict p { margin: 0 0 var(--s-1); }
+.grader-verdict p:last-child { margin: 0; }
+.grader-verdict.is-wrong { border-left-color: var(--reg); }
+.grader-verdict.is-right { border-left-color: var(--accent-ink); }
+.grader-verdict-head { font-weight: 500; font-size: var(--t-h3); line-height: 1.3; }
+@media (max-width: 520px) {
+  .card.grader, .card.big-stat { padding: var(--s-2); }
+  .grader-answer pre { padding: var(--s-1) var(--s-2); }
+  .grader-answer pre code, main.invisible > pre code { font-size: 13px; }
+}
+/* In a headline the character keeps its own width: a short red bar where the space sits, with
+   the label floating above it, so revealing it never reflows the title. */
+main :is(h1, h2) mark.grader-nbsp { font-size: 0; display: inline-block; width: 0.3em; height: 0.09em; min-height: 5px; padding: 0; margin: 0 0.04em; border-radius: 2px; vertical-align: 0.2em; position: relative; }
+main h1 mark.grader-nbsp { width: 18px; }
+main :is(h1, h2) mark.grader-nbsp::after { content: "NBSP"; position: absolute; left: 50%; bottom: calc(var(--t-h1) * 0.66); transform: translateX(-50%); font: 500 12px/1 var(--sans); color: var(--paper-2); background: var(--reg); padding: 3px 5px; border-radius: var(--radius); white-space: nowrap; }
+main.is-xray mark.grader-nbsp { animation: nbsp-pop 420ms ease-out 1; }
+@keyframes nbsp-pop { from { transform: scale(0.4); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { main.is-xray mark.grader-nbsp { animation: none; } }
+mark.grader-nbsp {
+  background: var(--reg); color: var(--paper-2); font-family: var(--sans); font-size: 0.72em; font-weight: 500;
+  padding: 0.05em 0.3em; border-radius: var(--radius); vertical-align: 0.1em;
+}
+/* The copy button sits on paper beside its note. */
+.grader-copy { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) var(--s-2); margin: var(--s-3) 0 0; font-size: var(--t-fine); color: var(--ink-muted); }
+.grader-copy[hidden], .grader-controls[hidden], .grader-xray[hidden] { display: none; }
+.grader-copy button {
+  font: inherit; font-weight: 500; cursor: pointer; min-height: var(--touch); padding: 0 var(--s-2); border-radius: var(--radius);
+  background: transparent; color: var(--accent-ink); border: 1px solid var(--accent-ink);
+}
+.grader-copy button:hover { background: var(--accent-ink); color: var(--paper-2); }
+.grader-answer-key { margin: var(--s-3) 0 0; }
+.grader-answer-key summary { cursor: pointer; font-weight: 500; }
+/* One square per grading decision: filled is a right call, hollow red a wrong one, so the two
+   read apart without colour. Rows share one 18-column scale, so 12 decisions look like 12. */
+.verdict-grid { margin: var(--s-4) 0; padding: var(--s-3); }
+.vg-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "label count" "cells cells"; gap: var(--s-1) var(--s-2); align-items: baseline; margin: 0 0 var(--s-3); }
+.vg-label { grid-area: label; margin: 0; font-weight: 500; color: var(--ink); max-width: none; }
+.vg-count { grid-area: count; margin: 0; color: var(--ink-muted); white-space: nowrap; max-width: none; }
+.vg-count strong { font-family: var(--display); font-weight: 400; font-size: var(--t-h3); color: var(--ink); }
+.vg-cells { grid-area: cells; display: grid; grid-template-columns: repeat(18, minmax(0, 1fr)); gap: 4px; }
+.vg-cell { display: inline-block; aspect-ratio: 1; border-radius: 2px; }
+.vg-cells .vg-cell { width: 100%; }
+.vg-cell.is-right { background: var(--accent-ink); }
+.vg-cell.is-wrong { box-shadow: inset 0 0 0 2px var(--reg); }
+.vg-key { margin: 0; font-size: var(--t-fine); color: var(--ink-muted); line-height: 1.5; }
+.vg-key .vg-cell { width: 0.8em; height: 0.8em; vertical-align: -0.05em; margin: 0 0.2em 0 0.4em; }
+.vg-key .vg-cell:first-child { margin-left: 0; }

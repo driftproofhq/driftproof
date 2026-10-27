@@ -228,6 +228,7 @@ ${plugin.map(copy).join('\n')}
 </div>
 <p class="hero-links"><a class="cta" href="/r/${esc(exampleHash)}/">See a receipt</a> <a href="/findings/">Read the findings</a> <a href="/reports/${esc(V('latest_report_number'))}/">Read the latest report</a></p>
 <p class="gap-line">A piece by Maverick: <a href="/leaderboard-noise/">quoted AI benchmark gaps, checked against their own sampling noise</a>.</p>
+<p class="gap-line">Found by Driftproof: <a href="/invisible-space/">the invisible space that AI graders got backwards</a>. Try the quiz.</p>
 </div>
 ${heroReceipt(V, example)}
 </section>
