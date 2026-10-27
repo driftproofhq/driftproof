@@ -249,7 +249,7 @@
   --w-track: 1320px;
   --w-rail: 240px;
   --g-rail: 48px;
-  --w-read: 26.5em;
+  --w-read: 32em;
   --w-read-track: var(--w-read);
   --w-card-min: 300px;
   --w-col-min: 420px;
@@ -321,6 +321,40 @@
     --t-stat: 30px;
     --pad-x: 20px;
     --section-y: 36px;
+  }
+}
+/* Wide screens: from 1024px the whole scale grows with the window, by 1 + (width - 1024) / 3584 up to
+   1.25 at 1920px, so type, spacing, the reading column and the rail keep their proportions instead of
+   sitting small in the middle of a large screen. Lines stay near 65 characters: the measure is in em. */
+@media (min-width: 1024px) {
+  :root {
+    --t-h1: clamp(56px, calc(40px + 1.56vw), 70px);
+    --t-h1-page: clamp(44px, calc(31.43px + 1.23vw), 55px);
+    --t-h2: clamp(36px, calc(25.71px + 1vw), 45px);
+    --t-h3: clamp(22px, calc(15.71px + 0.61vw), 27.5px);
+    --t-report-title: clamp(30px, calc(21.43px + 0.84vw), 37.5px);
+    --t-receipt-heading: clamp(26px, calc(18.57px + 0.73vw), 32.5px);
+    --t-receipt-date: clamp(20px, calc(14.29px + 0.56vw), 25px);
+    --t-stat: clamp(38px, calc(27.14px + 1.06vw), 47.5px);
+    --t-body: clamp(18px, calc(12.86px + 0.5vw), 22.5px);
+    --t-verdict: clamp(24px, calc(17.14px + 0.67vw), 30px);
+    --t-mono: clamp(15px, calc(10.71px + 0.42vw), 18.75px);
+    --t-fine: clamp(15px, calc(10.71px + 0.42vw), 18.75px);
+    --t-mono-sm: clamp(14px, calc(10px + 0.39vw), 17.5px);
+    --t-eyebrow: clamp(15px, calc(10.71px + 0.42vw), 18.75px);
+    --s-1: clamp(8px, calc(5.71px + 0.22vw), 10px);
+    --s-2: clamp(16px, calc(11.43px + 0.45vw), 20px);
+    --s-3: clamp(24px, calc(17.14px + 0.67vw), 30px);
+    --s-4: clamp(32px, calc(22.86px + 0.89vw), 40px);
+    --s-5: clamp(40px, calc(28.57px + 1.12vw), 50px);
+    --s-6: clamp(48px, calc(34.29px + 1.34vw), 60px);
+    --s-8: clamp(64px, calc(45.71px + 1.79vw), 80px);
+    --pad-x: clamp(32px, calc(22.86px + 0.89vw), 40px);
+    --section-y: clamp(64px, calc(45.71px + 1.79vw), 80px);
+    --w-wide: clamp(1200px, calc(857.14px + 33.48vw), 1500px);
+    --w-track: clamp(1320px, calc(942.86px + 36.83vw), 1650px);
+    --w-rail: clamp(240px, calc(171.43px + 6.7vw), 300px);
+    --g-rail: clamp(48px, calc(34.29px + 1.34vw), 60px);
   }
 }
 /* Measurement layout shares the main palette and type. */
@@ -496,14 +530,23 @@ pre code { background: none; border: 0; padding: 0; font-size: var(--t-mono-sm);
 .rail-cite { background: var(--deep); color: var(--shell-text); margin: 0; padding: var(--s-1) var(--s-2); font-size: var(--t-mono-sm); line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
 .rail-cite code { font-size: var(--t-mono-sm); white-space: inherit; overflow-wrap: inherit; }
 @media (min-width: 1024px) {
-  .page-grid { grid-template-columns: minmax(0, 1fr) var(--w-rail); column-gap: var(--g-rail); }
-  .page-grid > main { grid-column: 1; grid-row: 1; margin: 0; }
-  .page-grid > .page-toc { display: block; grid-column: 2; grid-row: 1; padding-top: var(--s-6); }
+  /* One frame with the header: the grid's content edges are the logo's and the last nav link's (a long
+     read takes the 1200px frame, every other page the wider one, as the header does). The rails sit on the left, under the logo, and the page runs beside them (Maverick, 28 Oct 2026). */
+  .page-grid { max-width: var(--w-grid); grid-template-columns: var(--w-rail) minmax(0, 1fr); column-gap: var(--g-rail); }
+  .page-grid.is-reading { max-width: var(--w-wide); }
+  .page-grid > main { grid-column: 2; grid-row: 1; margin: 0; }
+  .page-grid > .page-toc { display: block; grid-column: 1; grid-row: 1; padding-top: var(--s-6); }
   .page-grid.has-facts { grid-template-rows: auto 1fr; }
   .page-grid.has-facts > main { grid-row: 1 / span 2; }
-  .page-grid.has-facts > .facts-rail { display: block; grid-column: 2; grid-row: 1; padding-top: var(--s-6); }
+  .page-grid.has-facts > .facts-rail { display: block; grid-column: 1; grid-row: 1; padding-top: var(--s-6); }
   .page-grid.has-facts > .facts-rail .rail-in { position: static; max-height: none; }
   .page-grid.has-facts > .page-toc { grid-row: 2; padding-top: var(--s-3); }
+  /* A page with no rail takes the whole frame. */
+  .page-grid:not(:has(> .page-toc, > .facts-rail)) { grid-template-columns: minmax(0, 1fr); }
+  .page-grid:not(:has(> .page-toc, > .facts-rail)) > main { grid-column: 1; }
+  /* A long read sets its text a size up, at a measure near 70 characters, cards held to the same line. */
+  .page-grid.is-reading > main { font-size: min(1.12em, 23px); max-width: 36em; }
+  .page-grid.is-reading p, .page-grid.is-reading li, .page-grid.is-reading dd { max-width: 34em; }
 }
 
 /* TEXT GRIDS: a track wider than the reading measure is filled by columns, each column's text held
@@ -752,6 +795,8 @@ footer.site a, .foot-links a { color: var(--shell-muted); }
 footer.site a:hover { color: var(--shell-text); }
 /* On a page with the content column and its rail, the nav and the footer line up with that grid. */
 html:has(.page-grid:not(.is-reading)) :is(header.site, footer.site) { padding-left: max(var(--pad-x), calc((100% - var(--w-grid)) / 2 + var(--pad-x))); padding-right: max(var(--pad-x), calc((100% - var(--w-grid)) / 2 + var(--pad-x))); }
+/* The measurement pages hold their own frame; the header and footer follow it so the edges line up. */
+html:is(:has(body.measurement-ui .page-grid:not(.is-reading)), :has(.page-grid:not(.is-reading) > .skill-lookup-page)) :is(header.site, footer.site) { padding-left: max(var(--pad-x), calc((100% - var(--w-measure-wide)) / 2 + var(--pad-x))); padding-right: max(var(--pad-x), calc((100% - var(--w-measure-wide)) / 2 + var(--pad-x))); }
 
 /* ── section rhythm ───────────────────────────────────────────────────────────
    Sections stand 64px apart on a desktop and 36px on a phone (spec 170), with a hairline between
