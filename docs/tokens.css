@@ -119,10 +119,10 @@
   --t-measure-section: 32px;
   --t-measure-body: 20px;
   --t-measure-fine: 16px;
-  --w-measure-read: 68ch;
+  --w-measure-read: 26.5em;
   --w-measure-wide: 1320px;
   --w-measure-chart: 20ch;
-  --w-measure-intro: 45ch;
+  --w-measure-intro: var(--w-measure-read);
   --measure-font: var(--sans);
   --t-measure-count: 24px;
   --measure-bar: 12px;
@@ -237,19 +237,25 @@
   --w-plot: 560px;
   --w-measure: 38em;
   /* the site-wide layout (spec 125). The track is the widest a page's content runs; the rails sit
-     beside it, the contents rail from 1180px and the facts rail from 1600px. Running text is held at
+     beside it from 1024px, with contents and report facts in the left column. Running text is held at
      the reading measure; a frozen report body, which the chrome may not regroup, takes a track of the
      reading measure itself, so a block set in the smallest text size still fills more than three
      quarters of it. A text grid's column is never narrower than --w-card-min, or --w-col-min where
      two columns share the track; a short label beside its text takes --w-label.
      The measure is in em, the block's own font size, so it holds the same characters a line at every
-     size: 26.5em is about 68 in the body face, read from its average glyph by spec 125's gate
-     (A-125-9). It was 50ch: the capture browser resolved a ch to about 0.6em at 14 and 15px, wider
-     than the body face's "0", so small text ran to 73 and 79 characters a line (spec 130). */
+     size. Below 1024px the body uses 26.5em and Newsreader 27.5em, within 64 to 72 characters.
+     From 1024px the body uses 32em and long reads 32.9em, within 64 to 85. Italic card labels
+     use their own narrower measure. Spec 125 reads the committed fonts and the rendered faces. */
   --w-track: 1320px;
   --w-rail: 240px;
   --g-rail: 48px;
-  --w-read: 32em;
+  --w-read: 26.5em;
+  --w-read-long: 32.9em;
+  --w-read-display: 27.5em;
+  --w-read-mono: 41em;
+  --w-read-italic: 25em;
+  --w-read-main: 36em;
+  --t-read-body: min(1.12em, 23px);
   --w-read-track: var(--w-read);
   --w-card-min: 300px;
   --w-col-min: 420px;
@@ -325,9 +331,14 @@
 }
 /* Wide screens: from 1024px the whole scale grows with the window, by 1 + (width - 1024) / 3584 up to
    1.25 at 1920px, so type, spacing, the reading column and the rail keep their proportions instead of
-   sitting small in the middle of a large screen. Lines stay near 65 characters: the measure is in em. */
+   sitting small in the middle of a large screen. Reading measures hold 64 to 85 characters from
+   1024px; below that breakpoint they hold 64 to 72. The measure scales with the type. */
 @media (min-width: 1024px) {
   :root {
+    --w-read: 32em;
+    --w-measure-read: 32em;
+    --w-read-display: 32em;
+    --w-read-italic: 29em;
     --t-h1: clamp(56px, calc(40px + 1.56vw), 70px);
     --t-h1-page: clamp(44px, calc(31.43px + 1.23vw), 55px);
     --t-h2: clamp(36px, calc(25.71px + 1vw), 45px);
@@ -361,6 +372,10 @@
 body.measurement-ui {
   --w-read: var(--w-measure-read);
 }
+.page-grid :is(.receipt-heading, .headline .big) { --w-read: var(--w-read-display); }
+.page-grid .card-type { --w-read: var(--w-read-italic); --w-read-long: var(--w-read); }
+.page-grid.is-reading .report-type { --w-read-long: var(--w-read); }
+.skill-row dd { --w-read: var(--w-read-mono); --w-read-long: var(--w-read); }
 /* driftproof:/tokens */
 
 /* ── self-hosted type ─────────────────────────────────────────────────────────
@@ -493,7 +508,7 @@ pre code { background: none; border: 0; padding: 0; font-size: var(--t-mono-sm);
 
 /* ── the page grid (spec 125, restyled by spec 170) ───────────────────────────
    EVERY PAGE BUT THE HOMEPAGE sits in one wrapper the chrome writes around <main>, outside it, so
-   no report body moves. From 1024px the content track has one rail on its right, on surface: on a
+   no report body moves. From 1024px the content track has one rail on its left, on surface: on a
    report page the facts rail first (its facts and its BibTeX) and the contents rail under it, which
    stays in view as the page scrolls; elsewhere the contents rail alone. The contents rail still comes
    before <main> in the markup and the facts rail after it (spec 125 AC-3, AC-4): the grid places
@@ -544,9 +559,9 @@ pre code { background: none; border: 0; padding: 0; font-size: var(--t-mono-sm);
   /* A page with no rail takes the whole frame. */
   .page-grid:not(:has(> .page-toc, > .facts-rail)) { grid-template-columns: minmax(0, 1fr); }
   .page-grid:not(:has(> .page-toc, > .facts-rail)) > main { grid-column: 1; }
-  /* A long read sets its text a size up, at a measure near 70 characters, cards held to the same line. */
-  .page-grid.is-reading > main { font-size: min(1.12em, 23px); max-width: 36em; }
-  .page-grid.is-reading p, .page-grid.is-reading li, .page-grid.is-reading dd { max-width: 34em; }
+  /* Long reads use larger type and stay within the wide-screen band of 64 to 85 characters. */
+  .page-grid.is-reading > main { font-size: var(--t-read-body); max-width: var(--w-read-main); }
+  .page-grid.is-reading p, .page-grid.is-reading li, .page-grid.is-reading dd { max-width: var(--w-read-long); }
 }
 
 /* TEXT GRIDS: a track wider than the reading measure is filled by columns, each column's text held
@@ -683,6 +698,11 @@ main.shaped > h2 { margin-top: 2.5rem; }
 
 /* A page of full-width sections pads each section itself. */
 .page-grid.is-screens { padding: 0; }
+
+@media (min-width: 1024px) {
+  .page-grid.is-screens { padding: 0 var(--pad-x); }
+  .page-grid:not(:has(> .page-toc, > .facts-rail)) > main { max-width: none; }
+}
 
 /* A RECEIPT PAGE is one sheet on the track, and lays its sections in two columns once the track is
    wide enough for two: the title across both, the lede beside the run's facts, and each pair of
