@@ -4,8 +4,7 @@
 //
 // The page is complete before this runs: the task, both answers and the answer itself (inside a
 // <details>) are static HTML, so with scripts off the reader still gets the whole story. Mounting
-// adds two buttons to pick an answer, the verdict for that pick, an X-ray switch, and a button that
-// copies the task and both answers with their hidden characters intact.
+// adds two buttons to pick an answer, the verdict for that pick, and an X-ray switch.
 //
 // The X-ray covers the whole article, not only the quiz: the page's own text carries no-break
 // spaces where a typesetter would put them ("28 October", "Haiku 5.5", one in the headline), and
@@ -70,7 +69,6 @@ export function mount(el) {
   const xray = el.querySelector('.grader-xray');
   const toggle = xray && xray.querySelector('input');
   const count = xray && xray.querySelector('.grader-xray-count');
-  const copy = el.querySelector('.grader-copy');
   if (!controls || !out || !toggle) return;
   el.dataset.mounted = '1';
 
@@ -101,21 +99,4 @@ export function mount(el) {
   controls.hidden = false;
   xray.hidden = false;
 
-  if (copy && navigator.clipboard && navigator.clipboard.writeText) {
-    copy.hidden = false;
-    const btn = copy.querySelector('button');
-    btn.addEventListener('click', () => {
-      const wasOn = toggle.checked;
-      setXray(false);
-      const task = (el.querySelector('.grader-rule') || {}).textContent || '';
-      const answers = [...el.querySelectorAll('.grader-answer')].map((a) => `${a.querySelector('h3').textContent}\n${a.querySelector('code').textContent}`);
-      const text = `${task.trim()}\n\nWhich answer is correct, A or B? Explain briefly.\n\n${answers.join('\n\n')}`;
-      setXray(wasOn);
-      navigator.clipboard.writeText(text).then(() => {
-        const was = btn.textContent;
-        btn.textContent = 'Copied, hidden characters included';
-        setTimeout(() => { btn.textContent = was; }, 2200);
-      }, () => {});
-    });
-  }
 }
