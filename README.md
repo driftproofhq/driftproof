@@ -24,15 +24,13 @@ measures a skill in your repository and writes its receipt. It runs on your
 Claude Code subscription. You need Node.js 22 or later.
 [Other ways to install](#install) · [Measure your own skill](#quickstart-receipt-for-your-own-skill)
 
-**Latest finding** · [Report 015](https://driftproofhq.com/reports/015/), 18 Oct
-2026: for the Skills.sh snapshot 2026-10-17: text tasks by Driftproof; Haiku 5.5
-judge; eval account checked before/after runs, not during: Sonnet 5.5 10 helped,
-2 hurt, 4 too few answers; Opus 5.5 11 helped, 1 hurt, 4 too few answers.
+**Latest finding** · [Report 016](https://driftproofhq.com/reports/016/), 28 Oct
+2026: on Haiku, six made it write more than the fakes did; Sonnet was mixed.
 
 [![driftproof](https://img.shields.io/endpoint?url=https://driftproofhq.com/badges/commit-message-conventions.json)](https://driftproofhq.com)
 live badge for the bundled example, generated from its own receipt.
 
-[All fourteen reports](#reports) · [driftproofhq.com](https://driftproofhq.com)
+[All fifteen reports](#reports) · [driftproofhq.com](https://driftproofhq.com)
 
 ![The page driftproof view makes from Report 013's receipts: three skills by three models, each result in plain words: clearly helped, no clear difference, or too few answers to tell.](https://driftproofhq.com/assets/view-report-013.png)
 The page `npx driftproof view` makes from [Report 013's
@@ -430,6 +428,14 @@ A skill directory's `.driftproofrc` may not set
 directory is the skill directory, its `.driftproofrc` is the skill's, so
 `samples` and `max_cases` are ignored there too.
 
+`driftproof run` also accepts `--timeout <seconds>` for every generation and
+judge attempt on every surface. Give a positive integer with no leading zero,
+within Node's timer bound, shown by `driftproof --help`. Each retry gets that
+limit; retry counts and backoff
+stay unchanged. The receipt seals the setting as `run.timeout_ms`, in
+milliseconds. Without the flag, each surface keeps its current default.
+The flag works with `--quick` and keeps its sampling and UNVERIFIED level.
+
 ### What a run prints
 
 While a run works it prints one line to stderr when a draw's answer has been
@@ -574,7 +580,7 @@ A receipt is the unit of evidence — one JSON document conforming to
     "model_release_date": "2025-10-01",
     "provider": "anthropic",
     "surface": "claude-cli",
-    "runner_version": "0.23.1",
+    "runner_version": "0.24.0",
     "date_utc": "2026-07-27T…Z",
     "registry": "registered",
     "transcripts": "hashes-only",
@@ -654,7 +660,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: driftproofhq/driftproof@v0.23.1
+      - uses: driftproofhq/driftproof@v0.24.0
         with:
           skill-dir: skills/my-skill
           models: claude-haiku-4-5
@@ -782,7 +788,7 @@ permissions:
   contents: read
   issues: write
 # ...
-      - uses: driftproofhq/driftproof/stale@v0.23.1
+      - uses: driftproofhq/driftproof/stale@v0.24.0
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill
@@ -829,7 +835,7 @@ site, so it reflects a real dated run, not a hand-set color.
 
 ## Reports
 
-Fourteen reports are published, spanning seven report types. A report page lives at a
+Fifteen reports are published, spanning eight report types. A report page lives at a
 draft path — `docs/reports/NNN-draft/` — until the publish sequence renames it, and
 `scripts/build-public.sh` excludes every `*-draft/` path from the published tree
 (see the roll below, and
@@ -840,13 +846,10 @@ under [`receipts/`](receipts/)
 Report #010 takes no Driftproof measurement and has no receipts: it is re-derived
 from the upstream harness's output files, published beside its page.
 
-📊 **Fourteen published reports** (each re-derived from committed files, nothing
+📊 **Fifteen published reports** (each re-derived from committed files, nothing
 hand-entered: Driftproof's receipts, or for Report #010 the upstream harness's own
-output), spanning seven published report types, the newest being instrument
-comparison. The twelve that measure with Driftproof read its own arms by one
-band-based, floor-gated verdict rule and differ in what moves underneath the
-skill — or, in the value report, in which axes are measured; or, in the instrument re-measurement, in the
-instrument itself; or, in the instrument comparison, in which instrument measures:
+output), spanning eight published report types, the newest being rules-file behaviour. Reports that measure with Driftproof retain its correctness reader. The rules-file behaviour report also compares output tokens and code with paired task intervals:
+
 
 - **[Report #001](https://driftproofhq.com/reports/001/)** — *release drift*: ten
   public agent skills across a current-vs-previous Sonnet release; 9 of 10 showed
@@ -947,10 +950,11 @@ instrument itself; or, in the instrument comparison, in which instrument measure
 
 <!--driftproof:campaign-readme-->
 - **[Report #015: Skills.sh snapshot 2026-10-17: text tasks](https://driftproofhq.com/reports/015/)**: three text tasks per skill, written by Driftproof from the pinned skill descriptions. Both model sets use Haiku 5.5 as judge. Eligible receipts carry their per-task verdicts and the report names the tasks behind them. The four router subjects have no verdict in this revision; the report amendment explains why. The eval account was checked before and after each run, not during it.
+- **[Report #016](https://driftproofhq.com/reports/016/)**: *rules-file behaviour*. Seven popular rules files against no file and same-length fakes. File-to-fake output comparisons: 6 haiku increases · 1 haiku unclear · 3 sonnet increases · 2 sonnet decreases · 2 sonnet unclear. These are behaviour changes, not correctness verdicts, on small tasks with injected instructions.
 <!--/driftproof:campaign-readme-->
 
 ✍️ The launch essay, **[Three model releases later: what actually happens to agent
-skills](https://driftproofhq.com/writing/three-releases/)**, reads all fourteen reports
+skills](https://driftproofhq.com/writing/three-releases/)**, reads all fifteen reports
 together: what moves underneath a skill, what the skill costs to run, and what a
 corrected instrument did to three published results. Revised 2026-10-07; every
 figure in it is gate-checked against the report page it cites.
@@ -1005,3 +1009,20 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). The gate (`npm run gate`) must stay gree
 ## License
 
 [Apache-2.0](LICENSE).
+
+## Repository measurements
+
+Live repository mode uses the Claude subscription CLI with coding tools in a
+confined copy of a pinned starter. It retains the reply, captured text changes,
+tool evidence and omissions. Stub runs simulate this and prove no execution.
+
+R-2 scores 19 tasks by hidden tests on the final workspace. Sonnet grades test
+quality separately; TypeScript stays judge-only. Sonnet judges both targets,
+with self-grading and observed judge errors disclosed.
+
+Pause saves completed phases; a draw may be partly judged. Compatible resume
+reuses saved work. See the [operator procedure](specs/490-repository-capture/operator.md)
+for admission, limits and commands, and the
+[receipt specification](spec/RECEIPT.md#issue-490-repository-capture-and-resumable-runs)
+for the evidence contract. The admission probe includes one subscription model
+call and requires `--subscription-auth`.

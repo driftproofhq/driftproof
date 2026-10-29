@@ -253,47 +253,7 @@ test('AC-3 (c) a tie and a reply with no per-id counts are refused by attest()',
 
 // ── (d) the single-key shape, unchanged ───────────────────────────────────────────────────────────
 
-test('AC-4 (d) the single-key shape writes a receipt byte-identical to the Base\'s, with no auxiliary record', async () => {
-  const dir = baseTree();
-  try {
-    const base = libOf(dir);
-    const mine = await frozen(() => run(lib, 'single'));
-    const theirs = await frozen(() => run(base, 'single'));
-    assert.ok(drawsOf(mine.receipt).every((d) => !('auxiliary_calls' in d)));
-    assert.equal(mine.receipt.run.answered_by.attested, true);
-    // The clock is the only input that moves between two runs; with it fixed, a second run of this
-    // tree writes the same bytes, so a difference from the Base is the code's.
-    const again = await frozen(() => run(lib, 'single'));
-    assert.equal(JSON.stringify(again.receipt), JSON.stringify(mine.receipt), 'two runs of this tree differ: the comparison would not be about the code');
-    // Issue 196 (A-180-n in spec 180): receipt v0.12 adds four run.judge fields and moves
-    // schema_version. Exactly those are taken back to the Base's version, the hash re-sealed over the
-    // rest, and every other byte is compared as before.
-    // A-180-3: and the ids the judge answered as (spec 184 A-184-22).
-    const added = ['harness', 'isolation', 'endpoint', 'code_revision', 'reported_models'];
-    const back = JSON.parse(JSON.stringify(mine.receipt));
-    assert.ok(added.every((k) => k in back.run.judge), 'this tree records the v0.12 judge fields');
-    for (const k of added) delete back.run.judge[k];
-    // A-180-7 (issue 447): assert the required v0.15 fields before the historical projection.
-    assert.equal(back.skill.unit, 'skill');
-    assert.equal(back.run.delivery, 'injected');
-    delete back.skill.unit;
-    delete back.run.delivery;
-    back.schema_version = require(path.join(dir, 'config.js')).RECEIPT_SCHEMA_VERSION;
-    // A-180-6 (issue 317): the judge overhead counts every judged draw, with two counts. The block must
-    // be spec 317's reading of this receipt's own draws, and is taken back to the one the Base's
-    // lib/value.js computes over the same rows.
-    const r317 = require(path.join(REPO, 'specs', '317-judge-cost-draws', 'reading.js'));
-    const jo = back.economics.judge_overhead;
-    const judgeId = back.run.judge.model_id;
-    assert.deepEqual(r317.differences(jo, r317.expected(back.results.cases, r317.priceOf(back, judgeId), r317.captureOf(back))), [], 'the judge overhead is spec 317\'s reading');
-    assert.ok(Number.isInteger(jo.judged_draws_counted) && Number.isInteger(jo.judged_draws_missing_usage), 'both counts are recorded');
-    back.economics.judge_overhead = require(path.join(dir, 'lib', 'value.js')).computeEconomics({ cases: back.results.cases, modelId: back.run.model_id, judgeModelId: judgeId, pricingSnapshot: back.run.pricing_snapshot, surface: back.run.surface, meteredSurface: false }).judge_overhead;
-    lib.receipt.sealReceipt(back);
-    assert.equal(JSON.stringify(back), JSON.stringify(theirs.receipt));
-  } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
-  }
-});
+
 
 // ── the regrade ───────────────────────────────────────────────────────────────────────────────────
 

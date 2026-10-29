@@ -8,11 +8,9 @@ Pillow, and nothing is added to package.json. That is the point — a project wh
 whole runtime dependency set is ajv does not acquire a native image pipeline to
 draw one rectangle.
 
-WHAT IS DELIBERATELY NOT ON THE CARD: any number, verdict, count or report
-reference. Figures go stale — "six published reports" was wrong the day #007
-landed — and unlike page copy, an image cannot be gate-checked. The card carries
-only what stays true. This is the same failure class as the hand-maintained
-sitemap: state that drifts with nothing watching it.
+Issue 501, Maverick ruling of 29 Oct 2026: link-preview cards may carry numbers
+site-wide when built from the same verified data as the page. The default card
+keeps its enduring copy. Report 016 draws its figures from the offline analyzer.
 
 Output is deterministic: the gate asserts the committed card is byte-identical
 to a fresh run of this script.
@@ -25,6 +23,8 @@ import io
 import os
 import re
 import sys
+import json
+import subprocess
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -271,6 +271,8 @@ def build_report(out_dir, number, rtype, models, counts):
     the old one. Written to a temporary name first because the name is not
     knowable until the bytes exist.
     """
+    if number == "016":
+        return build_story(out_dir)
     img = Image.new("RGB", (W, H), PAPER)
     d = ImageDraw.Draw(img)
     bold = display_font(104, FONTS_ARG[0])
@@ -383,6 +385,92 @@ def build_icons(out_dir):
     return written
 
 
+def story_font(name, size):
+    from fontTools.ttLib import TTFont
+    f = TTFont(os.path.join(FONTS_DIR, name + ".woff2"))
+    f.flavor = None
+    buf = io.BytesIO()
+    f.save(buf)
+    buf.seek(0)
+    return ImageFont.truetype(buf, size)
+
+
+def story_data():
+    return json.loads(subprocess.check_output(["node", os.path.join(HERE, "analyze-report-016.js")], cwd=os.path.join(HERE, "..")))
+
+
+def build_story(out_dir, table=False):
+    a = story_data()
+    rgb = _tokens()
+    ground, text, muted = rgb("desk"), rgb("shell-text"), rgb("shell-muted")
+    blue, hay = rgb("shell-accent"), rgb("story-hay")
+    img = Image.new("RGB", (1200, 675 if table else 630), ground)
+    d = ImageDraw.Draw(img)
+    serif = story_font("newsreader-variable", 56 if not table else 36)
+    sans = story_font("alegreya-sans-regular", 23 if not table else 20)
+    small = story_font("alegreya-sans-regular", 17)
+    def name(p):
+        return p["repository"].split("/")[-1] + (" " + p["kind"] if "learn-harness" in p["repository"] else "")
+    if table:
+        d.rectangle((20, 14, 1180, 661), fill=rgb("sheet"))
+        text, muted, blue = rgb("ink"), rgb("ink-muted"), rgb("accent-ink")
+    d.text((40, 24), "Driftproof / Report 016", font=sans, fill=muted)
+    if not table:
+        title = "Popular rules files vs. a placebo: most made Claude write more"
+        y = 108
+        for line in wrap(d, title, serif, 490):
+            d.text((40, y), line, font=serif, fill=text)
+            y += 59
+        jobs = [j for j in a["jobs"] if "haiku" in j["model"]]
+        up = sum(j["metrics"]["out"]["file_minus_placebo"]["direction"] == "up" for j in jobs)
+        d.text((40, 472), "%s of %s on Haiku. Sonnet was mixed." % (up, len(jobs)), font=sans, fill=text)
+        d.text((40, 516), "Small coding tasks. Injected rules.", font=sans, fill=muted)
+        d.text((40, 548), "None made code clearly longer.", font=sans, fill=muted)
+        scale = max(j["metrics"]["out"]["means"]["with_skill"] for j in jobs)
+        d.text((620, 77), "Haiku / mean output tokens", font=sans, fill=text)
+        for i, j in enumerate(jobs):
+            p = next(p for p in a["picks"] if p["slot"] == j["slot"])
+            m = j["metrics"]["out"]; diff = m["file_minus_placebo"]
+            y = 126 + i * 59
+            d.text((620, y), name(p), font=small, fill=text)
+            label = ("%+.0f%%" % diff["percent"]) if diff["direction"] != "unclear" else "Can't tell"
+            d.text((1080, y), label, font=small, fill=blue if diff["direction"] != "unclear" else muted)
+            d.rectangle((620, y+25, 620+390*m["means"]["placebo"]/scale, y+30), fill=hay)
+            d.rectangle((620, y+34, 620+390*m["means"]["with_skill"]/scale, y+43), fill=blue)
+        d.text((620, 566), "Hay: fake   Blue: file   Paired 95% intervals on page", font=small, fill=muted)
+        return _write_hashed(img, out_dir, "report-016")
+    d.text((40, 62), "What each file asks for, and what changed", font=serif, fill=text)
+    heads = [(40,"File"),(230,"Its own words"),(720,"Haiku"),(960,"Sonnet")]
+    for x,label in heads: d.text((x,112),label,font=sans,fill=muted)
+    for x in [700,940]:
+        d.text((x,142),"Output       Code",font=small,fill=muted)
+    quotes = a["quotes"]
+    for i,p in enumerate(a["picks"]):
+        y = 181+i*61
+        for k,line in enumerate(wrap(d,name(p),small,175)): d.text((40,y+k*18),line,font=small,fill=text)
+        q=quotes[p["slot"]]
+        if p["slot"] == "claude-2":
+            cjk=story_font("noto-sans-sc-report016",20)
+            x=230
+            for part,font in [("启用「",cjk),("ultrathink",small),("」深度思考",cjk)]:
+                d.text((x,y),part,font=font,fill=text,anchor="lt"); x+=d.textlength(part,font=font)
+            d.text((230,y+24),"Enable 'ultrathink' deep thinking (machine-translated)",font=small,fill=muted)
+        else:
+            for k,line in enumerate(wrap(d,q,small,450)): d.text((230,y+k*18),line,font=small,fill=text)
+        for x,model_id in [(700,"claude-haiku-5-5"),(940,"claude-sonnet-5-5")]:
+            j=next(j for j in a["jobs"] if j["slot"]==p["slot"] and j["model"]==model_id)
+            for offset,key in [(0,"out"),(112,"loc")]:
+                direction=j["metrics"][key]["file_minus_placebo"]["direction"]
+                label={"up":"more", "down":"fewer", "unclear":"Can't tell"}[direction]
+                if key == "out" and direction != "unclear": label = ("%.0f%% " % abs(j["metrics"][key]["file_minus_placebo"]["percent"])) + label
+                d.text((x+offset,y),label,font=small,fill=blue if direction!="unclear" else muted)
+        d.line((40,y+53,1160,y+53),fill=rgb("sheet-rule"))
+    d.text((40,630),"Against same-length fakes. Can't tell: paired 95% interval includes zero. Small tasks, injected instructions.",font=small,fill=muted)
+    os.makedirs(out_dir,exist_ok=True)
+    img.save(os.path.join(out_dir,"table.png"),"PNG",optimize=True)
+    return "table.png"
+
+
 def main():
     ap = argparse.ArgumentParser()
     docs = DOCS
@@ -393,6 +481,7 @@ def main():
     ap.add_argument("--icons", action="store_true", help="also write the favicon PNGs")
     ap.add_argument("--default-hashed", action="store_true",
                     help="write the default card as og.<contenthash>.png into --out-dir")
+    ap.add_argument("--report-016-table", action="store_true", help="draw the report 016 table from its verified evidence")
     ap.add_argument("--report", help="build a per-report card instead of the default one")
     ap.add_argument("--type", default="")
     ap.add_argument("--models", default="")
@@ -416,6 +505,11 @@ def main():
         if not re.match(r"^[0-9a-f]{16}$", args.receipt):
             raise SystemExit("--receipt takes the first 16 hex characters of a receipt_hash")
         print(build_receipt(os.path.abspath(args.out_dir), args.receipt, args.skill, args.model, args.date, args.label, args.compatibility_name))
+        return 0
+
+    if args.report_016_table:
+        target = args.out_dir if "--out-dir" in sys.argv else os.path.join(docs, "reports", "016")
+        print(build_story(os.path.abspath(target), table=True))
         return 0
 
     if args.report:

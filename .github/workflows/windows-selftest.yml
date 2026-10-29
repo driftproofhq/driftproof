@@ -1,7 +1,6 @@
 # The package's own gate on Windows (spec 312).
 #
-# The same command, arguments and environment variables as plugin-selftest.yml's gate step on the
-# public repository, on a hosted windows-latest runner. It runs only on the public repository:
+# The package gate runs only in the public repository, on a hosted windows-latest runner. It runs only on the public repository:
 # every job is guarded to it, so on driftproof-source, where Windows minutes bill double, nothing
 # runs. Its scope is the package's gate and nothing more: a green run says no more than that the
 # gate passed there, and no page says Windows is supported.
@@ -40,11 +39,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-      - name: install (the runner's own deps)
-        run: npm ci --omit=dev
+      - uses: ./.github/actions/windows-setup
       - name: the package's own gate (offline, stubbed)
         # Git Bash, so the gate's bash and tar are the ones a composite action's bash step gets.
         shell: bash

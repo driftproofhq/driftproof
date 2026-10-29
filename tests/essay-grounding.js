@@ -20,7 +20,7 @@ const fs = require('fs');
 const path = require('path');
 const scope = require('./assertion-scope.js');
 
-const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen'];
+const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen'];
 const ESSAY_REL = path.join('docs', 'writing', 'three-releases', 'index.html');
 const PUBLISHED_ON = '2026-08-11'; // the essay's publication date, as printed on it
 

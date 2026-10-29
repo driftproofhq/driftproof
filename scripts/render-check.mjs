@@ -305,9 +305,9 @@ const MEASURE = () => {
   };
 
   const receipt = () => {
-    const card = one('.receipt');
+    const card = all('.receipt').find(vis);
     if (!card) return null;
-    const rows = all('.receipt .receipt-row');
+    const rows = all('.receipt .receipt-row').filter(vis);
     const values = rows.map((r) => {
       const k = r.querySelector('.receipt-key');
       const v = r.querySelector(':scope > span:last-child');
@@ -330,8 +330,8 @@ const MEASURE = () => {
         text: (v.textContent || '').trim().slice(0, 24),
       } : null;
     }).filter(Boolean);
-    const stamp = one('.receipt .receipt-stamp');
-    const plot = one('.receipt .receipt-plot') || one('.receipt svg') || one('.receipt img');
+    const stamp = all('.receipt .receipt-stamp').find(vis);
+    const plot = all('.receipt .receipt-plot, .receipt svg, .receipt img').find(vis);
     return {
       box: box(card), bg: cs(card).backgroundColor,
       inner: card.clientWidth - px(cs(card).paddingLeft) - px(cs(card).paddingRight),
@@ -342,9 +342,9 @@ const MEASURE = () => {
   };
 
   const tldr = () => {
-    const card = one('.receipt.is-tldr');
+    const card = all('.receipt.is-tldr').find(vis);
     if (!card) return null;
-    return all('.receipt.is-tldr .receipt-row').map((r) => {
+    return all('.receipt.is-tldr .receipt-row').filter(vis).map((r) => {
       const v = r.querySelector(':scope > span:last-child');
       return { key: (r.querySelector('.receipt-key') || {}).textContent || '', valueClass: v ? v.className : '', font: v ? cs(v).fontFamily : '', left: v ? Math.round(v.getBoundingClientRect().x * 100) / 100 : null };
     });

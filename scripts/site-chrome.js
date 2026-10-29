@@ -112,7 +112,7 @@ ${DOCS_LINKS.map(([h, t]) => `<a href="${h}">${t}</a>`).join('\n')}
 // public site the em dash rule applies to articles only: the reports and the other long-form written
 // pieces. Every other page, tables, cells and UI text included, may carry one. Each entry is a
 // docs-relative folder; a page is an article when its path starts with one. Spec 020 AC-35 reads this.
-const ARTICLES = ['reports/', 'findings/', 'paper/', 'writing/', 'leaderboard-noise/', 'agent-skill-evaluation/', 'agent-skill-regression-testing/', 'compare/', 'what-is-driftproof/'];
+const ARTICLES = ['invisible-space/', 'reports/', 'findings/', 'paper/', 'writing/', 'leaderboard-noise/', 'agent-skill-evaluation/', 'agent-skill-regression-testing/', 'compare/', 'what-is-driftproof/'];
 const isArticle = (rel) => ARTICLES.some((a) => String(rel).startsWith(a));
 
 // THE ONLY CLIENT SCRIPT ON THIS SITE, besides the analytics beacon: the island
@@ -583,13 +583,14 @@ function applyLayout(html, rel, data) {
   const row = m ? (data || reportsData()).find((r) => String(r.number.value) === m[1]) : null;
   const mainTag = /<main\b([^>]*)>/.exec(out)[1];
   const cls = (/\bclass="([^"]*)"/.exec(mainTag) || [null, ''])[1].split(/\s+/);
+  const story = cls.includes('story');
   const reading = (cls.includes('report') && !cls.includes('shaped')) || /^writing\//.test(rel) || READING_PAGES.has(rel);
-  const gridCls = ['page-grid', reading ? 'is-reading' : '', cls.includes('screens') ? 'is-screens' : '', row ? 'has-facts' : '', SHEET_PAGES.has(rel) ? 'is-sheet' : ''].filter(Boolean).join(' ');
+  const gridCls = ['page-grid', story ? 'is-story' : '', reading ? 'is-reading' : '', cls.includes('screens') ? 'is-screens' : '', row && !story ? 'has-facts' : '', SHEET_PAGES.has(rel) ? 'is-sheet' : ''].filter(Boolean).join(' ');
   const terms = heads.length >= 2 ? [] : termsFor(out);
   const reports = heads.length >= 2 || terms.length >= 2 || !/^writing\//.test(rel) ? [] : reportsFor(out);
   if (reports.length >= 2) for (const h of [...reports].reverse()) out = out.slice(0, h.at) + h.insert + out.slice(h.at);
   const entries = heads.length >= 2 ? heads : terms.length >= 2 ? terms : reports.length >= 2 ? reports : [];
-  const toc = entries.length
+  const toc = !story && entries.length
     ? `<nav class="page-toc" aria-label="On this page"><div class="rail-in"><p class="eyebrow">On this page</p><ol>
 ${entries.map((h) => `<li><a href="#${esc(h.id)}">${railText(h.text)}</a></li>`).join('\n')}
 </ol></div></nav>`
@@ -598,7 +599,7 @@ ${entries.map((h) => `<li><a href="#${esc(h.id)}">${railText(h.text)}</a></li>`)
   out = `${out.slice(0, a)}${LAYOUT_OPEN}<div class="${gridCls}">${toc ? `\n${toc}` : ''}${LAYOUT_CLOSE}\n${out.slice(a)}`;
   const b = out.lastIndexOf('</main>') + 7;
   const nl = out[b] === '\n' ? 1 : 0;
-  const end = `${LAYOUT_END_OPEN}${row ? `${factsRail(row)}\n` : ''}</div>${LAYOUT_END_CLOSE}${nl ? '\n' : ''}`;
+  const end = `${LAYOUT_END_OPEN}${row && !story ? `${factsRail(row)}\n` : ''}</div>${LAYOUT_END_CLOSE}${nl ? '\n' : ''}`;
   out = out.slice(0, b + nl) + end + out.slice(b + nl);
   return out;
 }

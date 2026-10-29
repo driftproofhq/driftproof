@@ -143,20 +143,46 @@ jobs:
           set -euo pipefail
           LIVE=""
           for ((i = 1; i <= 20; i++)); do
-            LIVE="$(npx -y "npm@$NPM_VERSION" view "$PKG_NAME@$VERSION" dist.integrity 2>/dev/null || true)"
-            [ -n "$LIVE" ] && break
+            if READ="$(npx -y "npm@$NPM_VERSION" view "$PKG_NAME@$VERSION" dist.integrity 2>/dev/null)" &&
+                [[ "$READ" =~ ^sha512-[A-Za-z0-9+/]{86}==$ ]]; then
+              LIVE="$READ"
+              break
+            fi
             echo "not visible yet (try $i of 20)"
             if [ "$i" -lt 20 ]; then sleep 30; fi
           done
           echo "registry: $LIVE"
           echo "recorded: $RECORDED"
-          # A registry slow to list the version does not turn a published release red; a different integrity does.
           if [ -z "$LIVE" ]; then
-            echo "::warning::npm lists no integrity for $PKG_NAME@$VERSION after 20 tries 30 s apart; the job goes on. Check it by hand: npm view $PKG_NAME@$VERSION dist.integrity"
+            echo "::warning::npm pending: no successful valid integrity reading for $PKG_NAME@$VERSION"
             exit 0
           fi
           if [ "$LIVE" != "$RECORDED" ]; then
             echo "::error::the registry integrity for $PKG_NAME@$VERSION differs from the recorded one"; exit 1
+          fi
+          echo 'NPM_VERIFIED=true' >> "$GITHUB_ENV"
+
+      - name: Report publication status
+        shell: bash
+        run: |
+          set -euo pipefail
+          main=""; tag=""; plugin=""
+          if refs="$(git ls-remote origin refs/heads/main "refs/tags/$TAG" "refs/tags/$TAG^{}" refs/heads/release)"; then
+            main="$(printf '%s\n' "$refs" | awk '$2 == "refs/heads/main" {print $1}')"
+            tag="$(printf '%s\n' "$refs" | awk -v t="refs/tags/$TAG" '$2 == t {s=$1} $2 == t"^{}" {p=$1} END {print p ? p : s}')"
+            plugin="$(printf '%s\n' "$refs" | awk '$2 == "refs/heads/release" {print $1}')"
+          fi
+          commit="$(git rev-parse "$TAG^{commit}")"
+          if [ "$main" != "$commit" ] || [ "$tag" != "$commit" ]; then
+            [ "$main" = "$commit" ] || echo 'public main pending' >> "$GITHUB_STEP_SUMMARY"
+            [ "$tag" = "$commit" ] || echo 'public tag pending' >> "$GITHUB_STEP_SUMMARY"
+            echo 'npm and plugin confirmation pending' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "${NPM_VERIFIED:-false}" = true ] && [ -n "$plugin" ] &&
+               git fetch --no-tags origin "$plugin" &&
+               [ "$(git rev-parse 'FETCH_HEAD^{tree}')" = "$(git rev-parse "$commit^{tree}")" ]; then
+            echo 'published; npm integrity and plugin branch confirmed' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'published, npm pending; plugin branch confirmation pending' >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Create the GitHub release from RELEASES.md

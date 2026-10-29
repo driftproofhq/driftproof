@@ -147,6 +147,14 @@ function receiptPlace(rel) {
 // R-3 leaves that choice to the operator.
 const SUFFIX = ' | Driftproof';
 const TITLE_MAX = 60;
+let report016Subjects;
+function subjectName(rel, r) {
+  if (!rel.startsWith('receipts/report-016/')) return (r.skill || {}).name;
+  if (!report016Subjects) report016Subjects = new Map(require('./analyze-report-016').analyzeReport().picks.map(p => [p.sha256, p.repository.split('/').at(-1) + ' ' + p.kind + '.md']));
+  const name = report016Subjects.get(r.skill.content_hash);
+  if (!name) throw new Error('Report 016 evidence: unnamed subject');
+  return name;
+}
 function titleRungs({ rel, receipt: r }) {
   const { report, run } = receiptPlace(rel);
   const date = String((r.run || {}).date_utc || '').slice(0, 10);
@@ -155,7 +163,7 @@ function titleRungs({ rel, receipt: r }) {
   const drops = [[report && `report ${report}`, run, date], [report && `report ${report}`, run], [run], []].map((ts) => ts.filter(Boolean));
   const out = [];
   for (const model of [full, short]) for (const tags of drops) {
-    const t = `${(r.skill || {}).name} on ${model}${tags.map((x) => `, ${x}`).join('')}${SUFFIX}`;
+    const t = `${subjectName(rel, r)} on ${model}${tags.map((x) => `, ${x}`).join('')}${SUFFIX}`;
     if (!out.includes(t)) out.push(t);
   }
   return out;

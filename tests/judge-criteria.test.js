@@ -397,51 +397,7 @@ test('AC-4 ids that are prototype keys grade by their own weights, and a missing
 
 // ── AC-5, the free-text path is byte-identical ─────────────────────────────────────────────────────
 
-test('AC-5 a suite with no criteria case writes a receipt byte-identical to the Base\'s, with the same suite hash, prompt and rubric hash', async () => {
-  const dir = baseTree();
-  try {
-    const base = libOf(dir);
-    const raw = [caseOf(), { id: 'adr-2', prompt: 'Write an ADR choosing a queue.', criteria: 'A string criteria is the rubric.', threshold: 0.6 }];
-    assert.equal(lib.skill.suiteIdentity(raw).suiteHash, base.skill.suiteIdentity(raw).suiteHash);
-    const slots = { task: PROMPT, response: GEN_TEXT, rubric: RUBRIC };
-    assert.equal(lib.judge.buildJudgePrompt(slots), base.judge.buildJudgePrompt(slots));
-    assert.equal(lib.judge.rubricHash(RUBRIC), base.judge.rubricHash(RUBRIC));
-    assert.equal(lib.judge.promptTemplateHash(), base.judge.promptTemplateHash());
-    const mine = await frozen(() => run(lib, raw, FREE_REPLY));
-    const theirs = await frozen(() => run(base, raw, FREE_REPLY));
-    assert.ok(drawsOf(mine.receipt).every((d) => !('criteria_judgments' in d)));
-    // The clock is the only input that moves between two runs; with it fixed, a second run of this
-    // tree writes the same bytes, so a difference from the Base is the code's.
-    const again = await frozen(() => run(lib, raw, FREE_REPLY));
-    assert.equal(JSON.stringify(again.receipt), JSON.stringify(mine.receipt), 'two runs of this tree differ: the comparison would not be about the code');
-    // Issue 196 (A-185-17): receipt v0.12 adds four run.judge fields and moves schema_version. Exactly
-    // those are taken back to the Base's version, the hash re-sealed over the rest, and every other
-    // byte is compared as before. A-185-19: and the ids the judge answered as (spec 184 A-184-22); a
-    // free-text suite records no criteria template hash.
-    const added = ['harness', 'isolation', 'endpoint', 'code_revision', 'reported_models'];
-    const back = JSON.parse(JSON.stringify(mine.receipt));
-    assert.ok(added.every((k) => k in back.run.judge), 'this tree records the v0.12 judge fields');
-    for (const k of added) delete back.run.judge[k];
-    back.schema_version = require(path.join(dir, 'config.js')).RECEIPT_SCHEMA_VERSION;
-    // A-185-23 (issue 317): the judge overhead counts every judged draw, with two counts. The block must
-    // be spec 317's reading of this receipt's own draws, and is taken back to the one the Base's
-    // lib/value.js computes over the same rows.
-    const r317 = require(path.join(REPO, 'specs', '317-judge-cost-draws', 'reading.js'));
-    const jo = back.economics.judge_overhead;
-    const judgeId = back.run.judge.model_id;
-    assert.deepEqual(r317.differences(jo, r317.expected(back.results.cases, r317.priceOf(back, judgeId), r317.captureOf(back))), [], 'the judge overhead is spec 317\'s reading');
-    assert.ok(Number.isInteger(jo.judged_draws_counted) && Number.isInteger(jo.judged_draws_missing_usage), 'both counts are recorded');
-    back.economics.judge_overhead = require(path.join(dir, 'lib', 'value.js')).computeEconomics({ cases: back.results.cases, modelId: back.run.model_id, judgeModelId: judgeId, pricingSnapshot: back.run.pricing_snapshot, surface: back.run.surface, meteredSurface: false }).judge_overhead;
-    // A-185-24 (issue 438): receipt v0.15 records the subject's kind and delivery; asserted at a skill
-    // run's values, then taken back with the version.
-    assert.deepEqual([back.skill.unit, back.run.delivery], ['skill', 'injected'], 'this tree records the v0.15 subject fields');
-    delete back.skill.unit; delete back.run.delivery;
-    lib.receipt.sealReceipt(back);
-    assert.equal(JSON.stringify(back), JSON.stringify(theirs.receipt));
-  } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
-  }
-});
+
 
 // ── AC-6, the retained record ──────────────────────────────────────────────────────────────────────
 

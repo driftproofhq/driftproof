@@ -1,6 +1,38 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
 'use strict';
+
+// Issue 489: when preloaded by its CLI tests, observe the provider boundary.
+if (process.env.SPEC489_CALLS) {
+// SPDX-License-Identifier: Apache-2.0
+'use strict';
+
+// Issue 489: observe the real CLI's provider boundary without sending a request.
+// Loaded before bin/driftproof, only in a child explicitly running the offline stub.
+const fs = require('node:fs');
+if (process.env.DRIFTPROOF_STUB !== '1' || !process.env.SPEC489_CALLS) {
+  throw new Error('issue 489 observer requires the offline stub and a scratch call file');
+}
+const provider = require('../lib/provider');
+const original = provider.complete;
+provider.complete = (args) => {
+  const judge = /Return ONLY this JSON object/.test(String(args.prompt || ''));
+  const actual = { ...args };
+  // Deliberately broken forwarding, used to prove the same call oracle reads RED.
+  if (process.env.SPEC489_PLANT === (judge ? 'drop-judge' : 'drop-generation')) {
+    actual.timeoutMs = provider.retryPolicyForSurface(provider.surfaceForModel(args.model)).timeoutMs;
+  }
+  fs.appendFileSync(process.env.SPEC489_CALLS, JSON.stringify({
+    phase: judge ? 'judge' : 'generation',
+    model: args.model,
+    surface: provider.surfaceForModel(args.model),
+    timeoutMs: actual.timeoutMs,
+    arm: judge ? null : args.system ? 'with_skill' : 'baseline',
+  }) + '\n');
+  return original(actual);
+};
+
+} else {
 // Recording seam for spec 017 AC-1: drives lib/run.js's runSkillOnModel
 // end-to-end under DRIFTPROOF_STUB=1 and prints, as JSON, the `timeoutMs`
 // every provider `complete()` call actually received — bucketed by
@@ -65,3 +97,5 @@ async function main() {
 }
 
 main().catch((e) => fail(`FAIL: ${(e && e.stack) || e}`));
+
+}

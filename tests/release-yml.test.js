@@ -72,6 +72,7 @@ function step(steps, name) {
 }
 
 const STUBS = {
+  git: '#!/bin/bash\nif [ "${STUB_PUBLICATION_REPORT:-}" = yes ]; then case "$1" in rev-parse) printf "%040d" 0 ;; ls-remote) exit 1 ;; *) exit 2 ;; esac; else exec /usr/bin/git "$@"; fi\n',
   npx: `#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "$STUB_LOG/npx"
 [ -z "\${STUB_NPX_ERR:-}" ] || printf '%s\\n' "$STUB_NPX_ERR" >&2
@@ -137,6 +138,9 @@ function runStep(dir, s, vars, cwd) {
     RUNNER_TEMP: path.join(dir, 'runner'),
     GITHUB_ENV: path.join(dir, 'runner', 'github-env'),
     STUB_LOG: path.join(dir, 'log'),
+    STUB_PUBLICATION_REPORT: s.name === 'Report publication status' ? 'yes' : '',
+    GITHUB_STEP_SUMMARY: path.join(dir, 'runner', 'summary'),
+    GITHUB_OUTPUT: path.join(dir, 'runner', 'output'),
     ...vars,
   };
   const r = spawnSync('bash', ['--noprofile', '--norc', '-eo', 'pipefail', file], { cwd: cwd || path.join(dir, 'work'), env, encoding: 'utf8', timeout: 60000 });
@@ -154,7 +158,7 @@ function withScratch(fn) {
 }
 
 const PKG = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).name;
-const REG = { PKG_NAME: PKG, VERSION: '9.9.9', TAG: 'v9.9.9', RECORDED: 'sha512-recorded' };
+const REG = { PKG_NAME: PKG, VERSION: '9.9.9', TAG: 'v9.9.9', RECORDED: 'sha512-'+require('node:crypto').createHash('sha512').update('recorded').digest('base64') };
 
 test('AC-1 the header comment lists exactly the keys of release-record.json and no longer says exactly two keys', () => {
   const { text } = workflow();
@@ -190,7 +194,7 @@ for (const [label, stub] of [
 test('AC-3 the registry check fails on a different integrity and passes quietly on the recorded one', () => withScratch((dir) => {
   const { steps, npmVersion } = workflow();
   const s = step(steps, VERIFY);
-  const bad = runStep(dir, s, { ...REG, NPM_VERSION: npmVersion, STUB_NPX_OUT: 'sha512-other' });
+  const bad = runStep(dir, s, { ...REG, NPM_VERSION: npmVersion, STUB_NPX_OUT: 'sha512-'+require('node:crypto').createHash('sha512').update('different').digest('base64') });
   assert.notStrictEqual(bad.status, 0, 'a different integrity fails the step');
   assert.ok(bad.has('::error::').length >= 1, 'a different integrity prints ::error::');
   const good = runStep(dir, s, { ...REG, NPM_VERSION: npmVersion, STUB_NPX_OUT: REG.RECORDED });

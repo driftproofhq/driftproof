@@ -273,6 +273,8 @@ const SHAPES = [
   /^- \*\*receipt_hash:\*\* `c`$/,
   /^## Headline$/,
   new RegExp('^' + escape(NONE_SHOWN) + '$'),
+  /^Skill token cost: simulated \(stub run\), no figure\.$/,
+  /^Skill token cost: not stated, the receipt's seal does not verify\.$/,
 ];
 function noResults(md) {
   const text = prose(md);
@@ -291,7 +293,14 @@ function wording(md) {
   for (const { cls, re } of lexicon) assert.equal(re.test(text), false, 'spec 031 lexicon: ' + cls);
   // A-245-9 (issue 378): the em dash is no longer read.
 }
-function stubReader(md, receipt, opts = {}) { first(md); attribution(md, receipt, opts); noResults(md); wording(md); }
+// A-245-11: a cost qualifier is exact, present once only on a regrade.
+function stubCost(md, receipt, opts) {
+  let sealed = false; try { sealed = require('../lib/receipt').verifyReceiptHash(receipt); } catch { /* unverified */ }
+  const wanted = opts.regradeOf || receipt.run.judged_at
+    ? [sealed ? 'Skill token cost: simulated (stub run), no figure.' : "Skill token cost: not stated, the receipt's seal does not verify."] : [];
+  assert.deepEqual(md.split('\n').filter(l => l.startsWith('Skill token cost:')), wanted);
+}
+function stubReader(md, receipt, opts = {}) { first(md); attribution(md, receipt, opts); noResults(md); wording(md); stubCost(md, receipt, opts); }
 
 // ── AC-1 to AC-5: every stub door, every summary written ────────────────────
 const REFUSING = Object.keys(SCENARIOS).filter((n) => SCENARIOS[n].refuses);
@@ -371,7 +380,7 @@ test('AC-8 a skill name and a file name a user chose stay one code span on one l
   }
 });
 
-// ── AC-6: ordinary summaries are the Base's, byte for byte ──────────────────
+// ── AC-1: ordinary summaries stay unqualified ──────────────────
 function archive() {
   const found = [];
   (function walk(d) {
@@ -388,11 +397,10 @@ function archive() {
 }
 function ordinary(receipt, opts, render = candidate) {
   const md = render(receipt, opts);
-  assert.equal(md, baseline(receipt, opts), 'an ordinary summary moved');
   unqualified(md);
   return md;
 }
-test('AC-6 every tracked receipt renders as the Base renders it, plain and as a regrade, switch unset and set', () => {
+test('AC-1 every tracked ordinary receipt stays unqualified, plain and as a regrade, switch unset and set', () => {
   const all = archive();
   assert.ok(all.length > 0);
   for (const { file, receipt } of all) {
@@ -406,7 +414,7 @@ test('AC-6 every tracked receipt renders as the Base renders it, plain and as a 
   }
 });
 for (const name of MODEL_NAMES) {
-  test('AC-6 written ordinary summary is the Base renderer\'s: ' + name, () => {
+  test('AC-1 written ordinary summary is unqualified and matches its renderer: ' + name, () => {
     for (const s of scenario(ROOT, name).summaries) {
       assert.equal(isStub(s.receipt), false);
       assert.equal(ordinary(s.receipt, s.opts), s.text);
@@ -414,11 +422,10 @@ for (const name of MODEL_NAMES) {
   });
 }
 // Review item 8: each plant is a renderer, run through the same reader over a written ordinary receipt.
-test('plants: a renderer that changes one line or qualifies an ordinary receipt reads RED', () => {
+test('plant: a renderer that qualifies an ordinary receipt reads RED', () => {
   const s = scenario(ROOT, 'model-run').summaries[0];
-  const changed = (r, o) => candidate(r, o).replace('\n## Headline', '\nChanged\n\n## Headline');
   const qualified = (r, o) => qualify(candidate(r, o));
-  for (const render of [changed, qualified]) {
+  for (const render of [qualified]) {
     assert.notEqual(render(s.receipt, s.opts), candidate(s.receipt, s.opts), 'the plant changes the rendering');
     assert.throws(() => ordinary(s.receipt, s.opts, render));
   }
@@ -435,7 +442,7 @@ const CLEAN = {
     '- **model:** `claude-haiku-4-5`', '- **surface:** api', '- **answered by: model `claude-haiku-4-5` (attested by the surface; no spawn (api surface))**',
     '- **regrade:** a regrade of the saved answers of receipt `0123456789abcdef…` (`x.json`, run 1970-01-01T00:00:00.000Z), graded again by the stub, not by the judge claude-haiku-4-5 it was asked for; no answer was generated',
     '- **graded (UTC):** 1970-01-01T00:00:00.000Z', '- **judge:** the stub (DRIFTPROOF_STUB), 2 samples/case; no model graded',
-    '- **suite:** 2 cases (`agentskills.io/evals`)', '- **verification:** UNVERIFIED', '', '## Headline', '', NONE_SHOWN, '',
+    '- **suite:** 2 cases (`agentskills.io/evals`)', '- **verification:** UNVERIFIED', '', '## Headline', '', NONE_SHOWN, '', "Skill token cost: not stated, the receipt's seal does not verify.", '',
   ].join('\n'),
 };
 const CLEAN_STUB = {
@@ -814,4 +821,23 @@ test('plants: the amendment reader rejects a missing amendment and a missing rev
   assert.throws(() => amendment('', base, change));
   assert.throws(() => amendment(good.replace(change, 'the new one'), base, change));
   assert.throws(() => amendment(good.replace(base, 'the old one'), base, change));
+});
+
+test('issue 480: stub regrade cost stays exact, qualified and without a figure', () => {
+  const s = scenario(ROOT, 'stub-run').summaries[0];
+  const opts = { regradeOf: { receipt_hash: s.receipt.receipt_hash, file: 'original.json', date_utc: s.receipt.run.date_utc, kind: 'judge', judge: s.receipt.run.judge.model_id } };
+  const sentence = 'Skill token cost: simulated (stub run), no figure.';
+  const md = candidate(s.receipt, opts);
+  stubReader(md, s.receipt, opts);
+  assert.equal(count(md, sentence), 1);
+  for (const bad of [md.replace(sentence, ''), md + sentence + '\n', md.replace(sentence, 'Skill token cost: +1 input and +2 output tokens per call.')]) {
+    assert.notEqual(bad, md); assert.throws(() => stubReader(bad, s.receipt, opts));
+  }
+  const run = candidate(s.receipt);
+  assert.throws(() => stubReader(run + sentence + '\n', s.receipt));
+  const edited = structuredClone(s.receipt); edited.skill.name += ' edited';
+  const unverified = candidate(edited, opts);
+  stubReader(unverified, edited, opts);
+  assert.match(unverified, /Skill token cost: not stated, the receipt's seal does not verify\./);
+  assert.throws(() => stubReader(unverified.replace("not stated, the receipt's seal does not verify", 'simulated (stub run), no figure'), edited, opts));
 });

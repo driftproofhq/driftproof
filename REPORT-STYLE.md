@@ -22,9 +22,13 @@ directly under the `<h1>` title:
 | Instrument re-measurement | `Instrument re-measurement report` | Does an earlier report's result survive a *corrected or strengthened instrument*, measuring the same cells again? | nothing moves under the skill and nothing moves in the substrate — the **instrument** moves: sampling design, a defect fix, or a rule the runner now applies. The cells, suites, substrates and judge are the ones the earlier report used, so the comparison is against the archive rather than against a fresh control |
 | Instrument comparison | `Instrument comparison report` | What can each of two instruments establish about the *same skills* on pinned inputs? | nothing moves under the skill and nothing in its inputs: the same SKILL.md bytes, prompts and rubrics are measured by two **instruments**, and the report states what each can and cannot establish rather than ranking them |
 
+| Rules-file behaviour | `Rules-file behaviour report` | What changes when popular rules files replace no file or equal-byte irrelevant prose? | injected instructions, held fixed within each file and model comparison |
+
 All use the same band-based, floor-gated verdict rule (below); they differ only
 in what moves underneath the skill. Future types add a row here and a label —
 they do not invent a new verdict rule without saying so.
+
+A **rules-file behaviour report** keeps correctness readings from the existing receipt reader and reports behavioural task means separately. Its paired bootstrap intervals are not correctness verdicts. Report 016 uses a full-width story with methods and evidence below it, instead of the paper body and side rails.
 
 An **instrument comparison report** is the one type that says so. Driftproof's
 own arms are read under the rule below; the other instrument's results are read

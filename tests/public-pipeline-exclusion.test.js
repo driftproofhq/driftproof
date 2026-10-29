@@ -16,7 +16,7 @@ const { spawnSync } = require('node:child_process');
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'build-public.sh');
 
 const OUT = [
-  ...['sweep', 'gates', 'nightly', 'build', 'review', 'fix-on-red', 'merge-on-green', 'queue', 'release-train', 'digest', 'labels']
+  ...['sweep', 'gates', 'nightly', 'build', 'review', 'fix-on-red', 'merge-on-green', 'queue', 'release-train', 'digest', 'docs-lint', 'labels']
     .map((n) => `.github/workflows/${n}.yml`),
   '.github/prompts/build.md',
   '.github/prompts/nested/review.md',
@@ -39,6 +39,7 @@ const OUT = [
   'scripts/docs-lint.mjs',
   'CLAUDE.md',
   'DECISIONS.md',
+  'DECISIONS-archive.md',
 ];
 const IN = [
   '.github/workflows/release.yml',

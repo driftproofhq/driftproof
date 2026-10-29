@@ -8,6 +8,165 @@ makes this one a record.
 
 ---
 
+## v0.24.0 - 2026-10-29
+
+### What's new
+
+- **`driftproof run --capture repository` measures a skill or a rules file inside a real
+  source-checkout, with coding tools turned on, instead of judging only a written answer.** It
+  copies a pinned starter repository, lets the run work in it with one model at a time, grades the
+  text and code it actually produced, and reports which tools it used and anything it could not
+  finish. A long run can be paused and resumed from its own checkpoint with `--resume DIR`.
+- **`driftproof run --timeout <seconds>` bounds how long any single generation or judge call may
+  take.** The receipt seals the timeout it ran with; leaving the flag off keeps every surface's
+  existing default, and `--quick` is unaffected. An invalid value is refused before any call is made.
+- **Report 016, "Popular rules files vs. a placebo: most made Claude write more," is published.**
+  Seven of the most-starred `CLAUDE.md` and `AGENTS.md` files on GitHub were each run against a
+  same-length fake with no real instructions, on Claude Haiku 5.5 and Sonnet 5.5, inside a real
+  coding task. On Haiku, six of the seven files made it write more than the fake did; Sonnet's
+  results were mixed, and none of the seven made the code itself clearly longer. The report counts
+  what changed in the output, not whether the extra writing helped.
+
+### What may change for you
+
+- **Token cost per call beside lift now also shows on the `run` console, the `regrade` summary and
+  `driftproof diff`,** beside the surfaces it already reached in 0.23.1. Alongside the wider reach,
+  a claims review fixed how it is read: the figure now rounds to an exact integer, a context file's
+  estimate names the file actually sealed in the receipt rather than always "SKILL.md", an
+  out-of-range count now reads as refused instead of being guessed at, and a malformed shape is
+  refused before it would be shown.
+- **A receipt that could not read a CLI's own cost or token usage now records that figure as
+  unknown, rather than zero.** A gap in reporting no longer reads as a free or token-less call.
+- **The README, the methodology page, the glossary and `spec/RECEIPT.md` are about 2,500 words
+  shorter after a claims review.** Nothing they describe changed; they are faster to read.
+- **Site animations everywhere now honour your reduced-motion setting, and a shared link-preview
+  card shows a report's headline figures** when a page links to one.
+
+### Known issues
+
+- **What is not recorded or compared.** A CLI judge's own settings files (`~/.claude/settings.json`,
+  project settings, `CLAUDE.md` files, codex's config), the eval user's shell profile behind the
+  isolated hop, other proxy, region and credential variables, and the network the call crosses can
+  all change what the judge reads or where its call goes. The receipt holds none of them.
+  `spec/RECEIPT.md` lists them.
+- **The route is recorded as an unsalted hash,** so an address that can be guessed can be recovered
+  from it.
+- **A regrade's raw judge replies are not kept,** only their hashes.
+- **A plain regrade's judge identity is self-reported, not authenticated.** The requested judge's
+  reported id comes from its own reply; it does not authenticate provider identity or measure
+  grading accuracy.
+- **`driftproof overlap` measures word overlap only.** It does not establish that a suite leaked,
+  explain a measured lift, or establish that a skill is free of overlap beyond this one comparison.
+- **`driftproof plan`'s draw targets and USD figure are estimates, not promises.** The USD figure
+  assumes fixed token counts at registry API prices; it is not an invoice or a subscription billing
+  prediction, and a long prompt can exceed it. Retries and auxiliary harness calls are not included,
+  and an actual run may stop before any projected target.
+- **`driftproof lint-suite`'s findings are evidence of risk, not proof of one.** A repeated-word or
+  answer-text finding does not assert semantic equivalence or a dollar saving, and a history finding
+  never says a future run cannot show a score lift. No findings means only that these checks found
+  none; it does not mean the suite is fair, sufficient, cheap or free of causal leakage. Its
+  answer-text check covers grading fields only; it does not check whether the model itself was
+  exposed to an answer.
+- **A `view` or `diff --lift-breakdown` reads recorded scores at the receipt's own sample size.** It
+  predicts neither a skill's future answers nor a causal mechanism, and a legacy receipt without
+  draw records, or a failed arm, yields no breakdown, with the reason stated.
+- **An NVIDIA-cards or Harbor import stays DECLARED.** `diff` reads it as NOT MEASURED, and no
+  Driftproof reader gives it a verdict, a band, a spread or a baseline the source itself did not
+  print or record.
+- **A quick first look (`driftproof run --quick`) cannot produce a verdict.** It runs a single test
+  task to show that a skill and its suite run at all, and to show that task's two answers side by
+  side; it is not a measurement of lift.
+- **A skill's Driftproof-measured result covers three text-only tasks against the recorded skill
+  bytes, model and environment only.** It does not establish general usefulness, installation
+  success, external service quality, performance on other models, or equivalence to an imported
+  benchmark. External tools, generated media and deployed services are not exercised, and a router's
+  result describes its own written answer, not the skill it delegates to.
+- **Repository capture (`--capture repository`) runs one model at a time, at concurrency 1.** It
+  does not run several models or several draws in parallel; a long run can be paused and resumed,
+  but not fanned out.
+- **In repository capture mode, Sonnet 5.5 currently judges every target model's work, including
+  its own.** A Sonnet 5.5 result measured this way carries this disclosed self-grading limitation.
+- **A repository-capture full run can lose up to one percent of its draws to disclosed causes**
+  (an unexpected tool call, a missing final answer or tool result, an unknown stop reason, incomplete
+  tool pairing, or a malformed judge reply). A lost draw is never scored, repaired, rerun or hidden;
+  it is listed with its reason in the receipt and the report.
+- **Closing your home directory (`chmod 700 ~`) stops other local users, including the eval
+  account, from reading it, but it does not cover files stored outside your home, or the target of
+  a symlink inside your home that points outside it.**
+- **Asking for a future public test does not promise that it happens, or when.** The GitHub issue it
+  opens only queues a request; whether and when a skill is tested in a future public batch is the
+  operator's call, and any maintainer tasks you offer may be edited and are reviewed before use.
+- **The guided first run's local search can come back incomplete.** If it cannot finish searching
+  your folder for a matching skill, it stops and asks you to move to the folder that holds your
+  skills, rather than guessing or showing a sample result.
+- **`driftproof activation-drift` only reads what its two input receipts declare.** It does not
+  attest what plugin bundle, model or environment was actually installed or executed, only that the
+  two sides' operator-declared fingerprints match; a receipt hash establishes integrity since
+  sealing, not authenticity.
+- **A placebo arm's text is drawn from a fixed corpus chosen without reference to any task, but it
+  can still bear on a case by chance.** The reading does not establish that the placebo carried no
+  information about the task.
+- **A context file's receipt only establishes that its exact bytes were sent on the injection path;
+  it does not establish that injection is how any file is loaded in real use, or that a context file
+  helps or harms.**
+
+### Upgrade
+
+- npm: `npx driftproof@0.24.0`. The Action: `driftproofhq/driftproof@v0.24.0`, and the stale Action
+  `driftproofhq/driftproof/stale@v0.24.0`.
+- Claude Code plugin: `claude plugin update driftproof@driftproofhq`. The plugin runs `npx
+  driftproof@0.24.0`.
+
+### Engineering log
+
+0.24.0 carries three user-facing features: repository capture, `driftproof run --capture
+repository`, which grades a skill's or rules file's work inside a real source-checkout with coding
+tools on and supports pause and resume (issue 490); a `--timeout` flag on `run` that bounds every
+generation and judge call and seals it on the receipt (issue 489); and token cost beside lift
+reaching the `run` console, the `regrade` summary and `driftproof diff`, with fixes to its rounding,
+its subject-file naming for a context file, its out-of-range handling and its suppression order
+(issue 469). Report 016 publishes rules-file behaviour measurements — seven popular `CLAUDE.md` and
+`AGENTS.md` files against a same-length placebo, on Haiku 5.5 and Sonnet 5.5, run inside repository
+capture (issues 471, 501). It changes nothing about a number already published: an unreported CLI
+cost or token count now reads as unknown rather than zero only in receipts sealed from here on
+(issue 490), and the README, methodology, glossary and `spec/RECEIPT.md` read about 2,500 words
+shorter with no change to what they describe (issue 490). Known issues gains three items from
+repository capture — its one-model, concurrency-1 limit, Sonnet 5.5 judging its own work, and a
+full run's disclosed one-percent draw-loss allowance (issue 490, catalogue row C-319); none is
+removed. Noted but not built in this release: per-model distinct cost figures beside lift (issue
+469). The rest is the outside rules review adopted into governance and the workflows (catalogue row
+C-316, issues 473 to 476), the confidentiality scan's removal with a narrowly scoped, ruling-gated
+allowance to rewrite public history to purge leaked data (catalogue rows C-322, C-323, issue 506),
+and fixes to the release pipeline, its tests and its own tooling (issues 465, 466, 480, 487, 493,
+504, 509, 511, 513); no other number already published changes.
+
+**Merged from dev by a refresh, after the draft.** `release-prepare --stage refresh` lists every merge on dev between `a57becd87f81` and `2c7b5c2dd16d`, the commit the refresh merged, so this release ships each of them, and `release-record.json`'s `source_commit` moves to `2c7b5c2dd16d`, where the next release's list starts.
+
+- PR 517, merge `2c7b5c2d`: Refresh spec 037 captures and the roadmap check
+
+**Merged from dev by a refresh, after the draft.** `release-prepare --stage refresh` lists every merge on dev between `2c7b5c2dd16d` and `5c223946b848`, the commit the refresh merged, so this release ships each of them, and `release-record.json`'s `source_commit` moves to `5c223946b848`, where the next release's list starts.
+
+- PR 520, merge `5c223946`: Cut checks that block without protecting users (part 1)
+
+**Merged from dev by a refresh, after the draft.** `release-prepare --stage refresh` lists every merge on dev between `5c223946b848` and `56d0927e70c3`, the commit the refresh merged, so this release ships each of them, and `release-record.json`'s `source_commit` moves to `56d0927e70c3`, where the next release's list starts.
+
+- PR 522, merge `56d0927e`: Decode article descriptions once
+
+---
+
+## Site push: a wider layout for large screens - 2026-10-27
+
+**The site moved and the package did not.** From 1024px the contents list sits on the left under
+the logo, every page's content lines up with the header, and type, spacing and the rails grow with
+the window to 1.25x at 1920px. Three prose-only pages take the reading layout. Phones and narrow
+windows are unchanged. No version change, no npm publish and no tag; nothing under `lib/`, `bin/`,
+`spec/`, `config.js`, `config/models.json` or `package.json` differs from v0.23.1. Built from the
+v0.23.1 source plus the site changes only.
+
+**No verdict, receipt field or published figure changes.**
+
+---
+
 ## Site push: the invisible-space article - 2026-10-27
 
 **The site moved and the package did not.** A standalone article at `/invisible-space/`, "The

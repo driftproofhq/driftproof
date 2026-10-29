@@ -99,6 +99,8 @@ export function receiptFiles(root = ROOT) {
       const f = path.join(dir, e.name);
       if (e.isDirectory()) { walk(f); continue; }
       if (!e.name.endsWith('.json') || e.name.startsWith('_')) continue;
+      // Issue 501: the campaign manifest is metadata, validated by its analysis reader.
+      if (path.relative(root, f) === 'receipts/report-016/manifest.json') continue;
       out.push(f);
     }
   })(path.join(root, 'receipts'));

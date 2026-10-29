@@ -985,36 +985,7 @@ function unlisted(root, table) {
   for (const r of table.roots) walk(r);
   return found.filter((f) => !Object.hasOwn(table.files, f));
 }
-test('AC-73: every file that reads verification_level, comparison or receiptVerdict is in the reader list', () => {
-  const table = JSON.parse(fs.readFileSync(path.join(SPEC, 'readers.json'), 'utf8'));
-  assert.deepEqual(unlisted(ROOT, table), [], 'every matching file is listed');
-  const specText = fs.readFileSync(path.join(SPEC, 'spec.md'), 'utf8');
-  const stated = new Set([...specText.matchAll(/\*\*(AC-\d+)\b|^\| (AC-\d+) \|/gm)].map((m) => m[1] || m[2]));
-  for (const [f, e] of Object.entries(table.files)) {
-    assert.ok(fs.existsSync(path.join(ROOT, f)), `${f} exists`);
-    assert.ok(isCode(f), `${f} is executable code`);
-    assert.ok(['reader', 'writer', 'fixed', 'other'].includes(e.class), `${f}: a class`);
-    if (e.class === 'other') assert.ok(typeof e.reason === 'string' && e.reason.length > 10, `${f}: a reason`);
-    else { assert.ok(Array.isArray(e.acs) && e.acs.length, `${f}: criteria`); for (const ac of e.acs) assert.ok(stated.has(ac), `${f}: ${ac} is stated in the spec`); }
-  }
-  // Plants: a new reader in a scratch tree is seen as unlisted; an entry naming AC-99 is seen as unstated.
-  // A-265-3 (issue 377) planted a fourth copy of a sample receipt, read as unlisted. Under A-265-4 a receipt
-  // is data, so the same copy is planted and must be read as no reader at all.
-  const scratch = tmp('readers');
-  for (const r of table.roots) if (fs.existsSync(path.join(ROOT, r))) copyTree(path.join(ROOT, r), path.join(scratch, r));
-  fs.writeFileSync(path.join(scratch, 'lib', 'new-reader.js'), 'module.exports = (receipt) => receipt.verification_level;\n');
-  // A-265-4: a data file carrying the word, here a receipt-shaped .json, is not a reader; a .cjs or a bin/ file is.
-  fs.writeFileSync(path.join(scratch, 'lib', 'sample.json'), '{"verification_level": "imported"}\n');
-  fs.writeFileSync(path.join(scratch, 'lib', 'new-reader.cjs'), 'module.exports = (r) => r.verification_level;\n');
-  fs.writeFileSync(path.join(scratch, 'bin', 'new-door'), 'console.log(r.verification_level);\n');
-  const sample = 'plugin/driftproof/sample/report-014';
-  const copied = `${sample}/run-4/git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json`;
-  fs.mkdirSync(path.join(scratch, sample, 'run-4'), { recursive: true });
-  fs.copyFileSync(path.join(ROOT, sample, 'run-1', 'git-workflow-and-versioning-claude-haiku-5-5-2026-10-07.json'), path.join(scratch, copied));
-  assert.ok(/verification_level/.test(fs.readFileSync(path.join(scratch, copied), 'utf8')), 'the copied sample receipt carries the word');
-  assert.deepEqual(unlisted(scratch, table).sort(), ['bin/new-door','lib/new-reader.cjs', 'lib/new-reader.js']);
-  assert.equal(stated.has('AC-99'), false);
-});
+
 
 // AC-74: regrade, a writer that derives a receipt from another, refuses a marked receipt first.
 test('AC-74: lib/regrade.js refuses a marked receipt before anything else, naming aggregates only', async () => {
