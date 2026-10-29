@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+name: Windows stub setup
+description: Install pinned Node and dependencies for model-free Windows checks.
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version-file: .nvmrc
+    - name: Install dependencies without lifecycle scripts
+      shell: pwsh
+      run: node .github/windows-ci/setup.cjs

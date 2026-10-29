@@ -44,6 +44,28 @@ same way: it adds optional fields and widens three values, so a v0.8 receipt res
 v0.8 is frozen because its version constant refuses anything else (see *What v0.9 adds*).
 v0.8 was additive over v0.7 in the same way (see *What v0.8 adds*).
 
+## Explicit per-call timeout
+
+Issue 489 adds optional `run.timeout_ms` to the current v0.15 schema.
+`driftproof run --timeout <seconds>` applies a positive integer number of
+seconds to each generation and judge attempt, on every surface. The maximum
+is 2147478 seconds, within Node's timer bound including CLI cleanup grace. Each retry receives the same
+limit; retry counts and backoff stay unchanged. The setting works with
+`--quick` and does not change its sampling or UNVERIFIED level.
+
+The receipt seals the explicit setting in milliseconds. It records a
+configured limit, not elapsed time or a deadline for the whole run. It does
+not guarantee that remote work stops when the local timeout fires. A stub
+records the requested setting without making a model call.
+
+Without the flag, surface defaults and the receipt's shape stay unchanged.
+An absent field means no explicit uniform setting is recorded; a reader
+cannot infer a default from it. Older receipts and imports omit it. Library
+callers with an explicit supported `opts.timeoutMs` record it when every
+selected case uses it. Per-case overrides retain their precedence; a varying
+run omits the uniform record. A regrade does not carry this original-run
+setting into its new operation. Frozen versioned schemas remain unchanged.
+
 ## Auxiliary calls on claude-cli
 
 Spec 180 (issue 134). Claude Code can make a call of its own on another model, such as a Haiku call,
@@ -822,10 +844,8 @@ presentation rules that follow from this — ratio framings gated on the effect
 floor, latency always carrying its disclosure — are in
 [`REPORT-STYLE.md`](../REPORT-STYLE.md) § "Value-axis presentation rules".
 
-**Read the incremental figures, not the absolute ones.** Both CLI surfaces
-prepend a large fixed harness preamble we do not control (observed ~25k input
-tokens on `claude-cli`, ~11k on `codex`). It inflates absolute per-call cost, but
-it is identical in the with-skill and baseline arms, so it cancels in every Δ.
+**Harness overhead.** Both arms use the same CLI harness configuration. Its
+token contribution need not cancel across different tool trajectories.
 
 ## What the judge overhead counts (issue 317)
 
@@ -842,8 +862,8 @@ value figure above.
   and is not counted. The figure is null when nothing was priced, never 0.
 - **What a draw's usage holds.** A draw's `judge_usage` is the sum of the usage its answered judge
   samples reported. Retried attempts, samples that failed, and samples that reported no usage are
-  not in it, though each was a call. So the total is the usage the answered samples reported, a floor
-  on what judging was billed, not the bill.
+  not in it, though each was a call. Frozen API rates price that reported usage;
+  subscription dollar figures are estimates, not a bill or a billing floor.
 - **`case_rows_measured`**: the case rows that contributed judge usage to the total.
 - **`judged_draws_counted`**: the judge usage records summed into the total, one per draw sent to the
   judge (one per row with no draws).
@@ -1003,6 +1023,7 @@ The v0.3.1 schema gained an **additive interop revision** so receipts can be
 | `counts`, `arms` | object | **v0.8**, optional. See *What v0.8 adds*. |
 | `harness`, `import` | object | **v0.9**, optional, imported receipts. See *What v0.9 adds*. `harness` is also written by every run on a CLI or api surface and carried by a regrade; see *What v0.10 adds*. |
 | `capture` | object | **v0.10**, optional, written by every run and carried by a regrade when the original records it: `{mode}`, `text` or `files`, which answer was judged. See *What v0.10 adds*. |
+| `timeout_ms` | integer | Optional (issue 489). Explicit uniform per-call setting, in milliseconds, from 1 through 2147478647. Applies to each generation and judge attempt in the original run. See *Explicit per-call timeout*. |
 | `preset` | `"quick"` | **v0.11**, optional. A smoke run (`--quick`); such a receipt is below `TESTED`. See *What v0.11 adds*. |
 | `regraded_from`, `regrade` | object | **v0.12**, optional, together and only with `judged_at`: a regrade's lineage and what it did, sealed inside the receipt's hash. See *What v0.12 adds*. |
 
@@ -1277,3 +1298,186 @@ when the source already supplies its run date. If the run date is absent, the im
 the clock used for the fallback date. The CLI supplies its import clock. An unknown import time
 never copies the source run date. Null import time is admitted only for a marked legacy
 calculation. An unmarked import still requires its original timestamp field.
+
+### Issue 490: repository capture and resumable runs
+
+`run.capture.mode: "repository"` adds the starter manifest and hash, available
+tools, generation limits, resource bounds, isolation policy, implementation
+contract hash, runtime image digest and effective environment hash. It describes
+the captured text subset. It does not assert that every repository byte was
+judged, that tools were called, or that commands reported as passing did pass.
+
+Each generation draw carries `delivery`, `collection` and
+`repository_files`. Delivery retains validated tool events and observed counts.
+Incomplete evidence has null totals. The file records preserve inclusion,
+change, type, mode, byte count and included-content hash. The existing
+generation hash binds the retained answer, including its character annotation.
+When judging occurs, these are the exact answer bytes supplied.
+Request and transcript hashes bind the observed request and stream.
+
+`run.resume` records whether the run resumed, the count of finished draws loaded
+from its checkpoint, and each segment's start, end and reason.
+`run.execution` separates dispatch intents, confirmed launches and uncertain
+attempts. `exact_launches` is null when any attempt remains uncertain.
+`checkpoint_evidence_hash` seals the binding, draw evidence, attempt ledger and
+segments. A stub labels its execution evidence simulated.
+
+Checkpoint publication orders file fsync, rename and directory fsync. Responses,
+large answers and retained final output use immutable hash-named artifacts.
+The finalizing checkpoint contains the exact final receipt bytes. Recovery
+publishes those same bytes and marks completion without calls. Preserve the
+whole output directory for inspection and resume.
+
+Repository regrade is refused. A comparison cannot treat different or invalid
+repository contracts as an unchanged measurement. Verdict and UNDERPOWERED
+rules remain unchanged. R-2 now uses Sonnet for both targets; crossed grading
+is historical. Sonnet self-grading is disclosed.
+
+### Repository diagnostic scope and attempt accounting (issue 490, 27 October 2026)
+
+New repository receipts carry optional run.scope with kind, task_ids and
+expected_arms. A diagnostic also carries draws_per_arm, requires quick and
+UNVERIFIED, and has no comparison. Its summary distinguishes selected tasks
+from the full suite count. Missing scheduled measurements remain incomplete.
+Comparison scope retains both required comparison arms and any scheduled placebo.
+Historical receipts without this field retain their existing reading.
+
+run.accounting records basis subscription-accounting, attempts, reported_cost_usd,
+unknown_cost_attempts, interrupted_attempts, tool_errors and stops. Each stop
+names its attempt, phase, code and bounded redacted detail. Costs are the sum
+of reported amounts; unknown amounts are counted separately, never assumed zero.
+They are not API charges or subscription quota. Tool errors count observed error
+results across attempted calls, including interrupted calls. Checkpoint attempts
+retain the underlying values across resume. The receipt hash binds these fields.
+
+Separate judge-control artifacts have kind judge-controls and are not comparative
+receipts. They grade fixed authored answers, retain individual scores and reasons,
+remain UNVERIFIED and count their calls separately from the smoke's 60 generations.
+
+### Repository character annotation (issue 490, A-490-11)
+
+Historical v1 repository receipts seal run.capture.answer_annotation with version
+repository-codepoints/1 and contract_hash. Absence identifies the historical
+unannotated contract. The original reply-plus-files remains an unchanged UTF-8
+prefix. An appended ASCII inventory records its byte length and SHA-256, then
+LF-based one-indexed lines, escaped renderings and scalar-column/codepoint pairs
+for every non-ASCII character and ASCII control, including LF, CR, tab and DEL.
+Literal backslashes are doubled; actual characters use backslash-u-braces.
+The inventory hash is included in the complete judged answer. generation_hash,
+answers archives, saved checkpoints and every judge request bind that complete
+answer. rubric_hash and prompt_template_hash bind the annotation policy.
+Missing or modified inventory refuses repository judging before dispatch.
+
+The caps in lib/capture.js refuse oversized input or annotated answers without
+truncation. Controls use the identical annotation and retain source_answer_sha256,
+judged_answer, answer_sha256, annotation_sha256 and rubric_hash. These additions
+never replace historical grades or alter text/files grading semantics. The shared
+judge code revision advances, so provenance can distinguish the implementation.
+
+### Character facts panel (issue 490, A-490-12)
+
+repository-codepoints/2 retains the original UTF-8 prefix and full inventory.
+It adds an ASCII panel of affected lines and positioned character identities,
+with names for whitespace, zero-width characters and fullwidth digits. Characters
+without a specific name in the pinned table keep their U+ identity and a generic
+label. CR/LF remain in the inventory but do not fill the compact panel.
+
+The panel and panel_sha256 are appended inside the exact judged answer. Both
+rubric and criteria prompts put that same validated panel before MODEL RESPONSE
+TO GRADE. The answer and checkpoint hashes bind its bytes; rubric and template
+identities bind its version, rendering policy and character-name table hash.
+Missing or modified panels refuse dispatch. Annotation limits still apply.
+
+The current schema reads both v1 and v2 descriptors. Historical v1 receipts keep
+their original meaning and hashes. New admission requires v2; old source-bound
+checkpoints cannot resume under the new grader. Text/files grading is unchanged.
+The shared judge code revision advances to identify the changed implementation.
+
+## Repository judge relationship (issue 490)
+
+New repository runs seal run.judge.relationship beside the requested and reported
+judge identity. same_model compares canonical target and judge IDs;
+comparison_scope is within-model; limitation is null for different IDs or
+"The judge uses the same model as the target. Self-grading may favor its own
+model's answers." for matching IDs. This describes configured identity, not
+proof of model execution or unbiased judgment. Existing stub and UNVERIFIED
+rules still apply. Validation refuses inconsistent relationship fields.
+Historical receipts may omit the field and are not rewritten.
+
+Maverick's A-490-14 ruling fixes Sonnet 5.5 as judge for both R-2 targets. The new
+R-2 driver requires this disclosure. Its report compares baseline, with-file and
+placebo within one target model, all graded by the same judge, and carries the
+Sonnet self-grading limitation. It does not claim independent judges or rank
+the target models against each other. Generic judge selection remains explicit.
+
+
+### Execution-primary R-2 contract (issue 490)
+
+The production library accepts an explicit, validated executionSuite option on
+a repository run. The current 0.15 schema accepts its optional run.scoring
+contract. Existing receipts without that marker retain their original meanings.
+The active suite carries an execution_freeze marker. Its loader retains that
+binding, and a run without the matching complete execution bundle refuses. The
+smoke and full-run drivers select the bundle and require current live evidence.
+Two reviewed execution smokes remain necessary to admit an R-2 batch. The old
+text freeze remains available as evals-text-v1.json with its original hashes.
+
+run.scoring names execution-primary-v1, the complete freeze root, component
+hashes for prompts, rubrics, hidden tests, references and broken versions, and
+the primary and judge-only case ids. Runtime and resource identities remain in
+run.capture. Every completed generation exports a complete quiescent snapshot.
+The checkpoint saves the raw generation before publishing the snapshot, then
+runs the frozen hidden tests in a separate confined scope before the judge.
+
+An executable draw seals snapshot_hash and execution: named test outcomes,
+passed/total/pass_rate, hidden-test and test-name hashes, freeze and runtime
+identities, scope, deadline, evidence kind and execution_hash. Its primary and
+mean are the pass rate. samples contains one execution observation and stddev
+is zero; execution_primary labels the unavailable generation/judge variance
+ratio. Across-draw means and spread drive primary statistics and stopping.
+Actual judge output hashes remain in judge_sample_hashes. Their count need not
+equal the single primary observation. secondary separately records the real
+judge samples, mean, spread, reason, status and matching output hashes. Case
+secondary records counts and the mean/spread across measured secondary draws.
+
+TypeScript has score_basis=judge-only, primary=null and no execution result.
+Its existing judge score drives its own sampling. Its three rows remain in a
+full 60-row receipt but stay outside the 19-case execution aggregate. All other
+rows have score_basis=hidden-tests. Main aggregates and comparisons use only
+those execution rows. No weighted blend is calculated.
+
+Missing code/export scores zero with a reason. Test errors and timeouts are
+labelled failures. Harness or confinement failures pause with retained local
+attempt evidence. run.local_execution records those attempts separately from
+subscription calls. Resume reuses saved phases; failed local phases may receive
+a disclosed new local attempt, but completed failed tests are never rescued.
+
+A malformed or timed-out secondary grade remains unmeasured without erasing
+valid execution. run.secondary_complete is false and smoke admission refuses.
+Missing required primary or judge-only evidence preserves INCOMPLETE; wide
+primary intervals preserve UNDERPOWERED. Summaries and report data disclose
+Sonnet self-grading, observed Unicode misreadings and the false positive on
+contradictory tests. Secondary grades do not certify implementation correctness.
+The strict JSON rule is unchanged. Legacy regrade refuses this new contract.
+No historical grade is replaced. A receipt hash authenticates no execution.
+
+For the full R-2 run only, the audit may continue with disclosed draw losses.
+Primary or secondary unmeasured scores and incomplete delivery are grouped by
+draw, with every audit reason retained. Scores and sealed INCOMPLETE status stay
+unchanged. The controller reviews each loss before publication. A conflicting
+reported model, runtime or sandbox failure, missing required test execution,
+integrity failure or interrupted attempt still fails the job. Primary-unmeasured
+draws above 1% of all generation draws also fail it; judge-only TypeScript and
+secondary-only losses stay outside that numerator. Smoke audits remain strict.
+Completed sample replies are retained without repair or replacement;
+undispatched or interrupted samples may have no saved reply.
+
+Resume normally requires identical measurement source and runner commit. The
+pinned full-run orchestration exception admits only the listed historical
+measurement commits with unchanged measurement source and inputs. It does not
+admit measurement-source changes.
+
+Issue 490 activation keeps aggregate exclusions scoped to their comparisons.
+A failed diagnostic placebo appears in placebo.aggregates.excluded_cases. It
+does not enter the baseline/with-file aggregate. The scheduled-scope failure
+count still covers every arm and keeps the receipt INCOMPLETE.

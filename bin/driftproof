@@ -28,6 +28,7 @@ const { registryStatus, assertRegistered, REGISTRY_PATH } = require('../lib/mode
 const { verdictFromReceipt, badgeEndpoint, githubOutputLines, drawsLine, underpoweredLine, lostDrawsLine } = require('../lib/verdict');
 const { placeboReading, placeboLine } = require('../lib/verdict');
 const decision = require('../lib/decision');
+const { skillTokenCost, assertReceiptShape } = require('../lib/skillCost');
 const { scaffoldInit } = require('../lib/init');
 const { planRegrade, regradeReceipt, answersArchive, readAnswers, readRevisedSuite, ANSWERS_ARCHIVE } = require('../lib/regrade');
 const { canonicalModelId } = require('../lib/usage');
@@ -182,11 +183,12 @@ const INPUT_CONTRACT = {
     max_usd: { re: /^[0-9]+(\.[0-9]+)?$/, message: 'max-usd: expected a positive decimal number such as 20 or 3.53' },
     max_usd_zero: { re: /^0+(\.0+)?$/, reject_on_match: true, message: 'max-usd: must be greater than zero' },
     max_calls: { re: /^[1-9][0-9]*$/, message: 'max-calls: expected a positive integer with no leading zero' },
+    timeout: { re: /^[1-9][0-9]*$/, message: 'timeout: expected a positive integer with no leading zero' },
     skill_dir_control: { re: /[\x00-\x1f\x7f]/, reject_on_match: true, message: 'skill-dir: contains a control character' },
   },
   // Which rule each `driftproof run` input is checked against. samples,
   // max-cases and concurrency are positive integers and reuse max_calls' rule.
-  flags: { 'models': ['models'], 'max-usd': ['max_usd', 'max_usd_zero'], 'max-calls': ['max_calls'], 'samples': ['max_calls'], 'max-cases': ['max_calls'], 'concurrency': ['max_calls'], 'skill-dir': ['skill_dir_control'] },
+  flags: { 'models': ['models'], 'max-usd': ['max_usd', 'max_usd_zero'], 'max-calls': ['max_calls'], 'samples': ['max_calls'], 'max-cases': ['max_calls'], 'concurrency': ['max_calls'], 'timeout': ['timeout'], 'skill-dir': ['skill_dir_control'] },
 };
 
 function shownValue(v) {
@@ -288,7 +290,7 @@ function parseArgs(argv, beforeRefusal = null) {
 // `node:util` parseArgs rewrite, one table per command, is later work.
 const COMMAND_FLAGS = {
   // Spec 438: and the suite of a context file.
-  run: ['models', 'samples', 'max-cases', 'max-calls', 'judge-model', 'concurrency', 'max-usd', 'keep-transcripts', 'out', 'trusted-skill', 'capture', 'quick', 'placebo', 'suite'],
+  run: ['models', 'samples', 'max-cases', 'max-calls', 'timeout', 'judge-model', 'concurrency', 'max-usd', 'keep-transcripts', 'out', 'trusted-skill', 'capture', 'quick', 'placebo', 'suite', 'resume'],
   // Spec 139: init takes the cases a suite is written from. Spec 165: and the label for cases a person
   // approved after they were drafted from the skill, which needs those cases.
   init: ['cases', 'drafted-from-skill'],
@@ -321,7 +323,11 @@ function refuseExtraPositionals(command, positional, placeholder) {
 // Spec 438 (§ The receipt entry points): a receipt file a command reads, through lib/receipt.js
 // readReceiptFile, or a refusal naming it, bounded and escaped, exit 2.
 function readReceiptOrRefuse(file, command) {
-  try { return readReceiptFile(file); } catch (e) {
+  try {
+    const receipt = readReceiptFile(file);
+    if (command === 'diff' || command === 'regrade') assertReceiptShape(receipt);
+    return receipt;
+  } catch (e) {
     if (!e || !/^RECEIPT_/.test(e.code || '')) throw e;
     console.error(`  ✗ REFUSED (${command}): the receipt is unreadable: ${invisibleShown(e.message)}. Nothing read.`);
     process.exit(2);
@@ -400,8 +406,8 @@ USAGE
   ${PROJECT_NAME} init <dir> [--cases FILE [--drafted-from-skill]]  scaffold SKILL.md + evals/evals.json + .driftproofrc, or add the
                                                        suite to a skill that has a SKILL.md
   ${PROJECT_NAME} run <skill-dir> [--models a,b] [--samples N] [--max-cases N] [--max-calls N]
-                        [--judge-model M] [--concurrency N] [--max-usd N]
-                        [--keep-transcripts] [--out DIR] [--trusted-skill] [--capture text|files] [--quick]
+                        [--judge-model M] [--concurrency N] [--max-usd N] [--timeout <seconds>]
+                        [--keep-transcripts] [--out DIR] [--trusted-skill] [--capture text|files|repository] [--resume DIR] [--quick]
                         [--placebo]
   ${PROJECT_NAME} plan <skill-dir> [--model ID] [--judge-model ID] [--lift L] [--samples N]
                         [--draws N] [--from receipt.json]...
@@ -489,6 +495,10 @@ NOTES
     DRIFTPROOF_REGISTRY names). An unregistered model id is REFUSED before any call,
     naming the id and the registry path (so is one not shaped like a model id);
     registry:"unregistered" is an import-only receipt value, refused for a run.
+  - --timeout <seconds> sets each generation and judge attempt's timeout, on every surface.
+    Give a positive integer with no leading zero, at most 2147478 seconds. Each retry
+    gets this limit; retry counts and backoff stay unchanged. The receipt seals it as
+    run.timeout_ms. Without the flag, surface defaults stay unchanged. Works with --quick.
   - --concurrency runs that many (case,mode) tasks at once (default 1). Higher
     values cut wall-clock on the cli surface (cold-start dominated).
   - ISOLATION (default). On the two cli surfaces every \`claude\` / \`codex\` spawn
@@ -508,6 +518,10 @@ NOTES
     directory, and the files it leaves there are judged with its reply (cli surfaces
     only). Either way, an answer that points at a file the judge is not shown, or only
     describes work, is a lost draw and is never scored. The receipt records the mode.
+  - repository capture is a source-checkout measurement mode. It requires one
+    model, concurrency 1, the isolated boundary and an output checkpoint. It grades
+    the captured text subset and reports observed tools and omissions. Use
+    --resume DIR with the original settings; a pause file stops after a draw.
   - --trusted-skill runs the legacy same-user path instead: your environment,
     your cwd, your CLI login. FOR SKILLS YOU AUTHORED YOURSELF ONLY. Never pass
     it for a skill fetched from anywhere else.
@@ -623,6 +637,11 @@ async function cmdRun(positional, flags) {
   // its shape is refused naming the input and the value; nothing is defaulted.
   if (INPUT_CONTRACT.rules.skill_dir_control.re.test(String(skillDir))) refuseInput('skill-dir', skillDir, INPUT_CONTRACT.rules.skill_dir_control.message, 'argument');
   const checked = checkNumericInputs(flags, rc);
+  const timeoutMs = Object.hasOwn(flags, 'timeout') ? Number(checkInput('timeout', flags.timeout, 'flag --')) * 1000 : undefined;
+  // Leave room for the CLI runner's five-second cleanup grace inside Node's timer bound.
+  if (timeoutMs !== undefined && (!Number.isSafeInteger(timeoutMs) || timeoutMs > 2147478647)) {
+    refuseInput('timeout', flags.timeout, 'timeout: expected seconds in the range 1 to 2147478', 'flag --');
+  }
   // The contract has read the three first, so a malformed one is refused under --quick as without it.
   const rcIgnored = quick ? ['samples', 'concurrency', 'max_cases'].filter((k) => Object.hasOwn(rc, k)) : [];
   if (rcIgnored.length) console.error(`  note: --quick sets samples, concurrency and max-cases; the .driftproofrc value${rcIgnored.length === 1 ? '' : 's'} for ${rcIgnored.join(', ')} ${rcIgnored.length === 1 ? 'is' : 'are'} not used for this run`);
@@ -680,7 +699,9 @@ async function cmdRun(positional, flags) {
   // Spec 172 (M-5): the receipts directory is made only once there is a receipt to put in it, not
   // here, before the skill has even loaded: a run that refuses before its first call (no suite, a
   // bad cases file, the isolation preflight) used to create an empty receipts/ anyway.
-  const outDir = flags.out ? path.resolve(flags.out) : RECEIPTS_DIR;
+  const outDir = flags.out ? path.resolve(flags.out) : flags.resume ? path.resolve(flags.resume) : RECEIPTS_DIR;
+  if ((capture === 'repository' || flags.resume) && (models.length !== 1 || concurrency !== 1)) throw new Error('Checkpoint runs require one model and concurrency 1.');
+  if (flags.resume === true) throw new Error('--resume requires an output directory.');
 
   let skill;
   // Spec 438: a context file, any Markdown file, is a subject too, with its suite given by --suite. Its
@@ -828,6 +849,8 @@ async function cmdRun(positional, flags) {
         model,
         opts: {
           maxCases, maxCalls, samples, judgeModel, concurrency, budget, keepTranscripts, trusted, capture,
+          ...((capture === 'repository' || flags.resume) ? { checkpointDir: outDir, ...(flags.resume ? {resume: flags.resume} : {}) } : {}),
+          ...(timeoutMs !== undefined ? { timeoutMs } : {}),
           ...(quick ? { preset: PRESET_QUICK, draws: QUICK.draws } : {}),
           ...(placebo ? { placebo: true } : {}),
           onProgress: (p) => {
@@ -858,7 +881,20 @@ async function cmdRun(positional, flags) {
       }
       throw e;
     }
+    if (result.status === 'paused') {
+      console.log('Run paused with a consistent checkpoint. Remove the pause file and use --resume.');
+      process.exitCode = 75; return;
+    }
     const { receipt, calls, transcripts, answers } = result;
+    if (capture === 'repository' || flags.resume) {
+      const checked=validateReceipt(receipt);
+      if(!checked.valid || !verifyReceiptHash(receipt)) throw new Error('Checkpoint receipt failed validation.');
+      require('../lib/checkpoint').atomicFile(path.join(outDir,'summary.md'),summarizeReceipt(receipt));
+      if(answers)require('../lib/checkpoint').atomicFile(path.join(outDir,'answers.json'),JSON.stringify(answersArchive({receipt,kept:answers}),null,2)+'\n');
+      console.log(summarizeReceipt(receipt));
+      emitted.push(path.join(outDir,'receipt-'+receipt.receipt_hash.slice(0,12)+'.json'));
+      continue;
+    }
 
     const { valid, errors } = validateReceipt(receipt);
     if (!valid) {
@@ -914,7 +950,8 @@ async function cmdRun(positional, flags) {
     // Spec 026 AC-6, AC-7: the band rule is named beside the band, and a band
     // the formula could not form prints as n/a, never as 0.000.
     // Spec 139 (R-4): a smoke run prints its two arms and the plain line, and no lift.
-    if (stubRun) continue;
+    const cost = skillTokenCost(receipt);
+    if (stubRun) { if (cost.shown) console.log(`  → ${cost.text}\n`); continue; }
     // A-139-17 (AC-367-1, AC-367-3, AC-367-4): a quick run names each draw that did not reach the
     // judge, then shows draw 0 of each arm side by side, checked against the sealed hashes, labelled
     // when not measured, and no score.
@@ -933,6 +970,7 @@ async function cmdRun(positional, flags) {
     }
     else if (cmp.delta == null) console.log(`  → skill lift n/a (${cmp.delta_uncertainty_unavailable === 'no_cases' ? 'no case was included on an arm' : 'no comparison'})\n`);
     else console.log(`  → skill lift ${cmp.delta >= 0 ? '+' : ''}${cmp.delta.toFixed(3)} ± ${uncertaintyStr(cmp)}  (with ${band(aw.mean_score, aw.stddev)} vs base ${band(ab.mean_score, ab.stddev)}; band = sample stddev of the per-case means)\n`);
+    if (cost.shown) console.log(`  → ${cost.text}\n`);
   }
 
   console.log(`Done. ${emitted.length} receipt(s) emitted to ${path.relative(process.cwd(), outDir)}/`);
@@ -975,7 +1013,9 @@ function cmdDiff(positional, flags) {
 
   const labelA = mode === 'revision' ? `pinned (${dateStamp(a.run.date_utc)})` : dateStamp(a.run.date_utc);
   const labelB = mode === 'revision' ? `current (${dateStamp(b.run.date_utc)})` : dateStamp(b.run.date_utc);
-  const { markdown } = buildDriftReport(a, b, { labelA, labelB, mode, includeLiftBreakdown: flags['lift-breakdown'] === true });
+  const report = buildDriftReport(a, b, { labelA, labelB, mode, includeLiftBreakdown: flags['lift-breakdown'] === true });
+  const figure = (r) => { const cost = skillTokenCost(r); return cost.shown ? cost.figure : 'n/a'; };
+  const markdown = report.markdown.replace(/^(\| skill lift \(Δ\) \|[^\n]*\n)/m, (row) => `${row}| Token cost | ${figure(a)} | ${figure(b)} |\n`);
 
   if (flags.out) {
     fs.writeFileSync(path.resolve(flags.out), markdown);

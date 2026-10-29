@@ -490,6 +490,46 @@
           }
         }
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "run": {
+            "required": [
+              "scope"
+            ],
+            "properties": {
+              "scope": {
+                "properties": {
+                  "kind": {
+                    "const": "diagnostic"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "run"
+        ]
+      },
+      "then": {
+        "properties": {
+          "verification_level": {
+            "const": "UNVERIFIED"
+          },
+          "run": {
+            "required": [
+              "preset"
+            ],
+            "properties": {
+              "preset": {
+                "const": "quick"
+              }
+            }
+          }
+        }
+      }
     }
   ],
   "properties": {
@@ -835,6 +875,30 @@
               "type": "string",
               "minLength": 1,
               "description": "v0.12 (optional). The revision of the code on the judging path (lib/judge.js JUDGE_CODE_REVISION): derived when the runner loads from the files spec/RECEIPT.md lists, each hashed whole, so a change to any of them moves it."
+            },
+            "relationship": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "same_model",
+                "comparison_scope",
+                "limitation"
+              ],
+              "description": "Optional on historical receipts. Configured target/judge identity relationship for repository runs, not an attestation that a model graded or that judging is unbiased.",
+              "properties": {
+                "same_model": {
+                  "type": "boolean"
+                },
+                "comparison_scope": {
+                  "const": "within-model"
+                },
+                "limitation": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
             }
           }
         },
@@ -1172,11 +1236,94 @@
             "mode": {
               "enum": [
                 "text",
-                "files"
+                "files",
+                "repository"
               ],
-              "description": "text: on a CLI surface the child ran with its file-writing tools off, and its reply is the judged answer (an api surface has no tools). files: the child could write files in its own fresh working directory, and the regular files there were collected, within the runner limits, and judged with its reply."
+              "description": "text: on a CLI surface the child ran with its file-writing tools off, and its reply is the judged answer (an api surface has no tools). files: the child could write files in its own fresh working directory, and the regular files there were collected, within the runner limits, and judged with its reply. repository: a fresh pinned starter, tools confined by the mandatory eval boundary, and the reply plus captured text changes. Issue 490."
+            },
+            "starter_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "starter_manifest": {
+              "type": "object"
+            },
+            "tools": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "limits": {
+              "type": "object"
+            },
+            "resources": {
+              "type": "object"
+            },
+            "isolation": {
+              "type": "object"
+            },
+            "runtime_image_digest": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "effective_environment_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "contract_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "answer_annotation": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "version",
+                "contract_hash"
+              ],
+              "properties": {
+                "version": {
+                  "enum": [
+                    "repository-codepoints/1",
+                    "repository-codepoints/2"
+                  ]
+                },
+                "contract_hash": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              },
+              "description": "Issue 490 A-490-11. New repository grades append an exact character inventory. Absent means the historical grading contract did not record this annotation."
             }
-          }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "mode": {
+                    "const": "repository"
+                  }
+                },
+                "required": [
+                  "mode"
+                ]
+              },
+              "then": {
+                "required": [
+                  "starter_hash",
+                  "starter_manifest",
+                  "tools",
+                  "limits",
+                  "resources",
+                  "isolation",
+                  "runtime_image_digest",
+                  "effective_environment_hash",
+                  "contract_hash"
+                ]
+              }
+            }
+          ]
         },
         "preset": {
           "type": "string",
@@ -1335,6 +1482,12 @@
             }
           ]
         },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147478647,
+          "description": "Issue 489. Explicit uniform per-call timeout in milliseconds, applied to each generation and judge attempt in the original run. Retries each get this limit. Not elapsed time or a whole-run deadline. Absent when no explicit uniform supported setting is recorded, including older receipts and imports. A stub records the requested setting without making a model call."
+        },
         "delivery": {
           "type": "string",
           "enum": [
@@ -1343,6 +1496,344 @@
             "unknown"
           ],
           "description": "v0.15, required (spec 438). The delivery the run was configured with. `injected`: the runner puts the subject text into each with-skill request it builds (the system prompt on the API, an argument appended to the harness's system prompt on claude-cli, before the task on standard input on codex). `installed`: a harness loaded the subject itself from where it was installed, and Driftproof put none of its text in a request; only an import says this, the claude plugin eval. `unknown`: an imported source that does not say how its subject reached the model. The field says nothing about whether a request was sent: a stub run sends none."
+        },
+        "resume": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "resumed",
+            "checkpoint_draws",
+            "segments"
+          ],
+          "properties": {
+            "resumed": {
+              "type": "boolean"
+            },
+            "checkpoint_draws": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "segments": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "execution": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "dispatch_intents",
+            "confirmed_launches",
+            "uncertain_attempts",
+            "exact_launches",
+            "usage_complete",
+            "evidence_kind"
+          ],
+          "properties": {
+            "dispatch_intents": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "confirmed_launches": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "uncertain_attempts": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "exact_launches": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "usage_complete": {
+              "type": "boolean"
+            },
+            "evidence_kind": {
+              "enum": [
+                "simulated",
+                "observed"
+              ]
+            }
+          }
+        },
+        "checkpoint_evidence_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "task_ids",
+            "expected_arms"
+          ],
+          "properties": {
+            "kind": {
+              "enum": [
+                "diagnostic",
+                "comparison"
+              ]
+            },
+            "task_ids": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "expected_arms": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "baseline",
+                  "with_skill",
+                  "placebo"
+                ]
+              }
+            },
+            "draws_per_arm": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            }
+          }
+        },
+        "accounting": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "basis",
+            "attempts",
+            "reported_cost_usd",
+            "unknown_cost_attempts",
+            "interrupted_attempts",
+            "tool_errors",
+            "stops"
+          ],
+          "properties": {
+            "basis": {
+              "const": "subscription-accounting"
+            },
+            "attempts": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "reported_cost_usd": {
+              "type": "number",
+              "minimum": 0
+            },
+            "unknown_cost_attempts": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "interrupted_attempts": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "tool_errors": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "stops": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "attempt",
+                  "phase",
+                  "code",
+                  "detail"
+                ],
+                "properties": {
+                  "attempt": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "phase": {
+                    "enum": [
+                      "generation",
+                      "judge"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "detail": {
+                    "type": "string",
+                    "maxLength": 4096
+                  }
+                }
+              }
+            }
+          }
+        },
+        "scoring": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "contract",
+            "freeze_hash",
+            "component_hashes",
+            "primary_case_ids",
+            "judge_only_case_ids",
+            "secondary_role",
+            "limitations"
+          ],
+          "properties": {
+            "contract": {
+              "const": "execution-primary-v1"
+            },
+            "freeze_hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "component_hashes": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "prompts",
+                "rubrics",
+                "hidden_tests",
+                "references",
+                "broken_versions"
+              ],
+              "properties": {
+                "prompts": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "rubrics": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "hidden_tests": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "references": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "broken_versions": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
+            },
+            "primary_case_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true,
+              "minItems": 19,
+              "maxItems": 19
+            },
+            "judge_only_case_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true,
+              "minItems": 1,
+              "maxItems": 1
+            },
+            "secondary_role": {
+              "const": "test-quality"
+            },
+            "limitations": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Issue 490. Explicit execution-primary contract. Existing receipts without this field keep judge-primary meanings."
+        },
+        "secondary_complete": {
+          "type": "boolean"
+        },
+        "local_execution": {
+          "type": "object",
+          "required": [
+            "attempts"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "attempts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "key",
+                  "phase",
+                  "request_hash",
+                  "started_at",
+                  "state"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "key": {
+                    "type": "array"
+                  },
+                  "phase": {
+                    "enum": [
+                      "snapshot",
+                      "hidden-execution"
+                    ]
+                  },
+                  "request_hash": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  },
+                  "result_hash": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  },
+                  "started_at": {
+                    "type": "string"
+                  },
+                  "ended_at": {
+                    "type": "string"
+                  },
+                  "state": {
+                    "enum": [
+                      "uncertain",
+                      "completed",
+                      "failed"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 4096
+                  },
+                  "code": {
+                    "type": "string",
+                    "maxLength": 64
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
         }
       },
       "dependentRequired": {
@@ -1577,7 +2068,8 @@
                   "minimum": 0,
                   "maximum": 1
                 },
-                "minItems": 0
+                "minItems": 0,
+                "description": "Judge samples on legacy and judge-only rows. Under execution-primary grading, the last measured draw has one hidden-test pass-rate observation; secondary holds the actual judge samples."
               },
               "generation_hash": {
                 "type": "string",
@@ -1586,7 +2078,7 @@
               },
               "judge_sample_hashes": {
                 "type": "array",
-                "description": "sha256 (hex) of each raw judge output, one per judge sample. Same length as `samples`.",
+                "description": "Hashes of actual judge outputs. Execution-primary receipts retain these as secondary evidence; their count is not the count of primary observations.",
                 "items": {
                   "type": "string",
                   "pattern": "^[a-f0-9]{64}$"
@@ -1926,6 +2418,214 @@
                               }
                             }
                           }
+                        },
+                        "delivery": {
+                          "type": "object",
+                          "description": "Issue 490. Validated tool-event prefix, observed counts, completeness and terminal delivery status. Unknown totals are null."
+                        },
+                        "collection": {
+                          "type": "object",
+                          "description": "Issue 490. Enumeration completeness and disclosed omissions for the captured text subset."
+                        },
+                        "repository_files": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          },
+                          "description": "Issue 490. Per-path delta, type, mode, inclusion, omission reason and included-content hash. Content bytes are in the hashed answer."
+                        },
+                        "request_hash": {
+                          "type": "string",
+                          "pattern": "^[0-9a-f]{64}$"
+                        },
+                        "transcript_hash": {
+                          "type": "string",
+                          "pattern": "^[0-9a-f]{64}$"
+                        },
+                        "score_basis": {
+                          "enum": [
+                            "hidden-tests",
+                            "judge-only"
+                          ]
+                        },
+                        "primary": {
+                          "type": [
+                            "number",
+                            "null"
+                          ],
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "snapshot_hash": {
+                          "type": "string",
+                          "pattern": "^[0-9a-f]{64}$"
+                        },
+                        "secondary": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "status",
+                            "samples",
+                            "mean",
+                            "stddev",
+                            "judge_sample_hashes",
+                            "reason"
+                          ],
+                          "properties": {
+                            "status": {
+                              "enum": [
+                                "measured",
+                                "unmeasured"
+                              ]
+                            },
+                            "samples": {
+                              "type": "array",
+                              "items": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              }
+                            },
+                            "mean": {
+                              "type": [
+                                "number",
+                                "null"
+                              ],
+                              "minimum": 0,
+                              "maximum": 1
+                            },
+                            "stddev": {
+                              "type": [
+                                "number",
+                                "null"
+                              ],
+                              "minimum": 0
+                            },
+                            "judge_sample_hashes": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[0-9a-f]{64}$"
+                              }
+                            },
+                            "reason": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "execution": {
+                          "type": "object",
+                          "required": [
+                            "status",
+                            "tests",
+                            "passed",
+                            "total",
+                            "pass_rate",
+                            "snapshot_hash",
+                            "hidden_test_hash",
+                            "test_names_hash",
+                            "freeze_hash",
+                            "runtime_image_digest",
+                            "effective_environment_hash",
+                            "scope_unit",
+                            "wall_ms",
+                            "evidence_kind",
+                            "execution_hash"
+                          ],
+                          "properties": {
+                            "status": {
+                              "const": "measured"
+                            },
+                            "tests": {
+                              "type": "array",
+                              "minItems": 1,
+                              "maxItems": 128,
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "name",
+                                  "outcome"
+                                ],
+                                "properties": {
+                                  "name": {
+                                    "type": "string",
+                                    "maxLength": 160
+                                  },
+                                  "outcome": {
+                                    "enum": [
+                                      "pass",
+                                      "fail"
+                                    ]
+                                  },
+                                  "reason": {
+                                    "type": "string"
+                                  }
+                                },
+                                "additionalProperties": false
+                              }
+                            },
+                            "passed": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "total": {
+                              "type": "integer",
+                              "minimum": 1
+                            },
+                            "pass_rate": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1
+                            },
+                            "snapshot_hash": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            },
+                            "hidden_test_hash": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            },
+                            "test_names_hash": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            },
+                            "freeze_hash": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            },
+                            "runtime_image_digest": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            },
+                            "effective_environment_hash": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            },
+                            "execution_hash": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            },
+                            "scope_unit": {
+                              "type": "string",
+                              "pattern": "^driftproof-490-[a-f0-9]{24}$"
+                            },
+                            "wall_ms": {
+                              "const": 10000
+                            },
+                            "evidence_kind": {
+                              "enum": [
+                                "observed",
+                                "simulated"
+                              ]
+                            },
+                            "scope": {
+                              "type": "string"
+                            },
+                            "diagnostics": {
+                              "type": "object"
+                            }
+                          },
+                          "additionalProperties": false
                         }
                       },
                       "allOf": [
@@ -1995,7 +2695,8 @@
                       "judge_sd_zero",
                       "no_measured_draws",
                       "judge_samples_unknown",
-                      null
+                      null,
+                      "execution_primary"
                     ],
                     "description": "WHICH null the variance_ratio is (F-014-C). `null` when a ratio was formed. `single_judge_sample`: k=1, so the per-draw judge spread is 0 by construction and the ratio is undefined — this is the shape every pre-v0.5 example produced. `judge_sd_zero`: k>=2 and the judge agreed with itself perfectly inside every measured draw. `no_measured_draws`: nothing was measured. `judge_samples_unknown`: the draws carry no sample list, so the count cannot be established and saying which null it is would assert a cause this control cannot reach. Each names what was OBSERVED and none names a cause."
                   },
@@ -2088,6 +2789,55 @@
                       "type": "string",
                       "minLength": 1
                     }
+                  }
+                }
+              },
+              "score_basis": {
+                "enum": [
+                  "hidden-tests",
+                  "judge-only"
+                ]
+              },
+              "primary": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0,
+                "maximum": 1
+              },
+              "secondary": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "n_measured",
+                  "n_unmeasured",
+                  "mean",
+                  "sd"
+                ],
+                "properties": {
+                  "n_measured": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "n_unmeasured": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "mean": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "sd": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0
                   }
                 }
               }

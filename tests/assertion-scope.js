@@ -290,7 +290,7 @@ const HARNESS_ENTRY_DIRS = ['scripts', 'tests'];
 // leaves the product path is red until somebody writes down why, which is the
 // sentence nobody wrote for `lib/reuse.js`.
 const HARNESS_ONLY_LIB = {
-  'lib/hygiene.js': 'the confidentiality scanner. Runs in the merge check and in the publish gate; the CLI never scans, so it is correctly outside the product path.',
+  'lib/hygiene.js': 'the hygiene scanner. Runs in the merge check and in the publish gate; the CLI never scans, so it is correctly outside the product path.',
   'lib/runner.js': 'the gate engine itself (`Gate`), used by tests/gate.js. It is harness by definition and shipping it is an accident of `files: ["lib/"]`, not a product path.',
 };
 
@@ -456,6 +456,8 @@ const BAND_SITE_KIND = {
   // filtered so that the set stays pinned: a new one is unclassified, and
   // therefore red, until somebody says which kind it is.
   'lib/judge.js': 'emission — assembles a judge result from its own samples',
+  // Issue 490, A-016-15: distinct primary and secondary result emission.
+  'lib/execution-grading.js': 'emission: assembles execution results and secondary sample summaries; compares no bands',
   'scripts/prepare-report.js': 'emission — stub case results for report staging',
   'scripts/prepare-report-002.js': 'emission — stub case results for report staging',
   'scripts/prepare-report-003.js': 'emission — stub case results for report staging',
@@ -940,8 +942,6 @@ const PROBE_COPY_EXCEPTIONS = [
   { probe: 'specs/021-gate-and-tooling-carry/probes/lib.mjs', name: 'run', independent_of: 'scripts/render-check.mjs run', reason: 'a name collision: a spawnSync wrapper for the probes; the render checker\'s browser runner is not involved', seen_failing_at: { gate: 'specs/021-gate-and-tooling-carry/gate.sh', assertion: 'MUTATION: a one-character edit to a real report body does not digest to the recorded value' } },
   { probe: 'specs/021-gate-and-tooling-carry/probes/lib.mjs', name: 'sha256', independent_of: 'lib/canonical.js sha256', reason: 'a name collision on a primitive: a node:crypto digest of utf8 text for the body baselines; the product\'s canonicalisation is not involved', seen_failing_at: { gate: 'specs/021-gate-and-tooling-carry/gate.sh', assertion: 'MUTATION: a one-character edit to a real report body does not digest to the recorded value' } },
   { probe: 'specs/026-receipt-integrity/probes/lib.mjs', name: 'run', independent_of: 'scripts/render-check.mjs run', reason: 'a name collision: the spawnSync wrapper every spec 026 probe uses; the render checker\'s browser runner is not involved', seen_failing_at: { gate: 'specs/026-receipt-integrity/gate.sh', assertion: 'MUTATION: a planted git invocation naming main is named' } },
-  { probe: 'specs/027-confidentiality-scan-classification/probes/lib.mjs', name: 'run', independent_of: 'scripts/render-check.mjs run', reason: 'a name collision: the same spawnSync wrapper shape as spec 021\'s', seen_failing_at: { gate: 'specs/027-confidentiality-scan-classification/gate.sh', assertion: 'MUTATION: scanning the pixel data instead of the text chunks takes the REPO gate red on the real screenshot' } },
-  { probe: 'specs/027-confidentiality-scan-classification/probes/classify.mjs', name: 'sha256', independent_of: 'lib/canonical.js sha256', reason: 'a name collision on a primitive: a node:crypto digest of bytes for the probe\'s own comparisons; the product\'s canonicalisation is not involved', seen_failing_at: { gate: 'specs/027-confidentiality-scan-classification/gate.sh', assertion: 'MUTATION: scanning the pixel data instead of the text chunks takes the REPO gate red on the real screenshot' } },
   // Spec 031, F-1 of specs/031-artefact-claims/evidence/approval-20260914T142509Z.md: the three its probes' lib.mjs carried undeclared.
   { probe: 'specs/031-artefact-claims/probes/lib.mjs', name: 'run', independent_of: 'scripts/render-check.mjs run', reason: 'a name collision: the spawnSync wrapper every spec 031 probe uses; the render checker\'s browser runner is not involved, and no lib/ module exports a spawn wrapper to import', seen_failing_at: { gate: 'specs/031-artefact-claims/gate.sh', assertion: 'the badge refuses when a retained judge output no longer digests to its judge_sample_hashes entry' } },
   { probe: 'specs/031-artefact-claims/probes/lib.mjs', name: 'main', independent_of: 'scripts/prepare-report-006.js main, scripts/prepare-report-007.js main, scripts/prepare-report-008.js main, scripts/run-report-006.js main', reason: 'a name collision: runs one probe body and prints its one RESULT line; the report scripts\' command-line entry points are not involved', seen_failing_at: { gate: 'specs/031-artefact-claims/gate.sh', assertion: 'the badge refuses when a retained judge output no longer digests to its judge_sample_hashes entry' } },
@@ -1262,7 +1262,7 @@ const isInternalNarrative = (f) => /^reports\/(week-[0-9]|phase-[0-9])[^/]*\.md$
 function publishExclusionHits(files) {
   return {
     pending: files.filter((f) => f === 'reports/pending-publish.md'),
-    governance: files.filter((f) => /^specs\//.test(f) || f === 'BACKLOG.md' || f === 'CLAUDE.md' || f === 'CONSTITUTION.md' || f === 'DECISIONS.md' || f === 'RUNBOOK.md'),
+    governance: files.filter((f) => /^specs\//.test(f) || f === 'BACKLOG.md' || f === 'CLAUDE.md' || f === 'CONSTITUTION.md' || (f === 'DECISIONS.md' || f === 'DECISIONS-archive.md') || f === 'RUNBOOK.md'),
     state: files.filter((f) => /^state\//.test(f)),
     internal: files.filter(isInternalNarrative),
   };

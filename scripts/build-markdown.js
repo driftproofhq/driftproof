@@ -31,7 +31,7 @@ const ORIGIN = 'https://driftproofhq.com';
 // gate reads these bounds against the ruling in the brief.
 const PAGES = ['what-is-driftproof', 'agent-skill-evaluation', 'agent-skill-regression-testing', 'compare', 'methodology', 'paper'];
 const COPIED_REPORTS = { from: '009', to: '013' };
-const copied = (n) => String(n) >= COPIED_REPORTS.from && String(n) <= COPIED_REPORTS.to || String(n) === '015';
+const copied = (n) => String(n) >= COPIED_REPORTS.from && String(n) <= COPIED_REPORTS.to || ['015', '016'].includes(String(n));
 const reportRows = (root) => JSON.parse(fs.readFileSync(path.join(root, 'docs', 'data', 'reports.json'), 'utf8')).reports;
 function pageSet(root = ROOT) {
   return [...PAGES.map((p) => `${p}/index.html`), ...reportRows(root).filter((r) => copied(r.number.value)).map((r) => `reports/${r.number.value}/index.html`)];
@@ -158,6 +158,12 @@ function makeCtx(pageUrl) {
 
   function block(n) {
     if (DROP.has(n.tag)) return '';
+    // Comparison panes put labels below their bodies visually. In linear prose
+    // each label must introduce its own content, including an empty first pane.
+    if ((n.attrs?.class || '').split(/\s+/).includes('door')) {
+      const body = n.children.find(c => (c.attrs?.class || '').split(/\s+/).includes('door-body'));
+      if (body) return [...n.children.filter(c => c !== body).map(c => isInline(c) ? para([c]) : block(c)), blocks(body.children)].filter(Boolean).join('\n\n');
+    }
     switch (n.tag) {
       case 'h1': case 'h2': case 'h3': case 'h4': case 'h5': case 'h6': {
         const t = para(n.children);

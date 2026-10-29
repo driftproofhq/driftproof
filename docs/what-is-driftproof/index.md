@@ -31,6 +31,7 @@ What each other tool measures, and whether it compares a task with the skill and
 
 Every published report, newest first.
 
+- [Report 016](https://driftproofhq.com/reports/016/): Popular rules files vs. a placebo: most made Claude write more
 - [Report 015](https://driftproofhq.com/reports/015/): Skills.sh snapshot [2026-10-17](https://driftproofhq.com/reports/015/): text tasks
 - [Report 014](https://driftproofhq.com/reports/014/): Claude Haiku 5.5 on release day, three skills
 - [Report 013](https://driftproofhq.com/reports/013/): Claude Sonnet 5.5, the day after its release

@@ -407,6 +407,7 @@ const TYPE_NOTES = {
     "Asks whether a skill still helps when a newer version of the model underneath it comes out."],
   'Substrate durability report': ['overlapping',
     "Asks whether a skill helps just as much on a different company's model, reached through that company's own command-line tool."],
+  'Rules-file behaviour report': ['overlapping', 'Popular rules files against no file and a same-length placebo on small coding tasks.'],
   'Capability-gap report': ['separated',
     "Asks whether a skill still helps on a stronger model from the same company."],
   'Value report': ['overlapping',
@@ -682,6 +683,10 @@ const TERMS = [
   // Spec 438 (spec 025 A-025-14): the two fields spec/RECEIPT.md v0.15 adds, in spec 438's own words.
   ['context file', 'Any Markdown file, such as a CLAUDE.md, an AGENTS.md or a shared rules file, measured as a subject in place of a skill. Its exact bytes are the with-skill system text and their sha256 is its content hash; the receipt records its kind as context_file.', RECEIPT_SPEC, 'the receipt specification'],
   ['delivery', 'How a run was configured to deliver its subject, recorded on every receipt: injected, the runner puts the subject text into each with-skill request it builds; installed, a harness loaded the subject from where it was installed, which only an import says; unknown, an imported source that does not say. It records the configuration, not that a request was sent.', RECEIPT_SPEC, 'the receipt specification'],
+  // Issue 490: terms for the capture, saved progress and configured grader pair.
+  ['repository capture', 'A capture mode that grades the reply and captured text changes from a fresh pinned starter repository, with coding tools available. The receipt discloses observed tool evidence and capture omissions; availability alone does not prove execution.', '/methodology/#repository-capture', 'repository capture'],
+  ['checkpoint', 'Durable run progress that retains finished draws and saved judge samples for a compatible resume. A pause or resume leaves the verdict rules unchanged and records the run segments in the final receipt.', '/methodology/#checkpoint-pause-resume', 'checkpoint, pause and resume'],
+  ['crossed judging', 'A historical R-2 pairing: Sonnet judged Haiku and Haiku judged Sonnet. Sonnet 5.5 now judges both targets; self-grading is disclosed.', '/methodology/#crossed-judging', 'R-2 judge configuration'],
 ];
 
 // THE QUOTED RULE IS A SENTENCE, and the template does not add to it (fix pass

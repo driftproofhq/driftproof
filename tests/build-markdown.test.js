@@ -119,3 +119,9 @@ test('AC-5 nested table evidence keeps words apart and preserves inline joins', 
   const inline=md('<table><tr><td>pre<b>fix</b>: <data>0</data>.<data>75</data>, <a href="/record">record</a>.</td></tr></table>');
   assert.ok(inline.includes('| pre**fix**: 0.75, [record](https://driftproofhq.com/record). |'),inline);
 });
+
+// Issue 501, review F-2: trailing visual labels introduce their own pane in prose.
+test('AC-18/22 comparison panes keep each label with its own content, including an empty pane', () => {
+  const out = md('<div class="doors wide"><div class="door none"><div class="door-body"></div><b>Nothing</b><span>No added file</span></div><div class="door file"><div class="door-body"><pre>Use &lt;rules&gt;.</pre></div><b>The file</b><span>Injected instructions</span></div><div class="door placebo"><div class="door-body"><p>A ferry crossed.</p></div><b>Its fake</b><span>Irrelevant prose, equal bytes</span></div></div>');
+  assert.equal(out, '# Title\n\nCanonical: <https://driftproofhq.com/paper/>\n\n**Nothing**\n\nNo added file\n\n**The file**\n\nInjected instructions\n\n' + '\x60\x60\x60\nUse <rules>.\n\x60\x60\x60' + '\n\n**Its fake**\n\nIrrelevant prose, equal bytes\n\nA ferry crossed.\n');
+});

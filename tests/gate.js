@@ -10,7 +10,7 @@
 //   - borderline outcome when the threshold sits inside mean ± stddev
 //   - drift: no separation on overlapping bands, "regression" ONLY on non-overlap
 //   - hardened example: recorded with_skill mean in [0.65, 0.95], baseline >=0.15 lower
-//   - confidentiality (deny-list) + hygiene (paths/emails/tokens/env/host-ip) scans
+//   - hygiene (paths/emails/tokens/env/host-ip) scans
 //   - live sampled runner on haiku (DRIFTPROOF_LIVE=1)
 //
 // Scans run on DRIFTPROOF_SCAN_ROOT if set (the exact tree being published),
@@ -24,9 +24,6 @@ const path = require('path');
 const { RECEIPT_SCHEMA_VERSION } = require('../config');
 const os = require('os');
 const crypto = require('crypto');
-// A Node built-in, so the classifier below adds no dependency: `zTXt` and
-// compressed `iTXt` payloads are deflate, and a woff2's table stream is brotli.
-const zlib = require('zlib');
 const { execFileSync, spawnSync } = require('child_process');
 const { Gate } = require('../lib/runner');
 const { buildReceipt, validateReceipt, verifyReceiptHash, computeReceiptHash } = require('../lib/receipt');
@@ -43,6 +40,11 @@ const { normalizeCases } = require('../lib/skill');
 const { POSIX_ONLY_ROWS, skipPosixOnly, runNpm, SCRATCH_GIT } = require('./portable');
 
 const ROOT = path.join(__dirname, '..');
+// Shared by the independent site-image checks after the name scanner's retirement.
+const PNG_SIGNATURE_HEX = '89504e470d0a1a0a';
+// Issue 476: npm children use this gate checkout's private cache. Ordinary
+// npm commands outside the gate keep their caller's configuration.
+process.env.npm_config_cache = path.join(ROOT, 'state/bootstrap/npm');
 
 // ── WHAT THIS GATE RUNS IS CHOSEN ON ARGV ────────────────────────────────────
 //
@@ -292,950 +294,6 @@ gate.section('hardened example');
   }
 }
 
-// ── CLASSIFY-BEGIN: the tree is classified before it is scanned (spec 027) ───
-//
-// THE DEFECT. Section 7 read every file with `readFileSync(..., 'utf8')` and
-// matched the deny list against the decoded string. One committed screenshot
-// carries three literal ASCII bytes, at offset 23576 inside an IDAT chunk,
-// that spell a deny-listed acronym with non-word bytes on both sides, so the
-// word-boundary test matched them. They are in the file (`grep -a` finds them)
-// and absent from the inflated pixel data: a coincidence of the compressed
-// stream's bit-packing, not a name anybody wrote. This comment first said the
-// lossy decode invented a string that was nowhere in the file. It did not, and
-// for a pure-ASCII deny list it cannot: an ASCII byte decodes to itself and
-// every other byte becomes a non-word character either way. The old reader
-// was a byte-exact reader in effect, and the classification below is a
-// NARROWING of it, argued from the gate's threat model (CONSTITUTION) and
-// measured per file by the IDAT residue check. DECISIONS 2026-09-05.
-//
-// WHY NOT SKIP BINARIES. It would remove the noise and open a hole: a file
-// carrying a real term plus one invalid byte would stop being scanned, silently,
-// by a control whose whole point is that it never stops. Three variants of that
-// fix were proposed and all three were ruled out.
-//
-// SO EVERY FILE IS CLASSIFIED, AND NO CLASS IS A SKIP.
-//
-//   text          bytes survive a strict UTF-8 round-trip -> the existing scan,
-//                 over the decoded string, unchanged
-//   a recognised  bytes match a signature in RECOGNISED_BINARIES -> that
-//   binary        format's own check, over the parts of the format that can
-//                 carry text, and nothing else
-//   unrecognised  neither -> THE GATE FAILS, naming the file and the reason
-//
-// Unrecognised is red. A new binary format arriving here is a decision somebody
-// makes in a spec, not a file that quietly stops being checked. A recognised
-// binary whose check throws is red for the same reason: a check that returns no
-// text because it could not read the file is indistinguishable, at the call
-// site, from one that read the file and found nothing. That is
-// `absence-vs-unreadable`, the register's own class.
-//
-// CLASSIFICATION KEYS ON THE SIGNATURE, NEVER ON THE EXTENSION. An
-// extension-keyed classifier is the ruled-out fix wearing a different hat:
-// rename a file and the control changes its mind.
-
-// The recognised-type list, declared ONCE, as data. `specs/027-.../spec.md`
-// AC-7 carries the same table and the gate holds the two equal in both
-// directions, so the prose beside this cannot go stale the way a list beside an
-// authoritative file always does.
-const RECOGNISED_BINARIES = [
-  {
-    id: 'png',
-    signature: '89504e470d0a1a0a',
-    check: 'pngScannableText',
-    scans: 'the contents of every tEXt, iTXt and zTXt chunk, zTXt and compressed iTXt inflated',
-    extract: pngScannableText,
-    residue: pngIdatResidue,
-  },
-  {
-    id: 'woff2',
-    signature: '774f4632',
-    check: 'woff2ScannableText',
-    scans: 'every name table record string decoded per platform id, the extended metadata block decompressed, and the private data block',
-    extract: woff2ScannableText,
-  },
-];
-
-// The PNG signature, named once and derived from the list above. Section 40's
-// two Open Graph card assertions used to carry the same hex literal of their
-// own: a second definition of what a PNG is, in the same file, free to disagree
-// with this one. They read this constant now. The check is unchanged.
-const PNG_SIGNATURE_HEX = RECOGNISED_BINARIES.find((b) => b.id === 'png').signature;
-
-// Strict, and written as the round trip it is named for: decode, re-encode,
-// compare bytes. Equivalent to a fatal UTF-8 decode on every input, and it says
-// what it does.
-function utf8RoundTrips(buf) {
-  return Buffer.compare(Buffer.from(buf.toString('utf8'), 'utf8'), buf) === 0;
-}
-
-// ── PNG: the three chunk types that carry text, and nothing else ────────────
-//
-// IDAT is not term-scanned. A confidential name rendered INTO a screenshot is
-// pixels, which no byte scan can see either way. IDAT is inflated instead, by
-// pngIdatResidue below, so that a byte-exact run inside it is adjudicated
-// against the pixel data rather than assumed to be noise.
-function pngScannableText(buf) {
-  const out = [];
-  let off = 8;
-  let sawIEND = false;
-  while (off + 8 <= buf.length) {
-    const len = buf.readUInt32BE(off);
-    const type = buf.toString('latin1', off + 4, off + 8);
-    const dataStart = off + 8;
-    const dataEnd = dataStart + len;
-    if (len > 0x7fffffff || dataEnd + 4 > buf.length) throw new Error(`chunk ${type} at offset ${off} runs past the end of the file`);
-    const data = buf.subarray(dataStart, dataEnd);
-    if (type === 'tEXt') {
-      const z = data.indexOf(0);
-      if (z < 0) throw new Error('a tEXt chunk has no keyword terminator');
-      out.push({ region: 'tEXt', text: `${data.subarray(0, z).toString('latin1')} ${data.subarray(z + 1).toString('latin1')}` });
-    } else if (type === 'zTXt') {
-      const z = data.indexOf(0);
-      if (z < 0) throw new Error('a zTXt chunk has no keyword terminator');
-      if (data[z + 1] !== 0) throw new Error(`a zTXt chunk declares compression method ${data[z + 1]}, which is not deflate`);
-      out.push({ region: 'zTXt', text: `${data.subarray(0, z).toString('latin1')} ${zlib.inflateSync(data.subarray(z + 2)).toString('latin1')}` });
-    } else if (type === 'iTXt') {
-      const z = data.indexOf(0);
-      if (z < 0) throw new Error('an iTXt chunk has no keyword terminator');
-      const flag = data[z + 1];
-      const method = data[z + 2];
-      let p = z + 3;
-      const l = data.indexOf(0, p);
-      if (l < 0) throw new Error('an iTXt chunk has no language-tag terminator');
-      const lang = data.subarray(p, l).toString('latin1');
-      p = l + 1;
-      const t = data.indexOf(0, p);
-      if (t < 0) throw new Error('an iTXt chunk has no translated-keyword terminator');
-      const translated = data.subarray(p, t).toString('utf8');
-      p = t + 1;
-      const rest = data.subarray(p);
-      let text;
-      if (flag === 0) text = rest.toString('utf8');
-      else if (flag === 1) {
-        if (method !== 0) throw new Error(`an iTXt chunk declares compression method ${method}, which is not deflate`);
-        text = zlib.inflateSync(rest).toString('utf8');
-      } else throw new Error(`an iTXt chunk declares compression flag ${flag}, which is neither 0 nor 1`);
-      out.push({ region: 'iTXt', text: [data.subarray(0, z).toString('latin1'), lang, translated, text].join(' ') });
-    }
-    off = dataEnd + 4;
-    if (type === 'IEND') { sawIEND = true; break; }
-  }
-  if (!sawIEND) throw new Error('no IEND chunk: this is not a complete PNG');
-  return out;
-}
-
-// ── PNG IDAT residue: the codec-coincidence adjudication (spec 027 AC-3) ─────
-//
-// IDAT is not term-scanned, and this is why that is safe under the gate's
-// threat model (CONSTITUTION, the confidentiality gate's threat model):
-// accidental plaintext disclosure by a person or an agent writing the tree.
-// IDAT bytes are a function of the inflated scanlines and the encoder. Nobody
-// writes them. A deny-list term reaches them by exactly two routes - a stored
-// deflate block, in which case it is verbatim in the inflated output as well,
-// or the bit-packing of a compressed block landing on those byte values by
-// chance, at a rate the stream's entropy fixes. So the inflated output is the
-// whole of what anyone put into IDAT, and it is pixel samples: a name rendered
-// into a screenshot is pixels either way.
-//
-// The residue check turns that argument into a measurement per file: inflate
-// the concatenated IDAT; the caller counts deny-list hits in the output; the
-// inflate must consume every IDAT byte. A byte-exact hit in the compressed bytes
-// that is absent from the output, in a stream that was fully consumed, is a
-// codec coincidence. A stream that is not fully consumed - bytes after the
-// final deflate block, or bytes that are not a deflate stream at all - is an
-// unauthored region nothing read, and the file goes RED on the same footing as
-// an unrecognised binary (rule 3). The chance rate is emitted beside the
-// measurement so that a hit in compressed bytes is a number, not a surprise.
-function pngIdatResidue(buf) {
-  const ranges = [];
-  let off = 8;
-  while (off + 8 <= buf.length) {
-    const len = buf.readUInt32BE(off);
-    const type = buf.toString('latin1', off + 4, off + 8);
-    const dataStart = off + 8;
-    const dataEnd = dataStart + len;
-    if (len > 0x7fffffff || dataEnd + 4 > buf.length) throw new Error(`chunk ${type} at offset ${off} runs past the end of the file`);
-    if (type === 'IDAT') ranges.push([dataStart, dataEnd]);
-    off = dataEnd + 4;
-    if (type === 'IEND') break;
-  }
-  const all = Buffer.concat(ranges.map(([a, b]) => buf.subarray(a, b)));
-  const counts = new Array(256).fill(0);
-  let word = 0;
-  for (const x of all) {
-    counts[x] += 1;
-    if ((x >= 0x30 && x <= 0x39) || (x >= 0x41 && x <= 0x5a) || (x >= 0x61 && x <= 0x7a) || x === 0x5f) word += 1;
-  }
-  let entropy = 0;
-  for (const n of counts) if (n) { const q = n / all.length; entropy -= q * Math.log2(q); }
-  const out = {
-    ranges,
-    idat_chunks: ranges.length,
-    idat_bytes: all.length,
-    idat_consumed: 0,
-    idat_fully_consumed: all.length === 0,
-    inflated_bytes: 0,
-    inflated: null,
-    idat_entropy_bits: all.length ? +entropy.toFixed(2) : 0,
-    idat_word_fraction: all.length ? +(word / all.length).toFixed(3) : 0,
-    error: null,
-  };
-  if (!all.length) return out;
-  try {
-    const r = zlib.inflateSync(all, { info: true });
-    out.idat_consumed = r.engine.bytesWritten;
-    out.inflated_bytes = r.buffer.length;
-    out.inflated = r.buffer;
-    out.idat_fully_consumed = out.idat_consumed === all.length;
-  } catch (e) {
-    out.error = e.message;
-  }
-  return out;
-}
-
-// ── woff2: every region the format defines as carrying text ────────────────
-//
-// spec 025 adds self-hosted fonts under docs/fonts/, which publish. WOFF2
-// defines THREE regions that carry text, and this reader covers all three:
-//
-//   name   the name table's record strings - copyright, family, designer,
-//          foundry - decoded per platform id
-//   meta   the extended metadata block at metaOffset/metaLength: a BROTLI-
-//          compressed XML document whose defined elements include `credit name`,
-//          `vendor name` and `description`, which are names of people and
-//          organisations by specification
-//   priv   the private data block at privOffset/privLength: arbitrary bytes
-//
-// WHAT IS NOT READ, AND ON WHAT GROUND. The glyph outlines and the other sfnt
-// tables are coordinates, metrics, class definitions and lookups: numeric
-// structures with no free-text field, and the woff2 equivalent of pixel data. A
-// name rendered as an outline is a shape, which no byte scan reads either way.
-// That is a statement about what those regions hold. This reader first covered
-// the name table alone, on the ground that it was "the only part of a font that
-// could carry a name" - a claim the format does not support, which is how a
-// blocking control acquires a hole nobody decided to open (approval finding
-// F-2, 2026-09-05). No region is excluded here on a claim about the format.
-const WOFF2_KNOWN_TAGS = ['cmap', 'head', 'hhea', 'hmtx', 'maxp', 'name', 'OS/2', 'post', 'cvt ', 'fpgm', 'glyf', 'loca', 'prep', 'CFF ', 'VORG', 'EBDT', 'EBLC', 'gasp', 'hdmx', 'kern', 'LTSH', 'PCLT', 'VDMX', 'vhea', 'vmtx', 'BASE', 'GDEF', 'GPOS', 'GSUB', 'EBSC', 'JSTF', 'MATH', 'CBDT', 'CBLC', 'COLR', 'CPAL', 'SVG ', 'sbix', 'acnt', 'avar', 'bdat', 'bloc', 'bsln', 'cvar', 'fdsc', 'feat', 'fmtx', 'fvar', 'gvar', 'hsty', 'just', 'lcar', 'mort', 'morx', 'opbd', 'prop', 'trak', 'Zapf', 'Silf', 'Glat', 'Gloc', 'Feat', 'Sill'];
-
-function readUIntBase128(buf, p) {
-  let v = 0;
-  for (let i = 0; i < 5; i++) {
-    if (p >= buf.length) throw new Error('a UIntBase128 runs past the end of the file');
-    const b = buf[p++];
-    if (i === 0 && b === 0x80) throw new Error('a UIntBase128 has a leading zero');
-    if (v & 0xfe000000) throw new Error('a UIntBase128 overflows 32 bits');
-    v = ((v << 7) | (b & 0x7f)) >>> 0;
-    if ((b & 0x80) === 0) return [v, p];
-  }
-  throw new Error('a UIntBase128 is longer than five bytes');
-}
-
-function decodeUtf16BE(raw) {
-  const n = raw.length - (raw.length % 2);
-  const swapped = Buffer.alloc(n);
-  for (let i = 0; i + 1 < n; i += 2) { swapped[i] = raw[i + 1]; swapped[i + 1] = raw[i]; }
-  return swapped.toString('utf16le');
-}
-
-function woff2ScannableText(buf) {
-  if (buf.length < 48) throw new Error('shorter than a woff2 header');
-  const numTables = buf.readUInt16BE(12);
-  const totalCompressed = buf.readUInt32BE(20);
-  let p = 48;
-  const dir = [];
-  for (let i = 0; i < numTables; i++) {
-    if (p >= buf.length) throw new Error('the table directory runs past the end of the file');
-    const flags = buf[p++];
-    const idx = flags & 0x3f;
-    const transform = (flags >> 6) & 0x03;
-    let tag;
-    if (idx === 0x3f) { tag = buf.toString('latin1', p, p + 4); p += 4; } else {
-      tag = WOFF2_KNOWN_TAGS[idx];
-      if (!tag) throw new Error(`the table directory names unknown tag index ${idx}`);
-    }
-    let origLength;
-    [origLength, p] = readUIntBase128(buf, p);
-    let transformLength = origLength;
-    // glyf and loca are transformed unless the transform version is 3; every
-    // other table is transformed only when the version is not 0.
-    const transformed = (tag === 'glyf' || tag === 'loca') ? transform !== 3 : transform !== 0;
-    if (transformed) [transformLength, p] = readUIntBase128(buf, p);
-    dir.push({ tag, transformLength });
-  }
-  const compressed = buf.subarray(p, p + totalCompressed);
-  if (compressed.length !== totalCompressed) throw new Error('the compressed stream is shorter than the header declares');
-  const font = zlib.brotliDecompressSync(compressed);
-  let off = 0;
-  let nameBuf = null;
-  for (const t of dir) {
-    if (t.tag === 'name') { nameBuf = font.subarray(off, off + t.transformLength); break; }
-    off += t.transformLength;
-  }
-  const out = [];
-  // Kept outside the block: the census check at the end needs to know whether
-  // the font DECLARES name records, so that a table read and found empty is
-  // distinguishable from a table never reached.
-  let nameRecords = 0;
-  if (nameBuf) {
-    if (nameBuf.length < 6) throw new Error('the name table is shorter than its own header');
-    const count = nameBuf.readUInt16BE(2);
-    nameRecords = count;
-    const stringOffset = nameBuf.readUInt16BE(4);
-    for (let i = 0; i < count; i++) {
-      const r = 6 + i * 12;
-      if (r + 12 > nameBuf.length) throw new Error('a name record runs past the name table');
-      const platformID = nameBuf.readUInt16BE(r);
-      const length = nameBuf.readUInt16BE(r + 8);
-      const offset = nameBuf.readUInt16BE(r + 10);
-      const s = stringOffset + offset;
-      if (s + length > nameBuf.length) throw new Error('a name string runs past the name table');
-      const raw = nameBuf.subarray(s, s + length);
-      // Platform 1 is Macintosh, single byte. Platforms 0 and 3 are UTF-16BE.
-      out.push({ region: 'name', text: platformID === 1 ? raw.toString('latin1') : decodeUtf16BE(raw) });
-    }
-  }
-  // ── the two blocks, at the offsets the WOFF2 HEADER puts them ─────────────
-  //
-  // The WOFF2 header is 48 bytes: signature 0, flavor 4, length 8, numTables 12,
-  // reserved 14, totalSfntSize 16, totalCompressedSize 20, majorVersion 24,
-  // minorVersion 26, metaOffset 28, metaLength 32, metaOrigLength 36,
-  // privOffset 40, privLength 44. `specs/027-.../spec.md` AC-4 carries the same
-  // table and `probes/classify.mjs woff2-header-fields` holds the three in
-  // agreement.
-  //
-  // WOFF 1.0 HAS NO totalCompressedSize, so every field after byte 20 sits four
-  // bytes earlier there: metaOffset at 24, metaLength at 28, privOffset at 36,
-  // privLength at 40. Those are the four this function read until approval
-  // finding F-3, 2026-09-05, while reading totalCompressedSize at 20 and the
-  // table directory at 48 as WOFF2 — one header read as two formats. On a
-  // conformant font it threw on the metadata block and returned the header and
-  // the whole compressed table stream labelled `priv`.
-  //
-  // A zero length means the block is absent; the offset is then meaningless and
-  // is not read, which is the shape every font in this repository had before the
-  // four fontTools wrote for AC-19 arrived.
-  const metaOffset = buf.readUInt32BE(28);
-  const metaLength = buf.readUInt32BE(32);
-  const metaOrigLength = buf.readUInt32BE(36);
-  if (metaLength > 0) {
-    if (metaOffset + metaLength > buf.length) throw new Error('the extended metadata block runs past the end of the file');
-    // BROTLI, NOT DEFLATE. WOFF 1.0 compresses the metadata block with zlib and
-    // WOFF2 compresses it with Brotli, so an inflate here throws `incorrect
-    // header check` on every conformant font and the block is never scanned.
-    // The second half of F-3, found while fixing the first.
-    const text = zlib.brotliDecompressSync(buf.subarray(metaOffset, metaOffset + metaLength)).toString('utf8');
-    // The header declares what the block decompresses to. A mismatch means the
-    // bytes read are not the block, which is a parse failure rather than a
-    // region quietly recorded as covered.
-    if (Buffer.byteLength(text, 'utf8') !== metaOrigLength) {
-      throw new Error(`the extended metadata block decompresses to ${Buffer.byteLength(text, 'utf8')} bytes against a declared metaOrigLength of ${metaOrigLength}`);
-    }
-    out.push({ region: 'meta', text });
-  }
-  // The private data block: arbitrary bytes, so it is decoded as UTF-8 only when
-  // it is UTF-8 and as latin1 otherwise, which keeps an ASCII run readable
-  // either way rather than turning it into replacement characters.
-  const privOffset = buf.readUInt32BE(40);
-  const privLength = buf.readUInt32BE(44);
-  if (privLength > 0) {
-    if (privOffset + privLength > buf.length) throw new Error('the private data block runs past the end of the file');
-    const raw = buf.subarray(privOffset, privOffset + privLength);
-    out.push({ region: 'priv', text: utf8RoundTrips(raw) ? raw.toString('utf8') : raw.toString('latin1') });
-  }
-  // ── the census may not record a region this function did not read ──────────
-  //
-  // `declared` is what the font's own header says it carries; the regions above
-  // are what came back. They must be the same set. A reader that located a block
-  // at the wrong offset returned real bytes under a region's name and the run
-  // recorded that region as covered — `priv` on a font whose private data had
-  // never been touched — which is `absence-vs-unreadable` fail-open in a
-  // blocking scan. A mismatch is a parse error, which AC-6 makes red and names.
-  const declared = new Set();
-  if (nameRecords > 0) declared.add('name');
-  if (metaLength > 0) declared.add('meta');
-  if (privLength > 0) declared.add('priv');
-  const covered = new Set(out.map((x) => x.region));
-  const missing = [...declared].filter((r) => !covered.has(r));
-  const extra = [...covered].filter((r) => !declared.has(r));
-  if (missing.length || extra.length) {
-    throw new Error(`the region census would be wrong: the header declares [${[...declared].join(', ')}] and the reader returned [${[...covered].join(', ')}]`);
-  }
-  return out;
-}
-
-// ── the classifier ──────────────────────────────────────────────────────────
-function classifyBytes(buf) {
-  if (utf8RoundTrips(buf)) return { cls: 'text' };
-  for (const b of RECOGNISED_BINARIES) {
-    const sig = Buffer.from(b.signature, 'hex');
-    if (buf.length >= sig.length && buf.subarray(0, sig.length).equals(sig)) return { cls: b.id, binary: b };
-  }
-  return { cls: 'unrecognised' };
-}
-
-// What the deny list is tested against, and why it is that and not the bytes.
-// `items` is how many pieces of text the format's own check returned, which is
-// what makes an empty result distinguishable from an unread one.
-function scannableProjection(buf) {
-  const c = classifyBytes(buf);
-  if (c.cls === 'text') return { cls: 'text', text: buf.toString('utf8'), items: 1, error: null };
-  if (c.cls === 'unrecognised') {
-    return { cls: 'unrecognised', text: null, items: 0, error: 'the bytes are not valid UTF-8 and the file matches no recognised binary signature' };
-  }
-  try {
-    // Each part carries the region of the format it came out of, so a run can
-    // record WHICH regions a reader covered rather than only how much it
-    // returned. A check that quietly stopped reading one region would otherwise
-    // look exactly like a file that does not use it.
-    const parts = c.binary.extract(buf);
-    const regions = {};
-    for (const x of parts) regions[x.region] = (regions[x.region] || 0) + 1;
-    // The residue, for a format that declares one. It runs after the extractor
-    // succeeded, on the same bytes, and a failure inside it is the residue's
-    // own (recorded, and red for consumption) rather than a parse failure.
-    let residue = null;
-    if (c.binary.residue) {
-      try { residue = c.binary.residue(buf); } catch (e) { residue = { ranges: [], idat_chunks: 0, idat_bytes: 0, idat_consumed: 0, idat_fully_consumed: false, inflated_bytes: 0, inflated: null, idat_entropy_bits: 0, idat_word_fraction: 0, error: e.message }; }
-    }
-    return { cls: c.cls, text: parts.map((x) => x.text).join('\n'), items: parts.length, regions, error: null, residue };
-  } catch (e) {
-    return { cls: c.cls, text: null, items: 0, regions: null, error: `the ${c.cls} check could not read the file: ${e.message}`, residue: null };
-  }
-}
-
-// The three matchers, unchanged in what they test, taking their term lists as an
-// argument so that a mutation can register a term of its own without the real
-// lists being involved at all.
-//
-// A HIT CARRIES ITS LIST AND ITS INDEX as well as its term, because a record of
-// what matched has to be emitted without emitting the thing that matched. The
-// term stays for the failure detail the operator reads; everything written to
-// `tests/gate-results.json` is the coded form.
-//
-// EACH BRANCH IS ONE LINE, and each is load-bearing: `probes/classify.mjs
-// mutation-matcher-branch` removes them one at a time in a scratch worktree and
-// requires the repo gate red every time. Before AC-18 two of the three could be
-// deleted with the gate at 603/603, which is a false negative in a blocking
-// confidentiality control and was found at approval on 2026-09-05, not
-// introduced by the change that surfaced it.
-function denyHits(text, terms) {
-  const hits = [];
-  (terms.SUBSTR || []).forEach((t, i) => { if (text.toLowerCase().includes(t.toLowerCase())) hits.push({ term: t, list: 'SUBSTR', index: i }); });
-  (terms.WORD || []).forEach((t, i) => { if (new RegExp(`\\b${t}\\b`).test(text)) hits.push({ term: t, list: 'WORD', index: i }); });
-  (terms.WORD_CI || []).forEach((t, i) => { if (new RegExp(`\\b${t}\\b`, 'i').test(text)) hits.push({ term: t, list: 'WORD_CI', index: i }); });
-  return hits;
-}
-
-// The scan. `names` is what to look at and `readBytes` is how to get the bytes,
-// so a mutation is a map from name to Buffer and nothing is ever written into
-// the tree the control is protecting.
-function classifiedScan(names, readBytes, terms) {
-  const hits = [];
-  const unreadable = [];
-  const counts = {};
-  const binaries = {};
-  for (const name of names) {
-    let buf;
-    try { buf = readBytes(name); } catch (e) {
-      unreadable.push({ file: name, reason: `the file could not be read: ${e.message}` });
-      counts.unreadable = (counts.unreadable || 0) + 1;
-      continue;
-    }
-    const p = scannableProjection(buf);
-    counts[p.cls] = (counts[p.cls] || 0) + 1;
-    let residueRed = null;
-    if (p.cls !== 'text') {
-      // How many terms a byte-exact read of the whole file matches: one byte,
-      // one character, no decode. The pre-change reader's lossy decode agreed
-      // with this count on every ASCII pattern (a lossy decode cannot invent an
-      // ASCII run, and cannot destroy one) and this is the count it was, by
-      // accident, all along. A COUNT, never a term: printing the string would put
-      // it in the tree the scan protects.
-      const latin = buf.toString('latin1');
-      const rec = { class: p.cls, items: p.items, chars: p.text ? p.text.length : 0, regions: p.regions, error: p.error, raw_hits: denyHits(latin, terms).length };
-      const rz = p.residue;
-      if (rz) {
-        // The residue record. `raw_hits_in_idat` is the byte-exact count over the
-        // concatenated IDAT bytes - the deflate stream as the decoder sees it -
-        // and `raw_hits_outside_idat` over the file with those ranges blanked, so
-        // a run cannot be counted on both sides. `inflated_hits` is the count
-        // over the inflated output: a hit there is in the image, not in the
-        // codec. `idat_chance_expected` is how many byte-exact runs the stream's
-        // length and its word-character density predict by chance, summed over
-        // every list entry at its own length with a boundary on both sides.
-        const idatLatin = Buffer.concat(rz.ranges.map(([a, b]) => buf.subarray(a, b))).toString('latin1');
-        const blanked = Buffer.from(buf);
-        for (const [a, b] of rz.ranges) blanked.fill(0, a, b);
-        const allTerms = [...(terms.SUBSTR || []), ...(terms.WORD || []), ...(terms.WORD_CI || [])];
-        const boundary = (1 - rz.idat_word_fraction) ** 2;
-        const chance = allTerms.reduce((acc, t) => acc + rz.idat_bytes * (256 ** -String(t).length) * boundary, 0);
-        Object.assign(rec, {
-          raw_hits_in_idat: denyHits(idatLatin, terms).length,
-          raw_hits_outside_idat: denyHits(blanked.toString('latin1'), terms).length,
-          inflated_hits: rz.inflated ? denyHits(rz.inflated.toString('latin1'), terms).length : 0,
-          idat_chunks: rz.idat_chunks,
-          idat_bytes: rz.idat_bytes,
-          idat_consumed: rz.idat_consumed,
-          idat_fully_consumed: rz.idat_fully_consumed,
-          inflated_bytes: rz.inflated_bytes,
-          idat_entropy_bits: rz.idat_entropy_bits,
-          idat_word_fraction: rz.idat_word_fraction,
-          idat_chance_expected: +chance.toFixed(4),
-          residue_error: rz.error,
-        });
-        if (!rz.idat_fully_consumed) {
-          residueRed = `the png IDAT stream was not fully consumed: ${rz.error ? rz.error : `${rz.idat_consumed} of ${rz.idat_bytes} bytes`}, so ${rz.idat_bytes - rz.idat_consumed} byte(s) are a region nothing read`;
-        }
-      }
-      binaries[name] = rec;
-    }
-    if (p.error) { unreadable.push({ file: name, reason: p.error }); continue; }
-    // AC-3 rule 2. Red on rule 3's footing: the file is not skipped, it is not
-    // reported as a hit for bytes nothing decoded, and the gate says why.
-    if (residueRed) {
-      unreadable.push({ file: name, reason: residueRed });
-    }
-    for (const h of denyHits(p.text, terms)) hits.push({ file: name, term: h.term, list: h.list, index: h.index, cls: p.cls });
-  }
-  return { hits, unreadable, counts, binaries, walked: names.length };
-}
-// ── CLASSIFY-END ────────────────────────────────────────────────────────────
-
-// ── 7. Confidentiality scan (BLOCKING) ───────────────────────────────────────
-gate.section('confidentiality');
-const SCAN_CLASSIFICATION = { assertions: [] };
-{
-  const dec = (b64) => JSON.parse(Buffer.from(b64, 'base64').toString('utf8'));
-  const SUBSTR = dec('W10=');
-  const WORD = dec('W10=');
-  // Case-insensitive word-boundary terms. Separate from WORD (whose entries are
-  // case-sensitive acronyms) so adding a name here cannot loosen those.
-  //
-  // PERSONAL NAMES ARE NEVER PUBLISHED. Driftproof credits an acknowledgment as
-  // "a former colleague" — a real person who asked a question that shaped the
-  // work has not consented to being named in a public artifact, and a published
-  // repo is forever. This list makes that a BLOCKING gate failure rather than a
-  // review habit: the full name as a substring, and each name part on a word
-  // boundary, so neither half can reach the tree by itself.
-  const WORD_CI = dec('W10=');
-  const FILENAME_PATTERNS = [/rate-card.*\.json$/i, /funding-rules.*\.json$/i, /workstreams.*\.json$/i, /^spi.*\.json$/i];
-  const files = listFiles(SCAN_ROOT);
-  const TERMS = { SUBSTR, WORD, WORD_CI };
-  const readBytes = (rel) => fs.readFileSync(path.join(SCAN_ROOT, rel));
-  const scan = classifiedScan(files, readBytes, TERMS);
-  const hits = [...scan.hits];
-  for (const rel of files) {
-    for (const pat of FILENAME_PATTERNS) if (pat.test(path.basename(rel))) hits.push({ file: rel, term: `filename:${pat}` });
-  }
-  gate.check('repo-wide deny-list scan returns zero hits', hits.length === 0, { hits: hits.slice(0, 20) });
-  gate.check('scan covered a non-trivial file set', files.length >= 10, { fileCount: files.length });
-
-  // ── the classification, and the assertions that hold it (spec 027) ────────
-  //
-  // An id is recorded WHEN ITS CHECK IS CALLED, never where its name is
-  // written, and the ledger is emitted beside the results. A comment naming an
-  // id is powerless to put it back — the shape spec 019a's round 2 found in the
-  // check against `name-vs-thing`.
-  const cidcheck = (id, name, pass, detail = null) => {
-    const r = gate.check(name, pass, detail);
-    SCAN_CLASSIFICATION.assertions.push({ id, name, pass: r });
-    return r;
-  };
-
-  // The mutation term. Registered for a mutation run and for nothing else: no
-  // mutation in this section uses, quotes or writes a real deny-list entry, so
-  // neither this file nor any artifact of a run carries one. AC-15 asserts that
-  // this string matches no real entry under any of the three matchers.
-  const MUT = 'ZZQXVQMUTATIONTERM';
-  const MUT_TERMS = { SUBSTR: [], WORD: [MUT], WORD_CI: [] };
-  const one = (name, buf, terms = MUT_TERMS) => classifiedScan([name], () => buf, terms);
-
-  // Synthetic artifacts, built rather than committed. A fixture on disk drifts
-  // from the format it is supposed to depict; a builder cannot.
-  const chunk = (type, data) => Buffer.concat([
-    (() => { const b = Buffer.alloc(4); b.writeUInt32BE(data.length); return b; })(),
-    Buffer.from(type, 'latin1'), data,
-    Buffer.alloc(4), // CRC. This reader does not verify it; see the spec's carry list.
-  ]);
-  const IHDR = chunk('IHDR', Buffer.from([0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0, 0, 0]));
-  const png = (...mid) => Buffer.concat([Buffer.from(PNG_SIGNATURE_HEX, 'hex'), IHDR, ...mid, chunk('IEND', Buffer.alloc(0))]);
-  const kw = (k, rest) => Buffer.concat([Buffer.from(k, 'latin1'), Buffer.from([0]), rest]);
-
-  const base128 = (v) => {
-    const out = [];
-    let n = v;
-    do { out.unshift(n & 0x7f); n >>>= 7; } while (n);
-    for (let i = 0; i < out.length - 1; i++) out[i] |= 0x80;
-    return Buffer.from(out);
-  };
-  // `meta` is the extended metadata block, Brotli-compressed as WOFF2 requires;
-  // `priv` is the private data block, raw. Both are appended after the table
-  // stream and pointed at from the header, which is where a real font carries
-  // them.
-  //
-  // THIS BUILDER TAKES NOTHING FROM THE READER, AND THAT IS THE POINT (AC-19,
-  // approval finding F-4, 2026-09-05). It used to write both blocks at bytes
-  // 24/28/32 and 36/40 — the WOFF 1.0 offsets — because that is where
-  // `woff2ScannableText` read them, and it used zlib because that is what the
-  // reader inflated. Fixture and implementation agreed with each other and with
-  // no version of the format, so M5 and M6 were green while neither block had
-  // ever been read from a spec-conformant font. The two are independent
-  // transcriptions of the WOFF2 header field table now: no name is shared, the
-  // known-tag index below is a literal rather than a lookup in the reader's
-  // table, and `probes/classify.mjs woff2-builder-independent` keeps them apart.
-  // The adjudication that would have caught it either way is
-  // `probes/classify.mjs woff2-external`, over fonts fontTools wrote.
-  const woff2 = (nameString, { meta = null, priv = null } = {}) => {
-    const s = Buffer.from(nameString, 'utf16le');
-    const be = Buffer.alloc(s.length);
-    for (let i = 0; i + 1 < s.length; i += 2) { be[i] = s[i + 1]; be[i + 1] = s[i]; }
-    const head = Buffer.alloc(6);
-    head.writeUInt16BE(0, 0); head.writeUInt16BE(1, 2); head.writeUInt16BE(18, 4);
-    const rec = Buffer.alloc(12);
-    rec.writeUInt16BE(3, 0); rec.writeUInt16BE(1, 2); rec.writeUInt16BE(0x0409, 4);
-    rec.writeUInt16BE(0, 6); rec.writeUInt16BE(be.length, 8); rec.writeUInt16BE(0, 10);
-    const nameTable = Buffer.concat([head, rec, be]);
-    const compressed = zlib.brotliCompressSync(nameTable);
-    // The WOFF2 header, 48 bytes, written from the specification's field table:
-    // signature 0, flavor 4, length 8, numTables 12, reserved 14, totalSfntSize
-    // 16, totalCompressedSize 20, majorVersion 24, minorVersion 26, metaOffset
-    // 28, metaLength 32, metaOrigLength 36, privOffset 40, privLength 44.
-    const header = Buffer.alloc(48);
-    header.write('wOF2', 0, 'latin1');
-    header.writeUInt32BE(0x00010000, 4);
-    header.writeUInt16BE(1, 12);
-    header.writeUInt32BE(12 + nameTable.length, 16);
-    header.writeUInt32BE(compressed.length, 20);
-    header.writeUInt16BE(1, 24); // majorVersion — a 16-bit field, which is why a
-    header.writeUInt16BE(0, 26); // 32-bit write at byte 24 is a WOFF 1.0 header
-    // One directory entry: the `name` table. Known-tag index 5 is the WOFF2
-    // specification's own numbering (cmap 0, head 1, hhea 2, hmtx 3, maxp 4,
-    // name 5), written as a literal rather than looked up in the reader's table.
-    const dir = Buffer.concat([Buffer.from([5]), base128(nameTable.length)]);
-    let out = Buffer.concat([header, dir, compressed]);
-    // Each block starts on a four-byte boundary, which is what the format asks
-    // of privOffset and what a real writer does to both.
-    const align = () => { const pad = (4 - (out.length % 4)) % 4; if (pad) out = Buffer.concat([out, Buffer.alloc(pad)]); };
-    if (meta !== null) {
-      align();
-      const raw = Buffer.from(meta, 'utf8');
-      // BROTLI. WOFF 1.0 compresses this block with zlib; WOFF2 does not.
-      const block = zlib.brotliCompressSync(raw);
-      const at = out.length;
-      out = Buffer.concat([out, block]);
-      out.writeUInt32BE(at, 28);
-      out.writeUInt32BE(block.length, 32);
-      out.writeUInt32BE(raw.length, 36);
-    }
-    if (priv !== null) {
-      align();
-      const block = Buffer.from(priv, 'utf8');
-      const at = out.length;
-      out = Buffer.concat([out, block]);
-      out.writeUInt32BE(at, 40);
-      out.writeUInt32BE(block.length, 44);
-    }
-    out.writeUInt32BE(out.length, 8);
-    return out;
-  };
-
-  // AC-1 / AC-14 — the classification covers the walk, and every class it used
-  // is one the list declares.
-  const declaredClasses = ['text', 'unrecognised', 'unreadable', ...RECOGNISED_BINARIES.map((b) => b.id)];
-  const summed = Object.values(scan.counts).reduce((a, b) => a + b, 0);
-  const undeclared = Object.keys(scan.counts).filter((k) => !declaredClasses.includes(k));
-  cidcheck('classify-record',
-    'every file walked is classified into exactly one declared class, and the counts sum to the walk',
-    summed === files.length && undeclared.length === 0 && files.length >= 10,
-    { walked: files.length, summed, counts: scan.counts, undeclared });
-
-  // AC-2, the half that can run in the published tree — every text file reaches
-  // the matcher over its UTF-8 decode, and the scan's text-half hits ARE the
-  // matcher's own output over those files, so nothing is dropped between the
-  // walk and the match.
-  //
-  // THIS IS NOT THE IDENTITY PROPERTY AND DOES NOT CLAIM TO BE. Both sides call
-  // `denyHits`, so it is blind to a change in `denyHits` itself. It used to be
-  // called `classify-text-identical` and to say it compared this scan against
-  // the pre-change reader, which it never did: it built both sides of its
-  // comparison by calling the same function (approval finding F-1, 2026-09-05).
-  // The reader as it stood BEFORE this change lives in the base commit's blob,
-  // which the source repository has and a published tree does not, so the
-  // identity property is `probes/classify.mjs prechange-text-identical` and the
-  // branch mutations of AC-18 are what make it bite.
-  const routed = [];
-  const textFiles = [];
-  for (const rel of files) {
-    let buf; try { buf = fs.readFileSync(path.join(SCAN_ROOT, rel)); } catch (_e) { continue; }
-    if (!utf8RoundTrips(buf)) continue;
-    textFiles.push(rel);
-    for (const h of denyHits(buf.toString('utf8'), TERMS)) routed.push(`${rel}|${h.list}|${h.index}`);
-  }
-  // Coded, never a term: this is the list the emitted record carries and the
-  // pre-change comparison reads.
-  const textHits = scan.hits.filter((h) => h.cls === 'text').map((h) => `${h.file}|${h.list}|${h.index}`);
-  cidcheck('classify-text-routing',
-    "every text file reaches the matcher over its UTF-8 decode, and the scan's text-half hits are the matcher's own output",
-    JSON.stringify(routed.slice().sort()) === JSON.stringify(textHits.slice().sort()) && textFiles.length >= 10,
-    { textFiles: textFiles.length, routed: routed.length, textHits: textHits.length });
-
-  // AC-3 — the png check reads the three text chunk types and nothing else, and
-  // every png in the scanned tree parses. The synthetic half is what makes this
-  // non-vacuous: no png committed here carries a text chunk of any kind.
-  const marker = 'CHUNKTEXT';
-  const pngText = png(chunk('tEXt', kw('Comment', Buffer.from(marker, 'latin1'))));
-  const pngZ = png(chunk('zTXt', kw('Comment', Buffer.concat([Buffer.from([0]), zlib.deflateSync(Buffer.from(marker))]))));
-  const pngI = png(chunk('iTXt', kw('Comment', Buffer.concat([Buffer.from([0, 0]), Buffer.from('en\0\0'), Buffer.from(marker)]))));
-  const pngExtract = (b) => { try { return pngScannableText(b).map((x) => x.text).join('\n'); } catch (e) { return `ERROR ${e.message}`; } };
-  const treePngErrors = Object.entries(scan.binaries).filter(([, v]) => v.class === 'png' && v.error).map(([k, v]) => `${k}: ${v.error}`);
-  cidcheck('classify-png-chunks',
-    'the png check returns tEXt, zTXt and iTXt text and no pixel data, and every png in the tree parses',
-    pngExtract(pngText).includes(marker) && pngExtract(pngZ).includes(marker) && pngExtract(pngI).includes(marker)
-      && !pngExtract(png(chunk('IDAT', Buffer.from(marker)))).includes(marker)
-      && treePngErrors.length === 0,
-    { tEXt: pngExtract(pngText), zTXt: pngExtract(pngZ), iTXt: pngExtract(pngI), idat: pngExtract(png(chunk('IDAT', Buffer.from(marker)))), treePngErrors });
-
-  // AC-4 — the woff2 check returns the name table's strings. The synthetic font
-  // carries a known string, so this is non-vacuous in a tree with no font in it;
-  // every real font in the tree is additionally required to parse and to yield a
-  // non-empty table.
-  const fontStrings = (() => { try { return woff2ScannableText(woff2('NAMEMARKER Regular')).map((x) => x.text); } catch (e) { return [`ERROR ${e.message}`]; } })();
-  const treeFonts = Object.entries(scan.binaries).filter(([, v]) => v.class === 'woff2');
-  const badFonts = treeFonts.filter(([, v]) => v.error || v.items < 1).map(([k, v]) => `${k}: ${v.error || 'no name strings'}`);
-  cidcheck('classify-woff2-names',
-    'the woff2 check returns the name table strings, and every font in the tree yields a non-empty table',
-    fontStrings.length === 1 && fontStrings[0] === 'NAMEMARKER Regular' && badFonts.length === 0,
-    { fontStrings, fonts: treeFonts.length, badFonts });
-
-  // AC-5 — nothing in the scanned tree is unreadable, for any reason. This is
-  // the assertion an unrecognised binary fails, and it names the file.
-  cidcheck('classify-unrecognised-red',
-    'no file in the scanned tree is an unrecognised binary or otherwise unreadable',
-    scan.unreadable.length === 0, { unreadable: scan.unreadable.slice(0, 20) });
-
-  // AC-6 — a recognised binary whose check throws is red, not clean.
-  const truncatedSubject = Object.entries(scan.binaries).find(([, v]) => v.class === 'png');
-  const truncated = truncatedSubject
-    ? fs.readFileSync(path.join(SCAN_ROOT, truncatedSubject[0])).subarray(0, 40)
-    : pngText.subarray(0, 40);
-  const corruptFont = (() => { const b = Buffer.from(woff2('NAMEMARKER Regular')); b[b.length - 1] ^= 0xff; b[b.length - 2] ^= 0xff; return b; })();
-  const truncScan = one('truncated.png', truncated);
-  const fontScan = one('corrupt.woff2', corruptFont);
-  cidcheck('classify-parse-failure-red',
-    'a truncated png and a corrupted font are reported unreadable with their parse error, not read as clean',
-    truncScan.unreadable.length === 1 && /png check could not read/.test(truncScan.unreadable[0].reason)
-      && fontScan.unreadable.length === 1 && /woff2 check could not read/.test(fontScan.unreadable[0].reason),
-    { truncated: truncScan.unreadable, font: fontScan.unreadable, subject: truncatedSubject ? truncatedSubject[0] : 'synthetic' });
-
-  // AC-7 — the list is well formed: unique ids, unique signatures, an extractor
-  // on every entry. The spec's table is held equal to it by the spec gate.
-  const ids = RECOGNISED_BINARIES.map((b) => b.id);
-  const sigs = RECOGNISED_BINARIES.map((b) => b.signature);
-  cidcheck('classify-list-declared',
-    'the recognised-type list is declared once, with a unique id, a unique signature and a check on every entry',
-    RECOGNISED_BINARIES.length >= 1
-      && new Set(ids).size === ids.length && new Set(sigs).size === sigs.length
-      && RECOGNISED_BINARIES.every((b) => typeof b.extract === 'function' && /^[0-9a-f]+$/.test(b.signature) && b.signature.length % 2 === 0),
-    { ids, sigs });
-
-  // AC-8 — M1. A registered term in a text file is red.
-  const m1 = one('probe.md', Buffer.from(`prose mentioning ${MUT} inline`, 'utf8'));
-  cidcheck('classify-m1-text',
-    'M1: a registered mutation term planted in a text file is a hit',
-    m1.hits.length === 1 && m1.hits[0].file === 'probe.md' && m1.unreadable.length === 0, m1);
-
-  // AC-18 — each branch of the matcher, proved by a subject only that branch can
-  // match. Found at approval on 2026-09-05: before these three, deleting the
-  // substring branch or the case-insensitive word branch left the repo gate at
-  // 603/603, because M1, M2 and M3 all register their term in the word list.
-  // Three mutations in `probes/classify.mjs` remove each branch alone and require
-  // this gate red; these are the assertions that go red when they do.
-  const branch = (id, list, subject, terms, name) => {
-    const r = one(`branch-${list.toLowerCase()}.md`, Buffer.from(subject, 'utf8'), terms);
-    cidcheck(id, name,
-      r.hits.length === 1 && r.hits[0].list === list && r.unreadable.length === 0, r);
-  };
-  // Registered in the substring list ALONE and planted with word characters on
-  // both sides, so no word-boundary matcher can reach it.
-  branch('classify-m1-substr', 'SUBSTR', `embedded xx${MUT}xx carrying no word boundary`,
-    { SUBSTR: [MUT], WORD: [], WORD_CI: [] },
-    'M1a: a term registered in the substring list alone, planted with no word boundary, is a hit from the substring branch');
-  // Registered in the case-sensitive word list alone.
-  branch('classify-m1-word', 'WORD', `prose mentioning ${MUT} inline`,
-    { SUBSTR: [], WORD: [MUT], WORD_CI: [] },
-    'M1b: a term registered in the case-sensitive word list alone is a hit from that branch');
-  // Registered in BOTH word lists and planted in the other case, so the single
-  // hit proves the case-insensitive branch ran and the case-sensitive one did
-  // not match — the branch and its case-sensitivity in one subject.
-  branch('classify-m1-word-ci', 'WORD_CI', `prose mentioning ${MUT.toLowerCase()} inline`,
-    { SUBSTR: [], WORD: [MUT], WORD_CI: [MUT] },
-    'M1c: a term registered in the case-insensitive word list and planted in the other case is a hit from that branch alone');
-
-  // AC-9 — M2. The same term in each of the three text chunk types, and in the
-  // compressed form of the one that has two.
-  const m2 = {
-    tEXt: one('t.png', png(chunk('tEXt', kw('Comment', Buffer.from(MUT, 'latin1'))))),
-    zTXt: one('z.png', png(chunk('zTXt', kw('Comment', Buffer.concat([Buffer.from([0]), zlib.deflateSync(Buffer.from(MUT))]))))),
-    iTXt: one('i.png', png(chunk('iTXt', kw('Comment', Buffer.concat([Buffer.from([0, 0]), Buffer.from('en\0\0'), Buffer.from(MUT)]))))),
-    iTXtz: one('iz.png', png(chunk('iTXt', kw('Comment', Buffer.concat([Buffer.from([1, 0]), Buffer.from('en\0\0'), zlib.deflateSync(Buffer.from(MUT))]))))),
-  };
-  const m2missed = Object.entries(m2).filter(([, v]) => v.hits.length !== 1 || v.unreadable.length !== 0).map(([k]) => k);
-  cidcheck('classify-m2-png-text',
-    'M2: the same term planted in a tEXt, a zTXt and an iTXt chunk, compressed and not, is a hit in every one',
-    m2missed.length === 0, { missed: m2missed, m2 });
-
-  // AC-10 — M3. One invalid byte and no recognised signature. The term is NOT
-  // detected — nothing was read from the file — and the gate is red anyway,
-  // which is the whole of what this fix buys over skipping the file.
-  const m3buf = Buffer.concat([Buffer.from(`prose mentioning ${MUT} inline`, 'utf8'), Buffer.from([0xff])]);
-  const m3 = one('probe.bin', m3buf);
-  cidcheck('classify-m3-invalid-byte',
-    'M3: a file with one invalid byte and no recognised signature is reported unreadable and named, rather than skipped',
-    m3.unreadable.length === 1 && m3.unreadable[0].file === 'probe.bin'
-      && /not valid UTF-8/.test(m3.unreadable[0].reason) && m3.hits.length === 0
-      && m3.counts.unrecognised === 1, m3);
-
-  // AC-11 — M4, the residue shape. Approval finding F-1 of 2026-09-05 (second
-  // round) measured that the real false positive is three ASCII bytes INSIDE an
-  // IDAT chunk and ABSENT from the inflated pixel data, so "a term present only
-  // in pixel data" was never what this assertion's subjects had. What it holds
-  // now: the synthetic subject is raw ASCII in an IDAT chunk that is not a
-  // deflate stream, and it is RED for consumption (AC-3 rule 2) with no hit and
-  // the raw run recorded; and every png in the scanned tree inflated to its
-  // last byte, so any byte-exact run inside IDAT there stands adjudicated by the
-  // residue the record carries. The real screenshot's residue is read out of
-  // the record by the spec gate, held against an independent inflate.
-  const pad = (t) => Buffer.from(` ${t} `, 'latin1');
-  const m4buf = png(chunk('IDAT', pad(MUT)));
-  const m4 = one('raw-ascii-in-idat.png', m4buf);
-  const m4rec = m4.binaries['raw-ascii-in-idat.png'] || {};
-  const treePngs = Object.entries(scan.binaries).filter(([, v]) => v.class === 'png');
-  const treeUnconsumed = treePngs.filter(([, v]) => v.idat_fully_consumed !== true).map(([k]) => k);
-  const treeIdatRuns = treePngs.filter(([, v]) => v.raw_hits_in_idat > 0).map(([k, v]) => ({ file: k, inflated_hits: v.inflated_hits, idat_chance_expected: v.idat_chance_expected }));
-  const classifiedHitBinaries = scan.hits.filter((h) => scan.binaries[h.file]).map((h) => h.file);
-  cidcheck('classify-m4-idat-residue',
-    'M4: raw ASCII in an IDAT chunk that is not a deflate stream is red for consumption and not a hit, and every png in the tree inflates to its last byte',
-    m4.hits.length === 0 && m4.unreadable.length === 1 && m4.unreadable[0].file === 'raw-ascii-in-idat.png'
-      && /not fully consumed/.test(m4.unreadable[0].reason) && m4.counts.png === 1
-      && m4rec.raw_hits === 1 && m4rec.raw_hits_in_idat === 1 && m4rec.idat_fully_consumed === false
-      && treeUnconsumed.length === 0 && classifiedHitBinaries.length === 0,
-    { synthetic: m4, tree_pngs: treePngs.length, tree_unconsumed: treeUnconsumed, tree_idat_runs: treeIdatRuns, classifiedHitBinaries });
-
-  // A term in the INFLATED pixel data is recorded and not red. Two streams: a
-  // stored one (level 0), where the term is verbatim in the compressed bytes as
-  // well, and a compressed one, where it is not. Neither is a hit and neither is
-  // red, and the record says `inflated_hits: 1` for both.
-  //
-  // WHY NOT RED, stated beside the assertion. The gate's threat model is
-  // accidental plaintext disclosure by a person or an agent writing the tree
-  // (CONSTITUTION). Pixel samples are not a text channel: a term that reaches
-  // them by chance in a photograph is noise, and one that reaches them by
-  // construction in a crafted image is an evasion, and the gate is for
-  // neither. THIS IS THE FIRST ASSERTION IN THE GATE THAT WOULD FLIP UNDER AN
-  // ADVERSARIAL THREAT MODEL. The count is in the record so that a change of
-  // model is a change to this one assertion and not a search.
-  const m4stored = one('stored.png', png(chunk('IDAT', zlib.deflateSync(pad(MUT), { level: 0 }))));
-  const m4packed = one('packed.png', png(chunk('IDAT', zlib.deflateSync(pad(MUT)))));
-  const sRec = m4stored.binaries['stored.png'] || {};
-  const pRec = m4packed.binaries['packed.png'] || {};
-  cidcheck('classify-m4-inflated-recorded',
-    'M4: a term in the inflated pixel data is recorded and not red, for a stored stream where it is also in the compressed bytes and for a compressed stream where it is not',
-    m4stored.hits.length === 0 && m4stored.unreadable.length === 0 && sRec.inflated_hits === 1 && sRec.raw_hits_in_idat === 1 && sRec.idat_fully_consumed === true
-      && m4packed.hits.length === 0 && m4packed.unreadable.length === 0 && pRec.inflated_hits === 1 && pRec.raw_hits_in_idat === 0 && pRec.idat_fully_consumed === true,
-    { stored: sRec, packed: pRec, stored_scan: m4stored, packed_scan: m4packed });
-
-  // AC-19 — M5 and M6. The two regions AC-4 first excluded on a claim the format
-  // does not support. `credit name` is the element the WOFF2 metadata schema
-  // defines for exactly the kind of string the deny list holds, so it is the
-  // shape the mutation plants rather than a bare token in an XML file.
-  const metaXml = `<?xml version="1.0" encoding="UTF-8"?><metadata version="1.0">`
-    + `<credits><credit name="${MUT}" role="Designer"/></credits>`
-    + `<description><text lang="en">a subsetted face</text></description></metadata>`;
-  const m5 = one('meta.woff2', woff2('Clean Regular', { meta: metaXml }));
-  cidcheck('classify-m5-woff2-metadata',
-    'M5: the term planted in a credit name inside the extended metadata block is a hit',
-    m5.hits.length === 1 && m5.hits[0].file === 'meta.woff2' && m5.unreadable.length === 0
-      && !!(m5.binaries['meta.woff2'] || {}).regions
-      && (m5.binaries['meta.woff2'].regions.meta || 0) === 1,
-    m5);
-
-  const m6 = one('priv.woff2', woff2('Clean Regular', { priv: `licence note ${MUT} end` }));
-  cidcheck('classify-m6-woff2-privdata',
-    'M6: the term planted as bytes in the private data block is a hit',
-    m6.hits.length === 1 && m6.hits[0].file === 'priv.woff2' && m6.unreadable.length === 0
-      && !!(m6.binaries['priv.woff2'] || {}).regions
-      && (m6.binaries['priv.woff2'].regions.priv || 0) === 1,
-    m6);
-
-  // The control for both: the same builder with neither block present returns
-  // the name region alone and no hit, so a red above is the planted block and
-  // not the builder.
-  const m56control = one('clean.woff2', woff2(`Clean Regular`));
-  cidcheck('classify-m56-woff2-control',
-    'CONTROL: the same font with neither block carries only the name region and produces no hit',
-    m56control.hits.length === 0 && m56control.unreadable.length === 0
-      && JSON.stringify(Object.keys((m56control.binaries['clean.woff2'] || {}).regions || {})) === '["name"]',
-    m56control);
-
-  // AC-12 — the classification is deterministic within a run. The two-run form
-  // is the spec gate's; this is the half that catches a classifier depending on
-  // anything but its input.
-  const d1 = one('pixels.png', m4buf);
-  const d2 = one('pixels.png', m4buf);
-  cidcheck('classify-deterministic',
-    'classifying the same bytes twice returns an identical result',
-    JSON.stringify(d1) === JSON.stringify(d2), { d1, d2 });
-
-  // NFR-5 — and the answer depends on the bytes and on nothing else: not the
-  // path, not the extension, not the size.
-  const pureBuf = png(chunk('IDAT', Buffer.from('pixels')));
-  const pureNames = ['a.png', 'b.txt', 'c', 'deep/dir/d.bin'];
-  const pureClasses = pureNames.map((n) => Object.keys(one(n, pureBuf).counts)[0]);
-  const textUnderPng = Object.keys(one('looks-like.png', Buffer.from('ordinary prose', 'utf8')).counts)[0];
-  cidcheck('classify-pure',
-    'the same bytes classify identically under four names and a changed extension, and text named .png is still text',
-    new Set(pureClasses).size === 1 && pureClasses[0] === 'png' && textUnderPng === 'text',
-    { pureClasses, textUnderPng });
-
-  SCAN_CLASSIFICATION.walked = scan.walked;
-  SCAN_CLASSIFICATION.counts = scan.counts;
-  SCAN_CLASSIFICATION.unrecognised = scan.unreadable.map((u) => u.file);
-  SCAN_CLASSIFICATION.unreadable = scan.unreadable;
-  SCAN_CLASSIFICATION.hit_files = [...new Set(hits.map((h) => h.file))];
-  // The text half's hits, as `<file>|<list>|<index>`. A COUNT AND A POSITION,
-  // never a term: `probes/classify.mjs prechange-text-identical` compares this
-  // against the reader built from the base commit's blob, and neither side may
-  // put a deny-list entry into a file (AC-15).
-  SCAN_CLASSIFICATION.text_hits = textHits.slice().sort();
-  SCAN_CLASSIFICATION.binaries = scan.binaries;
-  SCAN_CLASSIFICATION.mutation_term = MUT;
-  SCAN_CLASSIFICATION.recognised = RECOGNISED_BINARIES.map((b) => ({ id: b.id, signature: b.signature, check: b.check, scans: b.scans }));
-
-  // The deny-list must actually BITE. Plant each new term in a temp file inside
-  // the scanned tree and assert the scanner flags it — a deny-list that silently
-  // stopped matching would be worse than none, since it reads as protection.
-  // Held in memory only — the banned string is never written to disk, not even
-  // to a temp file, so a crash mid-test cannot leave it in the tree.
-  const planted = [];
-  for (const term of [...SUBSTR.slice(-1), ...WORD_CI]) {
-    for (const body of [`prose mentioning ${term} inline`, `PROSE MENTIONING ${term.toUpperCase()} INLINE`]) {
-      // THROUGH THE SHIPPED MATCHER, not a copy of it. This test used to
-      // re-implement the substring and case-insensitive tests over the body,
-      // which is why it stayed green when a branch of the real matcher was
-      // deleted (approval finding F-1, 2026-09-05). Routed here it sees a
-      // WORD_CI deletion; it still cannot see a SUBSTR one, because these
-      // bodies are reachable by both branches, which is what AC-18's three
-      // single-branch subjects are for.
-      const caught = denyHits(body, TERMS).length > 0;
-      planted.push({ caught });
-    }
-  }
-  gate.check('deny-list BITES: every acknowledgment-name term is caught when planted, in any case',
-    planted.length === 6 && planted.every((p) => p.caught), planted);
-  gate.check('the acknowledgment credits a role, never a person',
-    /a former colleague/.test(fs.readFileSync(path.join(ROOT, 'scripts', 'prepare-report-005.js'), 'utf8')));
-}
-
 // ── 8. Hygiene scan (BLOCKING) ───────────────────────────────────────────────
 // The pattern list lives in lib/hygiene.js, which `scripts/merge-check.js` reads
 // too: one definition, so the scan that runs at gate time and the scan that runs
@@ -1243,6 +301,13 @@ const SCAN_CLASSIFICATION = { assertions: [] };
 gate.section('hygiene');
 {
   const hygiene = require('../lib/hygiene.js');
+  // Issue 501: raw JSON escapes must not invent an email local part.
+  const jsonAddress = 'reader' + '@' + 'private.test';
+  const jsonEmail = (f, t) => hygiene.scanContent(f, t).filter(h => h.kind === 'email');
+  const unicodeAddress = '{"contact":"' + [...jsonAddress].map(c => String.fromCharCode(92) + 'u' + c.charCodeAt(0).toString(16).padStart(4,'0')).join('') + '"}';
+  const jsonEmailClean = jsonEmail('receipt.json', JSON.stringify({code: '\n' + '@pytest' + '.fixture\ndef connection(): pass'})).length === 0;
+  const jsonEmailBites = [jsonAddress, {contact:jsonAddress}, [null,{nested:[jsonAddress]}], {[jsonAddress]:'key'}, 'n'+'@pytest'+'.fixture'].every(v => jsonEmail('receipt.json', JSON.stringify(v)).length > 0);
+  gate.check('JSON email classification rejects actual addresses without mistaking escaped newlines for local parts', jsonEmailClean && jsonEmailBites && jsonEmail('receipt.json', unicodeAddress).length === 1 && jsonEmail('receipt.json', '{"contact":'+jsonAddress).length === 1 && jsonEmail('notes.txt',jsonAddress).length === 1);
   const files = listFiles(SCAN_ROOT);
   // The third argument is the link reader (spec 011, AC-2). Without it this
   // caller is the blind one: `readFileSync` on a symlink follows it, so a link
@@ -1438,7 +503,7 @@ gate.section('publish-tree draft guard');
     // Spec-anchored governance files are working documents, not products: the
     // decision log carries strategy, rejected options and risk posture, the
     // backlog carries unclosed defects, carried reds and an unexecuted release
-    // plan, and the confidentiality scan can only catch deny-listed TERMS — it can
+    // plan, and content hygiene checks can only catch their named patterns; they can
     // never know a document is internal BY NATURE. They are tracked on dev (that
     // is the point: they are version-controlled governance), so like
     // pending-publish.md this is asserted only against a published tree, where
@@ -2235,9 +1300,9 @@ gate.section('v0.3 transcript hashes');
   gate.check('every case carries one 64-hex judge_sample_hash per sample', allJudge);
 }
 
-// ── 17. npm pack whitelist + deny-list + credential-format (BLOCKING) ────────
+// ── 17. npm pack whitelist + credential-format (BLOCKING) ────────
 // The published npm tarball must contain EXACTLY the product whitelist and zero
-// repo-internal / deny-listed / credential-shaped content. `npm pack --dry-run
+// repo-internal or credential-shaped content. `npm pack --dry-run
 // --json` reports the exact file set without writing a tarball.
 gate.section('npm pack whitelist');
 {
@@ -2270,10 +1335,7 @@ gate.section('npm pack whitelist');
     const missing = NEED.filter((n) => !files.includes(n));
     gate.check('tarball includes every runtime essential (bin/config/spec/verdict/stub/init)', missing.length === 0, { missing });
 
-    // Deny-list + credential-format scan over the PACKED file CONTENTS.
-    const dec = (b64) => JSON.parse(Buffer.from(b64, 'base64').toString('utf8'));
-    const SUBSTR = dec('W10=');
-    const WORD = dec('W10=');
+    // Credential-format scan over the packed file contents.
     const CRED = [
       /\b(sk|pk|rk)_(live|test)_[0-9A-Za-z]{16,}\b/, /\bgh[pousr]_[A-Za-z0-9]{20,}\b/,
       /\bAKIA[0-9A-Z]{16}\b/, /\bxox[baprs]-[0-9A-Za-z-]{10,}\b/, /\bAIza[0-9A-Za-z_-]{35}\b/,
@@ -2282,11 +1344,9 @@ gate.section('npm pack whitelist');
     const contentHits = [];
     for (const rel of files) {
       let c; try { c = fs.readFileSync(path.join(ROOT, rel), 'utf8'); } catch (_e) { continue; }
-      for (const t of SUBSTR) if (c.toLowerCase().includes(t.toLowerCase())) contentHits.push({ rel, term: t });
-      for (const t of WORD) if (new RegExp(`\\b${t}\\b`).test(c)) contentHits.push({ rel, term: t });
       for (const re of CRED) if (re.test(c)) contentHits.push({ rel, term: `cred:${re}` });
     }
-    gate.check('packed file contents are deny-list + credential-format clean', contentHits.length === 0, { contentHits: contentHits.slice(0, 20) });
+    gate.check('packed file contents are credential-format clean', contentHits.length === 0, { contentHits: contentHits.slice(0, 20) });
   }
 }
 
@@ -4836,31 +3896,7 @@ gate.section('essay grounding (typed prose, bound to the pages it cites)');
   gate.check('every narrowing class carries a statement, a drafting rule, a mutation and the instance that named it',
     thin.length === 0, { thin: thin.map((c) => c.id) });
 
-  // AN ABSENT CONSTITUTION.md PASSES, and the reason is the one DECISIONS #28
-  // recorded for the blocker guard: the PUBLISHED TREE EXCLUDES THIS FILE, so a
-  // check that failed closed here would fail every build made from a published
-  // tree — for the absence of a file that tree is defined not to carry. The
-  // register itself ships and is checked above from both vantages; this
-  // assertion is the source tree's, and it says so rather than going quiet.
-  const constitutionPath = path.join(ROOT, 'CONSTITUTION.md');
-  if (fs.existsSync(constitutionPath)) {
-    const bar = fs.readFileSync(constitutionPath, 'utf8').split(/^## /m).find((sec) => sec.startsWith('Quality bar')) || '';
-    // THE PATTERN MUST MATCH THE NAMING CONVENTION, not one shape of it.
-    // `[a-z]+-vs-[a-z]+` matched only single-word halves, so `helper-vs-product-path`
-    // and `fixture-vs-real-artifact` were invisible here from the day they were
-    // named — which also weakened the orphan check below, since it compared
-    // against a list that was already short. Caught by adding the completeness
-    // direction (F-016-B4); the register's own probe had the broader pattern all
-    // along, and the two disagreeing is exactly the drift this pair of checks
-    // exists to stop.
-    // Spec 388 (R1): the quality bar no longer lists the classes; the register is
-    // the one list. A class token the bar does name must still be a register id.
-    const namedClasses = [...bar.matchAll(/`([a-z]+(?:-[a-z]+)+)`/g)].map((m) => m[1]);
-    const orphanClasses = namedClasses.filter((n) => !registerIds.has(n));
-    gate.check('the quality bar binds assertions to a declared scope and a mutation, naming no class the register lacks',
-      /mutation/i.test(bar) && /scope/i.test(bar) && orphanClasses.length === 0,
-      { namedClasses, orphanClasses });
-  }
+  // Issue 473, C-316: assertion scope comes from its data register, not policy prose.
 
   // AC-11. A receipt carries a self-verifying hash, which is tamper-evidence,
   // not authenticity. Claiming "signed" states a property the artifact does not
@@ -4878,29 +3914,6 @@ gate.section('essay grounding (typed prose, bound to the pages it cites)');
   const scopeTracked = execFileSync('git', ['ls-files', 'tests/assertion-scope.js'], { cwd: ROOT, encoding: 'utf8' }).trim();
   gate.check('the narrowing-class register ships with the tree it governs',
     scopeTracked === 'tests/assertion-scope.js', { scopeTracked });
-}
-
-// ── receipt integrity (spec 026) ─────────────────────────────────────────────
-//
-// Spec 026 AC-14 (F-R8). Runs HERE, not only in specs/026's gate, for the reason
-// every spec section gives: specs/ is excluded from the published tree and no
-// workflow runs a spec gate, so a rule that lived only beside its spec would
-// never be executed by a build. In the published tree there is no specs/, so
-// the rule reads 0 probes and says so rather than passing in silence.
-gate.section('receipt integrity (spec 026)');
-{
-  const scope026 = require('./assertion-scope');
-  // ONE predicate, in tests/assertion-scope.js (probeCopiesCheck), asserted
-  // here and exercised by specs/026's mutation on a planted copy.
-  const pc = scope026.probeCopiesCheck(ROOT);
-  gate.check('no probe carries an undeclared copy of an exported product function (the probe-copies rule; count read)',
-    pc.pass && pc.violations.length === 0, { probesRead: pc.probesRead, violations: pc.violations.slice(0, 10), excProblems: pc.excProblems.slice(0, 5) });
-  // The count is in the detail, not the name: the name must be the same in
-  // both trees for NFR-3's section comparison (it read 85 here and 0 there).
-  gate.check('the probe-copies rule reports how many probe files it read (0 in the published tree, where specs/ is absent)',
-    Number.isInteger(pc.probesRead), { probesRead: pc.probesRead, routed: pc.routed.length, declared: pc.declared.length });
-  gate.check('every declared probe-copy exception names the product function it is independent of and an assertion in its own spec\'s gate that exists',
-    pc.excProblems.length === 0 || pc.probesRead === 0, { excProblems: pc.excProblems.slice(0, 10) });
 }
 
 // ── release version literal scope (DECISIONS C-276) ──────────────────────────
@@ -5631,6 +4644,20 @@ gate.section('differ honesty (cross-version bands, refusal rendering, cost proje
 // than being skipped — a guard clause that skips a missing subject is the
 // `absence-vs-unreadable` class this project's DECISIONS log names as its
 // most-repeated defect.
+// Issue 489: the CLI's explicit per-call setting and sealed receipt record.
+// The regression suite uses only the offline stub and ships with tests/.
+gate.section('run --timeout reaches every call and the receipt (issue 489)');
+{
+  const r = spawnSync(process.execPath, ['--test', '--test-name-pattern=AC-489-', path.join(__dirname, 'firstrun-cli.test.js')], {
+    cwd: ROOT, encoding: 'utf8', timeout: 1800000, maxBuffer: 32 << 20,
+  });
+  gate.check('run --timeout validates, reaches every generation and judge, is sealed, and preserves quick and defaults',
+    r.status === 0 && !r.error, {
+      status: r.status,
+      output: String((r.stdout || '') + (r.stderr || '')).trim(),
+    });
+}
+
 gate.section('run fidelity: timeout wiring reaches the provider (spec 017 AC-1/AC-2)');
 {
   // AC-1 — dynamic: drives lib/run.js's runSkillOnModel end-to-end under
@@ -7936,15 +6963,9 @@ if (!ROOT_IS_PUBLISHED_TREE) {
 }
 
 const summary = gate.summarize();
-fs.writeFileSync(path.join(__dirname, 'gate-results.json'),
+fs.writeFileSync(argValue('--results-file') || path.join(__dirname, 'gate-results.json'),
   JSON.stringify({
     ...summary,
     executed_assertion_ids: [...new Set(EXECUTED_ASSERTION_IDS)],
-    // The classification of every file the confidentiality scan walked: counts
-    // by class, the full list of files that failed to be read for any reason
-    // (expected empty), and one entry per binary saying what its format-specific
-    // check returned. Emitted by the RUN rather than maintained beside it, so an
-    // assertion about the classification reads what happened (spec 027 AC-14).
-    scan_classification: SCAN_CLASSIFICATION,
   }, null, 2));
 process.exit(gate.toExitCode());

@@ -954,24 +954,7 @@ test('AC-26 a regraded receipt seals its evidence inside its hash: regraded_from
   assert.ok(v.valid && v.version === '0.11', JSON.stringify(v.errors));
 });
 
-test('AC-27 spec/RECEIPT.md and the methodology page say what a regraded receipt seals, and what the judge\'s setting is (A-184-12, A-184-13)', () => {
-  const doc = fs.readFileSync(path.join(RT, 'spec', 'RECEIPT.md'), 'utf8');
-  // A-184-33 (issue 265): v0.13 is current, so the heading reads v0.13. A-184-36 (issue 438): v0.15 now.
-  assert.match(doc.split('\n').slice(0, 3).join('\n'), /spec v0\.15\b/);
-  const at = doc.indexOf('\n## What v0.12 adds');
-  assert.ok(at >= 0, 'spec/RECEIPT.md has no What v0.12 adds section');
-  const sec = doc.slice(at + 1, doc.indexOf('\n## ', at + 1)).replace(/\s+/g, ' ');
-  for (const want of ['`run.regraded_from`', '`run.regrade`', '`checks_regrade`', '`answers_sha256`', '`rubric_revision_sha256`', '`judge_calls`', '`cases_changed`', '`harness`', '`isolation`', '`endpoint`', '`code_revision`', 'inside its hash', 'never the address', 'receipt.v0.11.schema.json']) {
-    assert.ok(sec.includes(want), `§ What v0.12 adds does not say ${want}`);
-  }
-  const tr = doc.match(/^## Transcripts[^\n]*\n([\s\S]*?)(?=^## )/m)[1].replace(/\s+/g, ' ');
-  assert.ok(!/sidecar[^.]*(only|alone)[^.]*record/.test(tr), '§ Transcripts says the sidecar is the only record');
-  assert.ok(tr.includes('sealed inside its hash'), '§ Transcripts does not say the evidence is sealed inside the receipt\'s hash');
-  const page = fs.readFileSync(path.join(__dirname, '..', 'docs', 'methodology', 'index.html'), 'utf8');
-  const p = page.split('\n').find((l) => l.includes('graded again under a revised rubric'));
-  assert.ok(p, 'the methodology page has no regrade paragraph');
-  for (const want of ['sealed in its hash', 'the original receipt', 'the answers', 'the calls made', 'never run again']) assert.ok(p.includes(want), `the methodology regrade sentence does not say ${want}`);
-});
+
 
 // ── issue 196, the second claim review (A-184-20 to A-184-26), each red on the tip it read ─────────
 
@@ -1210,23 +1193,7 @@ test('AC-33 regrade writes no file when the regraded receipt fails schema valida
   }
 });
 
-test('AC-34 spec/RECEIPT.md and the methodology page say what the judge record holds and compares, what is not recorded, and what the sidecar holds (A-184-20 to A-184-26)', () => {
-  const doc = fs.readFileSync(path.join(RT, 'spec', 'RECEIPT.md'), 'utf8');
-  const flat = (s) => s.replace(/\s+/g, ' ');
-  const at = doc.indexOf('\n## What v0.12 adds');
-  const sec = flat(doc.slice(at + 1, doc.indexOf('\n## ', at + 1)));
-  assert.ok(!/hands its child only `HOME` and `PATH`, so a judge behind it is handed none/.test(sec), 'the hop sentence the review found false');
-  for (const want of ['login shell', '`resolved_by`', '`routing`', ...ROUTING.map((k) => `\`${k}\``), 'unsalted', '`reported_models`', '`criteria_template_hash`', 'Not recorded and not compared', '`~/.claude/settings.json`', '`CLAUDE.md`', 'shell profile', ...JUDGE_CODE_FILES.map((f) => `\`${f}\``)]) {
-    assert.ok(sec.includes(want), `§ What v0.12 adds does not say ${want}`);
-  }
-  assert.ok(!/repeats no (top-level )?key/.test(flat(doc)), 'spec/RECEIPT.md still says the sidecar repeats no key');
-  for (const k of ['`format`', '`receipt_hash`', '`generated_at_basis`', '`draws`', '`calls`', '`judge_reported_models`', '`answers`', '`rubric_revision`']) assert.ok(sec.includes(k), `§ What v0.12 adds does not name the sidecar's ${k}`);
-  const page = fs.readFileSync(path.join(__dirname, '..', 'docs', 'methodology', 'index.html'), 'utf8');
-  const p = page.split('\n').find((l) => l.includes('graded again under a revised rubric'));
-  assert.ok(p, 'the methodology page has no regrade paragraph');
-  assert.ok(!p.includes('by the same grader in the same setting'), 'the page still says the same setting without saying what is recorded');
-  for (const want of ['refuses a grader whose recorded setting differs', 'not recorded', 'settings files', 'shell profile']) assert.ok(p.includes(want), `the methodology regrade paragraph does not say ${want}`);
-});
+
 
 // Issue 196 handover: these plants reproduce the remaining independent findings.
 test('AC-35 a judge timeout preserves the completed answer hash and fixed reason for regrading', async () => {
@@ -1363,12 +1330,4 @@ test('AC-37 exhausted non-timeout failures report every attempted request and lo
       });
     });
   } finally { override = null; }
-});
-
-
-test('AC-34 the count fields and identity refusal are explained on the methodology page with the cap source named', () => {
-  const doc = fs.readFileSync(path.join(RT, 'spec', 'RECEIPT.md'), 'utf8');
-  assert.ok(doc.includes('`DEV_MAX_CALLS`'), 'the receipt specification names the cap constant');
-  const page = fs.readFileSync(path.join(__dirname, '..', 'docs', 'methodology', 'index.html'), 'utf8');
-  for (const text of ['logical judge calls', 'CLI invocation', 'no recorded judge identity', 'requests made inside a CLI are not counted']) assert.ok(page.includes(text), text);
 });

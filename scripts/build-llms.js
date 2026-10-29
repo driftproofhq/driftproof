@@ -69,11 +69,12 @@ function answerLines(root) {
   return [
     `- [${A.links['what-is-driftproof']}](${ORIGIN}/what-is-driftproof/): ${A.descriptor}.`,
     `- [${A.links['agent-skill-evaluation']}](${ORIGIN}/agent-skill-evaluation/): ${q('agent-skill-evaluation')}`,
-    `- [${A.links['agent-skill-regression-testing']}](${ORIGIN}/agent-skill-regression-testing/): ${q('agent-skill-regression-testing')}`,
+    `- [Skill evaluation across model releases](${ORIGIN}/agent-skill-regression-testing/): ${q('agent-skill-regression-testing')}`,
     `- [${A.links.compare}](${ORIGIN}/compare/): ${firstSentence(P.compare.intro)}`,
-    `- [${A.links.paper}](${ORIGIN}/paper/): ${paper.title}. ${paper.version_line}. ${paper.preprint_line}.`,
+    `- [LLM eval measurement defects](${ORIGIN}/paper/): ${paper.title}. ${paper.version_line}. ${paper.preprint_line}.`,
     `- [${A.links['benchmark-gap']}](${ORIGIN}/benchmark-gap/): type two benchmark scores and the question count, and see whether the gap clears the benchmark's own sampling noise.`,
     ...phraseLines(),
+    ...articleLines(root).filter(line => ![...Object.keys(P).map(k => ORIGIN + "/" + k + "/"), ORIGIN + "/paper/", ORIGIN + "/findings/", ORIGIN + "/leaderboard-noise/"].some(url => line.includes("](" + url + ")"))),
   ];
 }
 
@@ -81,14 +82,15 @@ function answerLines(root) {
 // The link text is the phrase the page's title leads with.
 function phraseLines() {
   return [
-    `- [Skill evaluation across model releases](${ORIGIN}/agent-skill-regression-testing/): whether an agent skill still helps after the model under it changes, answered from the published reports.`,
+    `- [AI benchmark gaps vs sampling noise](${ORIGIN}/leaderboard-noise/): a piece by Maverick that checks the gaps quoted in frontier launch posts and on public leaderboards against each benchmark's own sampling noise, with its code and data linked.`,
     `- [Evaluation receipts](${ORIGIN}/r/): every published receipt, dated and hash-verified, listed by the report it belongs to.`,
-    `- [LLM eval measurement defects](${ORIGIN}/paper/): the paper on measurement defects in LLM and agent evaluation tools, with its data and its citation.`,
     `- [Maintainer](${ORIGIN}/maintainer/): who maintains Driftproof: Maverick (mavericksea-ai on GitHub), who also writes its reports and the paper.`,
     `- [Fixes merged into other evaluation tools](${ORIGIN}/what-is-driftproof/#fixes-merged-upstream): the fixes the maintainer contributed upstream, each credited in its project's own release notes.`,
-    // Spec 171, issue 51: Maverick's piece, which the gap calculator links as its Piece.
-    `- [AI benchmark gaps vs sampling noise](${ORIGIN}/leaderboard-noise/): a piece by Maverick that checks the gaps quoted in frontier launch posts and on public leaderboards against each benchmark's own sampling noise, with its code and data linked.`,
   ];
+}
+
+function articleLines(root) {
+  return require("./build-sitemap.js").publishedArticles(root, {}).map(a => `- [${a.title.replace(/[\[\]]/g, "")}](${a.url}): ${a.description}`);
 }
 
 function reportLines(root) {
@@ -152,7 +154,7 @@ function renderLlmsFull(root = ROOT) {
     if (!fs.existsSync(path.join(root, 'docs', rel))) throw new Error(`docs/${rel} is missing - run: node scripts/build-markdown.js`);
     return `${r.line} Its full text: <${ORIGIN}/${rel}>`;
   });
-  return `${OPENING}\n${parts.map((p) => `---\n\n${p}\n`).join('\n')}\n---\n\n# Reports\n\n${reports.join('\n')}\n`;
+  return `${OPENING}\n${parts.map((p) => `---\n\n${p}\n`).join('\n')}\n---\n\n# Reports\n\n${reports.join('\n')}\n\n# Articles\n\n${articleLines(root).join('\n')}\n`;
 }
 
 if (require.main === module) {

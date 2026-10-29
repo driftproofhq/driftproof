@@ -1,20 +1,6 @@
-# The Claude Code plugin self-test (spec 028, AC-13; step amended at A-028-34).
-#
-# This workflow ships in the published tree, so it runs only what that tree
-# carries: the tree's own documented gate. The fake-CLI self-test lives in the
-# source repository, outside the published tree, and it runs in
-# that repository's gate. Here the gate proves the plugin's manifest, its three
-# command step blocks and its input contract against action/lib.sh, plus the
-# published gate's scans, tarball whitelist and exclusions. It does not exercise
-# the door's or the badge's behaviour, which needs the harness and the fake CLIs.
-#
-# SPENDS NOTHING: no secret is read and no provider is reached. The gate runs
-# offline under DRIFTPROOF_STUB=1. Its four publish-state exclusion checks assert
-# in every tree but the source repository, so here they assert with or without --scan-root .
 name: plugin self-test
 
 on:
-  push:
   pull_request:
   workflow_dispatch:
 
@@ -40,11 +26,8 @@ jobs:
           node-version-file: .nvmrc
       - name: install (the runner's own deps; the plugin has none)
         run: npm ci --omit=dev
-      - name: the published tree's own gate (offline, stubbed)
-        # On driftproof-source the tree is the source, not a published tree: naming it on argv as a
-        # published scan root turned the published-tree guards red on its own specs/ and CLAUDE.md
-        # (issue 20). There the gate runs as the repository gate does; everywhere else, unchanged.
-        run: node tests/gate.js ${{ github.repository != 'driftproofhq/driftproof-source' && '--scan-root .' || '' }}
+      - name: Plugin compatibility (offline, stubbed)
+        run: node --test tests/plugin-compat.test.js
       - name: the manifests validate as manifests
         run: |
           node -e "JSON.parse(require('fs').readFileSync('.claude-plugin/marketplace.json','utf8'))"

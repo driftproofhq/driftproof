@@ -905,7 +905,7 @@ async function main(argv = process.argv.slice(2)) {
     console.log(`\nThis was a STUB dry run — NO model was called. To execute the real Report #005:\n\n    ${res.goCommand}\n`);
     console.log('Then review the draft and follow the operator\'s approve-and-publish procedure.');
   } else {
-    console.log('\nNOT published — review the draft + write the QA record, then follow the operator\'s approve-and-publish procedure.');
+    console.log('\nNOT published: check the draft against its receipts, then follow the operator\'s approve-and-publish procedure.');
   }
 }
 

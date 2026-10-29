@@ -24,12 +24,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-      - name: install dependencies
-        shell: pwsh
-        run: node .github/windows-ci/setup.cjs
+      - uses: ./.github/actions/windows-setup
       - name: first-run
         shell: pwsh
         run: node .github/windows-ci/first-run.cjs

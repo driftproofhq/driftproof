@@ -238,13 +238,48 @@ function renderRobots() {
 // date its receipts were run - not the date this file was generated, because a
 // feed that re-dates every entry on every build tells a subscriber that seven
 // reports changed when none did.
-function renderFeed(rows) {
+// Issue 501: use the same article classification as the site's reading chrome.
+function publishedArticles(root = ROOT, dates = null) {
+  const docs = path.join(root, 'docs');
+  if (!dates) {
+    const f = path.join(docs, 'data/page-dates.json');
+    dates = fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')).dates : {};
+  }
+  const source = fs.readFileSync(path.join(root, 'scripts/build-public.sh'), 'utf8');
+  const exclusion = /EXCLUDE_RE='([^']+)'/.exec(source) || /EXCLUDE_RE="([^"]+)"/.exec(source);
+  if (!exclusion) throw new Error('cannot read publish exclusions for articles');
+  const ex = new RegExp(exclusion[1]);
+  const articles = [];
+  // &amp; is decoded last, so "&amp;lt;" stays "&lt;" rather than becoming "<".
+  const decode = text => text.replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+  function walk(dir) {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const file = path.join(dir, e.name);
+      if (e.isDirectory()) { walk(file); continue; }
+      const rel = path.relative(docs, file).split(path.sep).join('/');
+      if (!e.name.endsWith('.html') || ex.test('docs/' + rel) || rel.startsWith('reports/') || !chrome.isArticle(rel)) continue;
+      const html = fs.readFileSync(file, 'utf8');
+      if (/<meta\s+http-equiv="refresh"/i.test(html) || /<meta[^>]+name="robots"[^>]+content="[^"]*noindex/i.test(html)) continue;
+      const h1 = /<h1[^>]*>([\s\S]*?)<\/h1>/i.exec(html);
+      const description = /<meta\s+name="description"\s+content="([^"]*)"/i.exec(html);
+      if (!h1 || !description) throw new Error('article metadata missing: ' + rel);
+      articles.push({ rel, url: ORIGIN + '/' + rel.replace(/(^|\/)index\.html$/, '$1'), title: htmlToText(h1[1], { decode }).trim(), description: decode(description[1]), date: dates[rel] || null });
+    }
+  }
+  walk(docs);
+  // URL order keeps LLM output stable before and after the first date derivation.
+  return articles.sort((a, b) => compare(a.url, b.url));
+}
+
+function renderFeed(rows, articles = publishedArticles()) {
+  if (articles.some(a => !/^\d{4}-\d{2}-\d{2}$/.test(a.date || ''))) throw new Error('article dates missing: run scripts/build-sitemap.js');
+  articles = articles.slice().sort((a, b) => compare(b.date, a.date) || compare(a.url, b.url));
   const updated = (d) => `${d}T00:00:00Z`;
-  const newest = rows.length ? rows[0].date.value : '1970-01-01';
+  const newest = [...rows.map(r => r.date.value), ...articles.map(a => a.date)].sort().pop() || '1970-01-01';
   return `<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-  <title>Driftproof reports</title>
-  <subtitle>Dated, hash-verified receipts that an agent skill still helps.</subtitle>
+  <title>Driftproof reports and articles</title>
+  <subtitle>Reports with dated, hash-verified receipts, and articles about evaluation.</subtitle>
   <link href="${ORIGIN}/feed.xml" rel="self"/>
   <link href="${ORIGIN}/"/>
   <id>${ORIGIN}/</id>
@@ -257,6 +292,14 @@ ${rows.map((r) => `  <entry>
     <updated>${updated(r.date.value)}</updated>
     <category term="${esc(r.type.value)}"/>
     <summary>${esc(`${r.headline_counts.value} Models: ${r.model_ids.map((m) => m.value).join(', ')}.`)}</summary>
+  </entry>`).join('\n')}
+${articles.map(a => `  <entry>
+    <title>${esc(a.title)}</title>
+    <link href="${esc(a.url)}"/>
+    <id>${esc(a.url)}</id>
+    <updated>${updated(a.date)}</updated>
+    <category term="article"/>
+    <summary>${esc(a.description)}</summary>
   </entry>`).join('\n')}
 </feed>
 `;
@@ -301,6 +344,8 @@ function sitemapLocs(docsDir = path.join(ROOT, 'docs')) {
   return files.flatMap((n) => [...read(n).matchAll(/<url>\s*<loc>([^<]+)<\/loc>\s*(?:<lastmod>([^<]*)<\/lastmod>)?\s*<\/url>/g)].map((m) => ({ loc: m[1], lastmod: m[2] || null })));
 }
 
+module.exports = { publishedArticles, pageFiles, entries, render, renderIndex, renderFeed, renderRobots, renderLlms, urlOf, isStub, isNoindex, mainWords, contentDates, sitemapLocs, ORIGIN };
+
 if (require.main === module) {
   const docs = path.join(ROOT, 'docs');
   const rows = reportRows();
@@ -316,7 +361,7 @@ if (require.main === module) {
     'sitemap.xml': renderIndex(kids),
     ...Object.fromEntries(kids.map(([name, list]) => [name, render(list)])),
     'data/page-dates.json': datesJson,
-    'feed.xml': renderFeed(rows),
+    'feed.xml': renderFeed(rows, publishedArticles(ROOT, JSON.parse(datesJson).dates)),
     'robots.txt': renderRobots(),
     'llms.txt': renderLlms(rows),
   };
@@ -337,5 +382,3 @@ if (require.main === module) {
     console.log(`docs/sitemap.xml: an index of ${counts}; page-dates.json, feed.xml, robots.txt, llms.txt: ${rows.length} reports`);
   }
 }
-
-module.exports = { pageFiles, entries, render, renderIndex, renderFeed, renderRobots, renderLlms, urlOf, isStub, isNoindex, mainWords, contentDates, sitemapLocs, ORIGIN };
