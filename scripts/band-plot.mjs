@@ -114,7 +114,9 @@ export const keyOf = (file, root = ROOT) =>
 // deviation of those means. Returns null when the arm has no measured case,
 // which is what makes a refusal a refusal rather than a zero.
 function arm(receipt, mode) {
-  const cases = ((receipt.results || {}).cases || []).filter((c) => c.mode === mode);
+  // Match the receipt writer's primary aggregate: judge-only scores measure a
+  // different outcome and must not enter these bands (issue 528).
+  const cases = ((receipt.results || {}).cases || []).filter((c) => c.mode === mode && c.score_basis !== 'judge-only');
   const means = cases.map(bandOf).filter(Boolean).map((b) => b.mean);
   if (!means.length) return null;
   const mean = means.reduce((s, v) => s + v, 0) / means.length;
