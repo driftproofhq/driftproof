@@ -192,7 +192,7 @@ const UNMEASURED = {
   truncated: { reason: /^generation truncated at the output cap \(stop_reason max_tokens\)$/, phases: ['generation'] },
   empty: { reason: /^empty generation \(the surface returned no text\)$/, phases: ['generation'] },
   lost: { reason: /^the answer points at a file the judge was not shown \(docs\/adr\/0001-database\.md\)$/, phases: ['generation'] },
-  'judge-unmeasured': { reason: /^judge output unparseable$/, phases: ['generation', 'judge', 'judge'] },
+  'judge-unmeasured': { reason: /^judge output unparseable$/, phases: ['generation', 'judge', 'judge', 'judge', 'judge'] },
 };
 for (const [p, { reason, phases }] of Object.entries(UNMEASURED)) {
   test(`AC-1 (a) a draw unmeasured on the ${p} return records its auxiliary calls too`, async () => {

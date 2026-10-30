@@ -60,7 +60,7 @@ Every published report, newest first.
 
 ### Fixes merged into other evaluation tools
 
-Driftproof's maintainer, Maverick ([mavericksea-ai](https://github.com/mavericksea-ai) on GitHub), reads the scoring and gating code of other evaluation tools and sends fixes upstream. Nine are merged. Current GitHub release observations are listed on the maintainer page:
+Driftproof's maintainer, Maverick ([mavericksea-ai](https://github.com/mavericksea-ai) on GitHub), reads the scoring and gating code of other evaluation tools and sends fixes upstream. Twelve are merged. Current GitHub release observations are listed on the maintainer page. Among the merged fixes:
 
 - **MLflow:** relative-change gates now use the baseline's magnitude, so a negative baseline no longer passes a worse model and fails a better one ([#26252](https://github.com/mlflow/mlflow/pull/26252)).
 - **NVIDIA SkillEvaluator:** a script earns execution credit only with evidence that it was run, not just read or searched ([#154](https://github.com/NVIDIA/SkillEvaluator/pull/154)).

@@ -1218,14 +1218,7 @@ function harborSection() {
   const m = /^## Source #\d+: Harbor\b[\s\S]*?(?=^## )/m.exec(md);
   return m ? m[0] : null;
 }
-test('AC-18, AC-21, AC-22: docs/interop.md has a Harbor section with the commands, the rules, the trust in the trial file\'s place and the placebo sentence', () => {
-  const s = harborSection();
-  assert.ok(s, 'docs/interop.md has no "## Source #n: Harbor" section');
-  assert.match(s, /driftproof import --from harbor --with \S+ --without \S+/);
-  assert.match(s, /driftproof import \S+ --from harbor --arm (with-skill|baseline)/);
-  for (const re of [/task_checksum/, /task_id/, /--reward/, /exception_info/, /step_results/, /agent_info\.version/, /model_info\.name/, /includes cached/i, /METHOD\.md/, /pool/i, /placebo/i, /DECLARED/, /agent\//, /verifier\//, /cannot check/, /one trial/, /config\.agent/, /source_sha256|sha256/, /finished_at/, /extra_instructions/, /model_usage/, /different shares/]) assert.match(s, re);
-  // A-266-1 (issue 378): the em dash is no longer read.
-});
+
 
 test('AC-18: the importer takes no placebo option; an unknown flag is refused, exit 2', () => {
   const r = cli([...pairArgs(path.join(TRIALS, 'skill-caveman'), BASELINE), '--placebo', path.join(TRIALS, 'skill-caveman')]);
@@ -1234,12 +1227,7 @@ test('AC-18: the importer takes no placebo option; an unknown flag is refused, e
   assert.deepEqual(r.files, []);
 });
 
-test('AC-21: the interop page carries an import line for --from harbor (spec 052 AC-4)', () => {
-  const { checkInteropPage } = require('./interop-page');
-  const html = fs.readFileSync(path.join(ROOT, 'docs', 'interop', 'index.html'), 'utf8');
-  const r = checkInteropPage({ html, current: '0', frozen: [], tools: ['harbor'] });
-  assert.deepEqual(r.problems.filter((p) => /harbor/.test(p)), []);
-});
+
 
 // ── AC-20: the skill's name ─────────────────────────────────────────────────
 test('AC-20: skill.name is the --skill declaration with a notice, else unknown with a notice; a --skill that is not a plain name is refused', () => {

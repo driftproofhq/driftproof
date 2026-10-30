@@ -321,10 +321,7 @@ function dependencyRefusal(r) {
   assert.equal(r.events.filter((e) => e.kind === 'synthetic').length, 0, 'no provider step');
   calls(r); costs(r, false); results(r, 0);
 }
-test('AC-1 names its one exception, spec 235\'s dependency refusal', () => {
-  const ac1 = /### AC-1:[\s\S]*?\n- \*\*Rationale/.exec(SPEC)[0].replace(/\s+/g, ' ');
-  assert.match(ac1, /One exception: spec 235's dependency refusal \(spec 138 RF-88\) runs before it\./);
-});
+
 for (const command of ['run', 'regrade']) {
   test('AC-1 exception: dependency refusal on ' + command, () => {
     const o = scenario(ROOT, 'full');

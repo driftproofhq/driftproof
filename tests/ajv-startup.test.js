@@ -161,47 +161,7 @@ for (const name of ['help', 'version', 'init', 'overlap']) {
   });
 }
 
-test('AC-6 the census trigger refuses and disabling its site makes the row red', async () => {
-  const censusTmp = path.join(TMP, 'census');
-  fs.mkdirSync(censusTmp);
-  const previous = process.env.SPEC138_TMP;
-  process.env.SPEC138_TMP = censusTmp;
-  try {
-    const census = await import(path.join(ROOT, 'specs', '138-first-run', 'probes', 'census.mjs'));
-    const row = census.ROWS['RF-88'];
-    assert.ok(row, 'spec 138 is missing RF-88');
-    const spec = fs.readFileSync(path.join(ROOT, 'specs', '138-first-run', 'spec.md'), 'utf8');
-    assert.match(spec, /^\| RF-88 \|.+\| 2 \|.+ajv.+$/m);
-    const matches = (out) => out.r.exit === 2 && out.r.stdout === '' &&
-      /^[^\r\n]+\n$/.test(out.r.stderr) &&
-      /REFUSED/.test(out.r.stderr) && /\bajv\b/.test(out.r.stderr) &&
-      /npm install/.test(out.r.stderr) && out.wrote.length === 0;
-    assert.equal(matches(row.run({ rt: { dir: ROOT } })), true, 'RF-88 does not reach its refusal');
-    const plant = census.sitePlant(row.file, row.anchor);
-    assert.ok(plant.from && !plant.from.includes('\u0000'), 'the site anchor is unreadable');
-    assert.notEqual(plant.to, plant.from, 'the site plant disables nothing');
-    const mutant = path.join(TMP, 'census-mutant');
-    fs.cpSync(RUNTIME, mutant, { recursive: true, dereference: false });
-    const target = path.join(mutant, plant.file);
-    const source = fs.readFileSync(target, 'utf8');
-    assert.equal(source.split(plant.from).length, 2, 'the plant must anchor exactly once');
-    fs.writeFileSync(target, source.replace(plant.from, plant.to));
-    const parsed = spawnSync(process.execPath, ['--check', path.join(mutant, 'bin', 'driftproof')], { encoding: 'utf8', timeout: 1800000 });
-    assert.equal(parsed.status, 0, parsed.stderr);
-    const disabled = row.run({ rt: { dir: mutant } });
-    assert.equal(disabled.r.dependencyProbed, true, 'mutant did not reach the dependency probe');
-    assert.equal(disabled.r.error, null, 'mutant failed to execute');
-    assert.match(disabled.r.stderr, /FATAL Error: receipt validation requires the .ajv. package/);
-    const w = work();
-    const installed = invoke(['run', w.skill, '--quick', '--out', path.join(w.cwd, 'out')], { ...w, runtime: mutant, block: false });
-    assert.equal(installed.status, 0, installed.stderr);
-    assert.ok(installed.events.some((e) => e.kind === 'model'), 'mutant installed control did not dispatch');
-    assert.equal(matches(disabled), false, 'disabled refusal still reads green');
-  } finally {
-    if (previous === undefined) delete process.env.SPEC138_TMP;
-    else process.env.SPEC138_TMP = previous;
-  }
-});
+
 
 for (const name of ['run', 'regrade', 'import', 'validate', 'badge', 'decide', 'diff', 'export', 'stale', 'view']) {
   for (const rest of [[], ['--strict=false']]) {

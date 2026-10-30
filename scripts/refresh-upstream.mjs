@@ -100,6 +100,21 @@ export function mentions(body,repo,n) {
   text=text.replace(/https?:\/\/[^\s<>]+/g,'').replace(/<[^>]*>/g,' ');
   return new RegExp('(^|[^A-Za-z0-9_/#])#'+n+'(?![A-Za-z0-9_])').test(text);
 }
+// A tag resolves through refs/tags only (issue 229): /commits/<name> would accept a branch of the same name.
+// git/ref answers one exact ref; an annotated tag is peeled through git/tags to the commit it names.
+function resolveTag(get,repo,tag) {
+  const ref=get(API+repoPath(repo)+'/git/ref/tags/'+tag.split('/').map(encodeTag).join('/')).body;
+  need(ref && !Array.isArray(ref) && ref.ref==='refs/tags/'+tag,'tag resolution: not the tag '+tag);
+  let object=ref.object;
+  for(let depth=0; object?.type==='tag'; depth++) {
+    need(depth<8 && validSha(object.sha),'tag resolution: annotated tag '+tag);
+    const t=get(API+repoPath(repo)+'/git/tags/'+object.sha).body;
+    need(t?.sha===object.sha,'tag resolution: annotated tag '+tag);
+    object=t.object;
+  }
+  need(object?.type==='commit' && validSha(object.sha),'tag resolution: '+tag+' names no commit');
+  return object.sha;
+}
 function derive(get) {
   const merged=pages(get,searchUrl(QUERY),true);const open=pages(get,searchUrl(OPEN_QUERY),true);
   for(const p of open) {identity(p);need(p.state==='open' && p.pull_request.merged_at===null,'open search identity');need(p.user?.login==='mavericksea-ai','wrong author');}
@@ -116,8 +131,7 @@ function derive(get) {
     const r=candidate(releases.get(repo),repo,detail.merged_at);let release=null;
     if(r) {
       need(r.body_omitted!==true,'selected release notes missing');
-      const resolved=get(API+repoPath(repo)+'/commits/'+encodeTag(r.tag_name)).body.sha;
-      need(validSha(resolved),'tag resolution');
+      const resolved=resolveTag(get,repo,r.tag_name);
       const comparison=get(API+repoPath(repo)+'/compare/'+detail.merge_commit_sha+'...'+resolved).body;
       need(comparison?.base_commit?.sha===detail.merge_commit_sha && (!comparison.head_commit || comparison.head_commit.sha===resolved),'compare identity');
       need(['ahead','identical'].includes(comparison.status) && comparison.behind_by===0 && comparison.merge_base_commit?.sha===detail.merge_commit_sha && Number.isSafeInteger(comparison.ahead_by) && comparison.ahead_by>=0,'containment');
@@ -141,7 +155,8 @@ function projectBody(url,b) {
   if(url.includes('/search/issues?'))return {total_count:b.total_count,incomplete_results:b.incomplete_results,items:b.items?.map(p=>({number:p.number,title:cleanText(p.title),html_url:p.html_url,user:user(p.user),state:p.state,repository_url:p.repository_url,pull_request:{url:p.pull_request?.url,merged_at:p.pull_request?.merged_at}}))};
   if(/\/pulls\/\d+$/.test(url))return {number:b.number,title:cleanText(b.title),html_url:b.html_url,user:user(b.user),state:b.state,merged:b.merged,merged_at:b.merged_at,merge_commit_sha:b.merge_commit_sha,base:{repo:{...(Number.isSafeInteger(b.base?.repo?.id)?{id:b.base.repo.id}:{}),full_name:b.base?.repo?.full_name,private:b.base?.repo?.private,html_url:b.base?.repo?.html_url}}};
   if(url.includes('/releases?'))return Array.isArray(b)?b.map(r=>({id:r.id,tag_name:r.tag_name,html_url:r.html_url,published_at:r.published_at,created_at:r.created_at,body:cleanText(r.body || ''),draft:r.draft,prerelease:r.prerelease})):b;
-  if(url.includes('/commits/'))return {sha:b.sha};
+  if(url.includes('/git/ref/tags/'))return Array.isArray(b)?b.map(r=>({ref:r.ref,object:{sha:r.object?.sha,type:r.object?.type}})):{ref:b.ref,object:{sha:b.object?.sha,type:b.object?.type}};
+  if(url.includes('/git/tags/'))return {sha:b.sha,object:{sha:b.object?.sha,type:b.object?.type}};
   if(url.includes('/compare/'))return {status:b.status,ahead_by:b.ahead_by,behind_by:b.behind_by,...(b.head_commit?{head_commit:{sha:b.head_commit.sha}}:{}),base_commit:{sha:b.base_commit?.sha},merge_base_commit:{sha:b.merge_base_commit?.sha}};
   throw Error('unexpected endpoint');
 }

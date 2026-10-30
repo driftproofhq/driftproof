@@ -40,6 +40,26 @@ in one file that opens from disk.
 Driftproof **consumes** the [`agentskills.io/evals`](https://agentskills.io) eval
 format; it does not invent its own.
 
+## First run
+
+1. Use Node.js 22 or later and an installed CLI. The default CLI isolation is
+   a Linux setup: a separate unprivileged user (default `driftproof-eval`),
+   passwordless sudo as that user, and each target or judge CLI installed and
+   logged in as that user. Follow the [setup and manual boundary checks](#isolation-the-cli-surfaces)
+   before a live run. Confirm the CLI login as the eval user. A CLI version
+   reply alone does not check login.
+2. Use `--trusted-skill` only for a skill you authored on a machine without
+   an eval user. It gives up the account boundary: the CLI runs as you, with
+   your environment and login. The plugin asks whether you wrote the skill.
+3. For an offline first check, use the installed CLI on a skill with test cases:
+
+   ```sh
+   DRIFTPROOF_STUB=1 driftproof run path/to/your-skill --quick --out /var/tmp/driftproof-stub
+   ```
+
+   The stub uses canned answers, makes no model calls and measures nothing.
+   Install the CLI first; an `npx` download would itself need the network.
+
 ## Why
 
 A skill is usually tested **once**, against **one** model, and the verdict is
@@ -143,6 +163,51 @@ generation per arm re-scored by the judge, and a comparison report labels each b
 the sample size it used, so treat a surprising verdict as **worth re-running**
 before you act on it.
 
+### Test your CLAUDE.md or AGENTS.md
+
+A rules file is measured the way a skill is: its exact text is given to the model as a
+skill's text is, the same tasks are answered with it and without it, and every answer
+is scored. In Claude Code, from the folder that holds the file, in a git repository:
+
+~~~text
+/driftproof:start CLAUDE.md
+~~~
+
+Claude drafts three to five tasks from the file with you and runs a quick check after
+you say yes. Nothing is added beside the file. On the command line, with the API set up
+as in step 3 above, give the tasks as a file in the `evals/evals.json` shape:
+
+```bash
+npx driftproof run CLAUDE.md --suite tasks.json --models claude-haiku-4-5 --placebo
+```
+
+`--placebo` adds a third arm: the same tasks answered with the file replaced by a text
+of exactly its length from a fixed corpus chosen without reference to any task, so the
+file's answers are also read against a same-length text's. It makes half as many calls
+again. The result says whether, on these tasks, with this model and judge, answers with
+the file scored clearly higher or clearly lower, made no clear difference, or were too
+few to tell. It does not say why, or how the file does on other tasks.
+
+### Reading a refusal
+
+- `REFUSED` or `ABORT` before a run is a setup, input or budget refusal,
+  not a reading of the skill. Fix the named prerequisite, input or budget plan.
+- `NOT_MEASURED` means this receipt cannot supply a measured verdict. Check
+  its reason: stub, quick run, imported or missing model evidence, incomplete
+  suite, or no readable comparison. Use a live run without `--quick`, with
+  both arms and the full suite; repair failed calls or missing evidence first.
+- `INCONCLUSIVE` can mean lost draws could change the reading. The warning
+  “Comparison unreliable: at least 5% of an arm's replies ended in fake tool calls.”
+  names a text-capture refusal. Read the reason; repair failed calls or use
+  `--capture files` for file-writing tasks, then rerun.
+- `NO_EFFECT` means no separation detected at this sample size. It does not prove the skill has no effect.
+  Revisit whether the test cases exercise its claims; inspect the answers and rubric.
+- `UNDERPOWERED` says either “Not enough draws to conclude at this effect floor”
+  or “More cases, not more draws, are needed to conclude at this effect floor”.
+  For the first, check the reported draws needed and the sampler's limits;
+  `--samples` changes judge samples, not answer draws. For the second, add
+  test cases grounded in the skill's claims. These are next steps, without promising a verdict.
+
 ### Install
 
 ```bash
@@ -180,6 +245,21 @@ applicable, and all nineteen failures are in the publishing helper, which needs
 GNU `realpath -m`. Windows is untested: from Node's source the plugin would not
 find `npx` there, but that failure has never been observed. A CI matrix across
 Linux, macOS and Windows is planned.
+
+### Which version am I running
+
+`driftproof --version` shows the CLI on your PATH. For the plugin, read the
+`version` field in `.claude-plugin/plugin.json` of the installed copy Claude
+Code loads. The plugin pins its runner to that version, which can differ from
+your standalone CLI. A marketplace clone's manifest is not the installed copy.
+
+Refresh the marketplace from its source in Claude Code, then update the installed plugin:
+
+```sh
+claude plugin update driftproof@driftproofhq
+```
+
+Check the installed copy's version again after updating.
 
 ### Other commands
 
@@ -580,7 +660,7 @@ A receipt is the unit of evidence — one JSON document conforming to
     "model_release_date": "2025-10-01",
     "provider": "anthropic",
     "surface": "claude-cli",
-    "runner_version": "0.24.0",
+    "runner_version": "0.25.0",
     "date_utc": "2026-07-27T…Z",
     "registry": "registered",
     "transcripts": "hashes-only",
@@ -660,7 +740,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: driftproofhq/driftproof@v0.24.0
+      - uses: driftproofhq/driftproof@v0.25.0
         with:
           skill-dir: skills/my-skill
           models: claude-haiku-4-5
@@ -788,7 +868,7 @@ permissions:
   contents: read
   issues: write
 # ...
-      - uses: driftproofhq/driftproof/stale@v0.24.0
+      - uses: driftproofhq/driftproof/stale@v0.25.0
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill

@@ -8,6 +8,36 @@ makes this one a record.
 
 ---
 
+## v0.25.0 - 2026-10-30
+
+Changes included in this release:
+
+- PR 543: Text capture: per-surface tool-limit wording and the v0.16 schema description
+- PR 541: Release sweep: place gates by time and memory; spec 434 memory 5.3→0.3 GB
+- PR 540: Text capture: record tool calls written as text as their own outcome (receipt v0.16)
+- PR 539: Spec 121 AC-3: stop pinning report 013's historical diff output to today's CLI
+- PR 536: Judge: retry once on an unparseable reply
+- PR 535: Restore two safety checks: PR workflows read no secrets, receipt scan reads at least one
+- PR 534: Sprint: trim DECISIONS, RUNBOOK and CONSTITUTION; archive history
+- PR 532: Report 016 plots: exclude judge-only cases so plots match receipts
+- PR 529: Sprint: release train down to draft, sweep, publish (C-329)
+- PR 527: Sprint: cut spec checks that do not protect users (C-328)
+- PR 524: Decisions: the 0.24.0 release log and purge record
+
+**Merged from dev by a refresh, after the draft.** `release-prepare --stage refresh` lists every merge on dev between `15a457b87950` and `d0c23fc17ea1`, the commit the refresh merged, so this release ships each of them, and `release-record.json`'s `source_commit` moves to `d0c23fc17ea1`, where the next release's list starts.
+
+- PR 555, merge `d0c23fc1`: Release 0.25.0 sweep: clear the 22 reds (stub summaries drop the zero fake-call line; fixtures follow v0.16)
+- PR 554, merge `dbd57526`: Plugin: test your CLAUDE.md or AGENTS.md, with an optional placebo arm
+- PR 548, merge `ea838e40`: Site: the upstream merged count follows the data (twelve, not nine); the release.yml comment says what gates publishing
+- PR 546, merge `c6fa43eb`: README: a first-run checklist, how to read a refusal, and how to check your version
+- PR 545, merge `9951c4e1`: CLI: escape control characters in printed names and paths; bounded reads for config, receipts and suites
+
+**Merged from dev by a refresh, after the draft.** `release-prepare --stage refresh` lists every merge on dev between `d0c23fc17ea1` and `7b051a9edafe`, the commit the refresh merged, so this release ships each of them, and `release-record.json`'s `source_commit` moves to `7b051a9edafe`, where the next release's list starts.
+
+- PR 558, merge `7b051a9e`: Release 0.25.0: re-anchor six mutation rows to the current code
+
+---
+
 ## v0.24.0 - 2026-10-29
 
 ### What's new

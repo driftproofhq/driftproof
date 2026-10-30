@@ -4,7 +4,10 @@
 # provenance, creates the GitHub release, and tells IndexNow what changed once the release is live.
 #
 # Runs on a GitHub-hosted runner only, never a self-hosted one. The job is in the `release`
-# environment, which holds a required reviewer, so nothing publishes until a person approves it.
+# environment, which has no protection rules and no required reviewer. A publish waits for no
+# one's approval here. What gates it is the private release train: it pushes the tag only after a green release
+# sweep and the train's own checks, which merge the checked release pull request, build its swept
+# head and scan and verify the public artifact. The refusals below then hold the tag itself.
 # No npm token exists anywhere: npm trusted publishing (OIDC, the id-token permission) signs the
 # publish, and the registry must have this workflow registered as the package's trusted publisher.
 #

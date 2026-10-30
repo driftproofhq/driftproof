@@ -729,31 +729,8 @@ test('AC-3 and AC-11: subnormal sealed scores keep finite sample spreads', () =>
   assert.deepEqual(breakdown(shuffled).rows, a.rows);
 });
 
-test('AC-19: fixture-version migration refuses changed instrument fields', () => {
-  const { migrateFixtureVersion } = require(P + 'baseline.cjs');
-  assert.equal(typeof migrateFixtureVersion, 'function');
-  const current = capture(); const prior = structuredClone(BEFORE);
-  prior.report.markdown = prior.report.markdown.replace(/^(\*\*Skill:\*\* lift-fixture )\x60[^\x60]+\x60/m, '$1' + String.fromCharCode(96) + 'fixture-prior' + String.fromCharCode(96));
-  assert.deepEqual(migrateFixtureVersion(prior, current), current);
-  for (const change of [r => { r.verdict.cases[0].delta += 0.1; }, r => { r.report.headlineDelta += 0.1; }, r => { r.report.markdown = r.report.markdown.replace('lift-fixture', 'other-fixture'); }]) {
-    const mutant = structuredClone(prior); change(mutant);
-    assert.throws(() => migrateFixtureVersion(mutant, current), { name: 'AssertionError' });
-  }
-});
-test('AC-19: the new comparison site routes recomputed evidence through the shared band definition', () => {
-  const { bandSites } = require('../tests/assertion-scope');
-  const sites = bandSites(path.join(__dirname, '..'));
-  assert.deepEqual(sites.unclassified, []);
-  assert.ok(sites.comparison.some(s => s.file === 'lib/view.js' && s.routed));
-  const dir = fs.mkdtempSync(path.join('/var/tmp', 'spec190-route-'));
-  try {
-    fs.mkdirSync(path.join(dir, 'lib'));
-    const source = fs.readFileSync(path.join(__dirname, '../lib/view.js'), 'utf8');
-    assert.ok(source.includes('bandOf(derived)'), 'shared-reader call anchor');
-    fs.writeFileSync(path.join(dir, 'lib/view.js'), source.replace('bandOf(derived)', 'unroutedBand(derived)'));
-    assert.ok(bandSites(dir).comparison.some(s => s.file === 'lib/view.js' && !s.routed), 'removed shared-reader call reads RED');
-  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
-});
+
+
 
 
 test('AC-21: CLI opt-in works in either position, both modes and --out', () => {

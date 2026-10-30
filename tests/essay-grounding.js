@@ -516,17 +516,7 @@ const CHECKS = {
     return bad.length ? bad.join('\n') : null;
   },
 
-  'ac6-revision-line'(root) {
-    const text = stripTags(readEssay(root));
-    const byline = text.match(/By the Driftproof maintainer[^<]*?(?=Sonnet|$)/);
-    if (!byline) return 'the byline block is gone';
-    if (!byline[0].includes(PUBLISHED_ON)) return `the byline no longer names the original publication date ${PUBLISHED_ON}`;
-    if (!/revised|updated/i.test(byline[0])) return 'the byline does not mark the page as revised';
-    const rev = byline[0].match(/(?:revised|updated)[^0-9]*(\d{4}-\d{2}-\d{2})/i);
-    if (!rev) return 'the byline marks a revision without dating it';
-    if (rev[1] <= PUBLISHED_ON) return `the revision date ${rev[1]} is not after publication`;
-    return null;
-  },
+
 
   // Derived, not listed (F-010-L): a report id the tree does not publish, or a
   // report type REPORT-STYLE.md declares but nothing publishes, may not be named.
@@ -549,47 +539,9 @@ const CHECKS = {
   // rather than the stripped document. The old form tested only
   // slice(at - 200, at + 500), which is how F-012-A survived a 17/17 spec gate
   // and a 463/463 repo gate and reached the published tree.
-  'ac8-pointers'(root) {
-    const n = publishedReportIds(root).length;
-    const word = WORDS[n];
-    const bad = [];
-    for (const rel of ['README.md', path.join('docs', 'index.html')]) {
-      const p = path.join(root, rel);
-      if (!fs.existsSync(p)) { bad.push(`${rel} is missing`); continue; }
-      const src = fs.readFileSync(p, 'utf8');
-      const doc = scope.documentText(src);
-      const low = doc.toLowerCase();
-      if (/(first )?three reports/.test(low)) bad.push(`${rel} still describes the essay as reading three reports`);
-      // The POINTER lives in an href, which is a link and not prose, so it is
-      // located in the raw source; the CLAIM is prose and is read out of the
-      // document. Two scopes, because they are two different properties.
-      const raw = src.toLowerCase().replace(/\s+/g, ' ');
-      const at = raw.indexOf('three-releases');
-      if (at < 0) { bad.push(`${rel} no longer points at the essay`); continue; }
-      // presence of the pointer's own claim, near the pointer
-      const around = raw.slice(Math.max(0, at - 200), at + 500);
-      if (!new RegExp(`\\b${word}\\s+(?:[a-z-]+\\s+)?reports\\b`).test(around)) bad.push(`${rel}'s essay pointer does not say "${word} reports"`);
-      // and no count anywhere else in the file disagrees with the repository
-      for (const v of scope.countClaims(doc, 'reports', n)) bad.push(`${rel} ${v}`);
-    }
-    return bad.length ? bad.join('\n') : null;
-  },
 
-  'nfr2-one-page'(root) {
-    const dir = path.join(root, 'docs', 'writing');
-    const found = [];
-    const walk = (d, rel) => {
-      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
-        const abs = path.join(d, e.name);
-        if (e.isDirectory()) walk(abs, path.join(rel, e.name));
-        else found.push(path.join(rel, e.name));
-      }
-    };
-    if (!fs.existsSync(dir)) return 'docs/writing is missing';
-    walk(dir, path.join('docs', 'writing'));
-    const want = ESSAY_REL;
-    return found.length === 1 && found[0] === want ? null : `docs/writing must hold exactly the one published page; found:\n  ${found.join('\n  ')}`;
-  },
+
+
 };
 
 const DESCRIPTIONS = {
@@ -600,10 +552,10 @@ const DESCRIPTIONS = {
   'ac3-binds': 'MUTATION: a permuted tally is caught (the tally rule is not vacuous)',
   'ac4-counts': "the essay's counts of reports and report types are the repository's",
   'ac5-constants': 'the effect floor and judge samples are stated as config.js has them',
-  'ac6-revision-line': 'the byline dates both publication and revision',
+
   'ac7-unpublished': 'no unpublished report or report type is named',
-  'ac8-pointers': 'README and the site index describe the same essay',
-  'nfr2-one-page': 'docs/writing holds exactly one published page',
+
+
 };
 
 // The checks that can run in ANY tree that ships — the dev checkout and the

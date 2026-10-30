@@ -621,7 +621,8 @@ function mainTextHits(mainText, hasBeacon) {
 }
 function commandHits(n4, help) {
   const m = /npx driftproof run <skill-dir> (--[a-z-]+) <model-id>\./.exec(n4);
-  const runLine = help.split('\n').find((l) => /^\s*driftproof run <skill-dir>/.test(l)) || '';
+  // A-315-6 (issue 553): the run line reads `run <skill-dir | rules-file>`; it is still the line read.
+  const runLine = help.split('\n').find((l) => /^\s*driftproof run <skill-dir[ >]/.test(l)) || '';
   return m && runLine.includes(`[${m[1]} `) ? [] : [`N-4's command is not the CLI's: ${n4.slice(0, 80)}`];
 }
 test('AC-11: the page\'s words are its fixed texts, and each is true of the page', async () => {

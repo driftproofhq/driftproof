@@ -946,6 +946,9 @@ function tokensCitation(root = ROOT) {
 // where the criterion puts it and which splits the verdict-rule card in two.
 function patchMethodology(html, root = ROOT) {
   let out = html;
+  const textLimit = '<p id="text-capture-limit">Text capture on Claude Code offers only <code>Read</code>, <code>WebFetch</code> and <code>WebSearch</code>; it cannot run shell commands or edit files. Replies ending in fake tool calls are excluded from scores and counted per arm; a comparison is unreliable when they reach 5% of any arm\'s draws.</p>';
+  if (out.includes('id="text-capture-limit"')) out = out.replace(/<p id="text-capture-limit">[\s\S]*?<\/p>/, textLimit);
+  else out = out.replace('  <p id="judged-answer">', '  ' + textLimit + '\n  <p id="judged-answer">');
   if (out.includes(BANDS_OPEN)) {
     out = out.replace(new RegExp(`${BANDS_OPEN}[\\s\\S]*?${BANDS_CLOSE}`), bandsSection());
   } else {
@@ -995,7 +998,15 @@ function patchInteropMd(md, root = ROOT) {
 }
 
 // Issue 13: the served current schema is derived from its source contract.
-const PATCHES = { 'methodology/index.html': patchMethodology, 'interop.md': patchInteropMd, 'spec/receipt.schema.json': () => fs.readFileSync(path.join(ROOT, 'spec', 'receipt.schema.json'), 'utf8') };
+function patchInteropPage(html, root = ROOT) {
+  const version = receiptSchemaVersion(root);
+  const versions = Object.keys(require('../lib/receipt').SCHEMA_FILES);
+  const prior = versions[versions.indexOf(version) - 1];
+  if (!prior) throw new Error('spec/receipt.schema.json: no prior frozen schema to cite');
+  return html.replace(/receipt spec v\d+\.\d+;/, 'receipt spec v' + version + ';')
+    .replace(/Prior schema versions \(v0\.1 to v0\.\d+, v0\.3\.1 among them, and v0\.14 as receipt\.placebo\.schema\.json\)/, `Prior schema versions (v0.1 to v${prior}, v0.3.1 among them, and v0.14 as receipt.placebo.schema.json)`);
+}
+const PATCHES = { 'interop/index.html': patchInteropPage, 'methodology/index.html': patchMethodology, 'interop.md': patchInteropMd, 'spec/receipt.schema.json': () => fs.readFileSync(path.join(ROOT, 'spec', 'receipt.schema.json'), 'utf8') };
 
 // ── How this is built (spec 037 AC-4) ───────────────────────────────────────
 // The method in plain prose, with counts and no record contents. Every count is read
@@ -1073,7 +1084,7 @@ function maintainerPage() {
 ${rows}
 </tbody>
 </table>
-<p>Open and in review: ${a(answers.UPSTREAM_OPEN_URL, 'all pull requests by mavericksea-ai')}.</p>
+<p>Open, merged and closed: ${a(answers.UPSTREAM_ALL_URL, 'all public pull requests by mavericksea-ai to other projects')}.</p>
 
 <h2 id="how-the-upstream-work-is-done">How the upstream work is done</h2>
 <p>Findings come from reading a tool's scoring code and reproducing the defect, sometimes starting from an outside audit. They are not Driftproof runs, and the project does not claim them as such. Every issue filed on another project ends with a line saying the author maintains Driftproof.</p>

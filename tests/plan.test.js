@@ -83,6 +83,16 @@ function valid(r) {
   return r;
 }
 function updateCounts(r) {
+  // Issue 547: these synthetic receipts seal the draws retained by the fixture.
+  if (r.run.capture?.mode === 'text') {
+    const totals = {};
+    for (const c of r.results.cases) {
+      const arm = totals[c.mode] ||= { count: 0, draws: 0 };
+      for (const d of c.generation?.draws || []) { arm.draws++; if (d.capture_outcome === 'fake_tool_call') arm.count++; }
+    }
+    r.results.fake_tool_calls = totals;
+  } else delete r.results.fake_tool_calls;
+
   delete r.run.counts;
   if (r.run.arms) for (const a of Object.values(r.run.arms)) delete a.counts;
   for (const c of r.results.cases) delete c.counts;
@@ -637,6 +647,7 @@ test('AC-12 one draw, lost draws and absent generation records never become zero
   const absent = structuredClone(shaped());
   for (const c of absent.results.cases) delete c.generation;
   delete absent.generation_sampled;
+  delete absent.results.fake_tool_calls;
   const legacy = valid(sealReceipt(absent));
   for (const c of powerPlan(legacy).cases) oracle.readUnknown(c);
 });
@@ -706,6 +717,7 @@ test('AC-13 two receipts with different single arms cannot be stitched into an e
   const a = structuredClone(shaped()), b = structuredClone(shaped());
   a.results.cases = a.results.cases.filter((c) => c.mode !== 'baseline');
   b.results.cases = b.results.cases.filter((c) => c.mode !== 'with_skill');
+  updateCounts(a); updateCounts(b);
   const p = planner().planSkill(defaultInput({ receipts: [sealReceipt(a), sealReceipt(b)] }));
   for (const c of p.cases) oracle.readUnknown(c);
 });

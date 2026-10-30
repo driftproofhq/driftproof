@@ -321,6 +321,17 @@ const UPSTREAM_CREDITS = UPSTREAM_DATA.pulls.map((p) => ({
   unobserved: p.release === null,
 }));
 const UPSTREAM_OPEN_URL = 'https://github.com/pulls?q=' + encodeURIComponent(UPSTREAM_DATA.open_query);
+// Every state: the census query without is:merged, keeping both exclusions (issue 229, F-2).
+const UPSTREAM_ALL_QUERY = UPSTREAM_DATA.query.split(' ').filter((t) => t !== 'is:merged').join(' ');
+if (UPSTREAM_ALL_QUERY === UPSTREAM_DATA.query) throw new Error('docs/data/upstream.json: the census query has no is:merged to drop');
+const UPSTREAM_ALL_URL = 'https://github.com/pulls?q=' + encodeURIComponent(UPSTREAM_ALL_QUERY);
+// The merged count is the census's own (issue 229, F-3), so the sentence moves with each refresh.
+const COUNT_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+  'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'];
+const countWord = (n) => {
+  const w = COUNT_WORDS[n] === undefined ? String(n) : COUNT_WORDS[n];
+  return w.charAt(0).toUpperCase() + w.slice(1);
+};
 
 const pullUrl = (repo, n) => `https://github.com/${repo}/pull/${n}`;
 const pullLink = (repo, n) => `<a href="${esc(pullUrl(repo, n))}">#${n}</a>`;
@@ -339,7 +350,7 @@ function fixesMergedUpstream() {
   const p = (n) => pullLink(skills.repo, n);
   return `<section id="fixes-merged-upstream">
 <h3>Fixes merged into other evaluation tools</h3>
-<p>Driftproof's maintainer, Maverick (<a href="${MAINTAINER_PROFILE}">mavericksea-ai</a> on GitHub), reads the scoring and gating code of other evaluation tools and sends fixes upstream. Nine are merged. Current GitHub release observations are listed on the maintainer page:</p>
+<p>Driftproof's maintainer, Maverick (<a href="${MAINTAINER_PROFILE}">mavericksea-ai</a> on GitHub), reads the scoring and gating code of other evaluation tools and sends fixes upstream. ${countWord(UPSTREAM_DATA.pulls.length)} are merged. Current GitHub release observations are listed on the maintainer page. Among the merged fixes:</p>
 <ul>
 <li>${creditLabel(mlflow)} relative-change gates now use the baseline's magnitude, so a negative baseline no longer passes a worse model and fails a better one (${pullLink(mlflow.repo, 26252)}).</li>
 <li>${creditLabel(nvidia)} a script earns execution credit only with evidence that it was run, not just read or searched (${pullLink(nvidia.repo, 154)}).</li>
@@ -469,4 +480,4 @@ ${answerList()}
 </div>`;
 }
 
-module.exports = { whatIsPage, questionPage, comparePage, paperQuestion, answerLinks, answerSplit, pageVisibleText: visibleText, UPSTREAM_CREDITS, UPSTREAM_DATA, UPSTREAM_OPEN_URL, MAINTAINER_PROFILE, pullUrl };
+module.exports = { whatIsPage, questionPage, comparePage, paperQuestion, answerLinks, answerSplit, pageVisibleText: visibleText, UPSTREAM_CREDITS, UPSTREAM_DATA, UPSTREAM_OPEN_URL, UPSTREAM_ALL_URL, MAINTAINER_PROFILE, pullUrl };

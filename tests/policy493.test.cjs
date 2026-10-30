@@ -30,12 +30,11 @@ test('493 internal measurement tooling takes a regression test and acceptance no
 });
 
 test('493 only public text pages skip review; nightly coverage remains', () => {
-  for (const name of ['CONSTITUTION.md', 'RUNBOOK.md']) {
-    const policy = read(name);
-    assert.match(policy, /Only README\.md, RELEASES\.md and docs\/ or reports\/ text pages/);
-    assert.match(policy, /Every specs\/ change requires review/);
-    assert.match(policy, /class:internal does not waive review/);
-  }
+  // Issue 533: the exemption procedure has one current home in RUNBOOK.
+  const policy = read('RUNBOOK.md');
+  assert.match(policy, /Only README\.md, RELEASES\.md and docs\/ or reports\/ text pages/);
+  assert.match(policy, /Every specs\/ change requires review/);
+  assert.match(policy, /class:internal does not waive review/);
   const text = read('RUNBOOK.md');
   assert.match(text, /PR gates check alone/);
   assert.match(text, /no .approve. review and no box-only history gates/);

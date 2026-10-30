@@ -312,13 +312,13 @@ function evidenceOf(r, i) {
     reported_models: r.reportedModels ?? null, served_model: r.servedModel ?? null,
     answered_by: r.answeredBy, surface: r.surface };
 }
-function correspondence(r, observed) {
+function correspondence(r, observed, returnedPerDraw = SAMPLES) {
   const judged = draws(r).filter((d) => d.judge_sample_evidence);
   return judged.every((d, j) => {
-    const batch = observed.slice(j * SAMPLES, (j + 1) * SAMPLES);
+    const batch = observed.slice(j * returnedPerDraw, (j + 1) * returnedPerDraw);
     return JSON.stringify(d.judge_sample_evidence) === JSON.stringify(batch.map(evidenceOf))
       && JSON.stringify(d.judge_sample_hashes) === JSON.stringify(batch.map((x) => R('lib/canonical.js').sha256(x.text)));
-  }) && judged.length * SAMPLES === observed.length;
+  }) && judged.length * returnedPerDraw === observed.length;
 }
 test('AC-20 per-sample evidence matches observed replies and detects replaced hashes and identity', async () => {
   const o = await original();
@@ -340,11 +340,49 @@ test('AC-20 per-sample evidence matches observed replies and detects replaced ha
   }
   await refused(o, (a, n) => reply(a, { reportedModels: n === 2 ? null : [MODEL] }));
   const invalid = await grade(o, (a) => reply(a, { text: 'invalid score' }));
-  assert.equal(correspondence(invalid.receipt, calls.map((c) => c.reply)), true);
+  assert.equal(correspondence(invalid.receipt, calls.map((c) => c.reply), 2 * SAMPLES), true);
   const timed = await grade(o, (a, n) => { if (n % SAMPLES === 0) throw timeoutReply(); return reply(a); });
   for (const d of draws(timed.receipt)) {
     assert.equal(d.judge_sample_evidence.length, 1, 'timeout keeps the returned sample identity');
     assert.deepEqual(d.judge_sample_hashes, d.judge_sample_evidence.map((e) => e.output_sha256));
+  }
+});
+
+// Issue 500: expected batch sizes come from these stubs, never receipt counters.
+test('AC-20 parse retries seal every returned identity and hash without adding scores', async (t) => {
+  const o = await original();
+  for (const mode of ['recovered', 'failed', 'timeout', 'mixed']) {
+    await t.test(mode, async () => {
+      const out = await grade(o, (a, n) => {
+        const malformed = mode === 'mixed' ? n % 3 === 1 : n % 2 === 1 || mode === 'failed';
+        if (mode === 'timeout' && n % 2 === 0) throw timeoutReply();
+        return reply(a, { reportedModels: [IDS[n % 2], IDS[n % 2]],
+          text: malformed ? 'malformed reply ' + n : JSON.stringify({ score: 0.8, reason: 'Reply ' + n }) });
+      });
+      const observed = calls.filter(c => c.reply).map(c => c.reply);
+      const returnedPerDraw = mode === 'timeout' ? SAMPLES : mode === 'mixed' ? SAMPLES + 1 : 2 * SAMPLES;
+      assert.equal(correspondence(out.receipt, observed, returnedPerDraw), true,
+        'every returned attempt keeps its own observed identity and output');
+      for (const d of draws(out.receipt)) {
+        assert.equal(d.samples.length, ['recovered', 'mixed'].includes(mode) ? SAMPLES : 0);
+        assert.equal(d.judge_usage.input_tokens, returnedPerDraw * 10);
+      }
+      if (['recovered', 'mixed'].includes(mode)) for (const c of out.receipt.results.cases) {
+        assert.equal(c.judge_sample_hashes.length, SAMPLES, 'case hashes still describe scoring samples');
+      }
+      assert.ok(validateReceipt(out.receipt).valid);
+      assert.ok(verifyReceiptHash(out.receipt));
+      for (const mutate of [
+        d => { d.judge_sample_evidence.shift(); d.judge_sample_hashes.shift(); },
+        d => { d.judge_sample_evidence[0].reported_models = null; },
+        d => { d.judge_sample_hashes[0] = '0'.repeat(64); },
+      ]) {
+        const plant = clone(out.receipt); mutate(draws(plant)[0]);
+        assert.equal(correspondence(plant, observed, returnedPerDraw), false,
+          'dropping or replacing initial retry evidence reads RED');
+        assert.equal(verifyReceiptHash(plant), false);
+      }
+    });
   }
 });
 

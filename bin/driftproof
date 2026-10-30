@@ -4,10 +4,10 @@
 
 const fs = require('fs');
 const path = require('path');
-const { PROJECT_NAME, RUNNER_VERSION, DEFAULT_JUDGE_SAMPLES, DEV_MAX_USD, DEV_MAX_CALLS } = require('../config');
-const { loadSkill, normalizeCases, loadSubject, SUBJECT_CODES } = require('../lib/skill');
+const { PROJECT_NAME, RUNNER_VERSION, DEFAULT_JUDGE_SAMPLES, DEV_MAX_USD, DEV_MAX_CALLS, SKILL_MAX_BYTES } = require('../config');
+const { loadSkill, normalizeCases, loadSubject, SUBJECT_CODES, readRequired, SUITE_MAX_BYTES } = require('../lib/skill');
 // Spec 438: a name or path escaped for the terminal.
-const { invisibleShown, termText } = require('../lib/names');
+const { invisibleShown, termText, shellArg } = require('../lib/names');
 // Spec 438: whether `run`'s argument is a context file, by lib/skill.js loadSubject's own rule: anything
 // but a directory, or a path that is not there and does not end in .md or .markdown.
 function subjectIsFile(p) {
@@ -81,7 +81,7 @@ const RECEIPTS_DIR = path.join(process.cwd(), 'receipts');
 // synthetic unsealed receipts.
 function refuseUnverified(receipt, file, command) {
   if (verifyReceiptHash(receipt)) return;
-  console.error(`  ✗ REFUSED (${command}): receipt_hash does not verify for ${path.basename(file)} (tampered or hand-edited since it was sealed); nothing rendered.`);
+  console.error(`  ✗ REFUSED (${command}): receipt_hash does not verify for ${invisibleShown(path.basename(file))} (tampered or hand-edited since it was sealed); nothing rendered.`);
   process.exit(4);
 }
 
@@ -95,7 +95,7 @@ function refuseUnverified(receipt, file, command) {
 function refuseAmbiguous(receipt, file, command) {
   const dups = duplicateCaseRows(receipt);
   if (!dups.length) return;
-  console.error(`  ✗ REFUSED (${command}): ${path.basename(file)} is ambiguous: ${ambiguityLine(dups)}. A verdict over it would depend on which row was read; nothing rendered.`);
+  console.error(`  ✗ REFUSED (${command}): ${invisibleShown(path.basename(file))} is ambiguous: ${invisibleShown(ambiguityLine(dups))}. A verdict over it would depend on which row was read; nothing rendered.`);
   process.exit(2);
 }
 
@@ -110,7 +110,7 @@ function refuseInvalid(receipt, file, command) {
   const { valid, errors } = validateReceipt(receipt);
   if (valid) return;
   const first = errors[0] || {};
-  console.error(`  ✗ REFUSED (${command}): ${path.basename(file)} does not validate against its schema (${errors.length} error(s); ${first.instancePath || '/'} ${first.message || ''}); nothing rendered. Run driftproof validate on it for the list.`);
+  console.error(`  ✗ REFUSED (${command}): ${invisibleShown(path.basename(file))} does not validate against its schema (${errors.length} error(s); ${invisibleShown(first.instancePath || '/')} ${invisibleShown(first.message || '')}); nothing rendered. Run driftproof validate on it for the list.`);
   process.exit(4);
 }
 
@@ -138,12 +138,12 @@ const SKILL_RC_IGNORED = ['max_cases', 'samples', 'judge_model', 'capture'];
 function readRc(p) {
   if (!fs.existsSync(p)) return {};
   let rc;
-  try { rc = JSON.parse(fs.readFileSync(p, 'utf8')); } catch (e) {
-    console.error(`  ✗ REFUSED: ${p} is not valid JSON (${e.message}); nothing run. Fix the file or remove it.`);
+  try { rc = JSON.parse(readRequired(p, p, SKILL_MAX_BYTES, 'SKILL_MAX_BYTES').toString('utf8')); } catch (e) {
+    console.error(`  ✗ REFUSED: ${invisibleShown(p)} is not valid JSON (${invisibleShown(e.message)}); nothing run. Fix the file or remove it.`);
     process.exit(2);
   }
   if (!rc || typeof rc !== 'object' || Array.isArray(rc)) {
-    console.error(`  ✗ REFUSED: ${p} is not a JSON object; nothing run. Fix the file or remove it.`);
+    console.error(`  ✗ REFUSED: ${invisibleShown(p)} is not a JSON object; nothing run. Fix the file or remove it.`);
     process.exit(2);
   }
   return rc;
@@ -157,7 +157,7 @@ function loadRc(skillDir) {
     const rc = readRc(p);
     const dropped = SKILL_RC_IGNORED.filter((k) => Object.hasOwn(rc, k));
     for (const k of dropped) delete rc[k];
-    if (dropped.length) console.error(`  note: ${p} sets ${dropped.join(', ')}; ignored, because a skill directory may not narrow the run that measures it (set them as flags, or in the working directory's .driftproofrc when you run the CLI yourself; the GitHub Action reads no working-directory .driftproofrc)`);
+    if (dropped.length) console.error(`  note: ${invisibleShown(p)} sets ${dropped.join(', ')}; ignored, because a skill directory may not narrow the run that measures it (set them as flags, or in the working directory's .driftproofrc when you run the CLI yourself; the GitHub Action reads no working-directory .driftproofrc)`);
     Object.assign(merged, rc);
   }
   return merged;
@@ -193,12 +193,12 @@ const INPUT_CONTRACT = {
 
 function shownValue(v) {
   if (v === true) return '<no value>';
-  return JSON.stringify(String(v));
+  return diagnosticValue(String(v));
 }
 // Refuse one input: the rule's own message, the input's name and the value it
 // carried, exit 2. Nothing has been printed or spent when this runs.
 function refuseInput(name, value, message, where) {
-  console.error(`  ✗ REFUSED: ${message}, got ${shownValue(value)} (${where} ${name}); nothing run, no receipt written.`);
+  console.error(`  ✗ REFUSED: ${invisibleShown(message)}, got ${shownValue(value)} (${invisibleShown(where)} ${invisibleShown(name)}); nothing run, no receipt written.`);
   process.exit(2);
 }
 // Check one input against every rule its flag maps to. `value` is what was
@@ -226,7 +226,7 @@ function checkRegistered(models, judgeFor) {
   try {
     for (const m of models) { assertRegistered(m, 'model'); assertRegistered(judgeFor(m), 'judge model'); }
   } catch (e) {
-    if (e && e.code === 'UNREGISTERED_MODEL') { console.error(`  ✗ REFUSED (${/judge/.test(e.message) ? 'judge-model / judge_model' : 'models'}): ${e.message}`); process.exit(2); }
+    if (e && e.code === 'UNREGISTERED_MODEL') { console.error(`  ✗ REFUSED (${/judge/.test(e.message) ? 'judge-model / judge_model' : 'models'}): ${invisibleShown(e.message)}`); process.exit(2); }
     throw e;
   }
 }
@@ -262,7 +262,7 @@ function stubAnnounce() { if (stubPending) { console.log(stubPending); stubPendi
 // Issue 301: `before` writes what must precede the refusal (the stub statement, on stderr).
 function refuseValue(key, given, before) {
   if (before) before();
-  console.error(`  \u2717 REFUSED: --${key} takes no value, and was given one (${given}). Give --${key} alone to set it, or leave it out. Nothing run, no receipt written.`);
+  console.error(`  \u2717 REFUSED: --${invisibleShown(key)} takes no value, and was given one (${invisibleShown(given)}). Give --${invisibleShown(key)} alone to set it, or leave it out. Nothing run, no receipt written.`);
   process.exit(2);
 }
 function parseArgs(argv, beforeRefusal = null) {
@@ -305,7 +305,7 @@ function refuseUnknownFlags(command, flags) {
   const unknown = Object.keys(flags).filter((k) => !COMMAND_FLAGS[command].includes(k));
   if (!unknown.length) return;
   stubBeforeRefusal();
-  console.error(`  ✗ REFUSED (${command}): unknown flag ${unknown.map((k) => `--${k}`).join(', ')}; ${command} takes ${COMMAND_FLAGS[command].map((k) => `--${k}`).join(', ')}. Nothing run, no receipt written.`);
+  console.error(`  ✗ REFUSED (${command}): unknown flag ${invisibleShown(unknown.map((k) => `--${k}`).join(', '))}; ${command} takes ${COMMAND_FLAGS[command].map((k) => `--${k}`).join(', ')}. Nothing run, no receipt written.`);
   process.exit(2);
 }
 
@@ -316,7 +316,7 @@ function refuseUnknownFlags(command, flags) {
 function refuseExtraPositionals(command, positional, placeholder) {
   if (positional.length <= 1) return;
   stubBeforeRefusal();
-  console.error(`  ✗ REFUSED (${command}): ${command} takes one argument and was given ${positional.length}: ${positional.join(', ')}. It took ${positional[0]} as ${placeholder}, and would read none of ${positional.slice(1).join(', ')}. A flag that takes no value is given alone. Nothing run, no receipt written.`);
+  console.error(`  ✗ REFUSED (${command}): ${command} takes one argument and was given ${positional.length}: ${invisibleShown(positional.join(', '))}. It took ${invisibleShown(positional[0])} as ${placeholder}, and would read none of ${invisibleShown(positional.slice(1).join(', '))}. A flag that takes no value is given alone. Nothing run, no receipt written.`);
   process.exit(2);
 }
 
@@ -339,7 +339,7 @@ function readReceiptOrRefuse(file, command) {
 function loadSkillOrRefuse(skillDir, command) {
   try { return loadSkill(skillDir); } catch (e) {
     if (!e || e.code !== 'SKILL_LINK') throw e;
-    console.error(`  ✗ REFUSED (${command}): ${e.message}. Nothing measured, no receipt written.`);
+    console.error(`  ✗ REFUSED (${command}): ${invisibleShown(e.message)}. Nothing measured, no receipt written.`);
     process.exit(2);
   }
 }
@@ -383,9 +383,9 @@ function cmdPlan(argv) {
     const plan = planSkill({skill, receipts, ...checked});
     const rcExists = [path.join(process.cwd(), '.driftproofrc'), path.join(skill.dir, '.driftproofrc')].some(file => fs.existsSync(file));
     const text = formatPlan(plan) + (rcExists ? '.driftproofrc defaults are ignored by plan. Bundled rc bytes still enter the skill hash. It uses explicit flags and built-in defaults for the full suite.\n' : '');
-    process.stdout.write(text);
+    process.stdout.write(jsonControls(text));
   } catch (e) {
-    console.error('REFUSED (plan): ' + e.message);
+    console.error('REFUSED (plan): ' + invisibleShown(e.message));
     process.exitCode = 2;
   }
 }
@@ -405,7 +405,7 @@ USAGE
     1,000,000 prompt words. Unnamed aliases use loader identity. Refusals exit 2, no report.
   ${PROJECT_NAME} init <dir> [--cases FILE [--drafted-from-skill]]  scaffold SKILL.md + evals/evals.json + .driftproofrc, or add the
                                                        suite to a skill that has a SKILL.md
-  ${PROJECT_NAME} run <skill-dir> [--models a,b] [--samples N] [--max-cases N] [--max-calls N]
+  ${PROJECT_NAME} run <skill-dir | rules-file> [--suite FILE] [--models a,b] [--samples N] [--max-cases N] [--max-calls N]
                         [--judge-model M] [--concurrency N] [--max-usd N] [--timeout <seconds>]
                         [--keep-transcripts] [--out DIR] [--trusted-skill] [--capture text|files|repository] [--resume DIR] [--quick]
                         [--placebo]
@@ -444,6 +444,8 @@ ENV
   DRIFTPROOF_EVAL_USER the unix user the isolated hop runs the CLI as (default: driftproof-eval)
 
 NOTES
+  - run on a rules file (a CLAUDE.md, an AGENTS.md or any Markdown file) needs --suite FILE, its tasks in the
+    evals.json shape; the file's text is given as a skill's is, against the same tasks answered without it.
   - diff --lift-breakdown adds recorded draw scores, sample spread and equal weight per case; removing a case recomputes lift.
     Tables appear where evidence and eligibility permit; unavailable breakdowns give a reason. Without the flag, diff output stays unchanged.
   - Planning: plan uses --model, --judge-model, --lift, --draws and repeatable --from receipts.
@@ -694,7 +696,7 @@ async function cmdRun(positional, flags) {
   if (!trusted && !stubRun && isolatedSurfaces.length) {
     const user = evalUser();
     const refusal = isolationPreflight({ surfaces: isolatedSurfaces, trusted, stub: stubRun, user, exists: evalUserExists(user) });
-    if (refusal) { console.error(`  ✗ REFUSED (isolation): ${refusal}`); process.exit(2); }
+    if (refusal) { console.error(`  ✗ REFUSED (isolation): ${invisibleShown(refusal)}`); process.exit(2); }
   }
   // Spec 172 (M-5): the receipts directory is made only once there is a receipt to put in it, not
   // here, before the skill has even loaded: a run that refuses before its first call (no suite, a
@@ -719,7 +721,7 @@ async function cmdRun(positional, flags) {
       // Spec 050 AC-1: a suite whose case ids collide is refused before the projection and
       // before any call, naming the suite file, like the empty suite below.
       if (!e || e.code !== 'DUPLICATE_CASE_ID') throw e;
-      console.error(`  ✗ REFUSED: the suite at ${path.join(path.resolve(skillDir), 'evals', 'evals.json')}: ${e.message}. Nothing measured, no receipt written.`);
+      console.error(`  ✗ REFUSED: the suite at ${invisibleShown(path.join(path.resolve(skillDir), 'evals', 'evals.json'))}: ${invisibleShown(e.message)}. Nothing measured, no receipt written.`);
       process.exit(2);
     }
   }
@@ -729,7 +731,7 @@ async function cmdRun(positional, flags) {
   // over nothing is a receipt about nothing. Refused here, before the
   // projection and before any call, naming the suite file.
   if (nCases < 1) {
-    console.error(`  ✗ REFUSED: the suite at ${path.join(path.resolve(skillDir), 'evals', 'evals.json')} has no cases${maxCases ? ` (after --max-cases ${maxCases})` : ''}; nothing to measure, no receipt written.`);
+    console.error(`  ✗ REFUSED: the suite at ${invisibleShown(path.join(path.resolve(skillDir), 'evals', 'evals.json'))} has no cases${maxCases ? ` (after --max-cases ${maxCases})` : ''}; nothing to measure, no receipt written.`);
     process.exit(2);
   }
   // Spec 438 (§ The transport bound): each model's with-skill requests, as its surface builds them,
@@ -778,10 +780,10 @@ async function cmdRun(positional, flags) {
   const quiet = quick && !stubRun;
   const tasksRun = skill.suite.cases.slice(0, nCases).map((c) => c.id);
   // Spec 438: a context file is named as one, its name escaped for the terminal.
-  const subjectWords = contextFile ? `context file "${termText(skill.name)}"` : `skill "${skill.name}" v${skill.version}`;
-  if (quiet) console.log(`\n${PROJECT_NAME} run --quick: ${subjectWords}, ${nCases} test task${nCases === 1 ? '' : 's'} (${tasksRun.join(', ')}, the first in the suite), with and without the ${contextFile ? 'file' : 'skill'}, on ${models.join(', ')}, judged by ${[...new Set(cost.judges)].join(', ')}`);
+  const subjectWords = contextFile ? `context file "${termText(skill.name)}"` : `skill "${invisibleShown(skill.name)}" v${invisibleShown(skill.version)}`;
+  if (quiet) console.log(`\n${PROJECT_NAME} run --quick: ${subjectWords}, ${nCases} test task${nCases === 1 ? '' : 's'} (${invisibleShown(tasksRun.join(', '))}, the first in the suite), with and without the ${contextFile ? 'file' : 'skill'}, on ${models.join(', ')}, judged by ${[...new Set(cost.judges)].join(', ')}`);
   else if (contextFile) console.log(`\n${PROJECT_NAME} run, ${subjectWords}`);
-  else console.log(`\n${PROJECT_NAME} run — skill "${skill.name}" v${skill.version}`);
+  else console.log(`\n${PROJECT_NAME} run — skill "${invisibleShown(skill.name)}" v${invisibleShown(skill.version)}`);
   // Spec 139 (R-4): a smoke run says before its first call that it cannot produce a verdict.
   if (quick) console.log(quickBanner());
   if (!quiet) {
@@ -797,7 +799,7 @@ async function cmdRun(positional, flags) {
   }
   if (subSurfaces.length && !quiet) {
     const isolation = trusted ? 'same-user (--trusted-skill: self-authored skill)' : `eval-user (${evalUser()})`;
-    console.log(`  isolation: ${isolation}`);
+    console.log(`  isolation: ${invisibleShown(isolation)}`);
   }
   // Spec 137: files capture needs a surface where a child can write a file.
   const noFiles = surfaces.filter((s) => !isSubscriptionSurface(s));
@@ -808,7 +810,7 @@ async function cmdRun(positional, flags) {
   if (quiet) {
     console.log(`  projected calls: ${perModelCalls}/model × ${models.length} model(s) = ${totalProjected}, at most (fewer when a draw does not reach the judge)   concurrency: ${concurrency}   projected cost: ~$${cost.totalUSD.toFixed(2)} (estimated API equivalent, rough upper bound; budget $${maxUsd.toFixed(2)})${subSurfaces.length ? `; metered spend on ${subSurfaces.join(', ')}: $0.00` : ''}`);
   } else {
-    console.log(`  ${captureLine({ mode: capture })}`);
+    console.log(`  ${captureLine({ mode: capture }, surface)}`);
     console.log(`  ${stubRun ? 'stub plan: projected synthetic calls' : 'projected calls'}: ${perModelCalls}/model × ${models.length} model(s) = ${totalProjected}   per-model cap: ${maxCalls}`);
     if (stubRun) console.log('  No projected cost: no model will be called.');
     else console.log(`  projected cost: ~$${cost.totalUSD.toFixed(2)} (rough upper bound; budget $${maxUsd.toFixed(2)}, hard-stop $${(maxUsd * 1.25).toFixed(2)})`);
@@ -857,7 +859,7 @@ async function cmdRun(positional, flags) {
             if (stubRun) return;
             progress.onProgress(p);
             // A-139-17 (AC-367-3): a quick run prints no per-case outcome or score.
-            if (p.phase === 'done' && !quick) console.log(`  ${p.case} / ${p.mode}: ${p.outcome} (${p.score.toFixed(2)} ± ${(p.stddev || 0).toFixed(2)})`);
+            if (p.phase === 'done' && !quick) console.log(`  ${invisibleShown(p.case)} / ${invisibleShown(p.mode)}: ${invisibleShown(p.outcome)} (${p.score.toFixed(2)} ± ${(p.stddev || 0).toFixed(2)})`);
           },
         },
       });
@@ -865,18 +867,18 @@ async function cmdRun(positional, flags) {
       if (e && e.code === 'SUBSTRATE_MISMATCH') {
         // Spec 026 AC-2: the surface answered as a different model. The run
         // stopped before its next call and wrote no receipt.
-        console.error(`\n  ✗ REFUSED (substrate mismatch): ${e.message}`);
+        console.error(`\n  ✗ REFUSED (substrate mismatch): ${invisibleShown(e.message)}`);
         process.exit(5);
       }
       if (e && e.code === 'BUDGET_HARDSTOP') {
         const message = stubRun ? 'synthetic stub work exceeded the budget; no model was called.' : e.message;
-        console.error(`\n  ✗ ABORT (budget hard-stop): ${message}`);
-        console.error(`    ${emitted.length} receipt(s) already written to ${path.relative(process.cwd(), outDir)}/.`);
+        console.error(`\n  ✗ ABORT (budget hard-stop): ${invisibleShown(message)}`);
+        console.error(`    ${emitted.length} receipt(s) already written to ${invisibleShown(path.relative(process.cwd(), outDir))}/.`);
         process.exit(3);
       }
       // Spec 440: a placebo that cannot be made for this skill text is refused before any call.
       if (e && ['PLACEBO_EMPTY', 'PLACEBO_TOO_LONG', 'PLACEBO_LENGTH', 'PLACEBO_OVERLAP'].includes(e.code)) {
-        console.error(`\n  ✗ REFUSED (${e.code}): ${e.message}`);
+        console.error(`\n  ✗ REFUSED (${e.code}): ${invisibleShown(e.message)}`);
         process.exit(2);
       }
       throw e;
@@ -891,14 +893,14 @@ async function cmdRun(positional, flags) {
       if(!checked.valid || !verifyReceiptHash(receipt)) throw new Error('Checkpoint receipt failed validation.');
       require('../lib/checkpoint').atomicFile(path.join(outDir,'summary.md'),summarizeReceipt(receipt));
       if(answers)require('../lib/checkpoint').atomicFile(path.join(outDir,'answers.json'),JSON.stringify(answersArchive({receipt,kept:answers}),null,2)+'\n');
-      console.log(summarizeReceipt(receipt));
+      console.log(jsonControls(summarizeReceipt(receipt)));
       emitted.push(path.join(outDir,'receipt-'+receipt.receipt_hash.slice(0,12)+'.json'));
       continue;
     }
 
     const { valid, errors } = validateReceipt(receipt);
     if (!valid) {
-      console.error('  ✗ emitted receipt FAILED schema validation:', JSON.stringify(errors, null, 2));
+      console.error('  ✗ emitted receipt FAILED schema validation:', diagnosticValue(errors, 2));
       process.exitCode = 1;
     }
     if (!verifyReceiptHash(receipt)) {
@@ -918,7 +920,7 @@ async function cmdRun(positional, flags) {
     const tdir = keepTranscripts && transcripts ? path.join(TRANSCRIPTS_DIR, receipt.receipt_hash) : null;
     const taken = [jsonPath, mdPath, ...(tdir ? [tdir] : [])].filter((p) => fs.existsSync(p));
     if (taken.length) {
-      console.error(`  ✗ ${taken.map((p) => path.relative(process.cwd(), p)).join(' and ')} already exist${taken.length === 1 ? 's' : ''}; nothing is written over, so nothing is written for ${model}`);
+      console.error(`  ✗ ${invisibleShown(taken.map((p) => path.relative(process.cwd(), p)).join(' and '))} already exist${taken.length === 1 ? 's' : ''}; nothing is written over, so nothing is written for ${model}`);
       process.exitCode = 1;
       continue;
     }
@@ -927,7 +929,7 @@ async function cmdRun(positional, flags) {
     // so a reader can verify every generation_hash / judge_sample_hash.
     if (tdir) {
       writeTranscripts(receipt, transcripts, answers);
-      console.log(`  → transcripts (retained-local): ${path.relative(process.cwd(), tdir)}/`);
+      console.log(`  → transcripts (retained-local): ${invisibleShown(path.relative(process.cwd(), tdir))}/`);
       console.log(`  → ${ANSWERS_ARCHIVE}: every answer the run was returned, ${(answers || []).length} draw(s)`);
     }
     fs.mkdirSync(outDir, { recursive: true });
@@ -939,9 +941,10 @@ async function cmdRun(positional, flags) {
     const cmp = receipt.comparison;
     const aw = receipt.results.aggregates.with_skill;
     const ab = receipt.results.aggregates.baseline;
-    console.log(`  → ${path.relative(process.cwd(), jsonPath)}  (${stubRun ? 'stub work; no model calls' : `${calls} calls`})`);
+    console.log(`  → ${invisibleShown(path.relative(process.cwd(), jsonPath))}  (${stubRun ? 'stub work; no model calls' : `${calls} calls`})`);
     console.log(`  → ${answeredLine(receipt)}; verification_level ${receipt.verification_level}`);
-    console.log(`  → ${captureLine(receipt.run.capture)}`);
+    console.log(`  → ${captureLine(receipt.run.capture, receipt.run.surface)}`);
+    for (const line of require('../lib/text-capture').fakeToolCallLines(receipt)) console.log(`  → ${line}`);
     // Spec 026 AC-8: how many draws were cut at the output cap and excluded.
     const nTruncated = receipt.results.cases.reduce((a, c) => a + (((c.generation || {}).n_truncated) || 0), 0);
     if (nTruncated) console.log(`  → ${nTruncated} draw(s) truncated at the output cap: unmeasured, never judged, excluded from every band`);
@@ -957,15 +960,15 @@ async function cmdRun(positional, flags) {
     // when not measured, and no score.
     if (quick) {
       const { firstLookOf, sideBySide } = require('../lib/view');
-      for (const line of unmeasuredLines(receipt)) console.log(line);
+      for (const line of unmeasuredLines(receipt)) console.log(invisibleShown(line));
       const look = firstLookOf(receipt, answersArchive({ receipt, kept: answers }).answers);
-      console.log(`\n  First look at test task ${look.id}: draw 0 of each arm, as it came back.`);
+      console.log(`\n  First look at test task ${invisibleShown(look.id)}: draw 0 of each arm, as it came back.`);
       for (const [mode, label] of [['with_skill', 'with the skill'], ['baseline', 'without the skill']]) {
         const a = look.arms[mode];
-        if (a.note) console.log(`  ${label}: ${a.note}`);
-        if (typeof a.text !== 'string') console.log(`  ${label}: ${a.why}`);
+        if (a.note) console.log(`  ${label}: ${invisibleShown(a.note)}`);
+        if (typeof a.text !== 'string') console.log(`  ${label}: ${invisibleShown(a.why)}`);
       }
-      console.log(sideBySide(look.arms.with_skill.text || '', look.arms.baseline.text || '').join('\n'));
+      console.log(jsonControls(sideBySide(look.arms.with_skill.text || '', look.arms.baseline.text || '').join('\n')));
       console.log(`${quickResultLine()}\n`);
     }
     else if (cmp.delta == null) console.log(`  → skill lift n/a (${cmp.delta_uncertainty_unavailable === 'no_cases' ? 'no case was included on an arm' : 'no comparison'})\n`);
@@ -973,7 +976,7 @@ async function cmdRun(positional, flags) {
     if (cost.shown) console.log(`  → ${cost.text}\n`);
   }
 
-  console.log(`Done. ${emitted.length} receipt(s) emitted to ${path.relative(process.cwd(), outDir)}/`);
+  console.log(`Done. ${emitted.length} receipt(s) emitted to ${invisibleShown(path.relative(process.cwd(), outDir))}/`);
 }
 
 function cmdDiff(positional, flags) {
@@ -986,7 +989,7 @@ function cmdDiff(positional, flags) {
   for (const [p, r] of [[aPath, a], [bPath, b]]) refuseUnverified(r, p, 'diff');
   // Spec 265 AC-53: a marked receipt on either side is refused; no drift report is formed.
   const { receiptAggregatesOnly, AGGREGATES_ONLY_LINE } = require('../lib/verdict');
-  for (const [p, r] of [[aPath, a], [bPath, b]]) if (receiptAggregatesOnly(r)) { console.error(`  ✗ REFUSED (diff): ${p}: ${AGGREGATES_ONLY_LINE}.`); process.exit(2); }
+  for (const [p, r] of [[aPath, a], [bPath, b]]) if (receiptAggregatesOnly(r)) { console.error(`  ✗ REFUSED (diff): ${invisibleShown(p)}: ${AGGREGATES_ONLY_LINE}.`); process.exit(2); }
 
   // --mode revision inverts the axis: the skill text is the variable under test
   // and the substrate is the control. The fields release drift merely warns about
@@ -996,7 +999,7 @@ function cmdDiff(positional, flags) {
   // exists to exclude — and an EQUAL content_hash has no revision to measure.
   const mode = flags.mode || 'release';
   if (mode !== 'release' && mode !== 'revision') {
-    console.error(`unknown --mode "${mode}" — supported: release, revision`);
+    console.error(`unknown --mode "${invisibleShown(mode)}" — supported: release, revision`);
     process.exit(2);
   }
   if (mode === 'revision') {
@@ -1005,7 +1008,7 @@ function cmdDiff(positional, flags) {
       const why = problem === 'skill.content_hash'
         ? 'the two receipts carry the SAME skill.content_hash — there is no revision between them to measure'
         : `${problem} differs between the two receipts — revision drift requires the substrate to be held fixed, and a differing ${problem} would confound the revision with release drift`;
-      console.error(`  ✗ REFUSED (--mode revision): ${why}.`);
+      console.error(`  ✗ REFUSED (--mode revision): ${invisibleShown(why)}.`);
       console.error(`    Compare these two with the default release mode, or supply a pair that differs only in skill.content_hash.`);
       process.exit(6);
     }
@@ -1019,9 +1022,9 @@ function cmdDiff(positional, flags) {
 
   if (flags.out) {
     fs.writeFileSync(path.resolve(flags.out), markdown);
-    console.log(`Drift report written to ${flags.out}`);
+    console.log(`Drift report written to ${invisibleShown(flags.out)}`);
   } else {
-    console.log(markdown);
+    console.log(jsonControls(markdown));
   }
 }
 
@@ -1035,7 +1038,7 @@ function cmdStale(positional, flags) {
   const { staleReport, renderText } = require('../lib/stale');
   const VALUE = ['skill', 'suite', 'model', 'judge', 'harness-version', 'capture'];
   const BOOL = ['strict', 'no-harness-check'];
-  const bad = (msg) => { console.error(`  ✗ stale: ${msg}\n`); console.error(`  usage: ${PROJECT_NAME} stale <receipt.json>... [--skill DIR] [--suite FILE] [--model ID] [--judge ID] [--capture text|files] [--harness-version V | --no-harness-check] [--strict] [--json [path]]`); process.exitCode = 2; };
+  const bad = (msg) => { console.error(`  ✗ stale: ${invisibleShown(msg)}\n`); console.error(`  usage: ${PROJECT_NAME} stale <receipt.json>... [--skill DIR] [--suite FILE] [--model ID] [--judge ID] [--capture text|files] [--harness-version V | --no-harness-check] [--strict] [--json [path]]`); process.exitCode = 2; };
   for (const k of Object.keys(flags)) if (![...VALUE, ...BOOL, 'json'].includes(k)) return bad(`unknown flag --${k}`);
   for (const k of VALUE) if (flags[k] === true) return bad(`--${k} needs a value`);
   if (flags['harness-version'] && flags['no-harness-check']) return bad('--harness-version and --no-harness-check together');
@@ -1064,7 +1067,7 @@ function cmdStale(positional, flags) {
   });
   if (flags.json) {
     const text = JSON.stringify(doc, null, 2) + '\n';
-    if (jsonOut) { fs.writeFileSync(jsonOut, text); process.stdout.write(renderText(doc)); } else process.stdout.write(text);
+    if (jsonOut) { fs.writeFileSync(jsonOut, text); process.stdout.write(renderText(doc)); } else process.stdout.write(jsonControls(text));
   } else process.stdout.write(renderText(doc));
   process.exitCode = doc.exit_code;
 }
@@ -1080,7 +1083,7 @@ function cmdView(positional, flags) {
   refuseExtraPositionals('view', positional, '<receipts-dir>');
   const { renderView, isViewPage } = require('../lib/view');
   const { fullRunOffer, fullRunLine } = require('../lib/firstrun');
-  const bad = (msg) => { console.error(`  \u2717 REFUSED (view): ${msg}. Nothing written.`); process.exit(2); };
+  const bad = (msg) => { console.error(`  \u2717 REFUSED (view): ${invisibleShown(msg)}. Nothing written.`); process.exit(2); };
   const dir = positional[0];
   if (!dir) bad(`a receipts directory is required: ${PROJECT_NAME} view <receipts-dir> [--out FILE]`);
   for (const k of ['out', 'skill', 'suite', 'model', 'judge', 'harness-version']) if (flags[k] === true) bad(`--${k} needs a value`);
@@ -1110,7 +1113,7 @@ function cmdView(positional, flags) {
   if (!receipts) bad(`${dir} holds no receipts`);
   fs.mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
   fs.writeFileSync(out, html);
-  console.log(`view written to ${out}  (${receipts} receipts, ${Buffer.byteLength(html)} bytes)`);
+  console.log(`view written to ${invisibleShown(out)}  (${receipts} receipts, ${Buffer.byteLength(html)} bytes)`);
   // Spec 173 (R-2): after a quick run, the small full run on offer, with its calls and its time. The
   // guided start reads this line and asks the person; nothing here runs it.
   const offer = newest && isSmoke(newest) ? fullRunLine(fullRunOffer(newest)) : null;
@@ -1128,7 +1131,7 @@ async function cmdRegrade(positional, flags) {
   refuseUnknownFlags('regrade', flags);
   refuseExtraPositionals('regrade', positional, '<receipt.json>');
   stubAnnounce();
-  const refuse =(why) => { console.error(`  ✗ REFUSED (regrade): ${why}; nothing run, no receipt written.`); process.exit(2); };
+  const refuse =(why) => { console.error(`  ✗ REFUSED (regrade): ${invisibleShown(why)}; nothing run, no receipt written.`); process.exit(2); };
   // Spec 184: --rubric names the revised suite of a rubric regrade, which keeps the original's judge.
   const rubricMode = Object.hasOwn(flags, 'rubric');
   if (rubricMode && (typeof flags.rubric !== 'string' || !flags.rubric)) refuse('--rubric needs the revised suite file, an evals.json');
@@ -1167,17 +1170,17 @@ async function cmdRegrade(positional, flags) {
   }
 
   const plan = planRegrade({ receipt, skill, answers, judgeModel, samples, revised, trusted });
-  console.log(`\n${PROJECT_NAME} regrade: ${path.basename(receiptPath)}`);
-  console.log(`  model: ${receipt.run.model_id} (generations kept)   judge: ${receipt.run.judge.model_id} → ${judgeModel}   samples/answer: ${samples}`);
-  if (read.source.kind === 'legacy-archive') console.log(`  answers: ${Object.keys(answers).length} read from ${read.source.file}/, an archive written before every draw was kept: it holds the last measured draw of each case and mode`);
-  if (revised) console.log(`  rubric: ${revised.file} (suite ${String(receipt.suite.suite_hash).slice(0, 12)}… → ${revised.suiteHash.slice(0, 12)}…); no answer is generated`);
+  console.log(`\n${PROJECT_NAME} regrade: ${invisibleShown(path.basename(receiptPath))}`);
+  console.log(`  model: ${invisibleShown(receipt.run.model_id)} (generations kept)   judge: ${invisibleShown(receipt.run.judge.model_id)} → ${judgeModel}   samples/answer: ${samples}`);
+  if (read.source.kind === 'legacy-archive') console.log(`  answers: ${Object.keys(answers).length} read from ${invisibleShown(read.source.file)}/, an archive written before every draw was kept: it holds the last measured draw of each case and mode`);
+  if (revised) console.log(`  rubric: ${invisibleShown(revised.file)} (suite ${String(receipt.suite.suite_hash).slice(0, 12)}… → ${revised.suiteHash.slice(0, 12)}…); no answer is generated`);
   // Spec 138 (R-9): the same loud warning when the new judge is the model whose answers it grades.
   if (!stubRun) {
     if (selfJudged(receipt.run.model_id, judgeModel)) for (const line of selfJudgeLines(receipt.run.model_id)) console.error(line);
   }
   if (plan.problems.length) {
     console.error(`\n  ✗ REFUSED (regrade): ${plan.problems.length} problem(s) with the inputs; nothing run, no receipt written.`);
-    for (const p of plan.problems.slice(0, 20)) console.error(`    - ${p}`);
+    for (const p of plan.problems.slice(0, 20)) console.error(`    - ${invisibleShown(p)}`);
     process.exit(2);
   }
   console.log(`  ${stubRun ? 'stub plan: saved answers' : 'answers to grade'}: ${plan.draws}   ${stubRun ? 'projected synthetic calls' : 'projected calls'}: ${plan.calls}   cap: ${maxCalls}`);
@@ -1197,20 +1200,20 @@ async function cmdRegrade(positional, flags) {
       receipt, skill, answers, judgeModel, samples, revised,
       opts: {
         trusted, budget: new BudgetTracker(maxUsd), maxCalls,
-        onProgress: (p) => { if (stubRun) return; if (p.phase === 'done') console.log(`  ${p.case} / ${p.mode}: ${p.outcome} (${p.score.toFixed(2)} ± ${(p.stddev || 0).toFixed(2)})`); },
+        onProgress: (p) => { if (stubRun) return; if (p.phase === 'done') console.log(`  ${invisibleShown(p.case)} / ${invisibleShown(p.mode)}: ${invisibleShown(p.outcome)} (${p.score.toFixed(2)} ± ${(p.stddev || 0).toFixed(2)})`); },
       },
     });
   } catch (e) {
-    if (e && e.code === 'SUBSTRATE_MISMATCH') { console.error(`\n  ✗ REFUSED (substrate mismatch): ${e.message}`); process.exit(5); }
-    if (e && e.code === 'BUDGET_HARDSTOP') { console.error(stubRun ? '\n  ✗ ABORT (budget hard-stop): synthetic stub work exceeded the budget; no model was called.' : `\n  ✗ ABORT (budget hard-stop): ${e.message}`); process.exit(3); }
-    if (e && e.code === 'PLACEBO_REGRADE') { console.error(`\n  ✗ REFUSED (regrade): ${e.message}`); process.exit(2); }
+    if (e && e.code === 'SUBSTRATE_MISMATCH') { console.error(`\n  ✗ REFUSED (substrate mismatch): ${invisibleShown(e.message)}`); process.exit(5); }
+    if (e && e.code === 'BUDGET_HARDSTOP') { console.error(stubRun ? '\n  ✗ ABORT (budget hard-stop): synthetic stub work exceeded the budget; no model was called.' : `\n  ✗ ABORT (budget hard-stop): ${invisibleShown(e.message)}`); process.exit(3); }
+    if (e && e.code === 'PLACEBO_REGRADE') { console.error(`\n  ✗ REFUSED (regrade): ${invisibleShown(e.message)}`); process.exit(2); }
     throw e;
   }
   const out = result.receipt;
   // Issue 196 (A-184-25): a regraded receipt that fails its schema, or whose hash does not verify, is
   // not written, and neither is its summary or sidecar.
   const { valid, errors } = validateReceipt(out);
-  if (!valid) { console.error('  ✗ regraded receipt FAILED schema validation:', JSON.stringify(errors, null, 2)); console.error('  nothing written: a receipt that fails its schema is not written'); process.exit(1); }
+  if (!valid) { console.error('  ✗ regraded receipt FAILED schema validation:', diagnosticValue(errors, 2)); console.error('  nothing written: a receipt that fails its schema is not written'); process.exit(1); }
   if (!verifyReceiptHash(out)) { console.error('  ✗ receipt_hash does not verify; nothing written'); process.exit(1); }
   fs.mkdirSync(outDir, { recursive: true });
   // Spec 184 (R-5): a rubric regrade is named one; every file is created, never replaced.
@@ -1227,9 +1230,9 @@ async function cmdRegrade(positional, flags) {
   // The sidecar's name is lib/receipt.js's, which the directory readers skip by (spec 069).
   const sidecar = `${base}${REGRADE_SIDECAR.suffix}`;
   fs.writeFileSync(path.join(outDir, sidecar), JSON.stringify(provenance, null, 2), { flag: 'wx' });
-  console.log(`  → ${path.relative(process.cwd(), jsonPath)}  (${stubRun ? 'stub work; no model calls' : `${result.calls} judge calls${revised ? ', no generation call' : ''}`})`);
-  console.log(`  → a ${stubRun ? 'stub regrade' : 'regrade'} of the saved answers of ${path.basename(receiptPath)} (run ${receipt.run.date_utc}), ${revised ? 'under a revised rubric' : `by the judge ${judgeModel}`}; graded ${out.run.date_utc}`);
-  console.log(`  → verification_level ${out.verification_level}; provenance: ${sidecar}\n`);
+  console.log(`  → ${invisibleShown(path.relative(process.cwd(), jsonPath))}  (${stubRun ? 'stub work; no model calls' : `${result.calls} judge calls${revised ? ', no generation call' : ''}`})`);
+  console.log(`  → a ${stubRun ? 'stub regrade' : 'regrade'} of the saved answers of ${invisibleShown(path.basename(receiptPath))} (run ${invisibleShown(receipt.run.date_utc)}), ${revised ? 'under a revised rubric' : `by the judge ${judgeModel}`}; graded ${invisibleShown(out.run.date_utc)}`);
+  console.log(`  → verification_level ${out.verification_level}; provenance: ${invisibleShown(sidecar)}\n`);
 }
 
 function cmdValidate(positional) {
@@ -1240,7 +1243,7 @@ function cmdValidate(positional) {
   const hashOk = verifyReceiptHash(receipt);
   console.log(`schema: ${valid ? 'VALID' : 'INVALID'}   receipt_hash: ${hashOk ? 'VERIFIED' : 'MISMATCH'}`);
   // Spec 438: at most 20 errors, each string in them bounded.
-  if (!valid) console.log(JSON.stringify(boundedErrors(errors), null, 2));
+  if (!valid) console.log(diagnosticValue(boundedErrors(errors), 2));
   process.exit(valid && hashOk ? 0 : 1);
 }
 
@@ -1257,8 +1260,9 @@ function cmdInit(positional, flags = {}) {
     process.exit(2);
   }
   refuseUnknownFlags('init', flags);
-  const bad = (msg) => { console.error(`  ✗ REFUSED (init): ${msg}; nothing written.`); process.exit(2); };
-  const rel = (p) => path.relative(process.cwd(), p) || '.';
+  const bad = (msg) => { console.error(`  ✗ REFUSED (init): ${invisibleShown(msg)}; nothing written.`); process.exit(2); };
+  const rel = (p) => invisibleShown(path.relative(process.cwd(), p) || '.');
+  const arg = (p) => shellArg(path.relative(process.cwd(), p) || '.');
   // Spec 165: the label says the cases were drafted from the skill and approved by the person, so it
   // needs cases to label.
   if (Object.hasOwn(flags, 'drafted-from-skill') && !Object.hasOwn(flags, 'cases')) bad('--drafted-from-skill labels the cases given with --cases, and was given with none');
@@ -1275,7 +1279,7 @@ function cmdInit(positional, flags = {}) {
     try { fs.lstatSync(suite); there = true; } catch (_e) { there = false; }
     if (there) bad(`${rel(path.resolve(target))} already has evals/evals.json, and init never writes over a suite, so the cases in ${flags.cases} would be dropped. Leave out --cases to keep that suite`);
     let text;
-    try { text = fs.readFileSync(flags.cases, 'utf8'); } catch (e) { bad(`the cases in ${flags.cases} could not be read (${e.code || e.message})`); }
+    try { text = readRequired(flags.cases, flags.cases, SUITE_MAX_BYTES, 'SUITE_MAX_BYTES').toString('utf8'); } catch (e) { bad(`the cases in ${flags.cases} could not be read (${e.message})`); }
     try { cases = JSON.parse(text); } catch (e) { bad(`the cases in ${flags.cases} do not parse as JSON (${e.message})`); }
     // The loader's rules are read here, before scaffoldInit, so only its refusal is said as one: a
     // write that fails inside scaffoldInit (EACCES, ENOSPC) is thrown as it is without --cases.
@@ -1287,7 +1291,7 @@ function cmdInit(positional, flags = {}) {
   if (existingSkill && cases !== null && created.length) {
     for (const f of created) console.log(`  + ${rel(f)}`);
     for (const f of skipped) console.log(`  · ${rel(f)} (exists — left untouched)`);
-    console.log(`Next: driftproof run ${rel(dir)} --quick   (a first look: one test task, no verdict)`);
+    console.log(`Next: driftproof run ${arg(dir)} --quick   (a first look: one test task, no verdict)`);
     return;
   }
   console.log(`driftproof init — ${rel(dir)}/`);
@@ -1302,9 +1306,9 @@ function cmdInit(positional, flags = {}) {
   if (existingSkill) steps.push(`Your ${rel(path.join(dir, 'SKILL.md'))} was left as it was.`);
   else steps.push(`Edit ${rel(path.join(dir, 'SKILL.md'))} with your skill's instructions.`);
   if (suiteMade && cases === null) steps.push(`Edit ${rel(path.join(dir, 'evals', 'evals.json'))}: replace the 3 example cases (rubrics anchored at 0.80). These generic examples are not grounded in your skill's claims. Their scores do not establish performance on your intended tasks. The CLI still computes scores and verdicts, but these do not validate a skill-specific suite.`);
-  if (suiteMade && cases !== null) steps.push(`Read ${rel(path.join(dir, 'evals', 'evals.json'))}: it holds the cases from ${flags.cases}.`);
-  steps.push(`driftproof run ${rel(dir)} --quick   (a smoke run: no verdict, a first look)`);
-  steps.push(`driftproof run ${rel(dir)} --models claude-haiku-4-5`);
+  if (suiteMade && cases !== null) steps.push(`Read ${rel(path.join(dir, 'evals', 'evals.json'))}: it holds the cases from ${invisibleShown(flags.cases)}.`);
+  steps.push(`driftproof run ${arg(dir)} --quick   (a smoke run: no verdict, a first look)`);
+  steps.push(`driftproof run ${arg(dir)} --models claude-haiku-4-5`);
   console.log(`\nNext:\n${steps.map((s, i) => `  ${i + 1}. ${s}`).join('\n')}\nSee AUTHORING.md for how to write a fair suite.`);
 }
 
@@ -1332,11 +1336,11 @@ function cmdBadge(positional, flags) {
       const out = path.resolve(flags.out);
       fs.mkdirSync(path.dirname(out), { recursive: true });
       fs.writeFileSync(out, svg);
-      console.log(`badge written to ${flags.out}  (${verdictFromReceipt(receipt).verdict}, svg)`);
+      console.log(`badge written to ${invisibleShown(flags.out)}  (${verdictFromReceipt(receipt).verdict}, svg)`);
     } else process.stdout.write(svg);
     return;
   }
-  if (flags['github-output']) { console.log(githubOutputLines(receipt)); return; }
+  if (flags['github-output']) { console.log(jsonControls(githubOutputLines(receipt))); return; }
   const badge = badgeEndpoint(receipt);
   const json = JSON.stringify(badge, null, 2);
   const v = verdictFromReceipt(receipt);
@@ -1351,11 +1355,11 @@ function cmdBadge(positional, flags) {
     const out = path.resolve(flags.out);
     fs.mkdirSync(path.dirname(out), { recursive: true });
     fs.writeFileSync(out, json + '\n');
-    console.log(`badge written to ${flags.out}  (${v.verdict}: ${badge.message}, ${badge.color})`);
-    for (const line of power) console.log(line);
+    console.log(`badge written to ${invisibleShown(flags.out)}  (${v.verdict}: ${invisibleShown(badge.message)}, ${badge.color})`);
+    for (const line of power) console.log(invisibleShown(line));
   } else {
-    console.log(json);
-    for (const line of power) console.error(line);
+    console.log(jsonControls(json));
+    for (const line of power) console.error(invisibleShown(line));
   }
 }
 
@@ -1367,7 +1371,7 @@ function cmdBadgeSet(dir, flags) {
   const listed = listReceipts(dir);
   const files = listed.map((l) => l.file);
   if (files.length === 0) {
-    console.error(`  \u2717 REFUSED (badge): ${dir} holds no receipts; a badge over nothing is a badge about nothing.`);
+    console.error(`  \u2717 REFUSED (badge): ${invisibleShown(dir)} holds no receipts; a badge over nothing is a badge about nothing.`);
     process.exit(2);
   }
   // Every receipt is verified before it is displayed, exactly as the
@@ -1385,16 +1389,16 @@ function cmdBadgeSet(dir, flags) {
   const models = flags.models || listed
     .map((l) => l.receipt && l.receipt.run && l.receipt.run.model_id).filter(Boolean).join(',');
   const d = decision.decideSet(dir, models);
-  if (flags['github-output']) { console.log(decision.githubOutputLines(d)); return; }
+  if (flags['github-output']) { console.log(jsonControls(decision.githubOutputLines(d))); return; }
   const badge = decision.badgeEndpointForSet(d);
   const json = JSON.stringify(badge, null, 2);
   if (flags.out) {
     const out = path.resolve(flags.out);
     fs.mkdirSync(path.dirname(out), { recursive: true });
     fs.writeFileSync(out, json + '\n');
-    console.log(`badge written to ${flags.out}  (${d.worst}: ${badge.message}, ${badge.color})`);
+    console.log(`badge written to ${invisibleShown(flags.out)}  (${d.worst}: ${invisibleShown(badge.message)}, ${badge.color})`);
   } else {
-    console.log(json);
+    console.log(jsonControls(json));
   }
 }
 
@@ -1416,12 +1420,12 @@ function cmdDecide(positional, flags) {
   // Spec 072: true or false, default false; any other value is refused before anything is read.
   const underpoweredFlag = flags['fail-on-underpowered'] ?? 'false';
   if (underpoweredFlag !== 'true' && underpoweredFlag !== 'false') {
-    console.error(`  \u2717 REFUSED (decide): --fail-on-underpowered takes true or false, and was given ${typeof underpoweredFlag === 'string' ? JSON.stringify(underpoweredFlag) : 'no value'}. Nothing decided.`);
+    console.error(`  \u2717 REFUSED (decide): --fail-on-underpowered takes true or false, and was given ${typeof underpoweredFlag === 'string' ? diagnosticValue(underpoweredFlag) : 'no value'}. Nothing decided.`);
     process.exit(2);
   }
   const failOnUnderpowered = underpoweredFlag === 'true';
   if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
-    console.error(`  \u2717 REFUSED (decide): ${dir} is not a directory; a run that wrote no receipt directory decided nothing.`);
+    console.error(`  \u2717 REFUSED (decide): ${invisibleShown(dir)} is not a directory; a run that wrote no receipt directory decided nothing.`);
     process.exit(2);
   }
   // ── THE SEAL IS VERIFIED BEFORE ANY DECISION (spec 026 AC-20, spec 030 AC-3)
@@ -1463,7 +1467,7 @@ function cmdDecide(positional, flags) {
     fs.mkdirSync(path.dirname(out), { recursive: true });
     const badge = decision.badgeEndpointForSet(d);
     fs.writeFileSync(out, JSON.stringify(badge, null, 2) + '\n');
-    console.log(`badge written to ${flags.badge}  (${d.worst}: ${badge.message}, ${badge.color})`);
+    console.log(`badge written to ${invisibleShown(flags.badge)}  (${d.worst}: ${invisibleShown(badge.message)}, ${badge.color})`);
     acted = true;
   }
   if (flags.summary) {
@@ -1475,11 +1479,11 @@ function cmdDecide(positional, flags) {
     acted = true;
   }
   if (flags.enforce) {
-    for (const line of decision.enforcementLines(d, { failOnRegression, failOnUnderpowered })) console.log(line);
+    for (const line of decision.enforcementLines(d, { failOnRegression, failOnUnderpowered })) console.log(invisibleShown(line));
     acted = true;
     if (d.fails) process.exit(1);
   }
-  if (!acted) console.log(JSON.stringify(d, null, 2));
+  if (!acted) console.log(diagnosticValue(d, 2));
 }
 
 // Convert another tool's results file into a valid DECLARED receipt (interop,
@@ -1505,7 +1509,7 @@ function cmdImport(positional, flags) {
       ({ receipt, file: read } = importAnthropic(p, { from, importedAt: new Date().toISOString(), countErroredRuns: flags['count-errored-runs'] === true }));
     } catch (e) {
       if (!(e instanceof ImportRefused)) throw e;
-      console.error(`✗ import refused, nothing written: ${e.message}`);
+      console.error(`✗ import refused, nothing written: ${invisibleShown(e.message)}`);
       process.exit(1);
     }
   } else {
@@ -1514,13 +1518,13 @@ function cmdImport(positional, flags) {
       const data = JSON.parse(sourceBytes.toString('utf8'));
       receipt = importResults(data, { from, sourceBytes, importedAt: new Date().toISOString() });
     } catch (e) {
-      console.error('import refused, nothing written: ' + importDiagnostic(e.message));
+      console.error('import refused, nothing written: ' + jsonControls(importDiagnostic(e.message)).slice(0, 2048));
       process.exit(1);
     }
   }
   const { valid, errors } = validateReceipt(receipt);
   if (!valid || !verifyReceiptHash(receipt)) {
-    console.error('✗ converted receipt failed validation — nothing written:', JSON.stringify(errors, null, 2));
+    console.error('✗ converted receipt failed validation — nothing written:', diagnosticValue(errors, 2));
     process.exit(1);
   }
   const outDir = flags.out ? path.resolve(flags.out) : RECEIPTS_DIR;
@@ -1534,11 +1538,11 @@ function cmdImport(positional, flags) {
   const base = receiptBaseName({ skill: receipt.skill.name, model: receipt.run.model_id, tag: `imported-${fileSlug(from)}`, date: dateStamp(receipt.run.date_utc), hash: doc });
   const jsonPath = path.join(outDir, `${base}.json`);
   fs.writeFileSync(jsonPath, JSON.stringify(receipt, null, 2));
-  if (read !== p) console.log(`read ${path.relative(process.cwd(), read)}`);
-  console.log(`imported → ${path.relative(process.cwd(), jsonPath)}`);
-  console.log(`  verification_level: DECLARED (source ${receipt.run.source}) — the source tool's declaration, converted faithfully;`);
+  if (read !== p) console.log(`read ${invisibleShown(path.relative(process.cwd(), read))}`);
+  console.log(`imported → ${invisibleShown(path.relative(process.cwd(), jsonPath))}`);
+  console.log(`  verification_level: DECLARED (source ${invisibleShown(receipt.run.source)}) — the source tool's declaration, converted faithfully;`);
   console.log(`  no generation hashes (never fabricated); excluded from drift verdicts unless re-run TESTED. See docs/interop.md.`);
-  for (const n of (receipt.run.import && receipt.run.import.notices) || []) console.log(`  notice: ${n}`);
+  for (const n of (receipt.run.import && receipt.run.import.notices) || []) console.log(`  notice: ${invisibleShown(n)}`);
 }
 
 // Spec 266: Harbor job directories. Two jobs declared as the arms (--with, --without), or one job as
@@ -1546,7 +1550,7 @@ function cmdImport(positional, flags) {
 const HARBOR_IMPORT_FLAGS = ['from', 'with', 'without', 'arm', 'reward', 'skill', 'out'];
 function cmdImportHarbor(positional, flags) {
   const usageLine = 'usage: driftproof import --from harbor --with <job> --without <job> [--reward KEY] [--skill NAME] [--out DIR]\n       driftproof import <job> --from harbor [--arm with-skill|baseline] [--reward KEY] [--skill NAME] [--out DIR]';
-  const fail = (why) => { console.error(`${why}\n${usageLine}`); process.exit(2); };
+  const fail = (why) => { console.error(`${invisibleShown(why)}\n${usageLine}`); process.exit(2); };
   for (const k of Object.keys(flags)) if (!HARBOR_IMPORT_FLAGS.includes(k)) fail(`import --from harbor does not take --${k}`);
   for (const k of ['with', 'without', 'arm', 'reward', 'skill', 'out']) if (flags[k] === true) fail(`--${k} needs a value`);
   const paired = flags.with !== undefined || flags.without !== undefined;
@@ -1562,13 +1566,13 @@ function cmdImportHarbor(positional, flags) {
     imported = paired ? importHarbor({ ...opts, withJob: flags.with, withoutJob: flags.without }) : importHarbor({ ...opts, job: positional[0], arm: flags.arm ?? 'with-skill' });
   } catch (e) {
     if (!(e instanceof HarborRefused)) throw e;
-    console.error(`✗ import refused, nothing written: ${e.message}`);
+    console.error(`✗ import refused, nothing written: ${invisibleShown(e.message)}`);
     process.exit(1);
   }
   const { receipt, counts } = imported;
   const { valid, errors } = validateReceipt(receipt);
   if (!valid || !verifyReceiptHash(receipt)) {
-    console.error('✗ converted receipt failed validation, nothing written:', JSON.stringify(errors, null, 2));
+    console.error('✗ converted receipt failed validation, nothing written:', diagnosticValue(errors, 2));
     process.exit(1);
   }
   const outDir = flags.out ? path.resolve(flags.out) : RECEIPTS_DIR;
@@ -1579,11 +1583,11 @@ function cmdImportHarbor(positional, flags) {
   const jsonPath = path.join(outDir, `${base}.json`);
   fs.writeFileSync(jsonPath, JSON.stringify(receipt, null, 2));
   // Spec 266 AC-26: Harbor declares no figure, so the line says what Driftproof recomputed.
-  console.log(`imported → ${path.relative(process.cwd(), jsonPath)}`);
+  console.log(`imported → ${invisibleShown(path.relative(process.cwd(), jsonPath))}`);
   const perArm = ['with_skill', 'baseline'].filter((m) => counts.arms[m]).map((m) => `${m === 'with_skill' ? 'with-skill' : 'baseline'} ${counts.arms[m].read - counts.arms[m].inDelta} of ${counts.arms[m].read}`).join(', ');
-  console.log(`  verification_level: DECLARED (source ${receipt.run.source}): recomputed by Driftproof from ${counts.inDelta} of ${counts.read} trial files read; ${counts.read - counts.inDelta} left out (${perArm}; see notices).`);
+  console.log(`  verification_level: DECLARED (source ${invisibleShown(receipt.run.source)}): recomputed by Driftproof from ${counts.inDelta} of ${counts.read} trial files read; ${counts.read - counts.inDelta} left out (${perArm}; see notices).`);
   console.log('  no generation hashes (never fabricated); excluded from drift verdicts unless re-run TESTED. See docs/interop.md.');
-  for (const n of receipt.run.import.notices) console.log(`  notice: ${n}`);
+  for (const n of receipt.run.import.notices) console.log(`  notice: ${invisibleShown(n)}`);
 }
 
 // Spec 265: NVIDIA/skills benchmark cards, from a git checkout at --commit. Every receipt is
@@ -1592,13 +1596,13 @@ function cmdImportHarbor(positional, flags) {
 const NVIDIA_IMPORT_FLAGS = ['from', 'commit', 'only', 'out', 'report'];
 function cmdImportNvidia(positional, flags) {
   const usageLine = 'usage: driftproof import <dir> --from nvidia-cards --commit <sha> [--only <skill>[,<skill>]] [--out DIR] [--report FILE]';
-  const refuseUsage = (why) => { console.error(`${why}\n${usageLine}`); process.exit(2); }; // nvidia-cards usage
+  const refuseUsage = (why) => { console.error(`${invisibleShown(why)}\n${usageLine}`); process.exit(2); }; // nvidia-cards usage
   for (const k of Object.keys(flags)) if (!NVIDIA_IMPORT_FLAGS.includes(k)) refuseUsage(`import --from nvidia-cards does not take --${k}`);
   for (const k of ['commit', 'only', 'out', 'report']) if (flags[k] === true) refuseUsage(`--${k} needs a value`);
   if (flags.commit === undefined) refuseUsage('--commit <sha> is required: the commit of the checkout read, which is its HEAD');
   if (positional.length !== 1) refuseUsage('give one NVIDIA/skills checkout');
   const { importNvidiaCards, NvidiaRefused } = require('../lib/importers-nvidia');
-  const refused = (why) => { console.error(`✗ import refused, nothing written: ${why}`); process.exit(1); };
+  const refused = (why) => { console.error(`✗ import refused, nothing written: ${invisibleShown(why)}`); process.exit(1); };
   let imported;
   try {
     imported = importNvidiaCards(positional[0], { commit: String(flags.commit), only: flags.only === undefined ? null : String(flags.only).split(','), importedAt: new Date().toISOString() });
@@ -1627,9 +1631,9 @@ function cmdImportNvidia(positional, flags) {
     fs.mkdirSync(path.dirname(rf), { recursive: true });
     fs.writeFileSync(rf, JSON.stringify(report, null, 2) + '\n');
   }
-  console.log(`imported ${receipts.length} receipt(s) → ${path.relative(process.cwd(), outDir) || '.'}`);
+  console.log(`imported ${receipts.length} receipt(s) → ${invisibleShown(path.relative(process.cwd(), outDir) || '.')}`);
   console.log('  verification_level: DECLARED (source imported/nvidia-cards): the cards\' figures as printed, aggregates only; no verdict is read from these receipts. See docs/interop.md.');
-  for (const [k, v] of Object.entries(report)) console.log(`report ${k}: ${JSON.stringify(v)}`);
+  for (const [k, v] of Object.entries(report)) console.log(`report ${k}: ${invisibleShown(JSON.stringify(v))}`);
 }
 
 // Emit the minimal stable interchange summary for one receipt (interop, Phase 7).
@@ -1637,7 +1641,7 @@ function cmdExport(positional, flags) {
   const p = positional[0];
   const to = flags.to || 'summary-json';
   if (!p) { console.error('usage: driftproof export <receipt.json> [--to summary-json] [--report-url URL] [--out FILE|DIR]'); process.exit(2); }
-  if (to !== 'summary-json') { console.error(`unknown export target "${to}" — supported: summary-json`); process.exit(2); }
+  if (to !== 'summary-json') { console.error(`unknown export target "${invisibleShown(to)}" — supported: summary-json`); process.exit(2); }
   const { toSummaryJson } = require('../lib/export');
   const receipt = readReceiptOrRefuse(p, 'export');
   refuseUnverified(receipt, p, 'export');
@@ -1654,9 +1658,9 @@ function cmdExport(positional, flags) {
     fs.writeFileSync(out, json + '\n');
     // Spec 139 (R-4): a smoke receipt's line names no lift. The JSON keeps delta as a field, as for every receipt.
     const delta = isSmoke(receipt) ? `n/a (${SMOKE_LINE.charAt(0).toLowerCase()}${SMOKE_LINE.slice(1)})` : summary.delta === null ? 'n/a' : summary.delta;
-    console.log(`summary written to ${shown}  (${summary.verdict}, delta ${delta})`);
+    console.log(`summary written to ${invisibleShown(shown)}  (${summary.verdict}, delta ${delta})`);
   } else {
-    console.log(json);
+    console.log(jsonControls(json));
   }
 }
 
@@ -1686,8 +1690,11 @@ function cmdLintSuite(args) {
 // Spec 182: only this door emits overlap JSON. Refusal values are bounded and
 // JSON-escaped before they reach stderr, including loader errors and paths.
 // Shared with overlap's existing bounded, single-line diagnostic.
-function diagnosticValue(value) {
-  return JSON.stringify(value).replace(/[\u007f-\u009f\u2028\u2029]/g, c => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'));
+function diagnosticValue(value, space) {
+  return jsonControls(JSON.stringify(value, null, space));
+}
+function jsonControls(text) {
+  return text.replace(/[\u0000-\u0009\u000b-\u001f\u007f-\u009f\u2028\u2029]/g, c => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'));
 }
 
 function checkReceiptValidator() {
@@ -1710,7 +1717,7 @@ function cmdOverlap(args) {
   }
   try {
     const report = require('../lib/overlap').overlapSkill(args[0]);
-    console.log(JSON.stringify(report, null, 2));
+    console.log(diagnosticValue(report, 2));
   } catch (e) {
     const reason = String(e && e.message || e).slice(0, 2048);
     const escaped = diagnosticValue(reason);
@@ -1745,7 +1752,7 @@ function cmdActivationDrift(argv) {
   } catch (error) {
     const { importDiagnostic } = require('../lib/importers');
     const reason = error instanceof SyntaxError ? 'invalid JSON input' : error.code ? 'filesystem refusal (' + error.code + ')' : error.message;
-    console.error('activation-drift refused: ' + importDiagnostic(reason, 2048 - 26));
+    console.error('activation-drift refused: ' + jsonControls(importDiagnostic(reason, 2048 - 26)).slice(0, 2048 - 26));
     process.exitCode = 2;
   }
 }
@@ -1783,8 +1790,8 @@ async function main() {
     case 'version': case '--version': case '-v': console.log(RUNNER_VERSION); return;
     case 'help': case '--help': case '-h': return usage();
     case undefined: return shortHelp();
-    default: console.error(`unknown command: ${cmd}\n`); usage(); process.exit(2);
+    default: console.error(`unknown command: ${invisibleShown(cmd)}\n`); usage(); process.exit(2);
   }
 }
 
-main().catch((e) => { console.error('FATAL', e && (e.stack || e.message || e)); process.exit(2); });
+main().catch((e) => { console.error('FATAL', diagnosticValue(String(e && (e.stack || e.message || e)))); process.exit(2); });

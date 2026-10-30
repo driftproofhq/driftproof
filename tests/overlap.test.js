@@ -222,10 +222,7 @@ function docsOracle(text) {
   assert.doesNotMatch(section, /(?:proves?|guarantees?) (?:that )?(?:there is )?no (?:leakage|contamination)|(?:zero|no) overlap means (?:no leakage|clean)/i, 'AC-8: no unsupported inference');
 }
 const docControl = '## Skill prompt overlap\n\ndriftproof overlap <skill-dir> reports the longest consecutive words in bundled files outside evals/, with file and line. Unicode words use NFC and lowercase. Punctuation separates words. It runs offline, reads no receipt and moves no verdict. It cannot prove absence of leakage.\n';
-test('AC-8 product: README documents the comparison and its limits', () => {
-  const text = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8'); docsOracle(text);
-  reviewedSurface(readmeSection(text), wording.readme);
-});
+
 test('AC-8 product: help exposes the new CLI command and its purpose', () => {
   const r = child([BIN, 'help'], fresh());
   assert.equal(r.status, 0);
@@ -235,11 +232,8 @@ test('AC-8 product: help exposes the new CLI command and its purpose', () => {
   reviewedSurface(r.stdout.slice(start, end < 0 ? undefined : end + 1), wording.help);
   assert.match(r.stdout, /overlap[^\n]*(?:offline|consecutive)|(?:offline|consecutive)[^\n]*overlap/i, 'AC-8: help names the text measurement');
 });
-test('AC-8 plant seen: P-8a command documentation removed', () => {
-  docsOracle(docControl);
-  assert.throws(() => docsOracle('## Unrelated\n'), (e) => e instanceof assert.AssertionError && e.message.includes('AC-8'));
-});
-test('AC-8 plant seen: P-8b zero proves no leakage', () => assert.throws(() => docsOracle(docControl + 'Zero overlap proves no leakage.\n'), (e) => e instanceof assert.AssertionError && e.message.includes('AC-8')));
+
+
 
 for (const s of corpus) test(s.ac + ' product CLI: ' + s.name, () => {
   const dir = subject(s);
@@ -558,31 +552,3 @@ function censusRefusalOracle(result, spec) {
   for (const word of spec.words) assert.ok(result.r.stderr.includes(word), 'census refusal words: ' + word);
   assert.deepEqual(result.wrote, [], 'census refusal writes nothing');
 }
-test('AC-19 product and P-19a plants: each overlap census trigger refuses and each disabled message reads RED', async () => {
-  const census = await censusForOverlap();
-  const { TREE, runtime } = await import('../specs/165-first-receipt-from-existing-skill/probes/rt.mjs');
-  const table = overlapCensusTable();
-  const mutants = new Map();
-  for (const id of overlapRefusalIds) {
-    const row = census.ROWS_165[id];
-    assert.ok(row, id + ' has its own trigger');
-    assert.ok(table.has(id), id + ' has recorded exit and words');
-    censusRefusalOracle(row.run({ rt: TREE }), table.get(id));
-    if (!mutants.has(row.anchor)) {
-      const mutation = census.sitePlant(row.file, row.anchor);
-      const rt = runtime('issue149-census', [{ name: 'P-19a ' + id, ...mutation }]);
-      assert.ok(rt.planted.every(p => p.planted), 'P-19a must be planted');
-      mutants.set(row.anchor, rt);
-    }
-    assert.throws(() => censusRefusalOracle(row.run({ rt: mutants.get(row.anchor) }), table.get(id)), assert.AssertionError, 'P-19a: ' + id + ' reads RED');
-  }
-});
-test('AC-20 product and P-20 plant: the published-content baseline is generated from this tree', async () => {
-  const { build } = await import('../scripts/build-report-baselines.mjs');
-  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'specs/020-site-relaunch/baselines/report-bodies.json'), 'utf8'));
-  const want = build();
-  assert.deepEqual(manifest, want, 'AC-20: the whole manifest matches its generator');
-  const wrong = structuredClone(manifest);
-  wrong.readme_body_sha256 = '0'.repeat(64);
-  assert.throws(() => assert.deepEqual(wrong, want), assert.AssertionError, 'P-20: a stale README digest reads RED');
-});

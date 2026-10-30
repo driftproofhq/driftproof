@@ -284,11 +284,12 @@ test('AC-8 a driftproof-answers/1 file still regrades by rubric; a receipt resea
     const { sealReceipt, validateReceipt } = R('lib/receipt.js');
     const r = clone(o.receipt);
     r.schema_version = '0.10';
-    for (const k of ['harness', 'isolation', 'endpoint', 'code_revision', 'reported_models', 'criteria_template_hash']) delete r.run.judge[k];
+    for (const k of ['harness', 'isolation', 'endpoint', 'code_revision', 'reported_models', 'criteria_template_hash', 'parse_retries', 'parse_recoveries']) delete r.run.judge[k];
     // A-184-34 (issue 317): the judge overhead's two counts are v0.13's, so a receipt at 0.10 records neither.
     for (const k of ['judged_draws_counted', 'judged_draws_missing_usage']) delete r.economics.judge_overhead[k];
     // A-184-36 (issue 438): nor run.delivery, which is v0.15's.
     delete r.run.delivery;
+    delete r.results.fake_tool_calls;
     delete r.receipt_hash;
     const sealed = sealReceipt(r);
     assert.ok(validateReceipt(sealed).valid, `the resealed receipt validates at 0.10: ${JSON.stringify(validateReceipt(sealed).errors).slice(0, 300)}`);
@@ -336,7 +337,7 @@ test('AC-10 files capture: a draw the judge could not score is hashed as its jud
   const content = 'red, yellow and blue\n';
   let judgeN = 0;
   override = (a) => {
-    if (isJudge(a)) { judgeN += 1; return judgeN === 1 ? stubReply('not a grade at all', { reportedModels: [provider.resolveModel(a.model)] }) : null; }
+    if (isJudge(a)) { judgeN += 1; return judgeN <= 2 ? stubReply('not a grade at all', { reportedModels: [provider.resolveModel(a.model)] }) : null; }
     return stubReply('Red is a primary colour; the list is in the file below.', { workspace: [{ path: 'colours.txt', bytes: Buffer.byteLength(content), included: true, content }] });
   };
   let r;
@@ -735,7 +736,7 @@ test('AC-19 a rubric regrade keeps the rest of the judge\'s setting: its harness
 // sampling (lib/sampling.js), the call, its retries and its reply extraction (lib/provider.js,
 // lib/usage.js), the judging path of a run and of a regrade (lib/run.js, lib/regrade.js), which answers
 // reach the judge (lib/capture.js), the hashes (lib/canonical.js) and the score scale (config.js).
-const JUDGE_CODE_FILES = ['config.js', 'lib/canonical.js', 'lib/capture.js', 'lib/json.js', 'lib/judge.js', 'lib/provider.js', 'lib/regrade.js', 'lib/run.js', 'lib/sampling.js', 'lib/stats.js', 'lib/usage.js'];
+const JUDGE_CODE_FILES = ['config.js', 'lib/canonical.js', 'lib/capture.js', 'lib/text-capture.js', 'lib/json.js', 'lib/judge.js', 'lib/provider.js', 'lib/regrade.js', 'lib/run.js', 'lib/sampling.js', 'lib/stats.js', 'lib/usage.js'];
 function judgeCodeDigest(root) {
   return sha(JUDGE_CODE_FILES.map((f) => `${f} ${sha(fs.readFileSync(path.join(root, f)))}`).join('\n'));
 }
@@ -943,11 +944,12 @@ test('AC-26 a regraded receipt seals its evidence inside its hash: regraded_from
   assert.equal(v011.$id, 'https://driftproofhq.com/spec/receipt.v0.11.schema.json');
   assert.equal(v011.properties.schema_version.const, '0.11');
   const older = clone(o.receipt);
-  for (const k of ['harness', 'isolation', 'endpoint', 'code_revision', 'reported_models', 'criteria_template_hash']) delete older.run.judge[k];
+  for (const k of ['harness', 'isolation', 'endpoint', 'code_revision', 'reported_models', 'criteria_template_hash', 'parse_retries', 'parse_recoveries']) delete older.run.judge[k];
   // A-184-34 (issue 317): nor the judge overhead's two counts, which are v0.13's.
   for (const k of ['judged_draws_counted', 'judged_draws_missing_usage']) delete older.economics.judge_overhead[k];
   // A-184-36 (issue 438): nor run.delivery, which is v0.15's.
   delete older.run.delivery;
+  delete older.results.fake_tool_calls;
   older.schema_version = '0.11';
   R('lib/receipt.js').sealReceipt(older);
   const v = validateReceipt(older);

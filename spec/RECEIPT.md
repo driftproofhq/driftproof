@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Driftproof receipt, spec v0.15
+# Driftproof receipt, spec v0.16
 
 A **receipt** is a **hash-verified**, dated record of running one agent skill's eval suite
 **with** and **without** the skill on one model version, with the judge **sampled**
@@ -12,8 +12,9 @@ The machine-readable contract is [`receipt.schema.json`](./receipt.schema.json)
 (JSON Schema, draft 2020-12). This document is the human companion. Where they
 disagree, the schema wins.
 
-**Versioning.** The current schema is v0.15
+**Versioning.** The current schema is v0.16
 ([`receipt.schema.json`](./receipt.schema.json)). Prior schemas are kept frozen as
+[`receipt.v0.15.schema.json`](./receipt.v0.15.schema.json),
 [`receipt.placebo.schema.json`](./receipt.placebo.schema.json) (v0.14),
 [`receipt.v0.13.schema.json`](./receipt.v0.13.schema.json),
 [`receipt.v0.12.schema.json`](./receipt.v0.12.schema.json),
@@ -219,6 +220,23 @@ digits, dot, underscore or hyphen. Blank, malformed and non-string ids refuse. T
 the same rule. Input bounds refuse before calling the judge; reply bounds refuse before copying or
 interpolating identity. Bound diagnostics omit hostile input. These limits cover answers and identity
 entering regrade, not provider transport buffering or receipt and suite size.
+
+## What v0.16 adds: fake tool calls in text capture
+
+Issue 538. Sampled text receipts seal `results.fake_tool_calls`: one entry per
+scheduled arm, including placebo, with `count` and `draws`. The denominator is
+all attempted draws across the arm's cases, including failed cases. Each fake
+reply records `capture_outcome: "fake_tool_call"`, status `unmeasured`, its answer
+hash and reason, no samples and null mean and standard deviation. It never reaches
+the judge or enters the scored mean. Counts must match the draw records.
+
+At 5% or more in any arm, the headline says: "Comparison unreliable: at least 5%
+of an arm's replies ended in fake tool calls." The CLI uses the same sentence.
+The comparison cannot receive a positive or negative measured verdict. Regrades
+apply the same detection before planning or making judge calls. This rule does
+not change repository or files capture. Old receipts keep their own schema;
+[`receipt.v0.15.schema.json`](./receipt.v0.15.schema.json) freezes v0.15 byte for byte.
+Old receipts do not imply a zero count.
 
 ## What v0.15 adds: what the subject was, and how the run was configured to deliver it
 
@@ -861,7 +879,7 @@ value figure above.
   a regrade could not grade is copied whole from the original, the original judge's usage with it,
   and is not counted. The figure is null when nothing was priced, never 0.
 - **What a draw's usage holds.** A draw's `judge_usage` is the sum of the usage its answered judge
-  samples reported. Retried attempts, samples that failed, and samples that reported no usage are
+  samples reported, including answered parse retries. Transport retries without usage, samples that failed without a reply, and samples that reported no usage are
   not in it, though each was a call. Frozen API rates price that reported usage;
   subscription dollar figures are estimates, not a bill or a billing floor.
 - **`case_rows_measured`**: the case rows that contributed judge usage to the total.
@@ -1481,3 +1499,23 @@ Issue 490 activation keeps aggregate exclusions scoped to their comparisons.
 A failed diagnostic placebo appears in placebo.aggregates.excluded_cases. It
 does not enter the baseline/with-file aggregate. The scheduled-scope failure
 count still covers every arm and keeps the receipt INCOMPLETE.
+
+### Judge parse retries (optional v0.15 fields, issue 500)
+
+Future runs and regrades retry a judge sample once if its reply cannot be parsed.
+The retry uses the same input, model and settings. A score of zero is valid and
+does not trigger a retry. Empty replies, output-cap truncation and invalid scores
+keep their existing unmeasured handling. Generation calls are unchanged.
+
+Each job records `run.judge.parse_retries` and `parse_recoveries`. The second
+counts retries that yielded a valid sample score; another failed sample can
+still leave that draw unmeasured. Absent fields mean unrecorded. A regrade
+counts only its own retries, even when it carries an old draw unchanged.
+
+A draw's `judge_parse_retries` records each retried sample by `sample_index`.
+Its `attempts` contains the first reply and the retry, each with `output_sha256`,
+`usage`, endpoint `attempts` and `cost_usd`. A timeout without a reply has null
+hash, usage and cost. Cost uses the receipt's frozen judge price and is a
+list-price estimate, not a bill. Both answered attempts contribute to the
+draw's judge usage and measurement overhead. These records and counts are
+inside `receipt_hash`. Existing receipts and report 016 keep their bytes.

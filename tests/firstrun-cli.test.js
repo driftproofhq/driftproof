@@ -413,3 +413,57 @@ test('AC-489-1: a long API timeout also extends the Anthropic SDK request cap', 
 });
 
 }
+
+
+// Issues 247 and 248: only the requested hostile-name, path and file plants.
+const controls247 = String.fromCharCode(1, 27) + '[2J' + String.fromCharCode(27) + '[H' + String.fromCharCode(127, 133, 0x2028, 0x2029);
+const unsafe247 = /[\x00-\x08\x0b-\x1f\x7f-\x9f\u2028\u2029]/;
+test('AC-247-control skill name stays visible as data', () => {
+  const root = tmp(), dir = skill(root, 1);
+  fs.writeFileSync(path.join(dir, 'SKILL.md'), '---\nname: planted' + controls247 + '\nversion: 1.0.0\n---\nAnswer briefly.\n');
+  const r = cli(['run', dir, '--trusted-skill', '--samples', '1', '--out', path.join(root, 'out')], root, { DRIFTPROOF_STUB: '1' });
+  assert.equal(r.status, 0, r.stderr);
+  assert.doesNotMatch(r.stdout + r.stderr, unsafe247);
+  assert.match(r.stdout, /planted.*\\u/);
+});
+for (const name of ['my skill', 'my\nskill']) test('AC-247-init commands round trip ' + JSON.stringify(name), () => {
+  const root = tmp(), r = cli(['init', name], root);
+  assert.equal(r.status, 0, r.stderr);
+  assert.doesNotMatch(r.stdout + r.stderr, unsafe247);
+  // A literal newline would split the suggestion; the pasted command must remain one line.
+  const commands = r.stdout.split('\n').filter(l => /driftproof run /.test(l)).map(l => l.slice(l.indexOf('driftproof run ') + 15).split(' --')[0]);
+  assert.equal(commands.length, 2, r.stdout);
+  for (const arg of commands) {
+    const read = spawnSync('bash', ['-c', 'set -- ' + arg + '; printf "%s\\0" "$@"'], { cwd: root });
+    assert.equal(read.status, 0);
+    assert.deepEqual(read.stdout, Buffer.from(name + '\0'));
+  }
+});
+
+let hardening248;
+function inputs248() {
+  if (hardening248) return hardening248;
+  const root = tmp(), dir = skill(root, 1), out = path.join(root, 'receipts');
+  const r = cli(['run', dir, '--trusted-skill', '--samples', '1', '--keep-transcripts', '--out', out], root, { DRIFTPROOF_STUB: '1' });
+  assert.equal(r.status, 0, r.stderr);
+  const receipt = path.join(out, fs.readdirSync(out).find(f => f.endsWith('.json')));
+  const hash = JSON.parse(fs.readFileSync(receipt)).receipt_hash;
+  return hardening248 = { root, dir, receipt, answers: path.join(root, 'transcripts', hash, 'answers.json') };
+}
+for (const input of ['rc', 'receipt', 'rubric', 'cases']) for (const type of ['FIFO', 'oversized']) {
+  test('AC-248-' + input + ' refuses ' + type + ' before parsing', () => {
+    const base = inputs248(), root = tmp();
+    const limit = input === 'receipt' ? require('../lib/receipt').RECEIPT_MAX_BYTES : require('../config').SKILL_MAX_BYTES;
+    const file = path.join(root, input === 'rc' ? '.driftproofrc' : input + '.json');
+    if (type === 'FIFO') assert.equal(spawnSync('mkfifo', [file]).status, 0);
+    else { const fd = fs.openSync(file, 'wx'); fs.ftruncateSync(fd, limit + 1); fs.closeSync(fd); }
+    const regrade = ['regrade', base.receipt, '--skill', base.dir, '--answers', base.answers, '--rubric', file, '--trusted-skill'];
+    const args = input === 'rc' ? ['run', base.dir, '--trusted-skill'] : input === 'receipt' ? ['validate', file] : input === 'rubric' ? regrade : ['init', path.join(root, 'new-skill'), '--cases', file];
+    const r = spawnSync(process.execPath, [BIN, ...args], { cwd: root, env: env({ DRIFTPROOF_STUB: '1' }), encoding: 'utf8', timeout: 2500 });
+    assert.equal(r.status, 2, r.error ? r.error.code : r.stderr);
+    assert.match(r.stderr, /REFUSED/);
+    assert.ok(r.stderr.includes(path.basename(file)), r.stderr);
+    assert.ok(r.stderr.includes(String(limit)), r.stderr);
+    assert.match(r.stderr, type === 'FIFO' ? /regular file/ : /exceed|bound/);
+  });
+}

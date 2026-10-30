@@ -1,13 +1,14 @@
 ---
 disable-model-invocation: true
-description: Measure a skill in this repository, or, after the person confirms the skill is theirs, in a folder with no git repository, against a model with the pinned Driftproof runner, on the trusted lane, and print the receipt it wrote. A skill with no test cases is offered a draft first.
+description: Measure a skill, or a CLAUDE.md or AGENTS.md with its tasks file, in this repository, or, after the person confirms it is theirs, in a folder with no git repository, against a model with the pinned Driftproof runner, on the trusted lane, and print the receipt it wrote. A skill or rules file with no test cases is offered a draft first.
 ---
 
 # /driftproof:run
 
 Measure a skill that lives in this repository and write a receipt. Where there is no git
 repository and the person confirmed the skill is theirs, it measures a skill inside the
-folder you run from instead.
+folder you run from instead. A `CLAUDE.md` or `AGENTS.md` is measured the same way, with
+its tasks file; see *A CLAUDE.md or AGENTS.md* below.
 
 This is a door onto the published Driftproof CLI. It builds one argument vector
 and hands it to the pinned runner. It bundles no runner, reimplements no
@@ -26,6 +27,8 @@ with your own `<skill-dir>` and any values you chose.
     node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" run <skill-dir> --samples <n> --concurrency <n> --max-cases <n>
     node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" run <skill-dir> --quick
     node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" run <skill-dir> --trust-outside-repo
+    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" run <skill-dir> --placebo
+    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" run <rules-file> --suite <tasks> [--placebo]
 
 With no `--models`, the run uses the cheapest registered model in the runner's
 own registry, resolved by reading it. The model id is deliberately not written
@@ -48,6 +51,10 @@ so.
 `--trust-outside-repo` is for a skill in a folder that is not in a git
 repository, and only after the person has said the skill is theirs; see *the
 trusted lane* below. It takes no value.
+
+`--suite <tasks>` is a rules file's tasks file, and is refused for a skill, whose tasks
+are its own `evals/evals.json`. `--placebo` adds the placebo arm; see below. It takes no
+value.
 
 Those are the only flags this command takes. **Anything else is refused, not
 ignored.** A door that quietly dropped a flag would let you ask for one judge
@@ -77,6 +84,35 @@ Nothing is written by this command, and never give `--confirm-write` here.
 If the person declines, or does not answer, stop there. The runner has already ended
 with its own message, the folder is exactly as it was, and nothing is written.
 
+## A CLAUDE.md or AGENTS.md
+
+A rules file is measured as a skill is: its exact text is given to the model as a
+skill's text is given, and the same tasks are answered without it. Give the file and its
+tasks file, a `{"cases": [...]}` file inside the same boundary as the rules file, as the
+last line above shows. The door refuses a file not named `CLAUDE.md` or `AGENTS.md`, a
+link, and a tasks file outside that boundary, before anything runs; for any other Markdown
+file it prints the CLI command instead. A rules file given no `--suite` is offered a
+draft, as a skill with no test cases is: `/driftproof:start <rules-file>` drafts the
+tasks with the person and asks before anything is written. The rules file is never
+changed and nothing is added beside it.
+
+Offer the two options below in one plain line each, with what each costs, and give a
+flag only after the person's yes to it.
+
+- **`--placebo`.** It answers each task a third time with the file's text replaced by a
+  text of exactly its length, drawn from a fixed corpus chosen without reference to any
+  task, so the receipt also reads the file's answers against those; that text can still
+  bear on a task by chance. It makes half as many calls again (three arms in place of
+  two), and takes about half as long again. It works for a skill too.
+- **`--capture repository`.** It gives each task a fresh copy of a small fixed starter
+  project, with tools, in a sandbox, and grades the reply with what was captured there.
+  It runs one model, one call at a time, with up to 15 minutes a draw, so it takes far
+  longer than a text run. This command does not take `--capture`: it runs on the trusted
+  lane, and repository capture refuses that lane. It needs a Driftproof source checkout,
+  the isolation account and a sandbox an operator builds; from there it is
+  `node bin/driftproof run <rules-file> --suite <tasks> --capture repository --models <model> --out <dir>`,
+  with no `--trusted-skill`.
+
 ## What it will do, in order
 
 1. Check every input you gave against the shipped contract in
@@ -86,7 +122,7 @@ with its own message, the folder is exactly as it was, and nothing is written.
    command substitution, a backtick or a newline is refused here, named, and
    nothing runs. No value you supply is ever composed into a shell string;
    there is no shell anywhere in this path.
-2. Resolve the skill directory to its real path and require it to be inside
+2. Resolve the skill directory, or the rules file, to its real path and require it to be inside
    this repository, or, where there is no git repository and the person
    confirmed it with `--trust-outside-repo`, to be a skill inside that folder, on its real path. See
    *the trusted lane* below.
@@ -152,7 +188,7 @@ measured, and it has no opinion about how to make a score better.
 
 ```driftproof-steps
 [
-  {"op": "validate", "inputs": ["skill-dir", "models", "max-calls", "max-usd", "samples", "concurrency", "max-cases"]},
+  {"op": "validate", "inputs": ["skill-dir", "models", "max-calls", "max-usd", "samples", "concurrency", "max-cases", "suite"]},
   {"op": "resolve-target", "input": "skill-dir", "inside_repo": true},
   {"op": "offer-draft"},
   {"op": "state-trusted"},
@@ -167,6 +203,8 @@ measured, and it has no opinion about how to make a score better.
     {"when": "concurrency", "emit": ["--concurrency", "@concurrency"]},
     {"when": "max-cases", "emit": ["--max-cases", "@max-cases"]},
     {"when": "quick", "emit": ["--quick"]},
+    {"when": "suite", "emit": ["--suite", "@suite"]},
+    {"when": "placebo", "emit": ["--placebo"]},
     "--trusted-skill"
   ]}
 ]

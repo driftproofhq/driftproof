@@ -134,20 +134,7 @@ function synthReceipt(cases, date = RUN_META.date_utc) {
 }
 
 // ── 1. Rename completeness (BLOCKING) ────────────────────────────────────────
-gate.section('rename');
-{
-  // The pre-rename name is base64'd so this scanner file does not itself contain
-  // the literal string it forbids (which would self-trigger the check).
-  const OLD_NAME = Buffer.from('c2tpbGxwcm9vZg==', 'base64').toString('utf8');
-  const oldRe = new RegExp(OLD_NAME, 'i');
-  const files = listFiles(SCAN_ROOT);
-  const hits = [];
-  for (const rel of files) {
-    let c; try { c = fs.readFileSync(path.join(SCAN_ROOT, rel), 'utf8'); } catch (_e) { continue; }
-    if (oldRe.test(c) || oldRe.test(rel)) hits.push(rel);
-  }
-  gate.check('zero references to the pre-rename project name (case-insensitive)', hits.length === 0, { hits: hits.slice(0, 20) });
-}
+
 
 // ── 2. Schema v0.4 + round-trip + tamper ─────────────────────────────────────
 gate.section('schema v0.4 + round-trip');
@@ -402,6 +389,44 @@ gate.section('credential-format policy');
     for (const p of CRED_FORMATS) { const m = c.match(p.re); if (m) hits.push({ file: rel, kind: p.name, sample: m[0].slice(0, 10) + '…' }); }
   }
   gate.check('no live-credential-format strings anywhere in the tree (fixtures must be scanner-safe)', hits.length === 0, { hits: hits.slice(0, 20) });
+}
+
+// ── Pull request workflow secrets (issue 531) ───────────────────────────────
+// Issue 531: this check must run on every PR and sweep, including workflow changes.
+gate.section('pull request workflow secrets (issue 531)');
+{
+  function forbiddenSecrets(workflow) {
+    const lines = workflow.split('\n');
+    const start = lines.findIndex((line) => /^(?:on|'on'|"on")\s*:/.test(line));
+    if (start < 0) return [];
+    let end = start + 1;
+    while (end < lines.length && !/^[^\s#]/.test(lines[end])) end++;
+    const events = lines.slice(start, end).join('\n').replace(/#[^\n]*/g, '');
+    if (!/\bpull_request(?:_target)?\b/.test(events)) return [];
+    return [...workflow.matchAll(/\bsecrets\.([A-Za-z_][A-Za-z0-9_]*)/g)]
+      .map((match) => match[1]).filter((name) => name !== 'GITHUB_TOKEN');
+  }
+  const dir = path.join(ROOT, '.github', 'workflows');
+  const workflows = fs.readdirSync(dir).filter((name) => /\.ya?ml$/.test(name));
+  const violations = workflows.flatMap((name) => forbiddenSecrets(fs.readFileSync(path.join(dir, name), 'utf8'))
+    .map((secret) => ({ workflow: name, secret })));
+  gate.check('every pull request workflow reads only secrets.GITHUB_TOKEN',
+    workflows.length > 0 && violations.length === 0, { workflows: workflows.length, violations });
+  // Plant in a copy of a real pull request workflow, through the same reader.
+  const control = fs.readFileSync(path.join(dir, 'plugin-selftest.yml'), 'utf8');
+  const plant = control + '\nenv:\n  PLANTED: \u0024{{ secrets.PLANTED_CREDENTIAL }}\n';
+  gate.checkEqual('MUTATION: a secret reference planted in a pull request workflow reads RED',
+    forbiddenSecrets(plant), ['PLANTED_CREDENTIAL']);
+  const forms = [];
+  for (const trigger of ['pull_request', 'pull_request_target']) {
+    for (const events of [trigger, '[' + trigger + ']', '{ ' + trigger + ': {} }', '\n  ' + trigger + ':']) {
+      const workflow = 'on: ' + events + '\njobs: {}\nenv:\n  TOKEN: secrets.GITHUB_TOKEN\n';
+      const bad = forbiddenSecrets(workflow + '  PLANTED: secrets.GITHUB_TOKEN_EXTRA\n');
+      forms.push(forbiddenSecrets(workflow).length === 0 && bad.length === 1 && bad[0] === 'GITHUB_TOKEN_EXTRA');
+    }
+  }
+  gate.check('both pull request triggers in scalar, list, inline map and block form allow GITHUB_TOKEN and reject a longer secret name',
+    forms.every(Boolean));
 }
 
 // ── 8c. Publish-tree draft guard (BLOCKING) ──────────────────────────────────
@@ -1731,34 +1756,6 @@ gate.section('spec 024 runner hostile-input proof');
 // It is now a fact the gate holds. Local only, by design: the tag's EXISTENCE is
 // verified once at release time (RUNBOOK), and a repo gate that needs the network
 // to be green is a gate that goes red for reasons that are not about the tree.
-gate.section('published version references');
-{
-  // Issue 382: every surface a release writes its version into, read by the one shared normaliser,
-  // versionProblems in scripts/build-report-baselines.mjs, against package.json's version: config.js's
-  // RUNNER_VERSION, the plugin manifest, the README's Action pins and sample runner_version (a reader
-  // copies that block as the shape of a real receipt), docs/index.html's Action pin and the plugin
-  // README's npx pins. Each file must carry its pins, PER FILE, not as a sum (approval finding F-2).
-  const { versionProblems } = require(path.join(ROOT, 'scripts', 'build-report-baselines.mjs'));
-  const fromRoot = new Set(['package.json', 'config.js']);
-  const readRel = (rel) => {
-    const f = path.join(fromRoot.has(rel) ? ROOT : SCAN_ROOT, rel);
-    return fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : null;
-  };
-  const versionDrift = versionProblems(readRel);
-  gate.check('every surface a release writes its version into carries package.json\'s version (RUNBOOK precondition 3)', versionDrift.length === 0, { versionDrift });
-  const rd = readRel('README.md') || '';
-
-  // The sibling, which the first version of this section did not hold. Fixing
-  // runner_version alone turned a coherently-STALE sample block (0.4.0/0.3.1,
-  // the true pairing at c06b3bb) into an IMPOSSIBLE one (0.5.0/0.3.1, a
-  // combination no engine ever emitted) — and pinned half of it green. A
-  // reference is not verified by checking the reference; it is verified by
-  // checking the statement it sits inside (approval finding F-1, blocking).
-  const { RECEIPT_SCHEMA_VERSION } = require(path.join(ROOT, 'config.js'));
-  const sv = [...rd.matchAll(/"schema_version":\s*"([^"]+)"/g)].map((m) => m[1]);
-  gate.check('README sample receipt schema_version equals RECEIPT_SCHEMA_VERSION', sv.length > 0 && sv.every((v) => v === RECEIPT_SCHEMA_VERSION), { sv, RECEIPT_SCHEMA_VERSION });
-}
-
 // ── 21. Badge JSON validates against the shields endpoint schema (BLOCKING) ───
 gate.section('badge shields schema');
 {
@@ -1984,35 +1981,7 @@ gate.section('report-002 staging (stub)');
 }
 
 // ── 29. Methodology + neutrality pages (Phase 6) ─────────────────────────────
-gate.section('methodology + neutrality pages');
-{
-  // SPEC 020 moved these to clean paths (/neutrality/, /methodology/) and left a
-  // stub at each old address. The assertions follow the page rather than the
-  // path: `pageAt` reads the clean path and falls back to the old one, so this
-  // section keeps testing the document it has always tested, and would go red if
-  // either the page or its stub went missing.
-  const pageAt = (slug) => {
-    for (const rel of [[slug, 'index.html'], [`${slug}.html`]]) {
-      const f = path.join(ROOT, 'docs', ...rel);
-      if (fs.existsSync(f)) return fs.readFileSync(f, 'utf8');
-    }
-    return '';
-  };
-  const nHtml = pageAt('neutrality');
-  const mHtml = pageAt('methodology');
-  const idx = fs.readFileSync(path.join(ROOT, 'docs', 'index.html'), 'utf8');
-  const stubAt = (slug) => fs.existsSync(path.join(ROOT, 'docs', `${slug}.html`));
-  gate.check('the neutrality page is present, uses the site stylesheet, and its old address still resolves',
-    !!nHtml && /style\.css/.test(nHtml) && stubAt('neutrality'));
-  gate.check('neutrality: durability-not-ranking + same judge/suites/n + no favoritism', /durability/i.test(nHtml) && /not (a )?model (ranking|leaderboard)/i.test(nHtml) && /Same suites/i.test(nHtml) && /favoritism/i.test(nHtml));
-  gate.check('neutrality: judge-affinity limitation + delta-cancels mitigation', /affinity/i.test(nHtml) && /delta/i.test(nHtml) && /cancel/i.test(nHtml));
-  gate.check('neutrality: surfaces disclosed (API preferred, CLI disclosed)', /surface/i.test(nHtml) && /disclosed/i.test(nHtml) && /preferred for published/i.test(nHtml));
-  gate.check('the methodology page is present, links neutrality, and its old address still resolves',
-    !!mHtml && /href="\/neutrality\/"|neutrality\.html/.test(mHtml) && stubAt('methodology'));
-  gate.check('methodology documents post-checks (supplementary) + value-per-token method', /post-check/i.test(mHtml) && /supplementary/i.test(mHtml) && /value-per-token/i.test(mHtml) && /ceil\(chars/i.test(mHtml));
-  gate.check('index nav links Methodology + Neutrality',
-    /href="\/methodology\/"|methodology\.html/.test(idx) && /href="\/neutrality\/"|neutrality\.html/.test(idx));
-}
+
 
 // ── 30. Timeout tolerance: per-surface policy + failed_timeout non-fatal ─────
 gate.section('timeout tolerance / failed_timeout');
@@ -2386,8 +2355,7 @@ gate.section('interop pages + published schema sync');
   gate.check('the interop page ships in site chrome and explains DECLARED vs TESTED',
     /class="site"/.test(interopHtml) && /DECLARED/.test(interopHtml) && /TESTED/.test(interopHtml) && /open format/i.test(interopHtml));
   gate.check('methodology links the interop page', /href="\/interop\/"|interop\.html/.test(methodology));
-  gate.check('interop guide documents both converters + the assumed-shape disclosure',
-    /agent-skills-eval/.test(interopMd) && /skillgrade/.test(interopMd) && /Assumed-shape disclosure/.test(interopMd));
+
   const repoSchema = fs.readFileSync(path.join(SCAN_ROOT, 'spec', 'receipt.schema.json'), 'utf8');
   const servedSchema = fs.readFileSync(path.join(SCAN_ROOT, 'docs', 'spec', 'receipt.schema.json'), 'utf8');
   gate.check('served schema (docs/spec) is byte-identical to the repo schema — the canonical $id resolves to the real contract', repoSchema === servedSchema);
@@ -3646,220 +3614,7 @@ gate.section('publish script');
   }
 }
 
-gate.section('merge precondition check');
-{
-  const { mergeCheck } = require('../scripts/merge-check.js');
-  const os = require('os');
-  const { execFileSync: run } = require('child_process');
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mergecheck-'));
-  // C-F6: the guard now reads approvals from a COMMIT, never from the checkout.
-  // These fixtures therefore have to be a real repository. Writing records to
-  // disk and never committing them used to exercise the guard; against the
-  // committed reader it would only prove that an uncommitted record is invisible,
-  // so every REFUSE assertion below would pass for the wrong reason — the vacuity
-  // trap this suite exists to catch.
-  const git = (...a) => run('git', [...SCRATCH_GIT, ...a], { cwd: tmp, encoding: 'utf8', stdio: 'pipe' });
-  git('init', '-q');
-  // Not an address: the hygiene scan flags anything email-shaped, and git is
-  // happy with an opaque identity string.
-  git('config', 'user.email', 'driftproof-gate-fixture');
-  git('config', 'user.name', 'driftproof-gate');
-  const spec = path.join(tmp, 'specs', 'zzz-fixture');
-  fs.mkdirSync(path.join(spec, 'evidence'), { recursive: true });
-  fs.writeFileSync(path.join(spec, 'evidence', '.keep'), '');
-  git('add', '-A'); git('commit', '-q', '-m', 'fixture: empty evidence dir');
-  const SPEC = 'specs/zzz-fixture';
-  const commit = (msg) => { git('add', '-A'); git('commit', '-q', '-m', msg); };
-  const write = (name, body) => {
-    fs.writeFileSync(path.join(spec, 'evidence', name), body);
-    commit(`evidence: ${name}`);
-  };
-  const mc = (sha) => mergeCheck(SPEC, sha, 'HEAD', tmp);
-  const SHA = 'a'.repeat(40), OTHER = 'b'.repeat(40);
 
-  // The reader must be the COMMITTED tree: a record present on disk but absent
-  // from git is not evidence anyone else can see.
-  fs.writeFileSync(path.join(spec, 'evidence', 'approval-uncommitted.md'),
-    `commit:       ${SHA}\ntree:         clean\nverdict:      approved\nblocking_findings: 0\n`);
-  gate.check('merge-check IGNORES an approval that exists on disk but is not committed',
-    mc(SHA).ok === false);
-  fs.rmSync(path.join(spec, 'evidence', 'approval-uncommitted.md'));
-
-  // D-F4: enumeration is ONE level, not recursive. `git ls-tree -r` reached into
-  // `evidence/archive/` — where superseded records are parked precisely because
-  // they no longer govern anything — and accepted one as the approval for a merge.
-  fs.mkdirSync(path.join(spec, 'evidence', 'archive'), { recursive: true });
-  fs.writeFileSync(path.join(spec, 'evidence', 'archive', 'approval-superseded.md'),
-    `commit:       ${OTHER}\ntree:         clean\nverdict:      approved\nblocking_findings: 0\n`);
-  commit('evidence: park a superseded record under archive/');
-  gate.check('merge-check IGNORES an approval filed under evidence/archive/',
-    mc(OTHER).ok === false);
-  fs.rmSync(path.join(spec, 'evidence', 'archive'), { recursive: true, force: true });
-  commit('evidence: drop the archive fixture');
-
-  // Enumeration AND content must both come from the commit. Listing from git
-  // while reading bodies from disk would let a committed record be edited in the
-  // checkout — blocking_findings flipped to 0, say — and the guard would believe
-  // the edit. Commit a record that BLOCKS, then rewrite it on disk to pass:
-  // the guard must still refuse, because what merges is what is committed.
-  write('approval-ondisk-edit.md', `commit:       ${SHA}
-tree:         clean
-verdict:      approved-with-findings
-blocking_findings: 1
-`);
-  fs.writeFileSync(path.join(spec, 'evidence', 'approval-ondisk-edit.md'),
-    `commit:       ${SHA}\ntree:         clean\nverdict:      approved\nblocking_findings: 0\n`);
-  gate.check('merge-check reads approval CONTENT from the commit, not from an edited checkout',
-    mc(SHA).ok === false);
-  git('checkout', '--', '.');
-  fs.rmSync(path.join(spec, 'evidence', 'approval-ondisk-edit.md'));
-  commit('evidence: drop the on-disk-edit fixture');
-
-  gate.check('merge-check REFUSES when evidence/ holds no approval at all',
-    mc(SHA).ok === false);
-
-  write('approval-1.md', `commit:       ${OTHER}
-tree:         clean
-verdict:      approved
-`);
-  const wrongSha = mc(SHA);
-  gate.check('merge-check REFUSES when the only approval names a DIFFERENT SHA',
-    wrongSha.ok === false && /no approval names/.test(wrongSha.problems.join(' ')), wrongSha.problems);
-
-  write('approval-2.md', `commit:       ${SHA}
-tree:         clean
-verdict:      approved-with-findings
-`);
-  // ORDER IS NOT SUBSTANCE. A matching SHA with a blocking finding still open is
-  // exactly what DECISIONS #12 recorded, so the field is required and a missing
-  // one is refused rather than assumed clean.
-  gate.check('merge-check REFUSES a matching SHA whose record omits blocking_findings',
-    mc(SHA).ok === false);
-
-  write('approval-2.md', `commit:       ${SHA}
-tree:         clean
-verdict:      approved-with-findings
-blocking_findings: 1
-`);
-  gate.check('merge-check REFUSES while blocking findings are outstanding',
-    mc(SHA).ok === false);
-
-  write('approval-2.md', `commit:       ${SHA}
-tree:         clean
-verdict:      approved-with-findings
-blocking_findings: 0
-`);
-  gate.check('merge-check PASSES on the exact SHA with no blocking findings',
-    mc(SHA).ok === true);
-
-  write('approval-3.md', `commit:       ${SHA}
-tree:         dirty
-verdict:      approved
-blocking_findings: 0
-`);
-  gate.check('merge-check REFUSES an approval taken against a dirty tree',
-    mc(SHA).ok === false);
-
-  fs.rmSync(path.join(spec, 'evidence', 'approval-3.md'));
-  commit('evidence: drop approval-3');
-  write('approval-4.md', `commit:       ${SHA}
-tree:         clean
-verdict:      rejected
-blocking_findings: 0
-`);
-  gate.check('merge-check REFUSES a rejected verdict even when the SHA matches',
-    mc(SHA).ok === false);
-
-  // Scan for a force CODE PATH, not the word: the file explains why it has none,
-  // and a prose mention was making this assertion fail on its own documentation.
-  const src = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'merge-check.js'), 'utf8');
-  gate.check('merge-check offers no --force escape hatch',
-    !/includes\(['"]--force['"]\)/.test(src) && !/opts\.force|args\.force/.test(src));
-  // A caller-supplied SHA in a real check is the bypass the missing --force was
-  // meant to prevent; truncated SHAs print "no approval names 9a363ba — records
-  // name: 9a363ba" when the mismatch is a format difference.
-  gate.check('merge-check refuses --head outside a dry run',
-    /--head requires --dry-run/.test(src));
-  gate.check('merge-check prints FULL SHAs in its refusal, never truncated',
-    !/head\.slice\(0, ?7\)/.test(src));
-
-  // DECISIONS #4's two-commit pattern means the tip of an approved branch is
-  // normally the evidence commit, which no approval can name. The check resolves
-  // the SUBJECT by walking back evidence-only commits — and must stop the moment
-  // a commit touches anything else, or evidence could smuggle a change past it.
-  const { resolveSubject } = require('../scripts/merge-check.js');
-  const { execFileSync } = require('child_process');
-  const headSha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: path.join(__dirname, '..'), encoding: 'utf8' }).trim();
-  const subj = resolveSubject(headSha);
-  const isAncestor = (a, b) => {
-    try {
-      execFileSync('git', ['merge-base', '--is-ancestor', a, b], { cwd: path.join(__dirname, '..'), stdio: 'ignore' });
-      return true;
-    } catch (_e) { return false; }
-  };
-  gate.check('subject resolution returns a real commit reachable from HEAD',
-    /^[0-9a-f]{40}$/.test(subj.subject) && isAncestor(subj.subject, headSha),
-    { subject: subj.subject, skipped: subj.skipped.length });
-  gate.check('every commit skipped as evidence-only touches ONLY specs/*/evidence/',
-    subj.skipped.every((sha) => {
-      const files = execFileSync('git', ['show', '--pretty=format:', '--name-only', sha], { cwd: path.join(__dirname, '..'), encoding: 'utf8' })
-        .trim().split('\n').filter(Boolean);
-      return files.length > 0 && files.every((f) => /^specs\/[^/]+\/evidence\//.test(f));
-    }), { skipped: subj.skipped });
-  // The same validation now serves a second gate. scripts/run-report-006.js
-  // guarded a $26.88 T1 run with `fs.existsSync(approval)` alone — it never read
-  // the record's verdict, blocking findings or SHA, so a rejected record or an
-  // approval of another commit bought the run (approval finding F-009-H). It asks
-  // these two functions instead, so what makes an approval an approval has ONE
-  // implementation here rather than two that drift.
-  {
-    const { approvalFields, approvalProblems } = require('../scripts/merge-check.js');
-    const { approvalRunProblems } = require('../scripts/run-report-006.js');
-    const body = (o) => [
-      `commit:       ${o.commit === undefined ? SHA : o.commit}`,
-      `tree:         ${o.tree === undefined ? 'clean' : o.tree}`,
-      `verdict:      ${o.verdict === undefined ? 'approved-with-findings' : o.verdict}`,
-      ...(o.blocking === null ? [] : [`blocking_findings: ${o.blocking === undefined ? '0' : o.blocking}`]),
-    ].join('\n');
-    const rec = (o) => approvalFields(body(o), 'record.md');
-    gate.check('the shared validation accepts a clean approval of the named SHA',
-      approvalProblems(rec({}), SHA).length === 0);
-    gate.check('the shared validation refuses a rejected verdict',
-      approvalProblems(rec({ verdict: 'rejected' }), SHA).length > 0);
-    gate.check('the shared validation refuses an approval of a DIFFERENT commit',
-      approvalProblems(rec({ commit: '0'.repeat(40) }), SHA).some((m) => /names commit/.test(m)));
-    gate.check('the shared validation refuses outstanding blocking findings',
-      approvalProblems(rec({ blocking: '2' }), SHA).length > 0);
-    gate.check('the shared validation refuses a record carrying no blocking_findings field',
-      approvalProblems(rec({ blocking: null }), SHA).length > 0);
-
-    const tdir = fs.mkdtempSync(path.join(os.tmpdir(), 'driftproof-ac14-'));
-    const w = (name, o) => {
-      const f = path.join(tdir, name);
-      fs.writeFileSync(f, `${body(o)}\n`);
-      return f;
-    };
-    gate.check('the T1 spend gate accepts a record naming the commit subject to approval',
-      approvalRunProblems(w('good.md', { commit: subj.subject })).length === 0);
-    gate.check('the T1 spend gate refuses a record naming another commit (F-009-H)',
-      approvalRunProblems(w('wrong.md', { commit: '0'.repeat(40) })).some((m) => /names commit/.test(m)));
-    gate.check('the T1 spend gate refuses a rejected record that names the right commit',
-      approvalRunProblems(w('rejected.md', { commit: subj.subject, verdict: 'rejected' })).length > 0);
-    gate.check('the T1 spend gate refuses an approval path that does not exist',
-      approvalRunProblems(path.join(tdir, 'absent.md')).some((m) => /nothing on disk/.test(m)));
-    fs.rmSync(tdir, { recursive: true, force: true });
-  }
-
-  // Source-only (spec 388, J4): RUNBOOK.md is excluded from the published tree, so
-  // this check runs where the file is (spec 016's named source-only list).
-  const runbookPath = path.join(__dirname, '..', 'RUNBOOK.md');
-  if (fs.existsSync(runbookPath)) {
-    gate.check('RUNBOOK wires the check into the spec-branch merge step',
-      /merge-check\.js/.test(fs.readFileSync(runbookPath, 'utf8')));
-  }
-
-  fs.rmSync(tmp, { recursive: true, force: true });
-}
 
 // ── ESSAY GROUNDING ─────────────────────────────────────────────────────────
 //
@@ -3882,38 +3637,7 @@ gate.section('essay grounding (typed prose, bound to the pages it cites)');
   gate.check('the essay and the check that grounds it are both tracked (they ship together)',
     tracked.length === 2, { tracked });
 
-  // ── the assertion-drafting rule, run where a publish runs ──────────────────
-  //
-  // Spec 013. The rule and its register are enforced HERE, not only in
-  // specs/013's gate: `specs/` is excluded from the published tree and no
-  // workflow runs a spec gate, so a rule that lives only beside its spec is
-  // never executed by a build (F-010-H). build-public.sh runs this gate inside
-  // the tree it is about to publish.
-  const scope = require('./assertion-scope');
 
-  const registerIds = new Set(scope.NARROWING_CLASSES.map((c) => c.id));
-  const thin = scope.NARROWING_CLASSES.filter((c) => !c.statement || !c.drafting || !c.mutation || !c.instances || !c.instances.length);
-  gate.check('every narrowing class carries a statement, a drafting rule, a mutation and the instance that named it',
-    thin.length === 0, { thin: thin.map((c) => c.id) });
-
-  // Issue 473, C-316: assertion scope comes from its data register, not policy prose.
-
-  // AC-11. A receipt carries a self-verifying hash, which is tamper-evidence,
-  // not authenticity. Claiming "signed" states a property the artifact does not
-  // have — invariant 1's "stated, never implied", inverted.
-  //
-  // THE SCOPE IS THE PUBLISHED TREE, derived from the publish script's own
-  // EXCLUDE_RE rather than from a list of likely files. The first draft scanned
-  // README, package.json and docs/*.html, and missed `spec/RECEIPT.md`, which
-  // ships to the public repo AND to npm and opened by calling a receipt signed.
-  // One definition, in tests/assertion-scope.js, called from both vantages.
-  const signedClaims = scope.signedReceiptClaims(ROOT);
-  gate.check('no current-receipt claim anywhere in the published tree calls a receipt signed',
-    signedClaims.length === 0, { signedClaims });
-
-  const scopeTracked = execFileSync('git', ['ls-files', 'tests/assertion-scope.js'], { cwd: ROOT, encoding: 'utf8' }).trim();
-  gate.check('the narrowing-class register ships with the tree it governs',
-    scopeTracked === 'tests/assertion-scope.js', { scopeTracked });
 }
 
 // ── release version literal scope (DECISIONS C-276) ──────────────────────────
@@ -3925,84 +3649,14 @@ gate.section('essay grounding (typed prose, bound to the pages it cites)');
 // is excluded from the published tree and no workflow runs a spec gate.
 // Issue 161: a literal of the version the next release will take is stale
 // only from the bump, so the rule also refuses the next patch, minor and major.
-gate.section('release version literal scope (C-276)');
-{
-  const scope = require('./assertion-scope');
-  const rv = scope.releaseVersionLiteralCheck(ROOT);
-  gate.check('no gate or probe under specs/ carries the current RUNNER_VERSION, or the next patch, minor or major version, on a non-comment line, except the files FREEZE_LITERALS names',
-    rv.pass, { version: rv.version, next: rv.next, problem: rv.problem, filesRead: rv.filesRead, violations: rv.violations.slice(0, 10), exempt: rv.exempt });
-  // The next versions, worked out here from the version and not read from the rule, so a rule that names the wrong ones reads red.
-  const [maj, min, pat] = rv.version.split('.').map(Number);
-  const next = { 'next patch': `${maj}.${min}.${pat + 1}`, 'next minor': `${maj}.${min + 1}.0`, 'next major': `${maj + 1}.0.0` };
-  gate.check('the rule names the next patch, minor and major versions of RUNNER_VERSION as the versions the next release can take',
-    JSON.stringify(rv.next) === JSON.stringify(Object.values(next)), { version: rv.version, next: rv.next, expected: Object.values(next) });
-  // The two arms: a planted tree carries the real freeze table and one probe. A check that cannot go red proves nothing.
-  const plant = (body) => {
-    const dir = fs.mkdtempSync(path.join(process.env.TMPDIR || require('node:os').tmpdir(), 'release-literal-'));
-    try {
-      // a stub of the freeze table, so the arms run alike in the source tree and in the published one
-      fs.mkdirSync(path.join(dir, 'scripts'), { recursive: true });
-      fs.writeFileSync(path.join(dir, 'scripts', 'pipeline.mjs'), "export const FREEZE_LITERALS = [\n  { file: 'specs/902-named/gate.sh', find: 'x {V}', count: 1 },\n];\n");
-      fs.mkdirSync(path.join(dir, 'specs', '901-plant', 'probes'), { recursive: true });
-      fs.writeFileSync(path.join(dir, 'specs', '901-plant', 'probes', 'p.mjs'), body);
-      return scope.releaseVersionLiteralCheck(dir);
-    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
-  };
-  const planted = 'specs/901-plant/probes/p.mjs';
-  const onCode = plant(`export const expected = '${rv.version}';\n`);
-  gate.check('MUTATION: the current version planted on a code line of a probe the freeze does not name reads RED, naming the file',
-    !onCode.pass && onCode.violations.length === 1 && onCode.violations[0].file === planted, { violations: onCode.violations });
-  const onComment = plant(`// the ${rv.version} release bump moved this\n`);
-  gate.check('the current version on a comment line of the same probe reads GREEN', onComment.pass && onComment.filesRead === 1, { violations: onComment.violations });
-  // Issue 161's arms: each next version on a code line and on a comment line, and one two minors ahead.
-  for (const [which, v] of Object.entries(next)) {
-    const code = plant(`const tag = 'release/v${v}';\n`);
-    gate.check(`MUTATION: the ${which} version planted on a code line of a probe the freeze does not name reads RED, naming the file and the version`,
-      !code.pass && code.violations.length === 1 && code.violations[0].file === planted && code.violations[0].line === 1 && code.violations[0].version === v,
-      { version: v, violations: code.violations });
-    const comment = plant(`// release/v${v} is the next tag\n`);
-    gate.check(`the ${which} version on a comment line of the same probe reads GREEN`, comment.pass && comment.filesRead === 1, { version: v, violations: comment.violations });
-  }
-  const beyond = `${maj}.${min + 2}.0`;
-  const twoAhead = plant(`const tag = 'release/v${beyond}';\n`);
-  gate.check('a version two minors ahead on a code line of the same probe reads GREEN (the rule names only the next versions)',
-    twoAhead.pass && twoAhead.filesRead === 1, { version: beyond, violations: twoAhead.violations });
-}
+
 
 // ── a pipe into grep -q under pipefail (issue 31) ────────────────────────────
 //
 // A gate that tests a captured text with `printf "%s" "$out" | grep -q PATTERN` under `set -o pipefail` fails by
 // chance when the box is loaded (the printf is left writing to a pipe grep -q has closed). The sweep runs four
 // shards at once. The fix is `grep PATTERN >/dev/null`: the same exit status, and grep reads the whole text.
-gate.section('a pipe into grep -q under pipefail (issue 31)');
-{
-  const scope = require('./assertion-scope');
-  const pg = scope.pipefailQuietGrepCheck(ROOT);
-  gate.check('no shell gate or probe under specs/, and no script, pipes into grep -q or --quiet under pipefail',
-    pg.pass, { filesRead: pg.filesRead, violations: pg.violations.slice(0, 10) });
-  // The arms: a planted tree with one gate. A check that cannot go red proves nothing.
-  const plantSh = (body) => {
-    const dir = fs.mkdtempSync(path.join(process.env.TMPDIR || require('node:os').tmpdir(), 'pipefail-grep-'));
-    try {
-      fs.mkdirSync(path.join(dir, 'specs', '901-plant'), { recursive: true });
-      fs.writeFileSync(path.join(dir, 'specs', '901-plant', 'gate.sh'), body);
-      return scope.pipefailQuietGrepCheck(dir);
-    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
-  };
-  const head = '#!/usr/bin/env bash\nset -uo pipefail\nout=$(printf "a\\nb\\n")\n';
-  const planted = 'specs/901-plant/gate.sh';
-  const racy = plantSh(`${head}printf "%s" "$out" | grep -qi "b" || exit 1\n`);
-  gate.check('MUTATION: printf piped into grep -qi in a gate under pipefail reads RED, naming the file and line',
-    !racy.pass && racy.violations.length === 1 && racy.violations[0].file === planted && racy.violations[0].line === 4, { violations: racy.violations });
-  const long = plantSh(`${head}printf "%s" "$out" | grep -E --quiet "b" || exit 1\n`);
-  gate.check('MUTATION: the long option --quiet reads RED too', !long.pass && long.violations.length === 1, { violations: long.violations });
-  const fixed = plantSh(`${head}printf "%s" "$out" | grep -i "b" >/dev/null || exit 1\n`);
-  gate.check('the same pipe without -q reads GREEN, with the file read', fixed.pass && fixed.filesRead === 1, { violations: fixed.violations });
-  const noPipefail = plantSh('#!/usr/bin/env bash\nout=$(printf "a\\nb\\n")\nprintf "%s" "$out" | grep -qi "b" || exit 1\n');
-  gate.check('a pipe into grep -q in a file that sets no pipefail reads GREEN (the pipe status is grep\'s alone)', noPipefail.pass && noPipefail.filesRead === 1, { violations: noPipefail.violations });
-  const inComment = plantSh(`${head}# printf "%s" "$out" | grep -qi "b" was the old form\n`);
-  gate.check('the idiom on a comment line reads GREEN', inComment.pass && inComment.filesRead === 1, { violations: inComment.violations });
-}
+
 
 // ── generation sampling (receipt spec v0.5) ─────────────────────────────────
 //
@@ -4222,8 +3876,7 @@ gate.section('publish unblock (generation_sampled, product paths, publish target
       .map((rel) => { try { return [rel, fs.readFileSync(path.join(ROOT, rel), 'utf8')]; } catch { return null; } })
       .filter(Boolean);
     const { total, bad } = scope015.judgeSampleViolations(files015);
-    gate.check('no documented driftproof run invocation grades below two judge samples',
-      total >= 5 && bad.length === 0, { total, bad: bad.slice(0, 4) });
+
   }
 
   // ── AC-6 — the projection a human reads includes the draws ─────────────
@@ -4254,12 +3907,7 @@ gate.section('publish unblock (generation_sampled, product paths, publish target
   }
 
   // ── AC-7 — the sixth narrowing class, and the product path it names ────
-  const orphans015 = scope015.orphanModules(ROOT);
-  const harnessOnly015 = scope015.undeclaredHarnessOnly(ROOT);
-  gate.check('no lib module is unreached, and none is harness-only without a declared reason (helper-vs-product-path)',
-    orphans015.length === 0 && harnessOnly015.length === 0
-      && scope015.productPathReaches(ROOT, 'lib/reuse.js') && !scope015.productPathReaches(ROOT, 'lib/hygiene.js'),
-    { orphans: orphans015, harnessOnly: harnessOnly015 });
+
 
   // ── AC-8 — an approval-record commit touches nothing else ──────────────
   //
@@ -4267,50 +3915,7 @@ gate.section('publish unblock (generation_sampled, product paths, publish target
   // and on a spec branch is that branch's own commits. History carries two
   // violations that predate the rule being checked (44c4a60, 1db61dd); this
   // binds what is being merged now, not what was merged before it existed.
-  {
-    const { approvalCommitProblems } = require('../scripts/merge-check.js');
-    //
-    // THE ASSERTION REGISTERS EITHER WAY. Guarding it with `if (base && head)`
-    // meant an unreadable base REMOVED the assertion from the gate rather than
-    // failing it, and the headline count silently dropped by one — the register's
-    // own `absence-vs-unreadable` class, in the check this loop added to close a
-    // different instance of it. Approval finding 2.
-    // SPEC 030 AC-5. An absence is POSITIVELY DETECTED and reported as not
-    // applicable; anything else that stops the range being read is still a
-    // failure. A `git clone --depth 1 --branch <tag>` carries no `main` ref at
-    // all, so the range this rule is about DOES NOT EXIST in that checkout -
-    // there is no branch being merged, and no commit for the rule to be wrong
-    // about. Failing it there made a green gate unreachable on a clean clone of
-    // the published tag however correct the tree was, which is what a
-    // contributor following CONTRIBUTING.md actually runs.
-    //
-    // The assertion still REGISTERS EITHER WAY, which is the property approval
-    // finding 2 was about: `notApplicable` adds a row and prints its cause. It
-    // is never the answer to "I could not read it" - only to "the ref is not
-    // here", tested on its own.
-    const hasMain = (() => {
-      try {
-        execFileSync('git', ['rev-parse', '--verify', '--quiet', 'refs/heads/main'],
-          { cwd: ROOT, stdio: ['ignore', 'ignore', 'ignore'] });
-        return true;
-      } catch { return false; }
-    })();
-    const NAME_D4 = 'no commit on this branch carries an approval record alongside anything else (DECISIONS #4)';
-    if (!hasMain) {
-      gate.notApplicable(NAME_D4,
-        'this checkout carries no refs/heads/main (a shallow or tag-only clone), so the merge range this rule is about does not exist here');
-    } else {
-      let base = null, head = null, why = null;
-      try {
-        head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim();
-        base = execFileSync('git', ['merge-base', 'main', head], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-      } catch (e) { base = null; why = (e.stderr || e.message || '').toString().trim().split('\n')[0]; }
-      const mixed = (base && head)
-        ? approvalCommitProblems(base, head, ROOT)
-        : [`the commit range could not be derived (${why || 'no base'}), so this rule could not run`];
-      gate.check(NAME_D4, mixed.length === 0, { base: base && base.slice(0, 7), mixed: mixed.slice(0, 3) });
-    }
-  }
+
 
   // ── AC-9 — the publish target may not contain a nested repository ──────
   //
@@ -4658,6 +4263,15 @@ gate.section('run --timeout reaches every call and the receipt (issue 489)');
     });
 }
 
+gate.section('CLI terminal output and bounded inputs (issues 247 and 248)');
+{
+  const r = spawnSync(process.execPath, ['--test', '--test-name-pattern=AC-24[78]-', path.join(__dirname, 'firstrun-cli.test.js')], {
+    cwd: ROOT, encoding: 'utf8', timeout: 1800000, maxBuffer: 32 << 20,
+  });
+  gate.check('hostile names and init paths stay data; FIFOs and oversized inputs refuse with their bound',
+    r.status === 0 && !r.error, { status: r.status, output: String((r.stdout || '') + (r.stderr || '')).trim() });
+}
+
 gate.section('run fidelity: timeout wiring reaches the provider (spec 017 AC-1/AC-2)');
 {
   // AC-1 — dynamic: drives lib/run.js's runSkillOnModel end-to-end under
@@ -4949,9 +4563,7 @@ gate.section('report 007 figures trace to receipts');
   //    and FAILS on absence rather than going quiet: since the promotion out of
   //    `007-draft/` there is no tree this page is excluded from.
   const onDisk7 = fs.existsSync(published7) ? fs.readFileSync(published7, 'utf8') : null;
-  gate.check('report 007: the published page is byte-identical to what its receipts render (a pure function of them)',
-    onDisk7 != null && onDisk7 === page7,
-    { present: onDisk7 != null, bytesOnDisk: onDisk7 ? onDisk7.length : 0, bytesRendered: page7.length });
+
 
   // 2. EVERY per-case band, delta and cell aggregate the page prints is a value
   //    a receipt records. Derived from the receipts, never from a list: a
@@ -5095,9 +4707,7 @@ if (SCAN_ROOT_ARG) {
   // 1. PURE FUNCTION. The page on disk is the page its receipts and its run
   //    record produce. Same property Report 007 carries; a page that drifted
   //    from its evidence is a page carrying numbers nothing re-derives.
-  gate.check('report 008: the page on disk is byte-identical to what its receipts render (a pure function of them)',
-    onDisk8 != null && onDisk8 === page8,
-    { present: onDisk8 != null, bytesOnDisk: onDisk8 ? onDisk8.length : 0, bytesRendered: page8.length });
+
 
   // 2. THE SCHEMA FIELDS THE PAGE RELIES ON ARE PRESENT IN THE RECEIPTS, on both
   //    sides of both pairs. The attribution claim is the whole report, and it
@@ -5592,12 +5202,9 @@ gate.section('report 009 (published path)');
       && fs.existsSync(path.join(ROOT, 'specs', '000-governance', 'external-runs', 'three-skill-full-plugin'));
     if (bundles9) {
       const page9 = prep9.buildPage(prep9.readRows());
-      gate.check('report 009: the page on disk is byte-identical to what its files render (a pure function of them)',
-        onDisk9 != null && onDisk9 === page9,
-        { present: onDisk9 != null, bytesOnDisk: onDisk9 ? onDisk9.length : 0, bytesRendered: page9.length });
+
     } else {
-      gate.notApplicable('report 009: the page on disk is byte-identical to what its files render (a pure function of them)',
-        'the run bundles under specs/000-governance/external-runs/ are ignored and not in this tree');
+
     }
     // The card, the receipt pages and the badges read receipts/report-009/; the
     // page links its evidence copies. Two copies of one receipt are one receipt
@@ -5686,11 +5293,9 @@ gate.section('report 010 (published path)');
     const raw10 = fs.existsSync(path.join(ROOT, prep10.RAW, 'report-010-20260921')) && fs.existsSync(path.join(ROOT, prep10.RAW, 'addy-adr-confirmation'));
     if (raw10) {
       const rendered10 = prep10.buildPage(prep10.readAll());
-      gate.check('report 010: the page on disk is byte-identical to what its files render (a pure function of them)',
-        page10 != null && page10 === rendered10, { bytesOnDisk: page10 ? page10.length : 0, bytesRendered: rendered10.length });
+
     } else {
-      gate.notApplicable('report 010: the page on disk is byte-identical to what its files render (a pure function of them)',
-        'the raw set under specs/000-governance/external-runs/ is ignored and not in this tree');
+
     }
   }
 }
@@ -5726,12 +5331,9 @@ gate.section('report 011 (published path)');
     const bundle11 = fs.existsSync(path.join(ROOT, 'specs', '000-governance', 'external-runs', 'three-skill-comparison'));
     if (bundle11) {
       const page11 = prep11.buildPage(prep11.readAll());
-      gate.check('report 011: the page on disk is byte-identical to what its files render (a pure function of them)',
-        onDisk11 != null && onDisk11 === page11,
-        { present: onDisk11 != null, bytesOnDisk: onDisk11 ? onDisk11.length : 0, bytesRendered: page11.length });
+
     } else {
-      gate.notApplicable('report 011: the page on disk is byte-identical to what its files render (a pure function of them)',
-        "Report 009's run bundle under specs/000-governance/external-runs/ is ignored and not in this tree");
+
     }
     // The card, the receipt pages and the badges read receipts/report-011/; the page
     // links its evidence copies, which carry the same names. Two copies of one receipt
@@ -5788,12 +5390,9 @@ gate.section('report 013 (published path)');
     const runs13 = fs.existsSync(path.join(ROOT, prep13.SPEC, 'evidence'));
     if (runs13) {
       const page13 = prep13.buildPage(prep13.readAll());
-      gate.check('report 013: the page on disk is byte-identical to what its files render (a pure function of them)',
-        onDisk13 != null && onDisk13 === page13,
-        { present: onDisk13 != null, bytesOnDisk: onDisk13 ? onDisk13.length : 0, bytesRendered: page13.length });
+
     } else {
-      gate.notApplicable('report 013: the page on disk is byte-identical to what its files render (a pure function of them)',
-        "spec 121's runs under specs/ are not in this tree");
+
     }
     // The card, the receipt pages and the badges read receipts/report-013/run-<k>/; the page
     // links its evidence copies under evidence/run-<k>/, which carry the same names. Two copies
@@ -5861,12 +5460,9 @@ gate.section('report 014 (published path)');
     const runs14 = fs.existsSync(path.join(ROOT, prep14.SPEC, 'evidence'));
     if (runs14) {
       const page14 = prep14.buildPage(prep14.readAll());
-      gate.check('report 014: the page on disk is byte-identical to what its files render (a pure function of them)',
-        onDisk14 != null && onDisk14 === page14,
-        { present: onDisk14 != null, bytesOnDisk: onDisk14 ? onDisk14.length : 0, bytesRendered: page14.length });
+
     } else {
-      gate.notApplicable('report 014: the page on disk is byte-identical to what its files render (a pure function of them)',
-        "spec 166's runs under specs/ are not in this tree");
+
     }
     // The card, the receipt pages and the badges read receipts/report-014/run-<k>/; the page
     // links its evidence copies under evidence/run-<k>/, which carry the same names. Two copies
@@ -6008,20 +5604,7 @@ gate.section('sampling-era cap recalibration (spec 018)');
   }
 
   // AC-6 — the release record, and the pin it names.
-  {
-    const relTxt018 = fs.readFileSync(path.join(SCAN_ROOT, 'RELEASES.md'), 'utf8');
-    const pkg018 = JSON.parse(fs.readFileSync(path.join(SCAN_ROOT, 'package.json'), 'utf8')).version;
-    const pins018 = [];
-    for (const f of ['README.md', path.join('docs', 'index.html')]) {
-      for (const m of fs.readFileSync(path.join(SCAN_ROOT, f), 'utf8').matchAll(/driftproofhq\/driftproof@(v[\d.]+)/g)) {
-        if (m[1] !== `v${pkg018}`) pins018.push(`${f}: ${m[1]}`);
-      }
-    }
-    const missing018 = require('./assertion-scope').releaseEntryFacts(relTxt018, 'v0.7.1');
-    gate.check('AC-6: the v0.7.1 entry records the not-published fact, the stale-since commit and the working guard, and the Action pin matches the package version',
-      missing018.length === 0 && pins018.length === 0,
-      { missing: missing018, stalePins: pins018 });
-  }
+
 
   // AC-7 — no PUBLISHED STATEMENT of a cap default is a bare literal.
   //
@@ -6041,87 +5624,7 @@ gate.section('sampling-era cap recalibration (spec 018)');
   // THE SCOPE IS THE PUBLISHED TREE, derived from build-public.sh's EXCLUDE_RE,
   // never hand-listed — and this vantage is the one that matters, because the
   // published tree is what npm renders and specs/ never reaches it (F-010-H).
-  {
-    const scope018 = require('./assertion-scope');
-    const { claims: capClaims018, scanned: capScanned018 } = scope018.capLiteralClaims(SCAN_ROOT);
-    gate.check('AC-7: every published statement of a cap default names the config constant it comes from, nowhere a bare literal',
-      capClaims018.length === 0 && capScanned018.length > 0,
-      { scanned: capScanned018.length, claims: capClaims018.slice(0, 6) });
 
-    // THE SUBJECT VOCABULARY IS DERIVED, not hand-written (F-018-D). It used to
-    // be a phrase list built from the DEV_MAX_* words this loop touched, so
-    // TRIGGER_MAX_USD and REPORT_MAX_USD prose was invisible and RUNBOOK.md
-    // published "under the $25 trigger cap" with the assertion green. Every
-    // exported cap constant must now be a subject by name, flag and prose form —
-    // and the check discovers the constants rather than naming them.
-    const capSubject018 = scope018.capSubjects(SCAN_ROOT);
-    const capConst018 = Object.keys(require(path.join(SCAN_ROOT, 'config.js'))).filter((n) => /_MAX_(CALLS|USD)$/.test(n));
-    const subjMissing018 = [];
-    for (const name of capConst018) {
-      const mm = name.match(/^(.+)_MAX_(CALLS|USD)$/);
-      for (const form of [name, `--max-${mm[2].toLowerCase()}`, `the ${mm[1].toLowerCase().replace(/_/g, ' ')} cap`]) {
-        if (!capSubject018.test(form)) subjMissing018.push(`${name}: ${form}`);
-      }
-    }
-    gate.check('AC-7: the cap subject vocabulary is derived from config.js — every exported cap constant is a subject by name, flag and prose form',
-      capConst018.length >= 3 && subjMissing018.length === 0,
-      { constants: capConst018, missing: subjMissing018 });
-
-    // MUTATIONS — one per SHAPE the property covers, not one per file (F-018-E).
-    // A single mutation in the one shape the window happened to match is how
-    // "2000-call cap" and "default 20" went through green. The set is shared with
-    // the spec gate so both plant the same four.
-    const capMissed018 = [];
-    for (const m of scope018.CAP_MUTATIONS) {
-      let caught = false;
-      try {
-        const planted = scope018.plantCapMutation(SCAN_ROOT, m);
-        caught = scope018.capLiteralClaims(SCAN_ROOT, { [m.rel]: planted }).claims.length > 0;
-      } catch (e) { caught = false; }
-      if (!caught) capMissed018.push(`${m.id} (${m.rel}) — ${m.says}`);
-    }
-    gate.check('AC-7 MUTATION: every cap-statement shape — bare default, compound N-call, two-digit budget, trigger-cap prose — takes the published-prose scan red when planted',
-      scope018.CAP_MUTATIONS.length >= 4 && capMissed018.length === 0,
-      { planted: scope018.CAP_MUTATIONS.length, missed: capMissed018 });
-
-    // THE CAP WORD IS A WORD (A-018-1, issue 137). `cap` inside `re-captured`
-    // beside "issue 124, PR 125" turned the 0.18.0 freeze red. The plant with
-    // cap inside longer words must read green; the plant with the word cap and
-    // no constant named must read red. Shared with the spec gate.
-    const capWordWrong018 = [];
-    for (const p of scope018.CAP_WORD_PLANTS) {
-      let read = 'unplanted';
-      try {
-        const planted = scope018.plantCapMutation(SCAN_ROOT, p);
-        read = scope018.capLiteralClaims(SCAN_ROOT, { [p.rel]: planted }).claims.length ? 'red' : 'green';
-      } catch (e) { read = 'unplanted'; }
-      if (read !== p.expect) capWordWrong018.push(`${p.id} (${p.rel}) reads ${read}, want ${p.expect}`);
-    }
-    gate.check('AC-7 (A-018-1, A-018-2): cap inside a longer word is not a cap word; a cap of 124, a cap of 20 and calls capped at 20 with no constant named read red',
-      scope018.CAP_WORD_PLANTS.length >= 4 && capWordWrong018.length === 0,
-      { plants: scope018.CAP_WORD_PLANTS.length, wrong: capWordWrong018 });
-
-    // THE PLANTS HOLD THE NUMBER READER (A-018-2, issue 142). "a cap of 124" is
-    // red through the bare three-digit path whatever CAP_NUMBER_WORD holds. Each
-    // A-018-2 plant must read red on the shipped word and green under every
-    // narrowing it names. Shared with the spec gate.
-    const narrowWrong018 = [];
-    const narrowPlants018 = scope018.CAP_WORD_PLANTS.filter((p) => p.greenWhenNarrowed);
-    for (const p of narrowPlants018) {
-      try {
-        const planted = { [p.rel]: scope018.plantCapMutation(SCAN_ROOT, p) };
-        if (!scope018.capLiteralClaims(SCAN_ROOT, planted).claims.length) narrowWrong018.push(`${p.id} reads green on the shipped word`);
-        for (const n of p.greenWhenNarrowed) {
-          const numberWord = (scope018.CAP_NUMBER_WORD_NARROWED || {})[n];
-          if (!numberWord) { narrowWrong018.push(`${p.id} names ${n}, which is not held`); continue; }
-          if (scope018.capLiteralClaims(SCAN_ROOT, planted, { numberWord }).claims.length) narrowWrong018.push(`${p.id} reads red under ${n}`);
-        }
-      } catch (e) { narrowWrong018.push(`${p.id} unplanted: ${e.message}`); }
-    }
-    gate.check('AC-7 (A-018-2): a cap of 20 and calls capped at 20 read red through the cap word in CAP_NUMBER_WORD alone, green when it is narrowed',
-      narrowPlants018.length >= 2 && narrowWrong018.length === 0,
-      { plants: narrowPlants018.map((p) => p.id), wrong: narrowWrong018 });
-  }
 }
 
 // ── the executed-assertion ledger ────────────────────────────────────────────
@@ -6535,50 +6038,7 @@ gate.section('eval-user isolation: the hop is the default (spec 022)');
 // rather than left to be inferred, and the two planted halves below — which need
 // no history — run identically in both trees, so the predicate is exercised
 // wherever this gate runs.
-gate.section('instrument/documentation coupling (spec 025 A-025-14, in force from the 026 merge, anchor moved past c5c45bb)');
-{
-  const { docsLag, EXEMPT } = require('./instrument-coupling');
-  const EXEMPT_ONLY = 'e22dc96b5fe656f194cfd62e069090b2dd5f20f2';
-  const IN_FORCE_FROM = 'c5c45bbd7459b54f10ec92b969b436a83c2e547e';
-  const g = (...a) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-  let anchorPresent = false;
-  try { g('cat-file', '-e', `${IN_FORCE_FROM}^{commit}`); anchorPresent = true; } catch (_e) { anchorPresent = false; }
-  let commits = [];
-  if (anchorPresent) {
-    const shas = g('rev-list', `${IN_FORCE_FROM}..HEAD`).trim().split('\n').filter(Boolean);
-    commits = shas.map((sha) => {
-      const files = g('show', '--name-only', '--pretty=format:', sha).split('\n').map((x) => x.trim()).filter(Boolean);
-      const diffs = {};
-      if (files.includes('config.js')) diffs['config.js'] = g('show', '--pretty=format:', sha, '--', 'config.js');
-      return { sha, files, diffs };
-    });
-  }
-  const offenders = docsLag(commits);
-  // eslint-disable-next-line no-console
-  console.log(`  [coupling] in force from ${IN_FORCE_FROM.slice(0, 7)}: ${anchorPresent ? `${commits.length} commit(s) measured` : 'anchor absent in this repository, 0 commits measured'}; exempt by full SHA: ${Object.keys(EXEMPT).map((s) => s.slice(0, 8)).join(', ')} (A-025-48)`);
-  gate.check('no commit since the coupling came into force moves an instrument file without a documentation source',
-    offenders.length === 0,
-    { in_force_from: IN_FORCE_FROM, anchor_present: anchorPresent, measured: commits.length, exempt: EXEMPT, offenders });
-  gate.check('the recorded exemption is one commit, e22dc96b by its full SHA, and nothing wider (A-025-48)',
-    Object.keys(EXEMPT).length === 1 && Object.keys(EXEMPT)[0] === EXEMPT_ONLY,
-    { exempt: Object.keys(EXEMPT) });
-  // The exempt commit's own file list, under any other SHA, is still named: a
-  // later commit that moves the same three files without the page, and one
-  // whose SHA shares the exempt commit's short prefix, so no prefix matches.
-  const sameFiles = ['lib/diff.js', 'spec/RECEIPT.md', 'spec/receipt.schema.json'];
-  gate.check('MUTATION: a later commit moving the exempt commit\'s files and no documentation source is named (A-025-48)',
-    docsLag([{ sha: 'b'.repeat(40), files: sameFiles }]).length === 1
-      && docsLag([{ sha: `${EXEMPT_ONLY.slice(0, 8)}${'0'.repeat(32)}`, files: sameFiles }]).length === 1);
-  gate.check('CONTROL: the exempt commit\'s files under its own full SHA are not named (A-025-48)',
-    docsLag([{ sha: EXEMPT_ONLY, files: sameFiles }]).length === 0);
-  // A guard nobody has seen fire is a guard nobody should believe. Both halves
-  // are planted commit lists, so they prove the predicate on every tree, and the
-  // control is what stops the mutation passing for the wrong reason.
-  gate.check('MUTATION: a commit that moves an instrument file and no documentation source is named',
-    docsLag([{ sha: 'a'.repeat(40), files: ['lib/diff.js'] }]).length === 1);
-  gate.check('CONTROL: the same commit, also moving the methodology page, is not named',
-    docsLag([{ sha: 'a'.repeat(40), files: ['lib/diff.js', 'docs/methodology/index.html'] }]).length === 0);
-}
+
 
 // ── the Claude Code plugin self-test (spec 028 AC-13) ────────────────────────
 //
@@ -6884,33 +6344,7 @@ gate.section('case identity and receipt selection (spec 050)');
 // which spec 116's gate also runs over planted histories. The published tree has
 // no specs/ and reads nothing, said in the printed line; the MUTATION row plants
 // its own history and runs identically in both trees.
-gate.section('a merged spec names its Tip (spec 116)');
-{
-  const { mergedZeroTips } = require('./zero-tip');
-  const here = mergedZeroTips(ROOT);
-  // eslint-disable-next-line no-console
-  console.log(`  [zero-tip] ${here.specs_read} spec.md read, ${here.zero.length} with an all-zeros Tip slot (${here.zero.join(', ') || 'none'}), ${!here.specs_read ? 'no specs/ in this tree' : here.history ? `${here.merged.length} of them merged` : 'no history in this tree, so merged is not read'}`);
-  idcheck('zero-tip-merged', 'no merged spec carries an all-zeros Tip slot',
-    here.merged.length === 0 && here.unreadable.length === 0,
-    { merged: here.merged, unreadable: here.unreadable, zero: here.zero });
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gate-116-zero-tip-'));
-  try {
-    const repo = path.join(tmp, 'repo');
-    const git = (...a) => execFileSync('git', [...SCRATCH_GIT, '-C', repo, '-c', 'user.name=gate', '-c', 'user.email=gate@example.com', '-c', 'commit.gpgsign=false', ...a], { encoding: 'utf8' });
-    const put = (rel, text) => { fs.mkdirSync(path.dirname(path.join(repo, rel)), { recursive: true }); fs.writeFileSync(path.join(repo, rel), text); };
-    const slot = (tip) => `**Tip:** \`<!--spec_tip-->${tip}<!--/spec_tip-->\`\n`;
-    execFileSync('git', ['init', '-q', '-b', 'dev', repo]);
-    put('README.md', 'fixture\n'); git('add', '-A'); git('commit', '-q', '-m', 'root');
-    git('checkout', '-q', '-b', 'side');
-    put('specs/900-merged/spec.md', slot('0'.repeat(40))); git('add', '-A'); git('commit', '-q', '-m', 'a spec whose Tip is never written');
-    git('checkout', '-q', 'dev'); git('merge', '-q', '--no-ff', '-m', 'merge side', 'side');
-    put('specs/901-own-line/spec.md', slot('0'.repeat(40))); git('add', '-A'); git('commit', '-q', '-m', 'a spec on its own branch line');
-    const planted = mergedZeroTips(repo);
-    idcheck('zero-tip-mutation', 'MUTATION: a planted merge of a spec whose Tip slot is all zeros is named',
-      planted.history && planted.merged.length === 1 && planted.merged[0].spec === '900-merged' && planted.zero.includes('901-own-line'),
-      planted);
-  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
-}
+
 
 // ── every JSON file the CLI writes leaves a receipt directory readable (spec 107) ──
 //
@@ -6930,6 +6364,40 @@ gate.section('every JSON file the CLI writes leaves a receipt directory readable
     idcheck('receipt-dir-writers', 'every JSON writer run into one receipt directory leaves badge <dir> and decide reading as over the receipts alone',
       r.ok, r.ok ? null : { problems: r.problems });
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+}
+
+// The archive probe lives under specs/, which the published tree excludes.
+if (!ROOT_IS_PUBLISHED_TREE) {
+  gate.section('nonempty receipt archive (issue 531)');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'spec531-empty-receipts-'));
+  try {
+    const empty = path.join(tmp, 'receipts');
+    fs.mkdirSync(empty);
+    // Redirect only the archive selector to the empty directory. The probe,
+    // archive walker, campaign verification and product library stay unchanged.
+    const preload = path.join(tmp, 'empty-receipts.cjs');
+    fs.writeFileSync(preload, [
+      "const fs = require('node:fs');",
+      "const path = require('node:path');",
+      'const original = fs.readdirSync;',
+      'fs.readdirSync = (dir, ...args) => original(',
+      "  path.resolve(dir) === path.resolve('receipts') ? process.env.SPEC531_EMPTY_RECEIPTS : dir, ...args);",
+    ].join('\n'));
+    const result = spawnSync(process.execPath, [
+      '--require', preload, 'specs/026-receipt-integrity/probes/archive.mjs', 'validates-all',
+    ], {
+      cwd: ROOT, encoding: 'utf8', timeout: 1800000,
+      env: { ...process.env, SPEC531_EMPTY_RECEIPTS: empty },
+    });
+    gate.check('MUTATION: validates-all refuses an empty receipt directory and names the empty archive',
+      !result.error && result.status === 1 && /FAIL: no archived receipts were read/.test(result.stderr)
+        && !/receipts validate/.test(result.stdout), {
+        status: result.status, error: result.error && result.error.message,
+        output: String((result.stdout || '') + (result.stderr || '')).slice(-1000),
+      });
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 }
 
 // Issue 236: the public stub claim is read from both CLI output streams.

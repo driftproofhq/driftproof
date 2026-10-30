@@ -1,12 +1,13 @@
 ---
-description: A guided first run with the pinned Driftproof runner - pick a skill, draft its test cases with the person, run a quick smoke run, and open the results page from disk.
+description: A guided first run with the pinned Driftproof runner - pick a skill, or a CLAUDE.md or AGENTS.md, draft its test cases with the person, run a quick smoke run, and open the results page from disk.
 ---
 
 # /driftproof:start
 
 A first result, in one sitting. This command walks a person from a skill to a
 page they can read: pick the skill, draft its test cases together, run a quick
-smoke run, and open the results page.
+smoke run, and open the results page. A `CLAUDE.md` or `AGENTS.md` takes the
+same steps; see *A CLAUDE.md or AGENTS.md* below.
 
 Like the other commands, it is a door onto the published Driftproof CLI. It
 lists, checks and runs the pinned runner; it measures nothing itself, and it
@@ -24,6 +25,8 @@ with your own folder and file.
     node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" start <skill-dir>
     node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" start <skill-dir> --cases <draft> --confirm-write
     node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" start <skill-dir> --full
+    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" start <rules-file> --suite <draft> --confirm-write
+    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" start <rules-file> --suite <draft> --confirm-write --full [--placebo]
 
 ## The steps, in order
 
@@ -136,6 +139,51 @@ with your own folder and file.
    the door asks that one question itself; run from here it has no terminal, so
    it does not ask, and it never refuses a direct `--full`.
 
+## A CLAUDE.md or AGENTS.md
+
+The person can name a rules file, a `CLAUDE.md` or an `AGENTS.md`, in place of a
+skill. Step 1's listing also names one in the folder you run start from, and
+opens no sample when it finds one. Its run gives the file's exact text to the
+model as a skill's text is given, and answers the same tasks without it. Take the
+steps above, with these changes.
+
+- **Its tasks (step 3).** Read the rules file. Draft three to five tasks, each a
+  prompt a person in that project might send, where one of the file's rules would
+  show in the answer, with a rubric that names what a person could look for,
+  scored so that a fully correct answer is 0.80. A run grants the same tools in
+  an empty directory with no file of the project, so each prompt carries all it
+  needs. Show the drafts, take the person's changes, and agree on the set. Hold it
+  as `{"cases": [...]}` in a file under the system temp directory until the
+  person's yes. It is given as `--suite`, never `--cases`: nothing is added beside
+  the rules file, and the door refuses `--cases` for one.
+- **Ask once, before anything is written (step 4).** In one question, name the
+  rules file, show the tasks and the tasks file's path, and say that a
+  `receipts/` folder will be created in the folder you run start from, holding
+  the run's receipt, and that a results page, `driftproof-view.html`, will be
+  written beside it. Say that nothing is added beside the rules file and that the
+  tasks file stays where it is; to keep it, the person can copy it into the
+  repository, where `/driftproof:run` takes it. Only a clear yes in this
+  conversation counts. Then give the fifth line, with `--confirm-write`. If they
+  say no, or do not answer, run nothing: the door refuses without the flag. Never
+  give it on your own. Where there is no git repository, step 2's question about
+  who wrote it is asked about the rules file.
+- **The small full run and the placebo arm (step 7).** The offer stands, with the
+  sixth line. In the same question, offer the placebo arm in one plain line:
+  `--placebo` answers each task a third time with the rules file replaced by a
+  text of exactly its length, drawn from a fixed corpus chosen without reference
+  to any task, so the receipt also reads the file's answers against those; that
+  text can still bear on a task by chance. It makes half as many calls again, and
+  takes about half as long again. Give `--placebo` only after a yes to it, and only
+  with `--full`: the door refuses it without.
+- **Repository capture.** Say in one plain line, once, after the placebo offer:
+  `--capture repository` gives each task a fresh copy of a small fixed starter
+  project, with tools, in a sandbox, and grades the reply with what was captured
+  there; it needs a Driftproof source checkout, the isolation account and a
+  sandbox an operator builds, and runs one model, one call at a time, with up to
+  15 minutes a draw, so it takes far longer than this run. This command cannot
+  start it: it runs on the trusted lane, and repository capture refuses that lane.
+  `/driftproof:run` says how to run it from the CLI.
+
 ## When it refuses
 
 - **No test cases and no draft.** It refuses before anything runs. Draft the
@@ -162,19 +210,24 @@ with your own folder and file.
   before anything runs, and prints the command that runs the skill with the
   isolation account instead. Tell the person what it printed. Inside a git
   repository it refuses `--trust-outside-repo`. Do not look for another way to
-  run it.
+  run it. A rules file is held to the same boundary.
+- **A rules file it cannot take.** It refuses before anything runs a file not
+  named `CLAUDE.md` or `AGENTS.md`, a link, a rules file with no `--suite`, or
+  one with no `--confirm-write`, and `--suite` for a skill. For any other Markdown
+  file, the refusal prints the CLI command to run instead.
 
 ## What it will not do
 
 It never changes a skill's instructions, and it has no opinion about how to make
 a score better. It adds at most one new file to a skill's folder, the test cases,
-after a yes, and never touches a file that is already there. The results page is
+after a yes, and never touches a file that is already there. It adds nothing
+beside a rules file and never changes one. The results page is
 a file on this computer; it loads nothing.
 
 ```driftproof-steps
 [
   {"op": "list-skills"},
-  {"op": "validate", "inputs": ["skill-dir", "models", "cases"]},
+  {"op": "validate", "inputs": ["skill-dir", "models", "cases", "suite"]},
   {"op": "resolve-target", "input": "skill-dir", "inside_repo": true},
   {"op": "outside-skill"},
   {"op": "require-suite"},
@@ -184,8 +237,8 @@ a file on this computer; it loads nothing.
   {"op": "version-guard", "minimum": "start_minimum"},
   {"op": "resolve-model"},
   {"op": "cli", "when": "cases", "args": ["init", "@skill-dir", "--cases", "@cases", "--drafted-from-skill"]},
-  {"op": "cli", "unless": "full", "args": ["run", "@skill-dir", {"emit": ["--models", "@models"]}, "--quick", "--trusted-skill"]},
-  {"op": "cli", "when": "full", "args": ["run", "@skill-dir", {"emit": ["--models", "@models"]}, "--max-cases", "5", "--concurrency", "4", "--trusted-skill"]},
+  {"op": "cli", "unless": "full", "args": ["run", "@skill-dir", {"emit": ["--models", "@models"]}, {"when": "suite", "emit": ["--suite", "@suite"]}, "--quick", "--trusted-skill"]},
+  {"op": "cli", "when": "full", "args": ["run", "@skill-dir", {"emit": ["--models", "@models"]}, {"when": "suite", "emit": ["--suite", "@suite"]}, "--max-cases", "5", "--concurrency", "4", {"when": "placebo", "emit": ["--placebo"]}, "--trusted-skill"]},
   {"op": "cli", "args": ["view", "receipts", "--out", "driftproof-view.html"]},
   {"op": "open-view", "file": "driftproof-view.html"}
 ]
