@@ -468,9 +468,9 @@ function editTrials(dir, pick, edit, { raw = null } = {}) {
 const first = (task) => { let done = false; return (d) => { if (done || d.task_name !== task) return false; done = true; return true; }; };
 const every = () => true;
 
-function cli(args, { nodeArgs = [], out = null } = {}) {
+function cli(args, { nodeArgs = [], out = null, home = null } = {}) {
   const dir = out || tmp();
-  const r = spawnSync(process.execPath, [...nodeArgs, BIN, 'import', ...args, '--out', dir], { encoding: 'utf8', cwd: tmp(), env: { PATH: process.env.PATH, HOME: tmp(), TMPDIR: os.tmpdir() } });
+  const r = spawnSync(process.execPath, [...nodeArgs, BIN, 'import', ...args, '--out', dir], { encoding: 'utf8', cwd: tmp(), env: { PATH: process.env.PATH, HOME: home || tmp(), TMPDIR: os.tmpdir() } });
   const files = fs.existsSync(dir) ? fs.readdirSync(dir) : [];
   return { ...r, out: dir, files, receipt: files.length === 1 ? JSON.parse(fs.readFileSync(path.join(dir, files[0]), 'utf8')) : null };
 }
@@ -1018,6 +1018,32 @@ test('AC-14: a folder name in a trial\'s path that is not a plain name is refuse
   fs.renameSync(path.join(b, job), path.join(b, 'job ~\u0007'));
   const { message, stderr } = refusedBoth({ withJob: w, withoutJob: b }, pairArgs(w, b), /folder name/);
   for (const text of [message, stderr]) assert.ok(text.includes('\\u0007') && !text.includes('\u0007'), 'the bell character is shown escaped');
+});
+
+// A-266-7 (issue 650): the importing account's own home where no usual root names it, as a service
+// account's home under /var/lib. HOME is set to a scratch home at such a path, so the case reads the
+// same on every account, and fails without lib/account-home.js on every account.
+test('AC-14: a receipt that would carry the importing account\'s own home is refused wherever that home sits', () => {
+  const svc = path.join(tmp(), 'var', 'lib', 'svc-account');
+  fs.mkdirSync(svc, { recursive: true });
+  // A model id naming a checkpoint under that home: a plain model id by AC-14's shape, holding none of
+  // the usual roots, so only the account's own home can refuse it.
+  const model = `local:${svc}/ckpt`;
+  const w = copyArm(path.join(TRIALS, 'skill-caveman'), ['application-debug']);
+  const b = copyArm(BASELINE, ['application-debug']);
+  for (const dir of [w, b]) editTrials(dir, every, (d) => { d.agent_info.model_info.name = model; });
+  const { importHarbor, HarborRefused } = lib();
+  const saved = process.env.HOME;
+  process.env.HOME = svc;
+  try {
+    assert.throws(() => importHarbor({ withJob: w, withoutJob: b, importedAt: AT }), (e) => e instanceof HarborRefused && /local path/.test(e.message));
+  } finally { process.env.HOME = saved; }
+  const r = cli(pairArgs(w, b), { home: svc });
+  assert.equal(r.status, 1, `the CLI exits 1 on a refusal: ${r.stderr}`);
+  assert.match(r.stderr, /local path/);
+  assert.deepEqual(r.files, [], 'a refused import writes nothing');
+  // On an account whose home that path is not, the same trials import as before: the shape is plain.
+  assert.equal(importPair(w, b).run.model_id, model);
 });
 
 // ── AC-15: two different jobs, and the input limits ─────────────────────────

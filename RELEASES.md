@@ -8,6 +8,37 @@ makes this one a record.
 
 ---
 
+## v0.26.1 - 2026-11-02
+
+### What's new
+
+- **New to this? [How Driftproof tests a skill, step by step](https://driftproofhq.com/how-it-works/).** Five short screens, in plain words, with one real example from Report 017: the task, three answers, the judge's scores and the reading.
+- **[The same skill on different models](https://driftproofhq.com/across-models/).** For each skill or instruction file Driftproof measured on more than one model, what each receipt read, model by model, linked to the receipt. Readings can differ between runs, so two readings on two models do not show that the model made the difference.
+- **[Can you tell?](https://driftproofhq.com/reports/017/blind/)** Try the blind read on Report 017's real answers for one skill: pick which answer used the skill and which used a same-length placebo, then see how you did, what picking at random would get, and how the judge scored the same pairs. Your picks never leave the page.
+- **Windows:** the Claude Code plugin no longer refuses a skill inside your repository when Windows spells part of its path in short form (such as `RUNNER~1`).
+- **Imports:** the Harbor and NVIDIA importers refuse a result that would write your own home folder's path into a receipt, wherever that folder sits.
+
+- PR 659: Runner setup: root never runs operator-writable node; rollback verifies runner executables (#658)
+- PR 644: Can you tell? A blind read on Report 017's real answers (#638)
+- PR 646: The same skill on different models (#639)
+- PR 657: Reader surfaces after 0.26.0: Windows wording, plugin options and commands, Report 017 titles, plain tally (#652)
+- PR 656: Windows: plugin path containment compares resolved long paths (#649)
+- PR 654: Harbor and nvidia importers refuse the running account's home wherever it sits (#650)
+- PR 653: Release 0.26.0: release-log entry and runner-migration publish lessons (#651)
+- PR 645: How Driftproof tests a skill, step by step (#640)
+- PR 648: Release train: build-public reads the public tip over HTTPS (#647)
+
+- PR 662: Release 0.26.1 sweep: spec 435 README count and 8 new CodeQL results (#661)
+
+
+### Engineering log
+
+**Merged from dev by a refresh, after the draft.** `release-prepare --stage refresh` lists every merge on dev between `55b53d8a05f8` and `39e1535b62cd`, the commit the refresh merged, so this release ships each of them, and `release-record.json`'s `source_commit` moves to `39e1535b62cd`, where the next release's list starts.
+
+- PR 662, merge `39e1535b`: Release 0.26.1 sweep: spec 435 README count and 8 new CodeQL results (#661)
+
+---
+
 ## v0.26.0 - 2026-11-01
 
 ### What's new
@@ -19,6 +50,7 @@ makes this one a record.
 - **`driftproof card`** draws a shareable SVG card of a receipt's result.
 - **`driftproof doctor`** runs the README's isolation checks in one command.
 - **`driftproof run --case`** runs only the tasks you name.
+- Correction, 2 Nov 2026 (issue 652): the blind read shows the pairs in receipt order, not shuffled; only which answer of a pair sits first is random. `driftproof doctor` runs most of the README's isolation checks, not all of them; the manual check is stricter on the environment.
 
 - PR 635: Report 017: Skill or sugar pill? (#627)
 - PR 620: fix(617): red gradeSamples test on dev; stale prints --models

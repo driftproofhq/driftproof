@@ -404,5 +404,5 @@ function main() {
 
 // EXPORTED BEFORE THE BUILD RUNS: the head builder asks this module for the receipt titles while
 // main() is writing pages (spec 133 R-3), so the exports have to exist already.
-module.exports = { uniqueReceipts, receipts, page, indexPage, receiptPlace, receiptTitles, ownTitle, titleRungs, LABELS, CLAUSES, honestLine, pageLabel, cardLabels, CASES_PAGE };
+module.exports = { uniqueReceipts, receipts, page, indexPage, receiptPlace, receiptTitles, ownTitle, titleRungs, subjectName, LABELS, CLAUSES, honestLine, pageLabel, cardLabels, CASES_PAGE };
 if (require.main === module) main();

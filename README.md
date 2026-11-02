@@ -36,9 +36,9 @@ Claude Code subscription. You need Node.js 22 or later.
 [First run](#first-run) · [Other ways to install](#install) · [Measure your own skill](#quickstart-receipt-for-your-own-skill)
 
 **Latest finding** · [Report 017](https://driftproofhq.com/reports/017/), 1 Nov
-2026: on Claude Sonnet 5.5, 11 of 16 skills beat the fake: by the case rule,
-each scored above the same-length placebo on at least one of three tasks and
-below it on none.
+2026: on Claude Sonnet 5.5, 11 of 16 skills beat the fake: read one task at a
+time, each scored above the same-length placebo on at least one of three tasks
+and below it on none.
 
 [![driftproof](https://img.shields.io/endpoint?url=https://driftproofhq.com/badges/commit-message-conventions.json)](https://driftproofhq.com)
 live badge for the bundled example, generated from its own receipt.
@@ -52,6 +52,8 @@ in one file that opens from disk.
 
 Driftproof **consumes** the [`agentskills.io/evals`](https://agentskills.io) eval
 format; it does not invent its own.
+
+[New to this? See how it works, step by step](https://driftproofhq.com/how-it-works/)
 
 ## First run
 
@@ -253,8 +255,8 @@ claude plugin marketplace add driftproofhq/driftproof
 claude plugin install driftproof@driftproofhq
 ```
 
-That installs `/driftproof:start`, `/driftproof:init`, `/driftproof:run` and
-`/driftproof:badge`.
+That installs `/driftproof:start`, `/driftproof:init`, `/driftproof:run`,
+`/driftproof:blind` and `/driftproof:badge`.
 The CLI is the product and it runs on every surface Driftproof measures, while
 the plugin is one install path for Claude Code users: it builds one argument
 vector, hands it to the pinned runner, and writes the receipt that runner would
@@ -531,8 +533,9 @@ declared with their derivation in [`config.js`](config.js), both overridable wit
 ### Run options
 
 `driftproof run <skill-dir>` takes three options that set how much it measures.
-`/driftproof:run` passes `--models`, `--max-calls`, `--max-usd`,
-`--quick` and these three on to `run`, and refuses any other option.
+`/driftproof:run` passes `--models`, `--max-calls`, `--max-usd`, `--quick`,
+`--suite`, `--placebo`, `--keep-transcripts` and these three on to `run`, and
+refuses any other option.
 `--quick` sets these three itself, so it is refused beside any of them, in the
 command and in the plugin.
 With one `--case`, `--quick` takes the first look at that test task instead of the suite's first.
@@ -706,7 +709,7 @@ A receipt is the unit of evidence — one JSON document conforming to
     "model_release_date": "2025-10-01",
     "provider": "anthropic",
     "surface": "claude-cli",
-    "runner_version": "0.26.0",
+    "runner_version": "0.26.1",
     "date_utc": "2026-07-27T…Z",
     "registry": "registered",
     "transcripts": "hashes-only",
@@ -789,7 +792,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: driftproofhq/driftproof@v0.26.0
+      - uses: driftproofhq/driftproof@v0.26.1
         with:
           skill-dir: skills/my-skill
           models: claude-haiku-4-5
@@ -924,7 +927,7 @@ permissions:
   contents: read
   issues: write
 # ...
-      - uses: driftproofhq/driftproof/stale@v0.26.0
+      - uses: driftproofhq/driftproof/stale@v0.26.1
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill
@@ -1110,7 +1113,7 @@ output), spanning nine published report types, the newest being placebo comparis
 <!--driftproof:campaign-readme-->
 - **[Report #015: Skills.sh snapshot 2026-10-17: text tasks](https://driftproofhq.com/reports/015/)**: three text tasks per skill, written by Driftproof from the pinned skill descriptions. Both model sets use Haiku 5.5 as judge. Eligible receipts carry their per-task verdicts and the report names the tasks behind them. The four router subjects have no verdict in this revision; the report amendment explains why. The eval account was checked before and after each run, not during it.
 - **[Report #016](https://driftproofhq.com/reports/016/)**: *rules-file behaviour*. Seven popular rules files against no file and same-length fakes. File-to-fake output comparisons: 6 haiku increases · 1 haiku unclear · 3 sonnet increases · 2 sonnet decreases · 2 sonnet unclear. These are behaviour changes, not correctness verdicts, on small tasks with injected instructions.
-- **[Report #017](https://driftproofhq.com/reports/017/)**: *placebo comparison*. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length placebo text, judged by Haiku 5.5. Of the 16 skills it counts, the placebo readings are 11 ABOVE_PLACEBO · 3 BELOW_PLACEBO · 0 NO_DIFFERENCE · 0 INCONCLUSIVE · 2 UNDERPOWERED · 0 NOT_MEASURED. Only ABOVE_PLACEBO beats the fake, by the case rule. Where the fake scored below no skill, beating it does not mean beating no skill. The four routers have no verdict, as in Report 015.
+- **[Report #017](https://driftproofhq.com/reports/017/)**: *placebo comparison*. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length placebo text, judged by Haiku 5.5. Of the 16 skills it counts, the placebo readings are 11 above the placebo · 3 below the placebo · 0 no difference · 0 inconclusive · 2 not enough draws · 0 not measured. A skill is above the placebo when, read one task at a time, it scored above the placebo on at least one task and below it on none; only that beats the fake. Where the fake scored below no skill, beating it does not mean beating no skill. The four routers have no verdict, as in Report 015.
 <!--/driftproof:campaign-readme-->
 
 ✍️ The launch essay, **[Three model releases later: what actually happens to agent

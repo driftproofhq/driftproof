@@ -199,11 +199,22 @@ function checkPairings() {
 // run's tasks file is held to the boundary the rules file is: its prompts reach a child that runs as the
 // person, as a skill's own evals/evals.json does from inside its folder. start's is the draft the person
 // agreed in the conversation, held under the system temp directory until their yes, as a skill's draft is.
+// Issue 649: every containment comparison in this file reads both sides as the resolved long path.
+// On win32 fs.realpathSync keeps an 8.3 alias (C:\Users\RUNNER~1), so a working directory under one
+// and git's long root compared unequal, and a skill inside the repository was refused as outside it.
+// fs.realpathSync.native asks the system for the final long name; on other platforms it is the same
+// resolution as before. The comparison folds case on win32 only, where the file system does.
+function realLong(p) { return fs.realpathSync.native(p); }
+function within(child, parent) {
+  const fold = (p) => (process.platform === 'win32' ? p.toLowerCase() : p);
+  const c = fold(child), base = fold(parent);
+  return c === base || c.startsWith(base + path.sep);
+}
 function suiteInside() {
-  const resolved = fs.realpathSync(path.resolve(process.cwd(), INPUTS['suite']));
+  const resolved = realLong(path.resolve(process.cwd(), INPUTS['suite']));
   const repo = repoState();
-  const base = repo.root ? fs.realpathSync(repo.root) : fs.realpathSync(process.cwd());
-  if (!(resolved === base || resolved.startsWith(base + path.sep))) {
+  const base = repo.root ? realLong(repo.root) : realLong(process.cwd());
+  if (!within(resolved, base)) {
     refuse('the tasks file ' + resolved + ' resolves outside ' + (repo.root ? 'this repository' : 'the folder you run from') + ' (' + base + '). Its prompts run as you, on the trusted lane,'
       + ' so it is held to the boundary the rules file is. Move it inside, or draft the tasks with /driftproof:start. Nothing was spawned.');
   }
@@ -342,7 +353,7 @@ function evalAccount() {
 function requireInsideRepo(value, command) {
   const repo = repoState();
   const confirmed = INPUTS['trust-outside-repo'] === true;
-  const resolved = fs.realpathSync(path.resolve(process.cwd(), value));
+  const resolved = realLong(path.resolve(process.cwd(), value));
   // Issue 553: a rules file stands where the skill does, under its own name, and its isolated run names its tasks.
   const what = rulesFile ? 'the rules file' : 'the skill';
   const isolated = 'npx driftproof@' + PINNED + ' run ' + resolved + (rulesFile ? ' --suite <tasks.json>' : '') + ' --models <model>';
@@ -352,8 +363,8 @@ function requireInsideRepo(value, command) {
     // folder they run from, and the skill must sit inside it on its real path, as DR-17 holds a skill
     // inside the repository. A skill elsewhere on the machine, and a link in this folder that points
     // out of it, are refused with the flag as without it.
-    const here = fs.realpathSync(process.cwd());
-    if (!(resolved === here || resolved.startsWith(here + path.sep))) {
+    const here = realLong(process.cwd());
+    if (!within(resolved, here)) {
       refuse(what + ' at ' + resolved + ' resolves outside the folder you run from (' + here + '). There is no git repository here, so that folder'
         + ' stands where the repository would, and the trusted lane claims the skill is the author\'s own, which is not available for a path'
         + ' outside it, or for a link out of it, flag or not. Nothing was spawned. Run it with the isolation account instead, on the lane spec 022'
@@ -369,7 +380,7 @@ function requireInsideRepo(value, command) {
       ? 'Run it with the isolation account instead, on the lane spec 022 built for a skill you did not write:'
       : 'This machine has no isolation account (' + acct.user + '), which a skill you did not write needs: a dedicated unprivileged user with its own logged-in claude, and a passwordless sudo rule that lets you run commands as it (the Isolation section of the Driftproof README on npm says what it needs). With that in place it runs on the lane spec 022 built for one:';
     // The yes the flag stands for is about a path the person has seen: the skill's real path and the folder it runs from.
-    const here = fs.realpathSync(process.cwd());
+    const here = realLong(process.cwd());
     const asYou = what + ' at ' + resolved + ' then runs from ' + here + ', as you, with your files and your Claude Code login.';
     const mine = rulesFile ? 'If you wrote the rules file yourself' : 'If you wrote the skill yourself';
     const trust = offersFlag
@@ -379,10 +390,9 @@ function requireInsideRepo(value, command) {
       + ' trusted-skill claim would rest on nothing. ' + route + '\n    ' + isolated + '\n' + trust);
   }
   const root = repo.root;
-  if (confirmed) refuse('--trust-outside-repo is for a folder with no git repository, and this is one (' + fs.realpathSync(root) + '). A skill inside it runs on the trusted lane without the flag; a skill outside it does not, flag or not.');
-  const realRoot = fs.realpathSync(root);
-  const inside = resolved === realRoot || resolved.startsWith(realRoot + path.sep);
-  if (!inside) {
+  if (confirmed) refuse('--trust-outside-repo is for a folder with no git repository, and this is one (' + realLong(root) + '). A skill inside it runs on the trusted lane without the flag; a skill outside it does not, flag or not.');
+  const realRoot = realLong(root);
+  if (!within(resolved, realRoot)) {
     refuse(what + ' at ' + resolved + ' resolves outside this repository (' + realRoot + ').'
       + ' The trusted lane claims the skill is the author\'s own, and that claim is not available for a path you do'
       + ' not own here. Run it with the isolation account instead, on the lane spec 022 built for exactly this:\n    ' + isolated);
@@ -803,14 +813,15 @@ function openSample() {
 // folder or inside it, and when the draft is inside it, before anything is spawned.
 function outsideSkill() {
   const dir = state.resolvedTarget;
-  const inside = (p) => p === dir || p.startsWith(dir + path.sep);
-  if (inside(fs.realpathSync(process.cwd()))) {
-    refuse('this folder is ' + (fs.realpathSync(process.cwd()) === dir ? 'the skill folder ' : 'inside the skill folder ') + dir + '. Run ' + command + ' from the folder above the skill,'
+  const inside = (p) => within(p, dir);
+  const here = realLong(process.cwd());
+  if (inside(here)) {
+    refuse('this folder is ' + (within(here, dir) && within(dir, here) ? 'the skill folder ' : 'inside the skill folder ') + dir + '. Run ' + command + ' from the folder above the skill,'
       + ' so the receipts and the page are not written into it. Nothing was spawned.');
   }
   if (INPUTS['cases'] === undefined) return;
   let draft = path.resolve(process.cwd(), INPUTS['cases']);
-  try { draft = fs.realpathSync(draft); } catch (e) { /* validate has refused a draft that is not there */ }
+  try { draft = realLong(draft); } catch (e) { /* validate has refused a draft that is not there */ }
   if (inside(draft)) {
     refuse('the draft ' + draft + ' is inside the skill folder ' + dir + ', and ' + command + ' adds no file there but the test cases.'
       + ' Hold the draft under the system temp directory until the person\'s yes, so nothing is written before it, and give that path. Nothing was spawned.');
@@ -1252,9 +1263,9 @@ for (let at = 0; at < steps.length; at++) {
       // Issue 623: viewing receipts needs a repository boundary, not skill trust.
       const repo = repoState();
       if (!repo.root) refuse('receipts-dir: ' + (repo.unknown || 'this is not a git repository') + '. Nothing was spawned.');
-      const resolved = fs.realpathSync(path.resolve(process.cwd(), given));
-      const root = fs.realpathSync(repo.root);
-      if (resolved !== root && !resolved.startsWith(root + path.sep)) {
+      const resolved = realLong(path.resolve(process.cwd(), given));
+      const root = realLong(repo.root);
+      if (!within(resolved, root)) {
         refuse('receipts-dir: resolves outside this repository. Give a directory inside it. Nothing was spawned.');
       }
       state.resolvedTarget = resolved;

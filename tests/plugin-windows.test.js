@@ -12,10 +12,24 @@ const ROOT = path.resolve(__dirname, '..');
 const DOOR = path.join(ROOT, 'plugin/driftproof/lib/door.mjs');
 const PIN = require('../plugin/driftproof/.claude-plugin/plugin.json').version;
 
-function fixture(t, { version = PIN, exit = 0, layout = 'global' } = {}) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-windows-'));
+// Issue 649: `alias` models a Windows 8.3 short name on Linux. The work folder lives under
+// `runneradmin`; `RUNNER~1` is a link to it, the door's working directory is the link's spelling,
+// and the child's fs.realpathSync keeps that spelling, as Node's JavaScript realpath keeps an 8.3
+// alias on win32, while fs.realpathSync.native gives the long name, as the system does there.
+// `caseAlias` spells the long name `RunnerAdmin` on the skill's side only.
+function fixture(t, { version = PIN, exit = 0, layout = 'global', alias = false, caseAlias = false, platform = 'win32' } = {}) {
+  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-windows-')));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  const work = path.join(root, 'work & %PLUGIN_SENTINEL% !literal! (space)');
+  const longHome = path.join(root, 'runneradmin');
+  const shortHome = path.join(root, 'RUNNER~1');
+  const caseHome = path.join(root, 'RunnerAdmin');
+  if (alias) {
+    fs.mkdirSync(longHome);
+    fs.symlinkSync('runneradmin', shortHome);
+    fs.symlinkSync('runneradmin', caseHome);
+  }
+  const work = path.join(alias ? longHome : root, 'work & %PLUGIN_SENTINEL% !literal! (space)');
+  const shortWork = path.join(shortHome, path.basename(work));
   const bin = path.join(root, 'npm & %PLUGIN_SENTINEL% !literal! (space)', ...(layout === 'local' ? ['node_modules', '.bin'] : []));
   const cli = path.resolve(bin, layout === 'local' ? '../npm/bin/npx-cli.js' : 'node_modules/npm/bin/npx-cli.js');
   fs.mkdirSync(work, { recursive: true });
@@ -39,8 +53,17 @@ function fixture(t, { version = PIN, exit = 0, layout = 'global' } = {}) {
     "  if (!windows && (file === 'npx' || /\\.cmd$/i.test(file))) return { status: null, error: { code: 'EINVAL' } };",
     "  return native(file, args, opts);",
     "};",
+    ...(alias ? [
+      "const fs = require('node:fs'), path = require('node:path');",
+      'const shortWork = ' + JSON.stringify(shortWork) + ', shortHome = ' + JSON.stringify(shortHome) + ';',
+      'const longHome = ' + JSON.stringify(longHome) + ', caseHome = ' + JSON.stringify(caseHome) + ';',
+      'const realNative = fs.realpathSync.native;',
+      'const long = (p) => { const r = realNative(p); return ' + JSON.stringify(caseAlias) + " && String(p).startsWith(shortHome + path.sep) ? caseHome + r.slice(longHome.length) : r; };",
+      'fs.realpathSync = Object.assign((p) => path.resolve(String(p)), { native: long });',
+      'process.cwd = () => shortWork;',
+    ] : []),
     "require('node:module').syncBuiltinESMExports();",
-    "Object.defineProperty(process, 'platform', { value: 'win32' });",
+    ...(platform === 'win32' ? ["Object.defineProperty(process, 'platform', { value: 'win32' });"] : []),
   ].join('\n'));
   const env = {};
   for (const [key, value] of Object.entries(process.env)) {
@@ -57,8 +80,8 @@ function fixture(t, { version = PIN, exit = 0, layout = 'global' } = {}) {
   fs.writeFileSync(path.join(skill, 'SKILL.md'), '# Local skill\n\nBe brief.\n');
   fs.writeFileSync(path.join(skill, 'evals/evals.json'), JSON.stringify({ cases: [{ id: 'one', prompt: 'Q?', rubric: 'R' }] }));
   return {
-    root, work, skill, skillName, cli,
-    run: args => spawnSync(process.execPath, ['--require', preload, DOOR, ...args], { cwd: work, env, encoding: 'utf8', timeout: 300000 }),
+    root, work, skill, skillName, cli, longHome, caseHome,
+    run: args => spawnSync(process.execPath, ['--require', preload, DOOR, ...args], { cwd: alias ? shortWork : work, env, encoding: 'utf8', timeout: 300000 }),
     calls: () => fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trim().split('\n').map(JSON.parse) : [],
   };
 }
@@ -118,5 +141,63 @@ test('Windows missing npm entry point fails closed before the runner', t => {
   const r = f.run(['run', f.skillName]);
   assert.equal(r.status, 2, r.stderr);
   assert.match(r.stderr, /could not read the runner version/);
+  assert.deepEqual(f.calls(), []);
+});
+// Issue 649: the containment check compares resolved long paths on both sides.
+test('Windows 8.3 alias: a skill inside the repository runs under its long path', t => {
+  const f = fixture(t, { alias: true });
+  const r = f.run(['run', f.skillName, '--models', 'claude-haiku-4-5', '--samples', '2']);
+  assert.equal(r.status, 0, r.stderr);
+  const long = fs.realpathSync(f.skill);
+  assert.ok(long.startsWith(f.longHome + path.sep), 'the fixture resolves to the long name');
+  assert.deepEqual(f.calls(), [
+    ['driftproof@' + PIN, '--version'],
+    ['driftproof@' + PIN, 'run', long, '--models', 'claude-haiku-4-5', '--samples', '2', '--trusted-skill'],
+  ]);
+});
+test('Windows 8.3 alias: start, its draft and a tasks file inside the repository are accepted', t => {
+  const f = fixture(t, { alias: true });
+  const draft = path.join(f.work, 'draft.json');
+  fs.copyFileSync(path.join(f.skill, 'evals/evals.json'), draft);
+  const start = f.run(['start', f.skillName, '--models', 'claude-haiku-4-5']);
+  assert.equal(start.status, 0, start.stderr);
+  assert.equal(f.calls()[1][1], 'run');
+  assert.equal(f.calls()[1][2], fs.realpathSync(f.skill));
+  fs.writeFileSync(path.join(f.work, 'CLAUDE.md'), '# Project rules\n\nBe brief.\n');
+  const suite = f.run(['run', 'CLAUDE.md', '--suite', 'draft.json', '--models', 'claude-haiku-4-5']);
+  assert.equal(suite.status, 0, suite.stderr);
+  const blind = f.run(['blind', '.']);
+  assert.doesNotMatch(blind.stderr, /resolves outside/);
+});
+test('Windows 8.3 alias: a long name that differs only in case is inside on win32 and outside elsewhere', t => {
+  const win = fixture(t, { alias: true, caseAlias: true });
+  const r = win.run(['run', win.skillName, '--models', 'claude-haiku-4-5']);
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(win.calls()[1][2], path.join(win.caseHome, path.relative(win.longHome, fs.realpathSync(win.skill))));
+  const posix = fixture(t, { alias: true, caseAlias: true, platform: 'linux' });
+  const refused = posix.run(['run', posix.skillName, '--models', 'claude-haiku-4-5']);
+  assert.equal(refused.status, 2, refused.stderr);
+  assert.match(refused.stderr, /resolves outside this repository/);
+  assert.deepEqual(posix.calls(), []);
+});
+test('Windows 8.3 alias: a real outside path is still refused before the runner', t => {
+  const f = fixture(t, { alias: true });
+  const outside = path.join(f.root, 'outside', 'far');
+  fs.mkdirSync(path.join(outside, 'evals'), { recursive: true });
+  fs.writeFileSync(path.join(outside, 'SKILL.md'), '# Far\n\nBe brief.\n');
+  fs.writeFileSync(path.join(outside, 'evals/evals.json'), JSON.stringify({ cases: [{ id: 'one', prompt: 'Q?', rubric: 'R' }] }));
+  const r = f.run(['run', outside, '--models', 'claude-haiku-4-5']);
+  assert.equal(r.status, 2, r.stderr);
+  assert.match(r.stderr, /resolves outside this repository \(/);
+  assert.deepEqual(f.calls(), []);
+  const suite = path.join(f.root, 'outside', 'tasks.json');
+  fs.copyFileSync(path.join(f.skill, 'evals/evals.json'), suite);
+  fs.writeFileSync(path.join(f.work, 'CLAUDE.md'), '# Project rules\n\nBe brief.\n');
+  const held = f.run(['run', 'CLAUDE.md', '--suite', suite, '--models', 'claude-haiku-4-5']);
+  assert.equal(held.status, 2, held.stderr);
+  assert.match(held.stderr, /the tasks file .* resolves outside this repository/);
+  const blind = f.run(['blind', path.join(f.root, 'outside')]);
+  assert.equal(blind.status, 2, blind.stderr);
+  assert.match(blind.stderr, /receipts-dir: resolves outside this repository/);
   assert.deepEqual(f.calls(), []);
 });

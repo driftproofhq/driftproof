@@ -488,6 +488,33 @@ test('AC-19: every refusal through both paths; nothing is written; bounds and li
   refusedBoth(checkout('late', (x) => editCard(x, 'i4h-workflow-scene-edit', (t) => t.replace('| Security | Not available |', '| Security | 99% |'))), CARDS, /i4h-workflow-scene-edit/, 'a refusal after earlier skills were read');
 });
 
+// A-265-13 (issue 650): the importing account's own home where no usual root names it, as a service
+// account's home under /var/lib. HOME is set to a scratch home at such a path, so the case reads the
+// same on every account, and fails without lib/account-home.js on every account.
+test('AC-19: a receipt that would carry the importing account\'s own home is refused wherever that home sits', () => {
+  const svc = path.join(tmp('svc'), 'var', 'lib', 'svc-account');
+  fs.mkdirSync(svc, { recursive: true });
+  // The card's Environment naming a sandbox under that home, agreed by benchmarks.json: a printed cell
+  // under 200 characters holding none of the usual roots, so only the account's own home can refuse it.
+  const sandbox = `${svc}/sandbox`;
+  const dir = checkout('svchome', (x) => {
+    editCard(x, 'doca-aes-gcm', (t) => t.replace('- Environment: `k8s-sandbox`', `- Environment: \`${sandbox}\``));
+    editBench(x, (j) => { j.skills.find((s) => s.catalog_dir === 'doca-aes-gcm').environment = sandbox; });
+  });
+  const saved = process.env.HOME;
+  process.env.HOME = svc;
+  try {
+    assert.throws(() => runImport(dir, ['doca-aes-gcm']), (e) => e instanceof lib().NvidiaRefused && /^doca-aes-gcm .*local path/.test(e.message), 'the function refuses');
+  } finally { process.env.HOME = saved; }
+  const out = tmp('svchome-out');
+  const r = cli(importArgs(dir, ['doca-aes-gcm'], out), { env: { HOME: svc } });
+  assert.equal(r.status, 1, `the CLI exits 1 (stderr: ${r.stderr.slice(0, 300)})`);
+  assert.match(r.stderr, /local path/, 'the CLI names the reason');
+  assert.deepEqual(listed(out), [], 'no file is written');
+  // On an account whose home that path is not, the same card imports as before, its Environment read verbatim.
+  assert.equal(receiptOf(runImport(dir, ['doca-aes-gcm']), 'doca-aes-gcm', 'codex').source_figures.environment, sandbox);
+});
+
 // ── AC-24, the source is recorded and checkable ─────────────────────────────
 test('AC-24: --commit is the checkout\'s HEAD, every file read is the commit\'s blob, and the record is checkable', () => {
   const r = receiptOf(runImport(BASE()), 'doca-aes-gcm', 'codex');

@@ -27,6 +27,7 @@
 const fs = require('fs');
 const path = require('path');
 const { humanModelName } = require('./model-names.js');
+const { htmlToText } = require('./html-text.js');
 
 const ROOT = path.join(__dirname, '..');
 const ORIGIN = 'https://driftproofhq.com';
@@ -84,9 +85,26 @@ function phraseLines() {
   return [
     `- [AI benchmark gaps vs sampling noise](${ORIGIN}/leaderboard-noise/): a piece by Maverick that checks the gaps quoted in frontier launch posts and on public leaderboards against each benchmark's own sampling noise, with its code and data linked.`,
     `- [Evaluation receipts](${ORIGIN}/r/): every published receipt, dated and hash-verified, listed by the report it belongs to.`,
+    `- [The same skill on different models](${ORIGIN}/across-models/): each skill and instruction file measured on two or more models, with each receipt's plain reading by model and a link to it; nothing is combined or ranked.`,
     `- [Maintainer](${ORIGIN}/maintainer/): who maintains Driftproof: Maverick (mavericksea-ai on GitHub), who also writes its reports and the paper.`,
     `- [Fixes merged into other evaluation tools](${ORIGIN}/what-is-driftproof/#fixes-merged-upstream): the fixes the maintainer contributed upstream, each credited in its project's own release notes.`,
   ];
+}
+
+// The blind read on Report 017's kept answers (spec 638), by the page's own h1 and description, so
+// this line moves when the page's words do. It is not a report, so it sits in Optional.
+const BLIND = 'reports/017/blind/index.html';
+function blindLines(root) {
+  const file = path.join(root, 'docs', BLIND);
+  if (!fs.existsSync(file)) return [];
+  const html = fs.readFileSync(file, 'utf8');
+  const decode = (s) => s.replace(/&#39;|&quot;|&lt;|&gt;|&amp;/g, (m) => ({ '&#39;': "'", '&quot;': '"', '&lt;': '<', '&gt;': '>', '&amp;': '&' })[m]);
+  const h1 = /<h1[^>]*>([\s\S]*?)<\/h1>/.exec(html), description = /<meta name="description" content="([^"]*)">/.exec(html);
+  if (!h1 || !description) throw new Error(`docs/${BLIND} has no h1 or description`);
+  // Issue 661 (CodeQL js/incomplete-multi-character-sanitization): the heading's text by the tokenizer
+  // of scripts/html-text.js, never a tag-stripping pattern; each entity decoded once, after the tags are gone.
+  const title = htmlToText(h1[1], { skip: ['script', 'style'], decode, collapse: true });
+  return [`- [${title}](${ORIGIN}/${BLIND.replace(/index\.html$/, '')}): ${decode(description[1])}`];
 }
 
 function articleLines(root) {
@@ -96,7 +114,9 @@ function articleLines(root) {
 function reportLines(root) {
   const rows = readJson(root, 'docs/data/reports.json').reports;
   const summaries = readJson(root, 'docs/data/report-summaries.json');
-  return rows.map((r) => ({ number: r.number.value, line: `- [Report ${r.number.value}: ${r.scope_title?.value || r.what_moved.value}](${ORIGIN}/reports/${r.number.value}/): ${finding(summaries, r.number.value)} Models: ${r.model_ids.map((m) => humanModelName(m.value)).join(', ')}.${r.scope_title ? ' Driftproof wrote the text-task suites from the pinned skill descriptions and READMEs. Both model sets use Haiku 5.5 as judge. The eval account’s configuration was read and found clean before and after each run, not during it.' : ''}` }));
+  // Issue 652: the link text is the report's title, as the cards read it (build-site-pages.js reportName).
+  const { reportName } = require('./build-site-pages.js');
+  return rows.map((r) => ({ number: r.number.value, line: `- [Report ${r.number.value}: ${r.scope_title?.value || reportName(r)}](${ORIGIN}/reports/${r.number.value}/): ${finding(summaries, r.number.value)} Models: ${r.model_ids.map((m) => humanModelName(m.value)).join(', ')}.${r.scope_title ? ' Driftproof wrote the text-task suites from the pinned skill descriptions and READMEs. Both model sets use Haiku 5.5 as judge. The eval account’s configuration was read and found clean before and after each run, not during it.' : ''}` }));
 }
 
 // How many kinds of report the site lists, said as /report-types/ says it: the distinct report types
@@ -129,7 +149,7 @@ ${answerLines(root).join('\n')}
 - [Authoring](${ORIGIN}/authoring/): writing a skill and an eval suite worth measuring.
 - [Judge policy](${ORIGIN}/judge-policy/): which model judges, and why it is held fixed.
 - [Findings](${ORIGIN}/findings/): what three external audits of 0.10.0 and 0.10.1 found, what is fixed, and what is still open.
-- [Atom feed](${ORIGIN}/feed.xml)
+${blindLines(root).map((line) => `${line}\n`).join('')}- [Atom feed](${ORIGIN}/feed.xml)
 `;
 }
 
@@ -173,4 +193,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { renderLlms, renderLlmsFull, fullOrder, OPENING };
+module.exports = { renderLlms, renderLlmsFull, fullOrder, blindLines, OPENING };

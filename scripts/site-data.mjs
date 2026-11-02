@@ -278,6 +278,9 @@ function buildStats() {
     // Spec 047: the latest card's title tail, which the homepage wraps in data-stat so a
     // numeral in it (Report 011's model name) names this field (spec 020 AC-9).
     latest_report_what_moved: reportRow(latest).what_moved,
+    // Issue 652: the latest card is headed by the report's title, its h1 without a "Report n:" prefix
+    // (scripts/build-site-pages.js reportName), which is what moved on every page but Report 017's.
+    latest_report_title: F(reportRow(latest).title.value.replace(/^Report\s*#?\d+\s*(?:—|:)\s*/, ''), rel(latestPage)),
     latest_report_headline: F(prefix(firstSentence(textOf(latestBig)), 150), rel(latestPage)),
     // The bundled example receipt - the one behind
     // docs/badges/commit-message-conventions.json, and the one the hero card and

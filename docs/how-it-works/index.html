@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Driftproof tests a skill, step by step | Driftproof</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/how-it-works/style.css">
+<!-- driftproof:card-tags -->
+<link rel="stylesheet" href="/tokens.css">
+<link rel="canonical" href="https://driftproofhq.com/how-it-works/">
+<link rel="alternate" type="application/atom+xml" title="Driftproof reports" href="/feed.xml">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-italic.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-medium.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-regular.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/courier-prime-regular.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/newsreader-variable.woff2" crossorigin="anonymous">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png" sizes="180x180">
+<link rel="icon" href="/icon-512.png" sizes="512x512" type="image/png">
+<meta name="description" content="How Driftproof tests a skill in five steps, with one real example from Report 017: the task, three answers, the judge's scores and the reading.">
+<meta property="og:site_name" content="Driftproof">
+<meta property="og:title" content="How Driftproof tests a skill, step by step | Driftproof">
+<meta property="og:description" content="How Driftproof tests a skill in five steps, with one real example from Report 017: the task, three answers, the judge's scores and the reading.">
+<meta property="og:image" content="https://driftproofhq.com/og.7a9c3a6e.png">
+<meta property="og:url" content="https://driftproofhq.com/how-it-works/">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "How Driftproof tests a skill, step by step | Driftproof",
+  "description": "How Driftproof tests a skill in five steps, with one real example from Report 017: the task, three answers, the judge's scores and the reading.",
+  "url": "https://driftproofhq.com/how-it-works/",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Driftproof",
+    "url": "https://driftproofhq.com/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://driftproofhq.com/#organization",
+  "name": "Driftproof",
+  "alternateName": "driftproofhq",
+  "url": "https://driftproofhq.com/",
+  "logo": "https://driftproofhq.com/icon-512.png",
+  "description": "Driftproof (driftproofhq): open-source agent skill evaluation and regression testing across model releases",
+  "sameAs": [
+    "https://github.com/driftproofhq",
+    "https://dev.to/driftproofhq",
+    "https://www.npmjs.com/package/driftproof",
+    "https://skillsllm.com/skill/driftproof"
+  ],
+  "founder": {
+    "@id": "https://driftproofhq.com/maintainer/#maverick"
+  }
+}
+</script>
+<!-- /driftproof:card-tags -->
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "d78764dd442f49cb9bb203bd6302e9b4"}'></script><!-- End Cloudflare Web Analytics -->
+</head>
+<body>
+<!--driftproof:nav--><header class="site">
+<a class="brand" href="/"><img class="brand-mark" src="/favicon.svg" alt="" width="28" height="28"><span>Driftproof</span></a>
+<details class="nav-menu"><summary>Menu</summary></details>
+<nav class="site-nav" aria-label="Site">
+<a href="/reports/">Reports</a>
+<a href="/benchmark-gap/">Gap calculator</a>
+<a href="/leaderboard-noise/">Leaderboard noise</a>
+<a href="/skills/">Skills</a>
+<a href="/findings/">Findings</a>
+<a href="/paper/">Paper</a>
+<details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
+<a href="/#how-it-works">How it works</a>
+<a href="/methodology/">Methodology</a>
+<a href="/neutrality/">Neutrality</a>
+<a href="/interop/">Interop</a>
+<a href="/authoring/">Authoring</a>
+<a href="/judge-policy/">Judge policy</a>
+<a href="/findings/">Findings</a>
+<a href="/how-this-is-built/">How this is built</a>
+<a href="/glossary/">Glossary</a>
+<a href="/report-types/">Report types</a>
+</div></details>
+<a href="https://github.com/driftproofhq/driftproof">GitHub</a>
+</nav>
+</header><!--/driftproof:nav-->
+<!--driftproof:layout--><div class="page-grid">
+<nav class="page-toc" aria-label="On this page"><div class="rail-in"><p class="eyebrow">On this page</p><ol>
+<li><a href="#step-1-title">1. One task, three ways</a></li>
+<li><a href="#step-2-title">2. With the skill, a placebo, or no skill text</a></li>
+<li><a href="#step-3-title">3. A separate judge scores each answer</a></li>
+<li><a href="#step-4-title">4. Repeat, then read the case rule</a></li>
+<li><a href="#step-5-title">5. What a result does not tell you</a></li>
+</ol></div></nav><!--/driftproof:layout-->
+<main class="how-page">
+<h1>How Driftproof tests a skill, step by step</h1>
+<p class="lede">How Driftproof tests a skill in five steps, with one real example from Report 017: the task, three answers, the judge's scores and the reading.</p>
+<div class="how-steps" data-island="how-it-works" data-attempt="335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed">
+<section class="how-step" id="step-1" data-step="1" aria-labelledby="step-1-title">
+<h2 id="step-1-title" tabindex="-1">1. One task, three ways</h2>
+<p>Driftproof gives an AI model a task Driftproof wrote to test the skill, and it gives the same task three ways. Here is a real task, for the handoff skill:</p>
+<blockquote class="how-quote" data-quote="text" data-prompt>Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. Write a handoff from these facts: parser fix drafted, tests not run, decision recorded in docs/parser-plan.md, next session verifies invalid input. Keep the existing plan as the detailed source.</blockquote>
+</section>
+<section class="how-step" id="step-2" data-step="2" aria-labelledby="step-2-title">
+<h2 id="step-2-title" tabindex="-1">2. With the skill, a placebo, or no skill text</h2>
+<p>One way with the skill, one with a placebo, one with no skill text added.</p>
+<p data-term="placebo">A placebo is a text exactly as long as the skill, built from sentences chosen without looking at any task.</p>
+<p>The skill is <data value="940" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="skill-bytes">940</data> bytes long and its placebo <data value="940" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="placebo-bytes">940</data>, about a byte per letter. Each text's first sentence (the skill's header lines are left out):</p>
+<div class="how-pair"><div><p class="how-label">The skill</p><blockquote class="how-quote" data-quote="text">Write a handoff document summarising the current conversation so a fresh agent can continue the work.</blockquote></div><div><p class="how-label">The placebo</p><blockquote class="how-quote" data-quote="text">The morning light settled slowly over the hills beyond the old market town.</blockquote></div></div>
+<p><a href="https://github.com/mattpocock/skills/blob/49dd158d1076134a641b33efb035946536778336/skills/productivity/handoff/SKILL.md">Read the whole skill</a>, at the version tested. The whole placebo text is not shown on this page.</p>
+</section>
+<section class="how-step" id="step-3" data-step="3" aria-labelledby="step-3-title">
+<h2 id="step-3-title" tabindex="-1">3. A separate judge scores each answer</h2>
+<p data-term="judge">The judge is a second AI model, here Claude Haiku 5.5, that scores each answer against a guide written for the task.</p>
+<p data-term="score">A score runs from 0, no point of the guide met, to 1, every point met.</p>
+<p>The answers came from Claude Sonnet 5.5. The judge gets the task, one answer and the guide, and is not told which way the answer was made; an answer can still show which way it was made.</p>
+<p>This task's guide gives <data value="0.25" data-src="docs/skills/receipts/issue-408/suites/92cc13dc7718360803650003087d6265928dcf466826b7f6fd2dcf8a52dfc137.json">0.25</data> for each point met:</p>
+<ol class="how-guide" data-guide data-quote="text"><li>State current status including unrun tests</li><li>Reference the plan instead of duplicating it</li><li>Name the next verification task</li><li>Suggest a relevant next-session skill without claiming it ran</li></ol>
+<p>The first answer each way, shown as plain text:</p>
+<div class="how-answers">
+<article class="how-answer" data-arm="with_skill">
+<h3>With the skill</h3>
+<p class="how-meta">Its opening, of <data value="1415" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed-answers.json">1415</data> characters:</p>
+<div class="how-excerpt" data-excerpt data-quote="text" data-raw="# Handoff: parser fix verification
+
+I didn't write this to `$TMPDIR` or `/tmp`, because you asked for text only. Save it there if you want the next agent to pick it up from a file.
+
+## Status
+- **Parser fix:** drafted, not yet verified."><p>Handoff: parser fix verification</p><p>I didn't write this to $TMPDIR or /tmp, because you asked for text only. Save it there if you want the next agent to pick it up from a file.</p><p>Status<br>• Parser fix: drafted, not yet verified.</p></div>
+<p>The judge scored it <data value="5" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">5</data> times: <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.75</data>, <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.75</data>, <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.75</data>, <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.75</data>, <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.75</data>; average <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.75</data>.</p>
+<p>One of its reasons: <q class="how-quote" data-quote="text">Meets criteria 1-3: states tests were not run, points to docs/parser-plan.md instead of duplicating it, and names invalid-input verification as the next task. Misses criterion 4 because it names no specific skill, only a general instruction to check for test-running or review skills.</q></p>
+</article>
+<article class="how-answer" data-arm="placebo">
+<h3>With the placebo</h3>
+<p class="how-meta">Its opening, of <data value="701" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed-answers.json">701</data> characters:</p>
+<div class="how-excerpt" data-excerpt data-quote="text" data-raw="## Handoff
+
+**Status**
+- Parser fix is drafted but not yet verified.
+- Tests have **not been run**, so nothing is confirmed working.
+
+**Decision**
+- Recorded in `docs/parser-plan.md`. That file remains the detailed source for the plan and"><p>Handoff</p><p>Status<br>• Parser fix is drafted but not yet verified.<br>• Tests have not been run, so nothing is confirmed working.</p><p>Decision<br>• Recorded in docs/parser-plan.md. That file remains the detailed source for the plan and</p></div>
+<p>The judge scored it <data value="5" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">5</data> times: <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.75</data>, <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.75</data>, <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.75</data>, <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.75</data>, <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.75</data>; average <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.75</data>.</p>
+<p>One of its reasons: <q class="how-quote" data-quote="text">Meets criteria 1 (status with unrun tests), 2 (references docs/parser-plan.md rather than duplicating it), and 3 (names invalid-input verification as next task); misses 4, since no next-session skill is suggested.</q></p>
+</article>
+<article class="how-answer" data-arm="baseline">
+<h3>With no skill text added</h3>
+<p class="how-meta">Its opening, of <data value="658" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed-answers.json">658</data> characters:</p>
+<div class="how-excerpt" data-excerpt data-quote="text" data-raw="# Handoff: Parser Fix
+
+**Status**
+- Parser fix is drafted but not yet verified.
+- Tests have **not** been run, so nothing is confirmed working.
+
+**Decision**
+- Recorded in `docs/parser-plan.md`. That file remains the detailed source of"><p>Handoff: Parser Fix</p><p>Status<br>• Parser fix is drafted but not yet verified.<br>• Tests have not been run, so nothing is confirmed working.</p><p>Decision<br>• Recorded in docs/parser-plan.md. That file remains the detailed source of</p></div>
+<p>The judge scored it <data value="5" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">5</data> times: <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.75</data>, <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.75</data>, <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.75</data>, <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.75</data>, <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.75</data>; average <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.75</data>.</p>
+<p>One of its reasons: <q class="how-quote" data-quote="text">Meets criteria 1-3: states unrun tests, references docs/parser-plan.md instead of duplicating it, and names invalid-input verification as next. Misses criterion 4 because it suggests no next-session skill.</q></p>
+</article>
+</div>
+</section>
+<section class="how-step" id="step-4" data-step="4" aria-labelledby="step-4-title">
+<h2 id="step-4-title" tabindex="-1">4. Repeat, then read the case rule</h2>
+<p data-term="draw">Each way answers the task at least <data value="3" data-src="config.js" data-fig="sampling-min">3</data> times and at most <data value="10" data-src="config.js" data-fig="sampling-max">10</data>, stopping once the scores settle, and each answer is called a draw.</p>
+<p>On this task there were <data value="3" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="draws-with_skill">3</data> draws with the skill, <data value="3" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="draws-placebo">3</data> with the placebo and <data value="3" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="draws-baseline">3</data> with no skill text, and the judge scored each draw <data value="5" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="judge-samples">5</data> times.</p>
+<p data-term="spread">The spread measures how much the scores of repeated draws differ from one another.</p>
+<p data-term="case-rule effect-floor">The case rule reads each case, meaning each task, on its own, and the effect floor, <data value="0.05" data-src="config.js" data-fig="effect-floor">0.05</data>, is the smallest gap it counts.</p>
+<p><strong>Clearly helped</strong> means: <span data-quote="library">on at least one test task, the average with the skill was higher, the two ranges of scores (the average plus or minus one spread) did not overlap, and the gap was at least 0.05.</span></p>
+<p><strong>Clearly hurt</strong> means: <span data-quote="library">on at least one test task, the average with the skill was lower, the two ranges of scores (the average plus or minus one spread) did not overlap, and the gap was at least 0.05.</span></p>
+<p>If any task is clearly lower, the reading is Clearly hurt, whatever the others show.</p>
+<p><strong>Above the placebo</strong> means: <span data-quote="library">case rule: at least one case scored above the same-length placebo, and none below</span>.</p>
+<p><strong>Below the placebo</strong> means: the same case rule, measured against the placebo instead of no skill text: a task clearly lower.</p>
+<div class="how-reading" data-reading>
+<p class="how-label">What the handoff skill read</p>
+<p>Against no skill text added: <strong data-quote="library">Clearly hurt</strong>. <span data-quote="library">The skill clearly hurt: 0.766 with it and 0.804 without, on 3 test tasks.</span> <span data-quote="library">0.766 with the skill and 0.804 without; on at least one of the 3 test tasks, the two ranges of scores (the average plus or minus one spread) did not overlap, and the gap was at least 0.05.</span></p>
+<p>Against the placebo: <span data-quote="library">case rule: at least one case scored below the same-length placebo</span>.</p>
+<p data-deciding="verdict" data-tasks="privacy">Against no skill text added, the privacy task decided it: <data value="0.7375" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.738</data> with the skill, <data value="0.93" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.930</data> without.</p>
+<p data-deciding="placebo" data-tasks="privacy">Against the placebo, the privacy task decided it: <data value="0.7375" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.738</data> with the skill, <data value="0.95" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.950</data> with the placebo.</p>
+<p>Task by task: the skill's average, then each other way's and the rule's reading:</p>
+<ul class="how-tasks"><li data-task="resume"><strong>resume</strong>: <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.750</data>. No skill text, <data value="0.733333" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.733</data>: too few answers to tell. Placebo, <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.750</data>: no clear difference.</li><li data-task="privacy"><strong>privacy</strong>: <data value="0.7375" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.738</data>. No skill text, <data value="0.93" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.930</data>: clearly lower. Placebo, <data value="0.95" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.950</data>: clearly lower.</li><li data-task="destination"><strong>destination</strong>: <data value="0.81" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.810</data>. No skill text, <data value="0.75" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.750</data>: too few answers to tell. Placebo, <data value="0.733333" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">0.733</data>: too few answers to tell.</li></ul>
+</div>
+<p class="how-scope" data-scope>Scope: <data value="3" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="tasks">3</data> tasks, written by Driftproof; answers in text only, with tools forbidden; Claude Sonnet 5.5 answering, Claude Haiku 5.5 judging; <data value="2026-11-01" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="date">1 Nov 2026</data>.</p>
+</section>
+<section class="how-step" id="step-5" data-step="5" aria-labelledby="step-5-title">
+<h2 id="step-5-title" tabindex="-1">5. What a result does not tell you</h2>
+<ul class="how-limits">
+<li>It covers only these <data value="3" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="tasks">3</data> tasks, Claude Sonnet 5.5 answering and Claude Haiku 5.5 judging, on 1 Nov 2026.</li>
+<li><strong>Too few answers to tell</strong>, which the case rule writes as <q data-quote="library">Not enough draws to conclude at this effect floor</q>, means <span data-quote="library">there were too few answers, or they varied too much, to call it either way. It does not mean the skill does nothing.</span></li>
+<li>Beating the placebo does not mean beating no skill text.</li>
+<li>A placebo text can still bear on a task by chance.</li>
+<li>The judge is an AI reading a guide, not a person.</li>
+<li>A reading under the rule is not proof.</li>
+</ul>
+<p data-term="receipt">Each reading comes from a receipt, a sealed record whose fingerprint stops matching if any figure in it changes.</p>
+<p>Check it: <a href="/r/c99347fd5003d4ce8f8af82defa7c3480943b1d348dc35c73845f59cf9776258/">the receipt's page</a>, <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json">its file</a>, <a href="https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed-answers.json">the kept answers</a>, <a href="/skills/receipts/issue-408/suites/92cc13dc7718360803650003087d6265928dcf466826b7f6fd2dcf8a52dfc137.json">the tasks and guides</a>, and <a href="/reports/017/">Report 017</a>.</p>
+</section>
+</div>
+<p class="how-why">Why this skill: it is the shortest skill counted in Report 017 that does more than hand the work to another skill. It was chosen by its length, not by its results.</p>
+<p class="muted">Like every page on this site, this one counts a visit with Cloudflare Web Analytics. Moving between the screens makes no further request.</p>
+</main>
+<!--driftproof:layout-end--></div><!--/driftproof:layout-end-->
+<!--driftproof:foot--><footer class="site">
+<p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
+<p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/maintainer/">Maintainer</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+</footer><!--/driftproof:foot-->
+<!--driftproof:scripts--><script src="/copy-button.js" defer></script>
+<script type="module" src="/islands/loader.js"></script><!--/driftproof:scripts-->
+</body>
+</html>

@@ -1,0 +1,22 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* The blind read on Report 017's answers (spec 638): the view block's layout (lib/view.js), on the
+   site's tokens. One pair at a time; each pane scrolls on its own; the panes stack when narrow. */
+.blind-page .blind-receipt { overflow-wrap: anywhere; }
+.blind-page .blind { container-type: inline-size; margin: 1.5rem 0; }
+.blind fieldset { min-width: 0; margin: 8px 0 0; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); }
+.blind fieldset[hidden], .blind-nav[hidden] { display: none; }
+.blind legend { font-weight: 500; padding: 0 4px; overflow-wrap: anywhere; }
+.blind-prompt { margin: 0 0 8px; max-height: 7.5em; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.blind-panes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.blind-col { min-width: 0; }
+.blind-col h5 { margin: 0 0 4px; font-size: var(--t-fine); }
+.blind [data-blind-pane] { margin: 0; max-height: min(52vh, 34rem); overflow-y: auto; overflow-x: hidden; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--values); font-size: var(--t-mono-sm); background: var(--sheet); color: var(--ink); border: 1px solid var(--sheet-rule); border-radius: var(--radius); padding: 8px; }
+.blind [data-blind-pane]:focus-visible { outline: 2px solid var(--shell-accent); outline-offset: 2px; }
+.blind-picks { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 8px; }
+.blind-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+/* The controls on the site's shell tokens, as the skill filters are; a disabled one keeps a text
+   colour that clears 4.5:1 on its face (spec 025 AC-4, A-638-3) rather than the browser's grey. */
+.blind-nav button { min-height: var(--touch); padding: .5rem 1rem; font: inherit; cursor: pointer; color: var(--shell-text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius); }
+.blind-nav button:disabled { color: var(--shell-muted); cursor: default; }
+.blind [data-blind-result] textarea { max-width: 100%; font-family: var(--mono); }
+@container (max-width: 520px) { .blind-panes { grid-template-columns: minmax(0, 1fr); } .blind [data-blind-pane] { max-height: 23vh; } .blind-prompt { max-height: 6em; } }

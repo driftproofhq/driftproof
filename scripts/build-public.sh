@@ -49,6 +49,12 @@ usage: scripts/build-public.sh -m "<what this publish ships>" [-m "<paragraph>".
             remote and makes a root commit, which scripts/push-public.mjs refuses.
             The default target parents on the public remote, which cannot be
             redirected, unless --no-parent is typed.
+  --public-https
+            the default target only: read the public main tip over HTTPS and
+            set the tree's origin to the same repository's HTTPS URL. For a
+            host with no SSH credential, such as the release train's runners.
+            It names the same public repository, so it is not a redirection.
+            Not accepted with --remote, --public-dir or --no-parent.
   --no-parent
             build a root commit and read no remote. For tests of this script's own
             guards in a throwaway source tree. The commit is never pushable:
@@ -80,6 +86,7 @@ PRINT_ONLY=0
 PUB_ARG=""
 PUB_EXPLICIT=0
 REMOTE_ARG=""
+PUBLIC_HTTPS=0
 NO_PARENT=0
 WAIVER=""
 while [ $# -gt 0 ]; do
@@ -95,6 +102,7 @@ $2"; else MSG="$2"; fi
         PUB_ARG="$2"; PUB_EXPLICIT=1; shift 2 ;;
     --remote) [ $# -ge 2 ] || { echo "build-public.sh: --remote needs a url or path" >&2; exit 2; }
         REMOTE_ARG="$2"; shift 2 ;;
+    --public-https) PUBLIC_HTTPS=1; shift ;;
     --no-parent) NO_PARENT=1; shift ;;
     --waiver) [ $# -ge 2 ] || { echo "build-public.sh: --waiver needs a decision-entry id" >&2; exit 2; }
         WAIVER="$2"; shift 2 ;;
@@ -103,6 +111,14 @@ $2"; else MSG="$2"; fi
     *) echo "build-public.sh: unknown argument: $1" >&2; usage; exit 2 ;;
   esac
 done
+
+# --public-https chooses the transport of the one public remote, never another remote (spec 113 A-113-10). Checked
+# first, so a refusal here names this flag rather than the --remote rule below.
+if [ "$PUBLIC_HTTPS" -eq 1 ]; then
+  if [ -n "$REMOTE_ARG" ]; then echo "build-public.sh: --public-https and --remote contradict each other: the default target reads the public remote, not a stand-in." >&2; exit 2; fi
+  if [ "$PUB_EXPLICIT" -eq 1 ]; then echo "build-public.sh: --public-https is for the default target only, not with --public-dir." >&2; exit 2; fi
+  if [ "$NO_PARENT" -eq 1 ]; then echo "build-public.sh: --public-https and --no-parent contradict each other: --no-parent reads no remote." >&2; exit 2; fi
+fi
 
 if [ -n "$REMOTE_ARG" ] && [ "$PUB_EXPLICIT" -eq 0 ]; then
   echo "build-public.sh: --remote is accepted only together with --public-dir." >&2
@@ -210,10 +226,16 @@ fi
 # target has to carry THIS remote to be recognisable as a tree this script built.
 REMOTE_HOST="github.com"
 REMOTE="git@${REMOTE_HOST}:driftproofhq/driftproof.git"
+# The same repository over HTTPS (issue 647), composed the same way. A host with no SSH
+# credential reads a public repository's tip this way without any credential.
+REMOTE_HTTPS="https://${REMOTE_HOST}/driftproofhq/driftproof.git"
 # The remote this run reads the public tip from and records as the tree's origin: the
-# public one, or, in a sandbox, the stand-in --remote names. A sandbox with no --remote
-# reads none and makes a root commit, which is never pushable (scripts/push-public.mjs).
-if [ -n "$REMOTE_ARG" ]; then REMOTE_USE="$REMOTE_ARG"; else REMOTE_USE="$REMOTE"; fi
+# public one, over SSH or with --public-https over HTTPS, or, in a sandbox, the stand-in
+# --remote names. A sandbox with no --remote reads none and makes a root commit, which is
+# never pushable (scripts/push-public.mjs).
+if [ -n "$REMOTE_ARG" ]; then REMOTE_USE="$REMOTE_ARG"
+elif [ "$PUBLIC_HTTPS" -eq 1 ]; then REMOTE_USE="$REMOTE_HTTPS"
+else REMOTE_USE="$REMOTE"; fi
 
 # Paths are derived, never hard-coded: this file is tracked now, and an absolute
 # home path in a tracked file fails the blocking hygiene scan — as it should, since
@@ -314,7 +336,8 @@ fi
 # `DECISIONS.md` and `specs/` absent — and an approval run pointed out that the
 # operator's home directory satisfies it, along with a great many ordinary project
 # directories. The marker is now the origin remote this script itself sets, which
-# is not a shape anyone else's directory happens to have.
+# is not a shape anyone else's directory happens to have. Either form of the one public
+# URL counts, SSH or HTTPS, so a tree built with --public-https is still ours without it.
 looks_like_ours() {
   [ -d "$PUB/.git" ] || return 1
   [ -f "$PUB/README.md" ] || return 1
@@ -322,7 +345,7 @@ looks_like_ours() {
   if [ -e "$PUB/DECISIONS.md" ] || [ -d "$PUB/specs" ]; then return 1; fi
   local origin
   origin="$(git -C "$PUB" remote get-url origin 2>/dev/null)" || return 1
-  [ "$origin" = "$REMOTE" ] || [ "$origin" = "$REMOTE_USE" ] || return 1
+  [ "$origin" = "$REMOTE" ] || [ "$origin" = "$REMOTE_HTTPS" ] || [ "$origin" = "$REMOTE_USE" ] || return 1
   return 0
 }
 if [ -d "$PUB" ] && [ -n "$(ls -A "$PUB" 2>/dev/null)" ]; then

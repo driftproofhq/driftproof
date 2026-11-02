@@ -25,6 +25,7 @@ const fs = require('fs');
 const path = require('path');
 const chrome = require('./site-chrome.js');
 const answers = require('./answer-pages.js');
+const drift = require('./model-drift-page.js');
 
 const ROOT = path.join(__dirname, '..');
 const DOCS = path.join(ROOT, 'docs');
@@ -227,6 +228,7 @@ ${plugin.map(copy).join('\n')}
 <p class="muted">Then run <code>/driftproof:start</code> on a skill in your repository. For CI, <a href="#ci">npx and the GitHub Action</a> are further down.</p>
 </div>
 <p class="hero-links"><a class="cta" href="/r/${esc(exampleHash)}/">See a receipt</a> <a href="/findings/">Read the findings</a> <a href="/reports/${esc(V('latest_report_number'))}/">Read the latest report</a></p>
+<p class="gap-line"><a href="/how-it-works/">New to this? See how it works, step by step</a></p>
 <p class="gap-line">A piece by Maverick: <a href="/leaderboard-noise/">quoted AI benchmark gaps, checked against their own sampling noise</a>.</p>
 <p class="gap-line">Found by Driftproof: <a href="/invisible-space/">the invisible space that AI graders got backwards</a>. Try the quiz.</p>
 </div>
@@ -295,9 +297,9 @@ ${statCards}
 <section id="quickstart" class="screen is-text">
 <h2>Install in Claude Code</h2>
 ${plugin.map((c) => `<p>${copy(c)}</p>`).join('\n')}
-<p>That installs <code>/driftproof:start</code>, <code>/driftproof:init</code>, <code>/driftproof:run</code> and <code>/driftproof:badge</code>. The plugin hands your arguments to the pinned runner and writes the receipt that runner would have written; <code>/driftproof:run</code> spends your Claude Code subscription rather than an API key. It measures and never changes a skill's instructions. The one file it adds is a new <code>evals/evals.json</code>, from <code>/driftproof:start</code> or <code>/driftproof:init</code>, to a skill that has none, after you say yes in the run.</p>
+<p>That installs <code>/driftproof:start</code>, <code>/driftproof:init</code>, <code>/driftproof:run</code>, <code>/driftproof:blind</code> and <code>/driftproof:badge</code>. The plugin hands your arguments to the pinned runner and writes the receipt that runner would have written; <code>/driftproof:run</code> spends your Claude Code subscription rather than an API key. It measures and never changes a skill's instructions. The one file it adds is a new <code>evals/evals.json</code>, from <code>/driftproof:start</code> or <code>/driftproof:init</code>, to a skill that has none, after you say yes in the run.</p>
 <p>Start with a skill you already have. In Claude Code, from the folder above it, in a git repository, run <code>/driftproof:start</code>. Claude lists your skills and asks which to check. If the skill has no test cases, Claude reads your <code>SKILL.md</code> and drafts test cases with you, aimed at outcomes you would check. It writes only after you say yes, then runs a quick check and opens a results page: your first receipt. Drafted cases are labelled as drafted from the skill and approved by you. A quick check is a first look and cannot produce a verdict. For a direct measurement, use <code>/driftproof:run path/to/your-skill</code>. On a skill with no test cases, it offers the same draft. For a new skill, scaffold one with <code>npx driftproof init my-skill</code>, as the next section shows.</p>
-<p>Driftproof is tested on Linux and macOS. In an outside retest on macOS the shipped gate failed only in the publishing helper, which needs GNU <code>realpath -m</code>. Windows is untested: from Node's source the plugin would not find <code>npx</code> there, but that failure has never been observed. A CI matrix across Linux, macOS and Windows is planned, and <a href="/findings/">the findings page</a> has the figures.</p>
+<p>Driftproof is tested on Linux and macOS. In an outside retest on macOS the shipped gate failed only in the publishing helper, which needs GNU <code>realpath -m</code>. Public Windows CI runs the package gate, a stubbed first run, selected core tests and the plugin's own compatibility and runner-launch tests. These checks make no model calls and do not establish real-provider support. On Windows the plugin needs Node, npm's bundled npx and Git for Windows on PATH. <a href="/findings/">The findings page</a> has the figures.</p>
 </section>
 
 <section id="ci" class="screen is-text">
@@ -316,7 +318,9 @@ cat receipts/*.summary.md              # read the receipt + human summary</code>
 <section id="latest" class="screen is-wide">
 <h2>Latest report</h2>
 ${reportCard(latest, HOME_CARD_STAT, { counts: false })}
+<p>The latest report reads each skill against a same-length placebo as well as against no skill: a text of the skill's length in bytes, in its place, drawn from a fixed corpus chosen without reference to any task. <a href="/placebo/">Fake my file</a> shows the text Driftproof would use for your file, in your browser, before you measure it. On a run that kept its answers, the results page and <code>driftproof blind</code> show each task's two answers without saying which used your file, ask you to pick, and after your picks say how often you were right beside the judge's scores. In Claude Code, <code>/driftproof:blind</code> opens it.</p>
 <p><a href="/reports/">All <span data-stat="reports_published">${esc(V('reports_published'))}</span> reports</a></p>
+<p><a href="${drift.HREF}">${esc(drift.TEXT.h1)}</a>: what each receipt read, model by model.</p>
 <p class="writing">Writing: <a href="/writing/three-releases/">${esc(latest.essay_links[0].title.value)}</a>, the launch essay reading all ${esc(V('reports_published_word'))} reports on what a moving model does to encoded expertise.</p>
 </section>
 
@@ -470,10 +474,17 @@ function plotState(rel) {
 // rather than reworded. /reports/ renders it on every card, this one included.
 // The fields the homepage's latest card names (spec 020 AC-9), one definition, exported so a
 // gate can call reportCard the way the homepage calls it (spec 025 AC-9, A-025-29).
-const HOME_CARD_STAT = (k) => ({ number: ' data-stat="latest_report_number"', date: ' data-stat="latest_report_date"', what_moved: ' data-stat="latest_report_what_moved"' })[k] || '';
+const HOME_CARD_STAT = (k) => ({ number: ' data-stat="latest_report_number"', date: ' data-stat="latest_report_date"', what_moved: ' data-stat="latest_report_title"' })[k] || '';
+
+// Issue 652: a card and an llms line are headed by the report's own title, its row's h1 without a
+// "Report n:" prefix. For every report but 017 that is what moved; Report 017's h1 states what moved
+// apart (data-what-moved), so its card reads "Skill or sugar pill?" as its page does. The homepage's
+// latest card wraps it in data-stat="latest_report_title", the same reading in scripts/site-data.mjs.
+const REPORT_PREFIX = /^Report\s*#?\d+\s*(?:—|:)\s*/;
+const reportName = (r) => r.title.value.replace(REPORT_PREFIX, '');
 
 function reportCard(r, stat = () => '', { counts = true } = {}) {
-  const tail = esc(r.what_moved.value);
+  const tail = esc(reportName(r));
   const plain = `Report <span${stat('number')}>${esc(r.number.value)}</span>: ${tail}`;
   const moved = plain.endsWith(tail) ? '' : `<p class="card-moved">${tail}</p>\n`;
   // Spec 047: where the caller names a field for the title's tail, the tail is wrapped in it,
@@ -522,6 +533,7 @@ function reportsIndex() {
 <div><h1>Reports</h1></div>
 <p>Every report Driftproof has published, newest first. ${esc(V('reports_published'))} reports, ${esc(V('receipts_published'))} receipts, all of them dated and hash-verified.</p>
 </div>
+<p><a href="${drift.HREF}">${esc(drift.TEXT.h1)}</a>: what each receipt read, model by model, across the reports.</p>
 ${cards}
 </section>
 
@@ -1528,8 +1540,18 @@ function placeboPage() {
     + '<p>Read <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md#the-placebo-arm">the placebo arm in the receipt specification</a>.</p></main>' });
 }
 
+// Spec 639: the same skill on different models, each receipt's reading by model.
+function acrossModelsPage() {
+  return shell({ title: drift.TEXT.title, description: drift.TEXT.lede, main: drift.driftMain() });
+}
+
+// Issue 640: the step-by-step walk-through, built from one sealed Report 017 receipt (scripts/how-it-works.js).
+const howItWorksPage = () => require('./how-it-works.js').page(shell);
+
 const TARGETS = {
   'placebo/index.html': placeboPage,
+  'how-it-works/index.html': howItWorksPage,
+  [drift.REL]: acrossModelsPage,
   'index.html': homepage,
   'glossary/index.html': glossaryPage,
   'report-types/index.html': reportTypesPage,
@@ -1584,4 +1606,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { BENCHMARK_GAP_PRESETS, BENCHMARK_GAP_FAMOUS, paperPage, maintainerPage, shell, heroReceipt, receiptWords, casesItem, reportCard, HOME_CARD_STAT, statePlot, plotState, subscribedPage, reportTypes, typeNote, word, bandFacts, bandsSection, floorFigure, checksSchemaVersion, tokensSchemaVersion, patchMethodology, receiptSchemaVersion, patchInteropMd, PATCHES, homepage, reportsIndex, glossaryPage, reportTypesPage, notFoundPage, redirectStub, STUBS, TERMS, TARGETS, reader, stats, reports, buildCards };
+module.exports = { reportName, BENCHMARK_GAP_PRESETS, BENCHMARK_GAP_FAMOUS, paperPage, maintainerPage, shell, heroReceipt, receiptWords, casesItem, reportCard, HOME_CARD_STAT, statePlot, plotState, subscribedPage, reportTypes, typeNote, word, bandFacts, bandsSection, floorFigure, checksSchemaVersion, tokensSchemaVersion, patchMethodology, receiptSchemaVersion, patchInteropMd, PATCHES, homepage, reportsIndex, glossaryPage, reportTypesPage, notFoundPage, redirectStub, STUBS, TERMS, TARGETS, reader, stats, reports, buildCards };

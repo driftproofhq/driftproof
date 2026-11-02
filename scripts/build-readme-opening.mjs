@@ -15,6 +15,9 @@
 //     docs/data/report-summaries.json (spec 125), resolved by scripts/site-chrome.js
 //     `summaryPoints`, the same resolver the report page's own summary uses, and dated by
 //     stats.json `latest_report_date`. A new report's summary row moves the line on the next run.
+//     The opening is a first-read surface (issue 652): a term the summary uses undefined, such as
+//     "by the case rule", is said in the data file's plain words (`finding_plain`), which carry no
+//     count, so no figure moves; the report page keeps the summary's own words.
 //   - the badge's image line is kept as the README carries it; spec 020 AC-30 holds it to its Base;
 //   - the view screenshot is a committed file under docs/, shown by its site URL (the site serves
 //     docs/ at its root), so it renders on GitHub and on npm, where a repository path would not;
@@ -90,13 +93,16 @@ export function latestFinding({ root = DEFAULT_ROOT } = {}) {
   const require = createRequire(path.join(root, 'scripts', 'build-readme-opening.mjs'));
   const chrome = require(path.join(root, 'scripts', 'site-chrome.js'));
   const stats = json(root, 'docs/data/stats.json');
+  const plain = json(root, 'docs/data/readme-opening.json').finding_plain || {};
+  for (const [term, words] of Object.entries(plain)) if (/\d/.test(words)) throw new Error(`docs/data/readme-opening.json finding_plain gives "${term}" words that carry a figure: ${JSON.stringify(words)}`);
   const n = String(stats.latest_report_number.value);
   const date = chrome.FORMATS['d Mon yyyy'](stats.latest_report_date.value);
   const points = chrome.summaryPoints(n);
   if (!points) throw new Error(`docs/data/report-summaries.json has no row for report ${n}, the newest`);
   const found = points.find((p) => p.lead === 'What we found.');
   if (!found) throw new Error(`report ${n}'s summary has no "What we found." point`);
-  const first = found.text.split(/(?<=[.!?])\s+(?=[A-Z])/)[0];
+  let first = found.text.split(/(?<=[.!?])\s+(?=[A-Z])/)[0];
+  for (const [term, words] of Object.entries(plain)) first = first.split(term).join(words);
   const w = first.split(/\s+/)[0];
   const proper = new RegExp(`[a-z,;:)] ${escRe(w)}\\b`).test(points.map((p) => p.text).join(' '));
   return { n, date, sentence: proper ? first : first.charAt(0).toLowerCase() + first.slice(1) };

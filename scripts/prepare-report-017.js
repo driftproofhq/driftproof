@@ -30,6 +30,8 @@ const MOVED='a same-length placebo text';
 // The opening's caveat (spec 627 A-627-3): it carries no count, so no headline line moves with it.
 const CAVEAT='Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings.';
 const AMENDMENT_1='Added a note after the headline and in the rows for grill-me and grill-with-docs. The whole text of each skill only calls another skill, and these text tasks forbid tools. Counts, readings and receipts are unchanged.';
+// The blind read's record (issue 638, spec 627 A-627-8), naming the skill its page uses.
+const AMENDMENT_2=(skill)=>'Added a link, after the opening panel, to a blind read of '+skill+'\'s kept answers. Counts, readings and receipts are unchanged.';
 // The dek: the model it was read on, then the frozen template line, its first letter lowercased
 // when it opens with a word ("All", "None").
 const lead=(h)=>/^[A-Z][a-z]/.test(h)?h[0].toLowerCase()+h.slice(1):h;
@@ -171,9 +173,17 @@ function body(c,{panelDir,placeboPage}){
  const surfaces=[...new Set(receipts.map(r=>r.receipt.run.surface))].sort().join(', ');
  const record='<section id="campaign-run-record"><h2>Run record</h2>'+annotateCampaignFigures('<p>One campaign root, <code>'+esc(c.src)+'</code>, read from the latest manifest its log names. '+receipts.length+' of '+c.rows.length+' attempts have a sealed receipt; every other attempt is a recorded failure and reads NOT_MEASURED. The earliest receipt date is '+fig(first.slice(0,10),receipts.find(r=>r.receipt.run.date_utc===first).src)+' and the latest '+fig(lastDate.slice(0,10),receipts.find(r=>r.receipt.run.date_utc===lastDate).src)+'. No finish time is inferred.</p><p>The surface was '+esc(surfaces)+'. Recorded spend across the chain: USD '+c.ledger.spent+'. Recorded costs are API-equivalent estimates, not a subscription invoice.</p>',c.manifests.at(-1).file)+'<ol class="campaign-runs">'+c.manifests.map(m=>'<li><code>'+esc(m.file)+'</code>, SHA-256 <code>'+m.sha256+'</code></li>').join('')+'</ol><p>Plan SHA-256 <code>'+c.ctx.plan_hash+'</code>. Pre-registered note SHA-256 <code>'+c.ctx.plan.outcomes.sha256+'</code>.</p><p>Read and built by:</p><ul class="reader-pins">'+READER.map(f=>'<li><code>'+f+'</code>, SHA-256 <code>'+sha256(fs.readFileSync(path.join(ROOT,f)))+'</code></li>').join('')+'</ul></section>';
  const list='<h2>Receipts</h2><ul>'+receipts.map(r=>'<li><a href="https://github.com/driftproofhq/driftproof/blob/main/'+esc(r.src)+'">'+esc(r.skill)+' on '+esc(humanModelName(r.receipt.run.model_id))+'</a></li>').join('')+'</ul>';
- // The dated record of the hand-off note (spec 627 A-627-7), before the receipts so a later entry appends.
- const amendments=c.handoffNote?'<h2 id="amendments">Amendments</h2><section id="amendment-1"><h3>Amendment 1, 2 Nov 2026</h3><p>'+esc(AMENDMENT_1)+'</p></section>':'';
- return head+headline+panelHTML+results+method+limits+record+amendments+list;
+ // Issue 638 (spec 627 A-627-8): one line to the blind read, after the panel, naming the skill that
+ // page's rule picks (the shortest counted skill that is not a hand-off). Required here, at call time:
+ // that builder requires this one.
+ const blindSkill=esc(require('./build-report-017-blind.js').skillOf(c.rows,panelDir).row.skill);
+ const blindLink='<p class="blind-link"><a href="/reports/017/blind/">Can you tell which answer had the skill? Try a blind read of '+blindSkill+'&#39;s kept answers</a>.</p>';
+ // The dated records, before the receipts so a later entry appends: the hand-off note's (spec 627
+ // A-627-7), which appears only with the note, then the blind read's (A-627-8), always. The entries
+ // keep the published page's numbers whichever are present, so a record never renumbers.
+ const amendments='<h2 id="amendments">Amendments</h2>'+(c.handoffNote?'<section id="amendment-1"><h3>Amendment 1, 2 Nov 2026</h3><p>'+esc(AMENDMENT_1)+'</p></section>':'')
+  +'<section id="amendment-2"><h3>Amendment 2, 2 Nov 2026</h3><p>'+esc(AMENDMENT_2(blindSkill))+'</p></section>';
+ return head+headline+panelHTML+blindLink+results+method+limits+record+amendments+list;
 }
 
 function summaryRow(c){return {points:[['What we tested.',TESTED],['What we found.',dekOf(c)],['Beating the fake is not beating no skill.',CAVEAT],['What it does not show.',scopeOf(c)]].map(([lead,text])=>({lead,text,sources:[{file:'docs/'+REL,quote:text}]}))};}

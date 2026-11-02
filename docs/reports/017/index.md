@@ -70,6 +70,8 @@ This text ends with one space.
 
 grill-me, the shortest skill counted in the headline (157 bytes), beside its placebo: the same length to the byte, rebuilt from the receipt's seed, length and corpus, with the SHA-256 the receipt seals. [Fake my file](https://driftproofhq.com/placebo/).
 
+[Can you tell which answer had the skill? Try a blind read of handoff's kept answers](https://driftproofhq.com/reports/017/blind/).
+
 ## Each skill
 
 In Report 015's order. Each row is one receipt, read by the receipt reader.
@@ -573,7 +575,7 @@ Plan SHA-256 `3f008b21d542b85b90a5e37c60672c62788b9742319ca1f1fde8c906c419f3f4`.
 
 Read and built by:
 
-- `scripts/prepare-report-017.js`, SHA-256 `92fc18086e6220f6ff1139b180809091471f92a0a65ddda6ebc292e6939a7192`
+- `scripts/prepare-report-017.js`, SHA-256 `44f2fdf2471f97244d6891ad8c2d6a7b90837869db14046c27fbd833ac14dd54`
 - `specs/613-placebo-skills-report/publication.cjs`, SHA-256 `fba3577194bab75b0ac4c993b4567008c418e17178ef4399e560a71ff2754050`
 - `specs/613-placebo-skills-report/tally.cjs`, SHA-256 `a7d334796f32591a9488baa2286e3ba9462305ff6a92b8b2f0c7695a96a415dd`
 - `specs/613-placebo-skills-report/run-campaign.cjs`, SHA-256 `db070608736eb9401fb8acf6a15cf800deeefbd706b18a92383242ef6609af6a`
@@ -590,6 +592,10 @@ Read and built by:
 ### Amendment 1, 2 Nov 2026
 
 Added a note after the headline and in the rows for grill-me and grill-with-docs. The whole text of each skill only calls another skill, and these text tasks forbid tools. Counts, readings and receipts are unchanged.
+
+### Amendment 2, 2 Nov 2026
+
+Added a link, after the opening panel, to a blind read of handoff's kept answers. Counts, readings and receipts are unchanged.
 
 ## Receipts
 

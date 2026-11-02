@@ -377,6 +377,7 @@ gate.section('fixed scratch names in PR-run tests (issue 629)');
       'tests/plan.test.js:@T/spec188-promise'].map(s => [s.split(':')[0], "'" + s.split(':')[1] + "'", TRIPWIRE]),
     ['tests/runner-user.test.js', "'@T/bbuild/heavy.lock'", 'path inside the disposable fake root'],
     ['tests/runner-user.test.js', "'@T/bbuild/runner-hooks/start.sh'", 'path inside the disposable fake root'],
+    ['tests/runner-user.test.js', "'@T/codeql'", 'path inside the disposable fake root'],
     ['tests/sweep-shards.test.js', "path.join(@D, 'ss-results')", 'argument to a pure path function, never created'],
     ['tests/doctor.test.js', "path.join(@D, 'doctor-caller')", 'home value passed to stubbed probes, never created'],
     ['specs/440-placebo-arm/paths.test.js', "path.join('@T', '440-placebo-arm')", 'text fixture for a path reader, never created'],

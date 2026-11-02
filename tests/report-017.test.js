@@ -468,7 +468,9 @@ const notesOf = (html) => [...html.matchAll(/<p class="handoff-note">([\s\S]*?)<
 
 test('A-627-7: the hand-off rule matches both committed texts and no synthetic text that does more', () => {
   const H = handoff();
-  assert.deepEqual(fs.readdirSync(PANEL).sort(), Object.keys(HANDOFF).map((id) => id + '.md').sort(), 'the committed texts are these two');
+  // The panel directory holds these two and the blind read's pick, handoff (spec 638 A-638-1), nothing else.
+  const BLIND_PICK = '335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed';
+  assert.deepEqual(fs.readdirSync(PANEL).sort(), [...Object.keys(HANDOFF), BLIND_PICK].map((id) => id + '.md').sort(), 'the committed texts are the two hand-offs and the blind read\'s pick');
   for (const id of Object.keys(HANDOFF)) assert.equal(H.handsOffOnly(fs.readFileSync(path.join(PANEL, id + '.md'), 'utf8')), true, HANDOFF[id]);
   const fm = '---\nname: synthetic\ndescription: A synthetic test skill.\n---\n\n';
   assert.equal(H.handsOffOnly(fm + 'Call the Skill tool with "one".\nCall the Skill tool with "two".\n'), true, 'control: two calls');
@@ -502,15 +504,19 @@ test('A-627-7: the published page carries the hand-off note after the caveat and
   const { splitReportBody } = require(path.join(ROOT, 'scripts/site-chrome.js'));
   const entry = '<h2 id="amendments">Amendments</h2><section id="amendment-1"><h3>Amendment 1, 2 Nov 2026</h3><p>Added a note after the headline and in the rows for grill-me and grill-with-docs. The whole text of each skill only calls another skill, and these text tasks forbid tools. Counts, readings and receipts are unchanged.</p></section>';
   assert.ok(html.indexOf('<section id="campaign-run-record">') < html.indexOf(entry) && html.indexOf(entry) < html.indexOf('<h2>Receipts</h2>'), 'after the run record, before the receipts');
-  assert.equal(splitReportBody(html).amendments, entry);
+  // Issue 638 (A-627-8) appends the blind read's entry after it, so Amendment 1 stays the section's prefix.
+  const blind = '<section id="amendment-2"><h3>Amendment 2, 2 Nov 2026</h3><p>Added a link, after the opening panel, to a blind read of handoff&#39;s kept answers. Counts, readings and receipts are unchanged.</p></section>';
+  assert.equal(splitReportBody(html).amendments, entry + blind);
   // Without the note the page is the same, but for the note's elements, its record and the record's
   // entry in the contents rail; the summary row is the same.
   const rail = '<li><a href="#amendments">Amendments</a></li>\n';
   assert.ok(html.includes(rail));
   const without = B.buildReport({ ...B.parse([]), handoff: [] });
   assert.equal(notesOf(without.html).length, 0);
-  assert.equal(splitReportBody(without.html).amendments, '');
-  assert.equal(html.replace(/<p class="handoff-note">[\s\S]*?<\/p>/g, '').replace(entry, '').replace(rail, ''), without.html);
+  // Without the note, the section keeps the blind read's entry alone, under the published number.
+  assert.equal(splitReportBody(without.html).amendments, '<h2 id="amendments">Amendments</h2>' + blind);
+  const noteEntry = entry.slice('<h2 id="amendments">Amendments</h2>'.length);
+  assert.equal(html.replace(/<p class="handoff-note">[\s\S]*?<\/p>/g, '').replace(noteEntry, ''), without.html);
   assert.deepEqual(done.built.summary, without.summary);
   assert.deepEqual(done.built.campaign.pub, without.campaign.pub);
 });
