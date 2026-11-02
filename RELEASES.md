@@ -8,9 +8,77 @@ makes this one a record.
 
 ---
 
+## v0.26.0 - 2026-11-01
+
+### What's new
+
+- **Can you tell which answer used your CLAUDE.md? Driftproof now deals you the answers blind.** On a receipt whose run kept its answers (`--keep-transcripts`, or any `--quick` run), the results page and the new `driftproof blind` show each task's two answers, one written with your file and one with the same-length placebo (or without the file), one pair at a time in a shuffled order, and ask you to pick. After your picks it says how often you were right, what a reader picking at random would get, and how the judge scored the same pairs. `--suite` with the suite the run measured shows each task's prompt. Your picks are saved as a record beside the receipt; they move no verdict and say nothing about other readers, tasks or models. In Claude Code, `/driftproof:blind` opens it.
+- **Report 017, Skill or sugar pill?** On Claude Sonnet 5.5, 11 of 16 skills beat a same-length placebo by the case rule. Where the placebo scored below no skill, beating it does not mean beating no skill; each row shows both readings. [Read the report](https://driftproofhq.com/reports/017/).
+- **Fake my file:** see the same-length placebo text Driftproof would use for your file, in your browser, before you measure it ([driftproofhq.com/placebo](https://driftproofhq.com/placebo/)).
+- **The placebo reading everywhere:** `view`, the pull request comment, the job summary, `export --to summary-json` and `diff` show it beside the verdict. The GitHub Action takes `placebo` and `suite` inputs for rules files.
+- **`driftproof card`** draws a shareable SVG card of a receipt's result.
+- **`driftproof doctor`** runs the README's isolation checks in one command.
+- **`driftproof run --case`** runs only the tasks you name.
+
+- PR 635: Report 017: Skill or sugar pill? (#627)
+- PR 620: fix(617): red gradeSamples test on dev; stale prints --models
+- PR 630: Report 017: placebo arm plan, campaign driver and 017c receipts (#613)
+- PR 621: feat(611): driftproof doctor checks the isolation setup in one command
+- PR 616: feat(610): show the placebo reading on every reader surface
+- PR 634: Blind read: one pair at a time, bounded panes, prompts from a matching suite (#633)
+- PR 632: Runner migration follow-ups and two CI reds on migrated runners (#629)
+- PR 631: driftproof card: a shareable SVG result card from a receipt (#628)
+- PR 615: feat(614): Fake my file - see your file's placebo in the browser
+- PR 622: feat(619): paired reading of kept answers
+- PR 626: feat(624): Action suite and placebo inputs for rules files
+- PR 625: feat(623): plugin opens the paired reading; run keeps transcripts
+- PR 618: feat(612): driftproof run --case runs chosen tasks only
+- PR 609: gate(608): cut the README body baseline hash (C-332)
+- PR 605: fix(603): runner migration handles user units, leftover listeners and absolute runner links
+- PR 607: fix(606): stale routes unsupported rubric regrades to rerun
+- PR 590: fix(stale): route rubric-only edits to regrade (#580)
+- PR 604: fix(602): cap-literal scan ignores path-segment numbers
+- PR 601: fix(600): harden runner migration and keep privileged scripts private
+- PR 598: feat(9): move the self-hosted runners to their own Linux user
+- PR 599: test(125): accept story report pages, keeping Report 016's layout (#591)
+- PR 597: chore(029): declare spec 490's sweep timeout, as 027's (#596)
+- PR 595: test(312): pin #588's plugin test step in the Windows workflow (#594)
+- PR 586: Report 005 rebuilds from the public tree, byte for byte
+- PR 593: test(015): derive the no-draw fixture's fake-tool-call count from its draws (#592)
+- PR 589: fix(reports): correct Report 008's title to what its receipts hold (#582)
+- PR 588: fix(plugin): run the Claude Code plugin on Windows (#581)
+- PR 585: CLI correctness: release dates, empty delta, corrupt-receipt badge, path redaction, stale help
+- PR 587: README: lead with dated receipts and drift across model releases
+- PR 584: The release version follows what users see
+- PR 578: Report 016: a visible receipts link; specs 021 AC-18 and 134 AC-2 green
+- PR 556: Release sweep: drop a redundant node_modules copy; run CodeQL at the end of the heavy shard
+- PR 576: Spec 025 AC-11 expects the width the fluid token resolves to
+- PR 565: Gates: remove source-text mutation rows from the swept specs (C-330)
+- PR 574: Drop-results page width uses a token
+- PR 571: Receipt fixtures follow the current schema: one shared helper
+- PR 572: Drop another tool's results file and see the analysis in the browser
+- PR 570: Windows package gate: #545's FIFO and init round-trip tests assume POSIX
+- PR 569: Release notes: the scripted draft needs a "### What's new" user section, or the GitHub release isn't created
+- PR 566: Release train: a manual auto-check records a finished publication
+- PR 563: Release train: publication completion survives the public history purge
+- PR 561: Release train: a site-only push after a release no longer blocks the next release
+
+- PR 643: Reports 017 and 015: a note on the two skills that only hand off to another skill (#642)
+- PR 641: Release 0.26.0 sweep: clear the 13 reds on the migrated runners (#637)
+
+
+### Engineering log
+
+**Merged from dev by a refresh, after the draft.** `release-prepare --stage refresh` lists every merge on dev between `89dd17dcd9ef` and `cd25e89f22aa`, the commit the refresh merged, so this release ships each of them, and `release-record.json`'s `source_commit` moves to `cd25e89f22aa`, where the next release's list starts.
+
+- PR 643, merge `cd25e89f`: Reports 017 and 015: a note on the two skills that only hand off to another skill (#642)
+- PR 641, merge `afa8f6b9`: Release 0.26.0 sweep: clear the 13 reds on the migrated runners (#637)
+
+---
+
 ## v0.25.0 - 2026-10-30
 
-Changes included in this release:
+### What's new
 
 - PR 543: Text capture: per-surface tool-limit wording and the v0.16 schema description
 - PR 541: Release sweep: place gates by time and memory; spec 434 memory 5.3→0.3 GB
@@ -23,6 +91,14 @@ Changes included in this release:
 - PR 529: Sprint: release train down to draft, sweep, publish (C-329)
 - PR 527: Sprint: cut spec checks that do not protect users (C-328)
 - PR 524: Decisions: the 0.24.0 release log and purge record
+- PR 555: Release 0.25.0 sweep: clear the 22 reds (stub summaries drop the zero fake-call line; fixtures follow v0.16)
+- PR 554: Plugin: test your CLAUDE.md or AGENTS.md, with an optional placebo arm
+- PR 548: Site: the upstream merged count follows the data (twelve, not nine); the release.yml comment says what gates publishing
+- PR 546: README: a first-run checklist, how to read a refusal, and how to check your version
+- PR 545: CLI: escape control characters in printed names and paths; bounded reads for config, receipts and suites
+- PR 558: Release 0.25.0: re-anchor six mutation rows to the current code
+
+### Engineering log
 
 **Merged from dev by a refresh, after the draft.** `release-prepare --stage refresh` lists every merge on dev between `15a457b87950` and `d0c23fc17ea1`, the commit the refresh merged, so this release ships each of them, and `release-record.json`'s `source_commit` moves to `d0c23fc17ea1`, where the next release's list starts.
 

@@ -17,7 +17,7 @@ test('plugin registries and manifest agree on the runner version',()=>{
 test('every plugin command has a description and an executable steps block',()=>{
   const dir=path.join(root,'plugin/driftproof/commands');
   const files=fs.readdirSync(dir).filter(f=>f.endsWith('.md'));
-  for(const required of ['init.md','run.md','badge.md','start.md']) assert.ok(files.includes(required));
+  for(const required of ['init.md','run.md','badge.md','start.md','blind.md']) assert.ok(files.includes(required));
   for(const file of files) {
     const text=fs.readFileSync(path.join(dir,file),'utf8');
     assert.match(text,/^---\n[\s\S]*?^description: *\S[\s\S]*?^---/m);

@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copy into .github/workflows/ beside your CLAUDE.md and driftproof/tasks.json.
+# Tasks use the evals/evals.json shape. This offline check makes no model calls.
+# Stub receipts are UNVERIFIED and NOT_MEASURED; they do not measure the rules.
+# Replace vX with a release containing suite and placebo, or its full commit SHA.
+# For a measured run, follow the README's GitHub Action provider setup and budgets.
+name: driftproof-rules-file
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rules:
+    runs-on: ubuntu-latest
+    env:
+      DRIFTPROOF_STUB: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: driftproofhq/driftproof@vX
+        with:
+          skill-dir: CLAUDE.md
+          suite: driftproof/tasks.json
+          placebo: 'true'
+          pr-comment: 'false'

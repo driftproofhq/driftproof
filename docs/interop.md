@@ -324,7 +324,7 @@ parser:
 ```json
 {
   "format": "driftproof/summary",
-  "format_version": "1",
+  "format_version": "2",
   "skill": { "name": "commit-message-conventions", "version": "0.2.0" },
   "model": { "id": "claude-opus-5", "provider": "anthropic", "surface": "claude-cli" },
   "run_date_utc": "2026-08-11T00:00:00.000Z",
@@ -340,14 +340,22 @@ parser:
   "judge": { "model_id": "claude-haiku-4-5-20251001", "samples": 5 },
   "receipt_hash": "…64 hex…",
   "report_url": null,
-  "spec": "https://driftproofhq.com/spec/receipt.schema.json"
+  "spec": "https://driftproofhq.com/spec/receipt.schema.json",
+  "placebo": null
 }
 ```
 
 Contract:
 
-- **`format`/`format_version` gate compatibility.** `"driftproof/summary"` v`"1"`
-  keys are frozen; additions bump `format_version`.
+- **`format`/`format_version` gate compatibility.** `"driftproof/summary"` v`"2"`
+  adds `placebo` and keeps every v1 field and its meaning. Further additions bump
+  `format_version`.
+- `placebo` is `null` without a placebo block. Otherwise it holds `bytes`,
+  `reading`, `delta`, `delta_uncertainty`, `with_skill_score` and `placebo_score`.
+  The reading uses the [same case rule](../spec/RECEIPT.md#the-placebo-arm-v014)
+  as the receipt readers, including `NOT_MEASURED` when the placebo cannot be verified.
+  The figures come from the recorded placebo comparison, apart from the case rule;
+  an unavailable figure stays `null`. The placebo reading does not change `verdict`.
 - `verdict` is the single-receipt verdict (`PASSED` / `NO_EFFECT` / `REGRESSED`
   through the 0.05 effect floor) — or **`NOT_MEASURED`** when the receipt is
   below `TESTED` or carries no delta (e.g. a skillgrade import with no baseline).

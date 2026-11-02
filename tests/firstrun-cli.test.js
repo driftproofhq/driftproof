@@ -426,7 +426,11 @@ test('AC-247-control skill name stays visible as data', () => {
   assert.doesNotMatch(r.stdout + r.stderr, unsafe247);
   assert.match(r.stdout, /planted.*\\u/);
 });
-for (const name of ['my skill', 'my\nskill']) test('AC-247-init commands round trip ' + JSON.stringify(name), () => {
+// Windows is documented as untested; mkfifo makes nothing there and init quotes for a POSIX shell.
+const WIN32 = process.platform === 'win32';
+for (const name of ['my skill', 'my\nskill']) test('AC-247-init commands round trip ' + JSON.stringify(name), {
+  skip: WIN32 && 'suggested commands are quoted for a POSIX shell',
+}, () => {
   const root = tmp(), r = cli(['init', name], root);
   assert.equal(r.status, 0, r.stderr);
   assert.doesNotMatch(r.stdout + r.stderr, unsafe247);
@@ -451,7 +455,7 @@ function inputs248() {
   return hardening248 = { root, dir, receipt, answers: path.join(root, 'transcripts', hash, 'answers.json') };
 }
 for (const input of ['rc', 'receipt', 'rubric', 'cases']) for (const type of ['FIFO', 'oversized']) {
-  test('AC-248-' + input + ' refuses ' + type + ' before parsing', () => {
+  test('AC-248-' + input + ' refuses ' + type + ' before parsing', { skip: WIN32 && type === 'FIFO' && 'no FIFOs on Windows' }, () => {
     const base = inputs248(), root = tmp();
     const limit = input === 'receipt' ? require('../lib/receipt').RECEIPT_MAX_BYTES : require('../config').SKILL_MAX_BYTES;
     const file = path.join(root, input === 'rc' ? '.driftproofrc' : input + '.json');
@@ -467,3 +471,27 @@ for (const input of ['rc', 'receipt', 'rubric', 'cases']) for (const type of ['F
     assert.match(r.stderr, type === 'FIFO' ? /regular file/ : /exceed|bound/);
   });
 }
+
+// Issue 568: on win32 the FIFO plants and the POSIX-quoted round trip skip with their reason; the
+// oversized plants still run. The rows rerun here with the platform read as win32.
+test('AC-568 win32 skips name their reason and oversized inputs still run', () => {
+  const root = tmp(), preload = path.join(root, 'win32.js');
+  // The real temporary directory is pinned first: os.tmpdir() reads the platform on each call.
+  fs.writeFileSync(preload, "const os = require('os'), t = os.tmpdir(); os.tmpdir = () => t;\n"
+    + "Object.defineProperty(process, 'platform', { value: 'win32' });\n");
+  // A test runner parent sets NODE_TEST_CONTEXT, which would turn this child's TAP into its own protocol.
+  const childEnv = env();
+  delete childEnv.NODE_TEST_CONTEXT;
+  const r = spawnSync(process.execPath, ['--require', preload, '--test-reporter=tap', '--test-name-pattern=AC-24[78]-', __filename], {
+    cwd: ROOT, env: childEnv, encoding: 'utf8', timeout: 600000, maxBuffer: 32 << 20,
+  });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  const rows = r.stdout.split('\n').filter(l => /^ok \d+ - /.test(l));
+  const row = name => rows.filter(l => l.includes('- ' + name));
+  for (const input of ['rc', 'receipt', 'rubric', 'cases']) {
+    assert.deepEqual(row('AC-248-' + input + ' refuses FIFO').map(l => / # SKIP no FIFOs on Windows$/.test(l)), [true], r.stdout);
+    assert.deepEqual(row('AC-248-' + input + ' refuses oversized').map(l => / # SKIP/.test(l)), [false], r.stdout);
+  }
+  assert.deepEqual(row('AC-247-init commands round trip').map(l => / # SKIP suggested commands are quoted for a POSIX shell$/.test(l)), [true, true], r.stdout);
+  assert.match(r.stdout, /^# skipped 6$/m, r.stdout);
+});

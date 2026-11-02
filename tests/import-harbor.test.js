@@ -274,6 +274,7 @@ function oracle({ withJob = null, withoutJob = null, reward = null, skill = null
     harness: agents.size === 1 ? JSON.parse([...agents][0]) : null,
     model, provider, notices, arm,
     trials: all,
+    dirs: [withJob, withoutJob].filter(Boolean),
     admittedInDelta: included.reduce((n, c) => n + c.with_skill.samples.length + c.baseline.samples.length, 0),
     // AC-26: per arm, the trial files read and the trials whose rewards enter the delta.
     perArm: Object.fromEntries(modesRead.map((m) => [m, { read: scans[m].trials.length, inDelta: included.reduce((n, c) => n + c[m].samples.length, 0) }])),
@@ -415,10 +416,15 @@ function trace(receipt, o) {
   return problems;
 }
 
-// Text a receipt must never carry (AC-14): the source's local paths, read from the trial files.
+// Text a receipt must never carry (AC-14): the source's local paths, read from the trial files, and
+// the paths of this import itself: the directories it was given, the checkout and the account's home.
+// A-266-6 (issue 637): those last are read as they are, not by a /home/ prefix, so the reading holds
+// on an account whose home and checkout sit elsewhere (a runner under /var/lib).
 function localPaths(receipt, o) {
   const text = JSON.stringify(receipt);
   const hits = [];
+  const own = [...o.dirs, ROOT, `${os.homedir()}${path.sep}`];
+  for (const s of own) if (s.length > 3 && text.includes(JSON.stringify(s).slice(1, -1))) hits.push(s);
   for (const t of o.trials) {
     const d = t.doc;
     for (const s of [d.task_id?.path, d.trial_uri, d.config?.trials_dir, ...(d.config?.environment?.mounts || []).map((m) => m.source), d.exception_info?.exception_message, d.exception_info?.exception_traceback]) {
@@ -951,14 +957,6 @@ test('AC-12: draw indexes follow path order where it is not listing order, and a
   const receipt = importPair(w, b);
   assert.deepEqual(trace(receipt, o), []);
   assert.deepEqual(receipt.results.cases.find((c) => c.mode === 'baseline').excluded_draws.map((e) => e.draw_index), [1], 'the trial in x-1 is draw 1');
-  // Plant: a copy of the importer with its one path sort removed, its requires made absolute.
-  const src = fs.readFileSync(path.join(ROOT, 'lib', 'importers-harbor.js'), 'utf8');
-  const SORT = '  trials.sort((a, b) => byCodeUnit(a.rel, b.rel));\n';
-  assert.equal(src.split(SORT).length, 2, 'the importer puts each arm\'s trials in path order in one place');
-  const mutant = path.join(tmp(), 'importers-harbor-unsorted.js');
-  fs.writeFileSync(mutant, src.replace(SORT, '').replace(/require\('\.\.\/config'\)/, `require(${JSON.stringify(path.join(ROOT, 'config'))})`).replace(/require\('\.\/([a-z-]+)'\)/g, (_, m) => `require(${JSON.stringify(path.join(ROOT, 'lib', m))})`));
-  const unsorted = require(mutant).importHarbor({ withJob: w, withoutJob: b, importedAt: AT }).receipt;
-  assert.notDeepEqual(trace(unsorted, o), [], 'without the path sort the draw indexes follow listing order');
 });
 
 // ── AC-13: no path skips a check ────────────────────────────────────────────

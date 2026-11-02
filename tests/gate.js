@@ -328,6 +328,119 @@ gate.section('hygiene');
     hygiene.scanPath('config/.env').length === 1 && hygiene.scanPath('config/env.md').length === 0);
 }
 
+// ── 8-tmp. Fixed scratch names in PR-run tests (issue 629) ───────────────────
+// The runners and the operator are different accounts. A fixed /var/tmp name one
+// account created first is not writable by the other, so a test or gate that
+// writes one fails on the next account (spec 316 and the placebo page test,
+// PR 615). Scratch comes from mkdtemp directly under /var/tmp or TMPDIR. A
+// mkdtemp prefix under a fixed subdirectory needs that directory, so it counts.
+// The reader is lexical: a name built at run time with ${...} or $VAR is not seen.
+gate.section('fixed scratch names in PR-run tests (issue 629)');
+{
+  const TMP_BASE = String.raw`(?:'/var/tmp'|"/var/tmp"|\(?process\.env\.TMPDIR\s*\|\|\s*'/var/tmp'\)?|os\.tmpdir\(\)|tmpdir\(\))`;
+  const JOIN = new RegExp(String.raw`path\.join\(\s*` + TMP_BASE + String.raw`\s*,\s*(['"])([^'"$]*)\1\s*[,)]`, 'g');
+  const LITERAL = /(['"`])\/var\/tmp\/([^'"`$\s]*)\1/g;
+  const SHELL = /(?:^|[\s"'=>(])(\/var\/tmp\/|\$TMPDIR\/|\$\{TMPDIR[^}]*\}\/)([A-Za-z0-9_.\/-]+)(?![A-Za-z0-9_.\/$*?-])/g;
+  function fixedTmpNames(file, text) {
+    const hits = [];
+    text.split('\n').forEach((line, i) => {
+      const found = [];
+      for (const m of line.matchAll(LITERAL)) found.push({ at: m.index, text: m[0], name: m[2] });
+      for (const m of line.matchAll(JOIN)) found.push({ at: m.index, text: m[0].replace(/\s*[,)]$/, ')'), name: m[2] });
+      if (file.endsWith('.sh')) {
+        for (const m of line.matchAll(SHELL)) {
+          const at = m.index + m[0].indexOf(m[1]);
+          if (!found.some(f => at >= f.at && at < f.at + f.text.length)) found.push({ at, text: m[1] + m[2], name: m[2] });
+        }
+      }
+      for (const f of found) {
+        // A bare prefix test, a glob and a mktemp template name no file.
+        if (!f.name || /[*?]|XXX/.test(f.name)) continue;
+        // A mkdtemp prefix directly in the scratch root makes a fresh directory.
+        const before = line.slice(0, f.at);
+        if (/mkdtemp(?:Sync)?\(\s*$/.test(before) && !f.name.includes('/')) continue;
+        hits.push({ file, line: i + 1, text: f.text });
+      }
+    });
+    return hits;
+  }
+  // Each entry names a file, the exact text the reader finds and why it writes no fixed name.
+  const TRIPWIRE = 'tripwire plant: the guard refuses the call before any write and the test reads the guard record';
+  const OPERATOR = 'operator or live-run tool, run by hand and never by a PR check';
+  // Texts write @T for /var/tmp and @D for os.tmpdir(), so this table is not itself a hit.
+  const fill = s => s.replace(/@T/g, '/var/tmp').replace(/@D/g, 'os.tmpdir()');
+  const ALLOWED = [
+    ['tests/import-harbor.test.js', "path.join(@D, 'nowhere')", 'dangling symlink target, never created'],
+    ...['tests/lint-suite.test.js:@T/spec189-should-never-exist', 'tests/lint-suite.test.js:@T/spec189-outside',
+      'specs/189-issue-206-lint-suite/offline.cjs:@T/spec189-outside', 'tests/plan.test.js:@T/spec188-outside-plant',
+      'tests/plan.test.js:@T/spec188-write-delete', 'tests/plan.test.js:@T/spec188-write-open',
+      'tests/plan.test.js:@T/spec188-promise'].map(s => [s.split(':')[0], "'" + s.split(':')[1] + "'", TRIPWIRE]),
+    ['tests/runner-user.test.js', "'@T/bbuild/heavy.lock'", 'path inside the disposable fake root'],
+    ['tests/runner-user.test.js', "'@T/bbuild/runner-hooks/start.sh'", 'path inside the disposable fake root'],
+    ['tests/sweep-shards.test.js', "path.join(@D, 'ss-results')", 'argument to a pure path function, never created'],
+    ['tests/doctor.test.js', "path.join(@D, 'doctor-caller')", 'home value passed to stubbed probes, never created'],
+    ['specs/440-placebo-arm/paths.test.js', "path.join('@T', '440-placebo-arm')", 'text fixture for a path reader, never created'],
+    ...['packed fixture with spaces', 'installer work with spaces'].map(n => ['specs/312-windows-ci/first-run.test.js',
+      "path.join(@D, '" + n + "')", 'value in an invocation plan, never created']),
+    ...['@T/408-parser-', '@T/408-reader-', '@T/408-pin-', '@T/414-version-']
+      .map(p => ['specs/408-skill-measurements/publication.test.cjs', "'" + p + "'", 'mkdtemp prefix passed through frozenScratch']),
+    ['specs/490-repository-capture/auth.test.cjs', "'@T/bbuild/490/runtime-sqlite-v1/image/usr/bin/claude'", 'read-only pinned runtime'],
+    ['specs/490-repository-capture/auth.test.cjs', "'@T/bbuild/490/runtime-tool-env-v1/profile.json'", 'read-only pinned runtime'],
+    ['specs/490-repository-capture/smoke-evidence.cjs', "'@T/bbuild/heavy.lock'", 'the shared heavy lock, granted to both accounts by design'],
+    ...[['specs/408-skill-measurements/build-plan.cjs', "'@T/bbuild/408/list.md'"],
+      ['specs/408-skill-measurements/run-campaign.cjs', "'@T/driftproof-issue408.lock'"],
+      ['specs/613-placebo-skills-report/run-campaign.cjs', "'@T/driftproof-issue613.lock'"],
+      ['specs/435-report-015-router-amendment/public.cjs', "'@T/bbuild/435/public'"],
+      ['specs/435-report-015-router-amendment/public.cjs', "'@T/bbuild/435/public-candidate.json'"],
+      ['specs/471-rules-files-report/pinned-runtime.cjs', "'@T/bbuild/490/pinned-execution-evidence.json'"],
+      ['specs/490-repository-capture/extend-runtime.cjs', "'@T/bbuild/490/runtime/profile.json'"],
+      ['specs/490-repository-capture/extend-runtime.cjs', "'@T/bbuild/490/runtime-tool-env-v1'"],
+      ['specs/490-repository-capture/full-run.cjs', "'@T/rules-files/'"],
+      ['specs/490-repository-capture/full-run.cjs', "'@T/bbuild/490/live-evidence.json'"],
+      ['specs/490-repository-capture/full-run.cjs', "'@T/bbuild/490/full-run-lock'"],
+      ['specs/490-repository-capture/live-probe.cjs', "'@T/bbuild/490/live-evidence.json'"],
+      ['specs/490-repository-capture/live-probe.sh', '@T/bbuild/490/live-evidence.json'],
+      ['specs/490-repository-capture/prepare-runtime.cjs', "'@T/bbuild/490/runtime'"],
+      ['specs/490-repository-capture/smoke-1.sh', '@T/bbuild/490/smoke-1'],
+      ['specs/490-repository-capture/smoke-2.sh', '@T/bbuild/490/smoke-2-exec-oauth-v1'],
+      ['specs/490-repository-capture/smoke-3.sh', '@T/bbuild/490/smoke-3-exec-oauth-v1'],
+      ['specs/490-repository-capture/smoke.cjs', "'@T/bbuild/490/live-evidence.json'"],
+      ['specs/490-repository-capture/smoke.cjs', "'@T/rules-files/picks-v2.json'"],
+      ['specs/490-repository-capture/smoke.cjs', "'@T/rules-files/'"]].map(([f, t]) => [f, t, OPERATOR]),
+  ].map(([f, t, why]) => [f, fill(t), why]);
+  // Gates and tests that PR checks run live under tests/ and specs/. Evidence holds records, not checks.
+  const scanned = listFiles(ROOT).filter(f => /^(tests|specs)\//.test(f) && /\.(js|cjs|mjs|sh)$/.test(f) && !f.split('/').includes('evidence'))
+    .filter(f => fs.existsSync(path.join(ROOT, f)));
+  const found = scanned.flatMap(f => fixedTmpNames(f, fs.readFileSync(path.join(ROOT, f), 'utf8')));
+  const allowed = (h) => ALLOWED.some(([f, t]) => f === h.file && t === h.text);
+  const unexplained = found.filter(h => !allowed(h));
+  // An entry that no longer matches is stale. A published tree carries no specs/, so absence there is expected.
+  const stale = ALLOWED.filter(([f, t]) => scanned.includes(f) ? !found.some(h => h.file === f && h.text === t) : !ROOT_IS_PUBLISHED_TREE);
+  gate.check('no PR-run test or gate writes a fixed /var/tmp name; every allowed entry still matches', scanned.length > 0 && unexplained.length === 0 && stale.length === 0,
+    { unexplained: unexplained.slice(0, 40), stale: stale.slice(0, 40) });
+  // Plants go through the same reader as standalone text, never as tree files.
+  const plants = [
+    ['a.test.js', "fs.writeFileSync('@T/out.png', x);"],
+    ['a.test.js', "page.screenshot({path: path.join(process.env.TMPDIR || '@T', 'shot.png')});"],
+    ['a.test.js', "const f = path.join(@D, 'state.json');"],
+    ['a.test.js', "const d = fs.mkdtempSync('@T/bbuild/9/case-');"],
+    ['a.test.js', "const d = fs.mkdtempSync('@T/bbuild/9/' + tag + '-');"],
+    ['gate.sh', 'node probe.mjs > @T/probe.log'],
+    ['gate.sh', 'cp out.json "$TMPDIR/fixed.json"'],
+  ];
+  const missed = plants.filter(([f, t]) => fixedTmpNames(f, fill(t)).length !== 1);
+  gate.check('MUTATION: each planted fixed scratch name reads RED', missed.length === 0, { missed });
+  const clean = [
+    ['a.test.js', "const d = fs.mkdtempSync('@T/spec629-');"],
+    ['a.test.js', "const d = fs.mkdtempSync(path.join(@D, 'spec629-'));"],
+    ['a.test.js', "assert.ok(dir.startsWith('@T/'));"],
+    ['gate.sh', 'T="$(mktemp -d "$TMPDIR/spec629-gate.XXXXXX")"'],
+    ['gate.sh', "if compgen -G '@T/driftproof-*quiet*' > /dev/null; then"],
+  ];
+  const noisy = clean.filter(([f, t]) => fixedTmpNames(f, fill(t)).length !== 0);
+  gate.check('fresh mkdtemp and mktemp scratch, prefix tests and globs read clean', noisy.length === 0, { noisy });
+}
+
 // ── 8a. Published-tree symlink boundary (BLOCKING) ───────────────────────────
 // The last look at the bytes that are about to become a public repository, after
 // every copy and rewrite the build performs (spec 011, AC-3). P-1 shipped a
@@ -1687,13 +1800,13 @@ gate.section('spec 024 runner hostile-input proof');
   };
   const hostile = block(/^      HOSTILE: \|$/);
   const classes = hostile ? [/"/, /;/, /\$\(/, /`/, /\n[^\n]/].every((re) => re.test(hostile)) : false;
-  const inputs024 = ['skill-dir', 'models', 'max-usd', 'max-calls', 'fail-on-regression'];
+  const inputs024 = ['skill-dir', 'models', 'max-usd', 'max-calls', 'fail-on-regression', 'suite', 'placebo'];
   const stepText = (id) => { const i = lines.findIndex((l) => l.trim() === `id: ${id}`); if (i < 0) return ''; let j = i; while (j > 0 && !/^      - /.test(lines[j])) j--; let k = i + 1; while (k < lines.length && !/^      - /.test(lines[k])) k++; return lines.slice(j, k).join('\n'); };
   const hostileOk = inputs024.filter((inp) => { const t = stepText(`hostile-${inp}`); return /uses: \.\//.test(t) && /continue-on-error: true/.test(t) && new RegExp(`^\\s+${inp}: \\$\\{\\{ env\\.HOSTILE \\}\\}$`, 'm').test(t); });
   const assertText = stepText('assert-refused');
   const outcomesMapped = inputs024.every((inp) => new RegExp(`^\\s+O_[A-Z_]+: \\$\\{\\{ steps\\.hostile-${inp}\\.outcome \\}\\}$`, 'm').test(assertText));
-  gate.check('AC-1: HOSTILE declared once with " ; $( ` and a newline; five hostile-<input> steps through uses: ./ with continue-on-error; assert-refused maps the five outcomes through env:',
-    classes && hostileOk.length === 5 && outcomesMapped, { classes, hostileOk, outcomesMapped });
+  gate.check('AC-1: HOSTILE declared once with " ; $( ` and a newline; seven hostile-<input> steps through uses: ./ with continue-on-error; assert-refused maps the seven outcomes through env:',
+    classes && hostileOk.length === 7 && outcomesMapped, { classes, hostileOk, outcomesMapped });
   // AC-4 (spec 024 v1.1, approval F-1): action.yml uploads its receipt under ONE
   // fixed name and actions/upload-artifact v4 refuses a second upload of a name
   // on the run, so the workflow may run the action to success at most once:
@@ -1726,12 +1839,12 @@ gate.section('spec 024 runner hostile-input proof');
     const r = spawnSync('bash', [script], { cwd: ROOT, encoding: 'utf8', env: { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, HOME: process.env.HOME, DRIFTPROOF_STUB: '1', GITHUB_WORKSPACE: ROOT, RUNNER_TEMP: rt, GITHUB_OUTPUT: path.join(tmp, 'out'), HOSTILE: hostile, ...outcomes } });
     return { status: r.status, out: (r.stdout || '') + (r.stderr || ''), rt };
   };
-  const allFail = { O_SKILL_DIR: 'failure', O_MODELS: 'failure', O_MAX_USD: 'failure', O_MAX_CALLS: 'failure', O_FAIL_ON_REGRESSION: 'failure' };
+  const allFail = { O_SKILL_DIR: 'failure', O_MODELS: 'failure', O_MAX_USD: 'failure', O_MAX_CALLS: 'failure', O_FAIL_ON_REGRESSION: 'failure', O_SUITE: 'failure', O_PLACEBO: 'failure' };
   if (assertRun && hostile) {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'driftproof-024-'));
     try {
       const green = runAssert(tmp, allFail);
-      gate.check('AC-3: the workflow\'s assert block, executed against this tree with five refusals, exits 0 (the shipped script refuses the payload in every input)',
+      gate.check('AC-3: the workflow\'s assert block, executed against this tree with seven refusals, exits 0 (the shipped script refuses the payload in every input)',
         green.status === 0, { status: green.status, out: green.out.slice(-300) });
       const tmp2 = fs.mkdtempSync(path.join(os.tmpdir(), 'driftproof-024m-'));
       try {
@@ -1743,7 +1856,7 @@ gate.section('spec 024 runner hostile-input proof');
       } finally { fs.rmSync(tmp2, { recursive: true, force: true }); }
     } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
   } else {
-    gate.check('AC-3: the workflow\'s assert block, executed against this tree with five refusals, exits 0 (the shipped script refuses the payload in every input)', false, { assertRun: !!assertRun, hostile: !!hostile });
+    gate.check('AC-3: the workflow\'s assert block, executed against this tree with seven refusals, exits 0 (the shipped script refuses the payload in every input)', false, { assertRun: !!assertRun, hostile: !!hostile });
     gate.check('AC-3 MUTATION: with a marker planted and every outcome reading failure, the same block exits non-zero and its first refusal names the marker', false, {});
   }
 }
@@ -2321,9 +2434,9 @@ gate.section('interop export (summary-json stable interchange)');
   const snapshot = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'export-summary.snapshot.json'), 'utf8'));
 
   const s = toSummaryJson(importAgentSkillsEval(aseData), { reportUrl: null });
-  gate.check('summary-json is deterministic and matches the checked-in snapshot (frozen v1 contract)',
+  gate.check('summary-json is deterministic and matches the checked-in snapshot (additive v2 contract, spec 107 A-107-5)',
     JSON.stringify(s) === JSON.stringify(snapshot), { got: s });
-  gate.check('summary format/version stamped', s.format === SUMMARY_FORMAT && s.format_version === SUMMARY_FORMAT_VERSION && SUMMARY_FORMAT === 'driftproof/summary' && SUMMARY_FORMAT_VERSION === '1');
+  gate.check('summary format/version stamped', s.format === SUMMARY_FORMAT && s.format_version === SUMMARY_FORMAT_VERSION && SUMMARY_FORMAT === 'driftproof/summary' && SUMMARY_FORMAT_VERSION === '2');
 
   const sSg = toSummaryJson(importSkillgrade(sgData));
   gate.check('no-baseline import exports null baseline/delta + NOT_MEASURED', sSg.scores.baseline === null && sSg.delta === null && sSg.verdict === 'NOT_MEASURED');
@@ -2333,8 +2446,9 @@ gate.section('interop export (summary-json stable interchange)');
   gate.check('TESTED export carries a real verdict + caller-supplied report_url + the receipt_hash link',
     sT.verdict === 'PASSED' && sT.report_url === 'https://driftproofhq.com/reports/001/' && sT.receipt_hash === tested.receipt_hash && sT.source === 'driftproof');
   const V1_KEYS = ['format', 'format_version', 'skill', 'model', 'run_date_utc', 'scores', 'delta', 'delta_uncertainty', 'verdict', 'verification_level', 'source', 'judge', 'receipt_hash', 'report_url', 'spec'];
-  gate.check('summary v1 key set is exactly frozen (additions must bump format_version)',
-    JSON.stringify(Object.keys(sT)) === JSON.stringify(V1_KEYS) && JSON.stringify(Object.keys(s)) === JSON.stringify(V1_KEYS));
+  const V2_KEYS = [...V1_KEYS, 'placebo'];
+  gate.check('summary v2 keeps every v1 key and adds only placebo (spec 107 A-107-5)',
+    JSON.stringify(Object.keys(sT)) === JSON.stringify(V2_KEYS) && JSON.stringify(Object.keys(s)) === JSON.stringify(V2_KEYS) && sT.placebo === null && s.placebo === null);
 }
 
 gate.section('interop pages + published schema sync');
@@ -2977,6 +3091,25 @@ gate.section('report-005 staging (value report, stub)');
     { before: docsReportsBefore });
 
   fs.rmSync(tmp, { recursive: true, force: true });
+}
+
+// ── 49a. Report #005 rebuilds from a clone (spec 007 AC-11.7, issue 390) ─────
+// The README's rebuild block, read out of this tree's README and run verbatim in
+// this tree with model calls made to fail. scripts/build-public.sh runs this gate
+// inside every tree it builds, so each publish checks the claim on its own
+// artifact. Spec 007's gate runs the same helper on a scratch public build.
+gate.section('report-005 rebuild from a clone');
+{
+  const r005 = require('./report-005-rebuild');
+  const rb = r005.runBlock({ root: ROOT });
+  gate.check("the README's Report #005 block rebuilds docs/reports/005/index.html byte for byte from this tree's tracked files, with no model call",
+    rb.pass, rb.detail);
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'driftproof-r005-refusal-'));
+  try {
+    const rf = r005.refusesMissingReceipt({ root: ROOT, dir: tmp });
+    gate.check("the README's Report #005 block refuses when a tracked receipt is missing, naming the pair, with no model call and no page",
+      rf.pass, rf.detail);
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 }
 
 // ── merge precondition (DECISIONS #12) ───────────────────────────────────────
@@ -4902,6 +5035,10 @@ if (SCAN_ROOT_ARG) {
       bad8.length === 0, { mismatches: bad8 });
   }
 
+  // The entry correcting the title (issue 582, spec 031 A-031-34), alone and to the end of the
+  // Amendments: what item 9 lets follow the lost-draw entry, and what item 11 reads.
+  const TITLE_ENTRY_AFTER8 = /^\s*<div class="card" id="amendment-title">\n(?: {4}<p>[^\n]*<\/p>\n)+ {2}<\/div>\s*$/;
+
   // 9. THE DATED ENTRY ON THE LOST BASELINE DRAW (issue 109, spec 031 A-031-27). Of the four
   //    receipts this page reads, one arm lost a draw: the older baseline of the case whose fall
   //    the recurrence section quotes. Every figure the entry must print is read here from the
@@ -4981,7 +5118,9 @@ if (SCAN_ROOT_ARG) {
       const m = ENTRY_RE8.exec(amendments);
       if (!m) return [...out, 'the entry is not a card of paragraphs in the Amendments section'];
       const card = m[0];
-      if (amendments.slice(m.index + card.length).trim() !== '') out.push('the entry is not the last entry of the Amendments section');
+      // A-031-34 (issue 582): the title entry, which item 11 holds, is the one entry that may follow it.
+      const after = amendments.slice(m.index + card.length);
+      if (after.trim() !== '' && !TITLE_ENTRY_AFTER8.test(after)) out.push('the entry is not the last entry of the Amendments section');
       const before = amendments.slice(0, m.index);
       const labels = [...before.matchAll(/<strong>v(\d+)\.(\d+) &middot; /g)].map((x) => [Number(x[1]), Number(x[2])]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
       const top = labels[labels.length - 1];
@@ -5167,6 +5306,112 @@ if (SCAN_ROOT_ARG) {
     gate.check('report 008 MUTATION: each paraphrase of the move the lost-draw entry corrects, in the row, on the page or as a source, reads red',
       at8 >= 0 && !!li8 && quotes8.length >= 3 && unread8.length === 0,
       { plants: plants8.length, quotes: quotes8.length, unread: unread8.slice(0, 8) });
+  }
+
+  // 11. THE CORRECTED TITLE (issue 582, spec 031 A-031-34). The page was published as "the skill
+  //     stabilises the floor, not the ceiling", a pattern read across the release, and no case in
+  //     either arm separated across it. The entry that corrects the title is read here: its counts
+  //     derived from the receipts by caseRule, never from scripts/report-corrections.js, which
+  //     writes it (I-1); the corrected title in the <h1>, the row and every file under docs/, and
+  //     the first title nowhere outside the record's Amendments (I-3); the entry last, labelled one
+  //     past the entry before it, quoting the first title (I-4).
+  {
+    const { caseRule: rule11, armOf: arm11, lostDrawsOf: lost11 } = require(path.join(ROOT, 'lib', 'verdict.js'));
+    const stats11 = require(path.join(ROOT, 'lib', 'stats.js'));
+    const { SCORE_SCALE: scale11 } = require(path.join(ROOT, 'config'));
+    const { splitReportBody: split11 } = require(path.join(ROOT, 'scripts', 'site-chrome.js'));
+    // The first title as the renderer's source still carries it; the corrected one typed from the amendment.
+    const first11 = (/<h1>(Report 008: [^<]+)<\/h1>/.exec(fs.readFileSync(path.join(ROOT, 'scripts', 'prepare-report-008.js'), 'utf8')) || [])[1] || '';
+    const NOW11 = 'Report 008: Claude Fable 5.1, no separation detected across the release in either arm';
+    const words11 = first11.replace(/^Report 008: /, '');
+    // One arm of one case: its band, or with its lost draws filled at each end of the scale.
+    const fills11 = (c) => {
+      const l = lost11(c);
+      if (!l) return [arm11(c)];
+      if (!l.measured) return null;
+      return [scale11.worst, scale11.best].map((t) => { const xs = [...l.measured, ...Array(l.lost).fill(t)]; return { mean: stats11.mean(xs), sd: stats11.stddev(xs), n: xs.length }; });
+    };
+    // Each arm across the release, the older receipt's against the newer one's. A separation counts
+    // only where every fill separates the same way; one that does not is held by a lost draw.
+    const across11 = { with_skill: { cases: 0, separated: 0, unheld: [] }, baseline: { cases: 0, separated: 0, unheld: [] } };
+    const unread11 = [];
+    for (const r of rows8) {
+      for (const mode of ['with_skill', 'baseline']) {
+        for (const o of r.baselineReceipt.results.cases.filter((c) => c.mode === mode)) {
+          const n = r.receipt.results.cases.find((c) => c.mode === mode && c.id === o.id);
+          const fo = fills11(o); const fn = n ? fills11(n) : null;
+          if (!fo || !fn) { unread11.push(`${r.slug}/${o.id}/${mode}`); continue; }
+          const states = fo.flatMap((a) => fn.map((b) => rule11(a, b).state));
+          across11[mode].cases += 1;
+          if (states[0].startsWith('separated') && states.every((s) => s === states[0])) across11[mode].separated += 1;
+          else if (rule11(arm11(o), arm11(n)).state.startsWith('separated')) across11[mode].unheld.push(o.id);
+        }
+      }
+    }
+    const w11 = across11.with_skill; const b11 = across11.baseline;
+    const unheld11 = [...b11.unheld, ...w11.unheld];
+    const figures11 = [
+      `This page was first published as <q>${first11}</q>.`,
+      `of the ${b11.cases} baseline cases, ${b11.separated} separated across the release, and of the ${w11.cases} with_skill cases, ${w11.separated} did.`,
+      ...unheld11.map((id) => `<code>${id}</code> separates on its measured draws, and not with its lost draw bounded.`),
+      `It now reads <q>${NOW11}</q>.`,
+    ];
+    const CARD11 = /\n {2}<div class="card" id="amendment-title">\n(?: {4}<p>[^\n]*<\/p>\n)+ {2}<\/div>\n/;
+    const docs11 = listFiles(ROOT).filter((f) => f.startsWith('docs/') && f !== 'docs/reports/008/index.html' && /\.(?:html|md|txt|json|xml)$/.test(f));
+    const carriers11 = words11 ? docs11.filter((f) => fs.readFileSync(path.join(ROOT, f), 'utf8').includes(words11)) : [];
+    const reports11 = JSON.parse(fs.readFileSync(path.join(ROOT, 'docs', 'data', 'reports.json'), 'utf8'));
+    const titleProblems11 = (html, { reports = reports11, files = {} } = {}) => {
+      const out = [];
+      if (!html) return ['no page'];
+      if (!first11 || !words11) return ['scripts/prepare-report-008.js carries no first title'];
+      if (unread11.length) out.push(`arms the rule cannot read: ${unread11.slice(0, 3).join(', ')}`);
+      if (w11.separated || b11.separated || unheld11.length !== 1) out.push(`the receipts do not read as the entry says: ${JSON.stringify(across11)}`);
+      const { body, amendments } = split11(html);
+      if (body.split(`<h1>${NOW11}</h1>`).length !== 2) out.push('the page\'s <h1> is not the corrected title, once');
+      if (body.includes(`<h1>${first11}</h1>`)) out.push('the page\'s <h1> is the first title');
+      if (html.split(words11).length - amendments.split(words11).length !== 0) out.push('the page carries the first title outside its Amendments');
+      for (const f of [...new Set([...carriers11, ...Object.keys(files)])]) {
+        const text = Object.hasOwn(files, f) ? files[f] : fs.readFileSync(path.join(ROOT, f), 'utf8');
+        if (text.includes(words11)) out.push(`${f} carries the first title`);
+      }
+      const row = ((reports && reports.reports) || []).find((x) => x.number && x.number.value === '008');
+      if (!row || row.title.value !== NOW11 || row.what_moved.value !== NOW11.replace(/^Report 008: /, '')) out.push(`reports.json row 008 reads title ${JSON.stringify(row && row.title.value)}`);
+      if ((html.match(/id="amendment-title"/g) || []).length !== 1) return [...out, 'the page does not carry the title entry once'];
+      const m = CARD11.exec(amendments);
+      if (!m) return [...out, 'the title entry is not a card of paragraphs in the Amendments section'];
+      const card = m[0];
+      if (amendments.slice(m.index + card.length).trim() !== '') out.push('the title entry is not the last entry of the Amendments section');
+      const labels = [...amendments.slice(0, m.index).matchAll(/<strong>v(\d+)\.(\d+) &middot; /g)].map((x) => [Number(x[1]), Number(x[2])]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+      const top = labels[labels.length - 1];
+      const label = /^\n {2}<div class="card" id="amendment-title">\n {4}<p><strong>v(\d+)\.(\d+) &middot; (\d{4}-\d{2}-\d{2})<\/strong>\. /.exec(card);
+      if (!top || !label || Number(label[1]) !== top[0] || Number(label[2]) !== top[1] + 1) out.push(`the title entry is not labelled one past the labels before it (${label ? `v${label[1]}.${label[2]}` : 'no label'} after ${top ? `v${top.join('.')}` : 'none'})`);
+      for (const f of figures11) if (!card.includes(f)) out.push(`the title entry does not print ${f}`);
+      if (/confiden|significan|certain(?:ty|ly)/i.test(card)) out.push('the title entry carries confidence language');
+      return out;
+    };
+    const problems11 = titleProblems11(onDisk8);
+    gate.check('report 008: the title entry is the last Amendments entry, labelled one past the last, quotes the first title, prints the counts the receipts give across the release, and the corrected title is the <h1>, the row and every docs file\'s',
+      problems11.length === 0, { problems: problems11.slice(0, 8) });
+    // MUTATION. A count moved, the first <h1> put back, the row with the first title, a docs file
+    // carrying it, and the entry above the one before it, each read red.
+    const m11 = onDisk8 ? CARD11.exec(onDisk8) : null;
+    const count11 = `${b11.separated} separated across the release`;
+    const moved11 = m11 && m11[0].includes(count11) ? onDisk8.replace(m11[0], () => m11[0].replace(count11, `${b11.separated + 1} separated across the release`)) : null;
+    const h1Back11 = onDisk8 && onDisk8.includes(`<h1>${NOW11}</h1>`) ? onDisk8.replace(`<h1>${NOW11}</h1>`, `<h1>${first11}</h1>`) : null;
+    const rowBack11 = JSON.parse(JSON.stringify(reports11));
+    const r11 = rowBack11.reports.find((x) => x.number && x.number.value === '008');
+    if (r11) { r11.title.value = first11; r11.what_moved.value = words11; }
+    const lost11At = onDisk8 ? /\n {2}<div class="card" id="amendment-lost-draw">\n(?: {4}<p>[^\n]*<\/p>\n)+ {2}<\/div>\n/.exec(onDisk8) : null;
+    const above11 = m11 && lost11At ? onDisk8.replace(m11[0], '').replace(lost11At[0], `${m11[0]}${lost11At[0]}`) : null;
+    const plants11 = {
+      moved: !!moved11 && titleProblems11(moved11).some((p) => /title entry does not print/.test(p)),
+      h1: !!h1Back11 && titleProblems11(h1Back11).some((p) => /<h1> is the first title/.test(p)),
+      row: !!r11 && titleProblems11(onDisk8, { reports: rowBack11 }).some((p) => /reports\.json row 008/.test(p)),
+      docs: titleProblems11(onDisk8, { files: { 'docs/llms.txt': `${fs.readFileSync(path.join(ROOT, 'docs', 'llms.txt'), 'utf8')}\n${first11}\n` } }).some((p) => /docs\/llms\.txt carries the first title/.test(p)),
+      above: !!above11 && above11 !== onDisk8 && titleProblems11(above11).some((p) => /not the last entry|not labelled/.test(p)),
+    };
+    gate.check('report 008 MUTATION: the title entry with a count moved, the first <h1> put back, the row or a docs file carrying the first title, and the entry above the one before it, each read red',
+      Object.values(plants11).every(Boolean), plants11);
   }
 }
 

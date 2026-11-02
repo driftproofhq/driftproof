@@ -31,6 +31,7 @@ What each other tool measures, and whether it compares a task with the skill and
 
 Every published report, newest first.
 
+- [Report 017](https://driftproofhq.com/reports/017/): a same-length placebo text
 - [Report 016](https://driftproofhq.com/reports/016/): Popular rules files vs. a placebo: most made Claude write more
 - [Report 015](https://driftproofhq.com/reports/015/): Skills.sh snapshot [2026-10-17](https://driftproofhq.com/reports/015/): text tasks
 - [Report 014](https://driftproofhq.com/reports/014/): Claude Haiku 5.5 on release day, three skills
@@ -38,7 +39,7 @@ Every published report, newest first.
 - [Report 011](https://driftproofhq.com/reports/011/): Claude Opus 5.5, the day after its release, three skills
 - [Report 010](https://driftproofhq.com/reports/010/): repeated ADR evaluations across two Claude Code configurations
 - [Report 009](https://driftproofhq.com/reports/009/): three skills under two eval harnesses
-- [Report 008](https://driftproofhq.com/reports/008/): the skill stabilises the floor, not the ceiling
+- [Report 008](https://driftproofhq.com/reports/008/): Claude Fable 5.1, no separation detected across the release in either arm
 - [Report 007](https://driftproofhq.com/reports/007/): the baseline is the noisy arm
 - [Report 006](https://driftproofhq.com/reports/006/): the skill text moves, the substrate holds still
 - [Report 005](https://driftproofhq.com/reports/005/): what does a skill cost to run?

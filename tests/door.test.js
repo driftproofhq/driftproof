@@ -375,3 +375,111 @@ test('run on a skill with no suite offers a draft, writes nothing, and ends with
   const withSuite = sandbox();
   assert.doesNotMatch(doorIn(withSuite, ['run', 'my-skill']).stdout, /no test cases yet/);
 });
+
+
+// Issue 623: real inputs and spawn records, with no source mutation rows.
+function blindSandbox() {
+  const sb = sandbox();
+  assert.equal(door(sb, ['run', 'my-skill', '--quick']).status, 0);
+  fs.rmSync(sb.log, { force: true });
+  const bin = path.join(sb.root, 'openers');
+  fs.mkdirSync(bin);
+  for (const name of ['open', 'xdg-open']) {
+    fs.writeFileSync(path.join(bin, name), '#!' + process.execPath + '\n' +
+      'require("fs").appendFileSync(process.env.SPEC028_SPAWNLOG, JSON.stringify({bin:"opener",argv:process.argv.slice(2)})+"\\n");\n', { mode: 0o755 });
+  }
+  sb.extra = { PATH: [bin, FAKE_BIN, path.dirname(process.execPath), '/usr/bin', '/bin'].join(path.delimiter) };
+  return sb;
+}
+
+test('623 AC-1 blind defaults to receipts and opens only after the pinned view succeeds', () => {
+  for (const given of [[], ['receipts'], ['paired answers']]) {
+    const sb = blindSandbox();
+    if (given[0] === 'paired answers') fs.renameSync(path.join(sb.work, 'receipts'), path.join(sb.work, given[0]));
+    const r = door(sb, ['blind', ...given], { extra: sb.extra });
+    assert.equal(r.status, 0, r.stderr);
+    const pin = require('../plugin/driftproof/.claude-plugin/plugin.json').version;
+    const seen = spawns(sb);
+    assert.deepEqual(seen.map(s => [s.bin, s.argv]), [
+      ['npx', ['driftproof@' + pin, '--version']],
+      ['npx', ['driftproof@' + pin, 'view', given[0] || 'receipts', '--out', 'driftproof-view.html']],
+      ['opener', [path.join(sb.work, 'driftproof-view.html')]],
+    ]);
+    assert.ok(fs.statSync(path.join(sb.work, 'driftproof-view.html')).isFile());
+    assert.ok(seen.filter(s => s.bin === 'npx').every(s => s.parent_shell === false));
+  }
+});
+
+test('623 AC-1 stale version and invalid receipt stop before opening', () => {
+  for (const invalid of [false, true]) {
+    const sb = blindSandbox();
+    if (invalid) {
+      const file = fs.readdirSync(path.join(sb.work, 'receipts')).find(f => f.endsWith('.json'));
+      fs.writeFileSync(path.join(sb.work, 'receipts', file), '{}');
+    }
+    const r = door(sb, ['blind'], { extra: { ...sb.extra, ...(invalid ? {} : { SPEC028_NPX_VERSION: '0.0.1' }) } });
+    assert.notEqual(r.status, 0, r.stdout + r.stderr);
+    assert.deepEqual(npx(sb).map(v => v[0]), invalid ? ['--version', 'view'] : ['--version']);
+    assert.equal(spawns(sb).filter(s => s.bin === 'opener').length, 0);
+  }
+});
+
+test('623 AC-2 blind refuses hostile existing paths and invalid shapes before spawning', () => {
+  const sb = sandbox();
+  fs.mkdirSync(path.join(sb.work, 'receipts'));
+  const outside = path.join(sb.root, 'work-neighbour');
+  fs.mkdirSync(outside);
+  fs.symlinkSync(outside, path.join(sb.work, 'link-out'));
+  const hostile = ['line\nbreak', 'tab\tname', 'delete\x7f', 'semi;colon', 'single\'quote', 'double"quote', 'tick' + String.fromCharCode(96), 'sub$(id)'];
+  for (const name of hostile) fs.mkdirSync(path.join(sb.work, name));
+  const inputs = [['receipts', 'extra'], ['--out', 'other.html'], ['--keep-transcripts'], [''], ['missing'], ['my-skill/SKILL.md'], [outside], ['link-out'], ...hostile.map(p => [p])];
+  for (const args of inputs) {
+    const r = door(sb, ['blind', ...args]);
+    assert.equal(r.status, 2, JSON.stringify(args) + ': ' + r.stderr);
+    assert.equal(spawns(sb).length, 0, JSON.stringify(args));
+    if (hostile.includes(args[0])) assert.match(r.stderr, /receipts-dir: contains a (control character|shell metacharacter)/);
+  }
+  const noRepo = sandbox({ repo: false });
+  fs.mkdirSync(path.join(noRepo.work, 'receipts'));
+  assert.equal(door(noRepo, ['blind']).status, 2);
+  assert.equal(spawns(noRepo).length, 0);
+  const empty = path.join(sb.root, 'empty-path');
+  fs.mkdirSync(empty);
+  assert.equal(door(sb, ['blind'], { extra: { PATH: empty } }).status, 2);
+  assert.equal(spawns(sb).length, 0);
+});
+
+test('623 AC-3 run emits keep-transcripts once and retains answers; values refuse before spawning', () => {
+  for (const flags of [[], ['--keep-transcripts'], ['--keep-transcripts', '--keep-transcripts']]) {
+    const sb = sandbox();
+    const r = door(sb, ['run', 'my-skill', ...flags]);
+    assert.equal(r.status, 0, r.stderr);
+    const run = npx(sb).find(v => v[0] === 'run');
+    assert.equal(run.filter(v => v === '--keep-transcripts').length, flags.length ? 1 : 0);
+    const out = path.join(sb.work, 'receipts');
+    const receipt = JSON.parse(fs.readFileSync(path.join(out, fs.readdirSync(out).find(f => f.endsWith('.json')))));
+    assert.equal(receipt.run.transcripts, flags.length ? 'retained-local' : 'hashes-only');
+    if (flags.length) {
+      const kept = path.join(sb.work, 'transcripts', receipt.receipt_hash);
+      assert.ok(fs.statSync(path.join(kept, 'index.json')).isFile());
+      assert.ok(fs.statSync(path.join(kept, 'answers.json')).isFile());
+    }
+  }
+  for (const args of [['run', 'my-skill', '--keep-transcripts', 'yes'], ['run', 'my-skill', '--keep-transcripts=true']]) {
+    const sb = sandbox();
+    assert.equal(door(sb, args).status, 2);
+    assert.equal(spawns(sb).length, 0);
+  }
+});
+
+test('623 AC-4 command wording leaves the blind reading to the person and offers retention', () => {
+  const commandText = name => fs.readFileSync(path.join(ROOT, 'plugin/driftproof/commands', name + '.md'), 'utf8');
+  const blind = commandText('blind');
+  for (const re of [/theirs alone/, /Do not read the page source or the person.s picks/, /come back after Reveal/, /honesty line/, /If there is no Blind read block/, /\/driftproof:run <file> --suite <tasks> --placebo --keep-transcripts/, /\/driftproof:start/]) assert.match(blind, re);
+  const run = commandText('run');
+  assert.match(run, /Before the run, offer/);
+  assert.match(run, /transcripts\/<receipt_hash>\//);
+  const start = commandText('start').split('6. **')[1].split('7. **')[0];
+  assert.match(start, /Blind read/);
+  for (const text of [blind, run.slice(run.indexOf('Before the run, offer'), run.indexOf('Before the run, offer') + 300), start]) assert.ok(!text.includes('\u2014'));
+});

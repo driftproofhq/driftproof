@@ -485,11 +485,16 @@ function amend005(rows, { nowIso, write = true }) {
 // sits behind the draft exclusion. F-009-M's mechanism, on a file F-009-M's fix
 // did not move.
 //
-// So the text lives under specs/, which the publish strips, and is applied HERE,
+// So the text was held under specs/, which the publish strips, and applied HERE,
 // after the draft rename. The ordering is the guarantee: --promote refuses until
 // docs/reports/006/index.html exists, so the forward links cannot go live pointing
 // at a directory that does not.
-const STAGED_005 = path.join(ROOT, 'specs', '009-revision-drift', 'evidence', 'amendment-005-v1.1.html');
+//
+// Issue 390: the entry went live on 29 Aug 2026, and scripts/rebuild-report-005.js
+// applies it again when it rebuilds the page. A public clone must carry it to do
+// that, so it now lives under reports/report-005-inputs/, which the publish ships.
+// The --promote ordering above still holds wherever the file lives.
+const STAGED_005 = path.join(ROOT, 'reports', 'report-005-inputs', 'amendment-005-v1.1.html');
 
 // `file` is the page to amend; it defaults to the published page. scripts/rebuild-report-005.js
 // passes a sandbox copy, so the replay never writes the tree.
@@ -529,7 +534,7 @@ function main(argv = process.argv.slice(2)) {
   if (argv.includes('--promote')) {
     const st = applyStagedAmendment005({ nowIso: new Date().toISOString() });
     console.log(st.applied
-      ? '  applied the staged #005 Amendment v1.1 from specs/009-revision-drift/evidence/'
+      ? '  applied the staged #005 Amendment v1.1 from reports/report-005-inputs/'
       : `  staged #005 amendment NOT applied — ${st.reason}`);
     process.exit(st.applied || st.already ? 0 : 1);
   }

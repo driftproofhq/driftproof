@@ -17,10 +17,13 @@
 //     Reports 002 and 004 had no Amendments section, so the entry starts one.
 //   - Report 008, after that entry: one more dated entry, on the baseline arm that lost a draw
 //     (issue 109, spec 031 A-031-27). Its figures are read from the receipts the page reads, below.
+//   - Report 008, after that: its title, which read a separation across the release, corrected in
+//     its <h1>, and one dated entry saying what the title said and what the receipts hold (issue
+//     582, spec 031 A-031-34). `stripInterimLines` puts the first title back exactly.
 //   - Report 011: its title, which said release day, corrected in its <h1>, and one dated entry
 //     after its Amendment 1 saying what the title said, what is true and the source (issue 8, spec
-//     161 A-161-2). The one place this script replaces bytes rather than inserting them, and
-//     `stripInterimLines` puts the first title back exactly.
+//     161 A-161-2). With Report 008's title, the places this script replaces bytes rather than
+//     inserting them, and `stripInterimLines` puts the first title back exactly.
 //
 // WHERE THE NOTE IS TRUE. Not on every page. `NOTE_ON` below is the table, and `notApplicable`
 // holds the reason for each page that does not take it. `checkNote` reads every receipt a page
@@ -329,6 +332,104 @@ function applyLostDraw(html, opts) {
   return html.slice(0, at) + card + '\n' + html.slice(at);
 }
 
+// ── Report 008: the title, which read a separation across the release (issue 582, spec 031 A-031-34) ──
+//
+// Report 008 was published as "the skill stabilises the floor, not the ceiling". Its entry of
+// 2026-09-14 reads that title as a separation and rests it on one baseline case that separated
+// across the release; the lost-draw entry above reads that case as not separated. Read by the rule,
+// no case in either arm separated across the release. The correction puts a title the receipts hold
+// in the page's <h1>, as Report 011's does, and appends one dated entry after the lost-draw entry.
+// Its counts are read here from the receipts, and nothing is written if a case in either arm
+// separates across the release.
+const TITLE_008_DATE = '2026-10-31';
+const TITLE_008_WAS = 'Report 008: the skill stabilises the floor, not the ceiling';
+const TITLE_008_NOW = 'Report 008: Claude Fable 5.1, no separation detected across the release in either arm';
+const H1_008_WAS = `<h1>${TITLE_008_WAS}</h1>`;
+const H1_008_NOW = `<h1>${TITLE_008_NOW}</h1>`;
+const TITLE_008_CARD = /  <div class="card" id="amendment-title">\n(?:    <p>[^\n]*<\/p>\n)+  <\/div>\n\n/;
+
+// Each arm of each case across the release, read by readCases, which bounds a lost draw over every
+// score it could have had: the older receipt's arm stands where it reads baseline, the newer one's
+// where it reads with_skill. Per arm, the cases read, those separated, and those that separate on
+// their measured draws and not with their lost draws bounded.
+function acrossRelease(cells) {
+  const { readCases } = require('../lib/verdict');
+  const out = { with_skill: { cases: 0, separated: [], unheld: [] }, baseline: { cases: 0, separated: [], unheld: [] } };
+  for (const cell of cells) {
+    const older = JSON.parse(read(cell.baseline));
+    const newer = JSON.parse(read(cell.receipt));
+    for (const mode of Object.keys(out)) {
+      const pairs = [];
+      const olders = older.results.cases.filter((c) => c.mode === mode);
+      for (const o of olders) {
+        const n = newer.results.cases.find((c) => c.mode === mode && c.id === o.id);
+        if (!n) throw new Error(`Report 008: ${cell.receipt} has no ${mode} arm for ${o.id}`);
+        pairs.push({ ...o, mode: 'baseline' }, { ...n, mode: 'with_skill' });
+      }
+      const read8 = readCases({ results: { cases: pairs } });
+      if (read8.length !== olders.length) throw new Error(`Report 008: the rule reads ${read8.length} of the ${olders.length} ${mode} cases of ${cell.slug}`);
+      for (const c of read8) {
+        out[mode].cases += 1;
+        if (c.state.startsWith('separated')) out[mode].separated.push(c.id);
+        else if (c.observed && c.observed.startsWith('separated')) out[mode].unheld.push(c.id);
+      }
+    }
+  }
+  return out;
+}
+
+function titleCard008(html, a) {
+  const w = a.with_skill;
+  const b = a.baseline;
+  const separated = [...b.separated, ...w.separated];
+  if (separated.length) throw new Error(`Report 008: ${separated.join(', ')} separated across the release, and the corrected title says no case did`);
+  const unheld = [...b.unheld, ...w.unheld];
+  if (unheld.length !== 1 || !b.unheld.length) throw new Error(`Report 008: ${unheld.length} cases are held by lost draws, and the title entry is written for one baseline case`);
+  const am = AMEND_H2.exec(html);
+  const end = am ? lineBefore(html, am.index + am[0].length) : -1;
+  if (end < 0) throw new Error('Report 008: no Amendments section to end the title entry in');
+  const section = html.slice(am.index, end);
+  const labels = [...section.matchAll(/<strong>v(\d+)\.(\d+) &middot; /g)].map((m) => [Number(m[1]), Number(m[2])]).sort((x, y) => x[0] - y[0] || x[1] - y[1]);
+  if (!labels.length) throw new Error('Report 008: its Amendments carry no label to follow');
+  const [major, minor] = labels[labels.length - 1];
+  // The two entries this one reads, and their dates, from the section: the one that reads the title
+  // as a separation, and the lost-draw entry, which must be about the case the rule holds.
+  const cards = section.split('<div class="card"');
+  const dateOf = (x) => x && (/<strong>v\d+\.\d+ &middot; (\d{4}-\d{2}-\d{2})<\/strong>/.exec(x) || [])[1];
+  const titled = dateOf(cards.find((x) => x.includes(`the title&rsquo;s <em>${TITLE_008_WAS.replace(/^Report 008: /, '')}</em>`)));
+  const lostCard = cards.find((x) => x.includes('id="amendment-lost-draw"'));
+  const lost = dateOf(lostCard);
+  if (!titled || !lost || !lostCard.includes(`<code>${unheld[0]}</code>`)) throw new Error('Report 008: its Amendments do not carry the two entries the title entry reads');
+  const ps = [
+    `<strong>v${major}.${minor + 1} &middot; ${TITLE_008_DATE}</strong>. <strong>This entry corrects the page&rsquo;s title; no other earlier text is changed, and no figure, verdict token, table value or receipt reference changes.</strong> This page was first published as <q>${esc(TITLE_008_WAS)}</q>. Its entry of ${titled} reads that title as a separation detected under the rule, and rests it on one baseline case that separated across the release. Its entry of ${lost} reads that case, <code>${esc(unheld[0])}</code>, as not separated under the rule.`,
+    `<strong>What the receipts hold.</strong> Read by the rule across the release, with each lost draw scored at every value it could have had, of the ${b.cases} baseline cases, ${b.separated.length} separated across the release, and of the ${w.cases} with_skill cases, ${w.separated.length} did. <code>${esc(unheld[0])}</code> separates on its measured draws, and not with its lost draw bounded. So no case in either arm separated across the release at the sample size used, which is not evidence that nothing changed. The title read the arm without the skill as moving further than the arm with it, and neither arm has a separation across the release to support that. No reading made within either model&rsquo;s own receipts changes.`,
+    `<strong>The title.</strong> It now reads <q>${esc(TITLE_008_NOW)}</q>. It reads so in this page&rsquo;s heading, its summary card and citation, and the site&rsquo;s lists of reports. The section headings and sentences above keep their published words, read as the entries of ${titled} and ${lost} say. Filed under the wording rules of the repository's spec 031, amendment A-031-34.`,
+  ];
+  return { at: end, card: `  <div class="card" id="amendment-title">\n${ps.map((p) => `    <p>${p}</p>\n`).join('')}  </div>\n` };
+}
+
+// Report 008 without the title entry and with its first <h1>, or the page as it is when it carries
+// no title entry.
+const unTitle008 = (html) => (html.includes('id="amendment-title"') ? html.replace(TITLE_008_CARD, '').replace(H1_008_NOW, H1_008_WAS) : html);
+
+// Report 008, carrying no title entry, with its corrected <h1> and the entry at the end of its
+// Amendments.
+function applyTitle008(html, opts) {
+  if (html.split(H1_008_WAS).length !== 2) throw new Error(`Report 008 does not carry ${H1_008_WAS} once`);
+  const { at, card } = titleCard008(html, acrossRelease((opts && opts.cells) || cellsFor008().cells));
+  return html.slice(0, at).replace(H1_008_WAS, H1_008_NOW) + card + '\n' + html.slice(at);
+}
+
+// Report 008 with every correction: the note and its entry, the lost-draw entry, and the title. A
+// page that carries a title entry is read without it, corrected again, and refused unless that gives
+// the page byte for byte.
+function apply008(html, opts) {
+  const bare = unTitle008(html);
+  const out = applyTitle008(applyLostDraw(applyInterim(bare, LOST_DRAW_ON, opts), opts), opts);
+  if (bare !== html && out !== html) throw new Error('Report 008 carries a title entry that is not the one this script writes');
+  return out;
+}
+
 // ── Report 011: the title, which said release day (issue 8, spec 161 A-161-2) ─────────────────
 //
 // Report 011 was published as "on release day". The vendor's news index lists Claude Opus 5.5 the
@@ -402,8 +503,7 @@ function stripRetitle(html) {
 function applyToPage(html, n, opts = {}) {
   if (n === RETITLE_ON) return applyRetitle(html);
   if (!NOTE_ON.includes(n)) return html;
-  const out = applyInterim(html, n, opts);
-  return n === LOST_DRAW_ON ? applyLostDraw(out, opts) : out;
+  return n === LOST_DRAW_ON ? apply008(html, opts) : applyInterim(html, n, opts);
 }
 
 function applyInterim(html, n, opts) {
@@ -446,7 +546,8 @@ function looseStrip(html) {
 
 function stripInterimLines(html, n, opts) {
   if (n === RETITLE_ON) return stripRetitle(html);
-  const candidate = looseStrip(html);
+  // Report 008's title entry and its <h1> go first, so the lost-draw entry before it is the last.
+  const candidate = looseStrip(n === LOST_DRAW_ON ? unTitle008(html) : html);
   if (candidate === html) return html;
   try {
     const o = opts || (n === '007' ? cellsFor007() : n === LOST_DRAW_ON ? cellsFor008() : {});
@@ -512,7 +613,7 @@ function main(argv = process.argv.slice(2)) {
     console.error(`not as written - run: node scripts/report-corrections.js\n  ${stale.join('\n  ')}`);
     return 1;
   }
-  console.log(check ? `${NOTE_ON.length} report pages and the Report 001 mirror carry spec 161's notes, Report ${LOST_DRAW_ON} its lost-draw entry and Report ${RETITLE_ON} its corrected title` : `spec 161's notes written on ${NOTE_ON.length} report pages and the Report 001 mirror, Report ${LOST_DRAW_ON}'s lost-draw entry and Report ${RETITLE_ON}'s corrected title`);
+  console.log(check ? `${NOTE_ON.length} report pages and the Report 001 mirror carry spec 161's notes, Report ${LOST_DRAW_ON} its lost-draw entry and corrected title, and Report ${RETITLE_ON} its corrected title` : `spec 161's notes written on ${NOTE_ON.length} report pages and the Report 001 mirror, Report ${LOST_DRAW_ON}'s lost-draw entry and corrected title, and Report ${RETITLE_ON}'s corrected title`);
   return 0;
 }
 

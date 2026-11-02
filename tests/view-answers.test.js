@@ -20,7 +20,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { sealReceipt } = require('../lib/receipt');
+const { sealReceipt, validateReceipt } = require('../lib/receipt');
+const { recount } = require('./receipt-versions');
 const { acrossDraws } = require('../lib/sampling');
 const { placeCounts, resolveCount } = require('../lib/counts');
 const { renderView } = require('../lib/view');
@@ -95,7 +96,9 @@ function shaped(lost = []) {
     if (!Object.keys(r.run.arms).length) delete r.run.arms;
   }
   placeCounts(r, r.results.cases.map((c, index) => ({ index, counts: { generations_per_arm: c.generation.draws.length, judge_samples_per_generation: judgeN } })));
-  return sealReceipt(r);
+  const sealed = sealReceipt(recount(r));
+  assert.equal(validateReceipt(sealed).valid, true, 'the reshaped fixture satisfies the receipt contract');
+  return sealed;
 }
 
 function answersRow(receipt) {
@@ -135,4 +138,11 @@ test('a lost draw is not counted as an answer: the row reads the generations the
   assert.equal(n.with, 24);
   assert.equal(resolveCount(r, r.results.cases.findIndex((c) => c.mode === 'with_skill' && c.id === 'c1'), 'generations_per_arm'), 10, 'the lost draw is a generation the receipt records');
   assert.equal(answersRow(r), `${n.with} with the skill, ${n.without} without, across ${n.tasks} test tasks; the judge scored each answer ${n.judge} times`);
+});
+
+// Issue 619: an ordinary sheet without a kept archive has no blind block.
+test('a folder without kept answers has no blind-read block', () => {
+  const dir = tmp();
+  fs.writeFileSync(path.join(dir, 'r.json'), JSON.stringify(shaped()));
+  assert.ok(!renderView(dir).html.includes('data-field="blind-read"'));
 });

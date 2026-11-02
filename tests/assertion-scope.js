@@ -801,7 +801,9 @@ function capLiterals(block, numberWord = CAP_NUMBER_WORD) {
     .replace(/#\d+/g, ' ');
   const found = [];
   for (const m of t.matchAll(/\$\s?\d+(?:\.\d+)?/g)) found.push(m[0].replace(/\s/g, ''));
-  for (const m of t.matchAll(/(?<![\w.$-])\d{3,}(?![\w.-])/g)) found.push(m[0]);
+  // A number with "/" beside it is a path segment (docs/reports/005/), not a
+  // bare cap amount (A-188-15, C-331).
+  for (const m of t.matchAll(/(?<![\w.$/-])\d{3,}(?![\w./-])/g)) found.push(m[0]);
   const near = new RegExp(`${numberWord}[^\\n\\d]{0,14}(\\d{2,})|(\\d{2,})[\\s-]?${numberWord}`, 'gi');
   for (const m of t.matchAll(near)) found.push(m[1] || m[2]);
   return [...new Set(found)];

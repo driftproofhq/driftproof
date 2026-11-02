@@ -45,6 +45,8 @@ provider.complete = async (a) => {
 };
 const sha = (s) => crypto.createHash('sha256').update(s).digest('hex');
 const readJson = (f) => JSON.parse(fs.readFileSync(f, 'utf8'));
+// Issue 549: the receipt versions and their fields, read from this checkout's lib/receipt.js and spec/.
+const { atVersion } = require('./receipt-versions');
 
 const made = [];
 test.after(() => { for (const d of made) fs.rmSync(d, { recursive: true, force: true }); });
@@ -282,14 +284,9 @@ test('AC-8 a driftproof-answers/1 file still regrades by rubric; a receipt resea
   assert.equal(a.status, 0, a.stderr);
   const older = variant('older', (dir, o) => {
     const { sealReceipt, validateReceipt } = R('lib/receipt.js');
-    const r = clone(o.receipt);
-    r.schema_version = '0.10';
-    for (const k of ['harness', 'isolation', 'endpoint', 'code_revision', 'reported_models', 'criteria_template_hash', 'parse_retries', 'parse_recoveries']) delete r.run.judge[k];
-    // A-184-34 (issue 317): the judge overhead's two counts are v0.13's, so a receipt at 0.10 records neither.
-    for (const k of ['judged_draws_counted', 'judged_draws_missing_usage']) delete r.economics.judge_overhead[k];
-    // A-184-36 (issue 438): nor run.delivery, which is v0.15's.
-    delete r.run.delivery;
-    delete r.results.fake_tool_calls;
+    // A-184-41 (issue 549): taken back to 0.10 by the shared helper, without every field a later
+    // schema adds: v0.12's judge fields, v0.13's judge overhead counts, v0.15's run.delivery and on.
+    const r = atVersion(o.receipt, '0.10');
     delete r.receipt_hash;
     const sealed = sealReceipt(r);
     assert.ok(validateReceipt(sealed).valid, `the resealed receipt validates at 0.10: ${JSON.stringify(validateReceipt(sealed).errors).slice(0, 300)}`);
@@ -943,14 +940,8 @@ test('AC-26 a regraded receipt seals its evidence inside its hash: regraded_from
   const v011 = JSON.parse(fs.readFileSync(path.join(RT, 'spec', 'receipt.v0.11.schema.json'), 'utf8'));
   assert.equal(v011.$id, 'https://driftproofhq.com/spec/receipt.v0.11.schema.json');
   assert.equal(v011.properties.schema_version.const, '0.11');
-  const older = clone(o.receipt);
-  for (const k of ['harness', 'isolation', 'endpoint', 'code_revision', 'reported_models', 'criteria_template_hash', 'parse_retries', 'parse_recoveries']) delete older.run.judge[k];
-  // A-184-34 (issue 317): nor the judge overhead's two counts, which are v0.13's.
-  for (const k of ['judged_draws_counted', 'judged_draws_missing_usage']) delete older.economics.judge_overhead[k];
-  // A-184-36 (issue 438): nor run.delivery, which is v0.15's.
-  delete older.run.delivery;
-  delete older.results.fake_tool_calls;
-  older.schema_version = '0.11';
+  // A-184-41 (issue 549): taken back to 0.11 by the shared helper, without every field a later schema adds.
+  const older = atVersion(o.receipt, '0.11');
   R('lib/receipt.js').sealReceipt(older);
   const v = validateReceipt(older);
   assert.ok(v.valid && v.version === '0.11', JSON.stringify(v.errors));

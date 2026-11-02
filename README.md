@@ -2,14 +2,25 @@
 <!-- The first screen is written by scripts/build-readme-opening.mjs from docs/data/readme-opening.json (spec 126): edit that file, never this block. -->
 # Driftproof (driftproofhq): open-source agent skill evaluation and regression testing across model releases
 
-**Does your AI coding skill really help, and does the help survive a new model? Driftproof measures it and gives you a receipt.**
+**Driftproof measures whether an AI coding skill helps, seals each result in a dated receipt anyone can check, and measures the same tests again on each new model to show drift.**
 
 A skill is a `SKILL.md` file that teaches an AI coding agent how you like things
-done. Driftproof runs your skill's own test tasks with the skill and without it,
-has a model score every answer several times, and tells you whether the skill
-clearly helps, clearly hurts, makes no clear difference, or whether there were
-too few answers to tell. Each result is a receipt: a file with the numbers that
-anyone can check. Run it again when a new model comes out.
+done. Driftproof runs the skill's own tests with it and without it, and a model
+scores each answer several times. Each
+[receipt](https://driftproofhq.com/r/fad883d1018d3a4b3c75bc60b1eaec50032256cbf69fba3299999edf7978589c/)
+records the date, the model, the scores and the hashes of the skill and its
+tests, sealed by a sha256 of its own. `driftproof validate receipt.json` checks
+it against the [receipt
+schema](https://driftproofhq.com/spec/receipt.schema.json) and recomputes that
+hash: an edit made after sealing shows as `MISMATCH`. On a new model, run the
+same tests and `driftproof diff old.json new.json` compares the two receipts
+case by case, as [Report 008](https://driftproofhq.com/reports/008/) did from
+`claude-fable-5` to `claude-fable-5-1` with the same skill and test hashes.
+
+What it does not show: the hash is not a signature, so a receipt does not show
+who made or sealed it, or that a model ran. A result covers only the tests,
+model and judge its receipt names, and no clear difference is not proof of no
+effect.
 
 ### Try it in Claude Code, no API key
 
@@ -22,15 +33,17 @@ claude plugin install driftproof@driftproofhq
 adds them after you say yes, and makes a first receipt. `/driftproof:run`
 measures a skill in your repository and writes its receipt. It runs on your
 Claude Code subscription. You need Node.js 22 or later.
-[Other ways to install](#install) · [Measure your own skill](#quickstart-receipt-for-your-own-skill)
+[First run](#first-run) · [Other ways to install](#install) · [Measure your own skill](#quickstart-receipt-for-your-own-skill)
 
-**Latest finding** · [Report 016](https://driftproofhq.com/reports/016/), 28 Oct
-2026: on Haiku, six made it write more than the fakes did; Sonnet was mixed.
+**Latest finding** · [Report 017](https://driftproofhq.com/reports/017/), 1 Nov
+2026: on Claude Sonnet 5.5, 11 of 16 skills beat the fake: by the case rule,
+each scored above the same-length placebo on at least one of three tasks and
+below it on none.
 
 [![driftproof](https://img.shields.io/endpoint?url=https://driftproofhq.com/badges/commit-message-conventions.json)](https://driftproofhq.com)
 live badge for the bundled example, generated from its own receipt.
 
-[All fifteen reports](#reports) · [driftproofhq.com](https://driftproofhq.com)
+[All sixteen reports](#reports) · [driftproofhq.com](https://driftproofhq.com)
 
 ![The page driftproof view makes from Report 013's receipts: three skills by three models, each result in plain words: clearly helped, no clear difference, or too few answers to tell.](https://driftproofhq.com/assets/view-report-013.png)
 The page `npx driftproof view` makes from [Report 013's
@@ -45,9 +58,10 @@ format; it does not invent its own.
 1. Use Node.js 22 or later and an installed CLI. The default CLI isolation is
    a Linux setup: a separate unprivileged user (default `driftproof-eval`),
    passwordless sudo as that user, and each target or judge CLI installed and
-   logged in as that user. Follow the [setup and manual boundary checks](#isolation-the-cli-surfaces)
-   before a live run. Confirm the CLI login as the eval user. A CLI version
-   reply alone does not check login.
+   logged in as that user. Follow the
+   [setup and manual boundary checks](#isolation-the-cli-surfaces) before a
+   live run, or run `driftproof doctor` after setup. Confirm the CLI login as
+   the eval user. A CLI version reply alone does not check login.
 2. Use `--trusted-skill` only for a skill you authored on a machine without
    an eval user. It gives up the account boundary: the CLI runs as you, with
    your environment and login. The plugin asks whether you wrote the skill.
@@ -165,28 +179,44 @@ before you act on it.
 
 ### Test your CLAUDE.md or AGENTS.md
 
-A rules file is measured the way a skill is: its exact text is given to the model as a
-skill's text is, the same tasks are answered with it and without it, and every answer
-is scored. In Claude Code, from the folder that holds the file, in a git repository:
-
+A rules file uses the same tasks with and without its exact text. In Claude Code,
+from its folder in a git repository, start with:
 ~~~text
 /driftproof:start CLAUDE.md
 ~~~
-
-Claude drafts three to five tasks from the file with you and runs a quick check after
-you say yes. Nothing is added beside the file. On the command line, with the API set up
-as in step 3 above, give the tasks as a file in the `evals/evals.json` shape:
-
+Claude drafts three to five tasks with you and runs a quick check after you say yes.
+For the CLI, set up the API as in step 3 above and use the evals/evals.json shape:
 ```bash
 npx driftproof run CLAUDE.md --suite tasks.json --models claude-haiku-4-5 --placebo
 ```
+The placebo adds a third arm using a fixed corpus text of exactly the file's length,
+chosen without reference to any task. It makes half as many calls again. The result
+compares answers on these tasks with this model and judge. It does not say why they
+differ or how the file does on other tasks.
+The placebo reading also appears beside the verdict in `view`, the pull request
+comment, the job summary, `export --to summary-json` and each side of `diff`.
+[See your file's fake in your browser](https://driftproofhq.com/placebo/) before measuring it.
 
-`--placebo` adds a third arm: the same tasks answered with the file replaced by a text
-of exactly its length from a fixed corpus chosen without reference to any task, so the
-file's answers are also read against a same-length text's. It makes half as many calls
-again. The result says whether, on these tasks, with this model and judge, answers with
-the file scored clearly higher or clearly lower, made no clear difference, or were too
-few to tell. It does not say why, or how the file does on other tasks.
+In a workflow, use a release containing these inputs in place of vX:
+```yaml
+- uses: driftproofhq/driftproof@vX
+  with: {skill-dir: CLAUDE.md, suite: driftproof/tasks.json, placebo: 'true'}
+```
+See the [complete offline workflow](examples/workflows/driftproof-rules-file.yml).
+
+### Blind read: can you tell?
+
+Run `driftproof blind receipts/receipt.json` to try identifying the file's answer
+in pairs of kept answers. It uses the placebo arm when present, or the baseline;
+`--against baseline` chooses the baseline. A run keeps answers with
+`--keep-transcripts`; a quick run keeps them too. The results page from
+`driftproof view receipts/` offers the same read, up to ten pairs. Older archives
+may have no task prompt.
+
+After your picks, you see your tally, a random reader's expected count and the
+judge's scores on those pairs. The CLI saves a separate record beside the receipt.
+One reader's picks on these pairs. It is not a measurement of the file: it moves no verdict, and it says nothing about other readers, tasks or models.
+See [the reader contract](specs/619-blind-read/spec.md) for details.
 
 ### Reading a refusal
 
@@ -242,9 +272,12 @@ global/npx install as it does in a checkout.
 **Platforms.** Driftproof is tested on Linux and macOS. In an outside retest of
 0.10.1 on macOS the shipped gate passed 592 of 611, with 19 failed and 1 not
 applicable, and all nineteen failures are in the publishing helper, which needs
-GNU `realpath -m`. Windows is untested: from Node's source the plugin would not
-find `npx` there, but that failure has never been observed. A CI matrix across
-Linux, macOS and Windows is planned.
+GNU `realpath -m`. Public Windows CI runs the package gate, a stubbed first run,
+selected core tests and the plugin's own compatibility and runner-launch tests.
+These checks make no model calls and do not establish real-provider support.
+On Windows the plugin needs Node, npm's bundled npx and Git for Windows on PATH.
+It prints the results page's path for you to open in a browser. The isolated
+account lane needs POSIX tools and is not available on Windows.
 
 ### Which version am I running
 
@@ -284,6 +317,9 @@ npx driftproof export receipt.json --to summary-json
 # words, its band plot, and whether it is up to date. It opens from disk and
 # loads nothing from the network.
 npx driftproof view receipts/ --out results.html
+
+# Try identifying the file's kept answer in each pair, in a terminal.
+npx driftproof blind receipts/receipt.json
 ```
 
 <!-- issue 207: lift breakdown begin -->
@@ -322,6 +358,10 @@ and any harness is encouraged to emit them. The interop contract (DECLARED vs
 TESTED, import mappings, `summary-json`) is documented in
 [`docs/interop.md`](docs/interop.md) and on
 [the interop page](https://driftproofhq.com/interop.html).
+
+Imported run errors redact quoted local paths, including a folder name with an
+apostrophe followed by a space. A suffix containing a slash or backslash is
+redacted with the path. A suffix with neither separator can still remain.
 
 A skill directory is expected to look like:
 
@@ -446,9 +486,13 @@ default name:
    outside it. Keep SSH keys and CLI configuration under your home, or close
    them where they are.
 
-5. Check the boundary by hand before the first run. From an empty environment
-   the user's `env` must list no variable from your shell, and both CLIs must
-   answer:
+5. Check the boundary by hand before the first run, or run `driftproof doctor`.
+   Add `--json` for a report on stdout. Doctor makes no model calls and changes
+   no accounts or permissions. The existing hop uses a temporary directory.
+   Doctor flags credential-shaped variable names in the hop's environment, not
+   every name from your shell, so the manual check is the stricter one. From an
+   empty environment the user's `env` must list no variable from your shell,
+   and both CLIs must answer:
 
    ```sh
    H=/home/driftproof-eval; sudo -n -u driftproof-eval /usr/bin/env -i HOME=$H PATH=$H/.local/bin:/usr/bin:/bin bash -lc 'env; claude --version; codex --version'
@@ -491,14 +535,16 @@ declared with their derivation in [`config.js`](config.js), both overridable wit
 `--quick` and these three on to `run`, and refuses any other option.
 `--quick` sets these three itself, so it is refused beside any of them, in the
 command and in the plugin.
+With one `--case`, `--quick` takes the first look at that test task instead of the suite's first.
 
 | option | what it sets | default |
 |---|---|---|
 | `--samples N` | how many times the judge scores each answer | 5 |
 | `--concurrency N` | how many case and arm pairs run at once | 1 |
 | `--max-cases N` | run only the first N cases of the suite | every case |
+| `--case ID` | run only the case with that id; repeat it for more. The cases run in suite order, and a run of fewer cases than the suite gets no verdict. Command only; refused beside `--max-cases` | every case |
 
-Each takes a positive whole number with no leading zero. A value that is not
+The first three each take a positive whole number with no leading zero. A value that is not
 one is refused before a call is made, in the command and in the plugin. The
 working directory's `.driftproofrc` can set the same three as `samples`,
 `concurrency` and `max_cases`.
@@ -660,7 +706,7 @@ A receipt is the unit of evidence — one JSON document conforming to
     "model_release_date": "2025-10-01",
     "provider": "anthropic",
     "surface": "claude-cli",
-    "runner_version": "0.25.0",
+    "runner_version": "0.26.0",
     "date_utc": "2026-07-27T…Z",
     "registry": "registered",
     "transcripts": "hashes-only",
@@ -726,6 +772,9 @@ claimed **only when the two bands do not overlap**. Overlapping bands are report
 as **no separation detected** at the sample size used: never counted as a
 regression, and never evidence that nothing changed.
 
+The runner records the model's best-effort release date from the model registry.
+A registry row without a release date records null.
+
 ## Verification in CI (GitHub Action + badge)
 
 Wire drift detection into a repo so the skill is re-checked on every push and when
@@ -740,7 +789,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: driftproofhq/driftproof@v0.25.0
+      - uses: driftproofhq/driftproof@v0.26.0
         with:
           skill-dir: skills/my-skill
           models: claude-haiku-4-5
@@ -814,7 +863,7 @@ naming the files or the case, because a decision that depends on which one was r
 is not a pass. Each invocation of the Action writes to its own directory and uploads
 its own artifact, so a job may run it more than once, one skill per step.
 
-Step outputs: `verdict`, `delta` (of the model the worst decision came from),
+Step outputs: `verdict`, `delta` (of the model the worst decision came from; `n/a` when no reading is available),
 `worst_state`, `regressed_models`, `missing_models`, `receipts_dir` and
 `artifact_name`. Each is described in [`action.yml`](action.yml).
 
@@ -838,8 +887,8 @@ all say so rather than exiting quietly green.
 
 That self-test is also the proof behind the **Action's** input hardening, and it
 is worth saying exactly which surface that covers. On every CI run the Action
-self-test sends one hostile value through each of the Action's five inputs — a
-quote, a semicolon, `$(...)`, a backtick and a newline — on the real runner, and
+self-test sends one hostile value through each of the Action's seven tested inputs: a
+quote, a semicolon, `$(...)`, a backtick and a newline, on the real runner, and
 the Action fails unless every one of them is refused before anything ran, so a
 green check there is a claim you can read rather than one you have to take.
 Those refusals live in `action/lib.sh`, and what they protect is the Action
@@ -855,6 +904,13 @@ capture mode, skill, suite and judge that would run today. The capture mode that
 `--capture`, else `capture` in the working directory's `.driftproofrc`, else `text`.
 The GitHub Action that runs a suite reads no working-directory `.driftproofrc`.
 The stale Action runs `driftproof stale` in the workspace, so it reads that workspace's `.driftproofrc`.
+A rubric or pass-threshold edit lists the affected cases for regrade when the receipt
+proves that all case prompts and their order are unchanged. A changed prompt, case
+added or removed, or missing evidence still requires a rerun. Old receipts remain
+valid and keep that rerun answer. For a rubric regrade, keep the original skill and
+suite, pass the revised suite with `--rubric`, and supply the retained answers.
+The executor grades all eligible saved answers and checks the original grader.
+
 The staleness check runs `driftproof stale` on a schedule in your
 repository. While any receipt needs a rerun or a regrade, one issue labelled `driftproof-stale` lists
 each one, what moved, and the command to run next. Later runs update that issue, and the first run
@@ -868,7 +924,7 @@ permissions:
   contents: read
   issues: write
 # ...
-      - uses: driftproofhq/driftproof/stale@v0.25.0
+      - uses: driftproofhq/driftproof/stale@v0.26.0
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill
@@ -893,6 +949,9 @@ advisory: the job summary reports it and nothing fails. An axis that cannot be k
 unknown, never as current. Outputs: `result` (`current`, `advisory`, `stale` or `error`),
 `stale-count`, `issue-number` and `report-dir`.
 
+The CLI's `stale --help` lists exit codes. Exit 3 covers an unknown value, a newer
+model or a patch release of the harness; `--strict` turns it into exit 1.
+
 ### Badge
 
 `driftproof badge <receipt>` emits a [shields.io endpoint](https://shields.io/badges/endpoint-badge)
@@ -908,14 +967,34 @@ git add badges/my-skill.json && git commit -m "chore: driftproof badge"
 ![driftproof](https://img.shields.io/endpoint?url=https://<your-site>/badges/my-skill.json)
 ```
 
+A directory badge refuses with exit 2 if any receipt is unreadable. It names the
+file and emits no badge, even when `--models` names only readable receipts.
+
 The [badge at the top of this README](docs/badges/commit-message-conventions.json)
 is the living demo: it is generated
 from the `commit-message-conventions` example's own receipt and served from the
 site, so it reflects a real dated run, not a hand-set color.
 
+#### Card
+
+`driftproof card <receipt>` draws one receipt as an SVG card, 600 by 315, to commit
+beside a badge or paste into a post. It shows the result in the words
+`driftproof view` uses, the skill, the model, the run date, the band plot and the
+receipt's short hash. A lift is printed only for a state that measured one. The
+card loads nothing: no script, no image, no font file.
+
+```bash
+npx driftproof card receipts/my-skill.json --out badges/my-skill-card.svg
+```
+
+`--href URL` makes the card a link. A receipt whose hash does not verify is refused
+with exit 4, and `--out` never writes over a file the command did not write.
+
+![A driftproof card for the commit-message-conventions example: Clearly helped, 0.822 with the skill and 0.434 without, on 10 test tasks.](https://driftproofhq.com/assets/card-commit-message-conventions.svg)
+
 ## Reports
 
-Fifteen reports are published, spanning eight report types. A report page lives at a
+Sixteen reports are published, spanning nine report types. A report page lives at a
 draft path — `docs/reports/NNN-draft/` — until the publish sequence renames it, and
 `scripts/build-public.sh` excludes every `*-draft/` path from the published tree
 (see the roll below, and
@@ -926,9 +1005,9 @@ under [`receipts/`](receipts/)
 Report #010 takes no Driftproof measurement and has no receipts: it is re-derived
 from the upstream harness's output files, published beside its page.
 
-📊 **Fifteen published reports** (each re-derived from committed files, nothing
+📊 **Sixteen published reports** (each re-derived from committed files, nothing
 hand-entered: Driftproof's receipts, or for Report #010 the upstream harness's own
-output), spanning eight published report types, the newest being rules-file behaviour. Reports that measure with Driftproof retain its correctness reader. The rules-file behaviour report also compares output tokens and code with paired task intervals:
+output), spanning nine published report types, the newest being placebo comparison. Reports that measure with Driftproof retain its correctness reader. The rules-file behaviour report also compares output tokens and code with paired task intervals, and the placebo comparison report reads each skill against a same-length text from a fixed corpus:
 
 
 - **[Report #001](https://driftproofhq.com/reports/001/)** — *release drift*: ten
@@ -1031,10 +1110,11 @@ output), spanning eight published report types, the newest being rules-file beha
 <!--driftproof:campaign-readme-->
 - **[Report #015: Skills.sh snapshot 2026-10-17: text tasks](https://driftproofhq.com/reports/015/)**: three text tasks per skill, written by Driftproof from the pinned skill descriptions. Both model sets use Haiku 5.5 as judge. Eligible receipts carry their per-task verdicts and the report names the tasks behind them. The four router subjects have no verdict in this revision; the report amendment explains why. The eval account was checked before and after each run, not during it.
 - **[Report #016](https://driftproofhq.com/reports/016/)**: *rules-file behaviour*. Seven popular rules files against no file and same-length fakes. File-to-fake output comparisons: 6 haiku increases · 1 haiku unclear · 3 sonnet increases · 2 sonnet decreases · 2 sonnet unclear. These are behaviour changes, not correctness verdicts, on small tasks with injected instructions.
+- **[Report #017](https://driftproofhq.com/reports/017/)**: *placebo comparison*. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length placebo text, judged by Haiku 5.5. Of the 16 skills it counts, the placebo readings are 11 ABOVE_PLACEBO · 3 BELOW_PLACEBO · 0 NO_DIFFERENCE · 0 INCONCLUSIVE · 2 UNDERPOWERED · 0 NOT_MEASURED. Only ABOVE_PLACEBO beats the fake, by the case rule. Where the fake scored below no skill, beating it does not mean beating no skill. The four routers have no verdict, as in Report 015.
 <!--/driftproof:campaign-readme-->
 
 ✍️ The launch essay, **[Three model releases later: what actually happens to agent
-skills](https://driftproofhq.com/writing/three-releases/)**, reads all fifteen reports
+skills](https://driftproofhq.com/writing/three-releases/)**, reads all sixteen reports
 together: what moves underneath a skill, what the skill costs to run, and what a
 corrected instrument did to three published results. Revised 2026-10-07; every
 figure in it is gate-checked against the report page it cites.
@@ -1055,6 +1135,42 @@ Reports #002–#005 have their own runners
 (`scripts/prepare-report-00N.js` — Report #005's is
 [`scripts/prepare-report-005.js`](scripts/prepare-report-005.js)) following the
 same fetch → run → re-derive shape.
+
+### Rebuild Report #005 from a clone
+
+You can rebuild Report #005's published page from a clone of this repository,
+byte for byte. You need Node 22 or later and `npm ci`. The rebuild makes no model
+call. It reads only files the clone tracks: the receipts under
+[`receipts/report-005/`](receipts/report-005/), the two inputs under
+[`reports/report-005-inputs/`](reports/report-005-inputs/) and the scripts. It
+renders from the receipts that exist, and it refuses if one is missing.
+
+```sh
+git clone https://github.com/driftproofhq/driftproof.git
+cd driftproof
+npm ci
+out="$(mktemp -d)"
+node scripts/rebuild-report-005.js --render-only --published \
+  --receipts-label 'receipts/report-005/' \
+  --run-concurrency 2 --max-usd 40 --out-root "$out"
+sha256sum docs/reports/005/index.html "$out/docs/reports/005/index.html"
+```
+
+The last line prints two digests, and they match when the rebuild reproduces the
+published page. On macOS, use `shasum -a 256` in place of `sha256sum`. The page
+has taken dated amendments since it was first rendered, and
+[`scripts/rebuild-report-005.js`](scripts/rebuild-report-005.js) applies each one
+in the order it reached the page.
+
+A hash is not a signature; it does not prove a model ran. A match shows that
+these scripts turn these tracked files into the published page. The receipts
+record what the run measured.
+
+`npm run gate` runs this block from the `out=` line on, in the tree it is run in,
+with model calls set to fail. It compares the two digests itself, and it checks
+that the rebuild read only the tracked receipts. It also leaves one receipt out
+of a copy of the tree and checks that the rebuild refuses. The publish script
+runs that gate inside every tree it builds.
 
 **Reports are published by hand, and the release watcher is off.**
 `scripts/release-watch.js` is built to run daily from a timer

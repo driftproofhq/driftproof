@@ -3,7 +3,8 @@
 # The "Run suite and emit receipt" step of action.yml (spec 023).
 #
 # Inputs arrive as INPUT_SKILL_DIR, INPUT_MODELS, INPUT_MAX_USD, INPUT_MAX_CALLS,
-# INPUT_FAIL_ON_REGRESSION, INPUT_FAIL_ON_UNDERPOWERED, set by the step's env: block from
+# INPUT_SUITE, INPUT_PLACEBO, INPUT_FAIL_ON_REGRESSION, INPUT_FAIL_ON_UNDERPOWERED,
+# set by the step's env: block from
 # ${{ inputs.* }}.
 # GITHUB_ACTION_PATH, RUNNER_TEMP and GITHUB_OUTPUT are the default variables
 # GitHub sets for a composite action step. Each value is referenced only as a
@@ -15,6 +16,9 @@ require_env GITHUB_ACTION_PATH RUNNER_TEMP GITHUB_OUTPUT \
 # Spec 072: an unset INPUT_FAIL_ON_UNDERPOWERED reads as the input's declared default. GitHub
 # always sets it from action.yml's env: block; only a caller outside GitHub leaves it unset.
 : "${INPUT_FAIL_ON_UNDERPOWERED=false}"
+# Optional Action defaults also apply to direct callers of this script.
+: "${INPUT_SUITE=}"
+: "${INPUT_PLACEBO=false}"
 
 # Validated before anything is created or started (AC-3): a bad value fails
 # here, with a message naming the input, before any model call is projected.
@@ -24,6 +28,8 @@ validate_max_usd "$INPUT_MAX_USD"
 validate_max_calls "$INPUT_MAX_CALLS"
 validate_bool fail-on-regression "$INPUT_FAIL_ON_REGRESSION"
 validate_bool fail-on-underpowered "$INPUT_FAIL_ON_UNDERPOWERED"
+validate_bool placebo "$INPUT_PLACEBO"
+if [ -n "$INPUT_SUITE" ]; then validate_suite "$INPUT_SUITE"; fi
 
 # SPEC 050 (AC-5). A directory made for THIS invocation, after every input has been
 # validated, so a refused input still creates nothing. Until this it was the fixed
@@ -43,14 +49,26 @@ case "$INPUT_SKILL_DIR" in
   /*) SKILL_DIR="$INPUT_SKILL_DIR" ;;
   *) SKILL_DIR="$PWD/$INPUT_SKILL_DIR" ;;
 esac
+# Resolve before changing to the isolated run directory, as for SKILL_DIR.
+EXTRA_ARGS=()
+if [ -n "$INPUT_SUITE" ]; then
+  case "$INPUT_SUITE" in
+    /*) SUITE="$INPUT_SUITE" ;;
+    *) SUITE="$PWD/$INPUT_SUITE" ;;
+  esac
+  EXTRA_ARGS+=(--suite "$SUITE")
+fi
+if [ "$INPUT_PLACEBO" = true ]; then EXTRA_ARGS+=(--placebo); fi
 RUN_CWD="$(mktemp -d "$RUNNER_TEMP/driftproof-cwd.XXXXXX")"
 trap 'rm -rf -- "$RUN_CWD"' EXIT
 # A key selects the metered Messages API; without one the run uses the
 # default cli surface (or the offline stub when DRIFTPROOF_STUB=1).
 if [ -n "${ANTHROPIC_API_KEY:-}" ]; then export CLAUDE_PROVIDER=api; fi
-( cd "$RUN_CWD" && node "$GITHUB_ACTION_PATH/bin/driftproof" run "$SKILL_DIR" \
+if ! ( cd "$RUN_CWD" && node "$GITHUB_ACTION_PATH/bin/driftproof" run "$SKILL_DIR" \
   --models "$INPUT_MODELS" --max-usd "$INPUT_MAX_USD" \
-  --max-calls "$INPUT_MAX_CALLS" --out "$OUT" )
+  --max-calls "$INPUT_MAX_CALLS" --out "$OUT" "${EXTRA_ARGS[@]}" ); then
+  die "run: driftproof run refused or failed; see the CLI diagnostic above"
+fi
 # SPEC 030 (AC-1). The decision is taken over EVERY receipt this run produced,
 # and the receipt DIRECTORY is what reaches the enforcement step. Until this,
 # the line below was

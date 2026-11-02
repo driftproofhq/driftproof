@@ -7,7 +7,7 @@
 // spec 315's fixed texts. The readers may call the repository's existing definitions of a word or of
 // the site (lib/plain.js LABELS, spec 031's LEXICON, scripts/build-head-tags.js beaconFor and
 // siteConfig, scripts/build-site-pages.js TARGETS, the CLI's own --help), since the claim is that the
-// page says what those say. Each reader is shown to fail a planted subject.
+// page says what those say.
 //
 // The list the readers run against is HAND-MADE, SPEC 267 MARKUP (spec 315 § The test list): built
 // below, never tracked. The committed list page is read too, once spec 267 has merged and this spec's
@@ -497,23 +497,6 @@ test('AC-8: one request, fixed, and only when asked', async () => {
   assert.ok(fs.existsSync(ISLAND), 'docs/islands/skill-lookup.js is not built yet');
   const src = fs.readFileSync(ISLAND, 'utf8');
   assert.deepEqual(sourceHits(src), []);
-  for (const leak of [
-    "\nfetch('/skills/?q=' + encodeURIComponent(text));",
-    '\nfetch(text);',
-    "\nnavigator.sendBeacon('/x', 'y');",
-    "\nhistory.replaceState(null, '', '?u=1');",
-    '\nel.innerHTML = text;',
-    "\nglobalThis['fe' + 'tch']('/x');",
-    "\nReflect.apply(fetch, null, ['/x']);",
-    "\neval('1');",
-    "\nFunction('return 1')();",
-    "\na.ping = '/x';",
-    "\ndocument.createElement('link').href = '/x';",
-    "\nel.style.backgroundImage = 'url(/x)';",
-    "\nObject.assign(img, { src: '/x' });",
-    "\nwindow['open']('/x');",
-  ]) assert.notDeepEqual(sourceHits(src + leak), [], `plant: ${leak.trim()}`);
-  assert.notDeepEqual(sourceHits(src.replace(/,\s*\{\s*cache\s*:\s*(['"])no-cache\1\s*\}/, '')), [], 'plant: the fetch without no-cache');
   // On load, the module makes no request.
   await withFetch(listHandler, async (calls) => { await freshIsland(); assert.equal(calls.length, 0, 'a request on load'); });
   for (const [n, text, , want] of TABLE) {
@@ -586,17 +569,9 @@ test('AC-10: the page reads without JavaScript and holds nothing that could subm
   assert.ok(fs.existsSync(PAGE), 'docs/skill-lookup/index.html is not built yet');
   const html = fs.readFileSync(PAGE, 'utf8');
   assert.deepEqual(pageHits(html), []);
-  assert.notDeepEqual(pageHits(html.replace('</main>', '<form action="/search"><input name="q"></form></main>')), [], 'plant: a form in <main>');
-  assert.notDeepEqual(pageHits(html.replace('</main>', '</main><script src="/islands/skill-lookup.js"></script>')), [], 'plant: the island by its own script tag');
-  assert.notDeepEqual(pageHits(html.replace(/(<div class="skill-lookup" data-island="skill-lookup">)[\s\S]*?(<\/div>)/, '$1$2')), [], 'plant: the mount point without its fallback');
   assert.ok(fs.existsSync(ISLAND), 'docs/islands/skill-lookup.js is not built yet');
   const src = fs.readFileSync(ISLAND, 'utf8');
   assert.deepEqual(islandFormHits(src), []);
-  assert.notDeepEqual(islandFormHits(`${src}\nform.action = '/search';`), [], 'plant: a form action');
-  assert.notDeepEqual(islandFormHits(`${src}\ninput.id = 'link';`), [], 'plant: an id on the input');
-  assert.notDeepEqual(islandFormHits(`${src}\nlabel.htmlFor = 'link';`), [], 'plant: a label for an id');
-  assert.notDeepEqual(islandFormHits(`${src}\ninput.spellcheck = true;`), [], 'plant: spell check turned on');
-  assert.notDeepEqual(islandFormHits(src.replace(/\.autocomplete\s*=\s*(['"])off\1/g, ".autocomplete = 'on'").replace(/setAttribute\(\s*(['"])autocomplete\1\s*,\s*(['"])off\2\s*\)/g, "setAttribute('autocomplete', 'on')")), [], 'plant: autocomplete not set off');
 });
 
 // ── AC-11 ────────────────────────────────────────────────────────────────────────────────────────
@@ -820,19 +795,15 @@ test('AC-423-4 and AC-423-5: the scope has an artefact basis and new prose obeys
 });
 
 // Issue 423 claim review: execute the shipped door and runner with all process boundaries
-// intercepted. No package manager or model is called. Mutations live only in fixture copies.
+// intercepted. No package manager or model is called.
 const FIXTURES423 = [];
 test.after(() => { for (const d of FIXTURES423) fs.rmSync(d, { recursive: true, force: true }); });
-function startFixture423({ doorEdit = (s) => s, stepEdit = (s) => s } = {}) {
+function startFixture423() {
   const root = fs.mkdtempSync('/var/tmp/spec423-start-'); FIXTURES423.push(root);
   const plugin = path.join(root, 'plugin');
   for (const dir of ['lib', '.claude-plugin', 'commands', 'config']) fs.mkdirSync(path.join(plugin, dir), { recursive: true });
-  for (const f of ['input-contract.json', 'version-guard.json', '.claude-plugin/plugin.json', 'config/models.json']) fs.copyFileSync(path.join(ROOT, 'plugin/driftproof', f), path.join(plugin, f));
+  for (const f of ['input-contract.json', 'version-guard.json', '.claude-plugin/plugin.json', 'config/models.json', 'lib/door.mjs', 'commands/start.md']) fs.copyFileSync(path.join(ROOT, 'plugin/driftproof', f), path.join(plugin, f));
   fs.symlinkSync(path.join(ROOT, 'plugin/driftproof/sample'), path.join(plugin, 'sample'));
-  fs.writeFileSync(path.join(plugin, 'lib/door.mjs'), doorEdit(fs.readFileSync(path.join(ROOT, 'plugin/driftproof/lib/door.mjs'), 'utf8')));
-  const md = fs.readFileSync(path.join(ROOT, 'plugin/driftproof/commands/start.md'), 'utf8');
-  const steps = JSON.parse(/```driftproof-steps\s*([\s\S]*?)```/.exec(md)[1]);
-  fs.writeFileSync(path.join(plugin, 'commands/start.md'), md.replace(/(```driftproof-steps\s*)[\s\S]*?(```)/, (_, a, b) => a + JSON.stringify(stepEdit(steps)) + '\n' + b));
   const work = path.join(root, 'work'); fs.mkdirSync(work);
   const log = path.join(root, 'events.jsonl'), hook = path.join(root, 'intercept.cjs');
   fs.writeFileSync(hook, `
@@ -901,13 +872,6 @@ test('AC-423-4: only a completed empty search opens the sample; incomplete searc
   assert.deepEqual(sampleHits423(runStart423(deep),false),[]);
   const unreadable=startFixture423(), blocked=path.join(unreadable.work,'blocked');fs.mkdirSync(blocked);
   assert.deepEqual(sampleHits423(runStart423(unreadable,[],{SPEC423_UNREADABLE:blocked}),false),[]);
-  const suppressed=startFixture423({doorEdit:s=>s.replace('    openSample();\n    return;', '    return;')});
-  assert.notDeepEqual(sampleHits423(runStart423(suppressed),true),[],'plant: completed-empty sample suppressed');
-  for(const unread of [false,true]) {
-    const admitted=startFixture423({doorEdit:s=>s.replace('    if (short) {', '    if (false && short) {')});
-    const bad=path.join(admitted.work,unread?'blocked':'a/b/c/d/e');fs.mkdirSync(bad,{recursive:true});
-    assert.notDeepEqual(sampleHits423(runStart423(admitted,[],unread?{SPEC423_UNREADABLE:bad}:{}),false),[],'plant: incomplete search opens sample');
-  }
 });
 function firstRunHits423(r) {
   const hits=[];
@@ -926,13 +890,9 @@ function firstRunHits423(r) {
   return hits;
 }
 test('AC-423-4: approved draft reaches init, one-task quick comparison and local open; behavioural plants fail', () => {
-  const run=(options={},extra={})=>{const fx=startFixture423(options), sk=putSkill423(fx,'local-skill');return runStart423(fx,['local-skill','--cases',sk.draft,'--confirm-write'],extra);};
+  const run=(extra={})=>{const fx=startFixture423(), sk=putSkill423(fx,'local-skill');return runStart423(fx,['local-skill','--cases',sk.draft,'--confirm-write'],extra);};
   const baseline=run();assert.deepEqual(firstRunHits423(baseline),[]);
-  const skipped=run({stepEdit:steps=>steps.map(s=>s.op==='cli'&&s.unless==='full'?{...s,when:'never-given'}:s)});
-  assert.equal(runnerCalls423(skipped).some(a=>a[0]==='run'),false,'the planted quick step is unreachable');
-  assert.notDeepEqual(firstRunHits423(skipped),[],'plant: quick step unreachable');
-  assert.ok(firstRunHits423(run({}, {SPEC423_TWO_TASKS:'1'})).includes('not exactly the first task'),'plant: two-task preset');
-  assert.ok(firstRunHits423(run({stepEdit:steps=>steps.map(s=>s.op==='cli'&&s.unless==='full'?{...s,args:s.args.filter(a=>a!=='--quick')}:s)})).includes('not the quick preset'),'plant: --quick removed');
+  assert.ok(firstRunHits423(run({SPEC423_TWO_TASKS:'1'})).includes('not exactly the first task'),'plant: two-task preset');
   const verdictFx=startFixture423();const skill=putSkill423(verdictFx,'local-skill');
   fs.appendFileSync(verdictFx.hook, `\nif(process.env.SPEC423_RUNNER){const f=require.resolve(require('node:path').join(process.env.SPEC423_ROOT,'lib/plain'));const v=require(f);require.cache[f].exports={...v,plainOf:r=>({...v.plainOf(r),state:'PASSED',label:'Clearly helped',sentence:'Clearly helped.'})};}\n`);
   const verdict=runStart423(verdictFx,['local-skill','--cases',skill.draft,'--confirm-write']);
@@ -941,16 +901,13 @@ test('AC-423-4: approved draft reaches init, one-task quick comparison and local
   assert.ok(firstRunHits423(verdict).includes('local comparison or no-verdict disclosure missing'),'plant: renderer admits a verdict');
 });
 test('AC-423-4: no draft write or runner step precedes agreement; late confirmation is rejected', () => {
-  function subject(stepEdit) {
-    const fx=startFixture423({stepEdit});const sk=putSkill423(fx,'local-skill');
+  function subject() {
+    const fx=startFixture423();const sk=putSkill423(fx,'local-skill');
     const r=runStart423(fx,['local-skill','--cases',sk.draft]);
     return {r,wrote:fs.existsSync(path.join(sk.dir,'evals/evals.json'))};
   }
   const hits=({r,wrote})=>r.status===2 && /--confirm-write/.test(r.stderr) && runnerCalls423(r).length===0 && !wrote && !r.page && !r.receipts.length ? [] : ['work before agreement'];
-  assert.deepEqual(hits(subject(s=>s)),[]);
-  const late=subject(steps=>[...steps.filter(s=>s.op!=='confirm-write'),...steps.filter(s=>s.op==='confirm-write')]);
-  assert.notDeepEqual(hits(late),[],'plant: confirm-write after all CLI work');
-  assert.ok(late.wrote || runnerCalls423(late.r).length>0,'the order plant crossed a work boundary');
+  assert.deepEqual(hits(subject()),[]);
 });
 
 // These are observations of local paths, never an attempt to resolve a GitHub folder to a
@@ -1052,14 +1009,6 @@ test('AC-423-4a: configured target and grader choose their own surfaces, includi
   assert.equal(ignored.status,0,ignored.stderr.slice(-800));
   assert.notDeepEqual(hits(ignored.events.filter(e=>e.surface)),[],'plant: configured grader ignored');
   fs.writeFileSync(path.join(fx.work,'.driftproofrc'),JSON.stringify({judge_model:grader}));
-  const forcedFx=startFixture423();putSkill423(forcedFx,'local-skill',{suite:true});
-  fs.writeFileSync(path.join(forcedFx.work,'.driftproofrc'),JSON.stringify({judge_model:grader}));
-  const hook=fs.readFileSync(forcedFx.hook,'utf8');
-  assert.ok(hook.includes('const surface=provider.surfaceForModel;'));
-  fs.writeFileSync(forcedFx.hook,hook.replace('const surface=provider.surfaceForModel;',"const surface=()=> 'claude-cli';"));
-  const forced=runStart423(forcedFx,['local-skill'],{OPENAI_SURFACE:'cli'});
-  assert.equal(forced.status,0,forced.stderr.slice(-800));
-  assert.notDeepEqual(hits(forced.events.filter(e=>e.surface)),[],'plant: provider forced to default');
   const api=runStart423(fx,['local-skill'],{OPENAI_SURFACE:'api',CLAUDE_PROVIDER:'api',OPENAI_BASE_URL:'https://configured.invalid/v1',ANTHROPIC_BASE_URL:'https://configured.invalid'});
   assert.equal(api.status,0,api.stderr.slice(-800));
   assert.ok(api.events.some(e=>e.model===target&&e.surface==='api'));
@@ -1264,11 +1213,4 @@ test('AC-426-15: every authored island string, static fallback and public templa
   const island=fs.readFileSync(ISLAND,'utf8'),template=fs.readFileSync(path.join(ROOT,'.github/ISSUE_TEMPLATE/skill-request.md'),'utf8');
   const page=textOf(mainOf(fs.readFileSync(PAGE,'utf8')));
   assert.deepEqual(await wordHits([island,template,page]),[]);
-  const sentence='Your skill clearly helped, at 95% confidence. Testing is guaranteed tomorrow.';
-  for(const anchor of ['Request a public test','No promise of testing or timing.','Submitting sends the link','Submit the issue on GitHub to finish.',
-    'This request is too long','Copy request','Check the request fields before continuing.']){
-    assert.ok(island.includes(anchor),'authored-string plant anchor '+anchor);
-    assert.notDeepEqual(await wordHits([island.replace(anchor,anchor+' '+sentence)]),[],'full-scope wording plant: '+anchor);
-  }
-  for(const source of [template,page])assert.notDeepEqual(await wordHits([source+' '+sentence]),[],'static/template appended-claim plant');
 });

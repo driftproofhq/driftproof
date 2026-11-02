@@ -124,7 +124,7 @@ function validateInputs(inputs, opts) {
     // INPUT_CONTRACT.flags), checked with it here, before anything is spawned.
     if (name === 'samples' || name === 'concurrency' || name === 'max-cases') checkRule(name, value, 'max_calls');
     if (name === 'max-usd') { checkRule(name, value, 'max_usd'); checkRule(name, value, 'max_usd_zero'); }
-    if (name === 'skill-dir' || name === 'receipt' || name === 'cases' || name === 'suite') {
+    if (name === 'receipts-dir' || name === 'skill-dir' || name === 'receipt' || name === 'cases' || name === 'suite') {
       checkRule(name, value, 'skill_dir_control');
       checkRule(name, value, 'skill_dir_shell_metachar');
       // action/lib.sh's validate_skill_dir is three parts: non-empty, no control
@@ -211,10 +211,34 @@ function suiteInside() {
 }
 
 // ── spawning the pinned CLI ──────────────────────────────────────────────────
+// Windows cannot launch npm's npx.cmd with shell:false. Resolve the npm entry
+// point beside the first npx.cmd on PATH and run it with this Node executable.
+// This keeps paths and names in argv, including cmd expansion characters. Do
+// not fall through to another npm installation when that entry is incomplete.
+function windowsNpx(argv, opts) {
+  const key = Object.keys(process.env).find((name) => name.toLowerCase() === 'path');
+  for (const entry of (process.env[key] || '').split(path.delimiter)) {
+    const dir = entry.startsWith('"') && entry.endsWith('"') ? entry.slice(1, -1) : entry;
+    if (!dir) continue;
+    if (!fs.existsSync(path.join(dir, 'npx.cmd'))) continue;
+    const candidates = [path.join(dir, 'node_modules', 'npm', 'bin', 'npx-cli.js'),
+      path.resolve(dir, '..', 'npm', 'bin', 'npx-cli.js')];
+    for (const cli of candidates) {
+      try { if (!fs.statSync(cli).isFile()) continue; } catch { continue; }
+      return spawnSync(process.execPath, [cli].concat(argv), {
+        cwd: process.cwd(), env: process.env, encoding: 'utf8', shell: false,
+        stdio: opts && opts.capture ? ['ignore', 'pipe', 'pipe'] : ['ignore', 'inherit', 'inherit'],
+      });
+    }
+    break;
+  }
+  return { status: null, stderr: 'Could not resolve npm npx-cli.js from npx.cmd on PATH.' };
+}
+
 // argv is an ARRAY. There is no shell, no string, and no interpolation.
 function runCli(args, opts) {
   const argv = ['driftproof@' + PINNED].concat(args);
-  const r = spawnSync('npx', argv, {
+  const r = process.platform === 'win32' ? windowsNpx(argv, opts) : spawnSync('npx', argv, {
     cwd: process.cwd(),
     env: process.env,
     encoding: 'utf8',
@@ -1074,11 +1098,12 @@ const INPUTS = {};
 // Issue 553: run and start take a rules file's tasks file (--suite) and the placebo arm (--placebo).
 const ACCEPTS = {
   init: ['confirm-write', 'cases', 'models'],
-  run: ['models', 'max-calls', 'max-usd', 'samples', 'concurrency', 'max-cases', 'quick', 'trust-outside-repo', 'suite', 'placebo'],
+  run: ['models', 'max-calls', 'max-usd', 'samples', 'concurrency', 'max-cases', 'quick', 'trust-outside-repo', 'suite', 'placebo', 'keep-transcripts'],
   badge: [],
+  blind: [],
   start: ['models', 'cases', 'confirm-write', 'full', 'trust-outside-repo', 'suite', 'placebo'],
 };
-const NO_VALUE = new Set(['quick', 'confirm-write', 'trust-outside-repo', 'full', 'placebo']);
+const NO_VALUE = new Set(['quick', 'confirm-write', 'trust-outside-repo', 'full', 'placebo', 'keep-transcripts']);
 const QUICK_SETS = ['samples', 'concurrency', 'max-cases'];
 function parseArgv(argv) {
   const command = argv[0];
@@ -1135,6 +1160,7 @@ function parseArgv(argv) {
       + ' too. Give --quick alone, or leave it out and set them. Nothing was spawned.');
   }
   if (command === 'badge') INPUTS['receipt'] = positional[0];
+  else if (command === 'blind') INPUTS['receipts-dir'] = positional[0] === undefined ? 'receipts' : positional[0];
   else INPUTS['skill-dir'] = positional[0];
   return command;
 }
@@ -1222,7 +1248,17 @@ for (let at = 0; at < steps.length; at++) {
   if (step.op === 'resolve-target') {
     const given = INPUTS[step.input];
     if (given === undefined) refuse(step.input + ': expected a value');
-    state.resolvedTarget = step.inside_repo ? requireInsideRepo(given, command) : path.resolve(process.cwd(), given);
+    if (step.input === 'receipts-dir') {
+      // Issue 623: viewing receipts needs a repository boundary, not skill trust.
+      const repo = repoState();
+      if (!repo.root) refuse('receipts-dir: ' + (repo.unknown || 'this is not a git repository') + '. Nothing was spawned.');
+      const resolved = fs.realpathSync(path.resolve(process.cwd(), given));
+      const root = fs.realpathSync(repo.root);
+      if (resolved !== root && !resolved.startsWith(root + path.sep)) {
+        refuse('receipts-dir: resolves outside this repository. Give a directory inside it. Nothing was spawned.');
+      }
+      state.resolvedTarget = resolved;
+    } else state.resolvedTarget = step.inside_repo ? requireInsideRepo(given, command) : path.resolve(process.cwd(), given);
     say('resolved ' + step.input + '=' + state.resolvedTarget);
     continue;
   }

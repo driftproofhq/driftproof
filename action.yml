@@ -8,8 +8,16 @@ branding:
 
 inputs:
   skill-dir:
-    description: 'Path to the skill directory (contains SKILL.md and evals/evals.json), relative to the repo root.'
+    description: 'Path to a skill directory (contains SKILL.md and evals/evals.json) or a regular .md/.markdown rules file, relative to the repo root. Rules files require suite.'
     required: true
+  suite:
+    description: 'Tasks file for a Markdown rules file, relative to the repo root. Omit for skill directories.'
+    required: false
+    default: ''
+  placebo:
+    description: 'Add a same-length placebo control. Makes half as many calls again.'
+    required: false
+    default: 'false'
   models:
     description: 'Comma-separated model ids/aliases to run the suite on.'
     required: false
@@ -100,6 +108,8 @@ runs:
       env:
         ANTHROPIC_API_KEY: ${{ inputs.api-key }}
         INPUT_SKILL_DIR: ${{ inputs.skill-dir }}
+        INPUT_SUITE: ${{ inputs.suite }}
+        INPUT_PLACEBO: ${{ inputs.placebo }}
         INPUT_MODELS: ${{ inputs.models }}
         INPUT_MAX_USD: ${{ inputs.max-usd }}
         INPUT_MAX_CALLS: ${{ inputs.max-calls }}

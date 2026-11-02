@@ -240,18 +240,24 @@ test('gradeSamples asks every sample at once and reads them in sample order', as
   delete require.cache[judgePath];
   try {
     const { gradeSamples } = require('../lib/judge');
-    const grade = (s) => { i = 0; most = 0; script = s; return gradeSamples({ task: 't', response: 'r', rubric: 'x', model: MODEL, samples: s.length }); };
+    // A-173-13 (issue 617): the script is read in call order, so a sample's parse retry takes the
+    // entry after the first replies; `n` is the sample count.
+    const grade = (s, n = s.length) => { i = 0; most = 0; script = s; return gradeSamples({ task: 't', response: 'r', rubric: 'x', model: MODEL, samples: n }); };
     const g = await grade(['ok', 'ok', 'ok', 'ok']);
     assert.equal(most, 4, 'every sample in flight together');
     assert.deepEqual(g.samples, [0.7, 0.7, 0.7, 0.7]);
-    const u = await grade(['ok', 'prose', 'ok']);
+    const r = await grade(['ok', 'prose', 'ok', 'ok'], 3);
+    assert.deepEqual(r.samples, [0.7, 0.7, 0.7], 'a retry that parses measures its sample');
+    assert.deepEqual(r.parseRetries.map((x) => [x.sample_index, x.recovered]), [[1, true]]);
+    const u = await grade(['ok', 'prose', 'ok', 'prose'], 3);
     assert.equal(u.unmeasured, true);
     assert.equal(u.reason, 'judge output unparseable');
     assert.equal(u.sample_hashes.length, 3, 'every sample that answered is recorded');
-    await assert.rejects(grade(['throw', 'prose']), (e) => e.phase === 'judge' && e.judgeAttempts === 3);
+    assert.equal(u.attempts, 4, 'the retry is charged');
+    await assert.rejects(grade(['throw', 'prose', 'prose'], 2), (e) => e.phase === 'judge' && e.judgeAttempts === 4 && e.judgeCalls === 3);
     // A-173-5 (issue 204): malformed replies cannot hide a failure or a call cap.
-    await assert.rejects(grade(['prose', 'throw']), (e) => e.phase === 'judge' && e.code === 'TIMEOUT' && e.judgeAttempts === 3 && e.judgeTexts.length === 1);
-    await assert.rejects(grade(['prose', 'throw', 'cap', 'ok']), (e) => e.phase === 'judge' && e.code === 'CALL_CAP' && e.judgeAttempts === 4 && e.judgeTexts.length === 2);
+    await assert.rejects(grade(['prose', 'throw', 'prose'], 2), (e) => e.phase === 'judge' && e.code === 'TIMEOUT' && e.judgeAttempts === 4 && e.judgeTexts.length === 1);
+    await assert.rejects(grade(['prose', 'throw', 'cap', 'ok', 'prose'], 4), (e) => e.phase === 'judge' && e.code === 'CALL_CAP' && e.judgeAttempts === 5 && e.judgeTexts.length === 2);
   } finally {
     provider.complete = orig;
     delete require.cache[judgePath];

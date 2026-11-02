@@ -92,6 +92,7 @@ const { regradeReceipt } = require('../lib/regrade');
 const { validateReceipt, verifyReceiptHash, sealReceipt } = require('../lib/receipt');
 const { receiptVerdict } = require('../lib/verdict');
 const { staleReport } = require('../lib/stale');
+const { atVersion } = require('./receipt-versions');
 
 const SYS = '---\nname: fx\n---\nWrite the ADR.';
 const reset = () => {
@@ -215,14 +216,9 @@ test('AC-3 versioned receipts validate at their stamped schema version', async (
   reset();
   generate = () => 'Here is the ADR:\n\n# ADR 1\n\nContext: we need a database.';
   const { receipt } = await runSkillOnModel({ skill: skillOf(), model: 'haiku', opts: { samples: 2, trusted: true } });
-  const v09 = JSON.parse(JSON.stringify(receipt));
-  // Issue 196: and without v0.12's judge fields, which no older schema carries.
-  for (const k of ['harness', 'isolation', 'endpoint', 'code_revision', 'reported_models', 'criteria_template_hash', 'parse_retries', 'parse_recoveries']) delete v09.run.judge[k];
-  // A-137-9 (issue 317): and without the judge overhead's two counts, which are v0.13's.
-  for (const k of ['judged_draws_counted', 'judged_draws_missing_usage']) delete v09.economics.judge_overhead[k];
-  // A-137-11 (issue 438): and without run.delivery, which is v0.15's; skill.unit skill is v0.9's own.
-  delete v09.run.delivery;
-  delete v09.results.fake_tool_calls;
+  // A-137-16 (issue 549): taken back to v0.10 by the shared helper, which removes every field a later
+  // schema adds, then stamped 0.9 with v0.10's run.capture still on it.
+  const v09 = atVersion(receipt, '0.10');
   v09.schema_version = '0.9';
   assert.equal(validateReceipt(v09).valid, false, 'a v0.9 receipt carrying run.capture validated');
   delete v09.run.capture;

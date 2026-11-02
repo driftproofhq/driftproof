@@ -107,6 +107,9 @@ export function receiptFiles(root = ROOT) {
   return out;
 }
 
+// A retained-answers sidecar, read by content: it carries its receipt's hash and no results.
+export const isSidecar = (json) => !!json && typeof json === 'object' && !json.results && typeof json.receipt_hash === 'string';
+
 export const keyOf = (file, root = ROOT) =>
   path.relative(path.join(root, 'receipts'), file).split(path.sep).join('--').replace(/\.json$/, '');
 
@@ -313,9 +316,12 @@ function main() {
   let n = 0;
   for (const f of receiptFiles()) {
     const receipt = JSON.parse(fs.readFileSync(f, 'utf8'));
+    // Issue 627: a retained-answers sidecar names its receipt and holds no results. It is not a cell:
+    // its receipt has its own plot, and a plot of the sidecar would read "refused" for a measured
+    // receipt. Every other file plots as before, a control record of a refusal (Report 006) included.
+    if (isSidecar(receipt)) continue;
     const key = keyOf(f);
-    const baseFile=f.replace(/-answers\.json$/, '.json');
-    const presented=f.endsWith('-answers.json')&&fs.existsSync(baseFile)?JSON.parse(fs.readFileSync(baseFile,'utf8')):receipt;
+    const presented=receipt;
     const limited=require('../lib/report-015-publication').routerLimit(presented);
     const cell = cellOf(receipt);
     for (const size of Object.keys(SIZES)) {

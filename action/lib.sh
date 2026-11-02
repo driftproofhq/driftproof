@@ -82,7 +82,21 @@ validate_bool() {  # validate_bool <input-name> <value>
 validate_skill_dir() {
   [ -n "$1" ] || die "skill-dir: must not be empty"
   [[ "$1" =~ $RE_CNTRL ]] && die "skill-dir: contains a control character, got $(shown "$1")"
-  [ -d "$1" ] || die "skill-dir: not a directory: $(shown "$1")"
+  # Keep the CLI's existing directory handling, including directory symlinks.
+  if [ -d "$1" ]; then return 0; fi
+  [ ! -L "$1" ] || die "skill-dir: symbolic links are refused: $(shown "$1")"
+  # Match lib/skill.js SUBJECT_EXT, including upper-case extensions.
+  case "$1" in
+    *.[mM][dD]|*.[mM][aA][rR][kK][dD][oO][wW][nN])
+      [ -f "$1" ] || die "skill-dir: not a regular Markdown file: $(shown "$1")" ;;
+    *) die "skill-dir: not a directory or a regular .md/.markdown file: $(shown "$1")" ;;
+  esac
+  return 0
+}
+validate_suite() {
+  [ -n "$1" ] || die "suite: must not be empty when given"
+  [[ "$1" =~ $RE_CNTRL ]] && die "suite: contains a control character, got $(shown "$1")"
+  [ -f "$1" ] || die "suite: not a regular file: $(shown "$1")"
   return 0
 }
 # The words the message names are read out of RE_VERDICT rather than typed
@@ -93,6 +107,9 @@ verdict_words() {
 validate_verdict() {
   [[ "$1" =~ $RE_VERDICT ]] || die "verdict: expected one of $(verdict_words), got $(shown "$1")"
 }
-validate_delta() {
+validate_delta() {  # value, verdict; issue 579's exact unavailable-reading sentinel
+  if [ "$1" = 'n/a' ]; then
+    case "${2:-}" in REFUSED|INCONCLUSIVE|NOT_MEASURED) return 0 ;; esac
+  fi
   [[ "$1" =~ $RE_DELTA ]] || die "delta: expected a decimal number, got $(shown "$1")"
 }

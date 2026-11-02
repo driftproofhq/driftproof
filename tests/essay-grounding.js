@@ -306,6 +306,14 @@ function campaignTablePairs(html) {
  return [...tally].map(([label,n])=>pair(n,label));
 }
 
+// Issue 627: a placebo comparison report's pre-registered counts line (spec 627, Report 017),
+// "Of the 16: ABOVE_PLACEBO 11, BELOW_PLACEBO 3, ...", each count bound to its reading token.
+function placeboTallyPairs(html) {
+ const t=html.match(/<p class="headline-counts" data-fn="placebo-tally">([\s\S]*?)<\/p>/);if(!t)return null;
+ const pairs=[...stripTags(t[1]).matchAll(/\b([A-Z][A-Z_]+) (\d+)\b/g)].map(m=>pair(m[2],m[1].toLowerCase()));
+ return pairs.length>=2?pairs:null;
+}
+
 function valuePairs(text) {
   const a = text.match(/In (\d+) of (\d+) skill × substrate pairs/);
   const b = text.match(/(\d+) cleared the floor on aggregate: (\d+) carry a price and (\d+) report a saving/);
@@ -326,7 +334,7 @@ function derive(root) {
   for (const id of publishedReportIds(root)) {
     const html = fs.readFileSync(path.join(root, 'docs', 'reports', id, 'index.html'), 'utf8');
     const text = stripTags(html);
-    const pairs = valuePairs(text) || tallyLinePairs(text) || verdictCellPairs(html) || refusalTablePairs(html) || instrumentComparisonPairs(html) || runTablePairs(html) || comparisonTablePairs(html) || liftTablePairs(html) || campaignTablePairs(html) || underTheRulePairs(html);
+    const pairs = valuePairs(text) || tallyLinePairs(text) || verdictCellPairs(html) || refusalTablePairs(html) || instrumentComparisonPairs(html) || runTablePairs(html) || comparisonTablePairs(html) || liftTablePairs(html) || campaignTablePairs(html) || placeboTallyPairs(html) || underTheRulePairs(html);
     if (!pairs) throw new Error(`no tally derivable from report ${id}`);
     // A count derived from the page (#002's verdict cells) is a figure the page
     // supports though it never spells it out, so it joins the page's numbers.

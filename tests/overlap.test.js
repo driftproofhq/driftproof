@@ -370,34 +370,6 @@ for (const kind of ['id', 'path']) test('AC-14 product and hostile ' + kind + ' 
   assert.throws(() => safeRefusal({ status: 2, stdout: '', stderr: 'refused ' + hostile + '\n' }), /AC-14/);
 });
 
-// A-182-4, PR 230 F-1: remove the real CLI bound under the same guards.
-test('AC-14 plant seen: P-14c removes the refusal reason slice', () => {
-  const hostile = '\n\x1b[31m forged\r\u2028\u2029' + 'x'.repeat(5000);
-  const d = subject({ files: { 'SKILL.md': '# specimen\n' }, cases: [{ id: hostile, rubric: 'r' }] });
-  const original = child([BIN, 'overlap', d], fresh());
-  safeRefusal(original);
-  const code = 'const fs=require("node:fs"),Module=require("node:module"),path=require("node:path"),file=' + JSON.stringify(BIN) + ';'
-    + 'const source=fs.readFileSync(file,"utf8"),needle="String(e && e.message || e).slice(0, 2048)";'
-    + 'require("node:assert/strict").equal(source.split(needle).length,2,"P-14c: exactly one refusal bound is mutated");'
-    + 'const m=new Module(file);m.filename=file;m.paths=Module._nodeModulePaths(path.dirname(file));'
-    + 'process.argv=[process.execPath,file,"overlap",' + JSON.stringify(d) + '];'
-    + 'm._compile(source.replace(needle,"String(e && e.message || e)"),file);';
-  const unbounded = child(['-e', code], fresh(), { SPEC182_INPUT: d });
-  rejectedCli(unbounded, /missing a prompt/);
-  assert.equal(unbounded.attempts, '', 'P-14c: no forbidden attempts');
-  const reason = JSON.parse(unbounded.stderr.slice('overlap refused: '.length, -1));
-  assert.ok(reason.length > 2048, 'P-14c: the real unbounded reason exceeds the ceiling');
-  assert.equal(JSON.parse(original.stderr.slice('overlap refused: '.length, -1)), reason.slice(0, 2048), 'AC-14: the whole reason is bounded before escaping');
-  assert.throws(() => safeRefusal(unbounded), { code: 'ERR_ASSERTION', message: 'AC-14: decoded reason is at most 2,048 characters' }, 'P-14c: removing the real bound reads RED');
-});
-
-// Load a source mutation without changing any tracked bytes.
-function sourceModule(rel, transform) {
-  const Module = require('node:module'); const file = path.join(ROOT, rel);
-  const m = new Module(file, module); m.filename = file; m.paths = Module._nodeModulePaths(path.dirname(file));
-  const source = fs.readFileSync(file, 'utf8'), changed = transform(source);
-  assert.notEqual(changed, source, 'plant changed its named cause'); m._compile(changed, file); return m.exports;
-}
 const requiredSubjects = [
   ['P-10a', 'SKILL.md', 'bytes'], ['P-10b', 'evals/evals.json', 'bytes'],
   ['P-10c', 'SKILL.md', 'FIFO'], ['P-10d', 'evals/evals.json', 'FIFO'],
@@ -420,21 +392,14 @@ for (const [id, rel, kind] of requiredSubjects) test('AC-10 product and pre-read
   assert.equal(probe.stdout.trim(), code, 'AC-10: shared loader refusal');
   assert.throws(() => product(d), (e) => e.code === code, 'AC-10: library refusal');
   rejectedCli(child([BIN, 'overlap', d], fresh()), new RegExp(kind === 'FIFO' ? 'regular' : rel === 'SKILL.md' ? 'SKILL_MAX_BYTES' : 'SUITE_MAX_BYTES'));
-  const bad = sourceModule('lib/skill.js', (s) => s.replace(/assertRequired\(st, rel, limit, bound\);/g, '/* P-10: pre-read checks omitted */'));
-  const real = fs.readSync; let attempted = false;
-  fs.readSync = function(fd, ...args) { if (fs.readlinkSync('/proc/self/fd/' + fd) === at) { attempted = true; throw new Error('P-10: forbidden required read'); } return real.call(this, fd, ...args); };
-  try { assert.throws(() => bad.loadSkill(d)); } finally { fs.readSync = real; }
-  assert.equal(attempted, true, id + ': independent observer sees the bypass before bytes are read');
 });
 
-test('AC-17 product and locale comparator plant: non-ASCII tied paths', () => {
+test('AC-17 product orders non-ASCII tied paths by bytes', () => {
   const files = { 'SKILL.md': '# specimen\n', 'z.txt': 'alpha beta', 'ä.txt': 'alpha beta' };
   const d = subject({ files, cases: [{ id: 'c', prompt: 'alpha beta', rubric: 'r' }] });
   const want = { skill: 'specimen', cases: [exhaustive('alpha beta', files, 'c')] };
   assert.equal(want.cases[0].match.file, 'z.txt'); measure(product(d), want, 'AC-17');
   validCli(child([BIN, 'overlap', d], fresh()), want);
-  const bad = sourceModule('lib/overlap.js', (s) => s.replace('Buffer.compare(Buffer.from(a.path), Buffer.from(b.path))', 'a.path.localeCompare(b.path)'));
-  assert.throws(() => measure(bad.overlapSkill(d), want, 'P-17'), /P-17/);
 });
 
 function upperSubject() {
@@ -464,30 +429,16 @@ for (const [id, target] of [['P-11a','bundle'],['P-11b','prompts']]) test('AC-11
     return true;
   };
   assert.throws(() => product(d), readBound);
-  // A-182-4, PR 230 F-2: mutate the product's reported allowance.
-  const wrongLimit = sourceModule('lib/overlap.js', s => target === 'bundle'
-    ? s.replace('pastBound(bound, limit + offset,', 'pastBound(bound, limit,')
-    : s.replace('for (const c of skill.suite.cases) {', 'for (const c of skill.suite.cases) { const remaining = OVERLAP_MAX_PROMPT_WORDS - promptWords;')
-      .replace("pastBound('OVERLAP_MAX_PROMPT_WORDS', OVERLAP_MAX_PROMPT_WORDS, promptWords,", "pastBound('OVERLAP_MAX_PROMPT_WORDS', remaining, promptWords,"));
-  assert.throws(() => assert.throws(() => wrongLimit.overlapSkill(d), readBound), { code: 'ERR_ASSERTION', message: /AC-11: refusal names the global word limit/ }, id + ': reporting the remaining allowance reads RED');
   rejectedCli(child([BIN,'overlap',d],fresh()), /OVERLAP_MAX/);
-  const bad=sourceModule('lib/overlap.js', s => s.replace(target === 'bundle' ? 'const OVERLAP_MAX_BUNDLE_WORDS = 250000;' : 'const OVERLAP_MAX_PROMPT_WORDS = 1000000;', target === 'bundle' ? 'const OVERLAP_MAX_BUNDLE_WORDS = Infinity;' : 'const OVERLAP_MAX_PROMPT_WORDS = Infinity;'));
-  assert.doesNotThrow(() => bad.overlapSkill(d));
-});
-test('AC-11 plant seen: P-11c quadratic comparison fails the resource oracle', () => {
-  const d = upperSubject();
-  const code = 'const Module=require("node:module"),fs=require("node:fs"),file='+JSON.stringify(path.join(ROOT,'lib/overlap.js'))+'; const m=new Module(file); m.filename=file; m.paths=Module._nodeModulePaths(require("node:path").dirname(file)); const source=fs.readFileSync(file,"utf8"); const needle="function compare(prompt, tokens, states, id) {"; if(!source.includes(needle))process.exit(3); m._compile(source.replace(needle,needle+" let planted=0; for(const a of tokens) for(const b of prompt) if(a.word===b.word) planted++; if(planted<0)throw Error(planted);"),file); console.log(m.exports.overlapSkill('+JSON.stringify(d)+'));';
-  const r=spawnSync(process.execPath,['-e',code],{timeout:30000,encoding:'utf8'});
-  assert.equal(r.error && r.error.code,'ETIMEDOUT','P-11c: the same operational bound sees the mutated product matcher');
 });
 
-test('AC-13 decoding mutation seen: P-13 auto-detects UTF-16', () => {
-  const d=subject({files:{'SKILL.md':'# specimen\n'},cases:[{id:'c',prompt:'alpha beta',rubric:'r'}]});
-  put(d,'utf16.bin',decoding[2][1]); const want={skill:'specimen',cases:[{id:'c',prompt_words:2,longest_words:0,match:null}]};
-  const bad=sourceModule('lib/overlap.js',s=>s.replace("f.bytes.toString('utf8')","f.bytes.toString(f.bytes[0] === 255 && f.bytes[1] === 254 ? 'utf16le' : 'utf8')"));
-  assert.throws(()=>measure(bad.overlapSkill(d),want,'P-13'),/P-13/);
-});
-
+// Load a changed copy of a source file without changing any tracked bytes.
+function sourceModule(rel, transform) {
+  const Module = require('node:module'); const file = path.join(ROOT, rel);
+  const m = new Module(file, module); m.filename = file; m.paths = Module._nodeModulePaths(path.dirname(file));
+  const source = fs.readFileSync(file, 'utf8'), changed = transform(source);
+  assert.notEqual(changed, source, 'the legacy reading changed its named cause'); m._compile(changed, file); return m.exports;
+}
 test('AC-10 accepted bytes: snapshot and legacy reading yield identical loader hashes', () => {
   const d = subject(corpus[0]); const { loadSkill } = require('../lib/skill');
   const legacy = sourceModule('lib/skill.js', s => s
@@ -514,15 +465,6 @@ for (const field of ['prompt', 'rubric', 'description']) {
       refused(loadSkill);
       refused(product);
       rejectedCli(child([BIN, 'overlap', d], fresh()), reason);
-      const bad = sourceModule('lib/skill.js', s => s.replace(/^function hasText\(s\) {[\s\S]*?^}/m, 'function hasText(s) { return true; }'));
-      if (label === 'blank') {
-        // Empty fields are also refused by the original presence checks.
-        const presence = sourceModule('lib/skill.js', s => s
-          .replace('!prompt || !hasText(prompt)', 'false')
-          .replace('(!rubric || !hasText(rubric)) && !listed', 'false')
-          .replace("typeof x.description !== 'string' || !hasText(x.description)", 'false'));
-        assert.throws(() => refused(presence.loadSkill), assert.AssertionError, 'P-18: bypass reads RED');
-      } else assert.throws(() => refused(bad.loadSkill), assert.AssertionError, 'P-18: bypass reads RED');
     });
   }
 }

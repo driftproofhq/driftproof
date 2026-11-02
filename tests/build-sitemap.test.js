@@ -158,7 +158,9 @@ test('issue 501: a new article builds before page dates exist', () => {
     assert.ok(outputs['feed.xml'].includes('<id>https://driftproofhq.com/writing/new-article/</id>'));
     // An escaped entity in the source decodes once: the text "&lt;tags&gt;", XML-escaped again in the feed.
     assert.ok(outputs['feed.xml'].includes('&amp;lt;tags&amp;gt;'), 'double-unescaped description');
-    assert.ok(outputs['llms.txt'].split(/[\s()<>\[\]]+/).includes('https://driftproofhq.com/writing/new-article/'));
+    // Each URL llms.txt carries is parsed, and its scheme, host and path compared whole.
+    const llmsUrls = (outputs['llms.txt'].match(/https?:\/\/[^\s()<>\[\]]+/g) || []).map((u) => new URL(u));
+    assert.ok(llmsUrls.some((u) => u.protocol === 'https:' && u.host === 'driftproofhq.com' && u.pathname === '/writing/new-article/' && !u.search && !u.hash), 'llms.txt lists the new article');
     result = cli(root, true);
     assert.equal(result.status, 0, result.stderr);
   } finally { fs.rmSync(root, { recursive: true, force: true }); }

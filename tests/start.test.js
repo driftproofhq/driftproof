@@ -822,7 +822,9 @@ test('AC-368-10: the description and the README\'s first line say what to type, 
   const md = fs.readFileSync(path.join(PLUGIN, 'README.md'), 'utf8');
   const i = md.indexOf('## What it sends, and where');
   const sec = md.slice(i);
-  const moved = md.slice(0, i).replace('This plugin adds four commands:', `${sec}\nThis plugin adds four commands:`);
+  const commandList = 'This plugin adds five commands:'; // A-139-28, issue 623.
+  assert.ok(md.slice(0, i).includes(commandList), 'the command-list plant anchor exists');
+  const moved = md.slice(0, i).replace(commandList, `${sec}\n${commandList}`);
   assert.ok(reds(await readWhatToType(planted(['README.md', md, moved])), /does not come after the command list/), 'the section above the command list was not read RED');
   // A-139-20 (issue 382): the release bump to 9.9.9 reads GREEN here and in the checklist; the README's pins bumped
   // without the manifest, and one other byte of the section beside the bump, read RED.

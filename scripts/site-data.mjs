@@ -336,7 +336,11 @@ export function reportRow(n, opts = {}) {
     const bigRaw = textOf(bigHtml);
     const verdict = verdictLine(bigHtml, html);
     const type = prefix(firstSentence(typeRaw), 60).replace(/\.$/, '');
-    const moved = prefix(h1.replace(/^Report\s*#?\d+\s*(?:—|:)\s*/, ''), 90);
+    // Issue 627: a title that is not what moved (Report 017's "Skill or sugar pill?") states it on
+    // its h1 as data-what-moved; every other page's h1 is what moved, as before.
+    const movedAttr = (html.match(/<h1[^>]*\sdata-what-moved="([^"]*)"/) || [])[1];
+    const cardDescriptionAttr = (html.match(/<div class="headline">[\s\S]*?<p class="big"[^>]*\sdata-card-description="([^"]*)"/) || [])[1];
+    const moved = prefix(movedAttr != null ? textOf(movedAttr) : h1.replace(/^Report\s*#?\d+\s*(?:—|:)\s*/, ''), 90);
 
     const rfiles = receiptsFor(n);
     const models = [];
@@ -401,7 +405,10 @@ export function reportRow(n, opts = {}) {
       // two places, and Report 005's card read "18 with an". One source, one cap,
       // one ellipsis: the page's own headline sentence, and the same value fills
       // the meta description and og:description.
-      og_description: F(prefix(cardDescription(bigRaw), OG_CAP), pageRel),
+      // Issue 627: a headline whose first sentence runs past the cap states its card description on
+      // the dek (data-card-description), a whole clause, so nothing is cut inside a claim. Every other
+      // page's description is its headline's, as before.
+      og_description: F(prefix(cardDescriptionAttr != null ? textOf(cardDescriptionAttr) : cardDescription(bigRaw), OG_CAP), pageRel),
       // Absent, not empty, where the report has no verdict line of its own: a
       // {value: "", from: ...} pair would cite a file for a value it does not
       // carry, which is the one thing this data layer exists to refuse.

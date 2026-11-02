@@ -5,8 +5,8 @@
 // body line, `Driftproof **consumes**`, from docs/data/readme-opening.json and the files each value
 // names. Nothing in the opening is kept by hand in two places:
 //
-//   - the words no other file holds (the pitch, what Driftproof tells you, what the two plugin
-//     commands do, the labels) are the data file's;
+//   - the words no other file holds (the pitch, what Driftproof tells you, what it does not show,
+//     what the two plugin commands do, the labels) are the data file's;
 //   - the two `claude plugin` lines are the README's own `### Install` section's;
 //   - the Node.js major is package.json `engines.node`;
 //   - every in-page link is the GitHub anchor of a heading the README carries;
@@ -134,6 +134,7 @@ export function composeOpening({ root = DEFAULT_ROOT } = {}) {
   if (!major) throw new Error(`package.json engines.node names no version: ${JSON.stringify(engines)}`);
   const badge = (readme.slice(0, at).match(/^\[!\[driftproof\][^\n]*$/m) || [])[0];
   if (!badge) throw new Error("README.md's opening carries no badge line to keep");
+  const firstRun = d.first_run_link ? `[${d.first_run_link.label}](#${anchor((h) => h.level === 2 && h.text === d.first_run_link.heading, `## ${d.first_run_link.heading}`)}) · ` : '';
   const install = `#${anchor((h) => h.level === 3 && h.text === d.install_link.heading, `### ${d.install_link.heading}`)}`;
   const quick = `#${anchor((h) => h.level === 2 && h.text.startsWith(d.quickstart_link.heading_starts), `## ${d.quickstart_link.heading_starts}...`)}`;
   const reports = `#${anchor((h) => h.level === 2 && h.text === d.reports_link.heading, `## ${d.reports_link.heading}`)}`;
@@ -148,14 +149,14 @@ export function composeOpening({ root = DEFAULT_ROOT } = {}) {
 
 ${wrap(d.what)}
 
-### ${d.try_heading}
+${d.limits ? `${wrap(d.limits)}\n\n` : ''}### ${d.try_heading}
 
 \`\`\`bash
 ${plugin.join('\n')}
 \`\`\`
 
 ${wrap(d.commands.replace('{node_major}', major))}
-[${d.install_link.label}](${install}) · [${d.quickstart_link.label}](${quick})
+${firstRun}[${d.install_link.label}](${install}) · [${d.quickstart_link.label}](${quick})
 
 ${wrap(`**${d.finding_label}** · [Report ${f.n}](${ORIGIN}/reports/${f.n}/), ${f.date}: ${f.sentence}`)}
 

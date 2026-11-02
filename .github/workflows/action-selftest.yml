@@ -5,7 +5,7 @@
 # ZERO model calls and zero spend. No API key required.
 #
 # Spec 024: before the benign run, this job passes one hostile value through
-# each of the action's five inputs, on this runner, through the real action.yml,
+# each of the action's seven tested inputs, on this runner, through the real action.yml,
 # and fails unless every one is refused before anything ran. A green run of
 # this workflow is the proof behind the v0.8.1 hardening (spec 023, audit A1
 # and A6). A red run means one of the assertions below failed, and the failing
@@ -19,7 +19,7 @@
 # second successful run here turned the job red for a reason that was not a
 # hostile input (spec 024 v1.1, approval F-1). Each invocation now writes to its
 # own directory, `driftproof-receipts.XXXXXX` under the runner temp, and uploads
-# under that directory's name. The five hostile runs fail before any of it.
+# under that directory's name. The seven hostile runs fail before any of it.
 name: action-selftest
 
 on:
@@ -88,6 +88,8 @@ jobs:
           max-usd: '3.53'
           max-calls: '1200'
           fail-on-regression: 'true'
+          suite: ''
+          placebo: 'false'
 
       - name: Hostile models
         id: hostile-models
@@ -99,6 +101,8 @@ jobs:
           max-usd: '3.53'
           max-calls: '1200'
           fail-on-regression: 'true'
+          suite: ''
+          placebo: 'false'
 
       - name: Hostile max-usd
         id: hostile-max-usd
@@ -110,6 +114,8 @@ jobs:
           max-usd: ${{ env.HOSTILE }}
           max-calls: '1200'
           fail-on-regression: 'true'
+          suite: ''
+          placebo: 'false'
 
       - name: Hostile max-calls
         id: hostile-max-calls
@@ -121,6 +127,8 @@ jobs:
           max-usd: '3.53'
           max-calls: ${{ env.HOSTILE }}
           fail-on-regression: 'true'
+          suite: ''
+          placebo: 'false'
 
       - name: Hostile fail-on-regression
         id: hostile-fail-on-regression
@@ -132,6 +140,34 @@ jobs:
           max-usd: '3.53'
           max-calls: '1200'
           fail-on-regression: ${{ env.HOSTILE }}
+          suite: ''
+          placebo: 'false'
+
+      - name: Hostile suite
+        id: hostile-suite
+        continue-on-error: true
+        uses: ./
+        with:
+          skill-dir: examples/commit-message-conventions
+          models: claude-haiku-4-5
+          max-usd: '3.53'
+          max-calls: '1200'
+          fail-on-regression: 'true'
+          suite: ${{ env.HOSTILE }}
+          placebo: 'false'
+
+      - name: Hostile placebo
+        id: hostile-placebo
+        continue-on-error: true
+        uses: ./
+        with:
+          skill-dir: examples/commit-message-conventions
+          models: claude-haiku-4-5
+          max-usd: '3.53'
+          max-calls: '1200'
+          fail-on-regression: 'true'
+          suite: ''
+          placebo: ${{ env.HOSTILE }}
 
       # Outcomes reach the shell through env:, never through an expression in
       # run: (spec 023). The checks run in this order on purpose: the marker
@@ -145,6 +181,8 @@ jobs:
           O_MAX_USD: ${{ steps.hostile-max-usd.outcome }}
           O_MAX_CALLS: ${{ steps.hostile-max-calls.outcome }}
           O_FAIL_ON_REGRESSION: ${{ steps.hostile-fail-on-regression.outcome }}
+          O_SUITE: ${{ steps.hostile-suite.outcome }}
+          O_PLACEBO: ${{ steps.hostile-placebo.outcome }}
         run: |
           set -uo pipefail
           MARK="$RUNNER_TEMP/driftproof-injection"
@@ -158,22 +196,22 @@ jobs:
           #    the check is for any of them, not for the one fixed name it used to be.
           if ls -d "$RUNNER_TEMP"/driftproof-receipts* >/dev/null 2>&1; then fail "a driftproof-receipts directory exists: a hostile value got past validation"; fi
           # 3. every hostile step failed
-          for s in "skill-dir:$O_SKILL_DIR" "models:$O_MODELS" "max-usd:$O_MAX_USD" "max-calls:$O_MAX_CALLS" "fail-on-regression:$O_FAIL_ON_REGRESSION"; do
+          for s in "skill-dir:$O_SKILL_DIR" "models:$O_MODELS" "max-usd:$O_MAX_USD" "max-calls:$O_MAX_CALLS" "fail-on-regression:$O_FAIL_ON_REGRESSION" "suite:$O_SUITE" "placebo:$O_PLACEBO"; do
             [ "${s#*:}" = failure ] || fail "hostile ${s%%:*} step outcome is '${s#*:}', expected failure"
           done
           # 4. the refusal names the input. A later step cannot read a composite
           #    step's log, so the shipped script is executed again here with the
           #    mapping action.yml declares and the same payload, one input at a time.
-          for pair in INPUT_SKILL_DIR:skill-dir INPUT_MODELS:models INPUT_MAX_USD:max-usd INPUT_MAX_CALLS:max-calls INPUT_FAIL_ON_REGRESSION:fail-on-regression; do
+          for pair in INPUT_SKILL_DIR:skill-dir INPUT_MODELS:models INPUT_MAX_USD:max-usd INPUT_MAX_CALLS:max-calls INPUT_FAIL_ON_REGRESSION:fail-on-regression INPUT_SUITE:suite INPUT_PLACEBO:placebo; do
             var="${pair%%:*}"; name="${pair#*:}"
-            if out="$(env INPUT_SKILL_DIR=examples/commit-message-conventions INPUT_MODELS=claude-haiku-4-5 INPUT_MAX_USD=3.53 INPUT_MAX_CALLS=1200 INPUT_FAIL_ON_REGRESSION=true "$var=$HOSTILE" GITHUB_ACTION_PATH="$GITHUB_WORKSPACE" bash "$GITHUB_WORKSPACE/action/run.sh" 2>&1)"; then
+            if out="$(env INPUT_SKILL_DIR=examples/commit-message-conventions INPUT_MODELS=claude-haiku-4-5 INPUT_MAX_USD=3.53 INPUT_MAX_CALLS=1200 INPUT_FAIL_ON_REGRESSION=true INPUT_SUITE= INPUT_PLACEBO=false "$var=$HOSTILE" GITHUB_ACTION_PATH="$GITHUB_WORKSPACE" bash "$GITHUB_WORKSPACE/action/run.sh" 2>&1)"; then
               fail "$name: run.sh exited 0 with the payload in $var"
             fi
             grep -q "^::error title=Driftproof::$name:" <<< "$out" || fail "$name: no ::error naming it; got: $(head -c 200 <<< "$out")"
           done
           if ls "$MARK"-* >/dev/null 2>&1; then fail "injection marker present after re-execution"; fi
           if ls -d "$RUNNER_TEMP"/driftproof-receipts* >/dev/null 2>&1; then fail "a driftproof-receipts directory exists after re-execution"; fi
-          echo "hostile value refused in skill-dir, models, max-usd, max-calls, fail-on-regression: no marker, no receipts dir, ::error names each input"
+          echo "hostile value refused in skill-dir, models, max-usd, max-calls, fail-on-regression, suite, placebo: no marker, no receipts dir, ::error names each input"
 
       # Refusing everything would also pass the step above. The same characters
       # minus the newline are a legal directory name; the action must run on it.
@@ -211,6 +249,8 @@ jobs:
           max-usd: '3.53'
           max-calls: '1200'
           fail-on-regression: 'true'
+          suite: ''
+          placebo: 'false'
 
       - name: Assert the literal directory ran as data
         id: assert-literal

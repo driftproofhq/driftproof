@@ -43,7 +43,7 @@ Rules-file behaviour report
 
 These small tasks test injected instructions on two Claude models, not harder work or native project loading.
 
-[See what changed ↓](https://driftproofhq.com/reports/016/#rules)
+[See what changed ↓](https://driftproofhq.com/reports/016/#rules)[See the receipts ↓](https://driftproofhq.com/reports/016/#receipts)
 
 The fileIts fake**352** bytes
 
@@ -73,7 +73,7 @@ File
 
 Fake
 
-The shortest of the files, drona23/claude-token-efficient (352 bytes), becoming its fake: same length to the byte, about hills, a ferry and fishing boats, with nothing about code.
+The shortest of the files, drona23/claude-token-efficient (352 bytes), becoming its fake: same length to the byte, about hills, a ferry and fishing boats, with nothing about code. [See your file's fake](https://driftproofhq.com/placebo/).
 
 ## A rules file is a note an AI coding assistant reads before it starts work.
 
@@ -686,6 +686,8 @@ Of 2,646 drawn runs, 58 had a primary or secondary loss: 3 primary execution fai
 
 Setup searches count actual Bash, Read, Glob or Grep inputs for the named progress, feature, setup and handoff files or git log, including git with a working-directory option. Descriptions and tool-result text do not count. Lost runs with complete tool evidence remain in the denominator; incomplete tool evidence is unknown.
 
+## Receipts
+
 **Appendix D: receipts and pinned subjects**
 
 - [claude-1 · Haiku · receipt-1d569adc36a7.json](https://github.com/driftproofhq/driftproof/blob/main/receipts/report-016/receipt-1d569adc36a7.json)
@@ -749,3 +751,9 @@ Execution settings come from the sealed receipts. Runner commits come from the c
 | agents-3 | Sonnet | Driftproof source at commit `ff3b5671926842cf5bd0c087291df91b1843f759`, released in 0.24.0 | {"name":"claude-code","version":"2.1.287"} | {"max_output_tokens":16384,"max_turns":32,"timeout_ms":300000} | claude-sonnet-5-5 | d60f94bb204643e335239404dae412d482588514d658380734dcaf027793b67f / 3ee521dbd58c525e4f4cb3aa0ecf05a6f21c21884a28afd6456032198b101698 | 650ea8175b6eaaf14056b150162e9b6698253d14ed86b1c3aa9e4618cbf73b5d / 47ea2419cc901bac7e89253ca7735db211aff5248d748cb6892fc88f6c53856c / a8d2649ffddaffda72d559f070b4d21d4d25781ffd1c4f5415e1780f85c9984e |
 
 The recorded usage fields do not establish whether output tokens include thinking tokens. Usage fields: cached_tokens, input_tokens, output_tokens, wall_ms.
+
+## Amendments
+
+31 Oct 2026, amendment 1 (issue 577): added a visible receipts link to the opening and a Receipts heading so both links reach appendix D. Findings and receipt counts are unchanged.
+
+First November, twenty twenty-six, amendment two (issue six hundred fourteen): added a link from the file and fake panel to the local preview. Findings and receipts are unchanged.

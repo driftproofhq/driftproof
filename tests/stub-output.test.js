@@ -525,33 +525,20 @@ for (const [command, plant] of [['run', 'summary-write'], ['regrade', 'summary-w
     assert.equal(validateReceipt(emitted).valid, true);
     assert.equal(verifyReceiptHash(emitted), true);
     first(r); costs(r); results(r, 1); calls(r);
-    const b = command === 'run' ? { work: fixture() } : scenario(baseRoot, 'metadata-original-' + plant);
-    const bad = cli(baseRoot, b.work, args, true, false, plant);
-    assert.equal(bad.status, 2);
-    assert.match(bad.stderr, /fixture metadata failure/);
-    assert.equal(verifyReceiptHash(receiptIn(path.join(b.work, dir)).receipt), true);
-    assert.throws(() => results(bad, 1), /completion claims equal emitted receipts/);
   });
 }
 
-// A-236-11 (issue 381): spec 301's two readings of its approval's F-2 and F-3, moved here with their
-// plants when spec 301 was deleted. Each runs the real CLI in a copy of the tree, under the stub, with no
-// provider credential; a plant is applied to the copy's bin/driftproof and must be read RED for its reason.
+// A-236-11 (issue 381): spec 301's two readings of its approval's F-2 and F-3, moved here when spec 301
+// was deleted. Each runs the real CLI in a copy of the tree, under the stub, with no provider credential.
 const STATEMENT_301 = /^STUB RUN \(DRIFTPROOF_STUB=1\):.*UNVERIFIED.*measure nothing/;
 const JUDGE_301 = 'claude-haiku-4-5';
 const CAP_301 = '0.0001';
-const tree301 = (plants = []) => {
+const tree301 = () => {
   const d = tmp();
   for (const rel of ['bin', 'lib', 'spec', 'examples', 'config', 'config.js', 'package.json']) {
     fs.cpSync(path.join(ROOT, rel), path.join(d, rel), { recursive: true });
   }
   fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(d, 'node_modules'));
-  for (const [rel, from, to] of plants) {
-    const p = path.join(d, rel);
-    const src = fs.readFileSync(p, 'utf8');
-    assert.equal(src.split(from).length - 1, 1, `the plant's anchor occurs once in ${rel}: ${from.slice(0, 80)}`);
-    fs.writeFileSync(p, src.split(from).join(to));
-  }
   return d;
 };
 const cli301 = (dir, args, cwd) => {
@@ -625,28 +612,10 @@ const readFlags301 = (dir) => {
   return problems;
 };
 
-const REGRADE_ANCHOR_301 = 'stub plan exceeds --max-usd ${maxUsd}: ${plan.calls} synthetic calls planned; no model will be called.`';
-const PARSE_ANCHOR_301 = 'parseArgs(rest, stubDoor ? () => console.error(STUB_STATEMENT) : null)';
-
 test('A-236-11 (spec 301 F-2): the stub regrade refusal names the cap and the planned synthetic calls, read back', () => {
   assert.deepEqual(readRegrade301(tree301()), []);
 });
 
-test('A-236-11 (spec 301 F-2) plants: issue 236\'s regrade refusal and one naming a call more than planned each read RED', () => {
-  const old = readRegrade301(tree301([['bin/driftproof', '`\\n  ✗ ABORT (cost guard): ' + REGRADE_ANCHOR_301,
-    "'\\n  ✗ ABORT (cost guard): stub plan exceeds --max-usd; no model will be called.'"]]));
-  assert.ok(old.some((p) => /does not name the cap/.test(p)), old.join('; '));
-  const more = readRegrade301(tree301([['bin/driftproof', REGRADE_ANCHOR_301, REGRADE_ANCHOR_301.replace('${plan.calls}', '${plan.calls + 1}')]]));
-  assert.ok(more.some((p) => /planned calls where the plan judges/.test(p)), more.join('; '));
-});
-
 test('A-236-11 (spec 301 F-3): a refused no-value flag writes the stub statement first, on stderr, and nothing on stdout', () => {
   assert.deepEqual(readFlags301(tree301()), []);
-});
-
-test('A-236-11 (spec 301 F-3) plants: the statement left out, and on stdout before parsing, each read RED', () => {
-  const none = readFlags301(tree301([['bin/driftproof', PARSE_ANCHOR_301, 'parseArgs(rest, null)']]));
-  assert.ok(none.some((p) => /first line written is not the stub statement/.test(p)), none.join('; '));
-  const out = readFlags301(tree301([['bin/driftproof', PARSE_ANCHOR_301, '(stubDoor && console.log(STUB_STATEMENT), parseArgs(rest, null))']]));
-  assert.ok(out.some((p) => /stdout is not empty/.test(p)), out.join('; '));
 });

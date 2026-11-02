@@ -60,6 +60,7 @@ const { runSkillOnModel } = require('../lib/run');
 const { loadSkill } = require('../lib/skill');
 const { sealReceipt } = require('../lib/receipt');
 const { staleReport, renderText } = require('../lib/stale');
+const { recount } = require('./receipt-versions');
 
 const ROOT = path.resolve(__dirname, '..');
 const BIN = path.join(ROOT, 'bin', 'driftproof');
@@ -92,7 +93,8 @@ async function receiptFile(mode, { unrecorded = false } = {}) {
   if (!made[key]) {
     const { receipt } = await runSkillOnModel({ skill: loadSkill(SKILL), model: 'haiku', opts: { samples: 2, trusted: true, capture: mode } });
     assert.deepEqual(receipt.run.capture, { mode });
-    if (unrecorded) { delete receipt.run.capture; delete receipt.results.fake_tool_calls; sealReceipt(receipt); }
+    // A-146-10 (issue 549): the shared helper recounts what the writer derives from the capture mode.
+    if (unrecorded) { delete receipt.run.capture; sealReceipt(recount(receipt)); }
     made[key] = receipt;
   }
   const f = path.join(scratch('receipt'), 'receipt.json');
@@ -343,7 +345,8 @@ test('AC-5 the text shows a capture line for an axis that is not current, its ef
 test('AC-5 the next command carries --capture when the flag was given, and not when the rc or the default gave the mode', async () => {
   const file = await receiptFile('files');
   const flagged = (await read(file, { capture: 'text' })).x;
-  assert.match(flagged.next, /^driftproof run .* --model \S+ --capture text$/);
+  // Issue 617 (A-053-11): run's flag is --models.
+  assert.match(flagged.next, /^driftproof run .* --models \S+ --capture text$/);
   const flaggedFiles = (await read(await receiptFile('text'), { capture: 'files' })).x;
   assert.match(flaggedFiles.next, / --capture files$/);
   const viaRc = (await read(file, { rc: { capture: 'text' } })).x;

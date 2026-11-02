@@ -96,6 +96,7 @@ const withSkill = (call) => call.args.includes('--append-system-prompt');
 
 
 const { textFakeToolCall, fakeToolCallCounts, fakeToolCallWarning } = require('../lib/text-capture');
+const { atVersion, CURRENT, VERSIONS } = require('./receipt-versions');
 const { summarizeReceipt } = require('../lib/run');
 const { plainOf } = require('../lib/plain');
 const endings = [
@@ -169,7 +170,8 @@ test('AC-4 threshold is per arm, all attempted draws, without rounding',()=>{
 test('AC-5 old schema verifies; regrade planning and two regrades never judge fake calls',async()=>{
   reset();generate=()=>real;
   const skill=skillOf();let {receipt}=await runSkillOnModel({skill,model:'haiku',opts:{samples:2,trusted:true}});
-  receipt.schema_version='0.15';delete receipt.results.fake_tool_calls;
+  // A-538-3 (issue 549): taken back to 0.15, the version before the counts, by the shared helper.
+  receipt=atVersion(receipt,'0.15');
   const d=receipt.results.cases[0].generation.draws[0];d.generation_hash=sha(endings[0]);receipt=sealReceipt(receipt);
   assert.ok(validateReceipt(receipt).valid);assert.ok(verifyReceiptHash(receipt));
   const answers={[sha(real)]:real,[sha(endings[0])]:endings[0]};
@@ -259,15 +261,17 @@ test('AC-6 text summaries name Claude Code tools only on claude-cli',async()=>{
     for(const mode of ['files','repository'])assert.equal(captureLine({mode},surface),captureLine({mode}));
   }
 });
-test('issue 542 current and served schema descriptions name v0.16 and its evidence',()=>{
+// A-538-3 (issue 549): the current version and the one before it, read through the shared helper.
+test('issue 542 current and served schema descriptions name the current version and its evidence',()=>{
   const source=fs.readFileSync(path.join(__dirname,'../spec/receipt.schema.json'),'utf8');
   assert.equal(fs.readFileSync(path.join(__dirname,'../docs/spec/receipt.schema.json'),'utf8'),source);
   const schema=JSON.parse(source),description=schema.description;
-  assert.match(description,/Receipt spec v0\.16:/);
-  assert.match(description,/Every run writes v0\.16, a placebo run included/);
-  assert.doesNotMatch(description,/Every run writes v0\.15/);
+  const v=s=>s.replace(/[\\^$.*+?()[\]{}|]/g,'\\$&'),prior=VERSIONS[VERSIONS.length-2];
+  assert.match(description,new RegExp('Receipt spec v'+v(CURRENT)+':'));
+  assert.match(description,new RegExp('Every run writes v'+v(CURRENT)+', a placebo run included'));
+  assert.doesNotMatch(description,new RegExp('Every run writes v'+v(prior)));
   for(const term of ['results.fake_tool_calls','count','draws','unmeasured','5%'])assert.ok(description.includes(term),term);
-  assert.equal(schema.properties.schema_version.const,'0.16');
+  assert.equal(schema.properties.schema_version.const,CURRENT);
 });
 test('issue 542 interop derives its frozen range from the current schema version',()=>{
   const {PATCHES}=require('../scripts/build-site-pages');

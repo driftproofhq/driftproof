@@ -399,6 +399,7 @@ function answersFor(row, body, { esc, root = ROOT } = {}) {
   const harness = nativeOf(row, new Set(numeralsIn(textOf(body))), { esc, root });
   return harness ? { ...got, harness } : got;
 }
+const PLACEBO_TYPE = 'Placebo comparison report';
 function driftproofAnswers(row, body, { esc, root = ROOT } = {}) {
   const across = acrossFor(row, body, { esc, root });
   if (across) return { ...across, across: true };
@@ -407,6 +408,11 @@ function driftproofAnswers(row, body, { esc, root = ROOT } = {}) {
   // a body that counts each model's own result across the runs (data-fn="lift-verdict", Report 014): a sentence
   // read from one receipt would lead with the latest run alone, so it keeps spec 125's summary (spec 134 A-134-6)
   if (/data-fn="lift-verdict"/.test(String(body))) return null;
+  // a placebo comparison report whose body headlines a pre-registered count of placebo readings
+  // (data-fn="placebo-tally", Report 017): a sentence read from one receipt against no skill would answer
+  // another question, and would name a router's verdict without its qualification, so it keeps spec 125's
+  // summary (spec 134 A-134-22). The type is the row's; a page of any other type is read as before.
+  if (row && row.type && row.type.value === PLACEBO_TYPE && /data-fn="placebo-tally"/.test(String(body))) return null;
   const bodyNums = new Set(numeralsIn(textOf(body)));
   const rels = (row.receipt_paths || []).map((p) => (typeof p === 'string' ? p : p.value));
   const eligible = [];

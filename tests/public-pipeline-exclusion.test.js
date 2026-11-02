@@ -24,6 +24,10 @@ const OUT = [
   'scripts/pipeline.mjs',
   'scripts/sweep-shards.mjs',
   'scripts/runner-setup.sh',
+  // Issue 600 F-1: privileged runner migration and its private test never ship.
+  'scripts/runner-user-setup.sh',
+  'scripts/runner-inputs-refresh.sh',
+  'tests/runner-user.test.js',
   'specs/000-governance/gate-map.json',
   'tests/pipeline.test.js',
   // a test does not ship without its subject: scripts/sweep-shards.mjs is out, so its test is too
@@ -74,7 +78,7 @@ function walk(root, rel = '') {
   return out;
 }
 
-test('the public build leaves out every pipeline file and ships release.yml', () => {
+test('the public build leaves out every pipeline file and ships release.yml', async t => {
   const dir = fs.mkdtempSync(path.join(process.env.TMPDIR || os.tmpdir(), 'pipe-exclusion-'));
   try {
     const src = path.join(dir, 'src');
@@ -108,8 +112,10 @@ test('the public build leaves out every pipeline file and ships release.yml', ()
     const disk = walk(pub);
     const commit = git(pub, ['ls-files']).stdout.split('\n').filter(Boolean);
     for (const f of OUT) {
-      assert.ok(!disk.includes(f), `${f} must be absent on disk`);
-      assert.ok(!commit.includes(f), `${f} must be absent from the commit`);
+      await t.test(`${f} stays private`, () => {
+        assert.ok(!disk.includes(f), `${f} must be absent on disk`);
+        assert.ok(!commit.includes(f), `${f} must be absent from the commit`);
+      });
     }
     for (const f of IN) {
       assert.ok(disk.includes(f), `${f} must be present on disk`);

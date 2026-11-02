@@ -1519,3 +1519,26 @@ hash, usage and cost. Cost uses the receipt's frozen judge price and is a
 list-price estimate, not a bill. Both answered attempts contribute to the
 draw's judge usage and measurement overhead. These records and counts are
 inside `receipt_hash`. Existing receipts and report 016 keep their bytes.
+
+## Optional suite evidence (issue 580)
+
+New sampled rows carry `generation.suite_case`. This optional extension uses the
+existing open generation object. The JSON Schema and schema version do not change.
+Old receipts still validate and cannot establish prompt identity after a suite edit.
+
+| Field | Meaning |
+| --- | --- |
+| `prompt_hash` | SHA-256 of the normalized case prompt's UTF-8 bytes. |
+| `grading_hash` | SHA-256 of canonical JSON containing normalized rubric and pass_threshold, plus criteria when present. |
+| `index` | Zero-based case position in the complete original suite. |
+| `grading_kind` | `rubric` or `criteria`, so a change of grading shape cannot masquerade as a rubric edit. |
+
+The receipt hash seals these fields, including failed rows. Regrade derives them
+from the verified original and grading suites. Stale and reuse require a valid
+receipt hash and schema, every case in both arms, and consistent evidence across
+all recorded arms. Missing, malformed, conflicting or partial evidence means rerun
+when the suite differs. Equal prompt hashes, case identities, order and grading
+kind allow a grading-only change to list affected cases for regrade. Repository
+capture and context-file subjects remain ineligible for this rubric route. These hashes detect inconsistent content; they do not
+authenticate a run or its author. Retained answer archives contain answers and
+judge replies, not prompt identity usable by this comparison.

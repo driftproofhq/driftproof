@@ -29,6 +29,7 @@ with your own `<skill-dir>` and any values you chose.
     node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" run <skill-dir> --trust-outside-repo
     node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" run <skill-dir> --placebo
     node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" run <rules-file> --suite <tasks> [--placebo]
+    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" run <rules-file> --suite <tasks> --placebo --keep-transcripts
 
 With no `--models`, the run uses the cheapest registered model in the runner's
 own registry, resolved by reading it. The model id is deliberately not written
@@ -55,6 +56,10 @@ trusted lane* below. It takes no value.
 `--suite <tasks>` is a rules file's tasks file, and is refused for a skill, whose tasks
 are its own `evals/evals.json`. `--placebo` adds the placebo arm; see below. It takes no
 value.
+
+Before the run, offer `--keep-transcripts`: it keeps answers and judge outputs
+under `transcripts/<receipt_hash>/` in the working folder for later reading; it
+takes no value and is passed only when chosen.
 
 Those are the only flags this command takes. **Anything else is refused, not
 ignored.** A door that quietly dropped a flag would let you ask for one judge
@@ -205,6 +210,7 @@ measured, and it has no opinion about how to make a score better.
     {"when": "quick", "emit": ["--quick"]},
     {"when": "suite", "emit": ["--suite", "@suite"]},
     {"when": "placebo", "emit": ["--placebo"]},
+    {"when": "keep-transcripts", "emit": ["--keep-transcripts"]},
     "--trusted-skill"
   ]}
 ]

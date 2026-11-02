@@ -408,6 +408,7 @@ const TYPE_NOTES = {
   'Substrate durability report': ['overlapping',
     "Asks whether a skill helps just as much on a different company's model, reached through that company's own command-line tool."],
   'Rules-file behaviour report': ['overlapping', 'Popular rules files against no file and a same-length placebo on small coding tasks.'],
+  'Placebo comparison report': ['overlapping', 'Reads each skill against no skill and against a same-length text from a fixed corpus, on one model.'],
   'Capability-gap report': ['separated',
     "Asks whether a skill still helps on a stronger model from the same company."],
   'Value report': ['overlapping',
@@ -578,7 +579,7 @@ function redirectStub(slug, label) {
 <section class="screen">
 <h1>${esc(label)} has moved</h1>
 <p>This page now lives at <a href="/${slug}/">driftproofhq.com/${slug}/</a>, and your browser should be taking you there. If it does not, follow the link.</p>
-</section>
+${slug === 'interop' ? '<p><a href="/drop-results/">Read a results file in your browser</a>.</p>\n' : ''}</section>
 </main>`;
   return `<!doctype html>
 <html lang="en">
@@ -1003,6 +1004,9 @@ function patchInteropPage(html, root = ROOT) {
   const versions = Object.keys(require('../lib/receipt').SCHEMA_FILES);
   const prior = versions[versions.indexOf(version) - 1];
   if (!prior) throw new Error('spec/receipt.schema.json: no prior frozen schema to cite');
+  const dropLink = '<p><a href="/drop-results/">Read a results file in your browser</a>.</p>';
+  html = html.replace(dropLink + '\n', '');
+  html = html.replace(/(<p class="lede">[\s\S]*?<\/p>)/, '$1\n' + dropLink);
   return html.replace(/receipt spec v\d+\.\d+;/, 'receipt spec v' + version + ';')
     .replace(/Prior schema versions \(v0\.1 to v0\.\d+, v0\.3\.1 among them, and v0\.14 as receipt\.placebo\.schema\.json\)/, `Prior schema versions (v0.1 to v${prior}, v0.3.1 among them, and v0.14 as receipt.placebo.schema.json)`);
 }
@@ -1491,7 +1495,41 @@ ${beacon ? `<p>${esc(T.beacon)}</p>\n` : ''}</details>
   return shell({ title: T.title, description: T.lede, main });
 }
 
+// Spec 316: complete fallback; interactive controls are mounted by the existing loader.
+function dropResultsPage() {
+  return shell({ title: 'Read a results file | Driftproof', description: 'Read another tool\'s results in your browser. No install or model call.',
+    main: '<main class="drop-results-page"><h1>Read a results file</h1>'
+    + '<p class="lede">Drop another tool\'s results file. Read its scores and exclusions here.</p>'
+    + '<p>The file stays on your machine. This page calls no model and spends no tokens.</p>'
+    + '<div data-island="drop-results"><p>This reader needs JavaScript. Without it, use the CLI on your machine:</p>'
+    + '<pre><code>driftproof import results.json --from skillgrade</code></pre>'
+    + '<p>Replace the file path and format. See the <a href="/interop/">supported formats and commands</a>.</p></div>'
+    + '<details><summary>What this page reads</summary><p>Choose agent-skills-eval, skillgrade, claude-plugin-eval or skill-creator. Harbor needs a job directory. NVIDIA cards need a git checkout. Use the CLI for those formats.</p>'
+    + '<p>The result is an analysis, not a sealed receipt. Source scores are declarations. This page does not verify model execution or read a verdict about effects.</p>'
+    + '<p>After loading, this reader makes no requests. It saves no file data in the address, cookies or browser storage. Browser extensions and other browser features are outside this page\'s control.</p>'
+    + '</details></main>' });
+}
+
+
+// Issue 614: local placebo preview with a complete static fallback.
+function placeboPage() {
+  return shell({ title: "See your file's fake | Driftproof", description: 'Build the same-length fake used by the placebo arm, in your browser.',
+    head: '<link rel="stylesheet" href="/placebo/style.css">\n',
+    main: '<main class="drop-results-page placebo-page"><h1>See your file\'s fake</h1>'
+    + '<p class="lede">Paste or drop your rules file. See the same-length fake that the placebo arm would put in its place.</p>'
+    + '<p>Your file stays in this page. Building the fake calls no model and stores no file data.</p>'
+    + '<div data-island="placebo"><p>The preview needs JavaScript. You can measure your file with the CLI:</p>'
+    + '<pre><code>npx driftproof run &lt;path&gt; --suite tasks.json --placebo</code></pre></div>'
+    + '<details><summary>Which file and mode?</summary><p>Choose context mode for CLAUDE.md or AGENTS.md. Choose skill mode for a skill containing only SKILL.md. Bundled files change a skill\'s seed, so this preview does not match skills with other bundled files.</p>'
+    + '<p>Use a UTF-8 Markdown file. A selected or dropped file keeps its original bytes, including line endings. Pasted text uses the browser\'s line endings.</p>'
+    + '<p>The fake uses the runner\'s pinned corpus and algorithm. It is a preview, not a measurement or a receipt. It does not tell you whether your file helps.</p>'
+    + '<p>After loading, the reader makes no requests. It keeps file data out of the address, cookies and browser storage.</p></details>'
+    + '<p>To measure a context file, replace the path and supply your tasks in tasks.json. For a skill, use its directory and omit the suite flag. Measurement runs can call models and incur costs.</p>'
+    + '<p>Read <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md#the-placebo-arm">the placebo arm in the receipt specification</a>.</p></main>' });
+}
+
 const TARGETS = {
+  'placebo/index.html': placeboPage,
   'index.html': homepage,
   'glossary/index.html': glossaryPage,
   'report-types/index.html': reportTypesPage,
@@ -1507,6 +1545,7 @@ const TARGETS = {
   'benchmark-gap/index.html': benchmarkGapPage,
   'leaderboard-noise/index.html': leaderboardNoisePage,
   'skill-lookup/index.html': skillLookupPage,
+  'drop-results/index.html': dropResultsPage,
   '404.html': notFoundPage,
   ...Object.fromEntries(Object.entries(STUBS).map(([slug, label]) => [`${slug}.html`, () => redirectStub(slug, label)])),
 };

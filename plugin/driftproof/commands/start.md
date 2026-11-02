@@ -114,6 +114,8 @@ with your own folder and file.
    look: **a smoke run cannot produce a verdict**, and the page says so. For a
    result that can, run `/driftproof:run` on the skill without `--quick`, or
    take the offer in step 7.
+   If the quick run's page has a Blind read block, leave it to the person and ask
+   them to return after Reveal, as `/driftproof:blind` describes.
 7. **Offer a small full run, once.** After the quick run, the view prints one
    line that begins `offer:`. It names a small full run on the same test cases:
    at most five, the normal judge samples, four calls at once, the calls it

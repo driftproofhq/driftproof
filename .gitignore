@@ -1,5 +1,7 @@
 node_modules/
 *.log
+# A campaign root's append-only log is evidence: publication refuses a root without it (spec 613 A-613-3).
+!receipts/**/campaign.log
 tests/gate-results.json
 .env
 .DS_Store
@@ -19,13 +21,12 @@ tests/gate-results.json
 # DIRECTORY, so a negation below it never matches. Excluding the contents leaves
 # the directory readable and the one exception effective.
 /state/*
-# EXCEPT the upstream skill-version snapshot. Report #005's published page renders
-# its "checked against upstream on <date>: N of M still byte-identical" sentence
-# from this file, so with it untracked the repository cannot reproduce a page it
-# ships — the published figure had no receipt in the repo (invariant 1), and a
-# gate re-rendering from tracked files alone read `null of null`. Backlog C-3.
-# It is produced by scripts/check-skill-drift.js, run by hand and by nothing on a
-# timer; when that is re-run, the figure changing as a reviewable diff is the point.
+# EXCEPT the upstream skill-version snapshot, written by scripts/check-skill-drift.js
+# and run by hand. Report #005's "checked against upstream on <date>" sentence
+# was rendered from its 2026-08-19 record (backlog C-3); since issue 390 the
+# renderer reads a byte copy of that record under reports/report-005-inputs/,
+# which ships, so a public clone rebuilds the page. This file stays tracked, and
+# stays out of the publish, because Report #006 cites it by this path.
 !/state/skill-version-check.json
 # Auto-prepared DRAFT reports (release trigger). Never tracked, never published:
 # a sitting unreviewed draft must not ride along with an unrelated publish. On

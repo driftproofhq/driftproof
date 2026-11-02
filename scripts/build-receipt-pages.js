@@ -205,6 +205,11 @@ function armRow(receipt, mode, name) {
 }
 
 const report015Policy = require('../lib/report-015-publication');
+// Issue 627: a Report 017 campaign receipt names the page that shows its placebo reading.
+const REPORT017_ROOT = 'receipts/report-017c/';
+const placeboLink = (rel, r) => (rel.startsWith(REPORT017_ROOT) && r.placebo
+  ? '  <p class="receipt-placebo" data-field="placebo">This receipt also reads the skill against a same-length placebo. <a href="/reports/017/">Report 017</a> shows that reading.</p>\n'
+  : '');
 function page({ rel, receipt: r }) {
   const limit = report015Policy.routerLimit(r);
   const v = receiptVerdict(r);
@@ -262,7 +267,7 @@ ${armRow(r, 'baseline', 'without the skill')}
     <p class="muted">${effect} A spread is the sample standard deviation of the per-case means: a descriptive spread with no coverage probability. ${limit ? 'No verdict is assigned to these text tasks.' : "The verdict above reads each case's two bands, not these aggregates."}</p>
 ${plot ? `    ${chrome.inlinePlot(plot, '', 'The two arms of this receipt drawn as ranges, with the effect floor marked.')}\n` : ''}  </section>
 
-${limit ? '  <p class="result-links"><a href="/skills/receipts/issue-408/'+limit.attempt+'.json">Receipt JSON</a> · <a href="/skills/receipts/issue-408/suites/'+limit.evals_sha256+'.json">Suite</a> · <a href="/skills/receipts/issue-408/'+limit.attempt+'-answers.json">Retained answers</a></p>\n' : ''}  <section class="receipt-verify">
+${placeboLink(rel, r)}${limit && limit.evals_sha256 ? '  <p class="result-links"><a href="/skills/receipts/issue-408/'+limit.attempt+'.json">Receipt JSON</a> · <a href="/skills/receipts/issue-408/suites/'+limit.evals_sha256+'.json">Suite</a> · <a href="/skills/receipts/issue-408/'+limit.attempt+'-answers.json">Retained answers</a></p>\n' : ''}  <section class="receipt-verify">
     <h2>What was verified</h2>
     <p>${esc(verified)}</p>
     <p>Receipt hash: <code class="receipt-hash">${esc(r.receipt_hash)}</code></p>

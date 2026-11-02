@@ -141,6 +141,7 @@ A [receipt](spec/RECEIPT.md) is one JSON document per run. When you read one:
 - **`content_hash` / `suite_hash` / `receipt_hash`** — reproducible hashes. The same
   skill + suite hash identically on any machine, and the self-hash makes a hand-edit
   detectable. `driftproof validate <receipt>` checks the schema and the self-hash.
+- **`suite.case_count`**: the suite's whole count. A run that measured fewer cases, by `--case` or `--max-cases`, gets no verdict.
 
 To compare two runs across a model release, `driftproof diff A.json B.json` — it applies
 the band + floor rule per case and summarizes the per-case verdicts into a headline.

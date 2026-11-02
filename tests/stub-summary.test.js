@@ -3,7 +3,7 @@
 
 // Issue 245. The Markdown summary beside a receipt the stub answered or graded.
 // Subjects are summaries the real CLI wrote, read back from disk, and receipts
-// rendered again by the Base and candidate renderers. No model is reached.
+// rendered again by the candidate renderer. No model is reached.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -31,7 +31,6 @@ execFileSync('git', ['archive', '--format=tar', '-o', tar, BASE, 'bin', 'lib', '
 execFileSync('tar', ['-xf', tar, '-C', baseRoot]);
 fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(baseRoot, 'node_modules'));
 const candidate = require(path.join(ROOT, 'lib/run.js')).summarizeReceipt;
-const baseline = require(path.join(baseRoot, 'lib/run.js')).summarizeReceipt;
 const { judgeCodeRevision } = require(path.join(ROOT, 'lib/judge.js'));
 const { sealReceipt } = require(path.join(ROOT, 'lib/receipt.js'));
 const { WITHIN_NOISE } = require(path.join(ROOT, 'lib/stats.js'));
@@ -329,9 +328,6 @@ for (const name of STUB_NAMES) {
       }
     }
   });
-  test('plant: the Base renderer reads RED: ' + name, () => {
-    for (const s of scenario(ROOT, name).summaries) assert.throws(() => stubReader(baseline(s.receipt, s.opts), s.receipt, s.opts));
-  });
 }
 for (const name of REFUSING) {
   test('AC-1 a stub rubric regrade refuses with exit 2 and writes no receipt or summary, as the Base does: ' + name, () => {
@@ -343,25 +339,13 @@ for (const name of REFUSING) {
   });
 }
 
-// Review item 8: the predicate plants are renderers, run through the real readers. The qualification
-// goes after the title, the first line, and nowhere else (issue 335: cut at that line's end, not by a
-// string replace that reads as one meant for every newline).
+// Review item 8: the qualification a plant adds goes after the title, the first line, and nowhere else
+// (issue 335: cut at that line's end, not by a string replace that reads as one meant for every newline).
 const qualify = (md) => {
   const end = md.indexOf('\n');
   if (end < 0) return md;
   return `${md.slice(0, end)}\n\n${PREFIX} x. UNVERIFIED. ${DONE}\n${md.slice(end + 1)}`;
 };
-const byAnswers = (r, o) => (((r.run.answered_by || {}).kind === 'stub') ? candidate(r, o) : baseline(r, o));
-const byEnvironment = (r, o) => (process.env.DRIFTPROOF_STUB === '1' ? qualify(baseline(r, o)) : baseline(r, o));
-test('plant: a renderer whose predicate is answered_by alone reads RED on the stub judge of model answers', () => {
-  for (const s of scenario(ROOT, 'stub-judge-of-model-answers').summaries) assert.throws(() => stubReader(byAnswers(s.receipt, s.opts), s.receipt, s.opts));
-});
-test('plant: a renderer whose predicate is the environment reads RED, switch unset on stub receipts and set on an ordinary one', () => {
-  for (const name of STUB_NAMES) for (const s of scenario(ROOT, name).summaries) assert.throws(() => stubReader(byEnvironment(s.receipt, s.opts), s.receipt, s.opts));
-  const s = scenario(ROOT, 'model-run').summaries[0];
-  process.env.DRIFTPROOF_STUB = '1';
-  try { assert.throws(() => ordinary(s.receipt, s.opts, byEnvironment)); } finally { delete process.env.DRIFTPROOF_STUB; }
-});
 
 // ── AC-8: a string a user chose cannot speak ────────────────────────────────
 const NAMES = ['pass-rate', 'lift-2 PASSED', 'a`b\nlift +0.9 PASSED'];

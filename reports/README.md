@@ -14,9 +14,12 @@ report is re-derived from the receipts under [`../receipts/`](../receipts/).
 | 002 | Substrate durability | Claude CLI vs Codex CLI, same suites | [QA record](report-002-qa.md) | [reports/002](https://driftproofhq.com/reports/002/) |
 | 003 | Release drift | claude-opus-4-8 → claude-opus-5 | [QA record](report-003-qa.md) | [reports/003](https://driftproofhq.com/reports/003/) |
 | 004 | Capability gap | claude-opus-5 (flagship) vs claude-fable-5 (frontier) | [QA record](report-004-qa.md) | [reports/004](https://driftproofhq.com/reports/004/) |
+| 005 | Value | claude-fable-5, claude-sonnet-5, gpt-5.6-sol | [QA record](005-qa/qa-rederivation-20260819T065644Z.md) | [reports/005](https://driftproofhq.com/reports/005/) |
+| 008 | Release drift | claude-fable-5-1 | [Run record](report-008-run-record.json) | [reports/008](https://driftproofhq.com/reports/008/) |
+| 017 | Placebo comparison | claude-sonnet-5-5: skill vs no skill vs a same-length placebo, claude-haiku-5-5 judge | [Markdown copy](../docs/reports/017/index.md) | [reports/017](https://driftproofhq.com/reports/017/) |
 
-The three report types share one band-based, floor-gated verdict rule and differ
-only in what moves underneath the skill — see
+The report types share one band-based, floor-gated verdict rule and differ only
+in what moves underneath the skill — see
 [`../REPORT-STYLE.md`](../REPORT-STYLE.md) for the shared chrome and
 [the methodology page](https://driftproofhq.com/methodology.html) for the rule.
 
@@ -31,6 +34,11 @@ only in what moves underneath the skill — see
   logs for each report, kept so the published numbers stay auditable.
 - **`rubric-sweep.md`**, **`report-001-audit.md`** — methodology hardening
   records from Report #001.
+- **`report-005-inputs/`**: the two files besides its receipts that Report
+  #005's page is rebuilt from. One is the upstream skill-version check of
+  2026-08-19, which the page's pinned-versus-current sentence reads. The other
+  is the text of the page's v1.1 amendment entry. The repository README's
+  "Rebuild Report #005 from a clone" section has the command.
 - **`pending-publish.md`** — the queue where the model-release trigger
   (`scripts/release-watch.js`) parks auto-drafted reports awaiting human review.
   Unreviewed drafts never ride a publish, so this queue stays out of the

@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 'use strict';
-// An operator check, run by spec 002 AC-8 and spec 007 AC-1 in the source repository:
-// it replays the render and every later layer in a sandbox, and those gates compare
-// the result with the tracked page. It reads files the public tree does not carry
-// (an amendment record under specs/ and state/skill-version-check.json), so it does
-// not run from a public clone (spec 388 A-388-1; a public rebuild is issue 390).
+// Rebuilds Report #005's published page from a clone. It replays the render and
+// every later layer in a sandbox; spec 002 AC-8 compares the result with the
+// tracked page in the source repository, and the README's block does the same in
+// a public clone (spec 007 AC-11, issue 390). Every file it reads ships in the
+// public tree: the two inputs that lived under excluded paths, the v1.1 amendment
+// text and the 2026-08-19 upstream check, are under reports/report-005-inputs/.
 //
 // The page is the source of truth. It was rendered on 19 Aug 2026 and every later
 // change reached it as a layer applied in place: amendment entries, the site's
@@ -18,8 +19,9 @@
 // gates do) covers all of them. No step makes a model call: the render is
 // --render-only, and every later step is a text transform of the page.
 //
-// The command line, with its arguments, is in the internal runbook; the gates read it
-// from there. Every argument is passed to the render as given. Without --out-root the rebuild
+// The command line, with its arguments, is in the README under "Rebuild Report #005
+// from a clone", and the gates read it from there and from spec 002's evidence. Every
+// argument is passed to the render as given. Without --out-root the rebuild
 // makes a directory under the system temp directory and prints it.
 
 const fs = require('fs');

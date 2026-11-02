@@ -14,7 +14,7 @@ require_env DRIFTPROOF_VERDICT DRIFTPROOF_DELTA DRIFTPROOF_RECEIPTS GITHUB_ACTIO
 # always sets it from action.yml's env: block; only a caller outside GitHub leaves it unset.
 : "${INPUT_FAIL_ON_UNDERPOWERED=false}"
 validate_verdict "$DRIFTPROOF_VERDICT"
-validate_delta "$DRIFTPROOF_DELTA"
+validate_delta "$DRIFTPROOF_DELTA" "$DRIFTPROOF_VERDICT"
 validate_bool fail-on-regression "$INPUT_FAIL_ON_REGRESSION"
 validate_bool fail-on-underpowered "$INPUT_FAIL_ON_UNDERPOWERED"
 validate_models "$INPUT_MODELS"

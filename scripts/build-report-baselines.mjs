@@ -43,22 +43,7 @@ const chrome = require(path.join(ROOT, 'scripts', 'site-chrome.js'));
 const OUT = path.join(ROOT, 'specs', '020-site-relaunch', 'baselines', 'report-bodies.json');
 const sha256 = (s) => crypto.createHash('sha256').update(s, 'utf8').digest('hex');
 
-// The README's derived opening moves with every promotion: the latest-report
-// link and the counts are supposed to follow stats.json. Everything below the
-// anchor is the body, and the body is what is frozen. The anchor is the same one
-// spec 020's AC-30 already splits on.
-export const README_ANCHOR = 'Driftproof **consumes**';
-
-// A release writes its version into the body (the Action pins and the sample
-// receipt's runner_version), so the body is read with the tree's own version,
-// package.json's, set aside: a bump alone moves no digest (issue 349). Any other
-// version string in the body, a stale one included, is read as written. That
-// the body carries the new version is spec 020's bump check, not this one's.
-export function readmeBody(readme, version) {
-  const i = readme.indexOf(README_ANCHOR);
-  if (i < 0) return null;
-  return setAside(readme.slice(i), version);
-}
+// The README carries no digest here (issue 608, C-332): no gate pins its words.
 
 // ── The release version: the one normaliser (issue 382) ─────────────────────
 // A release writes one version, package.json's, into config.js, the plugin
@@ -142,12 +127,9 @@ export function build() {
       amendments_sha256: amendments === '' ? '' : sha256(amendments),
     };
   }
-  const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
-  const body = readmeBody(readme, JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version);
   return {
     _what: 'Published-content baselines. Regenerate with scripts/build-report-baselines.mjs. A change to any body_sha256 here is only legal alongside a grown Amendments section on the same report; specs/020-site-relaunch/gate.mjs AC-21 enforces that against the merge base.',
     reports,
-    readme_body_sha256: body === null ? '' : sha256(body),
   };
 }
 

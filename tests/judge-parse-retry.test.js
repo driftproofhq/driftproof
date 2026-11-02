@@ -38,6 +38,7 @@ function reset(fn) { requests = []; judgeCalls = generationCalls = 0; respond = 
 const { gradeOnce, gradeSamples } = require('../lib/judge');
 const { runSkillOnModel } = require('../lib/run');
 const { regradeReceipt, answersArchive } = require('../lib/regrade');
+const { atVersion } = require('./receipt-versions');
 const { validateReceipt, verifyReceiptHash, sealReceipt } = require('../lib/receipt');
 const { sha256 } = require('../lib/canonical');
 const input = { task: 'Name a primary colour.', response: 'Red.', rubric: 'Names a colour.', model: MODEL, temperature: 0, timeoutMs: 1234, trusted: true };
@@ -284,9 +285,8 @@ test('AC-538-7: judge markup retries stay separate from fake generations, includ
     }
   };
   checkCounts(original.receipt);
-  const old = structuredClone(original.receipt);
-  old.schema_version = '0.15';
-  delete old.results.fake_tool_calls;
+  // A-538-3 (issue 549): taken back to 0.15, the version before the counts, by the shared helper.
+  const old = atVersion(original.receipt, '0.15');
   sealReceipt(old);
   const bytes = JSON.stringify(old);
   assert.ok(validateReceipt(old).valid, JSON.stringify(validateReceipt(old).errors));

@@ -709,8 +709,14 @@ async function prepareReport005(opts = {}) {
   // AC-10 — the pinned-vs-current count is read from the live-check record, never
   // written as prose. Absent record renders as unverified, which fails the gate:
   // unverifiable means unpublishable, not assumed-true.
+  //
+  // Issue 390: the record read is the 2026-08-19 check the published page states,
+  // a byte copy of what scripts/check-skill-drift.js wrote to state/ that day,
+  // kept under reports/report-005-inputs/ so a public clone carries it. state/
+  // stays the drift checker's record and stays out of the publish; a later check
+  // there does not move this page.
   const skillCheck = (() => {
-    try { return JSON.parse(fs.readFileSync(path.join(ROOT, 'state', 'skill-version-check.json'), 'utf8')); }
+    try { return JSON.parse(fs.readFileSync(path.join(ROOT, 'reports', 'report-005-inputs', 'skill-version-check-2026-08-19.json'), 'utf8')); }
     catch (_e) { return { checked_at: null, total: null, identical: null, revised: [], unverified: ['record missing'] }; }
   })();
 
