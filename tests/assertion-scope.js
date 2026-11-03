@@ -960,6 +960,11 @@ const PROBE_COPY_EXCEPTIONS = [
   // scripts/prepare-report-011.js after spec 046's emission had read its probes, and neither
   // emission read the other's tree, so the repository gate on dev read this rule red from 32554fff.
   { probe: 'specs/046-ajv-floor/probes/ajv.mjs', name: 'verdicts', independent_of: 'scripts/prepare-report-011.js verdicts', reason: 'a name collision: runs lib/receipt.js validateReceipt over the committed receipts under a chosen ajv in a child process and returns valid or invalid per file; Report 011\'s drift verdicts are not involved', seen_failing_at: { gate: 'specs/046-ajv-floor/gate.sh', assertion: 'every committed receipt validates under the new floor and under the locked version, as it does under 8.17.1' } },
+  // Issue 669's preflight over spec 134's probe: issues 638 and 640 exported `pageOf` from
+  // scripts/build-report-017-blind.js and `textOf` from scripts/how-it-works.js after the probe had
+  // carried both names (lane 61, 1 Oct 2026). Neither product function is what the probe reads.
+  { probe: 'specs/134-seo-answer-first-reports/probes/answers.mjs', name: 'textOf', independent_of: 'scripts/how-it-works.js textOf, lib/import-core/input.cjs textOf', reason: 'a name collision: the probe\'s own tag stripper and entity decoder for reading a summary\'s sentences, transcribed as an oracle (the probe shares no code with the renderers it reads); the walk-through page\'s and the import reader\'s text helpers are not involved', seen_failing_at: { gate: 'specs/134-seo-answer-first-reports/gate.sh', assertion: 'MUTATION: two answers swapped and a receipt the rule did not pick each read RED' } },
+  { probe: 'specs/134-seo-answer-first-reports/probes/answers.mjs', name: 'pageOf', independent_of: 'scripts/build-report-017-blind.js pageOf', reason: 'a name collision: the path of a report\'s page under docs/reports/, by its number; the blind-read page builder is not involved', seen_failing_at: { gate: 'specs/134-seo-answer-first-reports/gate.sh', assertion: 'MUTATION: two answers swapped and a receipt the rule did not pick each read RED' } },
 ];
 
 // Top-level definitions, with or without an ESM `export` prefix (the .mjs

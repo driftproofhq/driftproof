@@ -35,15 +35,15 @@ measures a skill in your repository and writes its receipt. It runs on your
 Claude Code subscription. You need Node.js 22 or later.
 [First run](#first-run) · [Other ways to install](#install) · [Measure your own skill](#quickstart-receipt-for-your-own-skill)
 
-**Latest finding** · [Report 017](https://driftproofhq.com/reports/017/), 1 Nov
-2026: on Claude Sonnet 5.5, 11 of 16 skills beat the fake: read one task at a
-time, each scored above the same-length placebo on at least one of three tasks
-and below it on none.
+**Latest finding** · [Report 018](https://driftproofhq.com/reports/018/), 2 Nov
+2026: 12 of 16 skills beat the fake on Haiku 5.5: read one task at a time, each
+scored above the same-length placebo on at least one of three tasks and below it
+on none.
 
 [![driftproof](https://img.shields.io/endpoint?url=https://driftproofhq.com/badges/commit-message-conventions.json)](https://driftproofhq.com)
 live badge for the bundled example, generated from its own receipt.
 
-[All sixteen reports](#reports) · [driftproofhq.com](https://driftproofhq.com)
+[All seventeen reports](#reports) · [driftproofhq.com](https://driftproofhq.com)
 
 ![The page driftproof view makes from Report 013's receipts: three skills by three models, each result in plain words: clearly helped, no clear difference, or too few answers to tell.](https://driftproofhq.com/assets/view-report-013.png)
 The page `npx driftproof view` makes from [Report 013's
@@ -191,12 +191,11 @@ For the CLI, set up the API as in step 3 above and use the evals/evals.json shap
 ```bash
 npx driftproof run CLAUDE.md --suite tasks.json --models claude-haiku-4-5 --placebo
 ```
-The placebo adds a third arm using a fixed corpus text of exactly the file's length,
-chosen without reference to any task. It makes half as many calls again. The result
-compares answers on these tasks with this model and judge. It does not say why they
-differ or how the file does on other tasks.
-The placebo reading also appears beside the verdict in `view`, the pull request
-comment, the job summary, `export --to summary-json` and each side of `diff`.
+The placebo adds a third arm using a fixed corpus text of exactly the file's length, chosen
+without reference to any task. It makes half as many calls again. The result compares
+answers on these tasks with this model and judge. It does not say why they differ or how
+the file does on other tasks. The reading also appears beside the verdict in `view`, the
+pull request comment, the job summary, `export --to summary-json` and each side of `diff`.
 [See your file's fake in your browser](https://driftproofhq.com/placebo/) before measuring it.
 
 In a workflow, use a release containing these inputs in place of vX:
@@ -709,7 +708,7 @@ A receipt is the unit of evidence — one JSON document conforming to
     "model_release_date": "2025-10-01",
     "provider": "anthropic",
     "surface": "claude-cli",
-    "runner_version": "0.26.1",
+    "runner_version": "0.26.2",
     "date_utc": "2026-07-27T…Z",
     "registry": "registered",
     "transcripts": "hashes-only",
@@ -792,7 +791,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: driftproofhq/driftproof@v0.26.1
+      - uses: driftproofhq/driftproof@v0.26.2
         with:
           skill-dir: skills/my-skill
           models: claude-haiku-4-5
@@ -927,7 +926,7 @@ permissions:
   contents: read
   issues: write
 # ...
-      - uses: driftproofhq/driftproof/stale@v0.26.1
+      - uses: driftproofhq/driftproof/stale@v0.26.2
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill
@@ -997,7 +996,7 @@ with exit 4, and `--out` never writes over a file the command did not write.
 
 ## Reports
 
-Sixteen reports are published, spanning nine report types. A report page lives at a
+Seventeen reports are published, spanning nine report types. A report page lives at a
 draft path — `docs/reports/NNN-draft/` — until the publish sequence renames it, and
 `scripts/build-public.sh` excludes every `*-draft/` path from the published tree
 (see the roll below, and
@@ -1008,7 +1007,7 @@ under [`receipts/`](receipts/)
 Report #010 takes no Driftproof measurement and has no receipts: it is re-derived
 from the upstream harness's output files, published beside its page.
 
-📊 **Sixteen published reports** (each re-derived from committed files, nothing
+📊 **Seventeen published reports** (each re-derived from committed files, nothing
 hand-entered: Driftproof's receipts, or for Report #010 the upstream harness's own
 output), spanning nine published report types, the newest being placebo comparison. Reports that measure with Driftproof retain its correctness reader. The rules-file behaviour report also compares output tokens and code with paired task intervals, and the placebo comparison report reads each skill against a same-length text from a fixed corpus:
 
@@ -1114,10 +1113,11 @@ output), spanning nine published report types, the newest being placebo comparis
 - **[Report #015: Skills.sh snapshot 2026-10-17: text tasks](https://driftproofhq.com/reports/015/)**: three text tasks per skill, written by Driftproof from the pinned skill descriptions. Both model sets use Haiku 5.5 as judge. Eligible receipts carry their per-task verdicts and the report names the tasks behind them. The four router subjects have no verdict in this revision; the report amendment explains why. The eval account was checked before and after each run, not during it.
 - **[Report #016](https://driftproofhq.com/reports/016/)**: *rules-file behaviour*. Seven popular rules files against no file and same-length fakes. File-to-fake output comparisons: 6 haiku increases · 1 haiku unclear · 3 sonnet increases · 2 sonnet decreases · 2 sonnet unclear. These are behaviour changes, not correctness verdicts, on small tasks with injected instructions.
 - **[Report #017](https://driftproofhq.com/reports/017/)**: *placebo comparison*. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length placebo text, judged by Haiku 5.5. Of the 16 skills it counts, the placebo readings are 11 above the placebo · 3 below the placebo · 0 no difference · 0 inconclusive · 2 not enough draws · 0 not measured. A skill is above the placebo when, read one task at a time, it scored above the placebo on at least one task and below it on none; only that beats the fake. Where the fake scored below no skill, beating it does not mean beating no skill. The four routers have no verdict, as in Report 015.
+- **[Report #018](https://driftproofhq.com/reports/018/)**: *placebo comparison*. Report 015's twenty skills on Haiku 5.5, each against no skill and against a same-length placebo text, judged by Haiku 5.5, the same model. Of the 16 skills it counts, the placebo readings are 12 above the placebo · 2 below the placebo · 0 no difference · 0 inconclusive · 2 not enough draws · 0 not measured. A skill is above the placebo when, read one task at a time, it scored above the placebo on at least one task and below it on none; only that beats the fake. Where the fake scored below no skill, beating it does not mean beating no skill. The four routers have no verdict, as in Report 015.
 <!--/driftproof:campaign-readme-->
 
 ✍️ The launch essay, **[Three model releases later: what actually happens to agent
-skills](https://driftproofhq.com/writing/three-releases/)**, reads all sixteen reports
+skills](https://driftproofhq.com/writing/three-releases/)**, reads all seventeen reports
 together: what moves underneath a skill, what the skill costs to run, and what a
 corrected instrument did to three published results. Revised 2026-10-07; every
 figure in it is gate-checked against the report page it cites.

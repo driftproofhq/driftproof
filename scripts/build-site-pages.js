@@ -483,10 +483,14 @@ const HOME_CARD_STAT = (k) => ({ number: ' data-stat="latest_report_number"', da
 const REPORT_PREFIX = /^Report\s*#?\d+\s*(?:—|:)\s*/;
 const reportName = (r) => r.title.value.replace(REPORT_PREFIX, '');
 
+// Issue 667: the separate what-moved line is rendered where the title's tail is not what moved
+// (spec 020 AC-18, amendment 13). Issue 652 made the tail the report's name, and the old test
+// compared the title with its own tail, which always held, so Report 017's card lost the line.
+// The comparison is the row's name against the row's what_moved, the reading the gate makes.
 function reportCard(r, stat = () => '', { counts = true } = {}) {
   const tail = esc(reportName(r));
   const plain = `Report <span${stat('number')}>${esc(r.number.value)}</span>: ${tail}`;
-  const moved = plain.endsWith(tail) ? '' : `<p class="card-moved">${tail}</p>\n`;
+  const moved = reportName(r) === r.what_moved.value ? '' : `<p class="card-moved">What moved: ${esc(r.what_moved.value)}</p>\n`;
   // Spec 047: where the caller names a field for the title's tail, the tail is wrapped in it,
   // so a numeral a title carries (Report 011's "Claude Opus 5.5") names the stats.json field it
   // prints, as spec 020 AC-9 requires of every figure the homepage shows.

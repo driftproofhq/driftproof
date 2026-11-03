@@ -205,11 +205,17 @@ function armRow(receipt, mode, name) {
 }
 
 const report015Policy = require('../lib/report-015-publication');
-// Issue 627: a Report 017 campaign receipt names the page that shows its placebo reading.
+// Issue 627: a Report 017 campaign receipt names the page that shows its placebo reading. Issue 669:
+// a Report 018 campaign receipt names Report 018's page the same way.
 const REPORT017_ROOT = 'receipts/report-017c/';
-const placeboLink = (rel, r) => (rel.startsWith(REPORT017_ROOT) && r.placebo
-  ? '  <p class="receipt-placebo" data-field="placebo">This receipt also reads the skill against a same-length placebo. <a href="/reports/017/">Report 017</a> shows that reading.</p>\n'
-  : '');
+const REPORT018_ROOT = 'receipts/report-018/';
+const PLACEBO_REPORTS = [[REPORT017_ROOT, '017'], [REPORT018_ROOT, '018']];
+const placeboLink = (rel, r) => {
+  const hit = PLACEBO_REPORTS.find(([root]) => rel.startsWith(root));
+  return hit && r.placebo
+    ? `  <p class="receipt-placebo" data-field="placebo">This receipt also reads the skill against a same-length placebo. <a href="/reports/${hit[1]}/">Report ${hit[1]}</a> shows that reading.</p>\n`
+    : '';
+};
 function page({ rel, receipt: r }) {
   const limit = report015Policy.routerLimit(r);
   const v = receiptVerdict(r);

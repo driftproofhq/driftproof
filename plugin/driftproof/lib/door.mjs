@@ -204,21 +204,28 @@ function checkPairings() {
 // and git's long root compared unequal, and a skill inside the repository was refused as outside it.
 // fs.realpathSync.native asks the system for the final long name; on other platforms it is the same
 // resolution as before. The comparison folds case on win32 only, where the file system does.
+// Issue 663: the long name is read for the comparison and nothing else. What the runner receives, and
+// what every message and later check names, is the path as the person spelled it, made absolute
+// against the folder they run from (spelled): no alias, link or case is rewritten on the way. The
+// door used to hand the runner the long name, so on win32 an argument typed under C:\Users\RUNNER~1
+// reached the runner under C:\Users\runneradmin, and the runner was given a path nobody had typed.
 function realLong(p) { return fs.realpathSync.native(p); }
+function spelled(p) { return path.resolve(process.cwd(), p); }
 function within(child, parent) {
   const fold = (p) => (process.platform === 'win32' ? p.toLowerCase() : p);
   const c = fold(child), base = fold(parent);
   return c === base || c.startsWith(base + path.sep);
 }
 function suiteInside() {
-  const resolved = realLong(path.resolve(process.cwd(), INPUTS['suite']));
+  const given = spelled(INPUTS['suite']);
+  const resolved = realLong(given);
   const repo = repoState();
   const base = repo.root ? realLong(repo.root) : realLong(process.cwd());
   if (!within(resolved, base)) {
     refuse('the tasks file ' + resolved + ' resolves outside ' + (repo.root ? 'this repository' : 'the folder you run from') + ' (' + base + '). Its prompts run as you, on the trusted lane,'
       + ' so it is held to the boundary the rules file is. Move it inside, or draft the tasks with /driftproof:start. Nothing was spawned.');
   }
-  return resolved;
+  return given;
 }
 
 // ── spawning the pinned CLI ──────────────────────────────────────────────────
@@ -353,7 +360,9 @@ function evalAccount() {
 function requireInsideRepo(value, command) {
   const repo = repoState();
   const confirmed = INPUTS['trust-outside-repo'] === true;
-  const resolved = realLong(path.resolve(process.cwd(), value));
+  // Issue 663: `given` is what the runner receives when the check passes; `resolved` is what the check reads.
+  const given = spelled(value);
+  const resolved = realLong(given);
   // Issue 553: a rules file stands where the skill does, under its own name, and its isolated run names its tasks.
   const what = rulesFile ? 'the rules file' : 'the skill';
   const isolated = 'npx driftproof@' + PINNED + ' run ' + resolved + (rulesFile ? ' --suite <tasks.json>' : '') + ' --models <model>';
@@ -371,7 +380,7 @@ function requireInsideRepo(value, command) {
         + ' built for exactly this:\n    ' + isolated);
     }
     state.outsideRepo = true;
-    return resolved;
+    return given;
   }
   if (repo.none) {
     const acct = evalAccount();
@@ -397,7 +406,7 @@ function requireInsideRepo(value, command) {
       + ' The trusted lane claims the skill is the author\'s own, and that claim is not available for a path you do'
       + ' not own here. Run it with the isolation account instead, on the lane spec 022 built for exactly this:\n    ' + isolated);
   }
-  return resolved;
+  return given;
 }
 
 // ── the default model, READ and never written into a command file ────────────
@@ -812,15 +821,17 @@ function openSample() {
 // skill's content hash for the next run. So start refuses when the working directory is the skill
 // folder or inside it, and when the draft is inside it, before anything is spawned.
 function outsideSkill() {
+  // Issue 663: the target is held as spelled; the comparison reads every side as its long name.
   const dir = state.resolvedTarget;
-  const inside = (p) => within(p, dir);
+  const realDir = realLong(dir);
+  const inside = (p) => within(p, realDir);
   const here = realLong(process.cwd());
   if (inside(here)) {
-    refuse('this folder is ' + (within(here, dir) && within(dir, here) ? 'the skill folder ' : 'inside the skill folder ') + dir + '. Run ' + command + ' from the folder above the skill,'
+    refuse('this folder is ' + (within(here, realDir) && within(realDir, here) ? 'the skill folder ' : 'inside the skill folder ') + dir + '. Run ' + command + ' from the folder above the skill,'
       + ' so the receipts and the page are not written into it. Nothing was spawned.');
   }
   if (INPUTS['cases'] === undefined) return;
-  let draft = path.resolve(process.cwd(), INPUTS['cases']);
+  let draft = spelled(INPUTS['cases']);
   try { draft = realLong(draft); } catch (e) { /* validate has refused a draft that is not there */ }
   if (inside(draft)) {
     refuse('the draft ' + draft + ' is inside the skill folder ' + dir + ', and ' + command + ' adds no file there but the test cases.'
@@ -1263,13 +1274,14 @@ for (let at = 0; at < steps.length; at++) {
       // Issue 623: viewing receipts needs a repository boundary, not skill trust.
       const repo = repoState();
       if (!repo.root) refuse('receipts-dir: ' + (repo.unknown || 'this is not a git repository') + '. Nothing was spawned.');
-      const resolved = realLong(path.resolve(process.cwd(), given));
+      // Issue 663: the check reads the long name; the runner receives the folder as spelled.
+      const resolved = realLong(spelled(given));
       const root = realLong(repo.root);
       if (!within(resolved, root)) {
         refuse('receipts-dir: resolves outside this repository. Give a directory inside it. Nothing was spawned.');
       }
-      state.resolvedTarget = resolved;
-    } else state.resolvedTarget = step.inside_repo ? requireInsideRepo(given, command) : path.resolve(process.cwd(), given);
+      state.resolvedTarget = spelled(given);
+    } else state.resolvedTarget = step.inside_repo ? requireInsideRepo(given, command) : spelled(given);
     say('resolved ' + step.input + '=' + state.resolvedTarget);
     continue;
   }

@@ -1,0 +1,697 @@
+{
+  "format": "driftproof-answers/2",
+  "receipt_hash": "3537eea8448e3369af25af6905504a8e887ba8ed6215728f37da34d05295b569",
+  "model_id": "claude-haiku-5-5",
+  "answers": {
+    "b212cb9141c0ba158d6c336a0f229e76bf8b9138b845f25c81e823a4f685dab9": "The service rejected the request as invalid input. Fix the request body and send it again. Retrying it unchanged will fail the same way.\n\n- **Status 400** means the request itself is malformed. It is not an authentication (401), scope or plan (403), not-found (404), conflict (409) or rate-limit (429) problem, so don't change the API key or plan.\n- **`code: INVALID_INPUT`** is not in the error table in the skill docs, which lists `BAD_REQUEST` for validation failures. Treat it as the same kind of error: a client-side validation failure. Read the `message` for the specific cause.\n- **`message: \"Missing brief\"`** means the body has no `brief` field, or it is empty. Add a non-empty brief describing the app or screen, then resend.\n- **No `data.url`** is present, so there is no page to open. This error is fixed by editing the request.\n\nBefore resending, check that the brief is a string with real content and that it is sent in the JSON body with `Content-Type: application/json`. If the request is still rejected after that, the endpoint's contract for the brief field is in the OpenAPI spec or the endpoint reference, which lists the required fields and their validation rules.",
+    "ddc5b0a82e3120f84918c4baedf1c66decb8ae8f64cc4b54d2f40af244405ca9": "**What the response means**\n\n- **HTTP 400** means the request was rejected before any work started. It's a client-side problem, so retrying the same request will fail the same way.\n- **`INVALID_INPUT`** is the top-level `code`. Its meaning is clear from the name, but it isn't one of the codes in the documented error table, which lists `BAD_REQUEST` for 400 validation failures. The skill's error reference may be out of date, so check the OpenAPI spec at `https://sleek.design/api/v1/spec.json` for the code the endpoint actually uses.\n- **`Missing brief`** is the specific problem. The request body didn't include a `brief` field, or it was empty. A brief is the design description the service needs to create a screen.\n\n**How the caller should act**\n\n1. Don't resend the request unchanged.\n2. Add a non-empty `brief` field to the JSON body, with the content the design should be based on. Check the spec for the exact field name and any length or format limits.\n3. Confirm the request uses `Content-Type: application/json` and that the body is valid JSON. A body that fails to parse can also produce validation errors.\n4. Send the corrected request again.\n\nI haven't contacted the service, so I can't tell whether the brief is missing from the request or only empty. Your request code will show which.",
+    "7ea0304fae470392c112e98990d8c341dc53af54f0c90c167efee2e0df4de281": "A `400` means the request was rejected for validation before anything ran, so the caller should fix the request body and send it again. Nothing was created or charged.\n\n- **Status and code:** The HTTP `400` and top-level `status: 400` mean the request itself is invalid. The code `INVALID_INPUT` is not in the documented error table, which lists `BAD_REQUEST` for validation failures. Treat the status and message as authoritative, and check the OpenAPI spec at `https://sleek.design/api/v1/spec.json` if the code matters for error handling.\n- **Message:** `Missing brief` means a required `brief` field was absent from the body. The caller should look at the JSON they sent and confirm the field is present with a non-empty string value, and that it was not misnamed, nested in the wrong object, or dropped during serialization.\n- **Retrying:** Resending the same body will fail the same way. Add the brief, then retry. The brief is a design request, so it should describe the app and what the screen or flow should do.\n- **Scope:** This is a client-side fix. No authentication, scope, or plan problem is indicated, so there is no key or billing step to take.",
+    "681e4181f1a011d5fe5e30769d4ede5d120813d32a1b6d3ff0b3cf160f816cb3": "The service rejected the request as invalid input because it has no `brief`. Fix that field and resend. Don't retry the same request unchanged.\n\nReading the response:\n\n- **HTTP 400** means the request failed validation. The request itself is malformed, so it isn't a credentials, scope, plan, or server problem.\n- **`status: 400`** repeats the HTTP status in the body.\n- **`message: \"Missing brief\"`** names the problem: the request body has no `brief`, or it's empty.\n- **`code: \"INVALID_INPUT\"`** is not in the error table in the Sleek skill docs, which lists `BAD_REQUEST` for 400 validation failures. Treat it as a validation error because of the 400 status and the message. Don't branch on the exact code string. If you need to confirm the contract, check the OpenAPI spec at `https://sleek.design/api/v1/spec.json`.\n\nTo fix it, check which endpoint the request was sent to. The request body that creates or drives a design needs a non-empty `brief` string describing the app. Add it, confirm the value isn't blank or whitespace-only, and send the request again.",
+    "e15aff06a9591d616423c16583eb2a7d392701ad82e3bf2c63b5ace57695454d": "The service rejected the request because it has no `brief`. Nothing was sent to the service for this answer.\n\n**How to read the response:**\n\n- **HTTP 400** means the request was invalid. The server is not failing, so retrying the same request won't help.\n- **`code: INVALID_INPUT`** is the machine-readable reason. The Sleek error table documents 400 as `BAD_REQUEST` for validation failures, so this code is not in that table. Treat it as a validation error and check the OpenAPI spec at `https://sleek.design/api/v1/spec.json` for the exact contract.\n- **`message: \"Missing brief\"`** names the problem. The request body needs a `brief` field with content, and the caller should add it.\n- **No `data.url`** was returned, so there is no page to open to fix the problem. The fix is in the request.\n\n**What the caller should do:** find where the request body is built, confirm it includes a non-empty `brief`, and send it again with the `Content-Type: application/json` header. If the body still fails validation after that, compare its shape against the spec.",
+    "a1f8772877da04dfc5a1134592adf35fcdb91dd86a188234a6be0227a02c3cf1": "The response means the request was rejected before any work was done, because it was missing a required input.\n\n- **HTTP 400** is a client error. The problem is in the request, not the service's availability, so retrying the same request unchanged will fail the same way.\n- **`INVALID_INPUT`** is the machine-readable category: the input failed validation.\n- **`Missing brief`** names the specific problem: the required `brief` field was absent from the request.\n\nTo fix it, the caller should add a `brief` value to the request body and send it again. The message doesn't say whether `brief` belongs at the top level or inside a nested object, so the caller should check the service's request schema. The `status` field repeats the 400 and adds nothing new.",
+    "de94da6e4e7a461f456e97c8e02c98a7181d22f926ba8742c7ae7382439e03a2": "The `400` status means the request was rejected because of something in the request itself, not a server fault. Sending the same request again will fail the same way, so the caller should change the request before retrying.\n\n- **`status 400` / HTTP 400:** The service received the request but refused to process it as sent.\n- **`code: INVALID_INPUT`:** The input failed validation.\n- **`message: Missing brief`:** A required `brief` value was absent from the request. The name suggests it's the field that describes the task, but the message alone doesn't show whether it was omitted entirely, sent empty, or nested in the wrong place.\n\nTo fix it, the caller should check that the request includes a non-empty `brief` field in the position the Sleek API documentation expects, then resend. I haven't seen the request or the API docs, so I can't confirm the exact field name or structure.",
+    "b2de05c0556495d08e1bb7eb91487c7698e353810895c87dc5754bad9aa71424": "A 400 status means the service rejected the request as malformed. The problem is in what the caller sent, not in the service being down, so retrying the same request will fail the same way.\n\n- **`code: INVALID_INPUT`** is the machine-readable category: the input failed validation.\n- **`message: Missing brief`** names the specific problem: a required `brief` field was absent from the request.\n\nTo fix it, the caller should add the `brief` field to the request body and confirm it is populated before sending. If the caller's code builds the request conditionally, the branch that omits `brief` is the likely source. The caller should also check the service's documented schema to confirm the field's name, type, and any length or format rules, since I only have this error response and cannot see those requirements.",
+    "7cc917a25124c938cedb5e484159cb565b974b7bb5753b96354b95a38ba2dc68": "The service rejected the request as malformed. The 400 status means a client-side error, so the caller should not retry the same request unchanged.\n\nThe top-level `code` of `INVALID_INPUT` says the request content failed validation. The `message` of `Missing brief` names the specific problem: the request had no `brief` field, or it was empty. The caller should:\n\n1. Check the request body for a `brief` field and confirm it is present and non-empty.\n2. Make sure the field is sent at the top level of the payload where the service expects it, not nested or misnamed.\n3. Validate the payload before sending, so a missing brief is caught locally.\n4. Resend only after the fix. Retrying as-is will produce the same 400.\n\nI have not contacted the service, so I can't confirm whether anything else in the request is also invalid. The supplied facts only identify the missing brief.",
+    "615e3b6ac2645515a18c03a605d564987ef8b6e6da547240ec25c2e78fc9d47a": "The service rejected the request as malformed. The 400 status means the request body itself was invalid, not that the service failed or is down. The top-level `code` of `INVALID_INPUT` confirms that the input is the problem. The message `Missing brief` names the cause: the request did not include a required field called `brief`.\n\nTo read it, the caller should:\n\n1. **Treat it as a client error.** Retrying the same request will fail the same way, so nothing should be resent unchanged.\n2. **Add the `brief` field** to the request payload, with a non-empty value, and then send it again.\n3. **Check for a nearby problem.** The field may have been misspelled, sent under a different key, nested in the wrong place, or set to an empty value that was dropped during serialization.\n\nI have not contacted the service, so I cannot confirm that a corrected request will succeed.",
+    "e0722a15bd0356fdd08e1aac9d34888a0ab00098933326c033d5feb1ec9ada90": "The service rejected the request as malformed. It did not fail on the server side.\n\n- **HTTP 400** means the request itself is the problem. The caller should change the request before sending it again. Retrying the same request will fail the same way.\n- **`INVALID_INPUT`** is the top-level error code. It says the input was rejected, not that the service is down or unavailable.\n- **`Missing brief`** is the specific cause. The request did not include a `brief` value, or it was empty.\n\nTo read it: the caller should check that the request includes a non-empty `brief` in the field the Sleek API expects, then send it again. The supplied facts don't say where `brief` belongs in the payload, so the caller should confirm that against the Sleek API documentation.",
+    "e798a112725537feae921f6a8989ca2823a1fff6285340dc4d620c92d61b0137": "I can't tell you what the \"Sleek\" request was for, because the only thing I have is its result, and the message you pasted is mostly unrelated prose about a village by the coast. The part that matters is the error:\n\n- **HTTP 400** means the request was malformed. The server rejected it before doing any work, so nothing was processed.\n- **`INVALID_INPUT`** is the top-level error code. It means a field in the request didn't pass validation.\n- **`Missing brief`** says which field: the request had no `brief` value. The service needs that field and didn't receive it.\n\nTo fix it, the caller should add a non-empty `brief` field to the request body, then send it again. If the field is present but empty or in the wrong place (for example, nested under another key), it will fail the same way, so check the structure against the service's documentation.\n\nI didn't contact the service or run anything. If you paste the request body you sent, I can point out where the `brief` field is missing.",
+    "d6c5de13673e896b3f1b2aaa6d1d462f307eeaea14375a696aaa255a93cef05f": "The Sleek request returned HTTP 400 with top-level code `INVALID_INPUT`, status 400, and the message \"Missing brief.\"\n\nHow to read it:\n\n- **HTTP 400** means the service rejected the request as malformed. The request was received, but nothing in it was processed, so retrying the same payload will fail the same way.\n- **`INVALID_INPUT`** points to the request body, not the service or the network. The caller sent input the service couldn't accept.\n- **\"Missing brief\"** names the specific problem: the required `brief` field was absent or empty. Add a non-empty `brief` value to the request body and send it again.\n\nI haven't contacted the service, so I can't tell whether the field was omitted entirely, sent under a different key, or sent with an empty value. The caller should check the payload for those cases.",
+    "b0d6e0e76a927c9da25b95cd7a2d73784de4f50d65a919ae2bf1c1347c0bcc4d": "The service rejected the request as malformed. Read the response like this:\n\n- **HTTP 400** means the problem is on the caller's side. The request was not accepted, and retrying it unchanged will fail the same way.\n- **`INVALID_INPUT`** means the service validated the input and found it unacceptable.\n- **\"Missing brief\"** says what was wrong: the request did not include a brief. The fix is to add one to the request and send it again.\n\nBased only on the facts supplied, the caller should check that the request contains a brief before resending. I can't confirm from these facts the exact field name or the required format of the brief, so those should be checked against Sleek's API documentation.",
+    "16d991805e07595ee065beef013ef6a2f5ac95cc2207f2c4babb8b05b2effa4e": "The service rejected the request as malformed. It did not fail on its own side.\n\n- **HTTP 400** means a client error. The request itself is the problem, so retrying it unchanged will fail the same way.\n- **`INVALID_INPUT`** confirms the request failed validation before any work was done.\n- **\"Missing brief\"** says which input is absent: the request has no `brief` field, or the field is empty or unreadable.\n\nTo fix it, the caller should:\n\n1. Check the request body for a `brief` field, using that exact spelling and casing.\n2. Confirm it sits where the API expects, at the top level or inside the nested object the docs specify.\n3. Make sure it has content. An empty string or a null value often triggers the same error.\n4. Look for a serialization step that drops the field, such as a conditional that skips it or a mapping that renames it.\n\nI have not contacted the service, so I can't tell which of these applies. Once the caller has checked, they can resend the corrected request.",
+    "9510ce0e2650d3b13bd274f3884d4e43ef2d1bf84fee2f60b316ce3ca579ae8a": "The service rejected the request as malformed. Nothing about the service itself failed.\n\n- **HTTP 400** means a client error. The server understood the request but would not process it as sent.\n- **`INVALID_INPUT`** is the top-level error code. It identifies the category: the input was invalid.\n- **\"Missing brief\"** names the problem. The request did not include a required `brief` field, or the field was empty.\n\nTo fix it, add a non-empty `brief` to the request body and send it again. Retrying the identical request will fail the same way.",
+    "a2412bd785173d288f983fd6518871bf324a92d9223d2a6f66d20e3a54375662": "**User shot:** A screenshot of the screen as a user would see it. It uses the default render: viewport height, phone-shaped. This is the one you show the designer.\n\n**Review shot:** A screenshot of one component at full height, so the whole long component is visible rather than just the first viewport. It is the same kind of request with `fullHeight: true` added, and it asks for one component per request. You use it to check your own work against the design, not to show the designer.\n\nBoth go to `POST /api/v1/screenshots`, which requires the `screenshots` scope. The only difference between them is the framing: the user shot takes the default, and the review shot adds `fullHeight: true` and targets a single component.",
+    "a6a7d81c4f413e01af02d630e762b741845dd4e1aeb3375e3a3981be7f439ca8": "The two screenshot requests differ in framing, and each one is for a different judge:\n\n1. **User shot (the phone screenshot).** This is the default render: viewport height, phone-shaped. It's the image you show the user. You request it without the `fullHeight` flag.\n\n2. **Review shot (the full-height review).** This adds `fullHeight: true` and is scoped to one component per request. It captures the whole length of a long component, so you can check your own implementation against the design. It's for your review, not for the user.\n\nSo the split is: the user shot answers \"what does the screen look like on a phone,\" and the review shot answers \"does the long component match the design from top to bottom.\" Each review request covers a single component, so a long screen with several components needs one review request per component.",
+    "e1b4e6b7dc56ab128684099627c98c1109f7d80297224b0eff983b4bd5f1ee29": "Two screenshot requests, both made to Sleek's `POST /api/v1/screenshots` endpoint, differ only in framing:\n\n1. **User shot (the one for the designer to look at as a phone screen):** the default render. It is viewport height and phone-shaped. You don't set any framing option, so this is what you show the user.\n\n2. **Review shot (the one for judging a long component):** the same endpoint with `fullHeight: true`, and it covers one component per request. Because it is full height, it captures the whole component rather than just the visible viewport, which makes it the right image to check your implementation against a long component.\n\nSo the designer gets a viewport-height phone render for presentation, and a separate full-height, single-component render for review. Each is its own request.",
+    "7ca90b9d2b49f2a4bad8807f1b2e3e3d4ebe87224bd9c15e7b10960367063f08": "**User shot:** The default render. It uses viewport height and a phone shape, and it's the one you show the user. Send the screenshot request without `fullHeight`.\n\n**Review shot:** The same kind of request with `fullHeight: true` added. It captures the whole component, so you can check a long component's full layout. Each request covers one component. It's the one you use to judge your own work, not the one you show the user.\n\nBoth requests go to `POST /api/v1/screenshots`, which needs the `screenshots` scope. The full request contract is in `endpoints.md`, which I haven't read in this session.",
+    "213e8fe1b97c60be75476d36848e4e7b025ee663aa8e1d0ba4a18ae11cbaa136": "The two screenshot requests differ in framing and in what they're for:\n\n1. **User shot (the default).** This is the render you show the user. It uses the default framing: viewport height, phone-shaped. You don't set any special flag for it. It answers \"what does this screen look like on a phone?\"\n\n2. **Review shot (`fullHeight: true`).** This is the render you judge your own work against. It adds `fullHeight: true` and captures one component per request, so a long component is captured in its entirety rather than cut off at the viewport. It answers \"does this long component match the design from top to bottom?\"\n\nSo the designer gets the first for presentation and the second for checking a long component, and the review shot is always requested per component, not for the whole screen at once.",
+    "5fae68368ecf1f51519cd78f1c5858907a25c7e79927b7b2798f4eb7b513d2f0": "**1. Phone screenshot (user-facing):** A capture of the interface as an end user would see it on a phone-sized viewport. It shows the visible screen at a single moment, with the device width and typical mobile scale, so the designer can judge layout, spacing, and text on a real-sized screen.\n\n**2. Full-height review of a long component:** A separate capture of one component rendered at its full height, so the entire length is visible in one image rather than cut off at the viewport edge. It's for reviewing the whole component's structure and consistency from top to bottom, not for showing what a user sees on a phone.\n\nThe two differ in purpose and framing. The first is a phone-sized view of the screen as a user sees it. The second is a tall, uncropped view of one component for design review. Keep them as separate files so the designer can compare each on its own terms.",
+    "88ea8feecbb9ab3c09b6112725d45d8a3e5115de1915fe8a355a86dc14b3407e": "The designer needs two separate screenshots, each for a different purpose:\n\n1. **User-facing phone screenshot:** A capture of the interface as an end user would see it on a phone. It shows the real viewport and is meant to reflect what the product looks like in use.\n\n2. **Full-height review of a long component:** A single capture of the whole component from top to bottom, including the parts that would normally need scrolling. It is for design review, so the designer can see the full layout at once rather than a single screen.\n\nThe two are kept apart because they answer different questions: the first shows what a user sees, and the second shows the complete structure of one component.",
+    "a5d31f861d6694a95962ad5085802e7e86df86592a229dffab3b9d2c583a064a": "Here are the two screenshot requests, described conceptually:\n\n1. **Phone screenshot (user-facing):** A capture of the interface as an end user would see it on a phone-sized viewport. It shows the screen as it appears on the device, with the normal visible area and no extra scrolling. It's meant for judging the real user experience: layout, spacing, and readability at phone dimensions.\n\n2. **Full-height component review:** A separate capture of a long component rendered at its full height, so the entire component is visible in one image instead of only the part that fits on screen. It's meant for reviewing the component as a whole, such as checking consistency from top to bottom or seeing how sections relate. It isn't tied to a phone viewport.\n\nThe two are distinct: one shows what a user sees on a phone, and the other shows the complete length of a long component for review.",
+    "9dc7c92a1d40aae2b6a0e1395d5a95d79cca5113e9ba6757e5feb4125797f9f6": "I can't take actions here, so this is a conceptual description only.\n\n**Request 1: User-facing phone screenshot.** The designer wants a single image that shows the interface as an end user would see it on a phone. It should capture one screen at phone dimensions, with the viewport cropped to what fits on the device without scrolling. The aim is a realistic view of the layout, text, and controls as they appear to the user.\n\n**Request 2: Full-height review of a long component.** The designer wants a separate capture meant for review, not for showing the user experience. It should render the entire component from top to bottom in one tall image, with no viewport cropping, so every section can be inspected in a single pass. The aim is to check the whole structure and spacing of a long component at once.\n\n**Key difference:** the first is a bounded, device-sized view of what a user sees, and the second is an unbounded, full-length view of the component for inspection. They should be produced as two distinct outputs so the designer can use each for its own purpose.",
+    "ca4ec3bbe712b658982cce508f6e91131fdb7d57afcb839eabb32ef36b0b5462": "The material you supplied is a set of descriptive passages about a coastal village, its orchards, and its harbour. None of it covers screenshots, phone viewports, or component layouts, so I can't ground this in those passages. The following is a general, conceptual description.\n\n**1. Phone screenshot (user-facing)**\nThis captures the interface at a phone-sized viewport, cropped to what appears on screen at one moment. It shows the app as an end user would see it, with mobile layout, text sizing, and touch targets in place. It's the right check for how the design looks to real users on a device.\n\n**2. Full-height review of a long component**\nThis captures one component at its full rendered height, so everything from top to bottom appears in a single tall image without scrolling. It's meant for reviewing structure, spacing, and consistency across the whole component. It isn't a device view, so it should be kept separate from the phone screenshot, which has different dimensions and a different purpose.\n\nKeeping the two as separate deliverables lets the designer judge the on-device experience and the complete layout independently.",
+    "e0b23a42e90630e24cf263ead35b54d49c9f4e947fe45a16dba8115989b97b88": "Here are the two requests described conceptually. The long village passage in your message has no details about screenshots or components, so these descriptions are general.\n\n1. **Phone screenshot (user-facing):** A capture of the interface as an end user would see it on a phone. The goal is to show the real visual result: the layout at phone dimensions, the typography, spacing, and the state the user would actually encounter. It is a snapshot of one moment in the flow, meant for the designer to judge how the screen looks and feels.\n\n2. **Full-height component review:** A separate capture of a long component rendered at its full height, so the whole component can be reviewed in one continuous view without cropping or scrolling. The goal is to check the component's complete structure, such as how sections connect, how content flows from top to bottom, and where spacing or alignment breaks down. It is meant for evaluating the component as a whole, not how it looks on a device.\n\nThe two differ in purpose and framing. The phone screenshot shows the end-user view at device size. The full-height review shows the complete component for structural review, regardless of device.",
+    "9cafcb3ee0322b1ad2499a8b0794bf64893bec04ded79ec09dbc8e5505ef0793": "The two requests are different kinds of capture, so they need different framing.\n\n1. **Phone screenshot (user-facing):** This shows the interface as an end user would see it on a phone. The goal is a realistic view of the screen at phone dimensions, so the designer can check layout, spacing, text, and visual polish as shipped. It is a single viewport-sized image of one state, such as a particular screen or moment in the flow.\n\n2. **Full-height review of a long component:** This is a separate capture meant for review, not presentation. It shows the whole component from top to bottom, including content that would normally require scrolling, so the designer can see the complete structure and check consistency and continuity from one end to the other. It is not limited to one viewport and is not meant to show the component as a phone user would see it.\n\nThe first is about how the screen looks to a user. The second is about seeing the full length of one component at once for review. Because the supplied material doesn't describe the specific screen or component, I can't say which states, data, or dimensions they should use. Those details would come from the designer's request or the project itself.",
+    "21a97f8d32529e82cfab1c228792b540e9e722739da332a8c98c67b19940e950": "Keep each id tagged with the response field it came from, because the id string itself carries no type. The docs say ids are opaque 11-character tokens with no prefix, so `V1StGXR8Z5j` could be a project, screen, component, version, or theme.\n\nWhen you plan a screen update:\n\n1. **Store the ids as typed fields.** When a response returns `projectId` and `screenId`, record them as `{ projectId: \"...\", screenId: \"...\" }`, not as a bare list of strings.\n2. **Fill path parameters by name.** The endpoint table uses `:id` for projects and `:runId` for runs. Put the `projectId` value where a project id belongs, and never put the `screenId` value there.\n3. **Check each id before a call.** Before sending a request, confirm that the value you're using came from the field the parameter expects. A wrong id can still be a valid-looking 11-character token, so the mismatch won't show up as a format error.\n4. **Carry the record forward.** When the work spans several steps, such as creating a project, designing a screen, and then fetching its render, keep the typed record in your notes so the ids don't get mixed up between steps.",
+    "72834b061e246d8d8367496be2fae4c05e769b60801d8961a76a517163b970fe": "Both values are opaque 11-character tokens with no type prefix, so the string alone doesn't tell you which one is a project and which is a screen. Keep the type by the field name each value came from:\n\n1. **Record each id under the field it arrived in.** When a response returns `projectId`, store it as `projectId`. When a response returns `screenId`, store it as `screenId`. Don't store them in a generic list or a shared `id` variable.\n\n2. **Pass each id only where its field name says it belongs.** Use `projectId` for project-scoped paths such as `/api/v1/projects/:id/...`, and use `screenId` only where a screen is expected. Keep the two in separate variables so one can't overwrite the other.\n\n3. **Don't classify by shape or pattern.** Two ids of the same length and character set look identical, so checking the string tells you nothing. The field name is the only reliable signal.\n\n4. **Carry both ids through the plan.** When you outline a screen update, list each step with the id it uses, labeled by type, for example: \"Update `screenId` via the chat endpoint under `projectId`.\" Then the plan keeps the types visible even after the values are passed around.\n\n5. **Check the spec for contract details.** The supplied facts don't say which endpoints take a screen id directly, so confirm those against the OpenAPI spec at `https://sleek.design/api/v1/spec.json` before you rely on them.",
+    "4fa8c11f5be7629dd0587005285b14663bfc125d7de1b15304e92f22036f4c62": "Ids in this API carry no type information. `projectId` and `screenId` both look like 11-character tokens such as `V1StGXR8Z5j`, so you can't tell them apart by format. Keep the type by recording it from the response field each id arrived in.\n\nWhen planning a screen update:\n\n1. **Store each id under its field name.** When a response returns `projectId` or `screenId`, save it in a separate, labeled slot (for example, `project.projectId` and `screen.screenId`). Don't put them in a shared list or an untyped variable.\n2. **Write the role next to the value in your plan.** Each step should say which id it uses and why, such as \"update screen `<screenId>` in project `<projectId>`.\" This keeps the type visible when you return to the plan later.\n3. **Match each id to the parameter it fills.** Use the project id where the endpoint expects a project and the screen id where it expects a screen. Don't swap them because they look alike.\n4. **Don't infer type from the value.** If you lose track of which id is which, go back to the response that produced it rather than guessing from the string.",
+    "47065146eb0ff7eda54e2174a8348c3785c57263b5b14aac5ff2ba461432e1db": "Both ids are opaque 11-character tokens with no type prefix, so the value alone cannot tell you whether it names a project or a screen. Keep each one tied to the response field it arrived in:\n\n1. **Store them under their field names.** Save `projectId` and `screenId` as separate, labeled values, for example `project.projectId` and `screen.screenId`. Don't put them in a shared list or a generic `id` variable.\n2. **Don't infer type from format.** Two tokens that look alike may name different kinds of resources. Use the field name to decide which is which.\n3. **Pass each id where its field name says it belongs.** When planning a screen update, the project identifier goes where a project is expected and the screen identifier goes where a screen is expected. Swapping them can produce a `NOT_FOUND` or `BAD_REQUEST` error.\n4. **Record the source with each id.** If you carry ids across steps, note which response and field each came from, so a later step can't mix them up.\n\nI can't confirm the exact update endpoint or its parameter names from the facts I have. Check the OpenAPI spec at `https://sleek.design/api/v1/spec.json` for the contract before you build the request.",
+    "00629325c2d73f307354a82721fab931d468d69fa318a92791d3ea029c96c729": "Treat `projectId` and `screenId` as opaque strings and keep them that way through the whole update plan:\n\n- **Type:** Store both as strings, not numbers. Even if an ID looks numeric, leading zeros and precision can be lost on conversion.\n- **Length:** Each should be exactly 11 characters. Check this when you read the response, and flag any value that doesn't match rather than silently truncating or padding it.\n- **Don't parse or derive meaning:** Don't split, slice, or reformat the value, and don't infer anything from its characters. Pass it through unchanged.\n- **Keep them separate:** Hold `projectId` and `screenId` as distinct fields so one can't be substituted for the other in the plan.\n- **Preserve exact bytes:** Don't change case, trim whitespace, or URL-encode the value in your notes. Apply any encoding only at the point of use, in the request itself.\n\nI only have your description of the response. I can't see its contents, so I haven't checked the actual values.",
+    "5f27f4db661421d660000e069a4ce9acb6e71069f781b53c226650a1e414a500": "To keep `projectId` and `screenId` typed as opaque 11-character identifiers in your screen update plan:\n\n1. **Treat both as opaque.** Don't parse, decode, or infer meaning from their characters, and don't assume ordering or any relationship between them.\n2. **Enforce the length.** Specify that each value must be exactly 11 characters. Validate at the boundary where the response is received, and reject or flag anything else rather than truncating or padding.\n3. **Use distinct types.** Model them as separate types (for example, `ProjectId` and `ScreenId`) rather than generic strings, so the compiler or reviewer catches a swapped argument.\n4. **Preserve the exact value.** Don't change case, trim whitespace, or otherwise normalize them. Carry them through each step byte-for-byte.\n5. **Pass them through unchanged.** Any step that reads or writes them should take the existing value as-is, not a reconstructed or derived one.\n6. **Record the constraint in the plan.** State explicitly that both are opaque, fixed-length identifiers, so anyone implementing the update keeps these rules.\n\nI haven't inspected the supplied response itself, so I can't confirm its exact field names or formats beyond what you've told me.",
+    "25bd03fc47ae8819d8c0b7d5d428fdffc59d9713d3da3a383ace329c3bdf4760": "The supplied response with `projectId` and `screenId` isn't in your message, so I can't see the actual values. Here's how to keep their types intact when planning a screen update, based on what you've described: both are opaque 11-character identifiers.\n\n1. **Type them as opaque strings.** Declare both as `string` (or a branded type such as `ProjectId` and `ScreenId`) rather than `number`. Leading zeros or characters like `-` and `_` can be lost in numeric conversion.\n2. **Keep the two types distinct.** Use separate branded types so a `screenId` can't be passed where a `projectId` is expected. Both are 11 characters, so the length check won't catch a swap.\n3. **Validate the shape at the boundary.** Check that each value is exactly 11 characters when it arrives, and reject anything else before it enters the update plan.\n4. **Don't parse or derive them.** Avoid splitting, slicing, or building IDs from other fields. Treat them as whole tokens.\n5. **Pass them through unchanged.** Copy the values exactly as received into request paths, payloads, and logs. Don't trim, case-normalize, or reformat them.\n\nIf you paste the response that contains the IDs, I can check that its types match these rules.",
+    "ecfe2605128e316601149718afbe9327c1ff310f1edb62e9cd3a7e89da04d546": "I can't answer this from the material you've supplied. It contains descriptions of a village, including its harbour, orchards, canal, and weekly events. It doesn't include a response with a `projectId` or `screenId`, and it says nothing about identifier types or screen updates, so I have no facts to explain how to keep those types when planning a screen update.\n\nIf you paste the response that contains the two identifiers, I can explain from that text how to keep their types through the planning step. I won't use tools or outside knowledge for this.",
+    "f1de923a4943ce0ee729f48b0e5492364f64f684a062a3ce777d79aeabe0d6b8": "Treat `projectId` and `screenId` as opaque 11-character strings, and keep them as separate types so they can't be swapped.\n\n- **Keep them opaque.** Don't parse, trim, case-fold, or derive meaning from them. Store and pass them as-is.\n- **Validate the length.** Check that each is exactly 11 characters where it enters your code, so malformed values fail early.\n- **Use distinct types.** Give each its own type, such as a branded or newtype string, so the compiler or type checker rejects passing a `screenId` where a `projectId` is expected. If your language lacks this, use separate wrapper classes or clearly named variables.\n- **Carry the types through the plan.** Every step that refers to a project or screen should take the matching type, not a bare string, so the update's inputs stay typed from start to finish.\n- **Don't convert between them.** Each ID should come from the response that supplied it and go only to the operation that needs it.",
+    "a2a038bb04464d82780bb2557a8d4632d15d372ae3a724402d836b36e8d23247": "Treat `projectId` and `screenId` as separate opaque types, each a string of 11 characters. Since neither identifier has meaningful internal structure, the goal is to keep them distinct and never reinterpret them.\n\n- **Keep them as separate types.** Use distinct types for each, such as branded or newtype wrappers (`ProjectId` and `ScreenId`), so the compiler rejects passing one where the other is expected. Both are 11-character strings, so a plain `string` type would let them be swapped silently.\n- **Treat them as opaque.** Don't parse, split, slice, or derive meaning from the characters. Pass them through unchanged.\n- **Validate at the boundary.** If input is parsed, check that each value is 11 characters and wrap it in its type immediately, so the rest of the plan only handles the typed values.\n- **Make the update signature explicit.** For a screen update, require both types in the function signature (for example, `updateScreen(projectId: ProjectId, screenId: ScreenId, ...)`). This keeps the project and screen arguments from being mixed up.\n\nI only have the description of the supplied response, not the response itself, so I can't check how its IDs are actually formatted or passed.",
+    "988fcc23191be2a5a5a7fb695e21fb761e849341e22acf59eb588fc839b4667d": "Keep `projectId` and `screenId` as opaque string identifiers. Don't convert them to numbers, and don't parse or split them. Both are 11 characters, so you can check that length when you validate input, but don't infer meaning from their characters.\n\nWhen you plan a screen update:\n\n- **Type them as strings** in any schema, interface, or function signature, for example `projectId: string` and `screenId: string`.\n- **Pass them through unchanged.** Don't trim, re-encode, or rebuild them from other fields.\n- **Keep them distinct.** Since both are the same length and format, nothing in their shape tells them apart. Use separate named parameters or fields so a `projectId` can't be passed where a `screenId` is expected.\n- **Validate the 11-character length** at the boundary where the identifiers enter your plan, and reject values that don't match.\n\nI'm answering from the facts you supplied only, so I haven't checked these identifiers against any project or screen.",
+    "c4c68f208db773c6c20cc2c3f158fa184dd728916a737c71356f6903fb0b9c06": "To keep `projectId` and `screenId` typed correctly in a screen update plan:\n\n1. **Treat both as opaque strings.** The supplied facts say they are opaque 11-character identifiers, so their meaning is not encoded in their contents. Don't parse them, split them, or read anything into their characters.\n\n2. **Don't coerce them to numbers.** Even if an ID looks numeric, keep it as a string. Converting it to an integer can drop leading zeros or change the value.\n\n3. **Keep the two IDs distinct.** Both are the same kind of identifier, so a plan can mix them up. Name the parameters clearly (for example, `projectId` and `screenId`) and never swap them.\n\n4. **Pass them through unchanged.** Copy each value exactly as received. Don't trim, re-case, or reformat it.\n\n5. **Check the length if you validate.** An 11-character check is a reasonable guard: reject values that are not exactly 11 characters before using them in an update step, which catches truncation or accidental concatenation.",
+    "5042733cbdf4e17e264101bc4857505bba0932e9f9d15639b6c5e4da0523df9c": "The supplied text doesn't include a response with a `projectId` or `screenId`. It's descriptive prose about a village, harbour, orchard, and railway, with no identifiers, schema, or API output. So I can't point to the actual values or show how they're returned.\n\nBased on your description, both are opaque 11-character identifiers, so when you plan a screen update:\n\n- **Keep them as strings.** Declare them as `string` (or your language's equivalent), not as numbers. Opaque IDs can have leading zeros or characters that numeric conversion would lose.\n- **Don't parse or derive meaning from them.** Treat them as black-box tokens. Don't split them, infer ordering from them, or build them yourself.\n- **Validate the shape, not the content.** Checking that a value is exactly 11 characters catches truncation or mix-ups between the two IDs. Don't enforce a character set unless the source specifies one.\n- **Keep the two types distinct.** If your language allows it, use separate types (for example, `ProjectId` and `ScreenId` wrappers) so a screen ID can't be passed where a project ID is expected. The compiler or type checker then catches the swap.\n- **Pass them through unchanged.** Copy the value exactly as received when it goes into request URLs, payloads, or function arguments, without trimming, case-changing, or reformatting.\n\nIf you paste the response that contains the IDs, or the API or schema that defines them, I can show concrete type declarations for your screen-update plan.",
+    "74542f0d929d2d489ac489179bb7c43599cba94a61576bc0d22e077c6c766520": "The material you've supplied doesn't include a response with `projectId` or `screenId`, or anything about how those identifiers are typed. It's descriptive prose about a village: the harbour wall, the loom in the museum, the choir on Thursdays, the ferry across the sound. So I can't explain how to keep those identifiers' types when planning a screen update without going beyond what you've given me.\n\nIf you paste the response that contains the IDs, I can explain how they're typed there and how to preserve that when planning the update. I'd also need to know what the screen-update plan is meant to do.",
+    "a29967b9048224b1331763c763d420090fe4a9270d24c7b1a7a70e75a0def306": "The text you supplied doesn't include a response with `projectId` or `screenId` values. It is descriptive prose about a village, so I can't check those identifiers against real data. Based on your statement that both are opaque 11-character identifiers, here is how to keep their types intact when planning a screen update:\n\n- **Treat them as strings.** Opaque identifiers have no numeric meaning, so don't cast them to integers or floats. Leading zeros or characters like `-` and `_` would be lost.\n- **Keep them as their own fields.** Store `projectId` and `screenId` separately rather than concatenating them into one composite key. Each should keep its own name and type.\n- **Don't parse or derive anything from them.** Avoid splitting, slicing, or reformatting the values. Pass them through unchanged.\n- **Check the length if you validate.** A check that each value is exactly 11 characters catches truncation or mangling early, without assuming anything about the character set.\n- **Use the same type in every step.** If the plan includes request bodies, function signatures, or stored records, declare these fields as strings in each one so the type stays consistent from the response to the update."
+  },
+  "draws": [
+    {
+      "id": "response",
+      "mode": "with_skill",
+      "draw_index": 0,
+      "generation_hash": "b212cb9141c0ba158d6c336a0f229e76bf8b9138b845f25c81e823a4f685dab9",
+      "answer_sha256": "b212cb9141c0ba158d6c336a0f229e76bf8b9138b845f25c81e823a4f685dab9",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets status-first, top-level error fields, and fix-brief-before-retry criteria; the 'No data.url' bullet implies a data-wrapper frame, so the not-data-wrapped-success criterion is weakly met.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks the 400 status first and reads the top-level message 'Missing brief' correctly, fixing the request before retrying (criteria 1, 2, 4 met). It treats the error as a client validation failure rather than data-wrapped success, but the rubric's criterion 3 wording is not explicitly addressed, and it relies on a 'skill docs' error table not in the supplied facts, so partial credit only.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks the 400 status first and reads the error fields, but it never explicitly says the body is not data-wrapped success, and it asks for the fix before retrying only partially. Criteria 1, 2, and 4 are met; criterion 3 is missed.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks the 400 status first and reads the top-level message 'Missing brief' correctly, but it treats the error as a client validation fix without explicitly flagging that the error body is not success-wrapped data, and it leans on an unverified 'skill docs' reference. It does say to add a brief before retrying, meeting criterion 4, but criterion 3 is not clearly stated, so only two criteria are fully satisfied.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Checks the HTTP 400 status first, reads the top-level INVALID_INPUT code and 'Missing brief' message, treats it as an error rather than data-wrapped success, and says to add the brief before retrying.\"}"
+      ]
+    },
+    {
+      "id": "response",
+      "mode": "with_skill",
+      "draw_index": 1,
+      "generation_hash": "ddc5b0a82e3120f84918c4baedf1c66decb8ae8f64cc4b54d2f40af244405ca9",
+      "answer_sha256": "ddc5b0a82e3120f84918c4baedf1c66decb8ae8f64cc4b54d2f40af244405ca9",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Leads with HTTP 400 as a client-side rejection, reads the top-level INVALID_INPUT code and 'Missing brief' message, treats it as an error rather than success, and says to add a brief before retrying.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Checks HTTP 400 first, reads top-level code and message 'Missing brief', treats it as a client error rather than success, and advises adding a brief without retrying unchanged.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response identifies the 400 status first and treats the error as client-side, and it asks for and fixes the missing brief before retrying, satisfying points 1 and 4. It reads the top-level code but does not clearly state that the body is an error rather than data-wrapped success, and it never explicitly frames the top-level error fields as the diagnosis, so points 2 and 3 are only partly met.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Meets all four criteria: it checks the HTTP 400 status first, reads the INVALID_INPUT code and 'Missing brief' message, treats the response as a rejection, and says to add a brief before resending.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response covers rubric items 1 (HTTP 400 read first) and 2 (reads top-level code and message), and item 4 (fix missing brief before retrying). It does not explicitly state the response is not a data-wrapped success (item 3), so it misses that criterion, yielding 0.75 rather than 1.0 strictly; scoring 0.75 with pass true is more accurate.\"}"
+      ]
+    },
+    {
+      "id": "response",
+      "mode": "with_skill",
+      "draw_index": 2,
+      "generation_hash": "7ea0304fae470392c112e98990d8c341dc53af54f0c90c167efee2e0df4de281",
+      "answer_sha256": "7ea0304fae470392c112e98990d8c341dc53af54f0c90c167efee2e0df4de281",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks HTTP 400 status and reads top-level status/message fields, but it does not state the response isn't wrapped data-success, and it fixes the body without explicitly asking for the missing brief before retrying; it also adds unsupported content about a spec URL.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Checks the HTTP 400 status first, reads the top-level status, code and message fields, treats the response as a rejection rather than wrapped success, and says to add the brief before retrying.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks the HTTP 400 status first and reads the top-level code/message fields, satisfying criteria 1 and 2; it does not treat it as success, and it asks the caller to add the brief before retrying, satisfying criterion 4 partially. It does not explicitly say to avoid interpreting it as data-wrapped success, so criterion 3 is arguably unmet, and the pass threshold is not clearly met.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Checks the 400 status first, reads the top-level status, code and 'Missing brief' message, does not treat the error as success, and says to add the brief before retrying.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Checks the 400 status first, reads top-level status and code fields, treats the response as a rejection rather than success, and tells the caller to add the brief before retrying.\"}"
+      ]
+    },
+    {
+      "id": "response",
+      "mode": "with_skill",
+      "draw_index": 3,
+      "generation_hash": "681e4181f1a011d5fe5e30769d4ede5d120813d32a1b6d3ff0b3cf160f816cb3",
+      "answer_sha256": "681e4181f1a011d5fe5e30769d4ede5d120813d32a1b6d3ff0b3cf160f816cb3",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Reads HTTP 400 first, reads the code/status/message fields, treats it as a validation error rather than success, and says to fix the missing brief before resending.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks the 400 status first and fixes the missing brief before retrying, satisfying criteria 1 and 4; it reads the top-level code/message but adds an unsupported claim about the Sleek skill docs error table, and it does not explicitly state the body is not a data-wrapped success, so criteria 2 and 3 are weakly met at best.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks HTTP 400 first and reads the top-level message and code fields, and it fixes the missing brief before resending. It fails criterion 3: it never states that the 400 error body is not a data-wrapped success, and it does not explicitly reject that reading.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Checks HTTP 400 first and reads top-level code/message fields, and proposes fixing the missing brief before retrying; but it treats the response as validation failure without explicitly ruling out data-wrapped success, and it adds unsupported claims about docs and an OpenAPI URL not in the supplied facts.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Reads HTTP 400 first, then the top-level code, status and message; treats it as a validation failure, not success; says to fix the missing brief before resending.\"}"
+      ]
+    },
+    {
+      "id": "response",
+      "mode": "with_skill",
+      "draw_index": 4,
+      "generation_hash": "e15aff06a9591d616423c16583eb2a7d392701ad82e3bf2c63b5ace57695454d",
+      "answer_sha256": "e15aff06a9591d616423c16583eb2a7d392701ad82e3bf2c63b5ace57695454d",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks HTTP 400 and reads the top-level message 'Missing brief' well, and tells the caller to fix the request rather than retry verbatim (criteria 1, 2, 4 partially). It never explicitly rules out treating the error as data-wrapped success (criterion 3 unaddressed), and the fix-before-retry point is only loosely stated, so the score is 0.5 with pass false.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Response checks the 400 status first, reads the top-level message and code, and recommends fixing the missing brief before resending; it does not treat the error as data-wrapped success. It loses credit for claiming a spec URL and error-table detail not in the supplied facts, though the rubric criteria themselves are met.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Response checks the 400 status first, reads the top-level message and code fields, does not treat it as data-wrapped success, and tells the caller to add the missing brief before retrying.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Covers HTTP 400 first in the reading list, reads the top-level code and message, treats it as an error rather than data-wrapped success, and says to add the brief before resending.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Checks HTTP 400 first, reads top-level code and message, and tells the caller to add the missing brief before resending; it does not treat the error as data-wrapped success. It also adds an unsupported claim about the spec URL and error table, which is not in the supplied facts.\"}"
+      ]
+    },
+    {
+      "id": "response",
+      "mode": "baseline",
+      "draw_index": 0,
+      "generation_hash": "a1f8772877da04dfc5a1134592adf35fcdb91dd86a188234a6be0227a02c3cf1",
+      "answer_sha256": "a1f8772877da04dfc5a1134592adf35fcdb91dd86a188234a6be0227a02c3cf1",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"The response reads HTTP 400 first as a client error, reads the top-level INVALID_INPUT code and 'Missing brief' message, avoids treating it as success, and says to add brief and resend rather than retry unchanged.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks the 400 status first and reads the top-level INVALID_INPUT and 'Missing brief' fields, but it never states the response isn't a data-wrapped success, and its fix is to add the brief and resend rather than ask for or supply it first, so criteria 3 and 4 are not met.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Leads with HTTP 400 as a client error, reads INVALID_INPUT and 'Missing brief' from the top-level fields, treats it as a failure not success, and says to add brief before resending.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Starts from the HTTP 400 client error, reads the INVALID_INPUT and 'Missing brief' fields, never treats it as success, and says to add brief and resend rather than retry unchanged.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Meets all four criteria: it checks the HTTP 400 status first, reads the top-level INVALID_INPUT code and 'Missing brief' message, treats it as a rejection rather than success, and says to add the brief before resending.\"}"
+      ]
+    },
+    {
+      "id": "response",
+      "mode": "baseline",
+      "draw_index": 1,
+      "generation_hash": "de94da6e4e7a461f456e97c8e02c98a7181d22f926ba8742c7ae7382439e03a2",
+      "answer_sha256": "de94da6e4e7a461f456e97c8e02c98a7181d22f926ba8742c7ae7382439e03a2",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks the 400 status first and reads the top-level code and message correctly, but it does not say the brief should not be treated as data-wrapped success, and it fixes the missing brief rather than asking for it, so only partial credit is given.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks the 400 status first and reads the top-level code and message, but it does not treat the response as an error rather than data-wrapped success explicitly, and it only says to fix the brief without clearly asking for it or stating the fix-before-retry step as a directive; criteria 3 and 4 are at best partially met.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks the 400 status first and reads the error code and message correctly, but it does not interpret the response as data-wrapped success (not explicitly stated) and instead of asking for or fixing the brief it tells the caller to check and resend, leaving the brief fix as conditional guidance.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Checks the HTTP 400 status first, reads the top-level code and message, treats it as a rejection rather than data-wrapped success, and says to fix the missing brief before retrying.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Checks the 400 status first and reads the top-level code and message correctly; says not to retry unchanged and to fix the missing brief. It does not explicitly say to ask for the brief, and it never considers the data-wrapped success interpretation, so criteria 3 and 4 are only partly met.\"}"
+      ]
+    },
+    {
+      "id": "response",
+      "mode": "baseline",
+      "draw_index": 2,
+      "generation_hash": "b2de05c0556495d08e1bb7eb91487c7698e353810895c87dc5754bad9aa71424",
+      "answer_sha256": "b2de05c0556495d08e1bb7eb91487c7698e353810895c87dc5754bad9aa71424",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks the 400 status first and reads the top-level code and message, satisfying criteria 1 and 2. It then fixes the missing brief before retrying, meeting criterion 4 in part, but it never explicitly says not to treat the error as data-wrapped success (criterion 3), so it is not fully satisfied.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Checks the 400 status first, reads top-level code INVALID_INPUT and message Missing brief, does not treat it as success, and tells the caller to add the brief before sending.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Checks the 400 status first, reads top-level code INVALID_INPUT and message 'Missing brief', treats it as a rejection rather than success, and says to add the brief before retrying.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks the 400 status first and reads the top-level code and message correctly, but it never says to avoid treating the error as data-wrapped success, and it recommends fixing the request rather than explicitly asking for the brief before retrying.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1 (checks HTTP 400 first), 2 (reads top-level code and message fields), and 4 (directs caller to add missing brief before retrying). Misses 3: it never explicitly states the error is not a data-wrapped success response.\"}"
+      ]
+    },
+    {
+      "id": "response",
+      "mode": "baseline",
+      "draw_index": 3,
+      "generation_hash": "7cc917a25124c938cedb5e484159cb565b974b7bb5753b96354b95a38ba2dc68",
+      "answer_sha256": "7cc917a25124c938cedb5e484159cb565b974b7bb5753b96354b95a38ba2dc68",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1 (checks 400 status first), 2 (reads top-level INVALID_INPUT code and message), and 4 (instructs fixing the missing brief before retry); misses 3 since it never explicitly states the response is not a data-wrapped success.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"It checks the 400 status first, reads the top-level INVALID_INPUT code and 'Missing brief' message, never treats the response as success, and says to fix the brief before retrying.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks the 400 status first and reads the top-level code and message, meeting criteria 1 and 2. It fails criterion 3 by not explicitly warning against treating the response as data-wrapped success, and it asks the caller to fix the brief, which partly meets criterion 4 only by stating a fix without asking for it.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Response checks the 400 status first, reads top-level code INVALID_INPUT and message 'Missing brief', and gives retry-after-fix steps. It does not treat the error as data-wrapped success, but its advice to ask for or fix the brief is only partly explicit (it says to check and fix the body, not to ask the user), so one criterion is arguably weak.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Checks the 400 status first, reads the top-level INVALID_INPUT code and 'Missing brief' message, treats it as an error rather than success, and advises fixing the brief before retrying.\"}"
+      ]
+    },
+    {
+      "id": "response",
+      "mode": "baseline",
+      "draw_index": 4,
+      "generation_hash": "615e3b6ac2645515a18c03a605d564987ef8b6e6da547240ec25c2e78fc9d47a",
+      "answer_sha256": "615e3b6ac2645515a18c03a605d564987ef8b6e6da547240ec25c2e78fc9d47a",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Checks the 400 status first, reads the INVALID_INPUT code and 'Missing brief' message, and fixes the missing brief before retrying. It does not explicitly warn against treating the response as data-wrapped success, so that criterion is only partly addressed.\", \"criteria\": {\"check_status_first\": true, \"read_top_level_error_fields\": true, \"not_data_wrapped_success\": false, \"fix_missing_brief_before_retry\": true}}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Checks the 400 status first, reads the top-level INVALID_INPUT code and message, treats it as a client error rather than success, and adds the missing brief before retrying.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Checks the 400 status first and reads the INVALID_INPUT code and 'Missing brief' message, then says not to resend unchanged and to add the brief before retrying. It does not explicitly warn against treating the body as data-wrapped success, so that criterion is likely missed.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks the 400 status and reads the error code and message, satisfying items 1 and 2. It does not treat the reply as data-wrapped success, so item 3 is arguably met. It asks to add the brief and resend, which covers item 4. Item 4 is only partly met: the response says to fix the field but does not explicitly ask the user for the missing brief value.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"The response checks the 400 status first, reads the top-level INVALID_INPUT code and 'Missing brief' message, treats it as a client error rather than success, and says to add the brief before resending.\"}"
+      ]
+    },
+    {
+      "id": "response",
+      "mode": "baseline",
+      "draw_index": 5,
+      "generation_hash": "e0722a15bd0356fdd08e1aac9d34888a0ab00098933326c033d5feb1ec9ada90",
+      "answer_sha256": "e0722a15bd0356fdd08e1aac9d34888a0ab00098933326c033d5feb1ec9ada90",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Checks HTTP 400 first, reads top-level INVALID_INPUT and Missing brief, and says to fix the request before retrying; it does not treat the response as data-wrapped success. It never explicitly asks for the brief, so the fourth criterion is only partly met.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks HTTP 400 first and reads INVALID_INPUT as a rejection, and it tells the caller to fix the missing brief and retry (criteria 1, 2, 4). It does not explicitly rule out reading the response as data-wrapped success (criterion 3 is not clearly stated), so it misses one of four criteria.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Checks HTTP 400 first and reads INVALID_INPUT and 'Missing brief' as client-side fault, not data-wrapped success; instructs fixing the brief before retrying. Does not explicitly say to ask the user, so the fourth criterion is only partly met.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Checks HTTP 400 first and reads INVALID_INPUT as a rejection, not a success, then tells the caller to fix the missing brief before resending; it does not explicitly say to avoid treating it as data-wrapped success, so criterion 3 is only implicit.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks HTTP 400 first and reads INVALID_INPUT as a rejection, but it never explicitly rejects reading it as data-wrapped success, and its fix step only says to check the brief and resend rather than asking for or supplying the missing brief before retrying.\"}"
+      ]
+    },
+    {
+      "id": "response",
+      "mode": "placebo",
+      "draw_index": 0,
+      "generation_hash": "e798a112725537feae921f6a8989ca2823a1fff6285340dc4d620c92d61b0137",
+      "answer_sha256": "e798a112725537feae921f6a8989ca2823a1fff6285340dc4d620c92d61b0137",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"The response checks HTTP 400 first, reads the top-level INVALID_INPUT code and 'Missing brief' message, treats it as a rejection rather than success, and tells the caller to add the brief before retrying.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"The response checks the HTTP 400 status first, reads the top-level INVALID_INPUT code and message, does not treat the error as data-wrapped success, and tells the caller to add the missing brief field before resending.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks the HTTP 400 status first and reads the top-level INVALID_INPUT code and message, and says to fix the missing brief before resending (criteria 1, 2, 4). It never explicitly warns against treating the error as data-wrapped success (criterion 3), so it fails to fully satisfy the rubric's four points.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks HTTP 400 first and reads top-level INVALID_INPUT and 'Missing brief' correctly, and offers a fix, but it does not explicitly say not to treat the response as data-wrapped success; it also fixes the field without asking for the brief first, so the rubric's ask-or-fix step is only partly met.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Response checks HTTP 400 first, reads top-level INVALID_INPUT and 'Missing brief' message, and says to add the brief field before resending; it does not treat it as wrapped success, but it fixes rather than explicitly asking for the brief first.\"}"
+      ]
+    },
+    {
+      "id": "response",
+      "mode": "placebo",
+      "draw_index": 1,
+      "generation_hash": "d6c5de13673e896b3f1b2aaa6d1d462f307eeaea14375a696aaa255a93cef05f",
+      "answer_sha256": "d6c5de13673e896b3f1b2aaa6d1d462f307eeaea14375a696aaa255a93cef05f",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Checks the HTTP 400 status first, reads the top-level INVALID_INPUT code and message, treats it as an error rather than wrapped success, and says to add a non-empty brief before retrying.\"}",
+        "{\n  \"score\": 1.0,\n  \"pass\": true,\n  \"reason\": \"Leads with the HTTP 400 status, reads the top-level code, status and message, treats it as a rejected request rather than success, and says to add a non-empty brief before retrying.\"\n}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks HTTP 400 first and reads the top-level INVALID_INPUT and 'Missing brief' fields correctly, but it treats the error as a request-body fault to fix and retry, not as a failure to be reported; the rubric's 'do not interpret as data-wrapped success' is implicitly met, while the 'ask for or fix the missing brief before retrying' point is met too, so the score should be higher. Corrected: all four criteria are satisfied.\"}",
+        "{\n  \"score\": 1.0,\n  \"pass\": true,\n  \"reason\": \"The response checks the HTTP 400 status first, reads the top-level INVALID_INPUT code and message, treats it as a rejection rather than success, and tells the caller to add a non-empty brief before resending.\"\n}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Checks the HTTP 400 status first, reads the top-level INVALID_INPUT code and message, treats it as a rejection rather than success, and says to add the missing brief before resending.\"}"
+      ]
+    },
+    {
+      "id": "response",
+      "mode": "placebo",
+      "draw_index": 2,
+      "generation_hash": "b0d6e0e76a927c9da25b95cd7a2d73784de4f50d65a919ae2bf1c1347c0bcc4d",
+      "answer_sha256": "b0d6e0e76a927c9da25b95cd7a2d73784de4f50d65a919ae2bf1c1347c0bcc4d",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks HTTP 400 status and reads the error fields (INVALID_INPUT, 'Missing brief') and says to add the brief before resending, meeting criteria 1, 2, and 4. It does not address criterion 3, that a 400 error must not be read as a data-wrapped success, so it is only partially compliant.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Checks HTTP 400 first and reads INVALID_INPUT and the missing-brief message, but never addresses rubric point 3 (not treating it as data-wrapped success) explicitly, and its fix-and-retry advice is only conditional rather than asking for or fixing the brief outright.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks HTTP 400 status first and reads INVALID_INPUT/Missing brief as caller error, then says to add the brief before resending, satisfying criteria 1, 2, and 4. It does not address the data-wrapped success point (criterion 3), and its handling is partial.\", \"pass\": false}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks the HTTP 400 status and reads the error fields (INVALID_INPUT, 'Missing brief') and says to add the brief before resending, but it never explicitly warns against interpreting the response as data-wrapped success, and does not clearly ask for the brief rather than just directing a fix.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks HTTP 400 status first and reads the error message as a malformed request, and says to add the brief and resend, but it does not explicitly treat the top-level error fields as the primary read, and it says retry only after fixing, which partly meets point 4. It never addresses the not-data-wrapped-success point, so the rubric is only partially met.\"}"
+      ]
+    },
+    {
+      "id": "response",
+      "mode": "placebo",
+      "draw_index": 3,
+      "generation_hash": "16d991805e07595ee065beef013ef6a2f5ac95cc2207f2c4babb8b05b2effa4e",
+      "answer_sha256": "16d991805e07595ee065beef013ef6a2f5ac95cc2207f2c4babb8b05b2effa4e",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"The response checks the HTTP 400 status first as a client error, reads the top-level INVALID_INPUT code and 'Missing brief' message, and tells the caller to fix the missing brief before retrying without contacting the service.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Checks the HTTP 400 status first, reads the INVALID_INPUT code and 'Missing brief' message, treats it as a rejection rather than success, and says to fix the field before resending.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks HTTP 400 and reads the top-level INVALID_INPUT and 'Missing brief' fields, but it treats the error as a client-side malformed request. It does not say the failure is not data-wrapped success, and it fixes the missing brief rather than asking for it before retrying.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Reads HTTP 400 first as a client error, cites top-level INVALID_INPUT and 'Missing brief', does not treat it as success, and says to fix the brief before resending.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Checks the 400 status first and reads the INVALID_INPUT and 'Missing brief' fields, and asks the caller to add or fix the brief before resending. It does not explicitly say not to treat the error as data-wrapped success, so that criterion is only partly met.\"}"
+      ]
+    },
+    {
+      "id": "response",
+      "mode": "placebo",
+      "draw_index": 4,
+      "generation_hash": "9510ce0e2650d3b13bd274f3884d4e43ef2d1bf84fee2f60b316ce3ca579ae8a",
+      "answer_sha256": "9510ce0e2650d3b13bd274f3884d4e43ef2d1bf84fee2f60b316ce3ca579ae8a",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"The response checks HTTP 400 status and reads the top-level INVALID_INPUT code and 'Missing brief' message, earning two criteria. It does not explicitly warn against treating the error as data-wrapped success, and it tells the caller to add the brief and retry rather than asking for it, so the last criterion is only partly met.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks HTTP 400 first and reads the top-level INVALID_INPUT code and 'Missing brief' message, but it does not frame the 400 as an error rather than data-wrapped success explicitly, and it does say to add the brief and retry, which partly covers criterion 4 but does not ask for or fix the brief before retrying as the rubric requires.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks HTTP 400 first and reads top-level INVALID_INPUT and the missing-brief message correctly (criteria 1, 2), but does not ask for or fix the brief before retrying; it instead tells the caller to add it, and it never addresses the data-wrapped success distinction (criterion 3 unaddressed).\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response checks HTTP 400 and reads INVALID_INPUT as the top-level error category, satisfying criteria 1-2 and implicitly not treating it as success. It then says to add the brief and retry, but never explicitly asks for or fixes the brief before retrying, missing criterion 4 partially; it does not explicitly address criterion 3 about data-wrapped success.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Response reads HTTP 400 first as a client error, cites top-level INVALID_INPUT and 'Missing brief', avoids treating it as success, and says to add a non-empty brief before retrying.\"}"
+      ]
+    },
+    {
+      "id": "shots",
+      "mode": "with_skill",
+      "draw_index": 0,
+      "generation_hash": "a2412bd785173d288f983fd6518871bf324a92d9223d2a6f66d20e3a54375662",
+      "answer_sha256": "a2412bd785173d288f983fd6518871bf324a92d9223d2a6f66d20e3a54375662",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Response uses the default viewport shot for the user, applies fullHeight: true for the review shot, limits each request to one component, and makes no claim that screenshots were captured.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"The response gives the user shot the default viewport render, uses fullHeight: true for the review shot, limits each review request to one component, and does not claim any screenshot was captured.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Meets all four rubric points: the user shot uses the default viewport, the review shot uses fullHeight, each request targets one component, and no capture is claimed.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"The response uses the default viewport shot for the user, adds fullHeight: true for the review shot, limits each request to one component, and does not claim any screenshot was captured.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1 (default viewport shot for user), 2 (fullHeight for review shot), and 3 (one component per request); criterion 4 is satisfied since it never claims screenshots were captured.\"}"
+      ]
+    },
+    {
+      "id": "shots",
+      "mode": "with_skill",
+      "draw_index": 1,
+      "generation_hash": "a6a7d81c4f413e01af02d630e762b741845dd4e1aeb3375e3a3981be7f439ca8",
+      "answer_sha256": "a6a7d81c4f413e01af02d630e762b741845dd4e1aeb3375e3a3981be7f439ca8",
+      "status": "measured",
+      "judge_outputs": [
+        "{\n  \"score\": 1.0,\n  \"pass\": true,\n  \"reason\": \"Meets all four criteria: the user shot is the default viewport render without fullHeight, the review shot uses fullHeight, each review request covers one component, and no capture is claimed.\"\n}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Meets all four criteria: the user shot is the default viewport render without fullHeight, the review shot uses fullHeight, each review request covers one component, and no capture is claimed.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response meets criterion 1 (normal viewport shot for the user) and criterion 3 (one component per review request), and avoids claiming captures, but it does not explicitly mention fullHeight for the review shot... wait, it does: it states fullHeight: true for the review shot, so criterion 2 is also met. Score corrected below.\"}",
+        "{\n  \"score\": 1.0,\n  \"pass\": true,\n  \"reason\": \"Meets all four rubric points: the user shot uses the default viewport without fullHeight, the review shot uses fullHeight, each request covers one component, and no capture is claimed.\"\n}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Meets all four rubric points: the user shot uses the default viewport without fullHeight, the review shot uses fullHeight, each review request covers one component, and no capture is claimed.\"}"
+      ]
+    },
+    {
+      "id": "shots",
+      "mode": "with_skill",
+      "draw_index": 2,
+      "generation_hash": "e1b4e6b7dc56ab128684099627c98c1109f7d80297224b0eff983b4bd5f1ee29",
+      "answer_sha256": "e1b4e6b7dc56ab128684099627c98c1109f7d80297224b0eff983b4bd5f1ee29",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Criteria 1 (viewport shot for user) and 2 (fullHeight for review) are met; criterion 3 is arguably met (one component per request) but criterion 4 is not explicitly addressed, and the response does not claim captures occurred, so partial credit is reasonable—scoring 0.75 if 4 is counted, but the response never states screenshots were not captured, so pass is false.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Criteria 1 (viewport shot for user) and 2 (fullHeight for review) are met; criterion 3 is arguably met via one component per request; criterion 4 is met since no capture is claimed, but the response's specific endpoint and parameter claims are unsupported by the supplied facts, and the aggregate reading is borderline.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Criterion 1 (normal viewport shot for the user) and criterion 2 (fullHeight for review) are met, and criterion 3 (one component per request) is met. Criterion 4 is also satisfied since it doesn't claim captures occurred. However, the rubric's first criterion requires the user shot to be the normal viewport render, which the response does provide, so all four appear met on close reading; scoring the rubric as written gives 1.0, but the response invents an endpoint and parameter specifics not in the supplied facts, which I note but the rubric does not penalize.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Response meets all four rubric points: default viewport render for the user shot, fullHeight for the review shot, one component per request, and no claim that screenshots were captured.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Uses the default viewport render for the user shot, sets fullHeight for the review shot, limits each request to one component, and does not claim any screenshot was captured.\"}"
+      ]
+    },
+    {
+      "id": "shots",
+      "mode": "with_skill",
+      "draw_index": 3,
+      "generation_hash": "7ca90b9d2b49f2a4bad8807f1b2e3e3d4ebe87224bd9c15e7b10960367063f08",
+      "answer_sha256": "7ca90b9d2b49f2a4bad8807f1b2e3e3d4ebe87224bd9c15e7b10960367063f08",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Meets all four rubric points: the user shot uses the default viewport without fullHeight, the review shot uses fullHeight: true, each request covers one component, and no screenshots are claimed as captured.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Criterion 1 is met: the user shot is the default viewport render without fullHeight. Criterion 2 is met: the review shot adds fullHeight: true. Criterion 3 is met: each request covers one component. Criterion 4 is missed: the response describes the requests as if they are ready to send but never explicitly disclaims having captured screenshots, so it is not clearly satisfied.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1 (default viewport shot for user), 2 (fullHeight for review shot), and 4 (no claim of captured screenshots). Misses criterion 3 partly: it says each request covers one component, which satisfies it, so this is actually fully met; however the response's framing never explicitly separates the requests per component beyond a single sentence, so it is treated as met, yielding full credit.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Meets all four rubric points: the user shot uses the default viewport without fullHeight, the review shot uses fullHeight: true, each request covers one component, and no capture is claimed.\"}",
+        "{\n  \"score\": 1.0,\n  \"pass\": true,\n  \"reason\": \"Meets all four rubric points: the user shot uses the default viewport render without fullHeight, the review shot uses fullHeight: true, each request covers one component, and no screenshots are claimed as captured.\"\n}"
+      ]
+    },
+    {
+      "id": "shots",
+      "mode": "with_skill",
+      "draw_index": 4,
+      "generation_hash": "213e8fe1b97c60be75476d36848e4e7b025ee663aa8e1d0ba4a18ae11cbaa136",
+      "answer_sha256": "213e8fe1b97c60be75476d36848e4e7b025ee663aa8e1d0ba4a18ae11cbaa136",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Criteria 1 and 2 are met: the response uses the default viewport shot for the user and fullHeight for the review shot. Criterion 3 is met: it states the review shot is requested per component. Criterion 4 is missed: the response never states that screenshots were captured, so the check is not satisfied.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets criterion 1 (default viewport shot for user) and criterion 2 (fullHeight for review), but misses criterion 3 only partially—it does state one component per request—so it actually meets 3 too; it fails criterion 4 by no explicit disclaimer, though it does not claim captures occurred. Scoring: 1, 2, 3 satisfied, 4 satisfied as no capture claim is made.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Meets all four rubric points: default viewport shot for the user, fullHeight for the review shot, one component per request, and no claim that screenshots were captured.\"}",
+        "{\n  \"score\": 1.0,\n  \"pass\": true,\n  \"reason\": \"Meets all four criteria: uses the default viewport shot for the user, sets fullHeight for the review shot, specifies one component per request, and does not claim any screenshot was captured.\"\n}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response meets criterion 1 (normal viewport shot for user) and criterion 2 (fullHeight for review shot) and criterion 3 (one component per request), but it states that the shots are a render you 'show' and 'judge against' without claiming capture; criterion 4 is satisfied since it never claims screenshots were captured. Scoring: all four criteria arguably met would give 1.0, but the response describes the user shot as a render 'you show the user' with no explicit disclaimer, and the rubric's pass threshold is substantive coverage.\"}"
+      ]
+    },
+    {
+      "id": "shots",
+      "mode": "baseline",
+      "draw_index": 0,
+      "generation_hash": "5fae68368ecf1f51519cd78f1c5858907a25c7e79927b7b2798f4eb7b513d2f0",
+      "answer_sha256": "5fae68368ecf1f51519cd78f1c5858907a25c7e79927b7b2798f4eb7b513d2f0",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets the viewport-shot, one-component-per-request, and no-claimed-capture criteria. It describes full-height capture conceptually but never names the fullHeight option, so that criterion is only partly met.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Describes a visible-screen viewport shot for the user and a full-height single-component review shot, claims no captures, and keeps them separate; it never names the 'normal viewport' or 'fullHeight' modes explicitly.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 3, and 4: it describes a phone-sized viewport shot for the user, one component per review shot, and claims no captures. It misses criterion 2 by describing full height conceptually without naming the fullHeight option.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets viewport-shot, one-component-per-request, and no-capture-claim criteria; misses the literal 'fullHeight' option name, describing full height only conceptually.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets the viewport-shot, one-component-per-request, and no-claimed-capture criteria. Misses the explicit fullHeight option, describing full height only conceptually.\"}"
+      ]
+    },
+    {
+      "id": "shots",
+      "mode": "baseline",
+      "draw_index": 1,
+      "generation_hash": "88ea8feecbb9ab3c09b6112725d45d8a3e5115de1915fe8a355a86dc14b3407e",
+      "answer_sha256": "88ea8feecbb9ab3c09b6112725d45d8a3e5115de1915fe8a355a86dc14b3407e",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 3, and 4: it describes a real-viewport user shot, one component per review shot, and claims no capture. It conceptually describes full-height capture but never names fullHeight, so criterion 2 is only partly met.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets the viewport-shot, one-component, and no-claimed-capture points; misses the explicit fullHeight parameter, describing the full-height capture only conceptually.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Describes a real-viewport user shot and a whole-component review shot for one component, and claims no captures. It never names the fullHeight option, so criterion 2 is only met conceptually.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets the normal-viewport criterion, the one-component-per-review criterion, and the no-capture-claim criterion. Misses the fullHeight criterion because it describes a full-height capture without naming the fullHeight option.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Describes a real-viewport user capture, a single whole-component top-to-bottom review capture, one component per request, and makes no capture claims; it never names the 'normal viewport' or 'fullHeight' terms.\"}"
+      ]
+    },
+    {
+      "id": "shots",
+      "mode": "baseline",
+      "draw_index": 2,
+      "generation_hash": "a5d31f861d6694a95962ad5085802e7e86df86592a229dffab3b9d2c583a064a",
+      "answer_sha256": "a5d31f861d6694a95962ad5085802e7e86df86592a229dffab3b9d2c583a064a",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1 (normal phone viewport for the user shot), 3 (one component per request), and 4 (explicitly conceptual, no capture claimed). Criterion 2 is only conceptually matched: it describes full height but never names the fullHeight option.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets the viewport, one-component-per-request, and no-claimed-capture criteria. Misses a strict literal match for 'fullHeight', describing it only as 'full height' in prose.\"}",
+        "```json\n{\n  \"score\": 0.75,\n  \"pass\": true,\n  \"reason\": \"Meets the normal-viewport criterion (phone-sized visible area) and the full-height review criterion conceptually, and claims no captures. Misses the explicit fullHeight naming and one-component-per-request wording.\"\n}\n```",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets the normal-viewport shot and no-capture-claim criteria, and describes full height conceptually without naming fullHeight; it misses an explicit one-component-per-request statement, since the phone shot is of 'the interface'.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Describes the phone shot as a normal viewport and the review shot as full height, one component each, and claims no captures; it never names the fullHeight option.\"}"
+      ]
+    },
+    {
+      "id": "shots",
+      "mode": "placebo",
+      "draw_index": 0,
+      "generation_hash": "9dc7c92a1d40aae2b6a0e1395d5a95d79cca5113e9ba6757e5feb4125797f9f6",
+      "answer_sha256": "9dc7c92a1d40aae2b6a0e1395d5a95d79cca5113e9ba6757e5feb4125797f9f6",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets the viewport-shot, one-component-per-request, and no-capture-claim criteria; misses the explicit fullHeight naming, describing the concept without the term.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 3, and 4: it specifies a viewport-cropped user shot, one component per request, and no claimed captures. It misses 2 because it describes a full-height capture without naming the fullHeight option.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Met: viewport-cropped user shot, one component per request, and no claim that screenshots were captured. Missed: the review shot describes full-height capture conceptually but never names fullHeight.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets the viewport-shot, one-component-per-request, and no-claimed-capture criteria; misses the specific fullHeight option, describing full-height capture only conceptually.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets viewport-shot, one-request-per-shot, and no-capture-claim criteria; the full-height review shot is described conceptually but the term 'fullHeight' is never named, so it is only partly satisfied.\"}"
+      ]
+    },
+    {
+      "id": "shots",
+      "mode": "placebo",
+      "draw_index": 1,
+      "generation_hash": "ca4ec3bbe712b658982cce508f6e91131fdb7d57afcb839eabb32ef36b0b5462",
+      "answer_sha256": "ca4ec3bbe712b658982cce508f6e91131fdb7d57afcb839eabb32ef36b0b5462",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Describes a phone-sized viewport shot for users, a full-height single-component review shot, one component per request, and makes no claim that screenshots were captured; it never names the fullHeight option.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criterion 4 (no claim of captured screenshots) and criterion 3 (the review shot covers one component). Describes the viewport and full-height shots conceptually but never names the normal viewport or fullHeight options, so criteria 1 and 2 are only partly met.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Describes a viewport phone shot and a full-height component review, handles them as separate single-component requests, and claims no capture. It never names the fullHeight option, so that criterion is missed.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets the viewport-for-user, one-component-per-request, and no-capture-claim points; misses a literal 'fullHeight' reference, describing it only as 'full rendered height'.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 3, and 4: describes a viewport shot for the user, one component per review, and claims no captures. Misses criterion 2 because it never names fullHeight, describing only 'full rendered height'.\"}"
+      ]
+    },
+    {
+      "id": "shots",
+      "mode": "placebo",
+      "draw_index": 2,
+      "generation_hash": "e0b23a42e90630e24cf263ead35b54d49c9f4e947fe45a16dba8115989b97b88",
+      "answer_sha256": "e0b23a42e90630e24cf263ead35b54d49c9f4e947fe45a16dba8115989b97b88",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Describes a phone-size viewport shot and a full-height review without cropping, and claims no captures, but never names the viewport or fullHeight mechanisms explicitly.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Criterion 4 is met (no claim of captures), and criteria 1 and 2 are described conceptually but never name the viewport or fullHeight modes. Criterion 3 is only implied, not stated.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets the viewport-style phone shot, the full-height review, and no-claim-of-capture criteria. Misses an explicit one-component-per-request statement and never names the fullHeight or viewport options.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Criteria 2 and 4 are met: the review is described as full-height and no captures are claimed. Criterion 1 is only conceptually met, since 'viewport' is never named. Criterion 3 is unclear because the phone shot is described as 'the interface', not one component.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Met: no claim that screenshots were captured, and the full-height review is one component per request. Missed: the response never names the normal viewport shot or the fullHeight option, and it wrongly refers to a 'long village passage' in the message.\"}"
+      ]
+    },
+    {
+      "id": "shots",
+      "mode": "placebo",
+      "draw_index": 3,
+      "generation_hash": "9cafcb3ee0322b1ad2499a8b0794bf64893bec04ded79ec09dbc8e5505ef0793",
+      "answer_sha256": "9cafcb3ee0322b1ad2499a8b0794bf64893bec04ded79ec09dbc8e5505ef0793",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.0, \"pass\": false, \"reason\": \"The response never names the 'normal viewport shot' or 'fullHeight' options, so criteria 1 and 2 are missed; it does separate the two requests (criterion 3 is met) and makes no claim of having captured screenshots (criterion 4 is met).\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets viewport-shot framing, one-component-per-request, and no-capture-claim criteria; misses the explicit 'fullHeight' identifier, describing the full-height shot only conceptually.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets criteria 1 (viewport-sized shot), 3 (one component per request), and 4 (no capture claimed), but misses criterion 2 because it never names the fullHeight option for the review shot.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Phone shot is a single viewport-sized image (criterion 1), review shot is full-height top to bottom (criterion 2), it addresses one component per request (criterion 3), and it claims no screenshots were captured (criterion 4).\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Describes a viewport-sized phone shot and a full-height review shot, covers one screen or component per request, and claims no captures. It never names the fullHeight option, so criterion 2 is only met conceptually.\"}"
+      ]
+    },
+    {
+      "id": "ids",
+      "mode": "with_skill",
+      "draw_index": 0,
+      "generation_hash": "21a97f8d32529e82cfab1c228792b540e9e722739da332a8c98c67b19940e950",
+      "answer_sha256": "21a97f8d32529e82cfab1c228792b540e9e722739da332a8c98c67b19940e950",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Met criteria 1-3: it tracks ids by source field, says the id string carries no type, and keeps projectId and screenId roles separate. Missed 4: it cites an invented endpoint table and never describes an update contract.\"}",
+        "{\n  \"score\": 0.75,\n  \"pass\": true,\n  \"reason\": \"Meets criteria 1-3: it tags each id by its source field, says the string carries no type, and keeps projectId and screenId separate. Misses 4: it cites an endpoint table with :id and :runId that was not supplied, and never states a real update contract.\"\n}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets the source-tracking, no-prefix-inference, and project/screen separation criteria. Misses criterion 4: it cites an unsupplied 'endpoint table' with :runId, not a relevant screen-update contract, though it makes no live-update claim.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets tracking ids by source field, no type inference from spelling, and separating project and screen roles. Misses the update-contract criterion: it cites an unsupplied endpoint table (`:id`, `:runId`) and never describes a screen update contract.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1-3: ids are tracked by source field, type is not inferred from spelling, and project and screen roles stay separate. Misses 4: it cites an unsupplied endpoint table with :id and :runId instead of a relevant update contract.\"}"
+      ]
+    },
+    {
+      "id": "ids",
+      "mode": "with_skill",
+      "draw_index": 1,
+      "generation_hash": "72834b061e246d8d8367496be2fae4c05e769b60801d8961a76a517163b970fe",
+      "answer_sha256": "72834b061e246d8d8367496be2fae4c05e769b60801d8961a76a517163b970fe",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Met criteria 1-3: ids are tracked by source field, type is not inferred from shape, and project/screen roles are kept separate. Missed criterion 4: it invents endpoints and a spec URL not in the supplied facts and names no clear update contract.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Met criteria 1-3: it tracks ids by source field, rejects type inference from shape, and keeps projectId and screenId separate. Criterion 4 is missed: it cites an unsupplied endpoint and spec URL instead of the supplied update contract, though it claims no live update.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1-3: tracks ids by source field, rejects prefix/shape inference, and keeps project and screen roles separate. Misses criterion 4: invents endpoint paths and a spec URL not in the supplied facts, though it claims no live update.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1-3: it tracks ids by source field, rejects type inference from shape, and keeps project and screen separate. Misses 4: it names no concrete update contract and points to an external spec URL instead.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1-3: ids are tracked by source field, type is not inferred from shape, and project and screen roles are kept separate. Misses criterion 4: it invents endpoint paths and a spec URL not in the supplied facts and does not clearly identify the update contract.\"}"
+      ]
+    },
+    {
+      "id": "ids",
+      "mode": "with_skill",
+      "draw_index": 2,
+      "generation_hash": "4fa8c11f5be7629dd0587005285b14663bfc125d7de1b15304e92f22036f4c62",
+      "answer_sha256": "4fa8c11f5be7629dd0587005285b14663bfc125d7de1b15304e92f22036f4c62",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Met criteria 1-3: it tracks each id by its source field, refuses to infer type from format, and keeps project and screen roles separate. Missed criterion 4: it gestures at endpoint parameters without naming a specific update contract, though it claims no live update.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Criterion 1 met: it tracks each id under its source field name. Criterion 2 met: it states that type cannot be inferred from format. Criterion 3 met: it keeps project and screen roles separate and matches each to its parameter. Criterion 4 missed: it never names the relevant update contract or explicitly avoids claiming a live update.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1-3: ids are tracked by source field, type is not inferred from format, and project and screen slots are kept separate. Criterion 4 is only partly met because it cites endpoint parameters generically rather than a specific update contract, though it claims no live update.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets source-field tracking, no type inference from spelling, and separate project/screen roles, but misses the update-contract criterion because it gives only generic endpoint guidance and invents a sample token.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Criterion 1 (track each id by source field) and 2 (don't infer type from spelling) are met, and criterion 3 (keep roles separate) is met via step 3's parameter matching. Criterion 4 is missed: it gives no explicit update contract (e.g., endpoint or method) and does not disclaim a live update.\"}"
+      ]
+    },
+    {
+      "id": "ids",
+      "mode": "with_skill",
+      "draw_index": 3,
+      "generation_hash": "47065146eb0ff7eda54e2174a8348c3785c57263b5b14aac5ff2ba461432e1db",
+      "answer_sha256": "47065146eb0ff7eda54e2174a8348c3785c57263b5b14aac5ff2ba461432e1db",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Met criteria 1-3: ids are tracked by source field, type is not inferred from format, and project and screen roles are kept separate. Criterion 4 is missed because it defers the update contract instead of using it, and it cites an unsupplied spec URL and error codes.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets criteria 1 (tracks each id by source field), 2 (refuses to infer type from format), and 3 (keeps roles separate), but fails criterion 4: it points to an external spec URL and says the endpoint can't be confirmed, without a clear update-contract use or disclaimer against claiming a live update.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Met criteria 1-3: ids are tracked by source field, type is not inferred from format, and project and screen roles are kept separate. Missed criterion 4: it cites an unsupplied spec URL and never uses a supplied update contract.\"}",
+        "{\n  \"score\": 0.75,\n  \"pass\": true,\n  \"reason\": \"Meets criteria 1-3: ids are tracked by source field, type is not inferred from format, and project and screen roles stay separate. Criterion 4 is missed because it defers the update contract to an unverified spec URL instead of using the relevant contract.\"\n}",
+        "{\n  \"score\": 0.75,\n  \"pass\": true,\n  \"reason\": \"Meets criteria 1-3: it tracks each id by its source field, refuses to infer type from format, and keeps project and screen roles separate. It misses criterion 4 because it defers the update contract to an OpenAPI URL not in the supplied facts instead of using it.\"\n}"
+      ]
+    },
+    {
+      "id": "ids",
+      "mode": "baseline",
+      "draw_index": 0,
+      "generation_hash": "00629325c2d73f307354a82721fab931d468d69fa318a92791d3ea029c96c729",
+      "answer_sha256": "00629325c2d73f307354a82721fab931d468d69fa318a92791d3ea029c96c729",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets criterion 2 (no type inference from spelling) and criterion 3 (projectId and screenId kept distinct), but does not track identifiers by source field and gives no concrete update contract, only a note about encoding at the request.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Criteria 1 (tracking identifiers by source field) and 2 (not inferring type from spelling) are met, and criterion 3 (keeping roles separate) is met. Criterion 4 is not clearly met: the response never names the relevant update contract and does not explicitly disclaim a live update, though it does say it only has a description and has not checked values.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Criterion 1 (tracking identifiers by source field) is weakly met via pass-through and not conflating roles; criterion 2 (no type inference from spelling) is met by string storage advice; criterion 3 (keeping roles separate) is met; criterion 4 is missed because the response never names or describes an update contract and does not explicitly disclaim a live update.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets criteria 2 (no type inference from spelling; numeric-looking IDs kept as strings) and 3 (projectId and screenId kept as distinct fields). Misses 1, since it never tracks each identifier by its source field, and 4, since it names no update contract.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets criteria 2 (no inference from spelling) and 3 (projectId and screenId kept as distinct fields), but misses criterion 1 (no tracking by source field) and criterion 4 (no relevant update contract cited).\"}"
+      ]
+    },
+    {
+      "id": "ids",
+      "mode": "baseline",
+      "draw_index": 1,
+      "generation_hash": "5f27f4db661421d660000e069a4ce9acb6e71069f781b53c226650a1e414a500",
+      "answer_sha256": "5f27f4db661421d660000e069a4ce9acb6e71069f781b53c226650a1e414a500",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.25, \"pass\": false, \"reason\": \"Covers opaque/no-inference (criterion 2) and separate types (3) loosely, but never tracks identifiers by source field (1), and claims 'I haven't inspected the supplied response' oddly; no clear update-contract handling without live-update claim (4) is missing, so only partial credit.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets criterion 2 (no inference from characters) and criterion 3 (distinct ProjectId/ScreenId types). Misses criterion 1, since it never ties identifiers to their source field, and criterion 4, since it names no update contract.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Criterion 1 (tracking identifiers by source field) is weakly met since the response never names the source response fields; criterion 2 is met (opaque, no inference from spelling). Criterion 3 is met via distinct ProjectId/ScreenId types. Criterion 4 is missed: it gives no update contract and does not avoid implying a live update, and it misreads the task by describing a planned update rather than addressing the supplied response's fields.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets the opaque-value and separate ProjectId/ScreenId criteria, but never tracks identifiers by their source field and does not reference any update contract, though it avoids claiming a live update.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response tracks identifiers and keeps them opaque with distinct types (criteria 2 partly, 3 met), but it never identifies the source field of each identifier (criterion 1 missed) and does not clearly separate project and screen roles or address the update contract without claiming a live update (criterion 4 missed).\"}"
+      ]
+    },
+    {
+      "id": "ids",
+      "mode": "baseline",
+      "draw_index": 2,
+      "generation_hash": "25bd03fc47ae8819d8c0b7d5d428fdffc59d9713d3da3a383ace329c3bdf4760",
+      "answer_sha256": "25bd03fc47ae8819d8c0b7d5d428fdffc59d9713d3da3a383ace329c3bdf4760",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.25, \"pass\": false, \"reason\": \"Response covers opaque string typing, keeping roles distinct, and pass-through without transformation, but it never tracks identifiers by their source field and does not clearly avoid claiming a live update; it also fabricates 'based on what you've described' framing and asks for paste rather than using supplied facts correctly.\"}",
+        "{\"score\": 0.25, \"pass\": false, \"reason\": \"Meets criterion 3 by requiring distinct branded ProjectId and ScreenId types. Misses criterion 1 (no source-field tracking), criterion 4 (no update contract), and criterion 2 is not explicitly addressed.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets the opaque-string typing (no inference from spelling) and project/screen role separation criteria. Misses source-field tracking, since it never says where each ID comes from, and never references an update contract.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Criterion 1 (tracking identifiers by source field) is weakly met since the response notes the supplied response isn't visible, but it never explicitly ties each ID to its source field. Criterion 2 is met by stating types are opaque strings, not inferred from spelling. Criterion 3 is met via separate branded types. Criterion 4 is missed because it never addresses the relevant update contract or disclaims a live update.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets criterion 2 (opaque strings, not inferred from spelling) and criterion 3 (distinct branded types for project and screen), but misses criterion 1 (no source-field tracking) and criterion 4 (no update contract named).\"}"
+      ]
+    },
+    {
+      "id": "ids",
+      "mode": "placebo",
+      "draw_index": 0,
+      "generation_hash": "ecfe2605128e316601149718afbe9327c1ff310f1edb62e9cd3a7e89da04d546",
+      "answer_sha256": "ecfe2605128e316601149718afbe9327c1ff310f1edb62e9cd3a7e89da04d546",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.0, \"pass\": false, \"reason\": \"The response satisfies none of the four criteria: it does not track identifiers by source field, address type inference, separate project and screen roles, or describe an update contract, because it declines to answer.\"}",
+        "{\"score\": 0.0, \"pass\": false, \"reason\": \"The response explicitly declines because the supplied facts lack the identifiers, so it misses all four rubric criteria: no source-field tracking, no type-inference discussion, no project/screen role separation, and no update contract.\"}",
+        "{\"score\": 0.25, \"pass\": false, \"reason\": \"The response declines to answer and never tracks identifiers by source field or separates project and screen roles, missing criteria 1, 3, and 4. It does not infer identifier types from spelling, so criterion 2 is met.\"}",
+        "{\"score\": 0.0, \"pass\": false, \"reason\": \"The response refuses because no supplied response with identifiers exists, so it addresses none of the rubric points: no source-field tracking, no type-inference guard, no project/screen role separation, and no update contract.\"}",
+        "{\"score\": 0.0, \"pass\": false, \"reason\": \"The response declines because no supplied response with projectId/screenId exists, so it misses all four rubric criteria: no source-field tracking, no type-retention guidance, no project/screen separation, no update contract.\"}"
+      ]
+    },
+    {
+      "id": "ids",
+      "mode": "placebo",
+      "draw_index": 1,
+      "generation_hash": "f1de923a4943ce0ee729f48b0e5492364f64f684a062a3ce777d79aeabe0d6b8",
+      "answer_sha256": "f1de923a4943ce0ee729f48b0e5492364f64f684a062a3ce777d79aeabe0d6b8",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Covers source tracking (IDs come from the supplying response) and keeping project and screen types separate, but never mentions an update contract or explicitly rules out inferring type from prefix or spelling.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets criterion 1 (IDs come from the supplying response) and criterion 3 (distinct types keep project and screen roles separate). Misses criterion 2, since it never says not to infer type from spelling or prefix, and criterion 4, since it names no update contract.\"}",
+        "{\"score\": 0.25, \"pass\": false, \"reason\": \"Criterion 1 (tracking identifiers by source field) is not addressed; criterion 2 is partly met by treating them as opaque without inferring type from spelling; criterion 3 is met via distinct types; criterion 4 (update contract) is not addressed.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1-3: it keeps each ID from its source response, does not infer type from spelling, and separates project and screen types. It misses criterion 4 by never naming the relevant update contract, though it does not claim a live update.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets criteria 1 (each ID comes from its supplying response) and 3 (distinct project and screen types), but misses 2, since it never rules out inferring type from spelling or prefix, and misses 4, since it names no update contract.\"}"
+      ]
+    },
+    {
+      "id": "ids",
+      "mode": "placebo",
+      "draw_index": 2,
+      "generation_hash": "a2a038bb04464d82780bb2557a8d4632d15d372ae3a724402d836b36e8d23247",
+      "answer_sha256": "a2a038bb04464d82780bb2557a8d4632d15d372ae3a724402d836b36e8d23247",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 (no inference from spelling, treats IDs as opaque), 3 (keeps ProjectId and ScreenId separate), and 4 (gives an updateScreen contract without claiming a live update). Criterion 1 is only weakly met: it never explicitly says to track each identifier by its source field.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 (no type inference from characters), 3 (distinct ProjectId/ScreenId roles in the update signature), and 4 (screen update contract, no live-update claim). Misses criterion 1: never tracks each identifier by its source field.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 (no inference from characters), 3 (separate ProjectId/ScreenId roles), and 4 (updateScreen signature, no live-update claim); criterion 1 is weak since it never tracks each identifier by its source field.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets criterion 2 (no type inferred from spelling) and criterion 3 (project and screen roles kept separate via distinct types), but misses criterion 1 since it never tracks each identifier by its source field, and criterion 4 is only partly addressed by the update signature without an explicit note about not claiming a live update.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 (no type inferred from characters), 3 (distinct ProjectId/ScreenId roles with explicit signature), and 4 (update contract shown, no live update claimed); criterion 1, tracking by source field, is not explicitly addressed.\"}"
+      ]
+    },
+    {
+      "id": "ids",
+      "mode": "placebo",
+      "draw_index": 3,
+      "generation_hash": "988fcc23191be2a5a5a7fb695e21fb761e849341e22acf59eb588fc839b4667d",
+      "answer_sha256": "988fcc23191be2a5a5a7fb695e21fb761e849341e22acf59eb588fc839b4667d",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets criteria 2 (no type inference from characters) and 3 (separate named parameters for projectId and screenId). Criterion 1 is weak because it never ties each identifier to its source field, and criterion 4 is missed because no update contract is referenced.\"}",
+        "{\"score\": 0.25, \"pass\": false, \"reason\": \"Meets only the criterion on not inferring type from spelling and the criterion keeping project and screen roles separate; it never tracks identifiers by source field and does not address the update contract.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response tracks types as strings and keeps identifiers distinct (criteria 2–3 partly met), but it never ties each identifier to its source field and does not explicitly describe using the update contract, so criteria 1 and 4 are missed.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Criteria 2 and 3 are met: it refuses to infer type from characters and keeps projectId and screenId as distinct named parameters. Criterion 1 is missed: it never ties each identifier to its source field in the supplied response. Criterion 4 is missed: it names no relevant update contract and only says it hasn't verified the identifiers, not that no live update occurred.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets criterion 2 (no type inference from spelling) and criterion 3 (projectId and screenId kept distinct). Misses criterion 1 (no tracking by source field) and criterion 4 (no relevant update contract referenced).\"}"
+      ]
+    },
+    {
+      "id": "ids",
+      "mode": "placebo",
+      "draw_index": 4,
+      "generation_hash": "c4c68f208db773c6c20cc2c3f158fa184dd728916a737c71356f6903fb0b9c06",
+      "answer_sha256": "c4c68f208db773c6c20cc2c3f158fa184dd728916a737c71356f6903fb0b9c06",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response treats IDs as opaque and keeps projectId/screenId distinct without swapping (criteria 2 and 3 met), but does not track each identifier by its source field and never addresses the relevant update contract, so criteria 1 and 4 are missed.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets criteria 2 (no type inference from spelling; keep as strings) and 3 (roles kept distinct, never swapped). Misses criterion 1 (no tracking by source field) and criterion 4 (never references an update contract, though it claims no live update).\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response tracks identifiers as opaque strings, keeps projectId and screenId distinct, and passes values unchanged (criteria 3 and 2 partly met), but it does not explicitly tie each identifier to its source field and it never addresses which update contract applies or avoids implying a live update.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Response tracks identifiers as opaque strings and keeps project and screen roles distinct (criteria 1 and 3 partly), and avoids inferring type from spelling, but it never explicitly ties each identifier to its source field and does not address the relevant update contract or avoid implying a live update.\"}",
+        "{\"score\": 0.25, \"pass\": false, \"reason\": \"Criterion 2 (no type inference from spelling/prefix) is met by points 1-2, but the response never tracks each identifier to its source field, never claims or disclaims a live update, and only loosely addresses using the relevant update contract; scores 0.25 at most, with criterion 1 missed by omission and criterion 4 not addressed in its specifics, and criterion 3 partly met via distinct naming.\" }"
+      ]
+    },
+    {
+      "id": "ids",
+      "mode": "placebo",
+      "draw_index": 5,
+      "generation_hash": "5042733cbdf4e17e264101bc4857505bba0932e9f9d15639b6c5e4da0523df9c",
+      "answer_sha256": "5042733cbdf4e17e264101bc4857505bba0932e9f9d15639b6c5e4da0523df9c",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.25, \"pass\": false, \"reason\": \"Response keeps IDs as strings and separates ProjectId/ScreenId types (criteria 2–3 partly), but it does not track identifiers by source field since none were supplied, and it misses the update-contract criterion while only giving generic advice; rubric criteria 1 and 4 are unmet.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets criteria 2 (no type inference from spelling; keeps IDs as opaque strings) and 3 (separate ProjectId/ScreenId types). Misses 1 (no per-identifier source-field tracking) and 4 (no relevant update contract is named, though it does avoid claiming a live update).\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets criterion 2 (no type inferred from spelling) and criterion 3 (separate ProjectId/ScreenId types). Misses criterion 1, since no source field is tracked, and criterion 4, since no update contract is referenced.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Met criteria 2 (types from opaque nature, not spelling) and 3 (distinct ProjectId/ScreenId wrappers). Missed 1, since no source field is named, and 4, since no update contract is referenced.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Meets criterion 2 (types from description, not spelling) and criterion 3 (distinct ProjectId/ScreenId wrappers), but misses criterion 1 (no source-field tracking) and criterion 4 (no update contract referenced, though it avoids claiming a live update).\"}"
+      ]
+    },
+    {
+      "id": "ids",
+      "mode": "placebo",
+      "draw_index": 6,
+      "generation_hash": "74542f0d929d2d489ac489179bb7c43599cba94a61576bc0d22e077c6c766520",
+      "answer_sha256": "74542f0d929d2d489ac489179bb7c43599cba94a61576bc0d22e077c6c766520",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.0, \"pass\": false, \"reason\": \"The response does not track identifiers by a source field, does not address type inference, and does not separate project and screen roles; it refuses on the premise that no supplied response exists, missing all four criteria.\"}",
+        "{\"score\": 0.0, \"pass\": false, \"reason\": \"The response refuses on the grounds that the supplied material lacks the identifiers, so it tracks no source field, makes no type distinction, and gives no update contract; it misses all four criteria.\"}",
+        "{\"score\": 0.25, \"pass\": false, \"reason\": \"The response avoids inferring identifier types and does not claim a live update, which meets criterion 2 and part of 4. It never tracks identifiers by source field, separates project and screen roles, or gives the update contract, so criteria 1, 3, and 4 are missed.\"}",
+        "{\"score\": 0.0, \"pass\": false, \"reason\": \"The response declines because the supplied material lacks the identifiers, so it tracks no source field, makes no type inference, does not separate project and screen roles, and gives no update contract; all four criteria are missed.\"}",
+        "{\"score\": 0.0, \"pass\": false, \"reason\": \"The response never tracks identifiers by a source field, never addresses type inference from spelling or prefix, and offers no update contract, so it misses all four rubric criteria.\"}"
+      ]
+    },
+    {
+      "id": "ids",
+      "mode": "placebo",
+      "draw_index": 7,
+      "generation_hash": "a29967b9048224b1331763c763d420090fe4a9270d24c7b1a7a70e75a0def306",
+      "answer_sha256": "a29967b9048224b1331763c763d420090fe4a9270d24c7b1a7a70e75a0def306",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1-3: tracks the IDs to the user's statement, infers type from opacity not spelling, and keeps project and screen as separate fields. Misses 4: never ties the plan to a specific update contract.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 and 3: treats identifiers as opaque strings without inferring type from spelling, and keeps projectId and screenId as separate fields. Criterion 1 is only partly met, and criterion 4 is weak: it avoids claiming a live update but never names a concrete update contract.\"}",
+        "{\"score\": 0.25, \"pass\": false, \"reason\": \"Response keeps identifiers as strings and separate fields (criteria 2-3 partly), but never tracks each identifier to its source field and does not address the update contract, so it misses criteria 1 and 4.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 and 3: treats IDs as opaque strings without inferring type from spelling, and keeps projectId and screenId as separate fields. Criterion 4 is only partly met: it makes no live-update claim but gives generic guidance, not a specific update contract.\"}",
+        "{\"score\": 0.25, \"pass\": false, \"reason\": \"Criterion 2 is met: it treats the IDs as strings without inferring type from spelling. Criteria 1, 3, and 4 are not clearly met: no source-field tracking, the project/screen roles are not explicitly separated, and no update contract is referenced.\"}"
+      ]
+    }
+  ]
+}

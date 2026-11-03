@@ -31,6 +31,7 @@ What each other tool measures, and whether it compares a task with the skill and
 
 Every published report, newest first.
 
+- [Report 018](https://driftproofhq.com/reports/018/): a same-length placebo text
 - [Report 017](https://driftproofhq.com/reports/017/): a same-length placebo text
 - [Report 016](https://driftproofhq.com/reports/016/): Popular rules files vs. a placebo: most made Claude write more
 - [Report 015](https://driftproofhq.com/reports/015/): Skills.sh snapshot [2026-10-17](https://driftproofhq.com/reports/015/): text tasks

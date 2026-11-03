@@ -8,6 +8,30 @@ makes this one a record.
 
 ---
 
+## v0.26.2 - 2026-11-03
+
+### What's new
+
+- **[Report 018: Skill or sugar pill, on Haiku?](https://driftproofhq.com/reports/018/)** Twenty skills, each tested on Claude Haiku 5.5 against no skill and against a same-length fake text. 12 of 16 skills beat the fake on Haiku 5.5. Haiku 5.5 also graded the answers, so self-grading may favor its own model's answers. Beating the fake is not the same as beating no skill: each skill's row shows both readings.
+- **Windows:** the Claude Code plugin now hands a run your skill's path as you typed it, while still checking that it sits inside your repository.
+- **Reports list and home page:** each report card says what moved once. The bundled sample results page is the page the current CLI writes.
+
+- PR 670: Report 018: Skill or sugar pill, on Haiku? (page from sealed campaign-3 receipts)
+- PR 665: fix(664): runner and eval setup copy only the Claude login entry, never MCP tokens
+- PR 668: fix(667): README section within cap, CLI-written sample page, report cards state what moved once
+- PR 666: fix(663): plugin door hands the runner the spelling given and compares long names
+
+- PR 674: fix(673): 0.26.2 sweep reds: 036 oracle reads the floor to six places; 435 census after Report 018
+
+
+### Engineering log
+
+**Merged from dev by a refresh, after the draft.** `release-prepare --stage refresh` lists every merge on dev between `aaebbd3ea120` and `8855f601f32b`, the commit the refresh merged, so this release ships each of them, and `release-record.json`'s `source_commit` moves to `8855f601f32b`, where the next release's list starts.
+
+- PR 674, merge `8855f601`: fix(673): 0.26.2 sweep reds: 036 oracle reads the floor to six places; 435 census after Report 018
+
+---
+
 ## v0.26.1 - 2026-11-02
 
 ### What's new

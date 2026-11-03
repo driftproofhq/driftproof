@@ -412,6 +412,8 @@ function driftproofAnswers(row, body, { esc, root = ROOT } = {}) {
   // (data-fn="placebo-tally", Report 017): a sentence read from one receipt against no skill would answer
   // another question, and would name a router's verdict without its qualification, so it keeps spec 125's
   // summary (spec 134 A-134-22). The type is the row's; a page of any other type is read as before.
+  // Report 018 (issue 669) is set aside by the same rule: its sentences would read the skill against no
+  // skill too, which is not the report's question.
   if (row && row.type && row.type.value === PLACEBO_TYPE && /data-fn="placebo-tally"/.test(String(body))) return null;
   const bodyNums = new Set(numeralsIn(textOf(body)));
   const rels = (row.receipt_paths || []).map((p) => (typeof p === 'string' ? p : p.value));

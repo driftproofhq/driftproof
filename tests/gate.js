@@ -391,6 +391,7 @@ gate.section('fixed scratch names in PR-run tests (issue 629)');
     ...[['specs/408-skill-measurements/build-plan.cjs', "'@T/bbuild/408/list.md'"],
       ['specs/408-skill-measurements/run-campaign.cjs', "'@T/driftproof-issue408.lock'"],
       ['specs/613-placebo-skills-report/run-campaign.cjs', "'@T/driftproof-issue613.lock'"],
+      ['specs/655-report-018-plan/protocol.cjs', "'@T/driftproof-issue613.lock'"],
       ['specs/435-report-015-router-amendment/public.cjs', "'@T/bbuild/435/public'"],
       ['specs/435-report-015-router-amendment/public.cjs', "'@T/bbuild/435/public-candidate.json'"],
       ['specs/471-rules-files-report/pinned-runtime.cjs', "'@T/bbuild/490/pinned-execution-evidence.json'"],
