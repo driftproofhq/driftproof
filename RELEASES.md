@@ -8,6 +8,28 @@ makes this one a record.
 
 ---
 
+## v0.26.3 - 2026-11-03
+
+### What's new
+
+- **Clearer verdict sentences.** Where a skill's overall averages point the other way from its verdict, the plain sentence now names the test task that decided the verdict, then gives the averages as averages over all tasks, so they no longer read as the reason. No verdict or number changes. Reports 017 and 018 carry a dated note for the rows whose wording moved.
+
+- PR 679: The verdict sentence names the deciding task where the averages do not point its way (#671)
+- PR 681: Across-models page test: the AC-8 plant reads the report the page names (#680)
+- PR 678: Release 0.26.1 and 0.26.2: release-log entries and lessons (#677)
+- PR 676: fix(675): Windows core inventory read by rule; blind-read row no longer missed
+
+- PR 684: 0.26.3 sweep red: retire spec 190's AC-6 preservation hold under C-315 (#683)
+
+
+### Engineering log
+
+**Merged from dev by a refresh, after the draft.** `release-prepare --stage refresh` lists every merge on dev between `7280315decc1` and `9e63b5e548e7`, the commit the refresh merged, so this release ships each of them, and `release-record.json`'s `source_commit` moves to `9e63b5e548e7`, where the next release's list starts.
+
+- PR 684, merge `9e63b5e5`: 0.26.3 sweep red: retire spec 190's AC-6 preservation hold under C-315 (#683)
+
+---
+
 ## v0.26.2 - 2026-11-03
 
 ### What's new

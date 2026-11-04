@@ -38,6 +38,10 @@ const MOVED='a same-length placebo text';
 const CAVEAT='Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings.';
 // The limitation the plan pins, in lib/receipt.js's words for this protocol's target and judge.
 const LIMITATION=repositoryJudgeRelationship(P.MODEL,P.JUDGE).limitation;
+// The page's dated record (spec 669 A-669-4; CONSTITUTION item 6, spec 020 AC-21): a published body
+// moves only with its Amendments. Issue 671: lib/plain.js rewords the verdict line where the averages
+// do not point the verdict's way, and the rows print that line.
+const AMENDMENT_1='Reworded the line against no skill in the rows where the overall averages with and without the skill do not point the verdict\'s way: it names the task that decided it and gives the averages over all the tasks. The verdict is decided per task, so those averages can sit equal or point the other way. Counts, readings and receipts are unchanged.';
 // Plain words for each placebo reading (A-669-3), shown first in the chart, the plain counts line and
 // each row's summary line, the reader's token beside them. The reader's own line stays verbatim in the
 // row. "Beat the fake" is ABOVE_PLACEBO and nothing else (the note, "Terms").
@@ -221,7 +225,9 @@ function body(c,{panelDir,placeboPage}){
  const surfaces=[...new Set(receipts.map(r=>r.receipt.run.surface))].sort().join(', ');
  const record='<section id="campaign-run-record"><h2>Run record</h2>'+annotateCampaignFigures('<p>One campaign root, <code>'+esc(c.src)+'</code>, read from the latest manifest its log names. '+receipts.length+' of '+c.rows.length+' attempts have a sealed receipt; every other attempt is a recorded failure and reads NOT_MEASURED. The earliest receipt date is '+fig(first.slice(0,10),receipts.find(r=>r.receipt.run.date_utc===first).src)+' and the latest '+fig(lastDate.slice(0,10),receipts.find(r=>r.receipt.run.date_utc===lastDate).src)+'. No finish time is inferred.</p><p>The surface was '+esc(surfaces)+'. Recorded spend across the chain: USD '+c.ledger.spent+'. Recorded costs are API-equivalent estimates, not a subscription invoice.</p>',c.manifests.at(-1).file)+'<ol class="campaign-runs">'+c.manifests.map(m=>'<li><code>'+esc(m.file)+'</code>, SHA-256 <code>'+m.sha256+'</code></li>').join('')+'</ol><p>Plan SHA-256 <code>'+c.ctx.plan_hash+'</code>. Pre-registered note SHA-256 <code>'+c.ctx.plan.outcomes.sha256+'</code>.</p><p>Read and built by:</p><ul class="reader-pins">'+READER.map(f=>'<li><code>'+f+'</code>, SHA-256 <code>'+sha256(fs.readFileSync(path.join(ROOT,f)))+'</code></li>').join('')+'</ul></section>';
  const list='<h2>Receipts</h2><ul>'+receipts.map(r=>'<li><a href="https://github.com/driftproofhq/driftproof/blob/main/'+esc(r.src)+'">'+esc(r.skill)+' on '+esc(humanModelName(r.receipt.run.model_id))+'</a></li>').join('')+'</ul>';
- return head+limitation+headline+panelHTML+results+method+limits+record+list;
+ // The dated records, after the run record and before the receipts so a later entry appends.
+ const amendments='<h2 id="amendments">Amendments</h2><section id="amendment-1"><h3>Amendment 1, 3 Nov 2026</h3><p>'+esc(AMENDMENT_1)+'</p></section>';
+ return head+limitation+headline+panelHTML+results+method+limits+record+amendments+list;
 }
 
 function summaryRow(c){return {points:[['What we tested.',TESTED],['What we found.',c.pub.headline[0]],['The judge is the target\'s model.',c.limitation],['Beating the fake is not beating no skill.',CAVEAT],['What it does not show.',scopeOf(c)]].map(([lead,text])=>({lead,text,sources:[{file:'docs/'+REL,quote:text}]}))};}

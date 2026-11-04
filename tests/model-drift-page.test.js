@@ -443,7 +443,10 @@ const plants = [
   ['AC-7', 'one reading\'s place changed', (h) => h.replace(/(<span class="drift-reading"[^>]*><a [^>]*>[^<]*<\/a> \(<span data-place>)[^<]*/, '$1Report 999')],
   ['AC-7', 'one reading\'s date changed', (h) => h.replace(/<span data-date>(\d{4})/, (m, y) => `<span data-date>${Number(y) - 1}`)],
   ['AC-8', 'a row\'s task state flipped', (h) => h.replace(/data-tasks="(same|differ|unrecorded)"/, (m, v) => `data-tasks="${v === 'same' ? 'differ' : 'same'}"`)],
-  ['AC-8', 'a named receipt changed', (h) => h.replace('The receipt from <span data-place>Report 017</span> records a different run setup', 'The receipt from <span data-place>Report 015</span> records a different run setup')],
+  // Issue 680: the plant reads the report the page names in its run-setup sentence and swaps it for
+  // another, so a report joining or leaving that sentence cannot leave the plant changing nothing.
+  ['AC-8', 'a named receipt changed', (h) => h.replace(new RegExp(`The receipts? from (?:(?!The receipts? from)[\\s\\S])*? records? ${T.differs.setup}`), (sentence) =>
+    sentence.replace(/(<span data-place>Reports? )(\d{3})/, (m, lead, n) => `${lead}${n === '015' ? '014' : '015'}`))],
   ['AC-8', 'a named list joined without its semicolon', (h) => h.replace('; and <span data-place>Report 011</span> on', ' and <span data-place>Report 011</span> on')],
   ['AC-8', 'a grading difference said generically', (h) => h.replace('was scored by a different version of the scoring code', 'records a different judge or grading')],
   ['AC-9', 'a score inserted', (h) => h.replace(/(<p class="drift-model"[^>]*>[\s\S]*?)(\.<\/p>)/, '$1, 0.906 with the skill$2')],

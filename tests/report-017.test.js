@@ -506,15 +506,17 @@ test('A-627-7: the published page carries the hand-off note after the caveat and
   assert.ok(html.indexOf('<section id="campaign-run-record">') < html.indexOf(entry) && html.indexOf(entry) < html.indexOf('<h2>Receipts</h2>'), 'after the run record, before the receipts');
   // Issue 638 (A-627-8) appends the blind read's entry after it, so Amendment 1 stays the section's prefix.
   const blind = '<section id="amendment-2"><h3>Amendment 2, 2 Nov 2026</h3><p>Added a link, after the opening panel, to a blind read of handoff&#39;s kept answers. Counts, readings and receipts are unchanged.</p></section>';
-  assert.equal(splitReportBody(html).amendments, entry + blind);
+  // Issue 671 (A-627-9) appends the reworded verdict line's entry after both, so the recorded prefix stays.
+  const reworded = '<section id="amendment-3"><h3>Amendment 3, 3 Nov 2026</h3><p>Reworded the line against no skill in the rows where the overall averages with and without the skill do not point the verdict&#39;s way: it names the task that decided it and gives the averages over all the tasks. The verdict is decided per task, so those averages can sit equal or point the other way. Counts, readings and receipts are unchanged.</p></section>';
+  assert.equal(splitReportBody(html).amendments, entry + blind + reworded);
   // Without the note the page is the same, but for the note's elements, its record and the record's
   // entry in the contents rail; the summary row is the same.
   const rail = '<li><a href="#amendments">Amendments</a></li>\n';
   assert.ok(html.includes(rail));
   const without = B.buildReport({ ...B.parse([]), handoff: [] });
   assert.equal(notesOf(without.html).length, 0);
-  // Without the note, the section keeps the blind read's entry alone, under the published number.
-  assert.equal(splitReportBody(without.html).amendments, '<h2 id="amendments">Amendments</h2>' + blind);
+  // Without the note, the section keeps the other entries alone, under their published numbers.
+  assert.equal(splitReportBody(without.html).amendments, '<h2 id="amendments">Amendments</h2>' + blind + reworded);
   const noteEntry = entry.slice('<h2 id="amendments">Amendments</h2>'.length);
   assert.equal(html.replace(/<p class="handoff-note">[\s\S]*?<\/p>/g, '').replace(noteEntry, ''), without.html);
   assert.deepEqual(done.built.summary, without.summary);

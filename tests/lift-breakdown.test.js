@@ -28,7 +28,6 @@ test.after(() => { for (const restore of restoreCalls.reverse()) restore(); });
 const P = '../specs/190-issue-207-lift-breakdown/probes/';
 const { fixture, variants, corpus, wordingPlants } = require(P + 'plants.cjs');
 const O = require(P + 'oracle.cjs');
-const { capture } = require(P + 'baseline.cjs');
 const { validateReceipt, verifyReceiptHash, sealReceipt } = require('../lib/receipt');
 const { EFFECT_FLOOR, POWER_Z } = require('../config');
 const view = require('../lib/view');
@@ -36,7 +35,6 @@ const { buildDriftReport: defaultDriftReport } = require('../lib/diff');
 const buildDriftReport = (a, b, opts = {}) => defaultDriftReport(a, b, { ...opts, includeLiftBreakdown: true });
 const D = require(P + 'default-diff.cjs');
 const { receiptVerdict } = require('../lib/verdict');
-const BEFORE = require(P + 'before-build.json');
 const V = variants();
 const CORPUS = corpus();
 const LINE = 'Not enough draws to conclude at this effect floor';
@@ -231,12 +229,8 @@ test('controls AC-7: visible HTML and Markdown readers reject wrong or absent se
     assert.throws(() => O.markdownRows(mutant, V.normal, 'A'), { name: 'AssertionError' });
 });
 
-test('controls AC-6 and AC-8: baseline and wording readers see planted changes', () => {
-  assert.deepEqual(capture(), BEFORE);
-  const changed = structuredClone(BEFORE); changed.report.headlineDelta = 0.99;
-  assert.throws(() => assert.deepEqual(capture(), changed), { name: 'AssertionError' });
-  changed.view.fields[0][1] = 'altered result';
-  assert.throws(() => assert.deepEqual(capture().view, changed.view), { name: 'AssertionError' });
+// A-190-23 (issue 683, C-315): the before-build record and its two plants retired with issue 207's merge.
+test('controls AC-8: the wording reader sees planted changes', () => {
   O.words(caveatControl);
   for (const phrase of ['recorded draw scores', 'sample spread', 'equal weight', 'removing']) {
     assert.throws(() => O.words(caveatControl.replace(new RegExp(phrase, 'i'), '')), { name: 'AssertionError' });
@@ -333,7 +327,7 @@ test('AC-4: overlap, touching, wide spreads and single draws do not claim separa
   assert.equal(breakdown(touch).rows[0].state, 'underpowered');
   for (const r of [V.wide, V.singleDraw]) {
     check(breakdown(r), r); assert.equal(breakdown(r).rows[0].state, 'underpowered');
-    const section = O.visibleRows(render(r), r); assert.ok(O.textOf(section).includes(LINE));
+    const section = O.visibleRows(render(r), r); assert.ok(O.visibleTextOf(section).includes(LINE));
     const report = buildDriftReport(r, r);
     const sectionMd = O.markdownRows(report.markdown, r, 'A'); assert.ok(sectionMd.includes(LINE));
   }
@@ -354,7 +348,7 @@ test('AC-4: every valid refusal suppresses labels, carriers and downward-case as
     const a = breakdown(r); check(a, r);
     assert.ok(a.rows.every(c => c.state === 'unavailable' && c.carriesLift === null));
     assert.deepEqual(a.hurtCases, []);
-    const text = O.textOf(O.visibleRows(render(r), r));
+    const text = O.visibleTextOf(O.visibleRows(render(r), r));
     assert.doesNotMatch(text, /\bhelps\b|\bhurts\b|leaves no positive measured lift/i);
     const md = O.markdownRows(buildDriftReport(r, r).markdown, r, 'A');
     assert.doesNotMatch(md, /\bhelps\b|\bhurts\b|leaves no positive measured lift/i);
@@ -366,7 +360,7 @@ test('AC-4: lost draws cannot create a helps claim or a carrier by being dropped
   assert.equal(a.rows.find(c => c.id === 'loss').state, 'inconclusive');
   assert.ok(a.rows.every(c => c.carriesLift === null));
   assert.deepEqual(a.hurtCases, []);
-  for (const text of [O.textOf(O.visibleRows(render(V.lost), V.lost)), O.markdownRows(buildDriftReport(V.lost, V.lost).markdown, V.lost, 'A')]) {
+  for (const text of [O.visibleTextOf(O.visibleRows(render(V.lost), V.lost)), O.markdownRows(buildDriftReport(V.lost, V.lost).markdown, V.lost, 'A')]) {
     assert.match(text, /lost|unmeasured/i); assert.match(text, /inconclusive/i);
   }
 });
@@ -384,16 +378,12 @@ test('AC-5: dominant, shared, zero, negative, zero-omission and single-case lift
   assert.equal(breakdown(V.one).rows[0].carriesLift, null);
 });
 
-test('AC-6: existing verdict, diff fields, Markdown and view numbers equal the before-build record', () => {
-  assert.deepEqual(capture(), BEFORE);
+// A-190-23 (issue 683, C-315): the before-build record's comparison left this row. Dev's own renderer and
+// report at the Preservation reference still hold the original fields and the page body, below.
+test('AC-6: the breakdown is additive; the original diff fields and page body equal dev\'s own', () => {
   const report = buildDriftReport(V.normal, V.normal);
   assert.ok(report.liftBreakdown, 'new breakdown not returned');
-  const old = { ...report }; delete old.liftBreakdown;
-  old.markdown = old.markdown.split('\n## Lift breakdown:')[0];
-  assert.deepEqual(old, BEFORE.report);
-  const html = render(V.normal);
-  assert.deepEqual(O.oldView(html), BEFORE.view);
-  O.visibleRows(html, V.normal);
+  O.visibleRows(render(V.normal), V.normal);
   // A-190-16 (PR 271 F-1): beyond V.normal, dev's own renderer and report hold the over-limit receipts.
   const h = D.harness(harnessExec);
   try {
@@ -410,7 +400,7 @@ test('AC-6, AC-7 and AC-16 (A-190-16): a receipt over a breakdown limit keeps de
       assert.doesNotMatch(html, /class="unread"/, limit + ': receipt listed as not read');
       const sections = html.match(LIFT_SECTION);
       assert.equal(sections.length, 1, limit);
-      assert.equal(O.textOf(sections[0]), 'Lift by caseLift breakdown unavailable: ' + reason, limit + ': unavailable reason');
+      assert.equal(O.visibleTextOf(sections[0]), 'Lift by caseLift breakdown unavailable: ' + reason, limit + ': unavailable reason');
       assert.doesNotMatch(sections[0], /data-lift-case/, limit + ': partial figures shown');
     }
   } finally { h.close(); }
@@ -436,9 +426,9 @@ test('AC-6, AC-7 and AC-16 (A-190-16): diff --lift-breakdown over a receipt past
 test('AC-7: every view sheet visibly renders independently recomputed rows and downward cases', () => {
   for (const r of [...Object.values(V), ...CORPUS]) {
     const section = O.visibleRows(render(r), r);
-    O.words(O.textOf(section));
+    O.words(O.visibleTextOf(section));
   }
-  const section = O.textOf(O.visibleRows(render(V.normal), V.normal));
+  const section = O.visibleTextOf(O.visibleRows(render(V.normal), V.normal));
   assert.match(section, /hurt/);
   assert.match(section, /hurts/i);
   assert.match(section, /removing this case leaves no positive measured lift/i);
@@ -490,7 +480,7 @@ test('AC-7: identifiers and labels cannot break HTML or Markdown table structure
 test('AC-8: new sections use qualified words and add no external script or interaction', () => {
   const html = render(V.normal);
   const section = O.visibleRows(html, V.normal);
-  O.words(O.textOf(section));
+  O.words(O.visibleTextOf(section));
   assert.doesNotMatch(section, /<script\b|<button\b|on(?:click|error)\s*=/i);
   assert.doesNotMatch(html, /<script\b[^>]*\bsrc\s*=/i);
   const md = O.markdownRows(buildDriftReport(V.normal, V.normal).markdown, V.normal, 'A'); O.words(md);
@@ -515,7 +505,7 @@ test('AC-9: both arms use the sealed same grading model and rubric before compar
     const a = breakdown(r); O.checkNumbers(a, r); O.checkCarriers(a, r); O.checkState(a, r, EFFECT_FLOOR, POWER_Z);
     assert.ok(a.rows.every(c => c.carriesLift === null), 'a mixed instrument cannot carry a measured claim');
     assert.equal(a.rows.find(c => c.id === 'driver').state, 'unavailable');
-    for (const text of [O.textOf(O.visibleRows(render(r), r)), O.markdownRows(buildDriftReport(r, r).markdown, r, 'A')]) {
+    for (const text of [O.visibleTextOf(O.visibleRows(render(r), r)), O.markdownRows(buildDriftReport(r, r).markdown, r, 'A')]) {
       assert.match(text, /grad|rubric|instrument/i, 'different instrument is not explained');
     }
   }
@@ -575,7 +565,7 @@ test('AC-12: duplicated draw identities and every contradictory count are refuse
     assert.throws(() => breakdown(r), /draw|count|contradict|ambiguous/i);
     const html = render(r);
     const sec = /<section[^>]*data-field="lift-breakdown"[^>]*>([\s\S]*?)<\/section>/.exec(html);
-    assert.ok(sec && /unavailable/i.test(O.textOf(sec[1])));
+    assert.ok(sec && /unavailable/i.test(O.visibleTextOf(sec[1])));
     assert.doesNotMatch(sec[1], /data-lift-case=/);
     assert.match(buildDriftReport(r, V.normal).markdown, /breakdown unavailable.*(?:draw|count|ambiguous)/i);
   }
@@ -702,7 +692,7 @@ test('AC-16: both product paths refuse oversized sections without showing partia
   assert.ok(Buffer.byteLength(JSON.stringify(r)) < 2097152);
   const html = render(r);
   const section = /<section data-field="lift-breakdown">([\s\S]*?)<\/section>/.exec(html)[1];
-  assert.match(O.textOf(section), /unavailable.*output bytes.*1048576/i);
+  assert.match(O.visibleTextOf(section), /unavailable.*output bytes.*1048576/i);
   assert.doesNotMatch(section, /data-lift-case/);
   const md = buildDriftReport(r, r).markdown;
   for (const label of ['A', 'B']) {

@@ -17,7 +17,7 @@ const path = require('path');
 const { EFFECT_FLOOR } = require('../config');
 const { receiptVerdict, UNDERPOWERED_LINE, lostDrawsLine } = require('../lib/verdict');
 const { acrossDraws } = require('../lib/sampling');
-const { sealReceipt } = require('../lib/receipt');
+const { sealReceipt, comparisonOf } = require('../lib/receipt');
 const decision = require('../lib/decision');
 const plain = require('../lib/plain');
 
@@ -52,6 +52,80 @@ test('PASSED and REGRESSED: the label, the figures and the task count', () => {
   const down = receipt([0.57, 0.58, 0.56], [0.85, 0.84, 0.86]);
   assert.equal(receiptVerdict(down).verdict, 'REGRESSED');
   assert.equal(plain.plainOf(down).sentence, 'The skill clearly hurt: 0.570 with it and 0.850 without, on 1 test task.');
+});
+
+// Issue 671. The verdict is decided per task (lib/verdict.js R-5 reads each case on its own) and the
+// two arms' overall averages are the means over every task, so they can sit equal or point the other
+// way while one task separated: Report 018 read "The skill clearly hurt: 0.883 with it and 0.865
+// without, on 3 test tasks" for a skill whose one separated task was down. A suite of several cases,
+// its comparison the receipt writer's own (lib/receipt.js comparisonOf), through the same seal.
+function suite(cases, { model = 'fx-model' } = {}) {
+  const rows = cases.flatMap(([id, w, b]) => [arm(id, 'with_skill', w), arm(id, 'baseline', b)]);
+  const got = comparisonOf(rows);
+  return sealReceipt({
+    verification_level: 'TESTED',
+    skill: { name: 'fx-skill' },
+    suite: { case_count: cases.length },
+    run: { model_id: model, date_utc: '2026-09-29T00:00:00Z', status: 'complete', answered_by: { kind: 'model' } },
+    results: { cases: rows, aggregates: got.aggregates },
+    comparison: got.comparison,
+  });
+}
+// Separated up and down by 0.28; separated down by 0.06 on point bands; and two cases whose bands
+// overlap (underpowered) while their means sit 0.28 apart, up and down.
+const UP = [[0.85, 0.84, 0.86], [0.57, 0.58, 0.56]];
+const DOWN = [[0.57, 0.58, 0.56], [0.85, 0.84, 0.86]];
+const DOWN_SMALL = [[0.80, 0.80, 0.80], [0.86, 0.86, 0.86]];
+const FLAT_UP = [[0.70, 0.85, 1.00], [0.40, 0.57, 0.74]];
+const FLAT_DOWN = [[0.40, 0.57, 0.74], [0.70, 0.85, 1.00]];
+const PAIRED = /^The skill clearly (?:helped|hurt): \d\.\d{3} with it and \d\.\d{3} without, on \d+ test tasks?\.$/;
+
+test('issue 671: the averages point the verdict\'s way, and the sentence pairs them with it as before', () => {
+  const up = suite([['c1', ...UP], ['c2', ...FLAT_UP]]);
+  const vu = receiptVerdict(up);
+  assert.equal(vu.verdict, 'PASSED');
+  assert.deepEqual(vu.cases.map((c) => c.state), ['separated-up', 'underpowered']);
+  assert.equal(plain.plainOf(up).sentence, 'The skill clearly helped: 0.850 with it and 0.570 without, on 2 test tasks.');
+  const down = suite([['c1', ...DOWN], ['c2', ...FLAT_DOWN]]);
+  assert.equal(receiptVerdict(down).verdict, 'REGRESSED');
+  assert.equal(plain.plainOf(down).sentence, 'The skill clearly hurt: 0.570 with it and 0.850 without, on 2 test tasks.');
+});
+
+test('issue 671: the averages are equal, so the sentence names the task that decided it and gives the averages over all the tasks', () => {
+  const r = suite([['c1', ...UP], ['c2', ...FLAT_DOWN]]);
+  const v = receiptVerdict(r);
+  assert.equal(v.verdict, 'PASSED');
+  assert.deepEqual(v.cases.map((c) => c.state), ['separated-up', 'underpowered']);
+  assert.equal(r.comparison.with_skill_score.toFixed(3), r.comparison.baseline_score.toFixed(3));
+  const p = plain.plainOf(r);
+  assert.equal(p.label, plain.LABELS.PASSED);
+  assert.equal(p.sentence, 'The skill clearly helped on 1 of 2 test tasks: the c1 task decided it. Over all 2, the averages were 0.710 with it and 0.710 without.');
+  assert.doesNotMatch(p.sentence, PAIRED);
+});
+
+test('issue 671: the averages point the other way, so the sentence names the deciding tasks; the verdict, its figures and the why line do not move', (t) => {
+  const r = suite([['c1', ...DOWN], ['c2', ...FLAT_UP], ['c3', ...FLAT_UP]], { model: 'fx-a' });
+  const v = receiptVerdict(r);
+  assert.equal(v.verdict, 'REGRESSED');
+  assert.deepEqual(v.cases.map((c) => c.state), ['separated-down', 'underpowered', 'underpowered']);
+  assert.ok(r.comparison.with_skill_score > r.comparison.baseline_score, 'the averages point up while the verdict is down');
+  const p = plain.plainOf(r);
+  assert.equal(p.state, 'REGRESSED');
+  assert.equal(p.label, plain.LABELS.REGRESSED);
+  assert.equal(p.sentence, 'The skill clearly hurt on 1 of 3 test tasks: the c1 task decided it. Over all 3, the averages were 0.757 with it and 0.663 without.');
+  assert.equal(p.why, `0.757 with the skill and 0.663 without; on at least one of the 3 test tasks, the two ranges of scores (the average plus or minus one spread) did not overlap, and the gap was at least ${EFFECT_FLOOR}.`);
+  // Two deciding tasks are both named, in the receipt's order.
+  const two = suite([['c1', ...DOWN_SMALL], ['c2', ...FLAT_UP], ['c3', ...DOWN_SMALL]]);
+  assert.deepEqual(receiptVerdict(two).cases.map((c) => c.state), ['separated-down', 'underpowered', 'separated-down']);
+  assert.ok(two.comparison.with_skill_score > two.comparison.baseline_score);
+  assert.equal(plain.plainOf(two).sentence, 'The skill clearly hurt on 2 of 3 test tasks: the c1 and c3 tasks decided it. Over all 3, the averages were 0.817 with it and 0.763 without.');
+  // A decision row over the same receipt reads the same words (AC-2).
+  const dir = setDir([r]);
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const d = decision.decideSet(dir, 'fx-a');
+  assert.equal(d.rows[0].state, 'regression');
+  assert.deepEqual(plain.plainOfRow(d.rows[0], r), p);
+  assert.ok(plain.summaryLead(d, dir, {}).includes(p.sentence));
 });
 
 test('NO_EFFECT: the floor is config.js EFFECT_FLOOR', () => {

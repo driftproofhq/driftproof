@@ -101,7 +101,7 @@ Receipt `62dc3eb753192c43c0dbae28aae9f4a7a901f93316437a134864024ecb12ccc9`
 
 The judge uses the same model as the target. Self-grading may favor its own model's answers.
 
-**grill-me mattpocock/skills Against the same-length placebo: below the fake `BELOW_PLACEBO` Against no skill: The skill clearly helped: 0.710 with it and 0.710 without, on 3 test tasks.**
+**grill-me mattpocock/skills Against the same-length placebo: below the fake `BELOW_PLACEBO` Against no skill: The skill clearly helped on 1 of 3 test tasks: the plan task decided it. Over all 3, the averages were 0.710 with it and 0.710 without.**
 
 ### grill-me mattpocock/skills
 
@@ -113,7 +113,7 @@ Against the same-length placebo: case rule: at least one case scored below the s
 - constraint (underpowered): with the skill 0.56875 plus or minus 0.155695; with the same-length placebo 0.7 plus or minus 0.057735.
 - followup (separated-down): with the skill 0.6875 plus or minus 0.062915; with the same-length placebo 0.87 plus or minus 0.075829.
 
-Against no skill: The skill clearly helped: 0.710 with it and 0.710 without, on 3 test tasks.
+Against no skill: The skill clearly helped on 1 of 3 test tasks: the plan task decided it. Over all 3, the averages were 0.710 with it and 0.710 without.
 
 0.710 with the skill and 0.710 without; on at least one of the 3 test tasks, the two ranges of scores (the average plus or minus one spread) did not overlap, and the gap was at least 0.05.
 
@@ -313,7 +313,7 @@ Receipt `255186420fbabfe851c85b70f7768dad055ecd29fedd0c98b473a9edd181fe57`
 
 The judge uses the same model as the target. Self-grading may favor its own model's answers.
 
-**frontend-design anthropics/skills Against the same-length placebo: below the fake `BELOW_PLACEBO` Against no skill: The skill clearly hurt: 0.883 with it and 0.865 without, on 3 test tasks.**
+**frontend-design anthropics/skills Against the same-length placebo: below the fake `BELOW_PLACEBO` Against no skill: The skill clearly hurt on 1 of 3 test tasks: the identity task decided it. Over all 3, the averages were 0.883 with it and 0.865 without.**
 
 ### frontend-design anthropics/skills
 
@@ -323,7 +323,7 @@ Against the same-length placebo: case rule: at least one case scored below the s
 - brief (separated-up): with the skill 0.966667 plus or minus 0.028868; with the same-length placebo 0.483333 plus or minus 0.121106.
 - content (underpowered): with the skill 0.77 plus or minus 0.15248; with the same-length placebo 0.766667 plus or minus 0.028868.
 
-Against no skill: The skill clearly hurt: 0.883 with it and 0.865 without, on 3 test tasks.
+Against no skill: The skill clearly hurt on 1 of 3 test tasks: the identity task decided it. Over all 3, the averages were 0.883 with it and 0.865 without.
 
 0.883 with the skill and 0.865 without; on at least one of the 3 test tasks, the two ranges of scores (the average plus or minus one spread) did not overlap, and the gap was at least 0.05.
 
@@ -433,7 +433,7 @@ Receipt `2c37963a2ebaf2d367acf79e65d71090dd748c7fc852e8e1f603caef2f7f1af8`
 
 The judge uses the same model as the target. Self-grading may favor its own model's answers.
 
-**grilling mattpocock/skills Against the same-length placebo: beat the fake `ABOVE_PLACEBO` Against no skill: The skill clearly hurt: 0.569 with it and 0.542 without, on 3 test tasks.**
+**grilling mattpocock/skills Against the same-length placebo: beat the fake `ABOVE_PLACEBO` Against no skill: The skill clearly hurt on 1 of 3 test tasks: the settled task decided it. Over all 3, the averages were 0.569 with it and 0.542 without.**
 
 ### grilling mattpocock/skills
 
@@ -443,7 +443,7 @@ Against the same-length placebo: case rule: at least one case scored above the s
 - settled (underpowered): with the skill 0.483333 plus or minus 0.028868; with the same-length placebo 0.52 plus or minus 0.103682.
 - finish (separated-up): with the skill 0.475 plus or minus 0.108397; with the same-length placebo 0.1625 plus or minus 0.047871.
 
-Against no skill: The skill clearly hurt: 0.569 with it and 0.542 without, on 3 test tasks.
+Against no skill: The skill clearly hurt on 1 of 3 test tasks: the settled task decided it. Over all 3, the averages were 0.569 with it and 0.542 without.
 
 0.569 with the skill and 0.542 without; on at least one of the 3 test tasks, the two ranges of scores (the average plus or minus one spread) did not overlap, and the gap was at least 0.05.
 
@@ -642,7 +642,7 @@ Plan SHA-256 `5aff61a014ddfca16def8bc4097201677cb1132fa174c879e71c30279294c4c7`.
 
 Read and built by:
 
-- `scripts/prepare-report-018.js`, SHA-256 `a6bf9f594c81e0f4236c991ab652c6b8516878814ec94b1e1ddf6c8398b27809`
+- `scripts/prepare-report-018.js`, SHA-256 `3d566c34472152d7748804134b54be52a6f89cb4d187eee2b8ad6b136deaa9f1`
 - `specs/655-report-018-plan/run-campaign.cjs`, SHA-256 `0e76a3d994e0d16ef956fd40af659231b1d799e5950cc854e9657164620cd94f`
 - `specs/655-report-018-plan/protocol.cjs`, SHA-256 `d0753f55970aca3dc3743665fca624fc183530a2a5f580cff2b7b9cd4f38763e`
 - `specs/613-placebo-skills-report/run-campaign.cjs`, SHA-256 `db070608736eb9401fb8acf6a15cf800deeefbd706b18a92383242ef6609af6a`
@@ -650,10 +650,16 @@ Read and built by:
 - `specs/408-skill-measurements/ledger.cjs`, SHA-256 `263a3d3423feea70aaf90074a58bcaf48d4ddb8b0eea262ec634450b17b63aae`
 - `specs/408-skill-measurements/reconstruct.cjs`, SHA-256 `f64871c647c3482a0d05e6a2308a05192b5934816097978ece34d553a360f2dd`
 - `lib/verdict.js`, SHA-256 `336cacca9ab4f80797de2ad12da8b393984843863f37e6839929aa8d44859ce8`
-- `lib/plain.js`, SHA-256 `5b7ea12440dd78212128dabe28c33f7fabc97d06756080e233c1f95547732fb2`
+- `lib/plain.js`, SHA-256 `46f471b1487460b6101680f0b4c1191e358611020f326898e37f0e420011dbb9`
 - `lib/placebo.js`, SHA-256 `f9511bdbb9928f615017addebfa305b1f7b27c544cc5dbd377e668d661be26a0`
 - `lib/receipt.js`, SHA-256 `6f4d56e9be11dd8dea52810d458d4c84b3eb188359f834e3bc771f2f3f8605d8`
 - `scripts/skill-handoff.js`, SHA-256 `261c15ba3c979f74bf69d4a6f7e192f8458a0b9635b7a17effd8e7cf1d53fda2`
+
+## Amendments
+
+### Amendment 1, 3 Nov 2026
+
+Reworded the line against no skill in the rows where the overall averages with and without the skill do not point the verdict's way: it names the task that decided it and gives the averages over all the tasks. The verdict is decided per task, so those averages can sit equal or point the other way. Counts, readings and receipts are unchanged.
 
 ## Receipts
 

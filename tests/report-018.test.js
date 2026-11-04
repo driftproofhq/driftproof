@@ -477,6 +477,21 @@ test('AC-4, AC-9, AC-10, AC-11, AC-14, AC-17: the published page is what the bui
   for (const n of [1, 2, 3]) assert.ok(record.includes(CAMPAIGN + '/campaign-' + n + '/manifest.json, SHA-256 ' + sha256(fs.readFileSync(path.join(ROOT, CAMPAIGN, 'campaign-' + n, 'manifest.json')))));
   assert.ok(record.includes('20 of 20 attempts have a sealed receipt') && record.includes('The surface was claude-cli.'));
   assert.ok(record.includes('Recorded spend across the chain: USD ' + done.built.campaign.ledger.spent + '.'));
+  // Issue 671 (A-669-4): where a row's overall averages do not point its verdict's way, the line against no
+  // skill names the task that decided it, in lib/plain.js's words, and never pairs the averages with the verdict.
+  const points = (r) => Number(r.receipt.comparison.with_skill_score.toFixed(3)) > Number(r.receipt.comparison.baseline_score.toFixed(3));
+  const disagree = done.built.campaign.rows.filter((r) => r.receipt && !r.router && ['PASSED', 'REGRESSED'].includes(r.reading.verdict) && points(r) !== (r.reading.verdict === 'PASSED'));
+  assert.deepEqual(disagree.map((r) => r.skill).sort(), ['frontend-design', 'grill-me', 'grilling']);
+  for (const r of disagree) {
+    const text = textOf(sectionOf(html, r.attempt_id));
+    assert.ok(text.includes('Against no skill: The skill clearly ' + (r.reading.verdict === 'PASSED' ? 'helped' : 'hurt') + ' on 1 of 3 test tasks: the '), r.skill);
+    assert.ok(text.includes('Against no skill: ' + plainOf(r.receipt).sentence), r.skill + ': the library\'s words');
+    assert.doesNotMatch(text, /The skill clearly (?:helped|hurt): \d/, r.skill + ': the averages are not paired with the verdict');
+  }
+  // The page's dated record of that rewording, after the run record and before the receipts (spec 020 AC-21).
+  const entry = '<h2 id="amendments">Amendments</h2><section id="amendment-1"><h3>Amendment 1, 3 Nov 2026</h3><p>Reworded the line against no skill in the rows where the overall averages with and without the skill do not point the verdict&#39;s way: it names the task that decided it and gives the averages over all the tasks. The verdict is decided per task, so those averages can sit equal or point the other way. Counts, readings and receipts are unchanged.</p></section>';
+  assert.ok(html.indexOf('<section id="campaign-run-record">') < html.indexOf(entry) && html.indexOf(entry) < html.indexOf('<h2>Receipts</h2>'), 'after the run record, before the receipts');
+  assert.equal(require(path.join(ROOT, 'scripts/site-chrome.js')).splitReportBody(html).amendments, entry);
   // The data layer: what moved is the placebo text; the summary's limit names the snapshot, model, judge and tasks.
   const rows = json(path.join(ROOT, 'docs/data/reports.json')).reports;
   assert.equal(rows.find((r) => r.number.value === '018').what_moved.value, 'a same-length placebo text');

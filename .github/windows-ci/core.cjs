@@ -6,9 +6,12 @@ const path = require('node:path');
 const os = require('node:os');
 const { pathToFileURL } = require('node:url');
 const c = require('./common.cjs');
-const inventory = require('./row-inventory.json');
+const { build } = require('./row-inventory.cjs');
 const CORE_FILES = ['tests/init.test.js', 'tests/firstrun.test.js', 'tests/progress.test.js',
   'tests/plain.test.js', 'tests/verdict-band.test.js', 'tests/answers-retention.test.js', 'tests/view-answers.test.js'];
+// Issue 675: the expected rows are read from each suite's source as checked out, by rule, so a row
+// added to a suite is expected the commit it lands. No list is pinned beside the suites.
+const inventory = build(c.ROOT, CORE_FILES);
 function assertRows(rows, expected) {
   assert.ok(Array.isArray(rows), 'AC-16 row inventory exists');
   for (const row of rows) {
@@ -98,4 +101,4 @@ function runCore() {
   console.log('Windows core: ' + CORE_FILES.length + ' files, ' + results.reduce((n, r) => n + r.rows.length, 0) + ' inventoried rows passed, 0 skipped; conditional, filter, duplicate and executable plants rejected');
 }
 if (require.main === module) c.main(runCore);
-module.exports = { CORE_FILES, assertRows, assertResults, collectFile, rowMutationTests, runCore };
+module.exports = { CORE_FILES, inventory, assertRows, assertResults, collectFile, rowMutationTests, runCore };

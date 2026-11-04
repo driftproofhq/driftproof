@@ -406,7 +406,7 @@ Against the same-length placebo: case rule: at least one case scored above the s
 - settled (separated-up): with the skill 0.7 plus or minus 0.05; with the same-length placebo 0.583333 plus or minus 0.028868.
 - finish (underpowered): with the skill 0.433333 plus or minus 0.08165; with the same-length placebo 0.3125 plus or minus 0.047871.
 
-Against no skill: The skill clearly helped: 0.657 with it and 0.670 without, on 3 test tasks.
+Against no skill: The skill clearly helped on 1 of 3 test tasks: the frontier task decided it. Over all 3, the averages were 0.657 with it and 0.670 without.
 
 0.657 with the skill and 0.670 without; on at least one of the 3 test tasks, the two ranges of scores (the average plus or minus one spread) did not overlap, and the gap was at least 0.05.
 
@@ -575,14 +575,14 @@ Plan SHA-256 `3f008b21d542b85b90a5e37c60672c62788b9742319ca1f1fde8c906c419f3f4`.
 
 Read and built by:
 
-- `scripts/prepare-report-017.js`, SHA-256 `44f2fdf2471f97244d6891ad8c2d6a7b90837869db14046c27fbd833ac14dd54`
+- `scripts/prepare-report-017.js`, SHA-256 `1fe1ca4efd96300ba8de45df6f679768a3fba53b726638c5823b1ddce1c6f36c`
 - `specs/613-placebo-skills-report/publication.cjs`, SHA-256 `fba3577194bab75b0ac4c993b4567008c418e17178ef4399e560a71ff2754050`
 - `specs/613-placebo-skills-report/tally.cjs`, SHA-256 `a7d334796f32591a9488baa2286e3ba9462305ff6a92b8b2f0c7695a96a415dd`
 - `specs/613-placebo-skills-report/run-campaign.cjs`, SHA-256 `db070608736eb9401fb8acf6a15cf800deeefbd706b18a92383242ef6609af6a`
 - `specs/408-skill-measurements/ledger.cjs`, SHA-256 `263a3d3423feea70aaf90074a58bcaf48d4ddb8b0eea262ec634450b17b63aae`
 - `specs/408-skill-measurements/reconstruct.cjs`, SHA-256 `f64871c647c3482a0d05e6a2308a05192b5934816097978ece34d553a360f2dd`
 - `lib/verdict.js`, SHA-256 `336cacca9ab4f80797de2ad12da8b393984843863f37e6839929aa8d44859ce8`
-- `lib/plain.js`, SHA-256 `5b7ea12440dd78212128dabe28c33f7fabc97d06756080e233c1f95547732fb2`
+- `lib/plain.js`, SHA-256 `46f471b1487460b6101680f0b4c1191e358611020f326898e37f0e420011dbb9`
 - `lib/placebo.js`, SHA-256 `f9511bdbb9928f615017addebfa305b1f7b27c544cc5dbd377e668d661be26a0`
 - `lib/receipt.js`, SHA-256 `6f4d56e9be11dd8dea52810d458d4c84b3eb188359f834e3bc771f2f3f8605d8`
 - `scripts/skill-handoff.js`, SHA-256 `261c15ba3c979f74bf69d4a6f7e192f8458a0b9635b7a17effd8e7cf1d53fda2`
@@ -596,6 +596,10 @@ Added a note after the headline and in the rows for grill-me and grill-with-docs
 ### Amendment 2, 2 Nov 2026
 
 Added a link, after the opening panel, to a blind read of handoff's kept answers. Counts, readings and receipts are unchanged.
+
+### Amendment 3, 3 Nov 2026
+
+Reworded the line against no skill in the rows where the overall averages with and without the skill do not point the verdict's way: it names the task that decided it and gives the averages over all the tasks. The verdict is decided per task, so those averages can sit equal or point the other way. Counts, readings and receipts are unchanged.
 
 ## Receipts
 

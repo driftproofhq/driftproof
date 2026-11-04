@@ -32,6 +32,9 @@ const CAVEAT='Where the fake scored below no skill, beating it does not mean bea
 const AMENDMENT_1='Added a note after the headline and in the rows for grill-me and grill-with-docs. The whole text of each skill only calls another skill, and these text tasks forbid tools. Counts, readings and receipts are unchanged.';
 // The blind read's record (issue 638, spec 627 A-627-8), naming the skill its page uses.
 const AMENDMENT_2=(skill)=>'Added a link, after the opening panel, to a blind read of '+skill+'\'s kept answers. Counts, readings and receipts are unchanged.';
+// Issue 671's record (spec 627 A-627-9): lib/plain.js rewords the verdict line where the averages do
+// not point the verdict's way, and the page prints that line, so the published body moves.
+const AMENDMENT_3='Reworded the line against no skill in the rows where the overall averages with and without the skill do not point the verdict\'s way: it names the task that decided it and gives the averages over all the tasks. The verdict is decided per task, so those averages can sit equal or point the other way. Counts, readings and receipts are unchanged.';
 // The dek: the model it was read on, then the frozen template line, its first letter lowercased
 // when it opens with a word ("All", "None").
 const lead=(h)=>/^[A-Z][a-z]/.test(h)?h[0].toLowerCase()+h.slice(1):h;
@@ -182,7 +185,8 @@ function body(c,{panelDir,placeboPage}){
  // A-627-7), which appears only with the note, then the blind read's (A-627-8), always. The entries
  // keep the published page's numbers whichever are present, so a record never renumbers.
  const amendments='<h2 id="amendments">Amendments</h2>'+(c.handoffNote?'<section id="amendment-1"><h3>Amendment 1, 2 Nov 2026</h3><p>'+esc(AMENDMENT_1)+'</p></section>':'')
-  +'<section id="amendment-2"><h3>Amendment 2, 2 Nov 2026</h3><p>'+esc(AMENDMENT_2(blindSkill))+'</p></section>';
+  +'<section id="amendment-2"><h3>Amendment 2, 2 Nov 2026</h3><p>'+esc(AMENDMENT_2(blindSkill))+'</p></section>'
+  +'<section id="amendment-3"><h3>Amendment 3, 3 Nov 2026</h3><p>'+esc(AMENDMENT_3)+'</p></section>';
  return head+headline+panelHTML+blindLink+results+method+limits+record+amendments+list;
 }
 
