@@ -171,6 +171,8 @@ ${wrap(d.badge_caption)}
 
 [${d.reports_link.label.replace('{reports_word}', stats.reports_published_word.value)}](${reports}) · [${host}](${d.site_link})
 
+${createRequire(import.meta.url)('./reader-pages.js').pages().map(p => '['+p.label+']('+ORIGIN+p.href+')').join(' · ')}
+
 ${view}`;
 }
 

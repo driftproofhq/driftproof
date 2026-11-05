@@ -217,6 +217,69 @@ function methodologyPath() {
   throw new Error('no methodology page found');
 }
 
+// THE TALLY (spec 687 AC-3): a report's plain-words counts line, "Of the N skills counted: n1 label1,
+// n2 label2, ...", parsed into its counts and labels. The home page draws one tile per skill counted
+// and prints each count beside the report's own words for its reading, so a count typed on the home
+// page is impossible and the next report moves the picture. A page with no such line has no tally.
+export function latestTally(html) {
+  const m = /<p class="headline-counts-plain">([\s\S]*?)<\/p>/.exec(String(html));
+  if (!m) return null;
+  const t = textOf(m[1]);
+  const head = /^Of the (\d+) skills counted: (.*)\.$/.exec(t);
+  if (!head) throw new Error(`the plain counts line does not parse: ${t}`);
+  const items = head[2].split(', ').map((x) => {
+    const q = /^(\d+) (.+)$/.exec(x);
+    if (!q) throw new Error(`a count in the plain counts line does not parse: ${x}`);
+    return { count: Number(q[1]), label: q[2] };
+  });
+  const total = Number(head[1]);
+  if (items.reduce((a, b) => a + b.count, 0) !== total) throw new Error(`the plain counts do not sum to ${total}`);
+  return { total, items };
+}
+function latestTallyFields(html, from) {
+  const t = latestTally(html);
+  if (!t) return {};
+  const out = { latest_tally_total: F(t.total, from) };
+  t.items.forEach((it, i) => {
+    out[`latest_tally_${i + 1}_count`] = F(it.count, from);
+    out[`latest_tally_${i + 1}_label`] = F(it.label, from);
+  });
+  return out;
+}
+// THE CAVEATS (spec 687 AC-3): the report's summary points (docs/data/report-summaries.json, the row
+// its builder writes), each lead and text. Only the repeated headline sentence is removed;
+// every following sentence stays. The point whose text opens with the headline block's
+// first forty characters is that one. Read through the chrome's resolver, so a {name} value is the
+// file's, and cited to the report page, where the chrome prints the same points.
+export function latestCaveats(number, html) {
+  const points = require(path.join(ROOT, 'scripts', 'site-chrome.js')).summaryPoints(number) || [];
+  const big = textOf((String(html).match(/<div class="headline">[\s\S]*?<p class="big"[^>]*>([\s\S]*?)<\/p>/) || [])[1] || '');
+  const head = big.slice(0, 40);
+  return points.flatMap((p) => {
+    if (!(head && p.text.startsWith(head))) return [p];
+    const rest = p.text.slice(firstSentence(p.text).length).trim();
+    return rest ? [{ ...p, text: rest }] : [];
+  });
+}
+// THE FINDING SENTENCE AND ITS SHORT FORM (spec 687 A-687-1). The sentence is the headline block's
+// first sentence, whole; the short form is its clause before the first colon, the report's own words
+// ("12 of 16 skills beat the fake on Haiku 5.5"). A sentence that is elided, or does not end as a
+// sentence, is refused: a cut finding is not the finding.
+export function latestFindingFields(bigHtml, from) {
+  const sentence = firstSentence(textOf(bigHtml));
+  if (!sentence || /…|\.\.\./.test(sentence) || !/[.?!]$/.test(sentence)) throw new Error(`the latest report's finding sentence is cut or elided: ${sentence}`);
+  const claim = sentence.split(/:\s/)[0].replace(/[.?!]$/, '').trim();
+  return { latest_report_claim: F(claim, from), latest_report_sentence: F(sentence, from) };
+}
+function latestPointFields(number, html, from) {
+  const out = {};
+  latestCaveats(number, html).forEach((p, i) => {
+    out[`latest_point_${i + 1}_lead`] = F(p.lead, from);
+    out[`latest_point_${i + 1}_text`] = F(p.text, from);
+  });
+  return out;
+}
+
 function buildStats() {
   const receipts = require('./build-receipt-pages.js').uniqueReceipts(receiptFiles(ROOT).map(f=>({rel:f,receipt:JSON.parse(fs.readFileSync(f,'utf8'))})).filter(x=>x.receipt.results && x.receipt.receipt_hash)).map(x=>x.rel);
   const models = new Set();
@@ -282,6 +345,14 @@ function buildStats() {
     // (scripts/build-site-pages.js reportName), which is what moved on every page but Report 017's.
     latest_report_title: F(reportRow(latest).title.value.replace(/^Report\s*#?\d+\s*(?:—|:)\s*/, ''), rel(latestPage)),
     latest_report_headline: F(prefix(firstSentence(textOf(latestBig)), 150), rel(latestPage)),
+    // THE FINDING, NEVER CUT (spec 687 A-687-1): the headline's first sentence whole, and its short
+    // form, the clause before its first colon. A cut finding can reverse its meaning (the 150-character
+    // prefix above lost "on none"), so neither is capped or elided.
+    ...latestFindingFields(latestBig, rel(latestPage)),
+    // THE LATEST REPORT'S TALLY AND CAVEATS (spec 687 AC-3): the counts the home page draws as a
+    // picture and the caveats it sets beside them, read off the report's own page and summary row.
+    ...latestTallyFields(fs.readFileSync(latestPage, 'utf8'), rel(latestPage)),
+    ...latestPointFields(latest, fs.readFileSync(latestPage, 'utf8'), rel(latestPage)),
     // The bundled example receipt - the one behind
     // docs/badges/commit-message-conventions.json, and the one the hero card and
     // the playground both read. Its recorded comparison figures are used rather
@@ -467,4 +538,4 @@ function main() {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
-export { buildStats, buildReports };
+export { buildStats, buildReports, latestTallyFields, latestPointFields, firstSentence };

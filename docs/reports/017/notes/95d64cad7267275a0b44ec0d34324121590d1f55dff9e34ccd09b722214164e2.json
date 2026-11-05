@@ -1,0 +1,1196 @@
+{
+ "format": "driftproof-judge-notes/1",
+ "report": "017",
+ "report_url": "/reports/017/",
+ "attempt_id": "95d64cad7267275a0b44ec0d34324121590d1f55dff9e34ccd09b722214164e2",
+ "skill": "improve-codebase-architecture",
+ "repository": "mattpocock/skills",
+ "receipt_hash": "4fba7a9b04033dee6c13a9c615ff264cc2175f10958c0a5ba1ed2aa19d4ad401",
+ "receipt_page": "/r/4fba7a9b04033dee6c13a9c615ff264cc2175f10958c0a5ba1ed2aa19d4ad401/",
+ "receipt_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/95d64cad7267275a0b44ec0d34324121590d1f55dff9e34ccd09b722214164e2.json",
+ "answers_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/95d64cad7267275a0b44ec0d34324121590d1f55dff9e34ccd09b722214164e2-answers.json",
+ "suite_file": "https://github.com/driftproofhq/driftproof/blob/main/specs/408-skill-measurements/suites/mattpocock--skills--improve-codebase-architecture.json",
+ "model": "Claude Sonnet 5.5",
+ "judge": "Claude Haiku 5.5",
+ "judge_samples": 5,
+ "date": "1 November 2026",
+ "arms": [
+  {
+   "key": "with_skill",
+   "label": "With the skill"
+  },
+  {
+   "key": "placebo",
+   "label": "With the fake text"
+  },
+  {
+   "key": "baseline",
+   "label": "With nothing"
+  }
+ ],
+ "caveats": [
+  "Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings.",
+  "The scores and reasons are the judge model's own words, kept exactly as it wrote them. They are a model's reading of the rubric, not Driftproof's.",
+  "This is one task of three. Each skill was given three text tasks, and one task is not the whole measurement."
+ ],
+ "tasks": [
+  {
+   "id": "candidate",
+   "number": 1,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. Review this architecture description: OrderController calls ValidateOrder, which forwards every argument unchanged to OrderRules. Only OrderRules contains validation logic. The last five changes touched validation. Suggest one deepening candidate, without implementing it.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/engineering/improve-codebase-architecture/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 552240a5ab5cec6b67c15dd1ad6e9f6962b1bca6ce870059a8c2713760c20392; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Prioritize the validation area 2. Identify the forwarding layer as a candidate 3. Explain whether removal concentrates complexity or merely moves it 4. Describe a public test seam and why it survives the change",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "**Candidate: remove the ValidateOrder pass-through so OrderController depends directly on OrderRules.** I'm working only from your description, so I haven't checked for other callers, ADRs, or a GLOSSARY.md entry for \"Order\".\n\n**Problem**\n- ValidateOrder is a **shallow** module. It forwards every argument unchanged, so its **interface** is as complex as its implementation, which is nothing.\n- It adds a **seam** with no variation behind it. OrderRules is the only thing on the other side, so it is a hypothetical seam (one **adapter**), not a real one.\n- The last five changes touched validation. Any change to what validation takes in has to be threaded through both ValidateOrder and OrderRules, so **locality** is poor in the area that changes most.\n\n**Deletion test**\nIf you deleted ValidateOrder, no complexity would reappear in callers, because OrderController would just call OrderRules. The test therefore says ValidateOrder isn't earning its place. The depth should live in OrderRules, which is already where all the validation logic is.\n\n**Benefits**\n- **Locality:** validation changes land in one module instead of two.\n- **Leverage:** OrderController gets one interface to the validation behavior, with no extra layer to keep in sync.\n- **Tests:** the interface is the test surface, so tests would target OrderRules. Any test that only checks ValidateOrder forwards its arguments can go, since it verifies nothing meaningful.\n\n**Recommendation strength:** Strong. The module is trivially shallow, and the recent churn means the cost is being paid repeatedly.\n\n**Caveat:** if ValidateOrder is used by callers other than OrderController, or an ADR requires it, that changes the picture. The first would need a look at those callers, and the second would need a clear reason to revisit the ADR.\n\nI'm not proposing an interface shape yet. Which direction would you like to explore?",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1–3: it targets the validation area, names the ValidateOrder forwarding layer, and uses the deletion test to show complexity concentrates in OrderRules. It only partly meets criterion 4: it names OrderRules as the test surface but never explains why that seam survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: prioritizes the validation churn, names the ValidateOrder forwarding layer, and says removal moves no complexity into callers. Criterion 4 is only partly met: it names OrderRules as the test surface but never explains why that seam survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Targets the validation area and the ValidateOrder forwarding layer, and explains via the deletion test that complexity concentrates in OrderRules. It names OrderRules as the test surface but never explains why that seam survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: it centers on the validation area, flags ValidateOrder as the forwarding layer, and explains the deletion test concentrates depth in OrderRules. Criterion 4 is weak: it names OrderRules as the test surface but never explains why that seam survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1–3: it prioritizes validation churn, names ValidateOrder as the forwarding candidate, and uses the deletion test to say complexity concentrates in OrderRules. Criterion 4 is only partly met: OrderRules is named as the test surface but not explained as surviving the change."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Deepening candidate: collapse `ValidateOrder` into `OrderRules`, or give it real responsibility.**\n\n**What the facts show**\n- `ValidateOrder` forwards every argument unchanged to `OrderRules`. It adds no logic, so it is a pass-through layer: a shallow module whose interface is as wide as its implementation.\n- All validation logic lives in `OrderRules`, and the last five changes touched validation. Each of those changes presumably had to be threaded through two layers (signature changes, new parameters, renames), which is the usual cost of a pass-through.\n\n**Suggestion**\nDeepen `OrderRules` and make it the single validation seam. `OrderController` would call one narrow interface, something like `validate(order) -> result`, and `OrderRules` would hide the rule details behind it. This removes `ValidateOrder` as a separate hop, or, if it needs to stay for a reason not stated in the description, turns it into the place that owns something real (for example, assembling the validation context or translating results into controller-friendly errors).\n\n**Why this is the right target**\n- Validation is the area of highest churn, so concentrating it behind one small interface localizes future changes.\n- The forwarded argument list is a leak: callers and the middle layer need to know what the rules need. Passing a single order (or a context object) instead lets rules change without touching the controller or the forwarder.\n- Tests can target one boundary rather than testing a forwarder that has nothing to verify.\n\n**Caveat**\nThe description doesn't say why `ValidateOrder` exists. It may be there for an unlisted reason, such as a framework hook, an interface boundary, or other callers. Check for those before removing it. If none exist, fold it into `OrderRules`.\n\nI have not implemented anything.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (prioritizes validation churn) and 2 (identifies ValidateOrder as the forwarding layer), but criterion 3 is only implied, not explicitly argued as concentrating versus moving complexity, and criterion 4 names a boundary without explaining why it survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (prioritizes validation churn), 2 (identifies the pass-through ValidateOrder), and 3 (argues folding concentrates validation behind one interface). Misses 4: it names a test boundary but never explains why it survives the change."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (prioritizes validation area) and 2 (identifies ValidateOrder forwarder as candidate). Missed 3: removal is framed as concentrating validation, not explicitly weighing concentrate-vs-move. Missed 4: no public test seam described; it only says tests can target one boundary without naming a surviving seam."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (prioritizes validation churn), 2 (identifies ValidateOrder as the pass-through), and 4 (narrow validate interface and boundary tests that survive rule changes). Criterion 3 is only implicit: it never states whether removal concentrates complexity or merely moves it."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (validation focus), 2 (ValidateOrder as forwarding candidate), and 3 (argues folding concentrates change). Criterion 4 is only partly met: it names a narrow validate interface and says tests can target it, but never explicitly frames it as a public test seam."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Observation:** `ValidateOrder` is a pass-through. It forwards every argument unchanged to `OrderRules` and holds no logic of its own. Because all validation logic lives in `OrderRules`, and the last five changes all touched validation, each change likely has to go through both layers (or at least be understood through both), which adds indirection without adding any behavior.\n\n**Deepening candidate: collapse `ValidateOrder` into `OrderRules`, so the controller depends on one validation module with a narrow interface.**\n\n- **Today:** the interface of `ValidateOrder` is as wide as `OrderRules`' (it mirrors every argument), but its implementation is trivial. That makes it a shallow module: the cost of knowing it exists is about equal to what it provides.\n- **Deepened:** `OrderController` calls a single entry point on `OrderRules`, something like `validate(order)`, that takes the order as one value and returns a result (valid, or a list of violations). The rule details, ordering, and any argument unpacking stay hidden behind it.\n- **Why it fits the history:** since validation is where the churn is, concentrating it behind one deep module means future rule changes stay local to `OrderRules`. The controller and any signature plumbing no longer change when rules gain or lose inputs.\n\n**Trade-offs to check before doing it:**\n- If `ValidateOrder` is a deliberate seam (for example, to mock validation in controller tests, or because other callers use it), keep a thin interface but have it be the real boundary rather than a mirror of `OrderRules`' arguments.\n- I only have the description, not the code, so I can't confirm whether other callers exist or whether the argument list is what's causing the churn.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (prioritizes validation area) and 2 (identifies ValidateOrder forwarding layer as candidate); missed 3 (no explicit complexity-concentrate-vs-move analysis) and 4 (no public test seam described surviving the change, only a brief mock-seam trade-off)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (prioritizes validation churn) and 2 (identifies ValidateOrder as the forwarding candidate). Misses 3, since it never states whether removal concentrates complexity or merely moves it, and misses 4, since the test seam is only a conditional aside."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: prioritizes validation, names ValidateOrder as the forwarding layer, and explains that collapsing it concentrates behavior. Missed 4: the test-seam mention lacks a public seam description and any explanation of why it survives."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (validation focus) and 2 (ValidateOrder as forwarding candidate); criterion 3 is only loosely addressed, and criterion 4 is missed because the test-seam mention lacks any explanation of why it survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets prioritizing validation, identifying the ValidateOrder forwarding layer, and explaining concentration behind one module. Misses a clearly described public test seam that survives the change; the mocking seam is only a conditional trade-off."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "## Deepening candidate: collapse the `ValidateOrder` pass-through into `OrderRules`\n\n**Files:** `OrderController`, `ValidateOrder`, `OrderRules`\n\n**Problem:** `ValidateOrder` is a shallow module. It forwards every argument unchanged, so its interface is exactly as wide as `OrderRules`' and it adds no behavior. Anyone tracing validation has to hop through two modules to reach the one that matters.\n\n**Deletion test:** If `ValidateOrder` were deleted, no complexity would reappear in callers. `OrderController` would call `OrderRules` directly. That means the module isn't hiding anything, so it should go.\n\n**Solution (plain English):** Remove the pass-through so `OrderController` talks to the module that actually holds the validation logic. Validation then has one entry point and one place to change.\n\n**Benefits:**\n- **Locality:** Your last five changes all touched validation. Today each one risks edits in two places, or at least a mental detour through a module with nothing in it. After the change, validation changes live in one module.\n- **Leverage:** The `OrderRules` interface becomes the one thing callers learn, instead of an echo of it.\n- **Tests:** Tests go through the `OrderRules` interface, which is the real test surface. Any tests on `ValidateOrder` only assert that arguments are forwarded, so they can be dropped.\n\n**Seam note:** `ValidateOrder` looks like a seam, but with a single implementation behind it, it's a hypothetical seam rather than a real one. Reintroduce a seam only when a second adapter appears, such as a different rule set per market.\n\n**Recommendation strength:** Strong. The change is small and low-risk, and the churn in validation makes it pay off quickly.\n\n**Caveats:**\n- I only have your description. I haven't checked `GLOSSARY.md`, any ADRs, or the commit history, so I can't rule out an ADR that justifies the wrapper.\n- I don't know whether other callers depend on `ValidateOrder`. If they do, that changes how much a removal would touch.\n- I haven't proposed an interface for the result, as that belongs in the next step.\n\nWould you like to explore this one?",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets prioritizing validation, identifying the ValidateOrder forwarding layer, and the deletion test on whether complexity concentrates; the test-seam point names OrderRules but never explicitly says why it survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: prioritizes validation, identifies the ValidateOrder forwarding layer, and uses the deletion test to show complexity concentrates. Criterion 4 is only partly met: OrderRules is named as the test surface, but why it survives the change is not explained."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: it prioritizes validation, names the ValidateOrder forwarding layer, and explains via the deletion test that complexity concentrates in OrderRules. Criterion 4 is only implicit: it names OrderRules as the test surface but never explains why it survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: it prioritizes validation, names the ValidateOrder forwarding layer, and explains via the deletion test that complexity concentrates rather than moves. Criterion 4 is thin: it names OrderRules as the test surface but never states why that seam survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: prioritizes validation, identifies the ValidateOrder forwarder, and explains concentration via the deletion test. Criterion 4 is only partial: it names OrderRules as the test surface but never argues why that seam survives the change."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Deepening candidate: remove the `ValidateOrder` pass-through and give `OrderRules` a narrow entry point that the controller calls directly.**\n\n**What the facts show**\n- `ValidateOrder` forwards every argument unchanged, so it adds no logic, abstraction, or decision. Its interface is as wide as the one behind it, which makes it a shallow module.\n- All validation logic sits in `OrderRules`, so `ValidateOrder` hides nothing.\n- The last five changes all touched validation. If each one had to change both the `ValidateOrder` signature and `OrderRules`, the pass-through is a likely source of change amplification. That is an inference, since the facts don't say which files those changes touched.\n\n**The suggestion**\n- Fold `ValidateOrder` into `OrderRules`, or make it disappear, so `OrderController` depends on one module.\n- Deepen `OrderRules` by narrowing what callers see. For example, it could take a single order object and return a single result, such as valid or a list of violations.\n- Rule selection, ordering, and error aggregation would stay hidden inside it. Adding or changing a rule then wouldn't ripple out to callers.\n\n**Caveat**\nKeep `ValidateOrder` only if it serves a purpose the description doesn't mention, such as a test seam, other callers, or a planned place for cross-cutting concerns like logging or authorization. If it does, give it that real job. A forwarder that does nothing shouldn't stay.",
+      "average": 0.45,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (validation area) and 2 (ValidateOrder forwarder as candidate). Missed 3, since it never explicitly says whether removal concentrates or moves complexity, and 4, since it mentions a test seam only as a reason to keep the forwarder, with no public seam described."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (prioritizes validation) and 2 (identifies the ValidateOrder forwarder as the candidate). Misses 3, since it never states whether removal concentrates complexity or merely moves it, and 4, since it names a test seam only as a reason to keep the forwarder, without describing one or why it survives."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (prioritizes validation area) and 2 (identifies the ValidateOrder forwarder as candidate); misses 3 (never explicitly says whether removal concentrates or merely moves complexity) and 4 (no public test seam described)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (prioritizes validation) and 2 (identifies the ValidateOrder forwarder), but misses 3, since it never explicitly says removal concentrates versus moves complexity, and misses 4, since it names a test seam only as a caveat without describing a public seam that survives the change."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets criteria 1 (prioritizes validation) and 2 (identifies the ValidateOrder forwarder). Misses 3, since it never explicitly says removal concentrates versus moves complexity, and misses 4, since it never describes a public test seam that survives the change."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Observation:** `ValidateOrder` is a pass-through. It forwards every argument unchanged to `OrderRules`, so it adds a layer without adding depth. Its interface is as wide as the one it wraps, and it hides nothing. Meanwhile, all validation logic lives in `OrderRules`, and the last five changes all touched validation. That means each change likely has to be threaded through two places (the forwarder's signature and the rules), even though only one holds real behavior.\n\n**Deepening candidate:** Collapse `ValidateOrder` into a deeper validation module with a narrow interface. Have `OrderController` call a single entry point, such as `validate(order) -> result`, and let `OrderRules` stay behind it as an internal detail.\n\nWhy this is the right candidate:\n\n- **Smaller interface, more behavior behind it.** Today the caller sees whatever argument list `OrderRules` needs. A narrow entry point that takes the order and returns a validation result lets rules be added, reordered, or changed without touching the controller or any forwarding signature.\n- **Targets the churn.** Since validation is what keeps changing, the change should be absorbed inside one module instead of rippling across a wrapper and its callers.\n- **Removes a shallow layer.** `ValidateOrder` currently earns nothing. Either delete it or repurpose it as that narrow entry point, which is the cheaper path if the controller already depends on its name.\n\n**Trade-offs and what to check first:**\n\n- If `ValidateOrder` is a seam used for test doubles or for a planned second rules implementation, keep it, but then give it a real job instead of forwarding unchanged.\n- Confirm how many callers beyond `OrderController` use the current argument list, since that sets the migration cost.\n- Decide how failures are reported (a result object versus exceptions) up front, because that shapes the narrow interface.\n\nI haven't implemented anything, as requested. This is based solely on the description you gave, not on the code itself.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (validation area) and 2 (forwarding layer as candidate). Misses 3, since it never explicitly argues concentrating versus moving complexity, and 4, since it names no public test seam and why it survives."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response prioritizes the validation area and identifies the forwarding ValidateOrder as a candidate, meeting criteria 1 and 2, but lacks an explicit assessment of whether removal concentrates or merely moves complexity and does not describe a public test seam surviving the change (it only mentions seams as a conditional trade-off)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response prioritizes validation, identifies the pass-through ValidateOrder as a candidate, and discusses the removal trade-off by noting its own layer adds nothing; it misses a public test seam explanation, so 0.5 of rubric is satisfied."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (prioritizes validation) and 2 (identifies ValidateOrder as the forwarding candidate). Misses 3, since it never says whether removal concentrates or merely moves complexity. Criterion 4 is only loosely addressed: it mentions a test seam conditionally but doesn't explain why it survives the change."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (prioritizes validation churn) and 2 (identifies the pass-through ValidateOrder as the candidate). Misses 3, since it never explicitly says whether removal concentrates or moves complexity, and 4, since it names no public test seam or why it survives."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "**Candidate: fold the `ValidateOrder` pass-through into `OrderRules`, so `OrderController` calls one validation module directly.**\n\nThis is based only on your description. I haven't looked at the code, `GLOSSARY.md`, or any ADRs.\n\n**Problem**\n- `ValidateOrder` is a shallow module. It forwards every argument unchanged, so its interface is as complex as the interface of `OrderRules`, and it adds no depth.\n- It creates a seam with only one adapter behind it. That is a hypothetical seam, not a real one.\n- All five recent changes touched validation. Each change likely has to be understood across two modules, even though only `OrderRules` holds logic.\n\n**Deletion test**\n- Deleting `ValidateOrder` removes a hop and nothing else, because the logic already lives in `OrderRules`.\n- That means `ValidateOrder` isn't earning its place.\n\n**Solution (plain English)**\n- Remove the forwarding layer and let the controller depend on the one module that owns the validation rules.\n- If the extra name carries domain meaning, such as a term from `GLOSSARY.md`, keep that name on the surviving module rather than on the pass-through.\n\n**Benefits**\n- **Locality:** validation changes, the hot spot in your history, would be made in one place.\n- **Leverage:** callers get the full validation behavior through a single interface.\n- **Testing:** tests can go through that one interface. There is no need to test the forwarder separately or to keep both layers in sync.\n\n**Recommendation strength:** Worth exploring, leaning Strong. The hot-spot evidence is good, but the payoff is modest on its own. It would shrink if `ValidateOrder` has other callers, or if it exists as a deliberate seam that a second adapter, such as a test double, depends on. Check both before committing.\n\nI'm not proposing an interface shape here. That would come in the grilling step, once you've chosen to pursue this candidate.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (validation area) and 2 (ValidateOrder forwarder as candidate). Criterion 3 is only implicit. Criterion 4 is missed: it mentions testing through one interface but never explains why that seam survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: it prioritizes validation, names the ValidateOrder forwarder, and explains locality/concentration. Missed 4: it mentions testing through OrderRules but never explains why that seam survives the change."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 and 2 (validation hot spot, ValidateOrder forwarder as candidate). Criterion 3 is only implied via locality. Criterion 4 names a test interface but never explains why it survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: prioritizes validation, names ValidateOrder as the forwarding candidate, and explains removal concentrates logic via the deletion test. Misses 4: the test seam is only briefly mentioned, with no explanation of why it survives."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (prioritizes validation area) and 2 (identifies ValidateOrder forwarder as candidate); missed 3 (complexity concentration vs. moving is only partly addressed via locality/deletion test) and 4 (no public test seam described that survives removal; it instead recommends testing through the single interface without explaining seam survival)."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Deepening candidate: collapse `ValidateOrder` into `OrderRules`, so the validation module has a real interface.**\n\n**Observation.** `ValidateOrder` is a pass-through: it forwards every argument unchanged to `OrderRules`, and all the logic lives in `OrderRules`. That makes it a shallow module. Its interface is as wide as the implementation behind it, so it hides nothing and adds a hop. Meanwhile, the last five changes all touched validation, which tells us that's where the real churn is, and each change likely has to edit both the wrapper's signature and `OrderRules`.\n\n**Suggestion.** Remove the pass-through layer and make `OrderRules` the single validation module that `OrderController` talks to. The deepening is in what that interface looks like:\n\n- Expose one narrow entry point, such as `validate(order) -> result`, instead of passing individual arguments through.\n- Keep the individual rules, their ordering, and the argument plumbing behind that entry point.\n- Have the result carry the outcome (pass/fail plus reasons), so the controller doesn't need to know which rules ran.\n\n**Why this is worth it.**\n- **Locality:** a new or changed rule is edited in one place rather than across the wrapper and `OrderRules`.\n- **Leverage:** the controller gets all validation behavior through one small call.\n- **Testability:** tests target the one interface, not a forwarding layer plus the rules.\n\n**Caveat.** I only have the description, not the code. If `ValidateOrder` serves other callers, or exists to enforce a dependency boundary (for example, keeping the controller from importing `OrderRules` directly), then the better move is to keep it but give it a real job, such as owning the order-to-rule-inputs mapping, rather than deleting it. Check its call sites before deciding.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (prioritizes validation churn) and 2 (names ValidateOrder as the forwarding layer), but misses 3 (never states whether removal concentrates or merely moves complexity) and 4 (test seam is named, but why it survives the change is not explained)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (prioritizes validation churn) and 2 (names the pass-through ValidateOrder as the candidate). Misses criterion 3, since it never states whether removal concentrates or merely moves complexity. Criterion 4 is only loosely covered: it names a single validate(order) entry point and says tests target it, but never explains why that seam survives the change."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (prioritizes validation area) and 2 (identifies the pass-through ValidateOrder as candidate); missed criterion 3's explicit concentrate-vs-move analysis and criterion 4's public test seam, though testability is mentioned loosely."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (prioritizes validation area) and 2 (identifies forwarding layer as candidate) are met; criterion 3 is partly met by discussing locality and caveats but never explicitly addresses whether removal concentrates complexity or merely moves it; criterion 4 (public test seam surviving the change) is not described beyond a vague 'tests target one interface' remark."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (prioritizes validation churn) and 2 (names ValidateOrder as the forwarding candidate). Criterion 3 is only implicit, never stating whether removal concentrates or merely moves complexity, and criterion 4 names a single entry point but never explains why it survives the change."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Observation:** `ValidateOrder` is a pass-through. It forwards every argument unchanged to `OrderRules`, adds no logic of its own, and all validation lives in `OrderRules`. So the interface is nearly as wide as the implementation behind it. The layer costs a hop and a signature to keep in sync, and it hides nothing. The last five changes all touched validation, which suggests the churn lands on both sides of that seam.\n\n**Deepening candidate:** Make `ValidateOrder` the deep module by folding `OrderRules` behind it, or by removing `ValidateOrder` and having `OrderController` call `OrderRules` directly. I'd recommend the first.\n\n- Give `ValidateOrder` a small interface, such as \"here is an order, get back a result (valid, or a list of violations)\".\n- Move the rule details (which rules exist, their order, how they combine, what context they need) behind that interface.\n- `OrderController` then depends on one narrow, stable entry point and doesn't need to know about individual arguments or rule structure.\n\n**Why this one:**\n- **Locality:** Validation changes would then stay inside one module. Today a change that adds or alters an input probably has to be edited in the controller, the forwarder, and the rules.\n- **Leverage:** Callers get the full validation behavior through a single call. Tests can target that one interface instead of the forwarding layer and the rules separately.\n- **Fit with the evidence:** Five recent validation changes show this area is volatile. A narrow interface over a changing implementation is the right shape for volatile code. A pass-through that mirrors the argument list works against it.\n\n**Caveat:** I only have the description, not the code. Before committing, I'd check whether `ValidateOrder` is also doing something implicit, such as being a mocking seam, a place for logging or metrics, or a boundary used by other callers. If it is, keep it, but give it a real job and a narrower signature instead of leaving it as a forwarder.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it prioritizes validation, names the ValidateOrder forwarder as the candidate, and describes a stable single entry point as the test seam. Misses criterion 3, since it never explains whether removing the forwarder concentrates or merely moves complexity."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (prioritizes validation area), 2 (identifies ValidateOrder forwarder as candidate), and 3 (discusses folding vs. removal, though weakly on concentrate-vs-move); misses 4 since it names no public test seam surviving the change, only mentions tests targeting one interface."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it prioritizes the volatile validation area, names the forwarder as the candidate, and proposes a narrow entry point tests can target. It misses 3, since it never explicitly weighs whether removal concentrates complexity or merely moves it."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (prioritizes validation area), 2 (identifies ValidateOrder forwarder as candidate), and 3 (discusses folding behind interface versus removal, partially); missed 4 since no public test seam is described as surviving the change, only a vague mention of tests targeting the interface."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it prioritizes the volatile validation area, identifies the forwarder, and names a narrow test seam that survives change. It misses criterion 3, since it never explains whether removal concentrates or merely moves complexity."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "**Candidate: collapse the `ValidateOrder` pass-through into `OrderRules`, so `OrderController` talks to one deep validation module.**\n\n**Problem.** `ValidateOrder` forwards every argument unchanged to `OrderRules`, so its interface is as complex as its implementation, which is the definition of a shallow module. It adds a hop without adding depth.\n\n**Deletion test.** If `ValidateOrder` were deleted, no complexity would reappear anywhere. `OrderController` would call `OrderRules` directly. Deletion would just remove indirection, so the module isn't earning its place.\n\n**Why it matters here.** The last five changes touched validation, so this is a hot spot. Each change to a rule's inputs risks edits in two modules, because the forwarded signature has to stay in sync. That is poor **locality**. Validation knowledge is concentrated in `OrderRules`, but its interface is spread across two modules.\n\n**Seam.** `ValidateOrder` creates a seam between the controller and the rules, but with only one adapter behind it. One adapter makes it a hypothetical seam, not a real one. Nothing varies across it, so it buys no **leverage**.\n\n**Benefits.**\n- Interface changes happen in one place.\n- Tests go through `OrderRules`' interface, which is the real test surface. Controller tests no longer need to stub or mock a forwarding layer.\n- Navigating the code takes one fewer hop when someone traces validation.\n\n**Direction, not implementation.** Make `OrderRules` the single validation module, with an interface expressed in the domain's terms, and decide later whether it should hide more (for example, collecting all rule failures behind one call). I'm not proposing that interface yet.\n\n**Recommendation strength: Strong**, with two caveats I can't check from the description:\n- Other callers of `ValidateOrder` would need to move to `OrderRules`.\n- If an ADR or a planned second implementation justifies the seam, that would change the verdict.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: prioritizes the validation hot spot, names the ValidateOrder forwarding layer, and explains that deletion removes indirection without moving complexity. Criterion 4 is only partly met: it names OrderRules' interface as the test surface but does not explain why that seam survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: it prioritizes validation as a hot spot, names the ValidateOrder forwarder, and explains that deletion removes indirection without moving complexity. Criterion 4 is only partly met: it names OrderRules' interface as the test surface but never explicitly argues why it survives the change."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criteria 1 (prioritizes validation area), 2 (identifies forwarding layer as candidate), and 3 (explains removal concentrates vs. moves complexity via deletion test) are met; criterion 4 misses since no public test seam surviving the change is described, only a claim that tests go through OrderRules."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: prioritizes validation, names ValidateOrder as the forwarding candidate, and explains via the deletion test that complexity would not reappear. Criterion 4 is weak: it names OrderRules' interface as the test surface but never explains why it survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: prioritizes validation as a hot spot, identifies ValidateOrder as the forwarding candidate, and uses the deletion test to show removal sheds indirection without moving complexity. Criterion 4 is weak: it names OrderRules' interface as the test surface but never explains why that seam survives the change."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Deepening candidate: remove the `ValidateOrder` pass-through and give `OrderRules` a single narrow entry point.**\n\n**What the description shows**\n- `ValidateOrder` forwards every argument unchanged, so it adds no logic, hides no decisions, and has an interface as wide as the thing it wraps. It is a shallow module.\n- All validation logic lives in `OrderRules`, so that is where the depth is. The extra layer only adds a second place to edit.\n- The last five changes all touched validation. If any of them changed a signature or added a parameter, `ValidateOrder` had to change in lockstep with `OrderRules`. This is likely a recurring cost.\n\n**The candidate**\nHave `OrderController` call `OrderRules` directly through one entry point that takes the order as a single object (or a small input type) rather than a growing list of arguments. It would return a structured result, such as a list of violations. Callers would no longer need to know which rules exist, their order, or what inputs each one needs. New rules could then be added behind that entry point without touching the controller or any intermediate layer.\n\n**Why this is the right one to pick first**\n- It targets where the churn is, since validation is what keeps changing.\n- It reduces the number of files a validation change touches, from two layers to one.\n- It trades a wide, unstable interface for a narrow, stable one, with the complexity concentrated inside `OrderRules`.\n\n**Caveats to check before doing it**\n- If `ValidateOrder` exists as a seam for tests, dependency injection, or a second caller, keep it, but then it should earn its place by owning something such as error translation or logging.\n- Confirm whether other callers depend on `ValidateOrder`'s current signature, as that determines how big the migration is.\n- The description doesn't say what the five changes actually were. If they were mostly new rules, the narrow entry point helps most. If they were mostly tweaks to individual rules, the larger win may be splitting `OrderRules` internally.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: it prioritizes validation churn, identifies the ValidateOrder forwarder, and explains that complexity concentrates in OrderRules. Misses 4: it never describes a public test seam that survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: prioritizes validation churn, names the ValidateOrder forwarding layer, and explains that complexity concentrates in OrderRules. Misses 4: it never describes a public test seam and why it survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: it prioritizes validation churn, names the ValidateOrder forwarder as the candidate, and explains complexity concentrating in OrderRules. Missed 4: no public test seam is described with reasons it survives."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: it prioritizes validation churn, names the ValidateOrder pass-through as the candidate, and says complexity concentrates in OrderRules. Missed 4: no public test seam is described as surviving the change."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (prioritizes validation area) and 2 (identifies ValidateOrder forwarding layer as candidate); misses 3 (never weighs whether removal concentrates or merely moves complexity explicitly) and 4 (no public test seam surviving the change; it only suggests keeping ValidateOrder as a seam conditionally)."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Observation:** `ValidateOrder` is a pass-through. It forwards every argument unchanged to `OrderRules` and holds no logic of its own. That makes it a shallow module: its interface is as wide as the one it wraps, so it hides nothing. Callers and maintainers pay for an extra hop without getting any abstraction in return. The fact that the last five changes all touched validation suggests the real complexity lives in `OrderRules`, and each change is likely rippling through both layers.\n\n**Deepening candidate:** Collapse the `ValidateOrder` / `OrderRules` split into a single deep validation module with a small interface, such as `validate(order) -> ValidationResult`, and have `OrderController` call it directly.\n\nWhat this would look like:\n\n- **Narrow interface:** The controller passes in the order (or a minimal context) and gets back a result. It does not need to know about individual rules or their parameters.\n- **Hidden complexity:** Rule selection, ordering, and short-circuit versus collect-all behavior stay behind the interface in `OrderRules`.\n- **Removed layer:** `ValidateOrder` goes away, or becomes the module itself if the name is preferred. Either way, there is one place to change rather than two.\n\n**Why this is worth it given the change history:** Because validation has been the hot spot in the last five changes, any signature change currently has to be mirrored across the forwarding layer. A narrower interface that takes the order as a whole means new rules or new inputs can be added inside the module without touching the controller or a pass-through signature.\n\n**Caveat:** I only have the description, not the code. Before acting, I would check whether `ValidateOrder` serves a purpose the description doesn't mention, such as acting as a seam for test doubles or a stable public API for other callers. If so, the better move might be to keep it but give it a real, narrower interface rather than delete it.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: it prioritizes validation, identifies the ValidateOrder pass-through as the candidate, and explains that removal concentrates validation into one place. Missed criterion 4: it mentions test doubles only as a caveat and never describes a surviving public test seam."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (prioritizes validation area), 2 (identifies ValidateOrder forwarding layer as candidate), and 3 (argues removal concentrates logic into one module); missed criterion 4, no public test seam described with survival rationale—only a caveat about test doubles without describing a surviving seam."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets prioritizing validation, identifying the ValidateOrder forwarding layer, and explaining concentration versus moving complexity. Misses item 4: it mentions a test-double seam only as a caveat and never describes a public test seam that survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: it targets validation, identifies the ValidateOrder forwarding layer, and explains that removal consolidates validation into one place. It misses 4, since it never describes a public test seam or why one survives the change."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 and 2 by prioritizing validation and identifying the pass-through ValidateOrder layer. Criterion 3 is only implicit ('one place to change'), and criterion 4 mentions a test-double seam without describing how it survives the change."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": {
+      "answer": "**Candidate: collapse the ValidateOrder pass-through into OrderRules (Strong)**\n\n**Problem:** ValidateOrder is a shallow module. It forwards every argument unchanged, so its interface is exactly as complex as OrderRules' interface and it adds no behavior. Anyone changing validation has to follow the call from OrderController through ValidateOrder to OrderRules to find the logic.\n\n**Deletion test:** If you deleted ValidateOrder, no complexity would reappear in its callers. OrderController would just call OrderRules directly, so the module is a hop rather than a place where complexity concentrates. That makes it a good candidate for removal.\n\n**Why it matters here:** The last five changes all touched validation, so this is a hot spot. If a signature change has to be mirrored in both ValidateOrder and OrderRules, that is a locality problem: one concept is spread across two modules. Merging them puts validation changes in one place.\n\n**Benefits:**\n- **Locality:** validation changes and bugs live in one module.\n- **Leverage:** OrderController gets one clear entry point for validation, with no forwarding layer to keep in sync.\n- **Testing:** the interface is the test surface, so tests go through OrderRules' interface alone. There is no pass-through to mock or to test for \"forwards correctly\".\n\n**Caveats:**\n- If ValidateOrder is a real seam, for example with a second adapter such as a different validation strategy per channel, keep it. One adapter is only a hypothetical seam, and two make it real. Nothing in the description suggests a second adapter.\n- I haven't checked the project's domain glossary or ADRs, so confirm no ADR deliberately requires this layer before acting.\n- I'm assuming the five recent changes touched both modules. If they only touched OrderRules, the case is weaker, though the pass-through is still dead weight.\n\nI haven't proposed the shape of the merged interface. That would be the first thing to work through if you pick this candidate.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: prioritizes the validation hot spot, names ValidateOrder as the forwarding layer, and explains via the deletion test that removal moves rather than concentrates complexity. Missed criterion 4: it names OrderRules' interface as the test surface but never explains why that seam survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: prioritizes validation via the recent-changes hot spot, identifies ValidateOrder as the forwarding layer, and explains via the deletion test that it is a hop. Misses 4: OrderRules' interface is named as a test surface, but survival under change is not explained."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: prioritizes the validation hot spot, names ValidateOrder as the forwarding candidate, and uses the deletion test to show removal moves rather than concentrates complexity. Criterion 4 is only partly met: it names OrderRules' interface as the test surface but never explains why that seam survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (prioritizes validation area), 2 (identifies ValidateOrder forwarding layer), and 3 (deletion test explains complexity concentrates in OrderRules). Misses 4: no public test seam is described; it only says tests go through OrderRules' interface, without explaining why it survives the change."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (prioritizes validation area), 2 (identifies ValidateOrder forwarding layer), and 3 (deletion test shows complexity doesn't reappear); missed 4, since it describes testing benefits but no explicit public test seam surviving the change."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Deepening candidate: collapse `ValidateOrder` into `OrderRules`, and give `OrderRules` one narrow entry point for the controller.**\n\n**Why this one**\n- `ValidateOrder` forwards every argument unchanged, so it is a pass-through. Its interface is as wide as `OrderRules`'s, and it hides nothing. That makes it a shallow module: it adds a layer to read and maintain without absorbing any complexity.\n- All the validation logic lives in `OrderRules`, and the last five changes all touched validation. The churn is concentrated there, so the interface callers see is probably changing along with the rules. Any signature change has to be made twice, in `ValidateOrder` and in `OrderRules`.\n\n**What the deeper shape looks like**\n- `OrderController` calls a single operation, such as \"validate this order\", and gets back a result. The result could be a list of violations or a pass/fail value.\n- Which rules exist, their ordering, and which arguments each one needs stay hidden inside `OrderRules`. Adding or changing a rule then doesn't ripple outward to the controller or an intermediate layer.\n\n**Caveat**\nThis is based only on the description. If `ValidateOrder` exists as a deliberate seam, for example for test substitution, dependency injection, or a planned second rule set, keep the seam but make it earn its place. It should take over something real, such as assembling the inputs `OrderRules` needs from the order, so the controller no longer passes those details through.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (prioritizes validation churn) and 2 (names ValidateOrder as the forwarding candidate). Misses 3, which never states whether removal concentrates or merely moves complexity, and 4, which describes no public test seam."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (prioritizes validation churn) and 2 (names ValidateOrder as the forwarding candidate); criterion 3 is only implied, not explicitly stated; criterion 4 (public test seam and why it survives) is missed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (prioritizes the validation churn) and criterion 2 (names ValidateOrder as the forwarding candidate). Misses criterion 3, since it never explicitly says whether removal concentrates or moves complexity, and criterion 4, since it proposes no public test seam that survives the change."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (prioritizes the validation area) and 2 (identifies ValidateOrder as the pass-through forwarding layer). Misses 3, since it never says whether removal concentrates or merely moves complexity, and 4, since it names no public test seam or why one survives."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (prioritizes the validation area) and 2 (identifies the ValidateOrder forwarding layer). Misses 3, since it never states whether removal concentrates or merely moves complexity, and misses 4, since it names no public test seam or why one survives."
+       }
+      ]
+     },
+     "baseline": null
+    },
+    {
+     "try": 6,
+     "with_skill": null,
+     "placebo": {
+      "answer": "**Deepening candidate: collapse `ValidateOrder` into `OrderRules`, or give it real depth.**\n\n**Observation:** `ValidateOrder` is a pass-through. It forwards every argument unchanged to `OrderRules`, holds no logic, and adds no behavior. Its interface is as wide as the implementation behind it, so it's a shallow module. Callers learn nothing from it that they wouldn't learn from `OrderRules` directly, and each change to validation (the last five all touched it) has to be threaded through two layers.\n\n**Suggested deepening:** Make `OrderRules` the single validation module and have `OrderController` depend on a small interface to it, such as `validate(order) -> ValidationResult`. Remove `ValidateOrder` as a separate layer. The aim is a narrow interface over a deep implementation: the controller passes in an order and gets back a result. It doesn't need to know how many rules exist, their ordering, or what arguments each one takes.\n\n**Why this fits the evidence:**\n- Validation is the churn hotspot, so that's where a stable, narrow interface pays off most. Rule changes would stay inside `OrderRules` and stop rippling outward.\n- With the forwarding layer gone, there's one place to read, test, and change.\n- Passing a single order object, instead of forwarding a growing argument list, means new rule inputs don't alter signatures.\n\n**Alternative, if the layer exists for a reason:** If `ValidateOrder` is a deliberate seam (for example, so the controller can be tested with a fake validator), keep it but have it own something real, like assembling rule inputs from the request or translating results into controller-facing errors. Otherwise it's indirection without payoff.\n\n**Caveat:** I only have the description, not the code. Before acting, I'd check whether anything else calls `ValidateOrder` and whether it's referenced for dependency injection or testing.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (validation as the churn focus), 2 (ValidateOrder named as the forwarding layer), and 3 (removal consolidates validation into one place). Criterion 4 is weak: the stable interface is described, but not explicitly as a test seam with reasons it survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it prioritizes validation, identifies the ValidateOrder pass-through, and describes a narrow validate() seam that survives rule changes. Misses criterion 3 because it never explicitly weighs whether removal concentrates complexity or merely moves it."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (prioritizes validation as churn hotspot) and 2 (identifies the ValidateOrder forwarding layer), but misses 3 (never explicitly weighs concentrating versus merely moving complexity) and only partly meets 4 (names a validate interface without explaining why it survives the change)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: prioritizes validation as the churn hotspot, names the forwarding ValidateOrder layer, and explains removal concentrates logic in OrderRules. Criterion 4 is weak: the validate(order) interface is named, but it never clearly explains why that seam survives the change."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (validation as churn hotspot) and 2 (ValidateOrder as pass-through candidate); criterion 3 is arguably met via concentration into OrderRules, and criterion 4 is only partly met since the seam's survival is implied rather than explicitly argued."
+       }
+      ]
+     },
+     "baseline": null
+    }
+   ]
+  },
+  {
+   "id": "adr",
+   "number": 2,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. Glossary calls the concept Reservation. An accepted ADR keeps payment separate to support two processors. A proposed review merges everything into BookingService. Write a review response.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/engineering/improve-codebase-architecture/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 552240a5ab5cec6b67c15dd1ad6e9f6962b1bca6ce870059a8c2713760c20392; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Use the supplied Reservation term 2. Identify the conflict with the accepted ADR 3. Require evidence before reopening the decision 4. Avoid proposing a broad merge solely for fewer modules",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "# Review response: merge into `BookingService`\n\n**Recommendation: don't accept as proposed.** Part of it is worth keeping, but the payment merge conflicts with an accepted ADR, and the name doesn't match the domain language.\n\n## 1. Naming: Reservation, not Booking\n\nThe glossary calls this concept **Reservation**. A module named `BookingService` introduces a second term for the same thing, and it also drifts into \"service,\" which isn't the vocabulary we use for architecture. If any of this is consolidated, the deepened module should be the **Reservation module** (or similar), and \"Booking\" shouldn't appear in its name or interface.\n\n## 2. Payment: this contradicts the accepted ADR\n\nThe ADR keeps payment separate so that two processors can be supported. That makes the payment **seam** a real one, since two **adapters** sit behind it, not a hypothetical one. Folding payment into the Reservation module would:\n\n- Lose **locality** for processor-specific behavior, spreading it through Reservation logic.\n- Make the **interface** wider, since callers would see processor concerns.\n- Weaken the **interface as test surface**: Reservation tests would need to account for both processors instead of faking one payment adapter.\n\nThe proposal gives no concrete friction that would justify reopening the ADR. Without that, we shouldn't revisit it. If the real pain is that Reservation and payment are awkward to coordinate, the fix is a better-shaped payment interface, not removing the seam.\n\n## 3. What's still worth pursuing\n\n\"Merge everything\" is too broad, but some of it may pass the **deletion test**. For each non-payment module the proposal would absorb, ask: if we deleted it, would complexity concentrate in the Reservation module (a signal to merge) or just move elsewhere? Where the answer is \"concentrates,\" merging gives more **depth** and **leverage** behind a smaller interface, and I'd support that.\n\n## 4. Requested changes\n\n1. Rename the target to the glossary term (Reservation).\n2. Exclude payment from the merge and keep the processor seam and both adapters.\n3. List which modules are being merged and apply the deletion test to each.\n4. If you still want to challenge the ADR, state the specific friction it causes and mark it explicitly as an ADR conflict, so it can be weighed on its merits.\n\nHappy to proceed with a narrowed version once points 1–3 are addressed.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: uses the Reservation term, identifies the conflict with the accepted ADR, requires concrete friction before reopening it, and rejects the broad merge in favor of deletion-test-based merging."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (uses Reservation term), 2 (identifies ADR conflict), and 4 (rejects broad merge for fewer modules); missed criterion 3 since it doesn't require concrete evidence before reopening the ADR, only states the proposal lacks friction."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses the glossary term Reservation, identifies the conflict with the accepted payment-separation ADR, requires concrete friction before reopening it, and rejects the broad merge rather than proposing one for fewer modules."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses the glossary term Reservation, identifies the conflict with the accepted ADR, requires concrete friction before reopening it, and conditions merges on the deletion test rather than fewer modules."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses the Reservation term, flags the conflict with the accepted ADR, requires specific friction before reopening it, and rejects the broad merge in favor of selective merging."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Review response: Request changes**\n\nThanks for the proposal. I can't approve it as written, for two reasons.\n\n**1. It conflicts with an accepted ADR**\n\nThe accepted ADR keeps payment separate from the rest of the booking flow so we can support two payment processors. Merging everything into `BookingService` pulls payment logic into the same class as the reservation logic. That removes the boundary the ADR set up, and adding or switching a processor would mean changing the core service rather than plugging in behind a payment interface.\n\nIf there's a strong reason to revisit that decision, the right path is a new ADR that supersedes the accepted one, with a plan for how both processors will still be supported. Until that's accepted, the change should follow the current ADR.\n\n**2. The naming doesn't match the glossary**\n\nOur glossary calls this concept **Reservation**, but the proposal names it around \"Booking\". Please align class, method, and variable names with the glossary term (for example, `ReservationService`), or, if \"Booking\" is meant to be a different concept, say so and add it to the glossary.\n\n**What I'd suggest**\n\n- Keep payment in its own component, as the ADR requires, and have the reservation service depend on it through an interface.\n- Rename to match the glossary term Reservation.\n- If the goal is to simplify the call path or cut indirection, I'm happy to discuss options that do so without merging payment into the reservation service, such as a thin facade that coordinates the two.\n- If the ADR itself needs to change, open a superseding ADR first, and we can review the code once that's decided.\n\nHappy to go through this together if it would help.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Uses the Reservation term and identifies the ADR conflict, but never asks for evidence before reopening the decision (it only suggests a superseding ADR), and it does not explicitly reject a broad merge for fewer modules, though it does reject merging payment into the service."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (uses the Reservation term), 2 (names the accepted-ADR conflict), and 4 (no broad merge proposed). Missed criterion 3: it asks for a 'strong reason' and a superseding ADR but never requires evidence."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (uses Reservation), 2 (identifies the accepted ADR conflict), and 4 (no broad merge proposed); misses 3, since it requires a superseding ADR but no concrete evidence before reopening."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: uses the Reservation term, identifies the accepted ADR conflict, and avoids proposing a merge. Missed: it asks for a superseding ADR with a plan but never requires evidence before reopening the decision."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Uses the Reservation term and identifies the ADR conflict, and it avoids proposing a broad merge. It misses the evidence requirement: it asks for a superseding ADR but never requires evidence before reopening the decision."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Review response: merging everything into `BookingService`**\n\nThanks for the review. I'd like to hold off on two parts of this proposal.\n\n**1. Payment should stay separate (blocking)**\n\nThe accepted ADR keeps payment separate from the booking logic so we can support two payment processors. Folding payment into `BookingService` would:\n\n- Couple reservation logic to processor-specific behavior, so each processor's quirks would leak into code that shouldn't know about them.\n- Make adding or swapping a processor a change to the core service rather than a new implementation behind the existing boundary.\n- Contradict a decision the team has already accepted.\n\nIf the merge solves a real problem, such as too much indirection, duplicated orchestration, or awkward transaction handling, I'm happy to look at it. The right route is a new ADR that supersedes the current one, not a change slipped in through a code review. In the meantime, I'd suggest addressing the underlying pain point within the current boundary. One option is a thin orchestration method on the service that calls the payment interface.\n\n**2. Naming (non-blocking, but should be fixed)**\n\nThe glossary calls this concept **Reservation**, so `BookingService` introduces a second term for the same thing. I'd prefer the code and docs use the glossary term, for example `ReservationService`. If \"Booking\" is the better name, let's update the glossary deliberately and everywhere at once, rather than letting the two terms drift apart.\n\n**Proposed next steps**\n\n- Keep payment as a separate component, per the accepted ADR.\n- Rename to match the glossary, or open a glossary change if we want \"Booking\".\n- If you still believe consolidation is the right call, please open a proposal to supersede the ADR, and I'll weigh in there.\n\nHappy to talk it through live if that's quicker.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses the glossary term Reservation, identifies the conflict with the accepted ADR, conditions reopening on a demonstrated real problem via a superseding ADR, and proposes no broad merge."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Uses the Reservation term via ReservationService, identifies conflict with the accepted ADR, requires a superseding ADR before reopening, but proposes no evidence threshold explicitly, so criterion 3 is only partly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (uses the Reservation term), 2 (names the conflict with the accepted ADR), and 4 (proposes no broad merge). Criterion 3 is only partly met: it asks for a real problem and a superseding ADR, but never explicitly requires evidence."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Uses the glossary term Reservation (via ReservationService), identifies the conflict with the accepted ADR, and requires a superseding ADR before reopening; but it does not explicitly require evidence before reopening and it does not pivot on the broad-merge-for-fewer-modules point, so 3 of 4 criteria are fully met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses the glossary term Reservation, flags the conflict with the accepted ADR, conditions reopening on a real problem and a superseding ADR, and proposes no broad merge for fewer modules."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "# Review response: proposal to merge everything into `BookingService`\n\n**Recommendation: don't merge as proposed. Keep payment separate, and deepen the Reservation module instead.**\n\n## Where the proposal conflicts with the project's decisions\n\n1. **It contradicts an accepted ADR.** The ADR keeps payment separate so the system can support two processors. The proposal doesn't say what has changed since that decision. Without evidence that the friction outweighs the ADR's reasoning, this reopens a settled decision.\n\n2. **The payment seam is real.** One adapter would be a hypothetical seam, but two processors make it a real one. Folding payment into a single module removes the **seam** where the processors plug in. Each processor's behaviour would then leak into booking logic, and every new processor would mean editing that module.\n\n3. **It uses the wrong name.** The glossary calls the concept **Reservation**. \"Booking\" isn't the domain term, so a `BookingService` that absorbs everything adds vocabulary drift on top of the structural change. If the module is to be consolidated, it should be named for the Reservation concept.\n\n## Where the proposal has a point\n\nIf understanding a Reservation currently means bouncing between many small modules, that friction is worth fixing. The way to fix it is to make the Reservation module **deeper**: a small **interface** over more of the reservation logic, with better **locality** for bugs and changes.\n\n## Counter-proposal\n\n- Consolidate reservation-only logic behind a single Reservation module. Apply the deletion test to each small module first. Merge only those whose removal would concentrate complexity rather than just move it.\n- Leave payment behind its existing seam, with one **adapter** per processor. Reservation code should call payment only through that interface.\n- Test through the Reservation interface, with a fake payment adapter standing in at the seam. This improves test coverage without collapsing the boundary.\n\n## Open question for the author\n\nWhat specific friction motivated the merge? If it's something the ADR didn't anticipate, such as a processor being dropped, say so explicitly. Then we can discuss superseding the ADR. Otherwise I'd ask that this be revised along the lines above.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (uses Reservation term), 2 (identifies conflict with accepted ADR), and 3 (requires evidence before reopening the decision); missed criterion 4 since it doesn't explicitly reject a broad merge solely for fewer modules—though it does reject the merge, it partially endorses consolidating small modules."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses the supplied Reservation term, identifies the conflict with the accepted ADR, requires evidence before reopening it, and avoids a broad merge by limiting consolidation to deletion-test-justified modules."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses the Reservation term, identifies the conflict with the accepted ADR, requires evidence before reopening it, and avoids a broad merge, proposing selective consolidation instead."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses the Reservation term, flags the conflict with the accepted payment-separation ADR, requires evidence before reopening it, and rejects the broad merge in favour of targeted consolidation justified by the deletion test."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response uses the Reservation term, identifies the conflict with the accepted ADR's two-processor rationale, requires evidence before reopening the decision, and rejects the broad merge in favor of a deeper module with a deletion-test approach."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Review response**\n\nThanks for the review. I'm not going to adopt the proposed merge of everything into `BookingService`, for two reasons.\n\n**1. Payment stays separate (accepted ADR)**\nThe accepted ADR keeps payment separate so we can support two processors. Folding payment logic into `BookingService` would couple booking to processor-specific behavior and undo that decision. If we want to reconsider it, that needs a new ADR that supersedes the accepted one, not a change made through code review. In the meantime, I'm keeping the payment boundary as it is.\n\n**2. Naming should follow the glossary**\nThe glossary calls this concept **Reservation**, not Booking. Extending `BookingService` would entrench a term the glossary doesn't use. I suggest the service be named around Reservation (e.g. `ReservationService`), and I'm happy to make that rename in this PR or a follow-up, whichever you prefer.\n\n**What I can do instead**\nIf the concern is that the current split is too fragmented or awkward to use, I can:\n- Add a thin orchestration layer that coordinates reservation and payment without merging their internals.\n- Simplify the interfaces between the two so callers deal with fewer touchpoints.\n\nIf you think the ADR no longer holds, for example because we're dropping one of the two processors, let's raise that explicitly and revisit it in a new ADR. Otherwise I'll proceed with the separation intact and the glossary-aligned naming.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses the Reservation term, identifies the conflict with the accepted payment-separation ADR, gates reopening behind a superseding ADR and explicit reasoning, and rejects the broad merge in favor of a thin orchestration layer."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Uses the Reservation term, identifies the conflict with the accepted payment-separation ADR, and avoids proposing a broad merge. It requires a new superseding ADR but never explicitly asks for evidence before reopening the decision."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: uses the Reservation term, names the conflict with the accepted ADR, and avoids a broad merge. Misses 3, since it requires a new ADR but not evidence."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Uses the Reservation term, identifies that merging payment into BookingService undoes the accepted ADR, and avoids proposing a broad merge. It does not explicitly require evidence before reopening the decision, only a new ADR."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: uses the Reservation term, ties the merge to undoing the accepted ADR, and avoids a broad merge. Criterion 3 is only partly met, since it requires a new ADR and names a trigger but does not ask for evidence."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Review response**\n\nThanks for the review. I'm not going to adopt the suggestion to merge everything into `BookingService`, for two reasons.\n\n**1. Payment must stay separate (accepted ADR)**\n\nAn accepted ADR keeps payment separate from the rest of the flow so we can support two payment processors. Folding payment logic into a single service would couple reservation logic to processor-specific behavior. That would undo the seam the ADR created, and adding or switching a processor would mean changing the core service instead of swapping an implementation behind a boundary.\n\nIf you think the ADR no longer holds, for example because we are dropping one processor or the boundary is causing real problems, the right path is a new ADR that supersedes it. That discussion should happen there, not through this change.\n\n**2. Naming: the glossary says Reservation**\n\nOur glossary calls this concept **Reservation**, not Booking. Even if we did consolidate, `BookingService` would introduce a term that conflicts with the shared vocabulary. Any service we keep or add in this area should use the glossary term (e.g. `ReservationService`). If you feel \"Booking\" is the better term, that should be a glossary change proposed separately.\n\n**What I'm happy to do**\n\n- Rename anything in this change that uses \"Booking\" to match the glossary.\n- Keep reservation logic consolidated where it makes sense, as long as payment stays behind its own boundary.\n- If the concern is too many small classes or awkward call paths, point me to the specific spots and I'll look at simplifying them without merging payment in.\n\nI'm leaving the structure as is for now. Happy to continue the discussion, especially if there's a case for superseding the ADR.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Uses the Reservation term, identifies the conflict with the accepted two-processor payment ADR, and avoids proposing a broad merge. It misses criterion 3 because it routes reopening through a superseding ADR without requiring evidence first."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met 1 (uses Reservation term), 2 (identifies conflict with accepted ADR on payment separation), and 3 (requires a superseding ADR before reopening); missed 4 is satisfied too, but the response never requires evidence explicitly, so 3 is partial—scoring 0.75 overall."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Uses the Reservation glossary term, identifies the conflict with the accepted payment-separation ADR, and avoids proposing a merge. It only loosely requires evidence before reopening, tying it to 'real problems' without asking for proof."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: uses the glossary term Reservation, identifies the conflict with the accepted payment-separation ADR, and rejects the broad merge. Criterion 3 is only partly met, since it routes reopening through a superseding ADR and cites 'real problems' but never explicitly requires evidence."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: uses the Reservation term, identifies the conflict with the accepted payment-separation ADR, and avoids proposing a broad merge. Missed: it routes reopening to a new ADR but never requires evidence before reopening."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "# Review response: merge into `BookingService`\n\n**Recommendation: don't approve as proposed.** Part of it is worth keeping, but the payment merge conflicts with an accepted ADR, and the naming conflicts with the glossary.\n\nThis is based only on the facts supplied. I haven't looked at the code, so I can't comment on specific files.\n\n## 1. Payment must stay behind its own seam\n\nThe accepted ADR keeps payment separate so the system can support two processors. With two processors there are two adapters, which makes payment a real seam rather than a hypothetical one. Folding it into one module would:\n\n- Push processor-specific branching into the module that owns the Reservation lifecycle, which reduces **locality** for both concerns.\n- Make tests exercise processor behavior through the Reservation interface, so the interface stops being a clean test surface.\n- Remove the point where a third processor, or a fake in tests, would plug in.\n\nThe proposal doesn't say what has changed since the ADR was accepted. The ADR should be reopened only if the friction is concrete, for example payment and Reservation logic being so tangled that every change touches both. If that's the case, make it an explicit ADR revision with the evidence. A refactor shouldn't override the decision implicitly.\n\n## 2. Use the domain term: Reservation\n\nThe glossary calls this concept **Reservation**. `BookingService` introduces a second name for the same thing, and \"service\" is vague about what the module owns. If the Reservation logic is consolidated, name it after the concept, for example a Reservation module, and don't introduce Booking vocabulary.\n\n## 3. What is worth keeping\n\nIf the underlying complaint is that Reservation logic is scattered across many shallow modules, that's a legitimate deepening opportunity. Apply the deletion test to each candidate: if removing a module would concentrate complexity, merge it. If it would only move the complexity elsewhere, leave it.\n\nReservation-side logic can be consolidated into one deeper module. Payment stays outside it, reached through a single payment seam with the two processors as adapters.\n\n## 4. Requested changes\n\n1. Remove payment from the merge scope.\n2. Rename the target module to match the glossary term Reservation.\n3. If the author still wants payment merged, state what has changed since the ADR and propose an ADR revision. Don't contradict it silently.\n4. Describe how tests would improve, in terms of locality and leverage, for the Reservation-only consolidation.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses the supplied Reservation term, identifies the conflict with the accepted ADR, requires concrete evidence and an explicit ADR revision before reopening it, and limits consolidation to the deletion-test rationale rather than fewer modules."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses the Reservation term throughout, identifies the conflict with the accepted ADR, requires concrete evidence before reopening it, and justifies the Reservation-only consolidation by depth via the deletion test rather than fewer modules alone."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses the supplied term Reservation throughout, identifies the conflict with the accepted ADR, requires concrete evidence before reopening it, and justifies consolidation by depth and the deletion test rather than fewer modules."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (uses Reservation term), 2 (identifies conflict with accepted ADR), and 3 (requires concrete evidence and an ADR revision before reopening). Misses 4: it proposes merging Reservation-side logic into one deeper module, which is a consolidation driven partly by module count rather than avoiding a broad merge."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses the Reservation term throughout, flags the conflict with the accepted ADR, requires concrete evidence and an explicit ADR revision before reopening it, and ties any merge to the deletion test rather than fewer modules."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Review response: merging everything into `BookingService`**\n\nThanks for the proposal. I can't approve it as written, for two reasons.\n\n**1. It contradicts an accepted ADR.**\nThe accepted ADR keeps payment separate so we can support two processors. Folding payment logic into `BookingService` removes that boundary. Processor-specific behavior would then sit in the same class as the core domain logic, and adding or switching a processor would mean changing and retesting the whole service. If there's a strong reason to revisit the decision, the right route is a new ADR that supersedes the existing one, with the two-processor requirement addressed explicitly. A code review isn't the place to override it.\n\n**2. The naming doesn't match the glossary.**\nThe glossary calls this concept **Reservation**, not Booking. A `BookingService` introduces a second term for the same thing, which splits the ubiquitous language across code, docs, and conversation. If the service is kept or split, it should be named for the glossary term (for example, `ReservationService`). If \"Booking\" is preferred, that is a glossary change that should be agreed separately.\n\n**What I'd suggest instead**\n- Keep payment behind its own boundary (an interface or separate service) with one implementation per processor, as the ADR intends.\n- Let the reservation service depend on that boundary rather than on a concrete processor.\n- Rename to follow the glossary term, **Reservation**.\n- If the goal is to reduce indirection or simplify the call flow, I'm happy to look at that within the ADR's constraints, such as a thin facade over the separated pieces.\n\n**Status:** Changes requested. I'd be glad to re-review once the payment separation is preserved and the naming is aligned, or once a superseding ADR is proposed.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Uses the Reservation term, identifies the ADR conflict, and avoids proposing a broad merge; it does not explicitly require evidence before reopening the decision, though it says a superseding ADR would be needed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it uses the Reservation term, identifies the conflict with the accepted ADR, and avoids proposing a merge. It only partly meets criterion 3, requiring a superseding ADR for a 'strong reason' but never asking for explicit evidence."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (uses Reservation term), 2 (identifies conflict with accepted ADR), and 3 (requires a superseding ADR with explicit justification before reopening); missed criterion 4 since it doesn't explicitly warn against merging solely for fewer modules, though it does reject the merge on other grounds."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (uses the Reservation term), 2 (identifies the conflict with the accepted ADR), and 4 (does not propose a broad merge); misses 3 because it requires a superseding ADR but never asks for evidence before reopening the decision."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (uses Reservation) and 2 (identifies ADR conflict), but misses 3 (never requires evidence before reopening, instead suggests a superseding ADR) and 4 (no broad merge proposed, so it's satisfied; recount gives 0.75). Final tally: 0.75 satisfied criteria with criterion 3 partly missed."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Review response: proposal to merge everything into `BookingService`**\n\nThanks for the proposal. I can see the appeal of a single entry point, but I can't approve it as written, for two reasons.\n\n**1. It contradicts an accepted ADR.**\nThe accepted ADR keeps payment separate from booking so we can support two payment processors. Folding payment logic into `BookingService` would couple booking to processor-specific behavior and undo that seam. If we think the ADR is wrong, the right path is a new ADR that supersedes it, with the reasoning and trade-offs written down, not a change that overrides it through a code review.\n\n**2. It doesn't use the agreed domain language.**\nOur glossary calls this concept **Reservation**. The proposal (and the `BookingService` name) uses \"Booking.\" Whichever term we use should match the glossary, so I'd ask that new code and naming follow it, or that we update the glossary deliberately if we want to change it.\n\n**What I'd suggest instead**\n- Keep payment behind its own interface, with one implementation per processor.\n- If the goal is a simpler call site, add a thin facade or orchestration layer that coordinates reservation and payment without absorbing payment logic.\n- Align names with the glossary (Reservation), or open a separate discussion to change the glossary.\n- If you still believe merging is the better design, propose a superseding ADR and we can discuss it there.\n\n**Status:** Request changes. I'm happy to re-review once the design respects the ADR, or once an ADR amendment is accepted.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response uses the Reservation term and identifies the ADR conflict (criteria 1 and 2 met), but it does not require evidence before reopening the decision, instead offering a superseding ADR path without an evidence bar; it avoids a broad merge (criterion 4 met). Score 0.75 would be generous; criterion 3 is missed, so 0.75 total."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criteria 1 (uses Reservation term), 2 (identifies ADR conflict), and 3 (asks for superseding ADR/evidence-based reopening) are met; criterion 4 is met too since it rejects the broad merge and doesn't propose it, but it's less explicit about fewer-modules rationale—scoring conservatively as partially met overall."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses the supplied Reservation term, identifies the conflict with the accepted ADR, requires a superseding ADR with written reasoning before reopening, and does not propose a broad merge."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (uses Reservation term) and criterion 2 met (identifies conflict with accepted ADR). Criterion 3 is only partially met: it asks for a superseding ADR but never requires evidence before reopening the decision. Criterion 4 is met since it rejects the merge and doesn't propose one for fewer modules."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses the Reservation glossary term, identifies the conflict with the accepted ADR, requires a superseding ADR with written reasoning before reopening, and rejects the broad merge in favor of a thin facade."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": null,
+     "placebo": {
+      "answer": "## Review response\n\nThanks for the review. I'm not going to merge everything into `BookingService`, for two reasons.\n\n**1. Payment stays separate (accepted ADR)**\n\nThe accepted ADR keeps payment separate so we can support two processors. Folding payment into one service would couple reservation logic to processor-specific behavior and undo that decision. If we want to revisit it, the right route is a new ADR that supersedes the accepted one, not a change in this PR. I'm happy to open that discussion if you think the tradeoffs have shifted, but until then this PR should follow the ADR.\n\n**2. Naming: Reservation, not Booking**\n\nOur glossary calls this concept **Reservation**. If we consolidate any reservation logic, it should live in something like `ReservationService`, not `BookingService`. Introducing \"Booking\" alongside \"Reservation\" creates two names for one concept, which makes the code and docs harder to follow.\n\n**What I'm proposing**\n\n- Keep payment behind its own boundary, as the ADR requires.\n- Use Reservation terminology in any new or renamed classes.\n- If there's duplication or awkward coordination between the reservation and payment code, point me to the specific spots and I'll address them within the existing separation, for example with a thin orchestration layer that calls the payment interface without absorbing it.\n\nLet me know if you'd like me to make those adjustments, or if you want to start a new ADR to reconsider the payment split.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: uses the Reservation term, identifies the accepted ADR conflict, and rejects the broad merge. Misses 3: it never requires evidence before reopening the decision, only invites discussion if tradeoffs have shifted."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it uses the Reservation term, identifies the conflict with the accepted ADR, and avoids a broad merge. It misses criterion 3 because reopening the decision only requires a new ADR or a shift in tradeoffs, with no evidence requirement."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it uses the Reservation term, ties the merge to the accepted ADR, and avoids a broad merge. It misses criterion 3 because it asks for a new ADR rather than requiring evidence before reopening the decision."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Uses the Reservation term, identifies the conflict with the accepted payment-separation ADR, and avoids proposing a broad merge. It misses the evidence requirement: it asks for a superseding ADR if tradeoffs shifted but never requires evidence first."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: uses the Reservation term, identifies the accepted ADR conflict, and rejects the broad merge. Misses 3: it never requires evidence before reopening the decision."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Review response: merging everything into `BookingService`**\n\nThanks for the review. I'm not going to make this change as proposed, for two reasons.\n\n**1. It reverses an accepted ADR.**\nThe accepted ADR keeps payment separate from the booking flow so we can support two payment processors. Folding payment into `BookingService` would couple booking logic to processor-specific behavior and undo that boundary. If we want to revisit the decision, for example because we no longer need two processors, that should go through a new ADR that supersedes the current one, not through a review comment. Until then, the separation stays.\n\n**2. The name doesn't match our glossary.**\nThe glossary calls this concept **Reservation**. A catch-all `BookingService` adds a second term for the same thing and makes the problem bigger by pulling more responsibilities under it. If we consolidate anything, I'd suggest naming it after the glossary term (e.g. `ReservationService`) and limiting it to reservation concerns only.\n\n**What I'm happy to do instead**\n- If the concern is too many small classes or indirection, I can simplify the interface between the reservation code and the payment component, such as a single narrow payment port that the reservation service calls, without merging them.\n- If the concern is duplicated logic, point me to the specific spots and I'll extract or consolidate those.\n- If you think the ADR is outdated, I'm glad to help draft a superseding ADR so the team can decide explicitly.\n\nLet me know which of these addresses your concern, and I'll update the PR.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: uses the Reservation term, identifies the accepted ADR conflict, and avoids a broad merge. Misses 3, since it never requires evidence before reopening the ADR decision."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response uses the Reservation term, identifies the accepted ADR conflict, and requires a superseding ADR to revisit the decision (criteria 1-3). However, it also argues against the merge partly by saying it adds a term and responsibilities, and never explicitly addresses avoiding a merge solely for fewer modules, so criterion 4 is not clearly satisfied; it still counts as a partial that fails overall."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: uses the Reservation term, names the accepted ADR conflict, and avoids a broad merge. Misses 3: it routes revisiting through a superseding ADR but never requires evidence first."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Uses the supplied Reservation term, identifies the conflict with the accepted ADR, and avoids a broad merge. It misses the evidence requirement: it routes reopening through a superseding ADR but never asks for evidence first."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: uses the Reservation term, identifies the accepted-ADR conflict, and avoids a broad merge. Misses 3: it routes reopening through a superseding ADR but never requires concrete evidence first."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "report",
+   "number": 3,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. Provide the text outline for a review card about a shallow ShippingFacade that exposes every CarrierClient method. There are two real carriers. Include what the user should decide next.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/engineering/improve-codebase-architecture/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 552240a5ab5cec6b67c15dd1ad6e9f6962b1bca6ce870059a8c2713760c20392; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Name involved modules and the concrete friction 2. Propose a smaller meaningful interface 3. Describe benefits and a before/after relationship 4. Ask which candidate or interface direction to explore rather than claiming completion",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "# Review card: ShippingFacade\n\n**Recommendation strength:** `Worth exploring`. The shape of the problem is clear from what you've told me. I haven't seen the callers or the code, so I can't tell whether the facade hides anything.\n\n## Files\n- `ShippingFacade` (the shallow module)\n- `CarrierClient` (the interface it wraps)\n- The two real carrier adapters behind `CarrierClient`. I don't have their names or paths.\n\n## Problem\n- `ShippingFacade` exposes every `CarrierClient` method, so its interface is about as large as its implementation. That makes it **shallow**.\n- Callers learn the same surface twice. They get no **leverage**, because the facade absorbs no complexity on their behalf.\n- Carrier-specific concerns can still reach callers through the pass-through methods, so **locality** is poor. A change to a carrier method means touching the adapter, `CarrierClient`, and the facade.\n- Tests of the facade only verify delegation, so they add little beyond testing `CarrierClient` directly.\n\n## Deletion test\n- Deleting `ShippingFacade` would likely just move calls to `CarrierClient`. Complexity would not reappear across many callers, so the facade is not earning its keep.\n- This holds only if the facade does no real work, such as carrier selection, rate comparison, or fallback. I haven't verified that.\n\n## Seam status\n- With two real carriers, the `CarrierClient` seam is real: two adapters make it more than hypothetical.\n- The facade sits on top of a good seam and adds no depth of its own.\n\n## Solution (plain English, no interface yet)\nThere are two directions:\n1. **Remove the facade.** Callers use `CarrierClient` directly.\n2. **Deepen it.** Make the shipping module own the decisions callers currently make themselves (which carrier, how to combine results, how to handle carrier differences), so its interface is much smaller than what it hides.\n\n## Benefits\n- **Locality:** carrier-handling logic and its bugs live in one place.\n- **Leverage:** callers depend on a small interface.\n- **Tests:** they run through the shipping module's interface, with the two adapters as the variation.\n\n## Before / After diagram (to draw in the HTML report)\n- **Before:** callers → `ShippingFacade` (wide, one-to-one) → `CarrierClient` → Carrier A / Carrier B.\n- **After (option 1):** callers → `CarrierClient` → Carrier A / Carrier B.\n- **After (option 2):** callers → narrow shipping module → `CarrierClient` → Carrier A / Carrier B.\n\n## ADR check\nNo ADRs were supplied, so I have no conflicts to flag.\n\n## What to decide next\n1. **Does the facade do any real work today** (selection, retries, mapping, validation), or is it pure delegation? This decides between removing it and deepening it.\n2. **Which direction do you want:** remove, or deepen? If you want to deepen, which caller decisions should move behind it?\n3. **Is this area a hot spot** in recent changes? If not, per the YAGNI guidance, defer it.\n4. **Which candidate do you want to explore first?** Once you pick, we can start the grilling session on constraints and what sits behind the seam.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (names ShippingFacade, CarrierClient, and the concrete friction), 3 (benefits and before/after diagram), and 4 (asks which direction and candidate to pursue). Misses criterion 2: it defers the interface ('no interface yet') rather than proposing a smaller one."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names the modules and concrete friction (pass-through, poor locality), gives benefits and a before/after relationship, and asks which direction to explore. The smaller-interface proposal stays vague, so that criterion is only partly met."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Names modules and concrete friction (shallow facade, pass-through, poor locality) and proposes a deepened smaller interface direction with before/after; but it gives only prose direction, not a smaller interface, and does ask which direction to explore. Criterion 2 is weak, so roughly half met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names ShippingFacade, CarrierClient, and adapters with concrete pass-through friction (criterion 1), gives benefits and a before/after diagram (3), and asks which direction to take (4). It misses criterion 2: the deepened option is described only in prose, with no concrete smaller interface."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (names facade, CarrierClient, adapters and pass-through friction), 3 (benefits and before/after diagram), and 4 (asks which direction to explore). Misses 2: the deepening option gives no concrete smaller interface."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Review card: shallow ShippingFacade\n\n**Title:** ShippingFacade mirrors CarrierClient one-to-one\n\n**Finding**\n- ShippingFacade exposes every CarrierClient method.\n- Its interface is as wide as the thing it wraps, so it hides nothing and adds a layer to read, test and keep in sync.\n- Every CarrierClient change forces a matching facade change.\n\n**Context**\n- There are two real carriers, so CarrierClient is already a genuine seam: two implementations vary behind it.\n- The facade sits on top of that seam and adds no variation of its own.\n\n**Why it matters**\n- Shallow: little behavior behind a large interface.\n- Callers learn the same API twice.\n- Tests of the facade mostly verify delegation.\n\n**Options**\n1. **Delete the facade.** Callers use CarrierClient directly. This is the smallest and safest change.\n2. **Deepen the facade.** Shrink it to the few operations callers actually need, and move carrier selection, differences between the two carriers, and shared orchestration inside it. Callers no longer see CarrierClient.\n3. **Leave it.** Only justified if something outside this code requires the facade's current shape.\n\n**Recommendation**\n- Choose option 1 unless callers currently repeat carrier-specific or multi-step logic. If they do, choose option 2.\n\n**What to decide next**\n1. Does any caller do carrier selection, fallbacks or multi-call sequences that a deeper facade could own? If yes, option 2. If no, option 1.\n2. Is the facade part of a public or external contract? If yes, keep it for now and note the cost.\n3. For option 2, which operations do callers need? Draft that narrower interface before changing code.\n4. Where should tests live afterward? Aim for them at the new boundary and per-carrier behavior, not at pass-through methods.\n\n**Open facts I don't have**\n- The method list, the callers, and how the two carriers differ. Those would settle decisions 1 and 3.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names ShippingFacade and CarrierClient with concrete friction, asks which direction to decide next, and proposes shrinking the facade. The smaller interface and before/after relationship are only sketched, not concretely specified."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names ShippingFacade and CarrierClient with concrete friction and before/after options (criteria 1, 3, 4 met), but only gestures at a smaller interface ('the few operations callers need') without proposing one (criterion 2 missed)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Names the modules and friction (shallow facade mirroring CarrierClient) and proposes a deeper, smaller interface with before/after tradeoffs, but ends by recommending deletion rather than asking which candidate direction to explore, so criterion 4 is missed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Names ShippingFacade and CarrierClient with concrete friction, gives benefits and options, and asks decisions rather than claiming completion; it never proposes an actual smaller interface, only deletion or a vague narrowing."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Names the facade/CarrierClient friction and proposes a smaller deeper interface with before/after framing, but never asks which direction to explore, instead recommending option 1 and listing decisions; criterion 4 is at best partly met, and criterion 1 lacks concrete modules beyond the two named classes, so it is arguably also missed."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Review Card: Shallow `ShippingFacade` over `CarrierClient`\n\n## 1. Summary\n`ShippingFacade` re-exposes every `CarrierClient` method one-for-one. It adds a layer of indirection without hiding complexity, so its interface is about as large as the implementation behind it. This is a shallow module: little leverage for callers, and one more place to change whenever `CarrierClient` changes.\n\n## 2. Context (supplied facts)\n- The facade exposes every `CarrierClient` method.\n- There are two real carriers behind `CarrierClient`.\n- No other facts (call sites, method list, carrier differences) were supplied, so nothing below assumes them.\n\n## 3. Observations\n- **Interface ≈ implementation:** every client method is mirrored, so callers learn nothing simpler than the client's own API.\n- **Change amplification:** adding or altering a `CarrierClient` method forces a matching facade change.\n- **Pass-through risk:** if methods merely delegate, the facade has no behavior to test or own.\n- **Two real carriers:** this is a genuine seam, since two adapters exist. But the seam is probably `CarrierClient` itself. The facade doesn't add a second one.\n\n## 4. Deletion test\nIf the facade were deleted and callers used `CarrierClient` directly, would complexity reappear across callers?\n- **If no:** the facade is pure pass-through and can go.\n- **If yes:** something real is being concentrated (e.g., carrier selection, normalization, error mapping), and the facade should be narrowed to just that.\n\n## 5. Options\n1. **Remove the facade** and have callers depend on `CarrierClient`. Lowest cost, and the right default if nothing is concentrated.\n2. **Deepen the facade** so it exposes a few caller-oriented operations (e.g., \"get rate\", \"create shipment\", \"track\") and absorbs carrier selection, request/response normalization, and error handling. Fewer methods, more behavior behind them.\n3. **Keep as is.** Only justified if there is a known, near-term reason (e.g., a third carrier or a public API boundary).\n\n**Recommendation:** Option 1, unless the deletion test shows callers repeat carrier-specific logic, in which case Option 2.\n\n## 6. Risks\n- Removing: touches every call site, so the diff may be wide though mechanical.\n- Deepening: risk of designing around two carriers' quirks and baking them into the abstraction.\n- Keeping: ongoing double maintenance with no payoff.\n\n## 7. Decisions for the user\n1. **Does the facade contain any logic today** beyond delegation (selection, mapping, retries)? This determines Option 1 vs 2.\n2. **Do callers currently handle carrier differences themselves?** If so, that logic belongs behind a deeper facade.\n3. **Is a third carrier or external API boundary planned?** If not, don't keep the facade speculatively.\n4. **Which option do you want to proceed with?** Once chosen, the next step is to list the facade's call sites and apply the deletion test to confirm.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2 and 4: names ShippingFacade and CarrierClient with pass-through and change-amplification friction, proposes a smaller interface (get rate/create shipment/track), and asks which option to pursue. Criterion 3 is only partly met, since benefits are noted but no explicit before/after relationship is described."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Names modules and friction (change amplification, pass-through) and proposes a smaller deepened interface, but it does not describe a before/after relationship and ends by asking which option to pursue rather than claiming completion, so criteria 1, 2 and 4 are met with 3 missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names ShippingFacade and CarrierClient with concrete friction, proposes a smaller caller-oriented interface, and asks which option to pursue. Benefits are listed per option, but no explicit before/after relationship is described."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names ShippingFacade and CarrierClient with concrete friction, proposes a smaller caller-oriented interface (get rate/create shipment/track), and asks which option to proceed with. It gives benefits per option but lacks an explicit before/after comparison, so criterion 3 is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names ShippingFacade, CarrierClient and the friction (pass-through, change amplification); proposes a smaller interface (get rate/create shipment/track); asks which option to proceed with. Before/after benefits are only implicit, so that criterion is missed."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "# Review card: ShippingFacade\n\n**Badge: Strong** (provisional: based only on the facts supplied, not on a code read)\n\n## Files\n- `ShippingFacade` (the shallow module)\n- `CarrierClient` (the module it wraps)\n- The two real carrier implementations behind `CarrierClient`\n- Exact paths not supplied; fill in from the repo.\n\n## Problem\n- `ShippingFacade` exposes every `CarrierClient` method, so its **interface** is nearly as large as its implementation. It is shallow.\n- Callers learn the `CarrierClient` surface anyway, so the facade adds a hop without hiding anything.\n- Carrier-specific differences still leak through to callers, so there is no **locality**. A change to carrier behavior touches both the facade and its callers.\n- Tests against the facade mostly re-verify pass-through calls, so they give little **leverage**.\n\n## Deletion test\n- Delete `ShippingFacade`: complexity does not concentrate, it mostly reappears as direct `CarrierClient` calls. That points to a pass-through, not a deep module.\n- Caveat: if the facade does hold real logic (retries, rate shopping, mapping), that logic would need a home. Check this before deleting.\n\n## Seam assessment\n- Two real carriers means the seam at `CarrierClient` is **real**, not hypothetical. Two adapters justify keeping it.\n- The facade is a second, redundant seam layered on the first, with no adapter variation of its own.\n\n## Solution (plain English, no interface proposed yet)\n- Either remove the facade and let callers use the real seam, or deepen it so it owns shipping decisions (such as carrier selection and normalizing results) and exposes a much smaller surface than `CarrierClient`.\n\n## Benefits\n- **Locality:** carrier quirks and shipping rules live in one place.\n- **Leverage:** callers get more behavior per method learned.\n- **Tests:** they can target the smaller interface, with the two carrier **adapters** as the variation under test, rather than asserting pass-through calls.\n\n## Before / After diagram (description)\n- **Before:** Callers → wide `ShippingFacade` (N methods) → `CarrierClient` (same N methods) → Carrier A / Carrier B adapters.\n- **After (option 1, delete):** Callers → `CarrierClient` → Carrier A / Carrier B.\n- **After (option 2, deepen):** Callers → narrow `ShippingFacade` (few methods, rich behavior) → `CarrierClient` → Carrier A / Carrier B.\n\n## ADR / glossary check\n- Not supplied. Check `docs/adr/` for any decision requiring the facade, and use `GLOSSARY.md` terms for the shipping concepts.\n\n## What you should decide next\n1. **Does the facade hold any real logic today?** This decides between deleting it and deepening it.\n2. **Which direction do you want to explore:** remove it, or deepen it around shipping decisions?\n3. **Are there callers or tests that depend on the facade for a load-bearing reason** (stability for external consumers, for example)? If so, that may warrant an ADR.\n4. Then tell me which candidate to take into the grilling step. Interface design comes after that decision.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names modules and concrete friction (leakage, pass-through, tests), proposes a smaller deepened interface, gives before/after and benefits, and asks which direction to explore; it does not claim completion, but the interface proposal is only partly concrete."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Names modules and friction (criterion 1) and gives a smaller-interface option and before/after relationship (criteria 2–3), but it does not ask which candidate or direction to explore; it asks about facade logic and ADRs, and proposes interface design only as deferred. Criterion 4 is only partly met, so 0.5 for criterion 1 plus criterion 3, with 2 arguably met as well."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names modules and friction (pass-through, leakage), gives benefits and a before/after diagram, and asks which direction to pursue. It misses criterion 2: it explicitly declines to propose a concrete smaller interface."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (modules, friction named), 3 (benefits and before/after diagram), and 4 (asks which direction to explore). Misses 2: it defers, saying 'no interface proposed yet', so no concrete smaller interface is given."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (names ShippingFacade, CarrierClient, carriers, and pass-through friction), 3 (benefits and before/after), and 4 (asks which direction to explore). Misses 2: it describes a smaller deepened facade but proposes no concrete interface."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Review card: ShippingFacade is shallow\n\n## 1. Finding\n- `ShippingFacade` exposes every `CarrierClient` method, so its interface is as wide as the one it wraps.\n- It adds no behavior of its own that I know of, so callers learn the same surface twice.\n\n## 2. Why it matters\n- **Little leverage:** callers gain nothing over using `CarrierClient` directly.\n- **Double maintenance:** every new or changed `CarrierClient` method must be mirrored in the facade.\n- **Misleading signal:** the facade looks like an abstraction boundary, but the real seam is `CarrierClient`.\n\n## 3. What is solid\n- There are two real carriers, so `CarrierClient` is a genuine seam with two adapters. Keep it.\n- The problem is the extra layer on top, not the carrier abstraction.\n\n## 4. Options\n1. **Remove the facade.** Callers depend on `CarrierClient` directly. This is the smallest change and the lowest cost.\n2. **Deepen the facade.** Give it a small interface built around caller intent, such as \"get a quote\" or \"ship this parcel\". Move into it the logic callers currently repeat:\n   - carrier selection or rate comparison\n   - normalizing carrier-specific responses and errors\n   - fallback or retry policy\n3. **Leave it as is.** Only reasonable if it is a deliberate placeholder for logic you plan to add soon.\n\n## 5. Recommendation\nRemove the facade unless callers already duplicate cross-carrier logic. If they do, shrink the facade to a few intent-level methods and move that logic into it.\n\n## 6. What you need to decide next\n- **Is any logic repeated across callers?** Check for carrier choice, response mapping or error handling. If yes, deepen the facade. If no, delete it.\n- **How many callers depend on it?** This sets the migration cost for removal.\n- **Is a third carrier or new cross-carrier behavior planned?** If so, a deeper facade is more likely to pay off.\n- **Who owns the follow-up?** Assign someone to take the chosen option.\n\nI haven't seen the code, so this is based only on what you described. Checking the callers would confirm whether duplicated logic exists.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (names ShippingFacade/CarrierClient and friction) and 2 (small intent-based interface). Misses 3, with no explicit before/after or benefits, and 4, which lists decisions rather than asking which direction to explore."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names ShippingFacade, CarrierClient, and the double-maintenance friction (1), proposes a smaller intent-level facade (2), and ends by asking the user to decide rather than claiming completion (4). It lacks an explicit before/after relationship (3)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (names ShippingFacade/CarrierClient and double-maintenance friction) and 2 (proposes intent-level facade). Misses 3 (no explicit before/after relationship) and only partly meets 4 (asks decision questions, not which direction to explore)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names ShippingFacade and CarrierClient with concrete friction (double maintenance, little leverage), proposes an intent-level deeper interface, and contrasts before/after. It misses the explicit ask of which direction to explore, instead recommending one and posing diagnostic questions."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Names modules and friction (double maintenance, little leverage) and proposes an intent-level deeper interface, but the before/after relationship is only implied and it recommends rather than asking which direction to explore."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Review Card: Shallow `ShippingFacade` over `CarrierClient`\n\n## 1. Summary\n`ShippingFacade` re-exposes every `CarrierClient` method one-to-one. It adds a layer without adding abstraction: its interface is as wide as the thing it wraps, so callers learn the same surface twice and gain nothing.\n\n## 2. What the facade is today\n- Interface: mirrors all `CarrierClient` methods (same names, same parameters, same return shapes).\n- Implementation: pass-through delegation.\n- Carriers behind it: two real ones.\n\n## 3. Problem (shallow module)\n- **Interface ≈ implementation complexity.** A deep module hides decisions; this one hides none.\n- **Leaky.** Any carrier-specific quirk in `CarrierClient` surfaces directly to callers.\n- **Change amplification.** Adding or changing a `CarrierClient` method forces an edit in the facade as well.\n- **False seam.** It looks like an abstraction boundary but offers no isolation or extra testability.\n\n## 4. Context that matters\n- Two real carriers means there is a genuine variation point. That is enough to justify an abstraction, but only if the interface reflects what callers need rather than what each carrier happens to offer.\n- Two is also few. An interface designed around just two carriers risks encoding their accidental similarities.\n- Unknown from the supplied facts: how many callers exist, which `CarrierClient` methods they actually use, and whether `CarrierClient` is already a per-carrier interface or a single class with branching.\n\n## 5. Options\n1. **Delete the facade.** Callers use `CarrierClient` directly. Cheapest, and correct if the variation between carriers is already handled inside `CarrierClient`.\n2. **Deepen the facade (recommended if callers share a few core workflows).** Shrink it to the operations callers actually need, such as get rates, create shipment, and track. Own carrier selection, request/response normalization, and error mapping. Keep carrier-specific methods out of its interface.\n3. **Keep as is.** Only reasonable if it is a deliberate temporary seam, for example ahead of a third carrier, with a dated plan.\n\n## 6. Recommendation\nOption 2 if callers need carrier selection or normalization, otherwise Option 1. Option 3 is the weakest because it keeps the cost and delivers no benefit.\n\n## 7. Decisions for the user\n1. **Delete or deepen?** Do callers need carrier-agnostic behavior, or just a client?\n2. **If deepening:** which 3–5 operations form the facade's interface, and who owns carrier selection?\n3. **Error and data model:** a normalized error type and normalized shipment/rate types, or pass carrier types through?\n4. **Unused methods:** which `CarrierClient` methods have no callers and can be dropped from the surface entirely?\n5. **Carrier count:** is a third carrier planned? If so, keep the seam; if not, weigh the cost of abstraction more heavily.\n\n## 8. Suggested next step\nAudit call sites to list which `CarrierClient` methods are used and where, then decide between Options 1 and 2 based on that list.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Names ShippingFacade, CarrierClient and their friction (pass-through, leakage, change amplification); proposes a 3-operation interface; describes Option 2's benefits against the current state; ends by asking the user decisions rather than claiming completion."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names ShippingFacade and CarrierClient with concrete friction (leaky, change amplification), proposes a smaller 3-5 operation interface, and asks the user to decide the direction. It misses an explicit before/after benefits comparison."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names ShippingFacade and CarrierClient with concrete friction, proposes a smaller 3-operation interface, and asks the user to decide direction; the before/after relationship is only implied, not described."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (names ShippingFacade/CarrierClient and friction), 2 (smaller 3-5 operation interface), and 4 (asks the user which direction to pursue). Criterion 3 is weak: before/after is described but benefits are not stated explicitly."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names ShippingFacade and CarrierClient with concrete friction (leakiness, change amplification, false seam), proposes a smaller interface (rates, shipment, tracking), and asks the user to choose the direction. Benefits of the deepened option are only implied, not stated, so the third criterion is weakly met."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "# Review card outline: ShippingFacade\n\n## 1. Header\n- **Title:** ShippingFacade is a pass-through over CarrierClient\n- **Recommendation strength:** `Worth exploring`. The shallowness follows from the facts given, but I haven't seen the code, so the payoff depends on what callers actually do.\n- **Files:** ShippingFacade, CarrierClient, and the two carrier adapters. Exact paths are unconfirmed.\n\n## 2. Problem\n- ShippingFacade exposes every CarrierClient method, so its **interface** is nearly as large as its implementation. That makes it a **shallow** module.\n- Callers learn the same surface twice, and every CarrierClient change must be mirrored in the facade.\n- Tests of the facade mostly verify delegation, so they give little **leverage**.\n- The two real carriers mean CarrierClient is a **real seam** (two adapters, not a hypothetical one). The facade sits on top of that seam without adding anything.\n\n## 3. Deletion test\n- If ShippingFacade were deleted, callers would use CarrierClient directly. Complexity would mostly **move** rather than concentrate.\n- That suggests the facade isn't earning its keep **as it stands**. This is unverified until we check whether it does any real work, such as carrier selection, defaults, or error normalization.\n\n## 4. Solution (plain English, no interface proposed)\n- Either remove the facade and let callers use the CarrierClient seam, or deepen it so it owns real shipping behavior and exposes a much smaller interface than CarrierClient.\n- Carrier-specific differences stay behind the seam in the two adapters.\n\n## 5. Benefits\n- **Locality:** a carrier change touches the adapter, not a mirrored facade method.\n- **Leverage:** a small interface gives callers more behavior per method learned.\n- **Tests:** tests run through the deepened interface against both adapters (or a fake), rather than checking pass-through calls.\n\n## 6. Before / After diagram\n- **Before:** Callers → ShippingFacade (N methods) → CarrierClient (same N methods) → Carrier A / Carrier B. The facade is a wide, thin layer.\n- **After (option A, remove):** Callers → CarrierClient → Carrier A / Carrier B.\n- **After (option B, deepen):** Callers → ShippingFacade (few methods, real logic) → CarrierClient seam → Carrier A / Carrier B.\n\n## 7. ADR and glossary check\n- I haven't checked `GLOSSARY.md` or `docs/adr/`. Before presenting this, confirm that no ADR mandates the facade and that \"Shipping\" and \"Carrier\" match the glossary terms.\n\n## 8. What you should decide next\n1. **Does the facade do any real work today** (selection, defaults, error mapping, retries)? If not, option A is the straightforward path.\n2. **If it does, which behavior belongs in a deepened module**, and which callers need it?\n3. **Do you want to explore this candidate?** If so, we move to the grilling step on constraints, what sits behind the seam, and which tests survive.\n4. **Should the two-carrier seam stay as is?** I'd keep it, since two real adapters justify it.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names modules and friction (criterion 1), gives benefits and before/after (3), and asks which direction to pursue (4). Misses 2: it explicitly declines to propose a concrete smaller interface."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names ShippingFacade, CarrierClient, and the adapters with concrete friction, gives benefits and a before/after diagram, and asks which direction to pursue. It misses criterion 2: it explicitly declines to propose an interface and only says a smaller one would be needed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (names facade, CarrierClient, adapters and concrete friction), 3 (benefits and before/after diagram), and 4 (asks which option or candidate to explore). Misses 2: it explicitly declines to propose an interface and gives no concrete smaller one."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Names modules and concrete friction (pass-through, mirrored methods) and proposes a smaller deepened interface with before/after, but its closing asks what to decide rather than explicitly asking which candidate to explore, so criterion 4 is only partly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (names ShippingFacade/CarrierClient/adapters with pass-through friction), 2 (proposes smaller deepened interface), and 4 (asks which direction and next decisions); criterion 3 is only partially met since benefits and before/after are given but the score-generation text lacks a clearly scoped before/after relationship for the rubric."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Review card: ShippingFacade\n\n## 1. Finding\n`ShippingFacade` is shallow. It re-exposes every `CarrierClient` method, so its interface is as wide as what it wraps and it hides nothing.\n\n## 2. Why it matters\n- **No leverage:** callers learn the same surface twice, and every `CarrierClient` change must be mirrored in the facade.\n- **Low locality:** carrier quirks stay with callers instead of being absorbed in one place.\n- **Weak test surface:** tests of the facade only verify delegation.\n\n## 3. What's in its favor\n- There are two real carriers, so the `CarrierClient` seam is justified (two adapters, not a hypothetical one).\n- That makes a carrier-agnostic layer plausible, but this facade doesn't deliver one.\n\n## 4. Options\n1. **Deepen (recommended):** shrink the facade to the few operations callers actually need, and move carrier selection, request/response mapping, and error normalization behind it.\n2. **Delete:** have callers use `CarrierClient` directly, if they already know which carrier they're talking to or the facade has no logic.\n3. **Keep as is:** only if it's a deliberate stable public boundary. If so, record that reason.\n\n## 5. Decisions for you\n- Do callers need to be carrier-agnostic? If yes, choose option 1. If no, choose option 2.\n- If deepening, which operations are the minimum set callers need, and which `CarrierClient` methods can become internal?\n- Where should carrier-specific differences (errors, formats, capabilities) be normalized: in the facade or in each adapter?\n- Do any external consumers depend on the current wide surface, which would require a migration step?\n\n## 6. Suggested next step\nPick option 1 or 2, then list which callers use which methods. That list determines the narrow interface, or confirms the facade can go.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response names the facade and friction (wide re-exposure, no leverage) and proposes a narrower 'deepen' interface, but it does not explicitly frame a before/after relationship, and it ends with a recommendation and next step rather than asking which candidate direction to explore; the rubric's criteria 3 and 4 are only partly met."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (names ShippingFacade, CarrierClient and the friction) and 4 (asks the user to pick option 1 or 2). Criterion 2 is vague with no concrete smaller interface, and criterion 3 lacks explicit benefits of the deepened design."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names ShippingFacade and CarrierClient with concrete friction and proposes a narrower facade (criteria 1, 2, 4 met); it never states the benefits of deepening or a before/after relationship (criterion 3 missed)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (names ShippingFacade/CarrierClient and concrete friction) and criterion 4 (asks the user to choose a direction). Misses criterion 2, since 'shrink to the few operations' names no concrete smaller interface, and is weak on criterion 3's explicit before/after."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Names ShippingFacade/CarrierClient and the concrete friction of mirrored methods (point 1); proposes shrinking to a minimal interface (2); covers leverage/locality benefits and a deepen-versus-current before/after (3); ends by asking which option to pick (4)."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "## Review Card: Shallow `ShippingFacade`\n\n**Title:** ShippingFacade passes through every CarrierClient method\n\n**Summary**\n`ShippingFacade` exposes the full `CarrierClient` surface one-to-one. It adds a layer of indirection without hiding complexity, so its interface is about as large as the implementation behind it. In depth terms, it is a shallow module: little leverage for callers, extra surface to maintain.\n\n**Context (supplied facts only)**\n- Facade interface mirrors every `CarrierClient` method.\n- Two real carriers exist today.\n- No other facts (call sites, carrier-specific quirks, tests) were supplied, so none are assumed here.\n\n**Findings**\n1. **No abstraction gained:** Each facade method forwards to a `CarrierClient` method, so callers still need to know carrier-level concepts.\n2. **Double maintenance:** Any change to `CarrierClient` must be repeated in the facade.\n3. **Leaky seam:** If carrier differences show up in the facade signatures, callers must handle them anyway.\n4. **Two carriers is a real seam:** With two actual implementations, an abstraction over carriers is justified. The question is whether the facade is the right one, since it currently adds nothing beyond `CarrierClient`.\n\n**Risks**\n- Callers couple to carrier-shaped operations rather than shipping outcomes.\n- Tests may mock at the wrong level (facade vs. client) and duplicate setup.\n- The facade may attract logic over time without a clear responsibility.\n\n**Options**\n- **A. Delete the facade:** callers use `CarrierClient` directly. Lowest cost, fits if `CarrierClient` is already the stable seam for the two carriers.\n- **B. Deepen the facade (recommended if callers repeat multi-step flows):** expose a small, outcome-oriented interface (for example, \"get rate and book label\") and hide carrier sequencing, mapping, and error handling inside.\n- **C. Leave as is:** only reasonable if it is a temporary step toward B.\n\n**Recommendation**\nPick A or B based on one check: do callers currently repeat multi-call sequences or carrier-specific handling? If yes, go with B. If no, go with A.\n\n**Decisions for the user**\n1. Should `ShippingFacade` exist at all, or should callers use `CarrierClient` directly (A vs. B)?\n2. If it stays, which few caller-level operations should its interface be reduced to?\n3. Where should carrier-specific differences between the two carriers live (inside the facade, inside each client adapter, or exposed to callers)?\n4. Where should tests sit: at the facade interface, or at `CarrierClient` per carrier?\n5. Should this be handled now or deferred, and if deferred, who owns revisiting it?\n\n**Suggested next step**\nList the current callers and note which repeat call sequences, then decide A or B.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names ShippingFacade and CarrierClient with concrete friction, proposes a smaller outcome-oriented interface (option B), and asks the user to choose a direction; it lacks an explicit before/after comparison with benefits."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names ShippingFacade/CarrierClient and the pass-through friction (criterion 1), proposes a small outcome-oriented interface in Option B (2), and asks the user to choose A vs. B (4). Criterion 3 is weak: benefits are thin and no explicit before/after relationship is described."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (names ShippingFacade/CarrierClient and concrete friction), 2 (proposes an outcome-oriented 'get rate and book label' interface), and 4 (asks the user to choose A or B). Misses 3: benefits are implied, with no explicit before/after comparison."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names ShippingFacade and CarrierClient with concrete friction (double maintenance), proposes a smaller outcome-oriented interface, and ends by asking the user to choose a direction. It misses an explicit before/after comparison of benefits."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names ShippingFacade and CarrierClient with concrete friction (pass-through, double maintenance) and proposes a smaller outcome-oriented interface (B), and asks the user to decide. It misses an explicit before/after relationship and benefits of the proposed change."
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

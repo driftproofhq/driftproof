@@ -19,6 +19,7 @@ const placebo=require('../lib/placebo');
 const {sha256,sha256Files}=require('../lib/canonical');
 const policy=require('../lib/report-015-publication');
 const skillHandoff=require('./skill-handoff');
+const sendResult=require('./build-send-result');
 const {applyHeadTags}=require('./build-head-tags'),{reportRow}=require('./site-data.mjs');
 const {annotateCampaignFigures}=require('./prepare-report-015');
 const {humanModelName}=require('./model-names');
@@ -35,6 +36,14 @@ const AMENDMENT_2=(skill)=>'Added a link, after the opening panel, to a blind re
 // Issue 671's record (spec 627 A-627-9): lib/plain.js rewords the verdict line where the averages do
 // not point the verdict's way, and the page prints that line, so the published body moves.
 const AMENDMENT_3='Reworded the line against no skill in the rows where the overall averages with and without the skill do not point the verdict\'s way: it names the task that decided it and gives the averages over all the tasks. The verdict is decided per task, so those averages can sit equal or point the other way. Counts, readings and receipts are unchanged.';
+// Issue 690's record (spec 627 A-627-10, spec 690): each row with a receipt carries the judge-notes
+// mount, so the published body moves.
+const AMENDMENT_4='Added, under each task of every row with a receipt, a way to open that task\'s prompt and rubric, the kept answers with the skill, with the fake text and with nothing, and the judge\'s scores and reasons for one try at a time. Counts, readings and receipts are unchanged.';
+// The judge-notes mount (spec 690 AC-9, AC-11): the island docs/islands/judge-notes.js mounts on it
+// and reads the row's own data file, built by scripts/build-judge-notes.js. The static fallback is one
+// paragraph with no numeral and no link: a receipt link here would be counted as one of the report's
+// receipts (scripts/site-data.mjs reads every receipt href), and the row's receipt is already listed.
+const notesMount=(row)=>'<div class="judge-notes" data-island="judge-notes" data-notes-src="/reports/017/notes/'+row.attempt_id+'.json"><p>See the question and the judge&#39;s notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge&#39;s scores and reasons, one try at a time. Without it, the kept answers sit beside this row&#39;s receipt in the repository, under Receipts at the end of the report.</p></div>';
 // The dek: the model it was read on, then the frozen template line, its first letter lowercased
 // when it opens with a word ("All", "None").
 const lead=(h)=>/^[A-Z][a-z]/.test(h)?h[0].toLowerCase()+h.slice(1):h;
@@ -142,7 +151,8 @@ function rowHTML(row){
  const secondary='<p class="secondary-reading"><span class="row-label">The placebo against no skill, shown here and not counted: </span>'+reading(r.placebo_vs_baseline,'secondary reading',r.placebo_vs_baseline)+'</p>';
  const context='<p class="report-015-context"><span class="row-label">Context only, not this measurement: </span>Report 015 read this skill in a separate, earlier run on '+fig(row.report015.date,P408.DIR+'/'+row.report015.id+'.json')+': '+esc(row.report015.label)+'. <a href="/r/'+row.report015.hash+'/">Report 015 receipt</a></p>';
  const seal=row.receipt?'<p class="receipt-ref">Receipt <code>'+row.receipt.receipt_hash+'</code></p>':'';
- return '<section class="placebo-result'+(row.router?' router-result':'')+'" data-attempt="'+row.attempt_id+'" data-reading="'+esc(r.placebo)+'"><h3>'+esc(row.skill)+' <span class="comparison-repository">'+esc(row.repository)+'</span></h3>'+router+(row.handoffNote?'<p class="handoff-note">'+esc(row.handoffNote)+'</p>':'')+'<p class="placebo-line"><span class="row-label">Against the same-length placebo: </span>'+reading(r.placebo,'placebo reading',line)+'</p>'+tasks+verdict+secondary+context+seal+'</section>';
+ const notes=row.receipt?notesMount(row):'';
+ return '<section class="placebo-result'+(row.router?' router-result':'')+'" data-attempt="'+row.attempt_id+'" data-reading="'+esc(r.placebo)+'"><h3>'+esc(row.skill)+' <span class="comparison-repository">'+esc(row.repository)+'</span></h3>'+router+(row.handoffNote?'<p class="handoff-note">'+esc(row.handoffNote)+'</p>':'')+'<p class="placebo-line"><span class="row-label">Against the same-length placebo: </span>'+reading(r.placebo,'placebo reading',line)+'</p>'+tasks+verdict+notes+secondary+context+seal+sendResult.render(sendResult.reportPayload('017',row))+'</section>';
 }
 
 // A text that ends in whitespace says so in words, since a reader cannot see it and an editor may
@@ -186,7 +196,9 @@ function body(c,{panelDir,placeboPage}){
  // keep the published page's numbers whichever are present, so a record never renumbers.
  const amendments='<h2 id="amendments">Amendments</h2>'+(c.handoffNote?'<section id="amendment-1"><h3>Amendment 1, 2 Nov 2026</h3><p>'+esc(AMENDMENT_1)+'</p></section>':'')
   +'<section id="amendment-2"><h3>Amendment 2, 2 Nov 2026</h3><p>'+esc(AMENDMENT_2(blindSkill))+'</p></section>'
-  +'<section id="amendment-3"><h3>Amendment 3, 3 Nov 2026</h3><p>'+esc(AMENDMENT_3)+'</p></section>';
+  +'<section id="amendment-3"><h3>Amendment 3, 3 Nov 2026</h3><p>'+esc(AMENDMENT_3)+'</p></section>'
+  +'<section id="amendment-4"><h3>Amendment 4, 4 Nov 2026</h3><p>'+esc(AMENDMENT_4)+'</p></section>'
+  +'<section id="amendment-5"><h3>Amendment 5, 4 Nov 2026</h3><p>Added Send this result to each row, with a fixed message that keeps its reading, model, judge, report, caveats and receipt together. A router row also links Report 015 Amendment 1, which says why a router gets no verdict. Counts, readings and receipts are unchanged.</p></section>';
  return head+headline+panelHTML+blindLink+results+method+limits+record+amendments+list;
 }
 
@@ -226,5 +238,5 @@ function main(argv=process.argv.slice(2)){
  const o=parse(argv),done=o.check?checkReport(o):writeReport(o),n=done.built.campaign.rows.filter(r=>r.receipt).length;
  console.log('report 017: page and summary '+(o.check?'match':'written from')+' '+n+'/20 sealed '+(o.stub?'stub receipts (test mode, not for publication)':'receipts')+'; headline shape '+done.built.campaign.pub.tally.shape);
 }
-module.exports={TITLE,REL,CAMPAIGN,PANEL,READER,readCampaign,panelOf,tasksOf,rowHTML,buildReport,summaryRow,outputs,writeReport,checkReport,parse,main};
+module.exports={TITLE,REL,CAMPAIGN,PANEL,READER,CAVEAT,readCampaign,panelOf,tasksOf,rowHTML,buildReport,summaryRow,outputs,writeReport,checkReport,parse,main};
 if(require.main===module)try{main();}catch(e){console.error('report 017: refused: '+(e.code||e.message));process.exitCode=1;}

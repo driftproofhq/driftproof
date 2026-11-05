@@ -4,6 +4,10 @@ Canonical: <https://driftproofhq.com/what-is-driftproof/>
 
 Driftproof (driftproofhq): open-source agent skill evaluation and regression testing across model releases. It runs a skill's own tests with the skill and without it, scores every answer several times, and calls a change only when it is clearly bigger than the usual spread. Each result is a dated, hash-verified receipt.
 
+## Explore the results
+
+[Can you tell? Every skill](https://driftproofhq.com/can-you-tell/) · [The AI noticed the sugar pill](https://driftproofhq.com/noticed/) · [Which bar is the fake?](https://driftproofhq.com/spot-the-fake/) · [Every task we gave a skill](https://driftproofhq.com/tasks/) · [Skill or sugar pill?](https://driftproofhq.com/sugar-pill/)
+
 ## What it measures
 
 For each task in a skill's own test set, Driftproof asks the model twice: once with the skill's instructions loaded, and once with the task alone. The model answers each way several times. What the skill adds is the average with the skill minus the average without it.

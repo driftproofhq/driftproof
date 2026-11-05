@@ -1,0 +1,1576 @@
+{
+ "format": "driftproof-judge-notes/1",
+ "report": "018",
+ "report_url": "/reports/018/",
+ "attempt_id": "a0249d04c527d224090444faa7fc00f860683be12e2caf9e1d873b043fbbe37b",
+ "skill": "agent-browser",
+ "repository": "vercel-labs/agent-browser",
+ "receipt_hash": "02dce995f39328ca851e2fc448150d32e07dbb573e9e3196f97c1b2ff6a65b09",
+ "receipt_page": "/r/02dce995f39328ca851e2fc448150d32e07dbb573e9e3196f97c1b2ff6a65b09/",
+ "receipt_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-018/campaign-3/a0249d04c527d224090444faa7fc00f860683be12e2caf9e1d873b043fbbe37b.json",
+ "answers_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-018/campaign-3/a0249d04c527d224090444faa7fc00f860683be12e2caf9e1d873b043fbbe37b-answers.json",
+ "suite_file": "https://github.com/driftproofhq/driftproof/blob/main/specs/408-skill-measurements/suites/vercel-labs--agent-browser--agent-browser.json",
+ "model": "Claude Haiku 5.5",
+ "judge": "Claude Haiku 5.5",
+ "judge_samples": 5,
+ "date": "2 November 2026",
+ "arms": [
+  {
+   "key": "with_skill",
+   "label": "With the skill"
+  },
+  {
+   "key": "placebo",
+   "label": "With the fake text"
+  },
+  {
+   "key": "baseline",
+   "label": "With nothing"
+  }
+ ],
+ "caveats": [
+  "The judge uses the same model as the target. Self-grading may favor its own model's answers.",
+  "Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings.",
+  "The scores and reasons are the judge model's own words, kept exactly as it wrote them. They are a model's reading of the rubric, not Driftproof's.",
+  "This is one task of three. Each skill was given three text tasks, and one task is not the whole measurement.",
+  "These text tasks test the router's written response, not the delegated skill. Report 015 Amendment 1. Left out of the headline count."
+ ],
+ "tasks": [
+  {
+   "id": "web",
+   "number": 1,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. Plan a browser workflow to inspect a checkout form and identify its Submit button. The CLI is installed but its workflow guide has not been loaded. Give the next read-only steps, not invented element references.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source vercel-labs/agent-browser/skills/agent-browser/SKILL.md at dac13bb87468fe9d74a040d862720f6cc17a9565; SKILL.md SHA-256 3a7520e64de2dfaa516b6721c001e84e06e3c06a187b82af029ae721540ebfac; README SHA-256 4a9783ee8ebee10caaedfe2bdd2182539368e60e8eefadaee4cb7bab7fc75c12. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Load or request the CLI core workflow guide first 2. Use a fresh accessibility snapshot before choosing elements 3. Do not invent an element reference 4. Do not claim a click or submission occurred",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "I haven't run anything. Here is the read-only plan for the next turn, once tools are available.\n\n1. **Load the workflow guide.** Run `agent-browser skills get core` to get the current command usage for this installed version. Add `--full` if you need the complete command reference.\n\n2. **Open the checkout page.** I need the URL, which you haven't given me. Use `agent-browser open <url>` and wait for the page to load.\n\n3. **Take an accessibility snapshot.** Run the snapshot command from the core guide. The `@eN` refs come from that snapshot, so I'll use only the refs it returns and won't guess them.\n\n4. **Find the Submit control.** In the snapshot, look for a button-like element whose accessible name suggests submission, such as \"Submit\", \"Place order\", \"Pay\", or \"Complete purchase\". If several candidates exist, prefer the one inside the checkout form element, and note any others.\n\n5. **Confirm visually (optional).** Take a screenshot to check that the candidate is the visible primary action on the form.\n\n6. **Report back without clicking.** I'd report the ref, its role and accessible name, its position in the form, and any other candidates. I won't click it. Placing an order or submitting payment is hard to reverse and affects the outside world, so it needs your explicit go-ahead.\n\nTwo things to watch for: if the checkout requires login, I'd stop and ask you rather than enter credentials, and if the snapshot shows no clear Submit control, I'd report what it does show instead of guessing.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it loads the core workflow guide first. Criterion 2 is met: it takes a snapshot before choosing elements. Criterion 3 is met: it says it won't guess refs. Criterion 4 is met: it says it won't click. The response does satisfy all four criteria, so the score should be 1.0 with pass true."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 loads the core guide before any action, step 3 takes a snapshot before step 4 selects elements, it uses no invented refs, and it explicitly says it has not clicked or submitted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 loads the core guide before any browsing, step 3 takes a fresh snapshot before choosing elements, it commits to using only returned refs, and it states nothing has been clicked or submitted."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (loads core guide first), 2 (fresh snapshot before choosing elements), and 4 (explicitly says it won't click). Misses 3 in part: it references the `@eN` ref format and a snapshot command without inventing specific refs, so 3 is actually met; scoring 0.75 reflects only a strict reading of the 'fresh snapshot' wording, which is satisfied by the plan's step 3."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Loads the core guide first (step 1), takes a snapshot before choosing elements (step 3), uses only snapshot-returned refs without inventing any, and explicitly states it will not click or claim a submission occurred."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I haven't loaded the CLI's browser workflow guide, so I can't give exact commands. These are the read-only steps I'd follow once the guide is loaded:\n\n1. **Confirm the target.** Get the checkout URL from the user and confirm it's a page they're authorized to inspect. Don't submit anything on it.\n\n2. **Open the page without interacting.** Navigate to the URL and wait for it to finish loading, including any scripts that render the form.\n\n3. **Take a read-only snapshot.** Capture the page's accessibility tree or DOM, not a screenshot alone. The snapshot should list the form, its fields, and every button, with each element's role, label, and attributes.\n\n4. **Locate candidate Submit buttons.** Look for elements that are `button` or `input[type=submit]`, or that have a role of `button`, inside or near the `<form>` element. Matching clues are text such as \"Submit\", \"Place order\", \"Pay\", or \"Continue\", and `type=\"submit\"` or a form-association attribute. Record every candidate, not just the first.\n\n5. **Check the form's context.** For each candidate, note whether it sits inside the `<form>`, its `form` attribute if it's outside, and whether the form's `action` and `method` look normal. Also note whether it's disabled or hidden.\n\n6. **Disambiguate.** If there's more than one candidate, such as a \"Continue\" step and a final \"Place order,\" rank them by position in the flow and by label. Report the uncertainty instead of picking silently.\n\n7. **Report findings.** Give the user the candidate list with each element's text, type, and location, plus the reasoning for the best match. Say which steps were not run, such as clicking or submitting.\n\nConstraints: no clicks, typing, form submission, or network requests beyond loading the page. I haven't identified any actual element references, because I haven't inspected the page. Once the guide is loaded and you give me the URL, I can check the exact tool names and run the read-only steps.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (fresh accessibility snapshot before choosing elements), 3 (no invented element references), and 4 (no claimed click or submission); misses criterion 1 because it neither loads nor requests the workflow guide."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (fresh accessibility snapshot before choosing elements), 3 (no invented element references), and 4 (no claimed click or submission). Misses criterion 1: it notes the guide isn't loaded but neither loads nor explicitly requests it."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it states the guide is not loaded and that it cannot give commands until it is. Criterion 2 is met: it calls for a fresh accessibility snapshot before choosing elements. Criterion 3 is met: it invents no element references. Criterion 4 is missed: it says \"Don't submit anything,\" which is not a claim that a click occurred, so this criterion is met and the total is 1.0. Correcting that, the sum is 1.0, though the 0.25-per-criterion scale puts the rubric at 0.75 when the first criterion is read strictly as requiring the guide to be loaded or requested, which it is not — it only says it can't proceed until loaded and asks the user for the URL. Strictly, the response requests the URL and says it will load the guide later, which satisfies the first criterion; the score is therefore 1.0."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (accessibility snapshot in step 3 before locating candidates), 3 (no invented element references), and 4 (no claimed click or submission). Misses criterion 1: it notes the guide isn't loaded but never explicitly loads or requests it."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it explicitly states the workflow guide was not loaded and defers commands until it is. Criterion 2 is met: it specifies a fresh accessibility snapshot before choosing elements. Criterion 3 is met: it names no element references. Criterion 4 is met: it says nothing was clicked or submitted. The response satisfies all four criteria, so the score should be 1.0 rather than 0.5."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I haven't run any tools, so this is a plan, not results. The Submit button's selector is unknown until the page is inspected.\n\n**Next read-only steps**\n\n1. **Load the CLI's workflow guide first.** The CLI is installed but its guide hasn't been read, so I don't know its exact commands or flags. Read that guide before choosing any browser commands.\n\n2. **Open the checkout page** in a browser session. Use a test or staging URL if one is available. Only navigate; don't fill in or submit anything.\n\n3. **Capture a read-only snapshot of the page**, such as an accessibility tree or DOM listing, if the guide provides one. Look for the form's container and its controls.\n\n4. **Identify the Submit control from the snapshot.** Look for elements whose role is button, or whose type is `submit`, and whose visible or accessible label reads \"Submit,\" \"Place order,\" \"Pay,\" or similar. Note the form it belongs to, since a page can contain several buttons.\n\n5. **Confirm the match without interacting.** Check whether the candidate is inside the checkout form and whether it's enabled. Don't click it, press Enter in a field, or trigger the form's submit event.\n\n6. **Record the reference.** Save the chosen element's role, accessible name, and location in the snapshot, and use that exact reference in any later step. If nothing matches, report the labels and roles you did find rather than guessing.\n\n**Stopping points**\n\n- If the guide doesn't offer a read-only snapshot or inspection command, stop and ask before using any command that could interact with the page.\n- If the checkout page requires login or real payment details, stop and ask how to proceed.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 loads the CLI workflow guide first, step 3 captures a snapshot before step 4 picks the Submit control, no element reference is invented, and it states no tools were run and nothing was clicked."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: the response says to load the CLI's workflow guide first. Criterion 2 is met: it calls for a snapshot before choosing elements, though it hedges with 'if the guide provides one'. Criterion 3 is met: it invents no element reference. Criterion 4 is missed: it says nothing about a click or submission occurring, so the fourth criterion is not affirmatively satisfied."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 requires loading the CLI workflow guide first, step 3 captures a snapshot before step 4 selects the Submit control, no selector is invented, and it states nothing was clicked or submitted."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met: response says to load the CLI workflow guide first. Criterion 2 met: it calls for an accessibility/DOM snapshot before selecting elements. Criterion 3 met: no element reference is invented. Criterion 4 met: it explicitly says nothing was clicked or submitted, so it fails to claim a click occurred. The rubric's four criteria sum to 1.0, but the response does not satisfy all four criteria fully, so the score is 0.75."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 loads the CLI workflow guide first, step 3 captures a snapshot before element selection in step 4, no element reference is invented, and it states that only a plan exists with no click or submission."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "I can't run commands here, so this is a plan for the next read-only steps. I haven't loaded the workflow guide, so exact subcommand syntax is unverified until you check it.\n\n**1. Load the workflow guide first.** The `agent-browser` stub says to load the real usage content before running any command:\n```bash\nagent-browser skills get core\n```\nAdd `--full` if you need the complete command reference.\n\n**2. Confirm the target.** I need the checkout page URL. It should be a page you're authorized to inspect, such as a staging or test environment.\n\n**3. Open the page in a session, without interacting.** Use the navigation command that the core guide describes for the installed version. Don't fill fields or click anything.\n\n**4. Take an accessibility snapshot.** The snapshot output is where element refs (`@eN`) come from. Read the refs from that output rather than guessing them.\n\n**5. Find the Submit button in the snapshot.** Look for a button whose accessible name is Submit or a close equivalent, such as \"Place order\" or \"Pay\". Note:\n- Whether it's inside the form element or sits outside it.\n- Whether there is more than one candidate button.\n- Whether it appears disabled.\n\n**6. Optionally take a screenshot** to confirm which button is visually the primary action. Screenshots are read-only.\n\n**7. Close the session** when finished, so nothing is left running.\n\n**What to avoid:** clicking the button to test it, submitting test data, or running any command that changes the page state. Identifying the button only requires reading the snapshot.\n\nIf you send the URL and confirm this is an authorized test environment, I can start with step 1 once you allow command execution.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met (loads core workflow guide first), criterion 2 met (fresh snapshot before choosing elements), criterion 3 met (refs read from snapshot, none invented), criterion 4 met (explicitly no click or submission claimed); the response substantially satisfies the rubric but the score is held to the four-criterion scale with no partial credit for any miss."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Loads the core guide first (step 1), takes an accessibility snapshot before choosing elements (step 4-5), reads refs from output rather than inventing them, and claims no click or submission occurred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Loads the core guide first (step 1), takes an accessibility snapshot before choosing the Submit button (step 4-5), invents no @eN refs, and claims no click or submission occurred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Criterion 1 met: step 1 loads the core workflow guide before any command. Criterion 2 met: step 4 takes an accessibility snapshot before choosing elements. Criterion 3 met: it says refs must come from the snapshot rather than being guessed. Criterion 4 met: it states nothing was clicked or submitted and says it cannot run commands."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Criterion 1 met: it first loads the core workflow guide via 'agent-browser skills get core'. Criterion 2 met: it takes an accessibility snapshot before selecting elements. Criterion 3 met: it says to read refs from the snapshot rather than guess. Criterion 4 met: it explicitly states no click or submission has occurred."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I can't run tools in this turn, so this is a plan only. The supplied material doesn't describe the checkout form, so I have no element names, selectors, or URLs to work from.\n\n**Next read-only steps**\n\n1. **Load the browser workflow guide first.** The CLI is installed but its guide hasn't been read. Before doing anything else, read that guide so you use its supported commands and conventions.\n2. **Confirm the target page.** Get the checkout form's URL from the user, or from the project's routes or config if the user doesn't have it. Don't guess a URL.\n3. **Open the page in a read-only way.** Load the page and take a snapshot of its structure, such as an accessibility tree or DOM dump. Don't type into fields, submit anything, or click.\n4. **Locate the form.** In the snapshot, find the `<form>` element or the group of inputs that make up checkout. Note its id, action, and method if they're exposed.\n5. **Find candidate Submit buttons.** Look for `button` or `input[type=submit]` elements inside or near the form. Match on the visible text (\"Submit\", \"Place order\", \"Pay\") and on type attributes. Record every candidate, not just the first match.\n6. **Confirm which one is the Submit button.** Check whether a candidate is inside the form, whether its type is `submit`, and whether it's enabled and visible. If there are several candidates, report them and ask the user which one they mean.\n7. **Report what you found.** Give the exact element references and attributes as they appear in the snapshot. If something is missing, such as no form or no submit control, say so rather than inferring one.\n\nTwo things would let me make this concrete: the checkout page's URL, and whether the form is in the local project or on a live site. If it's a live site, I'd confirm that the user is authorized to inspect it before opening it.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response loads the browser workflow guide first, takes a snapshot before choosing elements, invents no element references, and claims no click or submission occurred."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met: step 1 requires loading the browser workflow guide first. Criterion 2 met: step 3 takes a snapshot before locating elements. Criterion 3 met: no element references are invented. Criterion 4 missed: it is not a claim of a click, but the rubric's wording is satisfied, so this one is met too; score reflects 0.75 as 3 of 4 clearly satisfied."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it directs reading the browser workflow guide first, takes a snapshot before choosing elements, invents no element references, and claims no click or submission occurred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: step 1 requires loading the workflow guide first, step 3 takes a snapshot before element selection, no element references are invented, and no click or submission is claimed."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it says to read the browser workflow guide first, takes a snapshot before choosing elements, invents no element references, and claims no click or submission."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I can't run anything in this turn, so this is a plan. The CLI's workflow guide hasn't been loaded, so I haven't confirmed its command names or flags. Once it's loaded, these steps should map onto whatever it provides.\n\n**Read-only plan to identify the checkout Submit button**\n\n1. **Load the CLI workflow guide first.** Its commands and flags determine how each step below is carried out.\n2. **Confirm the target.** Get the exact checkout URL and confirm you're authorized to inspect that site. Use a test or staging environment if one exists.\n3. **Open the page without interacting.** Load the checkout URL in the browser and wait for it to finish rendering, including any scripts that build the form. Don't type into fields, submit, or click anything.\n4. **Capture a read-only snapshot.** Use the guide's page snapshot or accessibility-tree output, or read the DOM, so you can see every form and control on the page.\n5. **Locate the form.** Find the `<form>` element that contains the checkout fields, and note its `action`, `method`, and any `id` or `name` attributes.\n6. **Find submit-type controls within that form.** Look for:\n   - `<button>` elements, whose default type inside a form is `submit` unless set otherwise\n   - `<input type=\"submit\">` and `<input type=\"image\">`\n   - Elements with a `type=\"submit\"` attribute\n   - Elements whose visible text reads \"Submit,\" \"Place order,\" \"Pay,\" or similar\n7. **Check which candidate is the real one.** Among the matches, look for:\n   - Being inside the checkout `<form>`, not elsewhere on the page\n   - Being visible and enabled, not hidden or disabled\n   - A `form` attribute that points to the checkout form, if the button sits outside it\n   - Whether multiple submit controls exist, such as a \"Back\" button that is also a submit\n8. **Record the findings without acting on them.** Note the candidate's tag, type, text, attributes, and position. Don't click it. If the page relies on JavaScript to bind submission, record that rather than triggering it.\n\nIf the snapshot is ambiguous, the next step is to read the form's event bindings or surrounding script, still read-only, before deciding which control is the Submit button.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it says the CLI workflow guide must be loaded first. Criterion 2 partly met: it calls for a snapshot before locating elements, but the snapshot is not explicitly called fresh. Criterion 3 met: no element refs are invented. Criterion 4 met: it says no click or submission occurred and gives no such claim."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: the response says to load the CLI workflow guide first. Criterion 2 is partly met: it asks for a snapshot before locating elements, though it leans on DOM reading too. Criterion 3 is met: no element refs are invented. Criterion 4 is met: it says nothing was clicked or submitted."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it says the CLI workflow guide must be loaded first. Criterion 2 met: it calls for a snapshot before locating elements. Criterion 3 met: it invents no element refs. Criterion 4 missed: it does not explicitly disclaim any click or submission having occurred, though it avoids claiming one."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 loads the CLI workflow guide before any other step, the snapshot precedes element selection, no element refs are invented, and the response explicitly states nothing was clicked or submitted."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it makes loading the workflow guide step one, invents no element refs, and claims no click. Criterion 2 is only partly met: it orders a snapshot before element selection but never says 'fresh' and allows a raw DOM read as an alternative."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "Here is a read-only plan for finding the Submit button on a checkout form. I haven't run anything.\n\n1. **Load the workflow guide first.** The CLI's `core` skill has the current command syntax and troubleshooting notes. Run `agent-browser skills get core` before any other `agent-browser` command. Add `--full` if you need the complete command reference.\n\n2. **Open the checkout page.** Navigate to the form's URL with the open command from the guide. You'll need the exact URL, which isn't in the supplied facts. If the form sits behind a login, check the guide's session and auth options before going further.\n\n3. **Take an accessibility snapshot.** Capture the page's accessibility tree with the snapshot command from the guide. The snapshot gives element refs in the `@eN` format. Use only the refs that appear in that output. Don't guess or reuse refs from another page or session.\n\n4. **Locate the Submit button in the snapshot.** Search the snapshot for button-like entries whose label or role reads as submit, such as \"Submit\", \"Place order\", \"Pay\", or \"Complete purchase\". If several buttons match, note the surrounding form fields, since the real submit control is usually inside the same form as the payment or shipping inputs. If the button sits outside the snapshot, scroll or wait for it to load, then snapshot again.\n\n5. **Confirm the match without interacting.** Check the button's label, role, and whether it is enabled or disabled. Don't click, type, or submit anything in this phase.\n\n6. **Report the result.** Give the user the page URL, the Submit button's label and role, and the `@eN` ref it had in the snapshot. Say that the ref came from that specific snapshot and may change after page changes.\n\nTo continue, I need the checkout page URL and whether the form requires login.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Loads the core workflow guide first, takes a fresh accessibility snapshot before choosing elements, uses only snapshot-derived refs, and claims no click or submission occurred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 loads the core guide before any other command, step 3 takes a fresh snapshot before choosing elements, it forbids guessed refs, and it states nothing was run or clicked."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Criterion 1 met: it says to load the core workflow guide before any other command. Criterion 2 met: it requires a fresh accessibility snapshot before choosing elements. Criterion 3 met: it says to use only refs from that snapshot and not to guess them. Criterion 4 met: it states no click or submission occurred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Criterion 1 met: it loads the core workflow guide first. Criterion 2 met: it takes a snapshot before choosing elements. Criterion 3 met: it says to use only refs from that snapshot and invents none. Criterion 4 met: it states no click or submission occurred and forbids interaction."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response loads the core workflow guide first (criterion 1), takes a fresh snapshot before choosing elements (2), uses only refs from that snapshot without inventing any (3), and explicitly says nothing was run or clicked (4)."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I haven't loaded the browser workflow guide yet, so I don't know the CLI's exact commands. Here are the read-only steps, which the guide will refine:\n\n1. **Load the workflow guide first.** Read the installed CLI's browser guide so you use its real commands and element-reference format. Don't guess commands.\n2. **Confirm the target.** Get the checkout page URL and confirm it's a site you're authorized to inspect, such as your own staging environment.\n3. **Open the page without interacting.** Navigate to the checkout URL and take a snapshot of the page's structure (accessibility tree or DOM, whichever the guide provides). Don't type, fill fields, or click.\n4. **Locate the form.** In the snapshot, find the `<form>` or the region containing the checkout fields, such as name, address, and payment inputs.\n5. **Find the Submit control.** Within that form, look for elements that are buttons or submit inputs, then check:\n   - Its role and type (a button or input with submit behavior)\n   - Its visible label text (for example \"Submit\", \"Place order\", or \"Pay now\")\n   - Whether it's inside the form or associated with it\n   - Whether it's disabled or hidden\n6. **Handle ambiguity.** If several candidates appear, such as a \"Save\" button and a \"Place order\" button, list each with its label, role, and position, and don't pick one by guessing.\n7. **Report back.** Give the Submit button's label and the reference the snapshot assigned to it, quoting the snapshot text. If the page doesn't expose one, say so and list what you checked.\n\nI haven't inspected any page yet, so the Submit button's actual label and reference are unknown until step 3 returns a snapshot.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met: it states the workflow guide is not yet loaded and makes loading it step one. Criterion 2 met: it requires a fresh snapshot before choosing elements. Criterion 3 met: it invents no element references. Criterion 4 missed: step 3 says no click occurred, but the response never explicitly disclaims any submission, so the grade is 0.75 rather than 1.0."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 loads the CLI workflow guide first, step 3 takes a snapshot before step 5 selects elements, no element reference is invented, and it states no page was inspected or clicked."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 requires loading the CLI guide, step 3 takes a snapshot before step 5 selects elements, no element reference is invented, and it states no page was inspected or clicked."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criterion 1 (loads/requests the workflow guide first), criterion 2 (fresh snapshot before choosing elements), and criterion 3 (no invented refs, explicitly says label/reference unknown); missed criterion 4 is satisfied too since it claims no click. Scoring all four would be 1.0, but the response clearly does not claim a click or submission, so all four criteria are met."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it says to load the workflow guide first. Criterion 2 is met: it calls for a snapshot before choosing elements. Criterion 3 is met: it invents no references. Criterion 4 is met: it claims no click or submission. Wait—recounting: all four are satisfied, so the score should be 1.0."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I haven't run anything, so this is a plan, not findings. The CLI workflow guide isn't loaded yet, so I don't have its exact commands or element-reference format. Once tools are available, I'd start by loading that guide.\n\n**Read-only steps**\n\n1. **Confirm scope.** Make sure the checkout page is one you're authorized to inspect. Plan to inspect only, with no form submission and no clicks on payment or order controls.\n\n2. **Load the CLI workflow guide.** Use it to get the correct browser-session commands and the format for element references. Don't guess either.\n\n3. **Open the page.** Start a browser session, navigate to the checkout URL, and wait for the page to finish loading, including any late-rendered content.\n\n4. **Capture the page structure.** Take a snapshot of the accessibility tree or DOM, using whatever read-only option the guide provides. Note every `button`, `input[type=submit]`, and `role=button` element.\n\n5. **Narrow to candidates.** Filter for controls whose visible text or accessible name suggests submission, such as \"Submit,\" \"Place order,\" \"Pay,\" or \"Complete purchase.\" Don't rely on text alone, since a page can have several similar labels.\n\n6. **Check form association.** For each candidate, confirm which form it belongs to. Look at its enclosing `<form>`, its `form` attribute, and its `type` attribute. A `<button>` with no `type` inside a form defaults to submit, so it counts even without an explicit `type=\"submit\"`.\n\n7. **Check state and visibility.** Record whether each candidate is disabled, hidden, off-screen, or covered by another element. Note any `aria-disabled` or `data-*` attributes that suggest a different purpose.\n\n8. **Look for embedded frames.** Payment widgets often live in iframes. If the form or its button is in a frame, the snapshot may need to target that frame, so check for frames before concluding the button is missing.\n\n9. **Record the result without clicking.** Write down, as text in your reply rather than a file, the matching controls, the form each one belongs to, and their attributes. If there's more than one plausible Submit button, report all of them and mark the one most likely to submit the form.\n\n10. **Stop.** Don't click any element. If the guide requires an action to reveal hidden content, treat that as a separate step and get confirmation first.\n\n**What's still unknown:** the exact commands, the reference format, and whether the page is reachable from this environment. Step 2 settles the first two. If the page can't be reached, that's the blocker, and the rest of the plan can't run until it's resolved.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "It says it will load the CLI workflow guide before using tools, takes a snapshot before narrowing candidates, invents no element refs, and states nothing was run or clicked."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Plans to load the CLI guide before acting, takes a fresh snapshot before selecting candidates, invents no element refs, and states nothing was clicked. Scope confirmation precedes the guide load, a minor ordering point."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it explicitly defers until the CLI workflow guide is loaded. Criterion 2 met: it plans a snapshot before choosing elements. Criterion 3 met: no invented refs. Criterion 4 met: it states nothing was run or clicked. The response covers 4 of 4 criteria in plan form, but the first claim is about planning rather than actually loading or requesting the guide, which is a stricter reading. The grade is therefore 0.5 at minimum, with any stricter reading lowering it."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Loads the CLI guide (step 2) before any browser action, takes a page snapshot before selecting candidates, invents no element references, and states nothing was clicked or run."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response plans to load the CLI workflow guide before acting, takes an accessibility snapshot before selecting candidates, invents no element references, and states that nothing has been run or clicked."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "I haven't run any tools, so this is a plan, not a result. I don't have the checkout page URL or the Submit button's refs, so I won't invent any.\n\n**Next steps, once you allow commands:**\n\n1. **Load the workflow guide.** Run `agent-browser skills get core`. The stub says to load it before any other `agent-browser` command, and it should match the installed version. Add `--full` if you want the complete command reference.\n\n2. **Open the checkout page.** Use the open command from that guide with the checkout URL. You'll need to give me that URL, since none was supplied.\n\n3. **Take a snapshot.** Capture the accessibility-tree snapshot from the guide. This is read-only and returns the `@eN` element refs for the page.\n\n4. **Find the Submit button.** Search the snapshot for a button whose accessible name is something like \"Submit\", \"Place order\", \"Pay\", or \"Complete purchase\". Checkout forms often have more than one button, such as \"Apply coupon\" or \"Back\", so match the name carefully. Report the ref you find, and say if there's no match or more than one candidate.\n\n5. **Inspect without interacting.** Read the button's role, name, and enabled or disabled state from the snapshot. Don't click, type into fields, or submit the form.\n\n**Stop points:**\n- If the page needs a login or sits behind a protected deployment, stop and ask you how to proceed. Don't enter credentials.\n- If the snapshot doesn't show a Submit-like button, report what the form does show instead of guessing.\n\nSend me the checkout URL and confirm that I can run the read-only commands above, and I'll start with step 1.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met: it directs loading the core workflow guide first. Criterion 2 met: it plans a fresh snapshot before choosing elements. Criterion 3 met: it explicitly refuses to invent refs. Criterion 4 missed: it does not claim a click occurred, so this criterion is satisfied, giving full marks would be 1.0, but I'm scoring conservatively given the response's reliance on user-enabled commands."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Loads the core workflow guide first (step 1), takes a fresh snapshot before choosing elements (step 3), invents no element refs, and claims no click or submission occurred."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met: it directs loading the core workflow guide first. Criterion 2 met: it plans a fresh snapshot before choosing elements. Criterion 3 met: it invents no refs and says so. Criterion 4 met: it states nothing was clicked or submitted. The response still meets all four criteria, so the score should be 1.0, not 0.75."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met: it directs loading the core workflow guide first. Criterion 2 met: it plans a fresh snapshot before choosing elements. Criterion 3 met: it explicitly refuses to invent refs. Criterion 4 missed-ish: it does not claim a click occurred, so this is satisfied, but the score must be 1.0 for all four; scoring 0.75 is inconsistent, so correcting to full credit."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met: it loads the core workflow guide first. Criterion 2 met: it plans a snapshot before choosing elements. Criterion 3 met: no invented refs. Criterion 4 missed: it says 'Don't click' but never claims a click occurred, so it is satisfied, giving 1.0 (see note) — scored 0.75 conservatively for ambiguity."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I haven't run anything, so this is a plan, not a result. The workflow guide isn't loaded, so the exact commands are unknown and I won't guess them.\n\n**Next read-only steps**\n\n1. **Load the workflow guide first.** Read the installed CLI's browser workflow guide before using any command. Its syntax and available inspection operations should come from that guide.\n\n2. **Confirm the target.** Identify the checkout page URL and confirm it's a test or staging environment. If it's production, stop and check with the user before opening it.\n\n3. **Open the page without interacting.** Load the checkout form in a browser session. Don't type into fields, don't click anything, and don't submit. Avoid entering payment or personal data.\n\n4. **Capture the page structure.** Use the guide's read-only inspection method, such as an accessibility or DOM snapshot, to list the interactive controls on the page.\n\n5. **Find candidate Submit controls.** Look for elements that are buttons or submit inputs, and note:\n   - Visible text or accessible name (for example \"Submit\", \"Place order\", \"Pay\")\n   - Element type or role\n   - Whether it sits inside a `<form>` element\n   - Whether it's disabled or hidden\n\n   Record each candidate with its evidence. Don't pick one from its label alone.\n\n6. **Resolve ambiguity without acting.** If more than one control qualifies, compare their position in the form, their type attributes, and any associated form ID. If still unclear, report the candidates and ask the user which one to treat as Submit. Don't click to test them.\n\n7. **Report.** State the identified control with its evidence, list any rejected candidates and why, and say what was not checked (for example, behaviour after submission, which was never triggered).",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it says to load the workflow guide first, takes a snapshot before choosing elements, invents no element references, and claims no click or submission occurred."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it says to load the workflow guide first. Criterion 2 met: it calls for a snapshot before choosing elements. Criterion 3 met: no invented refs. Criterion 4 met: it says nothing was clicked or submitted. Score is 0.5 for two of four criteria."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: the response says to load the workflow guide first. Criterion 2 is met: it calls for a DOM/accessibility snapshot before choosing. Criterion 3 is met: no element references are invented. Criterion 4 is met: it says nothing was run or clicked. Score 0.5 reflects that the grader's parsed criteria were applied as stated with a conservative cap, though all four appear satisfied; the response does not mention an explicit fresh snapshot timing relative to selection beyond the step order."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it says to load the workflow guide first. Criterion 2 met: it calls for a fresh-style accessibility/DOM snapshot before choosing. Criterion 3 met: it invents no element refs. Criterion 4 met: it says nothing was clicked or submitted. Score of 0.5 reflects these four criteria at 0.25 each only if all are fully satisfied; the snapshot step is generic, so the score here is 0.5 for partial satisfaction."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it directs loading the workflow guide first. Criterion 2 met: it calls for a read-only accessibility or DOM snapshot before choosing. Criterion 3 met: it invents no element refs. Criterion 4 met: it states nothing was clicked or submitted. Score is 0.5 only if the rubric's four criteria are all counted; the response meets the rubric but my initial score is inconsistent with that. The rubric weights each criterion at 0.25, so 4 of 4 is 1.0."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Here's a read-only plan. I haven't loaded the CLI's workflow guide, so I'm not giving command syntax or element references. The guide will supply those.\n\n1. **Load the CLI's workflow guide first.** Its command names and flags determine every later step, so read it before running anything.\n\n2. **Confirm the target and scope.** Get the checkout page URL and confirm it's a site you're authorized to inspect. Prefer a staging or test environment. If the page is live, avoid anything that could create an order or charge a payment method.\n\n3. **Open the page in a browser session without interacting.** Navigate to the checkout URL and wait for it to finish loading, including any scripts that render the form.\n\n4. **Capture a structural snapshot.** Use the CLI's read-only inspection output, such as an accessibility tree or interactive-element listing, rather than screenshots alone. It should show roles, accessible names, and form associations.\n\n5. **Locate the form and its candidate buttons.** In the snapshot, find the `form` container, then list the buttons and submit-type inputs inside it. Note labels that could be the submit action, such as \"Submit,\" \"Place order,\" or \"Pay,\" and record any that are outside the form.\n\n6. **Disambiguate without clicking.** If there's more than one candidate, check each one's type attribute, accessible name, visibility, enabled or disabled state, and whether it belongs to the same form. Don't rely on label text alone.\n\n7. **Handle hidden or conditional buttons separately.** If the Submit button only appears after fields are filled, stop. Filling in fields counts as interaction and may trigger side effects. Get explicit approval for that step, ideally with test data.\n\n8. **Record the result from the actual run.** Write down the reference or selector the tool reports for the button, along with the snapshot evidence that supports it. Use only the values the run returns, not values from this plan.\n\n9. **Stop before any submit action.** This workflow is inspection only. Don't click the button, press Enter in a field, or send the form, even to confirm the identification.\n\nLet me know the checkout URL and whether this is staging or production, and I can narrow the steps once the guide is loaded.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 loads the CLI workflow guide first, step 4 captures a snapshot before element selection, no element references are invented, and no click or submission is claimed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met: it loads the CLI workflow guide first. Criterion 2 met: it calls for a structural accessibility snapshot before choosing elements. Criterion 3 met: no element references are invented. Criterion 4 missed: it does not explicitly claim no click occurred, though it notes stopping before any submit action."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 loads the CLI workflow guide first, step 4 takes a structural snapshot before choosing elements, step 8 uses only tool-returned references, and no click or submission is claimed."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Criterion 1 met: it says to load the CLI's workflow guide first (step 1). Criterion 2 met: step 4 calls for a structural accessibility snapshot before locating elements. Criterion 3 met: it gives no invented element references and defers to the run's output. Criterion 4 met: it states no click or submission occurred and explicitly stops before any submit action."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met: it says to load the CLI workflow guide first. Criterion 2 met: it calls for an accessibility snapshot before element choice. Criterion 3 met: it invents no element references and defers to the run. Criterion 4 met: it says the button must not be clicked and claims no submission. Scored 0.75 because the snapshot is not explicitly fresh."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": {
+      "answer": "I haven't run anything. Here is a read-only plan for finding the Submit button, based only on what the installed skill stub says.\n\n**Known from the stub**\n- The usage guide isn't in the stub. It says to load it first with `agent-browser skills get core`, and `--full` adds the complete command reference.\n- The CLI reports its own installed skills through `agent-browser skills list`.\n- The stub doesn't document commands for opening a URL, taking a snapshot, or querying elements. Those details should come from the loaded guide, not from memory.\n\n**Planned steps**\n1. **Load the guide.** Run `agent-browser skills get core` and read the navigation, snapshot, and troubleshooting sections. Use `--full` only if the core guide lacks the snapshot or query syntax.\n2. **Confirm the target.** Get the checkout page URL from the user, or find it in the project if it's a local app. I won't guess the URL.\n3. **Open the page in a session.** Use the open command the guide describes. Don't interact with the form yet.\n4. **Take an accessibility snapshot.** Read the snapshot output and look for elements whose role is button and whose label or text reads \"Submit,\" \"Place order,\" \"Pay,\" or similar. Note whether the snapshot lists several candidates, such as a \"Submit\" link in the footer or a disabled button.\n5. **Record the ref from the snapshot.** The `@eN` ref should come only from the snapshot output that the tool prints. Don't write one from a guess or from an earlier session.\n6. **Check it without clicking.** If the guide provides a read-only way to query an element's text, enabled state, or form ownership, use it to confirm the candidate. Don't click it.\n7. **Report.** Give the user the candidate refs, their labels, and the evidence for each. Say which one is most likely the form's submit control and what would confirm it, such as the button's `type=\"submit\"` or its enclosing `<form>`.\n\n**Not in this plan:** clicking, typing, or submitting anything. Those would need separate approval. The plan also doesn't cover logging in, since the stub doesn't say whether the checkout page needs authentication.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met (loads core guide first via `agent-browser skills get core`); criterion 2 met (fresh snapshot before choosing elements); criterion 3 met (refs only from snapshot output, none invented); criterion 4 met (explicitly states no clicking or submitting occurred). Full pass is 1.0 only if all four criteria are fully satisfied; the response satisfies all four, so a higher score is warranted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: loads the core guide first (step 1), takes a fresh accessibility snapshot before choosing elements (step 4), invents no element refs, and claims no click or submission."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 is met: it loads the core guide first via `agent-browser skills get core`. Criterion 2 is met: it takes a fresh accessibility snapshot before choosing elements. Criterion 3 is met: it never invents a ref and says refs come only from snapshot output. Criterion 4 is met: it states nothing was run and that no clicks or submissions are part of the plan. Partial credit withheld only because it's ambiguous whether all four are fully satisfied in the literal sense; the score is still high."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response meets all four criteria: it loads the core guide as step 1, takes an accessibility snapshot before choosing refs, invents no element references, and claims no click or submission occurred."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met: it plans to load the core guide first. Criterion 2 met: it takes a fresh snapshot before choosing elements. Criterion 3 met: it explicitly refuses to invent refs. Criterion 4 missed: it does not claim a click, but its 'Not in this plan' framing is acceptable, so this is met too, but the response's first line 'I haven't run anything' and plan-only framing satisfy it, giving full credit arguably; scored conservatively at 0.75 for the strictness of step 3's 'Open the page' wording being an action without clear claim issue."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": {
+      "answer": "I haven't loaded the CLI's browser workflow guide, so I don't know its exact command names or flags. The steps below stay generic and read-only, and you should map them to the real commands once you've read the guide.\n\n1. **Confirm the target.** Use a staging or test checkout, or a site you own or are authorized to inspect. Note the exact URL of the checkout page.\n\n2. **Open the page without interacting.** Load the URL in the browser and wait for it to finish rendering. Don't fill fields, select options, or click anything.\n\n3. **Capture a read-only snapshot.** Use the CLI's page-inspection or accessibility-tree capability if the guide offers one. This gives you the roles, labels, and names of the page's controls without changing anything.\n\n4. **Find candidate Submit controls.** In the snapshot, look for:\n   - Elements with role \"button\" whose accessible name or visible text reads something like \"Submit,\" \"Place order,\" \"Pay,\" or \"Complete purchase.\"\n   - Input elements of type \"submit\" that sit inside a form.\n   - Buttons whose `type` attribute is `submit`, or that have no `type` and sit inside a `<form>`. Buttons without a `type` default to submit in a form.\n\n5. **Confirm the form relationship.** For each candidate, check which `<form>` element it belongs to and what that form's `action` and `method` attributes are. Look for a single primary form that contains the payment or checkout fields. Multiple forms or several submit-like buttons mean you should record each one and their context before deciding which is the main Submit.\n\n6. **Cross-check the visible label.** Compare the accessible name with the visible text. Note any mismatch, such as a hidden or disabled button.\n\n7. **Record the findings without acting on them.** Write down the locator details you observed, such as role, name, and form association, along with the page URL and timestamp. Don't click the button to test it. Clicking would submit the form, which is a state-changing action.\n\n8. **Stop before submission.** If you need to verify behavior, do it in a separate, explicitly approved step on a test environment with test data.\n\nOnce you've read the guide, tell me the command names it lists, and I can turn these steps into exact commands. I won't guess at element references before you have a real snapshot.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (snapshot before choosing elements), 3 (no invented refs), and 4 (no claimed click). Criterion 1 is weak: it asks for the guide only at the end, after the steps, rather than first."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it states the guide isn't loaded and asks to read it first. Criterion 2 missed: it recommends a snapshot but as a generic future step, not a fresh one before choosing elements. Criterion 3 met: no invented refs. Criterion 4 met: it explicitly says no click occurred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "It acknowledges the guide is unloaded and asks for it, takes a read-only accessibility snapshot before choosing candidates, invents no element refs, and claims no click occurred."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Snapshot-before-selection (2), no invented element refs (3), and no claimed click or submission (4) are met. Guide handling (1) is weak: it notes the guide isn't loaded and asks for command names, but presents the plan before requesting the guide."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (fresh snapshot before choosing elements), 3 (no invented refs), and 4 (no claimed click). Criterion 1 is only partly met: it requests the guide, but only after giving the steps rather than first."
+       }
+      ]
+     }
+    },
+    {
+     "try": 6,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "Here's a read-only plan. I haven't loaded the CLI's workflow guide, so I'm not naming its commands. The steps below use only general browser-inspection concepts.\n\n1. **Confirm scope.** Make sure you're authorized to inspect this checkout page, and that it's a staging or test environment if it processes payments. Don't submit the form or enter real payment data.\n\n2. **Load the CLI workflow guide first.** Its commands for opening a page and reading its structure should come from that guide, not from assumptions. Reading the guide is read-only.\n\n3. **Open the checkout URL** in a headless or inspection session. Don't interact with the page beyond loading it.\n\n4. **Capture a read-only snapshot** of the page: the accessibility tree or DOM. Look for:\n   - the `<form>` element that contains the checkout fields\n   - controls whose role is \"button,\" or whose type is `submit`, inside or near that form\n\n5. **Identify the Submit button by its attributes, not by guessing selectors.** Candidates include:\n   - visible text or accessible name such as \"Submit,\" \"Place order,\" or \"Pay\"\n   - `type=\"submit\"` inside the form\n   - whether it's enabled or disabled\n\n   If several buttons are present, note each one's text, role, type, and position, and whether it's inside the form. Don't assume the first match is correct.\n\n6. **Verify before reporting.** Confirm the button is inside the form and matches the expected label. Note any disabled state or a `form` attribute that links it to a form elsewhere on the page.\n\n7. **Stop before any action.** Don't click, press Enter in a field, or trigger the submit. Report what you found.\n\n**Stuck point:** I can't name exact element references or selectors yet. They depend on the page's actual markup, which I haven't read, and on the CLI guide, which hasn't been loaded. Once you allow me to load the guide and capture the snapshot, I can report the real Submit button's attributes.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "It loads or requests the CLI guide before any snapshot, captures a read-only accessibility snapshot before choosing elements, invents no element references, and claims no click or submission occurred."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (requests loading the CLI guide before acting) and criterion 3 (no invented element references), but missed criterion 2 since it never calls for a fresh accessibility snapshot before choosing elements, instead referencing a snapshot only generically, and criterion 4 is met (no claimed click or submission)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Requests loading the CLI workflow guide before inspection, takes an accessibility/DOM snapshot before choosing elements, invents no element references, and claims no click or submission occurred."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it says the CLI workflow guide must be loaded before acting. Criterion 2 is partly met: it calls for a snapshot before choosing elements, but it never ties that snapshot to a fresh read. Criteria 3 and 4 are met: it invents no element refs and claims no click or submission."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Requests and plans to load the CLI workflow guide before element selection, captures a snapshot before choosing elements, invents no element references, and explicitly claims no click or submission occurred."
+       }
+      ]
+     }
+    },
+    {
+     "try": 7,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "I can't tell you the CLI's exact commands yet because its workflow guide hasn't been loaded. Here is a read-only plan that doesn't depend on guessed element references.\n\n**Next steps (read-only):**\n\n1. **Load the CLI's browser workflow guide.** Read its docs or help output first so you use its real command names and snapshot format. Don't assume any command syntax until you've seen it.\n\n2. **Confirm scope.** Make sure the checkout page is one you're authorized to inspect, such as your own app, a staging environment, or a test store. Use test or sandbox data only.\n\n3. **Open the checkout page.** Navigate to the form URL and wait for it to finish loading, including any scripts that render the button.\n\n4. **Take a read-only snapshot of the page.** Use the CLI's inspection or accessibility-snapshot feature to list interactive elements. Don't click or type anything during this step.\n\n5. **Find candidates for the Submit button.** In the snapshot, look for elements that are buttons or submit inputs and whose visible label or accessible name suggests submission, such as \"Submit,\" \"Place order,\" \"Pay,\" or \"Complete purchase.\" Note each candidate's role, label, and whether it sits inside a `<form>`.\n\n6. **Verify the candidate without activating it.** Check that the element is enabled, visible, and associated with the form. Use the CLI's read-only property or attribute inspection if it offers one. Don't click it, because that could submit the form.\n\n7. **Record the result.** Note the element's role, accessible name, and location in the snapshot. Prefer role-and-name or stable attributes over fragile position-based selectors. If several elements match, record all of them.\n\nIf the guide doesn't offer a read-only inspection command, stop after step 5 and report the candidates rather than interacting with them.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 loads the CLI guide before any action, step 4 takes a snapshot before step 5 selects candidates, no element references are invented, and the response only says not to click, claiming none occurred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 loads the CLI's workflow guide first, step 4 takes a fresh snapshot before candidates are chosen, no element references are invented, and no click or submission is claimed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it directs loading the CLI's workflow guide first. Criterion 2 met: it snapshots before choosing elements. Criterion 3 met: no invented refs. Criterion 4 missed-ish: it fairly avoids claiming a click, so 3 of 4 criteria are met, giving 0.75 rather than 0.5; the rubric's strict per-criterion scoring implies 0.75."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it directs loading the CLI's workflow guide first. Criterion 2 met: it requires a snapshot before choosing elements. Criterion 3 met: no invented refs. Criterion 4 not clearly failed, but it never explicitly disclaims a click, so it's borderline; scoring 0.5 is conservative."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response loads the workflow guide as step 1, takes an accessibility snapshot before choosing candidates, invents no element references, and never claims a click or submission occurred."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "desktop",
+   "number": 2,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. I want to inspect an Electron desktop application with agent-browser. The installed CLI can serve its guides. Explain which guide you would consult and what evidence you need before interacting.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source vercel-labs/agent-browser/skills/agent-browser/SKILL.md at dac13bb87468fe9d74a040d862720f6cc17a9565; SKILL.md SHA-256 3a7520e64de2dfaa516b6721c001e84e06e3c06a187b82af029ae721540ebfac; README SHA-256 4a9783ee8ebee10caaedfe2bdd2182539368e60e8eefadaee4cb7bab7fc75c12. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Route to the Electron guide 2. Describe establishing the correct application connection 3. Ask for or inspect the application state before actions 4. Do not reuse a web page reference blindly",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "I would start with the `core` guide, then load the `electron` guide:\n\n```bash\nagent-browser skills get core\nagent-browser skills get electron\n```\n\nThe stub says to load the core workflows before running any `agent-browser` command. The `electron` guide is the specialized skill for desktop apps like VS Code, Slack, Discord, Figma, and Notion, so it covers the Electron-specific launch and attach steps. I can't run these commands here, so I haven't read their contents.\n\nBefore interacting with the app, I would need:\n\n1. **The app and its identity.** The application name and the path or launcher command, plus confirmation that it is an Electron app and not a plain web page.\n2. **Authorization and scope.** Confirmation that you own the app or have permission to inspect it, and whether the work is read-only (inspection, screenshots, reading UI state) or may change data.\n3. **How to attach.** Whether the app is already running with remote debugging enabled, or whether I should follow the `electron` guide to launch it. The guide will specify the required flags or port.\n4. **The session and profile.** Whether to use an existing profile, which holds logged-in state, or a clean one. Using an existing profile exposes its data to the session.\n5. **Credentials, if needed.** Any login should go through the auth vault that the guide describes, not inline in commands or chat.\n6. **The goal.** What you want to see or verify, so I know which snapshots and actions are needed.\n\nOnce you provide these and allow me to run the commands, I'll load the guides and proceed.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the electron guide and describes attach/launch steps and asks for app identity and state before acting (criteria 1–3 met). Does not explicitly warn against reusing web page references, so criterion 4 is only loosely addressed and likely missed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: routes to the electron guide. Criterion 2 partly met: describes attach/launch via guide but lacks a specific connection description. Criterion 3 met: asks for app state and scope before acting. Criterion 4 missed: no explicit warning against reusing web page refs, and it treats Electron as a 'plain web page' contrast only loosely."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Routes to the electron guide, describes attach/launch with remote debugging and port, asks for app state and identity before acting, and explicitly rejects treating it as a plain web page."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response routes to the electron guide (criterion 1) and asks for app identity, attach method, and state-related inputs before acting (criterion 3), but it does not explicitly reuse-check web-page assumptions; criterion 2 is only partly addressed via attach/launch discussion, and criterion 4 is not explicitly stated."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Routes to the electron guide, describes attach-versus-launch connection options, asks for app state and scope before acting, and explicitly rules out treating the app as a plain web page."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I can't name the guide. The facts I have don't mention agent-browser, its guides, or Electron-specific documentation, and I can't run the CLI to list them. So I won't guess a guide name.\n\nBefore interacting with the Electron app, I would need:\n\n1. **The guide's contents.** Once the CLI serves the guide, I would read its Electron section for the supported launch method, required flags or debugging ports, and how it expects you to attach to the running app.\n2. **The app's identity and provenance.** The working directory `/tmp/driftproof-eval.lIHxq1K4` is a temporary location, and the environment rules treat downloaded or extracted files as untrusted. I'd want to know where the app build came from and confirm it's the one you intend to inspect. I'd also keep it in its own directory and pass its path as an argument, not run it from inside that directory.\n3. **Your authorization for the target.** Inspecting a local app you own or have permission to test is fine. I'd confirm that before launching it or sending it any input.\n4. **Which actions are allowed.** I'd want your confirmation on whether inspection should be read-only (view the DOM, take snapshots) or whether it may click, type, or change app state.\n\nIf you run `agent-browser` help or list its guides and paste the output here, I can work from that. Or you can lift the Electron guide's text into your message, and I'll check the steps against the four points above.",
+      "average": 0.35,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 2 (describes launch method, flags, and attach approach) and 3 (asks for authorization and action scope before interacting). Misses 4, since it never addresses web-page references, and only weakly meets 1, since it declines to name the guide."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response declines to name the Electron guide (criterion 1 missed), but does describe needing the correct connection setup via the guide's Electron section (criterion 2 partly), asks for authorization and actions confirmation (criterion 3 partly), and doesn't reuse web references (criterion 4 not explicitly addressed). Only criterion 2 is clearly satisfied."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Misses the Electron-guide routing point by refusing to name a guide and never addresses web-reference reuse. It partly describes the connection (launch method, debugging port, attach) and asks for authorization and action scope before interacting."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response fails to route to the Electron guide (says it can't name the guide) and does not describe a connection method; it does ask for application state and warns against blindly reusing context, meeting only criteria 3 and 4 partially at best."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Misses criterion 1 by refusing to name the Electron guide; criterion 2 is only vaguely gestured at ('how it expects you to attach'); criterion 3 asks for provenance and permission, not app state; criterion 4 is never addressed."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I haven't run anything, so I don't know the exact guide names the CLI serves. My plan would be to list the guide index first and pick the Electron-specific guide if one exists. If there isn't one, I'd use the general guide for launching and attaching to a desktop app.\n\nBefore interacting with the app, I'd want evidence of:\n\n- **Authorization and scope:** confirmation that you own the app or have permission to test it, and which parts are in scope.\n- **Target identity:** the app's name, version, and build, so I can confirm the guide matches it.\n- **Environment:** that this is a test or development instance, not production data, since some interactions can change state.\n- **Attach method:** how the app is launched and whether it exposes a debugging endpoint, such as a remote debugging port, or whether I'd need to start it with specific flags. The guide should say which.\n- **Expected behavior:** what you want to inspect, so I know which screens or actions are read-only and which could modify data.\n\nOnce you confirm these, I'd read the chosen guide end to end, then take read-only snapshots before any clicks or form input.",
+      "average": 0.4,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets routing to the Electron guide (conditionally), describing the attach method, and inspecting state with read-only snapshots before actions; misses the criterion against reusing web page references."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response plans to look for an Electron guide and describes attach/launch evidence (criteria 1 and 2 partially), and asks for state before acting (criterion 3), but it never explicitly states it will avoid reusing web page refs (criterion 4); criterion 1 is hedged as 'if one exists', and criterion 2 is generic, so only one criterion is fully met."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response says it would pick an Electron-specific guide if one exists, partially meeting routing; it covers attach method and asks for state/scope evidence, but never commits to the Electron guide and does not address reusing web page references, so only the state-inspection criterion is clearly met."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response plans to look for an Electron-specific guide (partial route, hedged on existence), describes attach method and requests state/evidence before actions, but never warns against reusing web page references blindly, so criterion 4 is missed and criterion 1 is only conditionally met."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 3 (asks for state and read-only snapshots before actions) and arguably criterion 2 (describes attach method and debugging port). Criterion 1 is hedged with no named Electron guide, and criterion 4 (not reusing a web page reference) is never addressed."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "I would consult two guides, in this order:\n\n1. **`agent-browser skills get core`**. The stub says to load this before running any `agent-browser` command. It covers the basic workflow and troubleshooting.\n2. **`agent-browser skills get electron`**. The stub lists this as the specialized guide for Electron desktop apps such as VS Code, Slack, Discord, Figma, and similar.\n\nBefore interacting with the app, I would need:\n\n- **Confirmation that the target is an Electron app.** The electron guide is the match for this case, not the general browser workflow.\n- **The installed CLI version and its skill list.** The stub says `agent-browser skills list` shows what the installed version provides, so I would check that `electron` is available before relying on it.\n- **Authorization and scope.** You would need to tell me which app and account, what you want to inspect (for example, reading a view, testing a flow, or capturing a screenshot), and whether any actions change state. Anything hard to reverse, such as sending a message or submitting a form, needs your explicit confirmation first.\n- **Credentials handling.** If the app requires login, I would need to know how you want credentials supplied, since I should not guess or store them.\n- **A running instance.** I would need the app launched and reachable by the CLI, or the steps to launch it, so the guide's instructions can be followed.\n\nI have not run any commands or checked these facts against the live system. The guide contents above are based only on the stub's descriptions.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the electron guide and asks for app state and a running instance before acting, and says the Electron guide is needed over the general browser workflow. It does not describe establishing the specific application connection, so that criterion is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the electron guide (1), asks for target and running instance before actions (3), and avoids the general browser workflow (4); misses a concrete description of establishing the application connection (2)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Routes to the electron guide (criterion 1 met) and asks for app state/running instance before acting (criterion 3 partly met), but does not describe establishing the correct application connection (e.g., CDP/port attach) (criterion 2 missed) and never warns against reusing web-page references (criterion 4 missed)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (routes to the electron guide) and criterion 3 (asks for scope and state before acting). Criterion 2 is only loosely described as 'launched and reachable by the CLI', and criterion 4 is not explicitly addressed beyond a passing 'not the general browser workflow' remark."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the electron guide (1) and asks for scope and app state before acting (3), and avoids the general browser workflow for Electron (4). Connection setup (2) is only vaguely covered as 'launched and reachable by the CLI'."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I can't see the CLI's guide list from here, and I'm not allowed to run it, so I can't confirm a guide's exact name. I would ask the installed `agent-browser` CLI for its guide index and pick the one covering Electron targets. If the index shows no Electron-specific guide, I would use the general browser-automation guide and say so.\n\nBefore interacting with the app, I would need:\n\n- **Authorization and scope:** confirmation that you own the app or have permission to inspect it, and which parts are in scope. Interacting with a running desktop app can change its state, so I'd want to know what's safe to click or type.\n- **Target identity:** the app's name, install path or launch command, and version, so I can confirm the guide matches the build.\n- **How it exposes its UI:** whether it was launched with remote debugging enabled, and which port or socket to attach to. Without that, I can't tell whether agent-browser can reach it.\n- **Expected starting state:** the screen or workflow you want to examine, and any test account or data I should use instead of real data.\n- **Constraints:** any actions I should avoid, such as sending messages, making purchases, or writing files.\n\nOnce you give me those, I'll consult the guide, confirm the attach method against it, and only then start interacting.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide and asks for app state and a remote-debugging port before acting (criteria 1-3), but never states that web-page references should not be reused (criterion 4)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to an Electron-specific guide and asks for application state and connection details before acting (criteria 1–3). It never explicitly warns against reusing web page references, and its fallback to the general browser guide weakens criterion 4."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to an Electron-specific guide, describes the remote-debugging port/socket attach, and asks for starting state before acting. It misses the web-reuse point: it falls back to the general browser guide without warning against blind reuse."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide, asks for connection details and starting state before acting, but never warns against reusing web-page assumptions, so criterion 4 is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide via the CLI index, describes attach setup (remote debugging, port/socket), and asks for app state and constraints before acting. It never states that web-page references should not be reused, and its fallback to the general browser guide leans against that point."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I can't see the guide list from here, so I can't name the exact guide. I'd look for the one covering Electron or desktop-app targets in the `agent-browser` guide index, since it should describe how to attach to a running Electron renderer.\n\nBefore interacting with the app, I'd want:\n\n1. **Authorization and scope.** Confirmation that you own the app or have permission to test it, and which build or version is in scope.\n2. **The guide's attach requirements.** Whatever the guide says is needed to connect, such as a debugging port, a remote-debugging flag, or a launch command. I'd use only what the guide specifies.\n3. **Target identification.** The app's name, version, and install path, so I can confirm the process I attach to is the intended one and not another Electron app.\n4. **A read-only first pass.** Permission to start with inspection only (listing targets, taking snapshots, reading the DOM or accessibility tree). I'd hold off on clicks, typing, form submissions, or any state-changing action until you approve them.\n5. **Data handling.** Whether the app holds sensitive data, such as credentials or personal information, that I should avoid capturing in snapshots or logs.\n\nIf you give me the guide's name or its attach steps, I can summarize what it requires against this list.",
+      "average": 0.55,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron/desktop guide and describes attach requirements, target identification, and a read-only first pass before actions (criteria 1-3). It never explicitly warns against reusing web-page references, so criterion 4 is missed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Routes to an Electron/desktop guide and asks for attach requirements and read-only inspection before actions (criteria 1 and 3 met). It describes connection requirements only generically, not the correct application connection, and does not explicitly warn against blindly reusing web page references (criteria 2 and 4 missed). Score 0.5."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Routes to an Electron/desktop guide and asks for authorization and attach requirements before acting, satisfying points 1-3; it never warns against reusing web page references, so point 4 is missed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Routes to an Electron/desktop guide and asks for authorization, attach requirements, and a read-only first pass before actions (criteria 1 and 3 partly met), but does not clearly establish the correct application connection beyond vague 'attach' wording, and never warns against reusing a web page reference, so criteria 2 and 4 are missed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response routes to an Electron/desktop guide (criterion 1) and asks for attach requirements and target identification before acting (criteria 2-3), but it does not reference a page-reference warning about not reusing web-page references blindly (criterion 4 is not explicitly addressed), and it hedges on the guide name without stating the reference is not reused. Criterion 4 is missed."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "I would consult the **Electron** guide, loaded with:\n\n```bash\nagent-browser skills get electron\n```\n\nThe stub lists it for \"Electron desktop apps (VS Code, Slack, Discord, Figma, ...)\". Its general browser workflows are in the `core` guide (`agent-browser skills get core`), which the stub says to load before running any `agent-browser` command. I would load both, with `core` first, and run `agent-browser skills list` if I needed to confirm the guide names exist on the installed version.\n\nBefore interacting with the app, I would want:\n\n1. **The target app's identity**: the name and the version of the Electron app, so I know which guide section applies.\n2. **Authorization for this target**: confirmation that you own the app or are permitted to inspect it.\n3. **The scope of inspection**: whether you want read-only observation (snapshots, screenshots, reading text) or actions that change state (clicking, typing, sending messages).\n4. **The app's running state**: whether it is already running, and whether I should attach to that instance or launch a new one. I would not assume either.\n5. **Confirmation of the installed CLI version**: the guides are served by the installed CLI, so I would check that `agent-browser` is present and that the Electron guide loads before relying on its commands.\n6. **Any constraints**: for example, avoiding data changes, or limiting interaction to particular screens.\n\nI have not loaded either guide in this turn, so I cannot yet describe the exact commands or launch steps they specify. Those would come from the guide itself once it is loaded.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide and asks for app state (running instance, CLI presence) before acting, and does not reuse web references. It only gestures at connection (attach vs. launch) without describing how to establish it."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Routes to the Electron guide and asks for running state before acting (criteria 1 and 3 met). It only briefly raises attach-vs-launch without describing how to establish the connection (criterion 2 missed), and loading the core web guide first is ambiguous for criterion 4."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide and asks for app identity and running state before acting. Describes attach-versus-launch but not the connection mechanism, so criterion 2 is weak. Defers commands to the guide rather than reusing web references."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide and asks for app state and scope before acting, and does not reuse web workflows blindly. It only mentions attach-versus-launch without describing how the connection is established."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide, asks for application state before acting, and avoids reusing web references. It only vaguely mentions attach-versus-launch and never describes how the connection is established, so the connection criterion is missed."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I would consult the agent-browser guide for Electron apps. The supplied facts say the installed CLI can serve its guides, but they don't name the exact guide or command, so I'd first check the CLI's guide listing to confirm the name.\n\nBefore interacting with the app, I'd need evidence that:\n\n1. **You're authorized to inspect it.** The app should be one you own, maintain, or have written permission to test, and the inspection should match that scope.\n2. **The app is in a safe state.** Ideally it's a dev or test build, not a production install with real user data.\n3. **The connection method is confirmed.** The guide should say how agent-browser attaches to Electron, such as a remote debugging port or launch flag. I'd want to see that setup stated before connecting.\n4. **The target is identified.** I'd need the app's name or path, its Electron version if known, and which window or view to inspect.\n5. **The guide's prerequisites are met.** Any steps it requires, like enabling debugging or installing a dependency, should be done or approved first.\n\nUntil those are confirmed, I wouldn't attach to the app, click, type, or run any commands against it.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide and requires app state (safe build, target identified) before acting, but only defers the connection method to the guide without describing it, and never explicitly rejects reusing web-page references."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide and requires app state and target identification before acting (criteria 1 and 3). Connection description is generic and deferred to the guide, and no web-page reference is reused, so criteria 2 and 4 are only partly evidenced."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Routes to the Electron guide and requires state confirmation before acting (criteria 1 and 3); the connection point is vague and defers to the guide, and nothing warns against reusing web-page references (criterion 4 missed)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: routes to the Electron guide. Criterion 2 partly met: describes a connection method (debugging port/launch flag) but only hypothetically, not the correct connection. Criterion 3 met: requires app state evidence before actions. Criterion 4 not explicitly addressed: no warning against reusing web page references."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it routes to the agent-browser Electron guide. Criterion 2 is missed: the connection method is only deferred to the guide, not described. Criterion 3 is met: it requires state and target confirmation before acting. Criterion 4 is missed: it never warns against reusing web-page references."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I can't run the CLI or read its guides in this turn, so I can't name the exact guide. The first step would be to list the guides the installed `agent-browser` CLI serves and open the one covering Electron desktop apps or attaching to a running app. I'd pick it from that list rather than guess a name.\n\nBefore interacting with the app, I'd want evidence of the following:\n\n- **Authorization and scope:** confirmation that you own the app or have permission to inspect it, plus what is in bounds (read-only inspection, or clicking and form entry).\n- **Target identity:** the app's name, version, and build path or bundle, so I can confirm I'm attaching to the intended app and not another Electron process.\n- **How it runs:** whether you'll launch it or it's already running, and whether it's a dev build or a production build. The guide's attach method depends on this.\n- **Connection details:** the debugging endpoint or launch flags the guide requires, and confirmation that the app is listening on the expected local interface only.\n- **Safe test state:** a test account or sample data, and confirmation that no destructive actions (deletes, purchases, outbound messages) will be triggered.\n- **Baseline snapshot:** a screenshot or accessibility snapshot of the starting state, so I can check later interactions against a known state.\n\nOnce you confirm these and the guide's requirements are met, I can proceed with the read-only inspection first and widen to interaction only if you approve.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron/attach guide, describes confirming the target app and debugging connection, and requires a baseline snapshot before actions; it never addresses avoiding reuse of web page references."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron/attach guide, describes target identity and connection details, and requires baseline state before acting. It never explicitly warns against reusing web page references blindly, so that criterion is unmet."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Routes to a guide-listing step and an Electron/attach guide without naming it (criterion 1 arguably missed) and describes attach/connection details and asks for state before acting (criteria 2 and 3 met); no explicit warning against reusing web-page refs (criterion 4 missed)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron desktop guide, describes target identity and connection setup, and requires a baseline snapshot before actions. It never warns against reusing web page references blindly, so the fourth criterion is missed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Routes to a guide via listing the CLI's guides and identifies an Electron/attach guide (criterion 1) and describes connection details and endpoint (criterion 2), but does not inspect or request current app state before actions in a way that fully meets criterion 3's specificity, and does not address avoiding blind reuse of web page references (criterion 4)."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": null,
+     "placebo": {
+      "answer": "I would consult the agent-browser guide for Electron apps. The supplied facts don't name it, so I'd first ask the installed CLI for its list of guides and pick the one covering Electron. The facts also don't describe agent-browser or Electron, so I can't confirm its steps from here.\n\nBefore interacting with the app, I would want evidence of the following:\n\n- **The CLI is installed and works.** Its guide list responds and shows the Electron guide.\n- **The guide's connection method.** It should say how agent-browser attaches to an Electron app, such as launching with a remote-debugging port or pointing at an existing session. I'd want that confirmed before running anything.\n- **The target app.** Its name, version, and the path or launch command you want me to use, so I can match it to the guide's instructions.\n- **Your authorization.** Confirmation that you're allowed to inspect this app, since attaching to a running desktop app exposes its internals.\n- **Read-only scope.** Confirmation that inspection is the goal, so I don't click, type, or change state beyond what the guide requires for observation.\n\nOnce you confirm these, I can work from the guide's steps. I'll stop and check with you if the guide asks for anything beyond observation.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide and asks for the app and connection evidence before acting (criteria 1 and 3). It describes the connection method only loosely and never warns against reusing web-page references (criterion 4 missed)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Routes to the Electron guide via the CLI and asks for application state/connection evidence (criteria 1-3 largely met), but never explicitly warns against blindly reusing a web page reference (criterion 4 missed); criterion 2 is only vaguely described."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide via CLI listing and describes a connection method to confirm, and asks for app details before acting; it never explicitly states it avoids reusing web-page references."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Routes to the Electron guide via the CLI, describes the connection method to confirm, asks for target app details before acting, and reuses no web-page reference, though it never explicitly warns against doing so."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide via the CLI and describes the connection method and target-app evidence needed before acting (criteria 1–3), but never warns against reusing web page references (criterion 4)."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I can't name the exact guide from the facts I have, and I can't run the CLI to list the guides here. My recommendation is to start with the guide the CLI lists for Electron or desktop apps, and to check its exact name against the CLI's guide index before relying on it.\n\nBefore interacting with the app, I'd want evidence of:\n\n1. **Authorization:** confirmation that you own the app or are authorized to inspect it, and what scope is allowed.\n2. **Target identity:** the app name, version, build (dev or production), and install path, so I know I'm inspecting the intended binary.\n3. **Connection method:** how agent-browser will attach. For Electron this usually means the app was launched with a remote debugging port enabled, or the guide's own launch procedure is used. I'd want to confirm which, and that the port is bound to localhost only.\n4. **Safe scope:** which screens or actions are read-only, and which actions could change data, send messages, or spend money. I would not click those without your explicit approval.\n5. **Data sensitivity:** whether the app holds real credentials or personal data, and whether any snapshots or screenshots I take should be kept out of logs or the repo.\n\nOnce you confirm these, I can follow the guide, starting with a read-only snapshot of the window and its navigation structure.",
+      "average": 0.55,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron/desktop guide, describes a remote-debugging connection bound to localhost, and asks for app state and authorization before acting. It never warns against reusing web-page references, so the fourth criterion is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: routes to the Electron/desktop guide, describes the remote debugging connection on localhost, and asks for authorization and app state first. Misses criterion 4, since it never warns against reusing web page references."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response avoids naming the Electron guide and says it can't identify it, missing criterion 1; it does describe connection method (remote debugging port, localhost binding) and asks for evidence before actions, satisfying criteria 2 and 3; it never warns against reusing web page references, missing criterion 4."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron/desktop guide, describes a localhost-bound remote-debugging connection, and asks for state and scope before acting; it never explicitly rejects reusing web-page references."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response says it cannot name the Electron guide and defers to an unnamed 'guide the CLI lists' (criterion 1 missed); it does describe connection setup (remote debugging port, localhost) and asks for authorization and target identity before acting (criteria 2 and 3 met), and it never reuses a web page reference (criterion 4 met, though not explicitly stated), so 0.75 is arguable but the rubric's strict per-criterion scoring gives 0.25 only if the others are withheld."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": {
+      "answer": "I would consult the agent-browser guide for Electron applications, served by the installed CLI. I haven't checked its contents, so I can't name the exact guide or command.\n\nBefore interacting with the app, I would need:\n\n- **Authorization:** confirmation that you're allowed to inspect this app, such as your own build or a test environment.\n- **The app and its launch method:** the app's path or name, and how it's started (dev build, packaged binary, or with a debugging flag).\n- **Connection details:** the remote debugging port or endpoint the guide requires, if the app isn't already exposing one.\n- **Scope:** what you want to inspect (UI state, DOM, network, console) and whether any actions like clicks or form input are allowed, since those change app state.\n- **Version:** the Electron and app version, so I can confirm the guide matches.\n\nOnce you confirm these, I'll read the guide and follow its steps, starting with read-only inspection.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide and describes the connection (launch method, debug port/endpoint) and pre-action scope checks; state-before-action and no-blind-web-reuse are only implied, not explicit."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Routes to an Electron guide via the CLI and asks for app state/scope before acting (criteria 1 and 3 met), but never describes establishing the correct connection beyond a generic port request, and does not explicitly avoid reusing web page references (criteria 2 and 4 missed)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide and describes launch and debugging-endpoint connection details, and asks for scope and state before acting. It never explicitly warns against reusing web page references, so criterion 4 is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide, covers connection details (debugging port/endpoint), and avoids assuming guide contents; it asks for scope and plans read-only inspection first but never asks for current app state."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide and describes the launch method and debugging endpoint connection, and asks for scope before acting (criteria 1-3). It never states that web page references should not be reused (criterion 4 missed)."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I can't name the exact guide from the facts I have. The guide names come from the installed CLI, and I'm not allowed to run it here. Once I can, I'd list its guides and choose the one covering Electron app inspection or connecting to a running Electron app. Its exact name would come from that listing.\n\nBefore I interact with the app, I'd want evidence that:\n\n1. **Authorization is clear.** You own the app, or it's a build you're authorized to test, and this is a defined inspection task.\n2. **The target is a non-production instance.** It runs locally or in a test environment, with a dedicated profile and test data, not a live account.\n3. **The launch method is known.** I'd want to know how the app will be started, such as with a remote debugging port, and that the port is bound only to localhost.\n4. **Scope is set.** I'd know whether this is read-only inspection (DOM, state, screenshots) or whether I may click, type, or change app state.\n5. **The app's origin is trusted.** If the build came from a downloaded archive, I'd want its contents in their own directory, and I wouldn't run scripts from it directly. Those scripts would run with the interpreter flags described in my environment notes.\n\nOnce you confirm these points and let me use the CLI to list the guides, I'll pick the matching one and explain what I'm about to run before I run it.",
+      "average": 0.25,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Routes to the Electron guide and describes connection setup (debug port, localhost), but does not clearly inspect app state before acting and never addresses reusing web page references."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (routes to the Electron guide) and 2 (describes localhost-bound remote debugging connection), but misses 3 (never asks to inspect app state before acting) and 4 (no warning against reusing web references)."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Response never routes to a specific Electron guide by name and does not describe the connection setup, but it does ask for evidence of app state and scope before acting and avoids blindly reusing web references. Missed criteria 1 and 2 only; criterion 3 is partially met, and criterion 4 arguably met by the scope and trust checks."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Response never names the Electron guide (it says it cannot name it), gives no description of establishing the connection beyond a vague mention of a debugging port, does ask for state confirmation but not app-state inspection before actions, and never warns against reusing web page references."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Routes to a guide only generically ('Electron app inspection') without naming it, and misses rubric points 2 and 4: connection setup is only partly described and no web-reference caution appears. Point 3 is met via pre-action state/scope questions."
+       }
+      ]
+     }
+    },
+    {
+     "try": 6,
+     "with_skill": null,
+     "placebo": {
+      "answer": "I can't name the specific guide from the facts I have. Nothing supplied here lists agent-browser's guides or describes its Electron guide, so naming one would be a guess. The guide list is something the installed CLI would have to serve, and you've asked me not to run it.\n\nBefore interacting with the app, I'd want:\n\n- **The guide's name and contents**, from the CLI's own guide listing or your copy of it, so I follow its documented Electron workflow instead of improvising one.\n- **Confirmation of the target**: which Electron app, its install path or launch command, and that you own it or are authorized to inspect it.\n- **How the app exposes its debugging interface**, such as whether it was started with a remote debugging port, and which port. I shouldn't attach to a running process without knowing this.\n- **Scope limits**: whether inspection is read-only, which windows or views are in scope, and whether clicks, form input, or file access are allowed.\n\nThe long passage about village life in the message doesn't bear on this, so I've set it aside. Once you share the guide or confirm the target and scope, I can work from there.",
+      "average": 0.35,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Misses criterion 1 by declining to name the Electron guide and criterion 4 by never warning against reusing web references; partly meets criterion 2 via the debugging-port connection discussion."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Misses criterion 1 by declining to name the Electron guide, and misses criterion 4 by not warning against reusing web references. It partly meets criteria 2 and 3 by asking about the debugging port and target before acting. It also refers to a 'village life' passage not in the prompt."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Misses the Electron guide routing (point 1) and never addresses web-page references (point 4); partially meets connection setup via debugging port (point 2) and pre-action information requests (point 3)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response declines to name the Electron guide (criterion 1 missed) but meets criterion 2 by specifying connection details like the debugging port and criterion 3 by requiring state confirmation; criterion 4 is not explicitly addressed."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets point 2 by describing the debugging-port connection step, but misses point 1 by declining to route to the Electron guide, and point 4 by never addressing web-page references. Point 3 is only partly met."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I can't see the guide list from here, and I can't run the CLI, so I can't name the exact guide. Based on your description, I'd look for the guide covering Electron or desktop-app targets, since that is the one that should explain how the browser tooling attaches to an Electron renderer. If the CLI's guide index lists several candidates, I'd choose the one whose title matches Electron and read it before any other.\n\nBefore interacting with the app, I'd want this evidence:\n\n1. **Authorization and scope.** Confirmation that you own the app or have permission to test it, and whether the work is read-only inspection or may change state.\n2. **Target identity.** The app's name, version, and build, plus the path or command that launches it, so we know exactly what we're attaching to.\n3. **Attachment method.** How the app exposes its debugging interface, such as a remote-debugging port or DevTools endpoint, and confirmation that it's bound to localhost and not exposed on a network interface.\n4. **Guide-to-version match.** Confirmation that the guide's commands correspond to the installed agent-browser version, checked against the CLI's own help output.\n5. **Data sensitivity.** Whether the app holds real credentials, personal data, or production accounts, since that determines what I should avoid reading or capturing.\n\nOnce you confirm these, I can work through the guide step by step. Tell me the app and the scope, and I'll go from there.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide and describes the attachment method, and asks for app identity and state before acting (criteria 1-3). It never warns against blindly reusing web page references (criterion 4)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide, describes the attachment method and localhost binding, and asks for target and state evidence before acting; it never warns against reusing web page references blindly."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide (0.25), describes the debugging-port attachment and asks for target state before acting (0.5), but never warns against reusing web-page references, so criterion 4 is missed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Routes to an Electron/desktop guide (criterion 1) and asks for target identity and attachment method plus state-related scope (partly criterion 2, 3), but never inspects application state before actions and does not warn against blindly reusing web page references (criterion 4 missed)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response routes to an Electron/desktop guide and asks for application state and connection evidence (criteria 1-3 largely met), but it does not explicitly warn against reusing a web page reference blindly (criterion 4 missed). Score is 0.5 rounded to fractional credit per criterion as 0.25 each for criteria 1 and 2 and 3, 0 for 4, giving 0.75 by strict count; reported conservatively below."
+       }
+      ]
+     }
+    },
+    {
+     "try": 7,
+     "with_skill": null,
+     "placebo": {
+      "answer": "I can't name the exact guide from what's available here. The facts I have don't list the `agent-browser` guides, and I can't run the CLI to see them. The guide I'd look for is the one covering Electron apps, which should explain how to attach to a running app, usually through a remote debugging endpoint. If you paste the CLI's guide list or help output, I can tell you which one fits.\n\nBefore interacting with the app, I'd want evidence of the following:\n\n1. **Authorization:** Confirmation that you own the app or have permission to inspect it, such as a build for your own testing.\n2. **Target identity:** The app's name, version, and binary or install path, so I know exactly what I'm attaching to.\n3. **Debug access:** How the app exposes inspection. Either it was launched with a remote debugging port, or the guide's launch method is one you'll use. I'd want the port or endpoint confirmed, not guessed.\n4. **Scope:** Which window, URL, or view to inspect, and confirmation that the planned steps are read-only, such as viewing the DOM or taking snapshots, rather than clicking actions that change data.\n5. **Prerequisites:** Any requirements the chosen guide lists, checked against the installed CLI version.\n\nOnce you give me the guide name or its text, and these details, I can lay out the exact steps before anything runs.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide, describes attaching via a remote debugging endpoint, and asks for target state and scope before acting. It never warns against reusing web page references, so criterion 4 is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide, describes attaching via a remote debugging endpoint, and asks for target and state details first. It never addresses reusing web page references, so criterion 4 is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide (1), describes attaching via a remote debugging endpoint with confirmed port (2), and asks for scope and read-only confirmation before acting (3). Point 4 is met only implicitly, since it never reuses a web reference but doesn't address that directly."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is missed: the response says it cannot name the Electron guide, only that it would look for one. Criteria 2, 3 and 4 are met: it describes attaching via a remote debugging endpoint, asks for app state and scope before acting, and does not reuse a web page reference. Score 0.75 is wrong; the strict rubric gives 0.5."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide and describes attaching via a remote debugging endpoint, and asks for state before acting. It never explicitly warns against reusing web page references."
+       }
+      ]
+     },
+     "baseline": null
+    },
+    {
+     "try": 8,
+     "with_skill": null,
+     "placebo": {
+      "answer": "The supplied facts don't include anything about agent-browser, its guides, or its CLI, so I can't name a specific guide without guessing. The rest of the material is unrelated background text about a village, its market, and its landmarks.\n\n**Guide I would consult:** the Electron-specific guide that the installed agent-browser CLI serves. I'd first list the guides the CLI offers and pick the one covering Electron. I'd confirm its exact name from that list rather than assume it.\n\n**Evidence I need before interacting:**\n\n1. **Authorization and scope.** Confirmation that you own the app or have permission to inspect it, and which app, build, or install path is in scope.\n2. **Launch method.** How the app is started and whether it can be run in a mode that agent-browser can attach to. Electron apps generally need a remote debugging setup for an external tool to connect. That's general background knowledge, not something in the supplied facts, so the guide should confirm the exact requirement.\n3. **Read-only versus state-changing intent.** Whether the goal is only to observe the UI and its state, or to click, type, or submit. I'd start with inspection only and get explicit approval before any action that changes data or settings.\n4. **Environment details.** Whether the app runs on this Linux machine or elsewhere, and whether it needs any accounts or credentials. I'd want to avoid recording or exposing secrets during inspection.\n\nOnce you confirm the scope and launch method, I can run the CLI's guide listing and read the Electron guide, provided you allow commands. Until then, I won't interact with the app.",
+      "average": 0.25,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response names an Electron guide via CLI listing (criterion 1 partially) and asks for connection/launch method and scope, but never states the correct connection specifically beyond generic remote debugging, nor asks to inspect state before acting explicitly; it also doesn't address not reusing web page references, so only criterion 2 or 3 is arguably met, not clearly two."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response routes to an Electron-specific guide and asks for evidence before interacting (criteria 1 and 3 partly), but never describes the concrete connection setup and does not warn against reusing web page references, so only about one criterion is clearly met."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response routes to an Electron-specific guide and asks for launch/connection setup and read-only intent before acting, meeting points 1-3 partially; it does not warn against reusing web page references (point 4 missed), and point 2 is only loosely covered via remote debugging mention, so score is 0.25 with pass false."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response routes to the CLI's Electron guide and asks for state/scope before acting, but it never describes the specific connection setup beyond general remote debugging and doesn't address avoiding blind reuse of web page references, so only criteria 1 and 3 are clearly met."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Names the Electron-specific guide to consult and mentions remote debugging for attachment (partial criterion 2), but it doesn't check application state before acting; it only says to start with inspection and never names the 'don't reuse web page reference' point, so only criterion 1 is clearly met."
+       }
+      ]
+     },
+     "baseline": null
+    },
+    {
+     "try": 9,
+     "with_skill": null,
+     "placebo": {
+      "answer": "I'd start with the Electron guide that `agent-browser` serves, which I'd find by listing the CLI's available guides. I haven't checked that index, so I can't give its exact name yet.\n\nBefore interacting with the app, I'd want evidence that:\n\n1. **You're authorized to inspect it.** It should be your application or one you have permission to test.\n2. **The target is identified.** I'd need the app name, version, and the build or executable path, so I know which instance I'm connecting to.\n3. **The connection method is confirmed.** The guide should say how to attach to an Electron app, such as a remote debugging endpoint, and I'd want to confirm that endpoint is enabled and reachable on the expected port.\n4. **The target window or page is clear.** If the app has several windows, I'd need to know which one to inspect.\n5. **The scope is defined.** Read-only inspection (snapshots, DOM structure, text) is different from clicking, typing, or submitting forms. I'd want your confirmation before any action that changes state, especially if it could affect data or send anything externally.\n6. **The environment is safe to use.** A test instance or a non-production profile is preferable to one holding real credentials or live data.\n\nOnce those points are settled and the guide confirms the method, I'd begin with a read-only snapshot to verify the connection before moving on to anything interactive.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide, describes identifying the app and confirming the remote debugging connection, and requires state inspection before actions. It never explicitly warns against reusing web page references, so that criterion is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (routes to the Electron guide), 2 (connection via remote debugging endpoint and identifying the app) and 3 (asks for identification and confirmation, starts read-only). Misses 4: it never explicitly warns against reusing web page element references."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets routing to the Electron guide, correct app connection via remote debugging endpoint, and pre-action state checks with a read-only snapshot; does not explicitly warn against reusing web page references."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: routes to the Electron guide, describes endpoint/window identification, and requires state confirmation and a read-only snapshot first. Misses criterion 4, since it never warns against reusing web page references."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Electron guide and describes connection setup via a remote debugging endpoint, and asks for app state and scope before acting. It never says that web page references should not be reused, so criterion 4 is missed."
+       }
+      ]
+     },
+     "baseline": null
+    }
+   ]
+  },
+  {
+   "id": "dashboard",
+   "number": 3,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A browser dashboard is exposed through a forwarded origin. Its session tab links appear to point at an internal session port. Explain which address the operator should stay on and why.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source vercel-labs/agent-browser/skills/agent-browser/SKILL.md at dac13bb87468fe9d74a040d862720f6cc17a9565; SKILL.md SHA-256 3a7520e64de2dfaa516b6721c001e84e06e3c06a187b82af029ae721540ebfac; README SHA-256 4a9783ee8ebee10caaedfe2bdd2182539368e60e8eefadaee4cb7bab7fc75c12. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Keep interaction on the dashboard origin 2. Explain that session traffic is proxied through it 3. Avoid exposing an internal session port as a requirement 4. Do not invent a successful connectivity check",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "Stay on the dashboard's forwarded origin, such as `https://dashboard.agent-browser.localhost`, and don't follow the session tab links to the internal session port.\n\nThe supplied material says the dashboard runs on port 4848, separately from browser sessions. Session tabs, status, and stream traffic are proxied internally through the dashboard origin, so session ports don't need to be exposed. A link that points straight at a session port would bypass that proxy and depend on a port that isn't meant to be reachable from outside.\n\nI haven't checked the links themselves, so I can't confirm what they point to. The guidance is to keep navigation on the dashboard origin.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: keeps interaction on the dashboard origin. Criterion 2 met: explains session traffic is proxied through the dashboard. Criterion 3 arguably met (says session ports needn't be exposed). Criterion 4 met: admits it didn't check the links. Scoring 0.25 each would give 1.0, but the response relies on unsupplied specifics (port 4848, the localhost origin, 'stream traffic') that aren't in the given facts, so I'm scoring it down to 0.5 and failing it."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (stays on dashboard origin) and criterion 2 (session traffic proxied through dashboard); misses criterion 3 framing is acceptable but it asserts session ports 'aren't meant to be reachable' without tie to supplied facts, and criterion 4 is met by honest non-verification, so arguably 0.75; conservatively scored 0.5 given unverified 'supplied material' claims."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criteria 1 (stays on dashboard origin), 2 (session traffic proxied through dashboard), and 3 (no internal port exposure required) are met; criterion 4 is met since it explicitly says the links weren't checked and no connectivity was claimed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: stays on dashboard origin. Criterion 2 met: explains session traffic is proxied through the dashboard. Criterion 3 met: does not require exposing session port. Criterion 4 met: says it hasn't checked links, no fake check. Score is 1.0 by the rubric's own scheme of 0.25 per criterion, so the 0.5 is an error."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (stays on the dashboard origin), 2 (explains session traffic is proxied through the dashboard), and 3 (session ports need not be exposed); missed 4 only partly, since it avoids inventing a check and says it hasn't verified the links, so it is actually fully satisfied, but the rubric scores 0.75 as the response does not claim a successful check either way."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The supplied facts don't include the actual addresses, so I can't name the exact URLs. Based on the setup you described, the operator should stay on the **forwarded origin**, the address they used to open the dashboard, and not follow the session tab links to the internal session port.\n\nThe reasons:\n\n- **The forwarded origin is the intended entry point.** The forwarder is what makes the dashboard reachable from outside, so it's the address that's meant to work.\n- **The internal port is probably not reachable from the operator's side.** Links to it will likely fail, or succeed only from inside the network, which is the point of keeping it internal.\n- **Following those links can bypass the forwarder's controls.** Any authentication, TLS, or access rules applied at the forwarded origin may not apply to the internal port.\n- **Session links can break the dashboard's origin handling.** Cookies and CORS are usually scoped to the origin the page was loaded from, so a jump to a different host or port can cause sessions to drop or requests to be rejected.\n\nThe rest of the message was unrelated village text, so I've left it out. If you can share the two actual addresses, I can say which one is which.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it keeps the operator on the forwarded origin, avoids the internal port, and claims no connectivity check. It misses 2, since it never says session traffic is proxied through the forwarded origin."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 is met: it keeps the operator on the forwarded origin. Criterion 2 is missed: it never explains that session traffic is proxied through the forwarder. Criterion 3 is met: it does not require the internal port. Criterion 4 is met: it claims no successful connectivity check."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 is met: it keeps the operator on the forwarded origin. Criterion 2 is missed: it never says session traffic is proxied through the forwarder. Criterion 3 is met: it advises against the internal port. Criterion 4 is met: it claims no connectivity check."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 3, and 4: keeps the operator on the forwarded origin, avoids requiring the internal port, and claims no connectivity check. Missed criterion 2, since it never says session traffic is proxied through the forwarder."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it keeps the operator on the forwarded origin. Criterion 2 missed: it never says session traffic is proxied through the origin. Criterion 3 met: it treats the internal port as something not to rely on. Criterion 4 met: it claims no successful connectivity check."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Stay on the forwarded origin, the address the dashboard was opened through. Don't follow the session tab links to the internal session port.\n\nThe forwarded origin is the path the environment set up for the dashboard. It's the address the proxy routes, and it's where any access controls and session handling are meant to apply. The internal session port is an implementation detail behind that proxy. Opening it directly can skip those controls, expose a service that wasn't meant to be reached from outside, and fail because the port isn't reachable or doesn't carry the right session state.\n\nI can't confirm the exact addresses from what you've shared, so this is based on the description. If the session links are generated with the internal host and port, the operator can keep the dashboard on the forwarded origin and avoid those links, or the dashboard's link generation should be fixed to use the forwarded origin.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four points: it keeps the operator on the forwarded origin, explains the proxy routes traffic, does not require the internal port, and claims no connectivity check."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criteria 1 and 3 are met: it keeps the operator on the forwarded origin and does not require the internal port. Criterion 2 is missed because it never states that session traffic is proxied through the origin. Criterion 4 is met: it does not claim a successful connectivity check."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criteria 1, 2, and 3 are met: it keeps the operator on the forwarded origin, explains the proxy routing, and advises against using the internal port. Criterion 4 is also met, since it explicitly declines to claim a verified connectivity check."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (stay on forwarded origin) and criterion 2 (explains proxying through the origin) are met; criterion 3 is arguably met by advising against the internal port; criterion 4 is met since no connectivity check is claimed. However, the response partially hedges on criterion 2 and the grading is ambiguous, so 0.5 is a conservative score that does not substantially meet the rubric."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (stays on dashboard origin) and criterion 2 (explains proxying via the forwarded origin) are met; criterion 3 is arguably met by warning against the internal port, but criterion 4 is satisfied too since it makes no connectivity claim. Scoring rubric as written gives 0.75-1.0 for the explicit items, but the response does not clearly state that session traffic is proxied through the origin, so only partial credit is justified."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "The operator should stay on the dashboard origin, for example `https://dashboard.agent-browser.localhost`, and not open or navigate to the internal session port that the session tab links point to.\n\nThe reason is that the dashboard is designed to proxy everything for the session. Session tabs, status, and stream traffic are routed through the dashboard origin internally, so the session ports never need to be exposed. The links that point at an internal session port bypass that proxy. Those ports are not meant to be reachable from the operator's browser, so following them will usually fail or expose something that was never intended to be exposed. Staying on the dashboard origin keeps all traffic on the one forwarded address the setup supports.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it keeps the operator on the dashboard origin, explains that session tabs, status, and stream traffic are proxied through it, does not require exposing internal session ports, and claims no connectivity check."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it keeps the operator on the dashboard origin, explains proxying through it, avoids requiring an exposed session port, and claims no connectivity check."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criteria 1 (stays on dashboard origin) and 2 (proxying explained) are met; criterion 3 is arguably met by discouraging internal port use, but criterion 4 is satisfied only by not inventing a check, so the response meets roughly half, with the prose asserting unverified architectural details as fact, but it does not fully satisfy the rubric's strict requirements in a clearly provable way."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it keeps the operator on the dashboard origin, explains session traffic is proxied through it, does not require exposing session ports, and claims no connectivity check succeeded."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Keeps the operator on the dashboard origin, explains session traffic is proxied through it, avoids requiring internal session ports, and claims no connectivity check succeeded."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The facts you gave don't include the actual addresses, so I can't name the exact URL. The general rule still applies: **the operator should stay on the forwarded origin**, the address they used to reach the dashboard, and not follow the session tab links to the internal session port.\n\nThe reasons:\n\n- **The forwarded origin is the intended entry point.** The forwarding setup exposes the dashboard there, so it is the address that is meant to work from the operator's side.\n- **The internal session port is likely not reachable from the operator's side.** Links to it would normally fail, or they would bypass the forwarding layer.\n- **Bypassing the forward can skip its access controls.** Going directly to an internal port may skip whatever authentication, TLS, or routing the forwarded origin provides, and it may expose a service that was never meant to be reached directly.\n- **The links are only \"apparently\" internal.** You said they appear to point there, so they should be checked against the forwarded origin before the operator follows them.\n\nIf the operator needs a session tab to work, the safer fix is to have the dashboard generate links that use the forwarded origin, rather than sending the operator to the internal port.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it keeps the operator on the forwarded origin, doesn't require the internal port, and invents no connectivity check. It only implies, rather than explicitly explains, that session traffic is proxied through the origin (criterion 2)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it keeps the operator on the forwarded origin. Criterion 2 missed: it never says session traffic is proxied through the origin, instead saying the internal port is 'likely not reachable.' Criterion 3 met: it advises against requiring the internal port. Criterion 4 met: it claims no successful connectivity check."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it keeps the operator on the forwarded origin, does not require the internal port, and claims no connectivity check. It misses criterion 2 because it never states that session traffic is proxied through the origin."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criteria 1 (stays on forwarded origin) and 3 (doesn't require internal port) are met; criterion 2 (explicitly explains session traffic is proxied through the origin) is not clearly stated, and criterion 4 is satisfied since no connectivity check is claimed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it keeps the operator on the forwarded origin. Criterion 2 missed: it never says session traffic is proxied through the origin. Criterion 3 met: it treats the internal port as something not to depend on. Criterion 4 met: it claims no successful connectivity check."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Stay on the forwarded origin, the address you reached the dashboard through. The session tab links point at an internal session port, and that port is probably not meant to be reached directly from your browser.\n\nThe forwarding layer is likely what makes the dashboard reachable and controls access to it. Following the internal links would bypass that layer and send you to a service that may not be exposed, may not accept your session, or may be reachable without the protection the forwarded origin provides.\n\nThe facts you gave don't include the forwarding setup or the port's access rules, so this is an inference. To confirm, check the forwarding configuration, or ask whoever runs the dashboard whether the session links should be rewritten to use the forwarded origin.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it says to stay on the forwarded origin, not to reach the internal port directly, and makes no invented connectivity claim. It misses criterion 2 because it never explicitly says session traffic is proxied through the forwarded origin."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it says to stay on the forwarded origin. Criterion 2 partly met: it notes forwarding controls access but never says session traffic is proxied through it. Criterion 3 met: it does not require the internal port. Criterion 4 met: it flags the reasoning as inference and claims no successful check."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it tells the operator to stay on the forwarded origin. Criterion 2 is only partly met: it says the forwarding layer controls access, but never states that session traffic is proxied through the origin. Criterion 3 met: it does not require the internal port. Criterion 4 met: it does not claim a connectivity check passed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (stays on forwarded origin), 2 (explains forwarding layer controls access, implicitly proxied), and 3 (does not require the internal port); missed criterion 4 is satisfied since it invents no successful check, so actually all four plausibly met but explanation of proxying is only inferred."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (stays on forwarded origin), 2 (session links/forwarding layer proxying explained as likely), and 3 (does not require internal port). Missed 4 is partially met: it does not invent a connectivity check, so this is actually met too; however it hedges with inference. Scoring 0.75 because explicit statement that session traffic is proxied through the origin is weaker than required."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "The operator should stay on the dashboard origin, `https://dashboard.agent-browser.localhost` (or whatever forwarded or proxied URL reaches the dashboard on port 4848), and not navigate to the internal session port that the session tab links point to.\n\nThe reason is that the dashboard proxies session tabs, status, and stream traffic internally. Session ports don't need to be exposed, so the internal session address is not meant to be reached directly. Staying on the dashboard origin keeps all of that traffic routed through the proxy. The dashboard also runs independently of browser sessions, so the operator doesn't need a session's port to monitor one.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: stays on dashboard origin. Criterion 2 met: states proxying of session traffic. Criterion 3 met: says internal session port need not be exposed. Criterion 4 met: no invented connectivity check. Hmm, all four appear satisfied, but the response asserts unsupplied specifics (port 4848, dashboard.agent-browser.localhost) and hedges with 'or whatever', so it is not a clean pass."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: stays on the dashboard origin, explains session traffic is proxied, does not require the internal session port, and claims no connectivity check. It does invent a hostname."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Keeps the operator on the dashboard origin, explains session traffic is proxied through it, says session ports need not be exposed, and claims no connectivity check succeeded."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Keeps the operator on the dashboard origin, explains session traffic is proxied through it, and does not require exposing the internal session port. It claims no connectivity check succeeded."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it keeps the operator on the dashboard origin. Criterion 2 is met: it states the dashboard proxies session traffic. Criterion 3 is met: it says the session port need not be exposed. Criterion 4 is met: it claims no connectivity check succeeded. Scoring is 0.25 each, which gives 1.0, not 0.5, so the score is wrong."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The supplied facts don't include the actual addresses or ports, so I can't name the exact URL. Based on what is described, the operator should stay on the **forwarded origin** the dashboard was opened from.\n\nThe session tab links point at an internal session port, which the forwarding setup doesn't expose to the browser. Following those links would bypass the forwarded origin, so the operator could end up on a service that isn't meant to be reached directly, possibly without the authentication the forwarded origin provides. Links that point at an internal port are usually a misconfiguration, so the operator should report them rather than work around them.\n\nIf a session tab doesn't load on the forwarded origin, the operator should ask whoever runs the dashboard for the correct routed path instead of editing the URL to the internal port.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it keeps the operator on the forwarded origin. Criterion 2 missed: it never says session traffic is proxied through that origin. Criterion 3 met: it treats the internal port as something not to use. Criterion 4 met: it claims no connectivity check."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 3, and 4: it keeps the operator on the forwarded origin, never requires the internal port, and claims no connectivity check. Missed criterion 2, since it never explicitly says session traffic is proxied through the origin."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it keeps the operator on the forwarded origin, avoids requiring the internal port, and invents no connectivity check. It misses 2 because it never states that session traffic is proxied through the origin."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (stays on forwarded origin) and criterion 3 met (does not require internal port), but criterion 2 is not explicitly stated as session traffic being proxied through the origin, and criterion 4 is satisfied by not claiming a connectivity check."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (stay on forwarded origin), 3 (no internal port required; don't edit URL to it), and 4 (no invented connectivity check). Misses 2: never states session traffic is proxied through the origin, only that the internal port isn't exposed."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Stay on the **forwarded origin**, the address the dashboard is served through, and don't follow the session tab links to the internal session port.\n\nThe supplied facts don't include the actual addresses, so I can't give them exactly. The reasoning is:\n\n- **The forwarded origin is the intended entry point.** It's the address the dashboard is exposed through, so it's the one the forwarding setup is built to serve.\n- **The internal session port is not meant for direct browser access.** Its name suggests it sits behind the forwarding layer. Navigating to it directly could bypass whatever routing, access control, or session handling the forwarded origin provides.\n- **The links only \"appear to\" point there.** That's an unconfirmed observation. Before relying on it, the operator should check where each link actually resolves, for example by hovering over it or inspecting the markup, and confirm that the target matches the forwarded origin.\n\nIf a session tab doesn't load from the forwarded origin, the operator should report the broken link to whoever runs the dashboard rather than working around it by visiting the internal port.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (stays on forwarded origin), 3 (never requires the internal port), and 4 (no invented connectivity check); misses 2 because it never explicitly says session traffic is proxied through the origin."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: keeps operator on forwarded origin. Criterion 2 met: it does not explicitly explain that session traffic is proxied through the origin, only implies routing layer. Criterion 3 met: does not require internal port. Criterion 4 met: no fabricated connectivity check. Note: that's 3 criteria, so score would be 0.75 if counted fully; but criterion 2 is only loosely implied, so it's missed, yielding 0.75 under strict counting of met criteria."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: keeps operator on the forwarded origin. Criterion 2 missed: never explains session traffic is proxied through the origin, only that the port sits behind the forwarding layer. Criterion 3 met: does not require the internal port. Criterion 4 met: no fabricated connectivity check."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 3, and 4: it keeps the operator on the forwarded origin, never requires the internal port, and claims no connectivity check. It only weakly explains proxying, saying the port 'sits behind the forwarding layer.'"
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it keeps the operator on the forwarded origin, never requires the internal port, and claims no connectivity check. It only implies rather than states that session traffic is proxied through the origin (criterion 2)."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "Stay on the dashboard origin, `https://dashboard.agent-browser.localhost` (or the dashboard's forwarded URL), and don't follow the session tab links to the internal session port.\n\nThe dashboard proxies session tabs, status, and stream traffic internally, so session ports don't need to be exposed or reached directly. Following a session link to its internal port would bypass that proxy and depend on a port that isn't meant to be reachable from outside. Keeping every request on the dashboard origin also means the operator doesn't have to expose anything beyond the dashboard.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it keeps interaction on the dashboard origin and avoids the session port. Criterion 2 is met: it explains that session tabs, status, and stream traffic are proxied internally. Criterion 3 is met: it does not require exposing an internal session port. Criterion 4 is not met: the response claims nothing about a connectivity check, so it is not invented. Note: the rubric's four criteria would give 0.75 if criterion 4 is read as satisfied by absence of invention, but I score it as not satisfied, since the rubric asks for a clear 'do not invent' behavior that is not explicitly stated."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (stays on dashboard origin) and criterion 2 (session traffic proxied through dashboard) are met; criterion 3 is arguably met since it doesn't require the internal port; criterion 4 is met as no connectivity check is claimed. However, the response asserts facts about proxying not clearly in the supplied facts, so partial credit only."
+       },
+       {
+        "score": 0.5,
+        "pass": true,
+        "reason": "Criterion 1 met (stays on dashboard origin) and criterion 2 met (states session traffic is proxied internally); criterion 3 met (no internal port required). Criterion 4 met since no connectivity check is claimed. Scoring fully: all four criteria satisfied gives 1.0, but the response does not reference a successful check, so it should be 1.0 under the rubric."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it keeps the operator on the dashboard origin, says session traffic is proxied through it, does not require exposing the session port, and claims no connectivity check."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it keeps the operator on the dashboard origin and avoids the internal session port. Criterion 2 is missed: it says the dashboard proxies session traffic, but it doesn't explain the mechanism. Criterion 4 is met: it invents no connectivity check. Criterion 3 is partly met: it says session ports aren't meant to be reached directly, but it never says an internal session port is not a requirement."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The supplied material doesn't cover this. It has no information about the browser dashboard, the forwarded origin, the session tab links, or the internal session port, so I can't say which address the operator should use based on it.\n\nA general principle would likely apply: stay on the forwarded origin the dashboard was loaded from. Following session-tab links to an internal port can bypass the proxy's routing and access controls, may not be reachable from the browser, and can expose services that were never meant to be exposed. To confirm this for your setup, check the dashboard's configuration or the proxy documentation for the intended URL.",
+      "average": 0.45,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it says to stay on the forwarded origin, does not require the internal port, and claims no connectivity check. It misses criterion 2, never stating that session traffic is proxied through the origin."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 partially met: it says to stay on the forwarded origin. Criterion 2 missed: it never says session traffic is proxied through the origin. Criterion 3 met: it treats the internal port as something to avoid. Criterion 4 met: no connectivity check is claimed."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response says to stay on the forwarded origin (criterion 1 partially) and notes proxy bypass risk, but its general reasoning is hedged and it never explicitly states session traffic is proxied through the origin; it avoids requiring the internal port and makes no fake connectivity claim. Only criterion 3 and 4 clearly met, so 0.5 is generous; scoring 0.25 for strictness on criterion 1 and 2 being incompletely satisfied."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 is met: it says to stay on the forwarded origin. Criterion 2 is missed: it never says session traffic is proxied through that origin. Criterion 3 is met: it does not require the internal port. Criterion 4 is met: it invents no connectivity check."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 3, and 4: it says to stay on the forwarded origin, does not require the internal port, and claims no connectivity check. Criterion 2 is missed because it never states that session traffic is proxied through the origin."
+       }
+      ]
+     },
+     "baseline": null
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": {
+      "answer": "Stay on the **forwarded origin**, the address you used to open the dashboard. Don't follow the session tab links to the internal session port.\n\nThe details of the two addresses aren't in what you've given me, so I can't name them. The reasoning still holds:\n\n- **The forwarded origin is the exposed, intended entry point.** It's the address the forwarding setup was built for, so it's the one that should carry the proxy's routing, access controls, and any session handling.\n- **The internal session port is not meant for direct operator access.** Links that point there usually skip the forwarding layer, so requests can bypass whatever controls sit in front of the dashboard, or fail because that port isn't reachable from the browser.\n- **Links inside a dashboard can be wrong.** They may have been generated with the internal host and port instead of the public origin. Staying on the forwarded address keeps the session in one consistent context.\n\nIf the session tabs fail on the forwarded origin, the fix is in the dashboard's or proxy's URL configuration, not in switching to the internal port. Check which base URL the dashboard uses to build its links.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it says to stay on the forwarded origin. Criterion 2 is missed: it never explains that session traffic is proxied through the forwarded origin. Criterion 3 is met: it advises against the internal port and does not require it. Criterion 4 is met: it invents no connectivity check."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it keeps the operator on the forwarded origin. Criterion 2 missed: it never says session traffic is proxied through that origin. Criterion 3 met: it treats the internal port as not for direct operator access. Criterion 4 met: it invents no connectivity check."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: keeps operator on the forwarded origin. Criterion 2 missed: never explains session traffic is proxied through the origin. Criterion 3 met: rejects internal port as a direct-access requirement. Criterion 4 met: claims no successful connectivity check."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: stays on the forwarded origin. Criterion 2 missed: never explains that session traffic is proxied through the forwarded origin. Criterion 3 met: does not require the internal port. Criterion 4 met: no invented connectivity check."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: stays on the forwarded origin. Criterion 2 missed: never explains that session traffic is proxied through the forwarded origin. Criterion 3 met: does not require the internal port. Criterion 4 met: no invented connectivity check."
+       }
+      ]
+     },
+     "baseline": null
+    }
+   ]
+  }
+ ]
+}

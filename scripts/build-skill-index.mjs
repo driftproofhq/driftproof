@@ -29,6 +29,9 @@ const REPO = path.resolve(HERE, '..');
 
 const { publication: campaignPublication } = require('../specs/408-skill-measurements/campaign.cjs');
 const { plainOf, LABELS } = require('../lib/plain');
+const sendResult = require('./build-send-result');
+// Issue 718: the share caveat's plain text is read by the tokenizer, not a tag-stripping pattern.
+const { htmlToText } = require('./html-text.js');
 const { armOf, receiptAggregatesOnly, receiptVerdict } = require('../lib/verdict');
 const { bandOf } = require('../lib/reuse');
 const { advisories } = require('../lib/stale');
@@ -419,6 +422,7 @@ function rowOf(e, r, ctx) {
 ${leading.map(pair).join('\n')}
 </dl>
 <details class="receipt-metadata"><summary>Receipt metadata</summary><dl>${metadata.map(pair).join('\n')}</dl></details>
+${sendResult.render(sendResult.skillPayload({receipt:r,name:e.name,model:fields.Model,source:fields.by,reading:e.source==='nvidia'?fields.Result:plainOf(r).sentence,caveats:[fields.Freshness,TX.G3,htmlToText(attribution(src))],href,report:e.report}))}
 </article>`;
   return { markup, source: e.source, evidence, freshness: fresh.value, label: e.source === 'nvidia' ? TX.NVLABEL : plainOf(r).label, model: fields.Model, hash: r.receipt_hash, file: f, srcName: src.name, date: r.run.date_utc, summary: fields.Result };
 }
@@ -576,7 +580,7 @@ export function buildSkillIndex({ root = REPO, buildDate } = {}) {
     const old = idents.get(x.id.page.toLowerCase());
     if (old && (old.page !== x.id.page || old.path !== x.id.path || old.unit !== x.id.unit)) refuse('CAMPAIGN_IDENTITY_COLLISION');
     if (!pages.has(x.id.page)) pages.set(x.id.page, { id: x.id, rows: [] });
-    pages.get(x.id.page).rows.push(x.row);
+    pages.get(x.id.page).rows.push({...x.row, markup:x.row.markup+sendResult.render(sendResult.campaignPayload(receipt,x.id.name))});
   }
   for(const p of pages.values())p.rows.sort((a,b)=>SOURCES.indexOf(a.source)-SOURCES.indexOf(b.source)||Date.parse(b.date||'1970-01-01')-Date.parse(a.date||'1970-01-01')||byCodeUnit(a.file,b.file));
   const ordered = [...pages.values()].sort((a, b) => byCodeUnit(`${a.id.page}/index.html`, `${b.id.page}/index.html`));
@@ -603,6 +607,7 @@ export function buildSkillIndex({ root = REPO, buildDate } = {}) {
       `<div class="skill-eyebrow">${verb === 'Measured' ? 'Worth installing?' : esc(slot(id.page, 'reported eyebrow', joinNames(ids.map((source) => sources.get(source).name)) + "'s reported results"))}</div><h1>${esc(id.name)}</h1>`,
       ...(ownCampaign?['<div class="skill-intro">Here is what happened when we tested its written answers, with and without the skill.</div>']:context),
       ...(ownCampaign?['<details class="skill-about"><summary>About this test</summary>',...context,'</details>']:[]),
+      ...(fs.existsSync(path.join(root, "docs/tasks", id.page, "index.html")) ? [`<p><a href="/tasks/${esc(id.page)}/">Read and try the exact tasks</a></p>`] : []),
       `<h2>${verb} results</h2>`,
       ...(p.rows.filter(x=>x.summary?.startsWith('<section')).length===2?['<p>Both model sets use Haiku 5.5 as judge.</p>']:[]),
       '<div class="skill-results">',

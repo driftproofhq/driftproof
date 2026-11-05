@@ -70,13 +70,14 @@
 <details class="nav-menu"><summary>Menu</summary></details>
 <nav class="site-nav" aria-label="Site">
 <a href="/reports/">Reports</a>
+<a href="/skills/">Skills</a>
+<a href="/how-it-works/">How it works</a>
+<details class="docs-menu"><summary>For builders</summary><div class="docs-menu-list">
+<a href="/#quickstart">Install</a>
+<a href="/#how-it-works">How a skill is tested</a>
 <a href="/benchmark-gap/">Gap calculator</a>
 <a href="/leaderboard-noise/">Leaderboard noise</a>
-<a href="/skills/">Skills</a>
-<a href="/findings/">Findings</a>
 <a href="/paper/">Paper</a>
-<details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
-<a href="/#how-it-works">How it works</a>
 <a href="/methodology/">Methodology</a>
 <a href="/neutrality/">Neutrality</a>
 <a href="/interop/">Interop</a>
@@ -106,7 +107,7 @@
 </ol></div></nav><!--/driftproof:layout-->
 <main class="docs">
   <h1>Writing a fair set of test tasks</h1>
-  <p class="lede">A receipt is only as trustworthy as the tasks behind it. This is how to write tasks that show whether a skill really helps, and keep showing it honestly as the model under it changes.</p>
+  <p class="lede">A <!--driftproof:term--><a class="term" href="/glossary/#term-receipt" data-entry="term-receipt" data-name="Receipt" data-plain="The dated file that records one test: the skill, the model, every score and the result. Anyone can check that it has not changed since it was sealed.">receipt</a><!--/driftproof:term--> is only as trustworthy as the tasks behind it. This is how to write tasks that show whether a <!--driftproof:term--><a class="term" href="/glossary/#term-skill" data-entry="term-skill" data-name="Skill" data-plain="A file of instructions that people add to an AI assistant, such as Claude, to make it better at a job. Driftproof tests whether a skill really helps.">skill</a><!--/driftproof:term--> really helps, and keep showing it honestly as the model under it changes.</p>
 
   <section>
   <h2 id="plain-the-rules">The rules, in short</h2>
@@ -114,7 +115,7 @@
     <div class="tile"><h3>Test only what the skill says</h3><p>Every task must check something the skill's own instructions actually say. If a task tests something the skill never mentions, the skill cannot be what moves the score.</p></div>
     <div class="tile"><h3>Same task, without the skill</h3><p>The comparison is the same prompt with the skill and without it, and nothing else changes between the two.</p></div>
     <div class="tile"><h3>Leave room at the top</h3><p>A fully correct answer should score about 0.80, not a perfect one, so a better answer still has somewhere to go. Mix easy and hard tasks so not every answer scores the same.</p></div>
-    <div class="tile"><h3>Small gaps are not called</h3><p>A difference under 0.05 is not called a change, however the scores fall, because the grader scores in coarse steps of about that size.</p></div>
+    <div class="tile"><h3>Small gaps are not called</h3><p>A difference under 0.05 is not called a change, however the scores fall, because the <!--driftproof:term--><a class="term" href="/glossary/#term-judge" data-entry="term-judge" data-name="Judge" data-plain="The judge, also called the grader, is an AI model, sometimes the same one that answered, that scores each answer against a guide written for the task. It is an AI, not a person, and it can be wrong.">grader</a><!--/driftproof:term--> scores in coarse steps of about that size.</p></div>
   </div>
   <p>The full guide, with each rule's reasons, what makes a task unfair, how to read a receipt and how to contribute tasks, is folded below.</p>
   </section>
@@ -137,7 +138,7 @@
   </div>
 
   <!--driftproof:anchor--><span id="baseline-the-same-prompt-no-skill-md" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Baseline = the same prompt, no <code>SKILL.md</code></h2>
-  <p>Driftproof runs each case twice: <strong>with_skill</strong> (the <code>SKILL.md</code> is the system prompt) and <strong>baseline</strong> (the identical prompt, no skill). A good case is one the base model gets <em>wrong or mediocre on its own</em> and <em>right with the skill</em> - that gap is the skill's value. A case both modes ace, or both flunk, measures the model, not the skill. (Caveat: skills that assume tools or context a bare baseline never had can show inflated lift - keep cases answerable from the prompt + skill text alone.)</p>
+  <p>Driftproof runs each case twice: <strong>with_skill</strong> (the <code>SKILL.md</code> is the system prompt) and <strong><!--driftproof:term--><a class="term" href="/glossary/#term-baseline" data-entry="term-baseline" data-name="Baseline" data-plain="The run without the skill: the same tasks and the same model, with nothing added. Every score with the skill is compared against it.">baseline</a><!--/driftproof:term--></strong> (the identical prompt, no skill). A good case is one the base model gets <em>wrong or mediocre on its own</em> and <em>right with the skill</em> - that gap is the skill's value. A case both modes ace, or both flunk, measures the model, not the skill. (Caveat: skills that assume tools or context a bare baseline never had can show inflated lift - keep cases answerable from the prompt + skill text alone.)</p>
 
   <!--driftproof:anchor--><span id="anchor-every-rubric-at-0-80" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Anchor every rubric at 0.80</h2>
   <p>Rubrics are graded by an LLM judge on a 0–1 scale. Anchor them so a <strong>fully correct, idiomatic answer scores 0.80</strong>, and reserve <strong>0.81–1.00 for exemplary work only</strong>. Subtract for concrete, named errors:</p>
@@ -152,11 +153,11 @@ If &lt;the skill's core requirement&gt; is missing, cap at 0.3.</code></pre>
 
   <!--driftproof:anchor--><span id="why-sampling-and-bands-exist" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Why sampling and bands exist</h2>
   <div class="card">
-    <p>An LLM judge is <strong>noisy</strong>: grade the same answer twice and the score can differ. If a receipt carried one grade, judge noise could swing it by more than the drift you're trying to catch. So Driftproof <strong>judges each generation N times</strong> (default 5) and records the distribution - the per-case <strong>band</strong> is <code>mean ± stddev</code>, a descriptive spread of one sample standard deviation. A verdict is claimed <strong>only</strong> when two <code>with_skill</code> bands are fully separated (<code>mean_new + sd_new &lt; mean_old − sd_old</code>, or symmetric), never on overlapping bands. The honest answer is allowed to be "no separation detected at this sample size."</p>
+    <p>An LLM judge is <strong>noisy</strong>: grade the same answer twice and the score can differ. If a receipt carried one grade, judge noise could swing it by more than the drift you're trying to catch. So Driftproof <strong>judges each generation N times</strong> (default 5) and records the distribution - the per-case <strong><!--driftproof:term--><a class="term" href="/glossary/#term-band" data-entry="term-band" data-name="Band" data-plain="The range a score is given instead of one number: the average plus or minus the usual spread of the scores. Two bands that do not overlap are what a report calls separated.">band</a><!--/driftproof:term--></strong> is <code>mean ± stddev</code>, a descriptive spread of one sample standard deviation. A verdict is claimed <strong>only</strong> when two <code>with_skill</code> bands are fully <!--driftproof:term--><a class="term" href="/glossary/#term-separated" data-entry="term-separated" data-name="Separated" data-plain="The two ranges of scores, with the skill and without it, do not overlap, and the gap is at least the effect floor. It is what a report means by a clear difference, and it is not proof that the skill caused it.">separated</a><!--/driftproof:term--> (<code>mean_new + sd_new &lt; mean_old − sd_old</code>, or symmetric), never on overlapping bands. The honest answer is allowed to be "no separation detected at this sample size."</p>
   </div>
 
   <!--driftproof:anchor--><span id="the-0-05-effect-floor" class="toc-anchor"></span><!--/driftproof:anchor--><h2>The 0.05 effect floor</h2>
-  <p>Band separation alone is necessary but <strong>not sufficient</strong>. The judge quantizes scores to a coarse ~0.05–0.1 grid, so a confident grade often collapses to a zero-width "point band," and two point bands one quantum apart (0.60 vs 0.64) are technically separated yet mean no real change. So the mean must <strong>also</strong> move by at least the <strong>effect floor of 0.05</strong> (one judge-quantization step). Separated but trivial moves are labelled <em>below effect floor</em> and are not called a verdict. Band separation <strong>plus</strong> a floor-sized delta - never either alone - triggers a verdict.</p>
+  <p>Band separation alone is necessary but <strong>not sufficient</strong>. The judge quantizes scores to a coarse ~0.05–0.1 grid, so a confident grade often collapses to a zero-width "point band," and two point bands one quantum apart (0.60 vs 0.64) are technically separated yet mean no real change. So the mean must <strong>also</strong> move by at least the <strong><!--driftproof:term--><a class="term" href="/glossary/#term-effect-floor" data-entry="term-effect-floor" data-name="Effect floor" data-plain="The smallest gap that counts. A smaller difference is not called a change, however the ranges fall, because the grader scores in coarse steps.">effect floor</a><!--/driftproof:term--> of 0.05</strong> (one judge-quantization step). Separated but trivial moves are labelled <em>below effect floor</em> and are not called a verdict. Band separation <strong>plus</strong> a floor-sized delta - never either alone - triggers a verdict.</p>
 
   <!--driftproof:anchor--><span id="what-makes-a-case-unfair" class="toc-anchor"></span><!--/driftproof:anchor--><h2>What makes a case <em>unfair</em></h2>
   <p>A case is unfair when it can fail for reasons the skill's author never signed up for:</p>
@@ -188,9 +189,11 @@ If &lt;the skill's core requirement&gt; is missing, cap at 0.3.</code></pre>
   </details>
 </main>
 <!--driftproof:layout-end--></div><!--/driftproof:layout-end-->
+<!--driftproof:cards--><div class="jargon-cards" data-island="jargon-cards"><p class="jargon-note">Words with a dotted line link to the glossary, where each is explained in plain words.</p></div><!--/driftproof:cards-->
 <!--driftproof:foot--><footer class="site">
 <p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
 <p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/maintainer/">Maintainer</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+<p class="foot-links"><a href="/can-you-tell/">Can you tell? Every skill</a> · <a href="/noticed/">The AI noticed the sugar pill</a> · <a href="/spot-the-fake/">Which bar is the fake?</a> · <a href="/tasks/">Every task we gave a skill</a> · <a href="/sugar-pill/">Skill or sugar pill?</a></p>
 </footer><!--/driftproof:foot-->
 <!--driftproof:scripts--><script src="/copy-button.js" defer></script>
 <script type="module" src="/islands/loader.js"></script><!--/driftproof:scripts-->

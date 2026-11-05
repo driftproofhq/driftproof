@@ -22,6 +22,10 @@
 const fs = require('fs');
 const path = require('path');
 const { htmlToText, escapeAttr } = require('./html-text.js');
+// THE PLAIN-WORD CARDS (spec 689): the glossary's entries, the markers written on a page's first use of each
+// entry's word, and the unwrap that gives the word back. This file requires that one; it requires nothing
+// of this file, so the chain is one way.
+const terms = require('./glossary-terms.js');
 
 const ROOT = path.join(__dirname, '..');
 const ORIGIN = 'https://driftproofhq.com';
@@ -85,24 +89,30 @@ const DOCS_LINKS = [
 // sibling and the collapse is one CSS rule on `[open] ~ nav`. No script, one copy
 // of every link, and with CSS off the nav is simply visible.
 //
-// THE TOP LEVEL (spec 170): Reports, Gap calculator, Findings, Paper, Docs, GitHub. How it works
-// moves into the Docs menu, where spec 020 AC-12 still finds its href. The current page is marked
-// by docs/tokens.css from the page's own canonical link, so this stays one set of bytes on every page
-// (spec 127 AC-13). Leaderboard noise follows Gap calculator (spec 175). Skills, the skill index's
-// list at /skills/, follows Leaderboard noise (spec 267).
+// THE TOP LEVEL (spec 687, Maverick's ruling of 4 Nov 2026): a few plain entries for a reader who
+// does not write code. Reports, Skills, How it works (the step-by-step page), For builders, GitHub.
+// Everything the menu carried before (spec 170: Gap calculator, Leaderboard noise, Findings, Paper,
+// the Docs list, and the home page's band section at /#how-it-works) is grouped under For builders,
+// with an Install entry, so every page stays reachable and no URL changes. The group keeps the
+// `docs-menu` class, so every stylesheet rule and reader that finds it by class still does. The
+// current page is marked by docs/tokens.css from the page's own canonical link, so this stays one
+// set of bytes on every page (spec 127 AC-13).
+const BUILDER_LINKS = [
+  ['/#quickstart', 'Install'],
+  ['/#how-it-works', 'How a skill is tested'],
+  ['/benchmark-gap/', 'Gap calculator'],
+  ['/leaderboard-noise/', 'Leaderboard noise'],
+  ['/paper/', 'Paper'],
+];
 const NAV = `${NAV_OPEN}<header class="site">
 <a class="brand" href="/"><img class="brand-mark" src="/favicon.svg" alt="" width="28" height="28"><span>Driftproof</span></a>
 <details class="nav-menu"><summary>Menu</summary></details>
 <nav class="site-nav" aria-label="Site">
 <a href="/reports/">Reports</a>
-<a href="/benchmark-gap/">Gap calculator</a>
-<a href="/leaderboard-noise/">Leaderboard noise</a>
 <a href="/skills/">Skills</a>
-<a href="/findings/">Findings</a>
-<a href="/paper/">Paper</a>
-<details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
-<a href="/#how-it-works">How it works</a>
-${DOCS_LINKS.map(([h, t]) => `<a href="${h}">${t}</a>`).join('\n')}
+<a href="/how-it-works/">How it works</a>
+<details class="docs-menu"><summary>For builders</summary><div class="docs-menu-list">
+${[...BUILDER_LINKS, ...DOCS_LINKS].map(([h, t]) => `<a href="${h}">${t}</a>`).join('\n')}
 </div></details>
 <a href="https://github.com/driftproofhq/driftproof">GitHub</a>
 </nav>
@@ -129,6 +139,7 @@ const SCRIPTS = `${SCRIPTS_OPEN}<script src="/copy-button.js" defer></script>
 const FOOTER = `${FOOT_OPEN}<footer class="site">
 <p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
 <p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/maintainer/">Maintainer</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+<p class="foot-links">${require('./reader-pages').links()}</p>
 </footer>${FOOT_CLOSE}`;
 
 // ── the TL;DR card ──────────────────────────────────────────────────────────
@@ -607,7 +618,10 @@ ${entries.map((h) => `<li><a href="#${esc(h.id)}">${railText(h.text)}</a></li>`)
 // The one entry point, taking a docs-relative path rather than a file, because
 // prepare-report-007.js calls it on a page it has not written yet.
 function applyChrome(html, rel, data) {
-  let out = applyNavFooter(html);
+  // THE MARKERS COME OFF FIRST AND GO ON LAST (spec 689). Every other fence is re-cut on a page that still
+  // carries the word as its body wrote it, and the markers are written over the finished page, so the plain
+  // summary a report's fence carries takes them as the body does. Rendering twice is rendering once.
+  let out = applyNavFooter(terms.stripCards(terms.unwrapTerms(html)));
   out = stripBetween(out, TLDR_OPEN, TLDR_CLOSE);
   // The `-draft` suffix is part of the PATH, never part of the report. An
   // unapproved report is published nowhere (build-public.sh drops `*-draft/`).
@@ -643,7 +657,7 @@ function applyChrome(html, rel, data) {
   out = applyLayout(out, rel, data);
   // Issue 408: an explicit route boundary keeps the measurement theme local.
   if ((rel.startsWith('skills/') && rel.endsWith('/index.html')) || rel === 'skills/index.html' || rel === 'reports/015/index.html') out = out.replace('<body>', '<body class="measurement-ui">');
-  return out;
+  return terms.applyTerms(out);
 }
 
 // THE HOOK A REPORT GENERATOR CALLS (spec 020 A3).
@@ -684,7 +698,9 @@ function splitReportBody(pageHtml) {
   const a = pageHtml.indexOf('<main');
   const b = pageHtml.lastIndexOf('</main>');
   const main = a < 0 || b < 0 ? '' : pageHtml.slice(a, b + 7);
-  const body = stripSiteFooter(main
+  //   - A plain-word marker (spec 689) is unwrapped, never stripped: it wraps one word of the body, and
+  //     the word comes back as the body wrote it.
+  const body = stripSiteFooter(terms.unwrapTerms(main)
     .replace(new RegExp(`${TLDR_OPEN}[\\s\\S]*?${TLDR_CLOSE}\\n?`, 'g'), '')
     .replace(new RegExp(`${ANCHOR_OPEN}[\\s\\S]*?${ANCHOR_CLOSE}\\n?`, 'g'), '')
     .replace(new RegExp(`${TW_OPEN}<div class="table-wrap">`, 'g'), '')
@@ -708,7 +724,8 @@ module.exports = {
   plainSummary, summariesData, summaryPoints, FORMATS, answersSummary, applyLayout, factsRail, slugOf, LAYOUT_OPEN, LAYOUT_CLOSE, LAYOUT_END_OPEN, LAYOUT_END_CLOSE,
   splitReportBody,
   stripSiteFooter, SITE_FOOTER_RE,
-  NAV, FOOTER, SCRIPTS, DOCS_LINKS, ORIGIN, esc, ARTICLES, isArticle,
+  NAV, FOOTER, SCRIPTS, DOCS_LINKS, BUILDER_LINKS, ORIGIN, esc, ARTICLES, isArticle,
   TLDR_OPEN, TLDR_CLOSE, TW_OPEN, TW_CLOSE, SUB_OPEN, SUB_CLOSE,
   ANCHOR_OPEN, ANCHOR_CLOSE, RECEIPTS_ANCHOR,
+  unwrapTerms: terms.unwrapTerms, TERM_OPEN: terms.TERM_OPEN, TERM_CLOSE: terms.TERM_CLOSE, CARDS_OPEN: terms.CARDS_OPEN, CARDS_CLOSE: terms.CARDS_CLOSE,
 };

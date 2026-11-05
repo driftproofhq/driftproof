@@ -222,6 +222,8 @@
   --t-receipt-date: 20px;
   --t-stat: 38px;
   --t-body: 18px;
+  /* the home page's opening paragraph (spec 687): one step above the body, under a heading size */
+  --t-lede: 20px;
   --t-verdict: 24px;
   --t-mono: 15px;
   --t-fine: 15px;
@@ -352,6 +354,7 @@
     --t-receipt-heading: 22px;
     --t-verdict: 21px;
     --t-stat: 30px;
+    --t-lede: 18px;
     --pad-x: 20px;
     --section-y: 36px;
   }
@@ -883,13 +886,12 @@ nav.site-nav { display: flex; align-items: center; gap: 0 var(--s-3); flex-wrap:
 nav.site-nav a { color: var(--shell-muted); text-decoration: none; display: inline-flex; align-items: center; min-height: var(--touch); }
 nav.site-nav a:hover { color: var(--shell-text); text-decoration: underline; text-decoration-color: var(--shell-accent); }
 /* THE CURRENT PAGE, read from the page's own canonical link, so the nav's bytes are one set on every
-   page (spec 127 AC-13): its top-level link, or Docs for a page the Docs menu lists, in the shell's
-   text with an accent underline. */
+   page (spec 127 AC-13): its top-level link (Reports, Skills, How it works; spec 687), or For builders
+   for a page that group lists, in the shell's text with an accent underline. */
 html:has(link[rel="canonical"][href^="https://driftproofhq.com/reports/"]) nav.site-nav > a[href="/reports/"],
-html:has(link[rel="canonical"][href^="https://driftproofhq.com/benchmark-gap/"]) nav.site-nav > a[href="/benchmark-gap/"],
-html:has(link[rel="canonical"][href^="https://driftproofhq.com/findings/"]) nav.site-nav > a[href="/findings/"],
-html:has(link[rel="canonical"][href^="https://driftproofhq.com/paper/"]) nav.site-nav > a[href="/paper/"],
-html:has(link[rel="canonical"]:is([href$="/methodology/"], [href$="/neutrality/"], [href$="/interop/"], [href$="/authoring/"], [href$="/judge-policy/"], [href$="/how-this-is-built/"], [href$="/glossary/"], [href$="/report-types/"])) nav.site-nav .docs-menu > summary {
+html:has(link[rel="canonical"][href^="https://driftproofhq.com/skills/"]) nav.site-nav > a[href="/skills/"],
+html:has(link[rel="canonical"][href^="https://driftproofhq.com/how-it-works/"]) nav.site-nav > a[href="/how-it-works/"],
+html:has(link[rel="canonical"]:is([href$="/benchmark-gap/"], [href$="/leaderboard-noise/"], [href$="/findings/"], [href$="/paper/"], [href$="/methodology/"], [href$="/neutrality/"], [href$="/interop/"], [href$="/authoring/"], [href$="/judge-policy/"], [href$="/how-this-is-built/"], [href$="/glossary/"], [href$="/report-types/"])) nav.site-nav .docs-menu > summary {
   color: var(--shell-text); text-decoration: underline; text-decoration-color: var(--shell-accent);
   text-decoration-thickness: 2px; text-underline-offset: 0.45em;
 }
@@ -912,7 +914,10 @@ html:has(link[rel="canonical"]:is([href$="/methodology/"], [href$="/neutrality/"
 nav.site-nav .docs-menu-list a { color: var(--shell-text); }
 nav.site-nav .docs-menu-list a:hover { color: var(--shell-accent); }
 @media (min-width: 641px) {
-  .docs-menu-list { position: absolute; z-index: 5; top: var(--touch); right: calc(-1 * var(--s-2)); min-width: 14rem; }
+  /* THE GROUP IS A SHEET OF TWO COLUMNS (spec 687): it holds every technical page, so one column
+     would run off a laptop screen. */
+  .docs-menu-list { position: absolute; z-index: 5; top: var(--touch); right: calc(-1 * var(--s-2)); min-width: 28rem; display: grid; grid-template-rows: repeat(7, auto); grid-auto-flow: column; column-gap: var(--s-3); }
+  .docs-menu-list a:nth-child(7n) { border-bottom: 0; }
 }
 .nav-menu { display: none; }
 .nav-menu summary {
@@ -952,14 +957,79 @@ html:is(:has(body.measurement-ui .page-grid:not(.is-reading)), :has(.page-grid:n
 .is-bleed > .bleed-inner { max-width: var(--w-wide); margin: 0 auto; }
 .eyebrow { font-size: var(--t-eyebrow); color: var(--shell-muted); margin: 0 0 0.5rem; }
 
-/* ── the hero ─────────────────────────────────────────────────────────────────
-   THE HEADLINE GETS THE ROOM AND THE RECEIPT GETS A FLOOR. The minimums are what keep the
-   headline in three lines (spec 025 AC-11, spec 038 AC-9) and the receipt's model id on one. */
-#hero { display: grid; gap: var(--s-6); grid-template-columns: minmax(0, 1fr); }
+/* ── the hero (spec 687) ──────────────────────────────────────────────────────
+   THE HEADLINE GETS THE ROOM AND THE FINDING GETS A FLOOR. The opening and the three doors stack
+   in the wide column; the finding card stands beside them from 1024px and spans both rows. On a
+   phone the order is the source's: the opening, the doors, then the finding. The minimums are what
+   keep the headline in three lines (spec 025 AC-11, spec 038 AC-9) and the finding's tiles in two
+   rows. */
+#hero { display: grid; gap: var(--s-5) var(--s-6); grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 1024px) {
-  #hero { grid-template-columns: minmax(0, 7fr) minmax(400px, 5fr); align-items: start; }
+  #hero { grid-template-columns: minmax(0, 7fr) minmax(400px, 5fr); grid-template-rows: auto auto 1fr; align-items: start; }
+  #hero > .hero-words { grid-column: 1; grid-row: 1; }
+  #hero > .doors { grid-column: 1; grid-row: 2; }
+  #hero > .hero-more { grid-column: 1; grid-row: 3; }
+  #hero > .finding { grid-column: 2; grid-row: 1 / span 3; }
 }
-.hero-sub { font-size: var(--t-body); line-height: var(--lh-body); color: var(--shell-text); margin: 0 0 var(--s-4); }
+.hero-words h1 { margin-bottom: var(--s-3); }
+.hero-sub { font-size: var(--t-lede); line-height: var(--lh-body); color: var(--shell-text); margin: 0; max-width: var(--w-read); }
+.hero-more .gap-line { margin: 0 0 var(--s-1); color: var(--shell-muted); font-size: var(--t-fine); }
+/* THE DOORS: three ways in, each an explainer card on the desk with an accent edge, a line drawing,
+   a title in the display face and its links at a touch target's height. */
+.doors { display: grid; gap: var(--s-2); grid-template-columns: minmax(0, 1fr); }
+.door {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 var(--s-2); align-items: start;
+  background: var(--surface); color: var(--shell-text); border: 1px solid var(--border); border-left: 3px solid var(--shell-accent);
+  border-radius: var(--radius); padding: var(--s-2) var(--s-3) var(--s-2) var(--s-2);
+}
+.door-icon { grid-row: 1 / span 2; width: 2.4rem; height: 2.4rem; margin-top: 0.3rem; color: var(--shell-accent); }
+.door-title { font-family: var(--display); font-size: var(--t-h3); line-height: var(--lh-h2); margin: 0.1rem 0 0; max-width: none; color: var(--shell-text); }
+.door ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0 var(--s-3); }
+.door li { margin: 0; max-width: none; }
+.door a { display: inline-flex; align-items: center; min-height: var(--touch); color: var(--shell-accent); text-decoration-color: var(--border-strong); }
+.door a:hover { color: var(--shell-text); }
+/* THE FINDING: the latest report's headline and tally on one sheet of stock, half a degree off
+   square as every receipt-type card lies. The tiles are one small card per skill counted, drawn in
+   the ink of their reading: the stamp pad for a skill that beat the fake, the regression red as an
+   outline for one below it, a dashed outline where there were too few answers to tell, the second
+   pass of the ink for no difference, the refused grey for not measured. The legend's keys repeat
+   them, so the picture reads without colour too. */
+.card.finding { padding: var(--s-4) var(--s-4) var(--s-3); margin: 0; }
+.finding-eyebrow { font-family: var(--display); font-style: italic; font-size: var(--t-eyebrow); color: var(--ink-muted); margin: 0 0 var(--s-1); }
+.finding-heading { font-size: var(--t-h3); line-height: var(--lh-h2); margin: 0 0 var(--s-2); color: var(--ink); }
+.finding-heading a { color: var(--ink); }
+/* The finding's short form in the display face, and under it the whole sentence, never cut (A-687-1). */
+.finding-claim { font-family: var(--display); font-size: var(--t-receipt-heading); line-height: 1.25; letter-spacing: -0.01em; margin: 0 0 var(--s-1); max-width: none; color: var(--ink); }
+.finding-sentence { font-size: var(--t-fine); line-height: 1.5; margin: 0 0 var(--s-3); max-width: none; color: var(--ink); }
+.finding-tiles { display: block; width: 100%; height: auto; margin: 0 0 var(--s-2); }
+.tile.is-up { fill: var(--accent-ink); }
+.tile.is-down { fill: var(--paper-2); stroke: var(--reg); stroke-width: 2; }
+.tile.is-few { fill: var(--paper-2); stroke: var(--ink-muted); stroke-width: 2; stroke-dasharray: 4 3; }
+.tile.is-flat { fill: var(--ink-muted); }
+.tile.is-none { fill: var(--refused); }
+.finding-legend { font-size: var(--t-fine); color: var(--ink-muted); line-height: 1.5; margin: 0 0 var(--s-3); max-width: none; }
+/* A key is a square of its tile's ink, drawn as a border so no text ground is declared for a colour
+   nothing is ever written on (spec 020 AC-40 reads every background against the pair list). */
+.tile-key { display: inline-block; width: 0.8em; height: 0.8em; box-sizing: border-box; border: 0.4em solid transparent; border-radius: var(--radius); vertical-align: -0.05em; margin: 0 0.3em 0 0.2em; }
+.tile-key.is-up { border-color: var(--accent-ink); }
+.tile-key.is-down { border: 2px solid var(--reg); }
+.tile-key.is-few { border: 2px dashed var(--ink-muted); }
+.tile-key.is-flat { border-color: var(--ink-muted); }
+.tile-key.is-none { border-color: var(--refused); }
+.finding-caveats { list-style: none; margin: 0 0 var(--s-3); padding: var(--s-2) 0 0; border-top: var(--perforation) dotted var(--rule); font-size: var(--t-fine); color: var(--ink); }
+.finding-caveats li { margin: 0 0 var(--s-1); max-width: none; line-height: 1.5; }
+.finding-caveats b { font-weight: 500; }
+.finding-link { margin: 0; }
+.card.finding a.cta { background: var(--accent-ink); color: var(--paper-2); }
+.card.finding a.cta:hover { color: var(--paper-2); }
+/* A SECTION'S EYEBROW names the reader it is for, in the display face, italic, in the accent. */
+.section-eyebrow { font-family: var(--display); font-style: italic; font-size: var(--t-h3); color: var(--shell-accent); margin: 0 0 var(--s-1); }
+/* THE RECEIPT BESIDE THE LIST OF WHAT IT CAN SAY (spec 687): the hero's card moved down, next to
+   the states list, in the same two columns the hero uses. */
+.states-grid { display: grid; gap: var(--s-5) var(--s-6); grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 1024px) {
+  .states-grid { grid-template-columns: minmax(0, 7fr) minmax(400px, 5fr); }
+}
 .cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
 /* A COMMAND ON THE DESK is typed in the deep well, with its Copy button beside it (spec 170). */
 .copy-cta {
@@ -1170,8 +1240,8 @@ img.bandplot, .report-type-card img, .report-type-card svg { background-color: v
   .stat-band { padding: var(--s-2); }
   .stat + .stat { padding-left: var(--s-2); }
 }
-/* A receipt-type card lies half a degree off square: the hero receipt and the report teaser. */
-#hero .card.receipt, #latest .card.report-card { transform: rotate(var(--card-tilt)); }
+/* A receipt-type card lies half a degree off square: the finding, the receipt and the report teaser. */
+#hero .card.finding, #states .card.receipt, #latest .card.report-card { transform: rotate(var(--card-tilt)); }
 .receipt-note { margin: 0.4rem 0 0.2rem; font-size: var(--t-fine); font-style: italic; color: var(--ink-muted); text-align: right; }
 .cols { display: grid; gap: var(--s-3); grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
 .cols p { margin: 0; color: var(--shell-muted); }
@@ -1231,6 +1301,43 @@ img.bandplot, .report-type-card img, .report-type-card svg { background-color: v
 @media (min-width: 900px) { .glossary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .glossary dt { font-size: var(--t-h3); margin-top: 1.6rem; }
 .glossary dd { margin: 0.3rem 0 0; color: inherit; }
+/* Each entry opens in plain words (spec 689): the line the cards show, then the fuller definition. */
+.glossary .term-plain { margin: 0 0 var(--s-1); font-weight: 500; color: var(--ink); }
+.glossary .term-full { margin: 0; color: var(--ink-muted); }
+
+/* ── the plain-word cards (spec 689) ───────────────────────────────────────────
+   THE MARKER is the word itself with a dotted line under it, in the text's own colour: a margin note's
+   mark, not a link's. On the desk the line is the shell accent; on paper, the stamp pad. Hover makes the
+   line solid; focus takes the site's outline. THE CARD is a small sheet of stock beside the word, in the
+   top layer where the browser has one (popover), so no tilted or clipped ancestor can trap it, and a fixed
+   box where it has not. Under 640px it is a sheet at the foot of the screen. Nothing here moves the page:
+   the card is fixed, and the marker's box is the word's. The note under the page, on the desk, says what
+   the dotted line means. */
+a.term { color: inherit; text-decoration: underline dotted; text-decoration-color: var(--shell-accent); text-decoration-thickness: 1px; text-underline-offset: 0.2em; cursor: help; }
+a.term:hover, a.term[aria-expanded="true"] { text-decoration-style: solid; }
+:where(.card, .grader, .verdict-grid, main.receipt-page, table, .chart-panels, .page-grid.is-sheet > main, .gap-result, .gap-famous, .panel) a.term { color: inherit; text-decoration-color: var(--accent-ink); }
+.jargon-cards { max-width: var(--w-wide); margin: 0 auto; padding: 0 var(--pad-x) var(--s-4); }
+.jargon-note { margin: 0; color: var(--shell-muted); font-size: var(--t-fine); max-width: none; }
+.jargon-card {
+  display: none; position: fixed; inset: auto; margin: 0; z-index: 50;
+  width: min(22rem, calc(100vw - 2 * var(--s-2))); padding: var(--s-2) var(--s-3);
+  background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-left: 3px solid var(--accent-ink);
+  border-radius: var(--radius); box-shadow: var(--sheet-shadow); overflow: visible;
+  font-family: var(--sans); font-size: var(--t-fine); font-weight: 400; font-style: normal; line-height: 1.5; letter-spacing: normal; text-align: left;
+}
+.jargon-card:popover-open { display: block; }
+.jargon-card.is-open { display: block; }
+.jargon-card.is-sheet { left: var(--s-2); right: var(--s-2); bottom: var(--s-2); top: auto; width: auto; }
+.jargon-card > span, .jargon-card > strong { display: block; }
+.jargon-card-eyebrow { font-family: var(--display); font-style: italic; font-size: var(--t-eyebrow); color: var(--ink-muted); margin: 0 0 var(--s-1); }
+.jargon-card-title { font-family: var(--display); font-weight: 400; font-size: var(--t-h3); line-height: var(--lh-h2); color: var(--ink); margin: 0 0 var(--s-1); }
+.jargon-card-text { color: var(--ink); margin: 0 0 var(--s-2); }
+.jargon-card-links { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-1) var(--s-2); }
+.jargon-card-more { color: var(--ink); text-decoration: underline; text-decoration-color: var(--accent-ink); }
+.jargon-card-more:hover { color: var(--accent-ink); }
+.jargon-card-close { font: inherit; font-weight: 500; min-height: var(--touch); padding: 0 var(--s-2); cursor: pointer; background: var(--paper-2); color: var(--ink); border: 1px solid var(--ink-muted); border-radius: var(--radius); }
+.jargon-card-close:hover { border-color: var(--accent-ink); color: var(--accent-ink); }
+.jargon-card :focus-visible { outline-color: var(--accent-ink); }
 .report-type-card { border-top: 1px solid var(--border); padding: var(--s-3) 0; display: grid; gap: var(--s-2); grid-template-columns: 1fr; }
 @media (min-width: 700px) { .report-type-card { grid-template-columns: 160px 1fr; } }
 .report-type-card img, .report-type-card svg { width: 100%; height: auto; max-width: 100%; }
@@ -1381,14 +1488,33 @@ h1 code { font-size: var(--t-h3); vertical-align: 0.2em; }
     from { transform: scaleX(0.02); }
     to { transform: scaleX(1); }
   }
-  /* THE HOMEPAGE'S HERO CARD, and nothing else. Spec 038 A-038-3 inlines a hero-size plot into every
-     receipt page and the methodology page, and a rule on `.bandplot.is-hero` alone set five hundred
-     bands drawing on load across the site. The one animation is the one on the first screen. */
-  #hero .bandplot.is-hero .band {
+  /* THE HOMEPAGE'S RECEIPT CARD, and nothing else. Spec 038 A-038-3 inlines a hero-size plot into
+     every receipt page and the methodology page, and a rule on `.bandplot.is-hero` alone set five
+     hundred bands drawing on load across the site. Since spec 687 the card sits beside the states
+     list (#states), and the band still draws on load there. */
+  #states .bandplot.is-hero .band {
     transform-box: fill-box;
     transform-origin: center;
     animation: hero-band-draw 600ms ease-out 1 both;
   }
+  /* THE FINDING'S TILES (spec 687) are stamped on as the page opens, once, inside the same guard. */
+  @keyframes tile-stamp {
+    from { transform: scale(0.6); opacity: 0; }
+    to { transform: none; opacity: 1; }
+  }
+  #hero .finding-tiles .tile {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: tile-stamp 500ms ease-out 1 both;
+  }
+  /* THE PLAIN-WORD CARD (spec 689) rises in as it opens, inside the same guard; two rules, because a
+     browser without the popover pseudo-class would drop a selector list naming it. */
+  @keyframes jargon-card-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+  }
+  .jargon-card:popover-open { animation: jargon-card-in 160ms ease-out 1 both; }
+  .jargon-card.is-open { animation: jargon-card-in 160ms ease-out 1 both; }
 }
 
 /* ── "You be the grader" (/invisible-space/, docs/islands/grader-quiz.js) ─────────────

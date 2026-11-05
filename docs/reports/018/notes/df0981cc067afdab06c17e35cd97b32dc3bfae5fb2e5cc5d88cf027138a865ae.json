@@ -1,0 +1,1401 @@
+{
+ "format": "driftproof-judge-notes/1",
+ "report": "018",
+ "report_url": "/reports/018/",
+ "attempt_id": "df0981cc067afdab06c17e35cd97b32dc3bfae5fb2e5cc5d88cf027138a865ae",
+ "skill": "media-use",
+ "repository": "heygen-com/hyperframes",
+ "receipt_hash": "2c37963a2ebaf2d367acf79e65d71090dd748c7fc852e8e1f603caef2f7f1af8",
+ "receipt_page": "/r/2c37963a2ebaf2d367acf79e65d71090dd748c7fc852e8e1f603caef2f7f1af8/",
+ "receipt_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-018/campaign-3/df0981cc067afdab06c17e35cd97b32dc3bfae5fb2e5cc5d88cf027138a865ae.json",
+ "answers_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-018/campaign-3/df0981cc067afdab06c17e35cd97b32dc3bfae5fb2e5cc5d88cf027138a865ae-answers.json",
+ "suite_file": "https://github.com/driftproofhq/driftproof/blob/main/specs/408-skill-measurements/suites/heygen-com--hyperframes--media-use.json",
+ "model": "Claude Haiku 5.5",
+ "judge": "Claude Haiku 5.5",
+ "judge_samples": 5,
+ "date": "2 November 2026",
+ "arms": [
+  {
+   "key": "with_skill",
+   "label": "With the skill"
+  },
+  {
+   "key": "placebo",
+   "label": "With the fake text"
+  },
+  {
+   "key": "baseline",
+   "label": "With nothing"
+  }
+ ],
+ "caveats": [
+  "The judge uses the same model as the target. Self-grading may favor its own model's answers.",
+  "Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings.",
+  "The scores and reasons are the judge model's own words, kept exactly as it wrote them. They are a model's reading of the rubric, not Driftproof's.",
+  "This is one task of three. Each skill was given three text tasks, and one task is not the whole measurement."
+ ],
+ "tasks": [
+  {
+   "id": "reuse",
+   "number": 1,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A project needs a short chime. A local candidate has the right license and duration but its fit has not been checked. Explain the next asset workflow.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source heygen-com/hyperframes/skills/media-use/SKILL.md at c4440dfb200def5e0c0afee938778f05b5985039; SKILL.md SHA-256 0f08ff6b493a46e0505dcc9c0c607e517e0eb70e7dc2b7b5c1f51b4f27bb6181; README SHA-256 3e8f26d5e35c6a8c32c661bf1439443d8eee332eedc9bf1a32bfe3dc417c218e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Inspect reusable candidates before generating 2. Evaluate fit rather than reuse blindly 3. Resolve a concrete local asset and preserve its record 4. Do not claim an audio sample was heard",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "**Next steps for the chime:**\n\n1. **Check the local candidate's fit.** The license and duration already match, so the open question is whether it sounds right for this project: its tone, how it sits in the mix, and whether it suits the moment it plays. Listen to it in place, or against a short clip of the scene, before you use it.\n\n2. **If it fits, use it.** Adopting it as the project's chime is the next step. The exact adopt or ingest commands are in `references/resolve.md`, which I haven't read in this reply, so check that file for the flags before running them.\n\n3. **If it doesn't fit, resolve a new one.** The skill's sound-effect verb is `resolve --type sfx`. Its command shape is:\n\n   ```\n   npx hyperframes media-use resolve --type sfx --intent \"short chime\" --project <dir>\n   ```\n\n   The bundled sound-effect library and the HeyGen catalog both serve `sfx`. The catalog path needs the `heygen` CLI, unless the host app sets `HEYGEN_API_BASE`. If the host app provides its own sound-effect tool, use that instead.\n\nBefore you pick a new candidate, run `--candidates` for `sfx` to list reusable options and judge their fit yourself. The skill's rule is to decide fit on your own rather than accept the first match.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets inspect-candidates-first (run --candidates before picking new), fit evaluation, and no claim of hearing audio; misses preserving the resolved asset's record, which is never addressed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 2 (evaluate fit) and criterion 3 (resolve concrete asset, preserve record) are partly addressed, but it never lists candidates before generating (criterion 1 only mentions it as a later step), and it doesn't clearly preserve a record. It does not claim to have heard audio (criterion 4 met)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 2 is met: it says to judge fit rather than reuse blindly. Criterion 1 is missed: it tells the user to run --candidates only after deciding to resolve a new asset, not inspecting candidates first. Criterion 3 is missed: it never resolves a concrete local asset or preserves its record. Criterion 4 is met: it does not claim to have heard the sample."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2 and 4: it says to run --candidates before picking a new asset, tells the user to judge fit rather than reuse blindly, and claims no audio was heard. It misses criterion 3 because it never mentions preserving the asset's record."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it says to run --candidates before generating, tells the user to judge fit, and does not claim to have heard audio. It misses 3 because it never says to preserve the asset's record."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The supplied facts don't cover audio assets or chimes. They describe a village and its surroundings, so the workflow below is general, based on your description of the candidate.\n\n1. **Record what's confirmed.** The candidate has the right license and duration. Note that in the asset record with its source and license terms, and mark fit as unchecked.\n\n2. **Check fit in context.** Play the chime where the project will use it, not just in isolation. Check:\n   - Whether it matches the project's tone and the sounds around it.\n   - Its level and loudness next to other audio, so it isn't jarring or buried.\n   - Whether the start and end are clean, with no clicks or silence padding.\n   - Whether its length works at the actual trigger point.\n\n3. **Decide.** If it fits, approve it. If not, reject it and look for another candidate, then repeat steps 1 and 2 for that one.\n\n4. **Add the approved asset.** Place the file where the project keeps assets, add its license attribution if the license requires it, and update any asset manifest. Then commit the change so the decision is traceable.\n\nI haven't read, run, or changed anything. If you share the project's audio directory or the place the chime is triggered, I can suggest exactly where the fit check and the file should go.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (fit evaluation) and 4 (no claim of hearing the sample). Misses 1, since it never says to inspect candidates before generating, and 3, since it doesn't resolve a concrete local asset path."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets fit evaluation (step 2 checks tone, loudness, clean edges) and does not claim hearing the sample. Misses inspecting candidates before generating and does not resolve a concrete local asset; it uses generic placement."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (thorough fit evaluation) and criterion 4 (no claim of hearing the sample); misses 1 (never inspects candidates before generating) and 3 (no concrete local asset path resolved)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets evaluating fit with concrete checks and does not claim hearing the sample, but never explicitly inspects candidates before generating and does not resolve a concrete local asset path, only recording its metadata."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets fit evaluation (step 2) and does not claim to have heard audio. Misses inspecting reusable candidates before generating, and does not resolve a concrete local asset, though it does preserve the asset record."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "The candidate already meets the license and duration requirements, so the remaining step is to check whether it fits the project. Until that check passes, treat it as provisional.\n\n1. **Check fit against the project's needs.** Listen to it in context, not in isolation. Confirm it suits the project's tone and the moment it will play, and that it doesn't clash with existing sounds.\n2. **Check the technical properties.** Look at the file format, sample rate, and bit depth against what the project expects. Check peak level and loudness so it doesn't clip or jump in volume compared with other assets. Trim any leading or trailing silence that would cause a delay when it plays.\n3. **Test playback in the target environment.** Play it through the same path users will hear it on, and confirm it starts promptly and doesn't loop or cut off unexpectedly.\n4. **Record provenance.** Keep the license text, the source URL, and the author's attribution requirements with the asset, since the license is already approved and those details are what you'd need later.\n5. **Decide and record the result.** If it passes, add it to the project and note the chosen version. If it fails on fit or technical checks, reject it and go back to the candidate list. Don't edit it to force a fit unless the license allows modification and you've confirmed the result still meets the checks above.\n\nI'd recommend doing steps 1 and 3 first, since they're the most likely to reject it, and only doing the technical cleanup if the chime is otherwise a good fit.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets fit evaluation, local asset resolution with provenance record, and no claim of hearing the sample; misses inspecting reusable candidates before generating, which the response never addresses."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets fit evaluation (steps 1 and 3) and never claims to have heard the sample. Misses inspecting candidates before generating and does not resolve a concrete local asset, though it records provenance."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (evaluates fit, treats candidate as provisional), 3 (preserves license, source, and attribution record for the local asset), and 4 (never claims to have heard the audio); misses criterion 1, as it never says to inspect reusable candidates before generating."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets fit evaluation, preserving the asset's record (provenance and chosen version), and not claiming to have heard the sample. Misses inspecting reusable candidates before generating; it never addresses that step."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets fit evaluation (step 1) and does not claim to have heard the sample; misses inspecting candidates before generating and does not resolve a concrete local asset, though it preserves provenance."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "Here's the workflow for the chime, based only on the media-use guidance above. I haven't run anything.\n\n1. **Judge the local candidate's fit first.** It already has the right license and duration, so the open question is whether it suits the project. Listing reusable candidates with `--candidates` shows what's available. Per the guidance, you judge fit yourself, so listen to the chime in the project's context before adopting it.\n\n2. **If it fits, bring it in.** The guidance says to use `--from` to ingest a local file and to adopt it through the resolve workflow. The reuse rules and exact adoption steps are in `references/resolve.md`, which I haven't read here, so check that file for the specifics.\n\n3. **If it doesn't fit, look for another chime.** A chime is a sound effect, so the `sfx` type applies. Its bundled 19-file library is available without the HeyGen CLI. Resolving `--type sfx` with a short intent such as \"soft chime\" searches the bundled library and, if the HeyGen CLI is set up, the catalog as well. Only the catalog path needs that CLI.\n\n4. **Don't skip the check.** License and duration passing doesn't establish fit, so the candidate shouldn't be used until you've confirmed it sounds right in the project.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 2 (evaluates fit, not blind reuse) and 4 (no claim of hearing audio). Criterion 1 is borderline, since it lists candidates first but never says to inspect before generating. Criterion 3 is missed: it defers resolve details and never mentions preserving the asset record."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it lists candidates first, insists on judging fit before use, and claims no audio was heard. It misses 3 because it never says to preserve the asset's record."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it lists candidates before adoption, judges fit rather than reusing blindly, and claims no audio was heard. Misses 3: it defers resolve details and never says to preserve the asset's record."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (inspects candidates via --candidates before generating) and 2 (judges fit by listening rather than reusing blindly); missed 3, since it defers the concrete resolve steps to an unread file and never preserves a record, and 4 is met because it says it hasn't run anything."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (inspect candidates via --candidates) and criterion 2 (judge fit before adopting) are met; criterion 3 is missed since it defers resolve details and never concretely resolves the local asset with a record; criterion 4 is met since it says nothing was heard or run."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I can't verify the candidate chime's fit from here, so the workflow below is the order I'd follow. I haven't used any tools or touched the project.\n\n1. **Confirm the license and duration.** You've already checked these, so record them with the asset: the license name, the source, and the exact length in seconds.\n2. **Audition the candidate in context.** Play it at the volume and in the place it will actually be heard, such as the app's startup, a notification, or a completion event. Check that it's short enough not to annoy and that its tone suits the project.\n3. **Check the fit against the other assets.** Compare its loudness, tone, and length with the existing sounds so it doesn't stand out or clash.\n4. **Decide on the result.** If it fits, add the file to the project's asset directory, record its license and source alongside it, and commit it. If it doesn't, keep looking and repeat from step 1 with the next candidate.\n5. **Wire it in last.** Hook the chosen file to its event only after it's approved, so the project never references an unchecked asset.\n\nThe fit check in step 2 is the one open item. Until someone has listened to the candidate in context, the asset isn't approved.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response gives a sound workflow and notes the fit check is open, but it does not inspect reusable candidates before generating, and it does not resolve a concrete local asset or name its record path. Criterion 4 is met: it says no one has listened yet. Score 0.25."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (evaluates fit via in-context audition and comparison) and criterion 4 (never claims to have heard the sample). Misses criterion 1, since it never addresses inspecting candidates before generating, and criterion 3, since it stays generic and does not resolve a concrete local asset."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets fit evaluation (criterion 2) and does not claim hearing the audio (criterion 4); misses inspecting candidates before generating and never resolves a concrete local asset path, though it preserves the license/source record."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (steps 2-3 evaluate fit before use), 3 (records license and source and commits the local file) and 4 (states it cannot verify the audio). Misses 1: it never says to inspect reusable candidates before generating anything."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets fit evaluation (step 2 audition and step 3 comparison) and does not claim hearing the sample. Misses inspecting candidates before generating, which is never addressed, and resolving a concrete asset path, since it stays generic."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "The candidate chime has the right license and duration, but nobody has checked whether it fits the project. Until that check passes, treat it as provisional.\n\n1. **Check fit.** Listen to the chime in the project's actual context and confirm it suits the tone and purpose the project needs. Duration and license alone don't settle this.\n2. **Record the license.** Keep the license terms with the asset so the provenance is clear before it ships.\n3. **Treat the file as untrusted.** It's a downloaded or local audio file, so don't run any script or tool from its directory as part of this check. Keep any helper scripts in a separate directory and pass the file's path as an argument.\n4. **Add it only after fit passes.** If it fits, add it to the project. If it doesn't, keep looking and repeat the same checks on the next candidate.\n\nI haven't opened or played the candidate, so I can't say whether it fits. The fit check in step 1 is the open item.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response says to check fit and notes it hasn't heard the chime (meets 2 and 4), but never inspects reusable candidates before generating and only partially preserves the record via license note, missing criteria 1 and 3."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (fit evaluated, not reused blindly) and criterion 4 (explicitly says it hasn't heard or played the candidate). Misses criterion 1 (no inspect-before-generate step) and criterion 3 (no concrete asset resolved, only license-keeping)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (fit is checked before adding) and criterion 4 (explicitly says it hasn't played the candidate); misses criterion 1 (no inspection of candidates before generating) and criterion 3 (no concrete local asset resolved, only a general license note)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets fit evaluation (criterion 2) and avoids claiming the audio was heard (criterion 4); misses inspecting existing candidates before generating and resolving a concrete local asset with its record (criteria 1 and 3)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (checks fit before adding) and criterion 4 (explicitly says it hasn't played the candidate). Misses criterion 1, since it never inspects candidates before generating, and criterion 3, since it doesn't resolve a concrete local asset path."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "The local candidate already has the right license and duration, so the remaining step is checking whether it fits the project. Nothing has been run or changed here.\n\n1. **Check the fit first.** The candidate's fit hasn't been judged yet, so listen to it in the project's context: tone, length of the decay, and how it sits against the scene it plays under.\n\n2. **If it fits, reuse it.** Reuse it through the media-use `resolve` flow. Use `--candidates` to list reusable candidates, then judge fit yourself. The reuse, ingest (`--from`), and adopt rules are in `references/resolve.md`, which I haven't read for this answer, so check its exact flags there before running anything.\n\n3. **If it doesn't fit, resolve a new one.** A chime is a sound effect, so the type is `sfx`:\n   ```bash\n   npx hyperframes media-use resolve --type sfx --intent \"<short chime description>\" --project <dir>\n   ```\n   The bundled 19-file sfx library answers without any setup. The HeyGen catalog search for `sfx` needs the `heygen` CLI, or the `HEYGEN_API_BASE` host if that is set. Without either, the catalog side fails, and the bundled library still works.\n\n4. **If the host app provides its own sound-effect tool, use that** for the chime instead of `resolve`.\n\n5. **Record the result.** `resolve` returns one line with the asset ID, path, and metadata. Keep that ID so the choice can be reused later.\n\nOnce the fit check is done, tell me whether the candidate passed and I'll write the next step.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 2 (evaluates fit before reuse) and criterion 3 partially via resolve flow, but did not inspect candidates with a concrete step, and it claims a sound-effect library exists and mentions a remote catalog; criterion 4 is satisfied since it says nothing was heard."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2 and 4: it lists candidates before generating, requires judging fit, and never claims to have heard the sample. Criterion 3 is weak because it gives conditional commands and record-keeping advice rather than resolving a concrete local asset."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: lists candidates before generating, judges fit before reuse, and claims no audio was heard. Criterion 3 is weak: no concrete local asset is resolved, only a generic ID-keeping instruction."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets fit evaluation (step 1), listing candidates before resolving (step 2), and not claiming a sample was heard. Partly meets resolve and record: gives a concrete command and says to keep the asset ID, but resolves nothing."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Lists reusable candidates via --candidates before any new generation, judges fit before reuse, gives a concrete resolve command and preserves the asset ID record, and never claims to have heard the sample."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The candidate already meets two of three requirements: the license and the duration. Its fit is the only open check, so the workflow is:\n\n1. **Check fit.** Listen to the candidate in the project's context and confirm it works as a short chime. This is the one step left, and it needs a person to listen, since I can't play audio here.\n2. **If it fits, adopt it.** Add it to the project and keep the license and duration checks with the asset record so the reasoning is traceable.\n3. **If it doesn't fit, find another candidate.** Any replacement must also pass the license and duration checks, then go through the same fit check.\n4. **Integrate only after fit passes.** Don't add the chime to the project until the fit check is done.",
+      "average": 0.55,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets evaluating fit before adoption and does not claim to have heard audio. Misses inspecting candidates before generating, and only partly meets resolving the concrete local asset while preserving its record."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets evaluating fit before reuse and not claiming to have heard audio ('I can't play audio here'). Misses inspecting candidates before generating, since generation is never addressed, and gives no concrete asset identifier or path."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets fit evaluation (fit check before adoption, with a fallback) and does not claim to have heard audio. It misses inspecting candidates before generating, and it never resolves a concrete local asset, though it mentions keeping the asset record."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets fit evaluation (step 1 gates adoption), preserves the asset's license and duration record, and avoids claiming it heard audio. It never addresses inspecting candidates before generating, and it does not resolve a concrete asset path."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets fit evaluation (point 2) and avoids claiming audio was heard (point 4); misses candidate inspection before generating (point 1) and never resolves a concrete local asset (point 3)."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "The candidate chime has the right license and duration, so the remaining step is checking fit before it goes into the project:\n\n1. **Confirm the fit.** Listen to the chime in the context where it plays, not in isolation. Check that it suits the moment, doesn't clash with other sounds, and isn't too loud or too quiet relative to the project's existing audio.\n2. **Check the technical specs.** Confirm the file format, sample rate, bit depth, and channel layout match what the project expects. Check that the file plays on the target platforms.\n3. **Decide.** If it fits, adopt it. If not, either trim, edit, or re-level it, or reject it and keep looking. Only the candidate that passes this check should move forward.\n4. **Record the asset.** Save the file in the project's asset directory with a clear name, and note its source, license terms, and the decision made in the project's asset log or credits file.\n5. **Wire it up and test.** Reference the asset from the code, then confirm it plays at the right moment on each target.\n\nI haven't checked the candidate's fit, so step 1 is still open.",
+      "average": 0.55,
+      "notes": [
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Response never inspects existing candidates or reusable assets before proposing steps, does not weigh fit against alternatives, and lacks a concrete local asset path; it does preserve a record and avoids claiming to have heard the sample, so only criterion 4 is met (0.25)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (explicit fit evaluation with reject path), 3 (save to asset directory and log source, license, and decision), and 4 (states fit is unchecked, claims no listening). Misses criterion 1: it never mentions inspecting existing candidates before generating."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets evaluating fit before reuse and does not claim to have heard the sample; misses inspecting reusable candidates before generating and does not resolve a concrete local asset path, though it preserves the asset record."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets fit evaluation (step 1/3), records the asset with source, license, and decision (step 4), and does not claim to have heard the audio; misses inspecting reusable candidates before generating."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (evaluates fit before use), 3 (records source, license, and decision for the local asset) and 4 (no claim of hearing the sample). Misses criterion 1, since it never says to inspect candidates before generating."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "Nothing has been run or changed. Here is the workflow from the supplied facts.\n\n1. **Hold the candidate as unverified.** It has the right license and duration, but its fit for this project hasn't been checked, so don't adopt or place it yet.\n\n2. **Check fit.** Fit means whether the chime suits the project's tone, loudness, and timing. Listening to it is the only way to judge that, and I can't do it in this reply. Someone needs to audition the file, or I can check it in a follow-up turn with tools enabled.\n\n3. **If it fits, reuse it.** List reusable candidates with `npx hyperframes media-use resolve --type sfx --candidates --project <dir>` and judge the match yourself. To bring in a local file, use the ingest path (`--from`). Adoption rules and the full flag list are in `references/resolve.md`, which I haven't read in this reply, so confirm the exact flags there before running them.\n\n4. **If it doesn't fit, resolve a new chime.** Run `resolve --type sfx --intent \"short chime\" --project <dir>`. This searches the bundled 19-file SFX library first, then the HeyGen catalog. The catalog needs the `heygen` CLI unless `HEYGEN_API_BASE` is set. If the catalog is unavailable, the bundled library still answers.\n\n5. **Record the choice.** Resolve returns a result line with the asset ID, path, and metadata. Keep the ID with the project so the chime can be reused or traced later.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it lists candidates before generating, holds the candidate until fit is judged, and says no audio was heard. It misses criterion 3 because it defers the local-file ingest command to a file it did not read rather than resolving a concrete asset."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it lists candidates before generating, requires judging fit, and says it cannot listen. Misses 3: the local-asset ingest step lacks a concrete command and defers flags to another file."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets candidate-inspection-before-generation, fit evaluation, and no-audition-claim criteria, and preserves the asset ID record. It misses the concrete local-asset resolution criterion, deferring the ingest command to an unread reference file."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets inspect-candidates-before-generating, fit evaluation, and no-audio-heard claims; misses concrete local asset resolution, giving only a vague '--from' pointer with flags deferred to an unread file."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it lists reusable candidates before generating, requires judging fit, and says it cannot hear the audio. It misses 3 because the local asset is not concretely resolved; it defers the `--from` flags to an unread reference."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": {
+      "answer": "Since the candidate already has the right license and duration, the remaining work is checking fit and then adding it to the project. Here's the workflow:\n\n1. **Stage the file outside the project.** Keep the candidate in a separate, empty folder until it passes. This keeps unvetted audio out of the repo.\n\n2. **Check fit by listening in context.** Play it at the volume the project will use. Confirm it sounds like a chime and matches the project's tone, and that it doesn't clip, click at the start or end, or have unwanted silence or background noise.\n\n3. **Check the technical properties.** Confirm the format, sample rate, and channel count match what the project already uses, and that the loudness is close to other assets.\n\n4. **Record the license.** Save the license terms and source alongside the candidate, and note any attribution requirement, so the provenance is clear later.\n\n5. **Decide.** If it fits, move it into the project's asset directory with a descriptive name. If it doesn't, discard it or try another candidate and repeat from step 2.\n\n6. **Wire it in and test.** Reference the asset from the code, then trigger the chime in the real flow to confirm it plays when expected and nowhere else.\n\n7. **Commit the asset with its license note** so the change is reviewable and reversible.\n\nI didn't inspect the files or the repo, so the exact paths, formats, and loudness targets should come from the project's existing assets.",
+      "average": 0.45,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets fit evaluation (steps 2-3), resolving and recording the local asset (steps 4-5), and does not claim hearing the audio. Misses the requirement to inspect reusable candidates before generating anything new."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets fit evaluation (listen in context, decide) and does not claim hearing audio. Misses inspecting candidates before generating and resolving a concrete local asset path, though it preserves the license record."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (checks fit by listening and technical properties before adopting) and criterion 4 (never claims to have heard the audio). Misses criterion 1, since it admits it inspected nothing, and criterion 3, since it defers concrete paths rather than resolving the asset."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets fit evaluation (criterion 2), record preservation via license note and commit (part of 3), and does not claim hearing audio (criterion 4). Misses resolving a concrete local asset path and does not clearly inspect the candidate before use (criteria 1 and 3)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response inspects nothing and claims no sample was heard, but it never checks reusable candidates before generating, and it does not resolve a concrete local asset or preserve a record beyond a generic license note; only criterion 4 is fully met and criterion 2 is arguably partial but not clearly satisfied."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "logo",
+   "number": 2,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. The project needs a company logo. No official logo file has been supplied. Describe the sourcing plan and what not to fabricate.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source heygen-com/hyperframes/skills/media-use/SKILL.md at c4440dfb200def5e0c0afee938778f05b5985039; SKILL.md SHA-256 0f08ff6b493a46e0505dcc9c0c607e517e0eb70e7dc2b7b5c1f51b4f27bb6181; README SHA-256 3e8f26d5e35c6a8c32c661bf1439443d8eee332eedc9bf1a32bfe3dc417c218e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Seek an official brand source 2. Avoid redrawing a trademark as an invented official asset 3. Preserve source and local asset information 4. Do not claim a file is available before retrieval",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "**Sourcing plan for the company logo**\n\n1. **Ask for the official file first.** The cleanest source is the company's own logo asset. Until it's supplied, the project has no approved logo.\n\n2. **If none is supplied, use official brand sources only.** The media-use `logo` resolver checks sources in this order:\n   - theSVG\n   - the company's GitHub avatar\n   - the company's favicon\n\n   Each candidate should be an existing official mark that the resolver returns. I'd recommend running `resolve --type logo` with the company name as the intent, then reviewing the returned file before using it.\n\n3. **Check fit and permission before use.** Confirm the mark matches the company's name and is the current version. If the source has usage terms, note them. Keep the original file unmodified in the project, and record where it came from.\n\n4. **If no official mark is found, stop and ask.** Report which sources were checked and what each returned. Don't substitute a stand-in and let it pass as the real logo.\n\n**What not to fabricate**\n\n- Don't redraw, trace, or recreate the logo by hand or with an image model. Logos are never redrawn.\n- Don't invent a wordmark, monogram, or tagline and present it as the company mark.\n- Don't use another company's logo or a lookalike.\n- Don't guess brand colors or fonts and label them as official.\n- Don't claim the logo is verified or licensed unless you have checked the source and the terms.\n- If a placeholder is needed for layout, label it clearly as a placeholder in the file and in the final output, so it can't ship as the real logo.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response seeks official sources (theSVG, GitHub avatar, favicon) and avoids redrawing or inventing a logo, meeting points 1 and 2; it does not state the file is unavailable before retrieval (point 4 met-ish), but preserves source info only partially with a 'record where it came from' note, and the resolver-based plan presumes retrieval rather than explicitly deferring claims, so point 3 is weakly met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Seeks official brand sources (theSVG, GitHub avatar, favicon), forbids redrawing or inventing the mark, requires recording source and keeping the original unmodified, and does not claim a file is available before retrieval."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four points: seeks official brand sources, forbids redrawing or inventing the mark, requires keeping the original unmodified and recording its source, and claims no file is available before retrieval."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Seeks official brand sources (theSVG, GitHub avatar, favicon), forbids redrawing or inventing a mark, requires keeping the original file and recording its source, and does not claim a file is available before retrieval."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: seeks an official brand source first, forbids redrawing or inventing logos, requires recording source and keeping the original unmodified, and never claims a file is already available."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "## Logo sourcing plan\n\nNo official logo file has been supplied, and the passage you pasted describes a market town and its surroundings, so it has no logo or brand information.\n\n**Sourcing steps**\n\n1. **Ask for the official asset.** Request the logo from whoever owns brand or marketing for the company, or from an existing brand guidelines document. Ask for the source format (SVG, AI, or EPS preferred) and a PNG fallback.\n2. **Confirm usage rights.** Check that the company is allowed to use the logo in this project and in whatever context it will appear, such as a public repo or documentation.\n3. **Get the variants you need.** Ask for light and dark versions, and any clear-space or minimum-size rules from the brand guidelines.\n4. **Add it only after receipt.** Once the file arrives, place it in the project's assets directory and reference it from there.\n\n**Do not fabricate**\n\n- A logo, icon, wordmark, or any approximation of one.\n- Brand colours, fonts, or spacing rules that the company has not provided.\n- The company's exact name or trademark status.\n- Claims that the logo is official, licensed, or approved.\n- Vector paths or dimensions for a mark you have not seen.\n\n**Interim option:** If the project needs a visual in the meantime, use a plain text label such as \"[LOGO PLACEHOLDER]\" and mark it clearly as a placeholder, so no one mistakes it for the real mark.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets seeking an official brand source, avoiding invented logos, and not claiming availability before receipt. Misses source preservation: it notes the assets directory but never records provenance or source details."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets seeking an official brand source, avoiding an invented logo, and not claiming the file is available before receipt. Source and local-asset preservation is only loosely covered by the assets-directory step and is never explicitly recorded."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets seeking an official brand source, avoiding invented logos, and not claiming availability before receipt; misses preserving source and local asset provenance, since it never records where the file came from."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (seeks official brand source) and criterion 2 (no invented logo, explicitly forbids fabricating one); misses criterion 3 since it doesn't preserve source/local asset info beyond a generic assets directory, and criterion 4 is met by stating it is added only after receipt, so the score is 0.75 at most—recounted: criteria 1, 2, and 4 satisfied gives 0.75."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (requests the official asset from brand owners or guidelines), 2 (forbids fabricating or approximating a logo), and 4 (adds it only after receipt). Criterion 3 is weakly met: it names an assets directory but does not say to record the source or provenance."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Logo sourcing plan**\n\nNo official logo file has been supplied, so I haven't used any tools or looked for one. Here's how I'd proceed:\n\n1. **Request the official asset.** Ask the user or the brand/marketing owner for the approved logo files, ideally vector (SVG or PDF) plus a PNG, and any brand guidelines covering clear space, minimum size, and approved color variants.\n2. **Confirm provenance and usage rights.** Check that the files come from the company's brand team and that the company is allowed to use them in this project.\n3. **Use a labeled placeholder until then.** If the project needs a visible mark now, use a neutral, clearly marked placeholder (for example, a gray box reading \"LOGO PLACEHOLDER\"). Note it in the code or docs as temporary.\n4. **Wire it in once received.** Place the official file in the project's assets location, reference it from the relevant spots, and verify it renders at the required sizes.\n\n**What not to fabricate**\n\n- Don't design or generate a logo and present it as the company's.\n- Don't recreate, trace, or closely imitate a logo from a website, document, or third-party brand.\n- Don't invent brand colors, fonts, taglines, or clear-space rules and present them as official.\n- Don't state or imply that a logo is approved, licensed, or trademark-cleared unless someone with authority has confirmed it.\n- Don't add a fake source, version, or license note to the asset.\n\nIf you can send the logo files or tell me where they live, I can integrate them.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (seek official brand source) and 2 (no redrawn/invented trademark) are met; criterion 3 (preserve source and local asset information) is not clearly addressed, and criterion 4 is satisfied by explicitly stating no file was retrieved, though the response offers a placeholder rather than noting asset location tracking—so roughly half is met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it asks the brand owner for approved files, forbids fabricating or tracing a logo, and never claims a file is available. Criterion 3 is only partly met, since it checks provenance and mentions the assets location but never says to record the source or local path."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (requests official brand assets from brand team), 2 (explicitly forbids fabricating/tracing logos), and 4 (no claim of file availability). Criterion 3 is weakly addressed: it asks for provenance and placement in assets location but doesn't clearly preserve source/local asset info, so partial credit only is arguable; scored 0.75."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets seeking an official brand source, avoiding invented or traced logos, and not claiming a file exists before retrieval; source and local asset preservation is only weakly addressed via provenance checks and asset placement."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it asks for the official brand files, forbids inventing or tracing a logo, and does not claim a file exists. It misses criterion 3, since it never says to record the asset's source or origin alongside the local file."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "**Status:** No official logo file has been supplied, so the project does not yet have a company logo.\n\n**Sourcing plan**\n\n1. **Ask for the official file first.** If the company can provide its logo (SVG preferred), that is the source to use. Nothing else should be used if it exists.\n2. **If no file is provided, resolve the official mark from public sources.** The media-use `logo` type looks in this order: theSVG, then the company's GitHub avatar, then its favicon. Each step needs the company's real name or domain. The command would be `npx hyperframes media-use resolve --type logo --intent \"<company name>\" --project <dir>`. I have not run it.\n3. **Check the result before using it.** Confirm the file belongs to the company you named and is the mark it actually uses. A favicon can be a small or simplified version of the full logo, so note that if it is the only option.\n4. **Record the source and check usage rights.** Keep the source URL or identifier with the project. Logos are usually trademarked, so confirm the company permits this use.\n\n**What not to fabricate**\n\n- Do not redraw, trace, or reconstruct the logo from memory or from a description. The logo must be the company's actual mark.\n- Do not invent a wordmark, monogram, or placeholder that could be mistaken for the real logo.\n- Do not guess the company's name, domain, GitHub organization, brand colors, or logo variants. Ask for them or leave them unset.\n- Do not describe a resolved logo as \"official\" unless you have verified where it came from.\n- If no official source can be found, leave the logo slot empty or marked as a placeholder, and say so in the project rather than filling it with something similar.\n\n**What I need from you:** the official logo file, or the company's exact name and primary domain so the public-source lookup can run.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Seeks an official source first, forbids redrawing or inventing the mark, requires recording the source identifier, and states the resolve command was not run, so nothing is claimed as available."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Seeks the official brand file first and a public-source lookup, forbids redrawing or inventing the mark, keeps source URL/identifier with the project, and states the command was not run, so no file is claimed."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Seeks the official brand file first and a public-source lookup, forbids redrawing or inventing the mark, records source identifiers with the project, and states the command was not run, so no file is claimed."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: seeks the official file first, forbids redrawing or tracing the mark, records the source identifier with the project, and states 'I have not run it' rather than claiming a logo exists."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets 1 (seeks official source first and checks official marks), 2 (explicitly forbids redrawing/inventing logos), and 3 (records source URL/identifier with project); misses 4 partially? It explicitly says 'I have not run it' and does not claim availability, so 4 is met too, but the response defers the lookup ... scoring 0.75 reflects a strict read that 'Preserve source and local asset information' is only addressed as a forward-looking instruction rather than as a result."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Logo sourcing plan**\n\nNo official logo file has been supplied, and the materials I have contain no logo asset, brand guidelines, or brand colours. The git status is clean with no recent commits, so nothing in this working directory provides one either.\n\n1. **Request the asset from the company.** Ask the brand or marketing owner for the approved logo, ideally as a vector file (SVG or PDF) plus a PNG at high resolution.\n2. **Confirm it is the approved version.** Check that it matches the current brand guidelines, including any light and dark variants and clear-space rules.\n3. **Confirm usage rights.** Make sure the company permits use in this project and in the form it will appear.\n4. **Add it once received.** Place the supplied file in the project and reference it from there. Record its source and version so it can be traced later.\n\n**What not to fabricate**\n\n- Do not design, draw, or generate a logo, even as a placeholder presented as official.\n- Do not invent brand colours, fonts, proportions, or taglines.\n- Do not copy a logo from a website or another source without rights to use it.\n- Do not create a file path, filename, or checksum that implies an asset exists when it does not.\n- Do not describe a logo as \"official\" or \"approved\" unless the company has supplied and confirmed it.\n\nIf a temporary stand-in is needed for layout work, label it clearly as a placeholder and remove it when the official file arrives.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it requests the approved logo from the brand owner, forbids drawing or generating an official logo, plans to record source and version, and states no logo file exists yet."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it seeks the logo from the company brand owner, forbids inventing or redrawing an official logo, says to record source and version, and states no file is available yet."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Seeks the logo from the company's brand owner (1), forbids drawing or generating a logo (2), records source and version for traceability (3), and states no file is available (4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: requests the logo from the company, forbids drawing or generating an official logo, says to record source and version, and states no file exists before retrieval."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: requests the official logo from the company, forbids drawing or generating a logo even as a placeholder, requires recording source and version, and states no logo file exists yet."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "## Sourcing plan for the company logo\n\nNo official logo file has been supplied, so the logo is blocked until the company provides one. Nothing below has been checked against a real file.\n\n1. **Request the official assets** from whoever owns brand or marketing for the company. Ask for:\n   - Vector source (SVG, or AI/EPS) preferred, with PNG exports as a fallback.\n   - Approved variants: full color, single color, reversed for dark backgrounds, and icon-only if one exists.\n   - Brand guidelines covering clear space, minimum size, and approved colors.\n   - Confirmation that the project is permitted to use the logo, and for what purposes.\n\n2. **Confirm provenance** before using any file. The asset should come from the company or another source with clear usage rights, and the sender should be confirmed as authorized.\n\n3. **Add the files in one place** once received, with the original filenames kept. Record the source and the usage terms next to them.\n\n4. **Use a placeholder until then.** If the project needs a visible logo before the official files arrive, use a clearly labeled placeholder such as a plain text name or a gray box marked \"TODO: official logo.\" Don't let a placeholder ship as if it were final.\n\n## What not to fabricate\n\n- **Logo artwork.** Don't draw, generate, or trace a logo and present it as the company's.\n- **Brand colors, fonts, or spacing.** Don't invent hex codes, typefaces, or clear-space rules and attribute them to the brand.\n- **Asset paths, dimensions, or checksums** for files that don't exist.\n- **Usage rights.** Don't state that the logo is licensed or approved for use unless someone with authority has confirmed it.\n- **Logos scraped from websites** as a substitute for official files, since the project may not have rights to them.\n- **Trademark or ownership claims** about the company's marks.\n\nIf you can share the official files or the brand contact, I can set up the placeholder and the file layout once they arrive.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: requests official brand assets, forbids drawing or tracing an invented logo, records source and filenames, and states no file is available before retrieval."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: asks the company's brand owner for official assets, forbids drawing or tracing a logo, requires recording source and usage terms with original filenames, and states no file is available yet."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: requests official brand assets, forbids drawing or tracing a logo as official, records source and usage terms with filenames, and states the logo is blocked until supplied."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it requests official brand assets, forbids drawing or tracing a logo as the company's, keeps original filenames with source and usage terms, and states no file is available yet."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Requests official assets from brand owners, forbids drawing or tracing a logo as the company's, requires recording source and usage terms, and states no file exists yet, meeting all four criteria."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "I can't access files, the network, or tools here, so this is a plan based only on the facts you've given and the media-use skill's documented behavior.\n\n**Sourcing plan**\n\n1. **Ask for the official file first.** No official logo has been supplied, so the best source is the company's own logo file. If you can provide it, I'll use it as-is.\n2. **If there's no file, use the logo resolver.** The media-use skill's `logo` type looks for official brand marks in this order: theSVG, then the GitHub avatar, then the favicon. The intended command is `npx hyperframes media-use resolve --type logo --intent \"<company name>\" --project <dir>`. I haven't run it. It would run in the project directory once tools are available.\n3. **Confirm the result is the company's official mark.** The fallback sources are third-party, so a match on the company name isn't enough. Check that the mark belongs to that company before using it.\n4. **If nothing is found, stop and report.** Say which sources were tried and what failed, and ask for the official file or a confirmed source.\n\n**What not to fabricate**\n\n- Don't redraw, trace, or recreate the logo by hand, including as an SVG or CSS approximation. The skill says brand marks are never redrawn.\n- Don't guess the company's brand colors, typography, or layout to build a stand-in.\n- Don't invent a GitHub organization, domain, or URL to fetch a mark from.\n- Don't use a generic icon, placeholder, or unrelated image and present it as the company logo.\n- Don't mark a logo as official unless the source confirms it.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it seeks the official source first, forbids redrawing the mark, and states the resolver hasn't run. It misses 3, since it never says to record the source URL or local asset path."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (seeks the official file and a verified brand source), 2 (forbids redrawing or tracing the logo), and 4 (says the resolver has not been run). Misses 3: it never says to record the source URL or local asset path."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: seeks the official brand file first, avoids redrawing or inventing marks, and says the resolver has not been run. Partly missed: it asks to report sources tried but never says to record the source or local asset path."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it seeks official brand sources, forbids redrawing the mark, and says the resolver hasn't run. It misses criterion 3 because it never says to record the source URL or local asset path."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: seeks an official brand source via the resolver and asks for the official file; avoids redrawing the mark; does not claim a file is available ('I haven't run it'). Missed: no explicit instruction to record the source URL or local asset path, only reporting sources tried."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The supplied material doesn't cover this. The long passage describes a market town, its harbour, and its seasons. It doesn't mention the company, a brand, colours, or a logo. The git status shows a clean repository with no commits, so there's no existing asset in the history to work from.\n\n**Sourcing plan**\n\n1. **Request the official logo file from the company.** Ask for the master version, preferably vector (SVG, EPS, or PDF), plus any PNG exports they already use.\n2. **Ask for usage rules.** Get the approved colour variants, minimum sizes, clear-space requirements, and any restrictions on modifying the mark.\n3. **Confirm provenance and rights.** Check that the company owns the logo or has licence to use it in this project, and record who supplied it and when.\n4. **Store the file once.** Place it in a dedicated assets folder with its original filename, and reference that single source everywhere else.\n5. **Check the result.** Confirm it renders correctly at the intended sizes and on light and dark backgrounds before it ships.\n\n**What not to fabricate**\n\n- Don't draw, generate, or reconstruct a logo from memory or from a description.\n- Don't invent a company name, tagline, colour palette, or brand style to fill the gap.\n- Don't download a logo from the web or lift one from another organisation's materials.\n- Don't present a placeholder as the real logo. If a stand-in is needed for layout, label it clearly as a placeholder and remove it before release.\n- Don't claim the logo is approved or licensed until the company has confirmed that.\n\n**What I need from you:** the official logo file, or the name of the person who can supply it.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four: requests the official logo from the company, forbids drawing or generating a logo, records supplier and date with original filename, and makes no claim that a file exists."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Seeks the official logo from the company, refuses to draw or reconstruct a logo, records provenance and single-source storage, and does not claim the file is available or approved."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Requests the official logo from the company, forbids redrawing or generating a logo, records source and provenance with a local assets folder, and never claims a file is available."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "It seeks the official logo from the company, forbids drawing or reconstructing a logo, requires recording the supplier and storing the original file, and does not claim the file is available."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Seeks the official logo from the company, forbids redrawing or inventing the mark, records supplier and file location, and makes no claim that a file is available."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Logo sourcing plan**\n\nNo official logo file has been supplied, so the project does not have one yet. Here is how I'd source it:\n\n1. **Request the official asset from the owner.** Ask the person or team who owns the brand for the logo in a vector format (SVG, or PDF/EPS), plus a PNG at high resolution. If they have brand guidelines, ask for those too, since they define clear space, minimum size, and approved color variants.\n2. **Confirm usage rights.** Get written confirmation that the project may use the logo, including any restrictions on the context or audience.\n3. **Place the files once received.** Store them in a dedicated assets directory, use the vector source where possible, and keep the original filenames from the owner so the provenance is clear.\n4. **Use a clearly marked placeholder until then.** If the project needs a visible logo before the real one arrives, use a generic, obviously temporary placeholder with a note such as \"placeholder, replace with official logo,\" and track it as an open item.\n\n**What not to fabricate**\n\n- Do not create or approximate an official logo, or anything that resembles a real company's mark.\n- Do not invent brand colors, fonts, hex codes, or spacing rules and present them as the official brand.\n- Do not claim a logo is official, approved, or licensed unless the owner has confirmed it.\n- Do not invent file paths, asset URLs, or repository contents for a logo that does not exist.\n- Do not treat a placeholder as the final asset in docs, releases, or public-facing pages.\n\nI did not check the repository or any files, so I can't confirm whether any logo assets already exist in it. The git status was clean at the start of this conversation, and that snapshot does not show file contents.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (requests official asset from owner), 2 (explicitly warns against creating/approximating official logo), and 3 (keeps original filenames and provenance); misses 4 only partially-no, it does satisfy 4 by stating it did not check files, so arguably all four are met, but scoring strictly, criterion 4 is satisfied via 'Do not claim...' and no-retrieval disclaimer, giving full marks."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it seeks the official asset from the brand owner, forbids approximating an official logo, keeps provenance via original filenames and tracked placeholders, and does not claim a file exists before retrieval."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Seeks official brand source from owner and rights confirmation (1), avoids inventing a logo/colors (2), preserves provenance via original filenames and asset directory (3), but does not explicitly state no file is available until retrieval beyond noting it's not supplied (4 is largely met since it says none yet exists), so partially strict; roughly 3 of 4 criteria clearly satisfied."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets seeking official brand source (request from owner, usage rights), avoids fabricating an official logo, and does not claim availability; misses explicit preservation of source/local asset info is partially covered by keeping owner filenames and provenance, so likely satisfied—score 0.75 reflects some ambiguity on criterion 3."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Seeks the official asset from the brand owner, forbids approximating an official logo, keeps owner filenames and provenance, and states no logo file is available or checked."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "**Logo sourcing plan**\n\nNo official logo file has been supplied, so I haven't checked the project for one. In order:\n\n1. **Ask for the official file.** The company's brand kit or a supplied SVG/PNG is the best source. Ask the person to provide it and its source.\n2. **If no file is supplied, use `resolve --type logo` later.** It searches official sources in this order: theSVG, then the GitHub avatar, then the favicon. It returns only official marks and never redraws them. I haven't run it, so I can't say whether it will find this company's logo.\n3. **Check the result.** Confirm the returned mark belongs to the company and record where it came from in the project's ledger.\n4. **If nothing official is found, use a labeled placeholder.** Mark it as a placeholder so nobody mistakes it for the real logo, and ask the person for the official file.\n\n**What not to fabricate:**\n\n- Don't redraw, trace, or approximate the logo from memory or a description.\n- Don't treat an icon-search result or a lookalike as the company's mark.\n- Don't invent brand colors or typography and present them as official.\n- Don't describe a placeholder or redrawn mark as the official logo.\n- Don't write a resolved path or ledger entry unless a real resolve produced it.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Seeks the official brand kit or file, forbids redrawing or inventing the logo, records source in the ledger, and states it has not checked for or retrieved a file."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Seeks the official brand kit or supplied file first, forbids redrawing or lookalikes, requires recording the source in a ledger, and says it has not run resolve or checked for a file."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: seeks the official brand kit first, forbids redrawing or approximating the mark, requires recording source in the ledger, and states no file was retrieved or available."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (seeks official brand kit/supplied file first), 2 (forbids redrawing/tracing and lookalikes), and 3 (requires recording source in ledger). Criterion 4 is met too: it says it hasn't checked for a file or run resolve. Misses partially on 3 by not explicitly preserving local asset paths; the 'no resolved path unless real' line is close but still counts as partial."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Seeks official brand sources (brand kit, supplied file, resolve); forbids redrawing or tracing the logo; requires recording source and ledger entries; states nothing was retrieved and no file is available yet."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Sourcing plan**\n\n1. **Ask for the official asset.** The request says no official logo file has been supplied. The owner, usually the company's brand or marketing team, should provide the approved file, ideally as SVG or high-resolution PNG, with any usage guidelines.\n2. **Place it in a known location.** Once the file arrives, put it in a path the user chooses, such as `assets/logo/`, and reference that path from the project. Nothing in the current repository provides one: the git status is clean and there are no commits yet.\n3. **Use a clearly labeled placeholder until then.** If the project needs a logo before the official file arrives, use a neutral stand-in, named `logo-placeholder`, and note in the code or docs that it is not the company's logo.\n4. **Verify before shipping.** Confirm the file's license and permitted use with the owner before publishing it.\n\n**What not to fabricate**\n\n- Do not create or redraw a logo that imitates a company's mark or any third-party trademark.\n- Do not invent a company name, tagline, colors, fonts, or brand guidelines.\n- Do not label a placeholder or generated image as official.\n- Do not download a logo from the web. This task has no network access, and it would also raise licensing questions.\n\nThe long passage of text in the request describes a market town, its river, and its seasons. It contains no company, brand, or logo details, so it is not a usable source for this asset.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it asks the brand owner for the official asset, forbids imitating marks, and says no file exists yet. It only partly meets 3, giving a local path but not recording source provenance."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2 and 4: it asks the brand owner for the official file, forbids imitating or redrawing a mark, and claims no file exists. Criterion 3 is only partly met: it gives a local asset path and a placeholder note but never says to record the official file's source or provenance."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Seeks the official brand owner's asset, forbids redrawing or imitating trademarks, states the logo isn't available until it arrives, and records a local path and license verification for the asset."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four: asks the owner for the official asset, forbids imitating or redrawing marks, records local path and placeholder labeling, and never claims a logo file is available."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it seeks the owner's official asset, forbids imitating or redrawing a mark, and does not claim a file is available. It only partly meets criterion 3, giving a local path but not recording the source or provenance of the file."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "## Logo sourcing plan\n\nNo official logo file has been supplied, so I can't use one here. I haven't checked the repository or any other location for one.\n\n**Sourcing steps:**\n1. **Ask the company** (brand, marketing, or whoever owns the identity) for the official logo files, ideally as SVG plus PNG at common sizes, along with brand guidelines covering approved colors, clear-space rules, and permitted variants.\n2. **Confirm the rights.** Get written confirmation that the project may use the logo, and in which contexts (for example, public docs versus a product UI).\n3. **Record provenance.** Note where each file came from, its version, and the date received, so it can be replaced if the brand changes.\n4. **Add it once it arrives.** Place the official files in the agreed assets directory and reference them from there.\n\n**Until then:**\n- Use a clearly labeled text placeholder, such as the company name in plain type or a neutral gray box marked \"LOGO PLACEHOLDER,\" so the gap is obvious.\n- Mark any build or screenshot that uses a placeholder as not final.\n\n**Do not fabricate:**\n- Don't create a logo, wordmark, or icon and present it as the company's.\n- Don't recreate or trace a logo from a screenshot, website, or memory and call it official.\n- Don't invent brand colors, fonts, or spacing rules. Use a neutral style or ask for the guidelines.\n- Don't claim trademark status, licensing, or approval that hasn't been confirmed.\n- Don't present a placeholder as the final logo.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks the company for official logo files (criterion 1), forbids recreating or tracing a logo as official (2), records provenance and assets directory (3), and states no file is available without retrieval (4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: seeks the official brand source, avoids inventing or tracing a logo, records provenance and asset location, and does not claim a file is available before retrieval."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it asks the company for official brand files, forbids recreating or tracing the logo, requires recording provenance and local asset location, and states no file is available before retrieval."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: asks the company for official logo files, forbids recreating or tracing the logo, requires provenance and asset-location tracking, and states no file exists or was checked."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: seeks official brand files, forbids recreating or tracing the logo, records provenance and assets directory, and never claims a logo file is available."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": {
+      "answer": "The supplied material doesn't contain any logo information. It's a block of descriptive text about a market town: the mill, the harbour wall, the bridge, the bees, the herons. It names no company, brand, colours, typefaces, or logo file, so I can't source the logo from it.\n\n**Sourcing plan**\n\n1. **Ask for the official asset.** The right source is the company's brand owner or marketing team. Request the logo in vector form (SVG, EPS, or PDF) and a raster version (PNG with transparency), plus any usage guidelines covering clear space, minimum size, and approved colour variants.\n2. **Confirm rights.** Check that the logo is cleared for this project's use and that the company has authorised it.\n3. **Record the source.** Note where the file came from and its version, so it can be traced later.\n4. **Wire it in only after receipt.** Once the official file arrives, add it to the project's assets and reference it from there.\n\n**What not to fabricate**\n\n- Do not design, trace, or generate a logo and present it as the company's official mark.\n- Do not invent the company name, brand colours, fonts, or tagline to fill gaps.\n- Do not pull a logo from the web or from an unrelated project and assume it is licensed for use.\n- Do not describe a logo as \"official\" or \"approved\" until the owner has confirmed it.\n\nIf the build needs something visible before the real asset arrives, use a clearly labelled neutral placeholder (for example, a plain grey box reading \"LOGO PLACEHOLDER\") and note in the project that it must be replaced.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it seeks the official brand owner's asset, forbids presenting an invented or traced logo as official, requires recording source and version, and wires the file in only after receipt."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: asks the brand owner for the official asset, forbids presenting a drawn or generated logo as official, records source and version, and wires in the file only after receipt."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Seeks the official brand owner's asset, forbids redrawing or presenting an invented mark as official, requires recording source and version, and wires in the file only after receipt, so all four criteria are met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it asks the company brand owner for the official logo (1), forbids designing or tracing a logo as official (2), requires recording source and version (3), and defers wiring in the asset until receipt (4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four points: it seeks the official brand owner's asset, forbids presenting an invented or traced logo as official, records source and version, and wires in the file only after receipt."
+       }
+      ]
+     },
+     "baseline": null
+    }
+   ]
+  },
+  {
+   "id": "grade",
+   "number": 3,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. The supplied frames are uniformly too dark. The user asks for ordinary exposure correction, with no LUT supplied. Propose the review and persistence workflow.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source heygen-com/hyperframes/skills/media-use/SKILL.md at c4440dfb200def5e0c0afee938778f05b5985039; SKILL.md SHA-256 0f08ff6b493a46e0505dcc9c0c607e517e0eb70e7dc2b7b5c1f51b4f27bb6181; README SHA-256 3e8f26d5e35c6a8c32c661bf1439443d8eee332eedc9bf1a32bfe3dc417c218e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Inspect evidence before selecting a correction 2. Use a bounded correction candidate 3. Persist the treatment settings 4. Avoid inventing a LUT merely to encode exposure",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "Here's a proposed workflow for the exposure correction. I haven't inspected the frames myself, so this relies on your report that they're uniformly too dark.\n\n1. **Confirm the scope.** The problem is underexposure across the clip, with no LUT and no creative look requested. That makes this an ordinary correction, not a stylization.\n\n2. **Review the source once.** Build one labeled early/middle/late contact sheet of the footage. Since the frames are uniformly dark, a single sheet should be enough to judge the whole clip. Escalate to individual frames only if the brightness varies in a way the sheet doesn't show.\n\n3. **Choose one bounded correction.** Use a modest exposure or brightness lift with a small shadow lift, and avoid aggressive values. Check whether the highlights are already near white before raising overall gain, because a large lift can clip them. Don't generate a `.cube` file for this. Exposure is a parameter adjustment, not a LUT.\n\n4. **Apply the candidate and review the after-sheet.** Build a matching contact sheet of the corrected frames and compare it to the original. Look for:\n   - Shadow detail recovered without washed-out blacks\n   - Highlights that aren't clipped\n   - Skin tones that look natural\n   - Noise that hasn't become obvious in the lifted shadows\n\n   If the result is ambiguous, review a few individual frames or a short moving draft.\n\n5. **Adjust once if needed.** If the after-sheet still looks too dark or overcorrected, make one further bounded adjustment and review again. Don't keep iterating past that.\n\n6. **Persist the final values.** Save the chosen exposure and shadow settings as preset or adjustment JSON through the `hyperframes media-treatment` workflow, so the correction is reproducible and visible in Studio controls. Don't recreate it with CSS or SVG overlays, since that bypasses the canonical preview and render path.\n\n7. **Verify the render.** Confirm the persisted treatment appears in the preview and renders the same as the reviewed after-sheet.\n\nI'd recommend stopping after step 6 unless you want a creative look added on top, which would be a separate request.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it reviews a contact sheet before choosing a bounded exposure lift, persists settings as preset/adjustment JSON, and explicitly rejects generating a .cube LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it plans contact-sheet inspection before choosing a correction, proposes a bounded exposure and shadow lift, persists values via media-treatment JSON, and explicitly rejects generating a .cube LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Inspects evidence via a contact sheet before choosing a correction, proposes a bounded exposure and shadow lift, persists settings as preset/adjustment JSON, and explicitly avoids generating a .cube LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it plans evidence review (contact sheets) before choosing a correction, proposes a modest bounded lift, persists settings as preset/adjustment JSON via media-treatment, and explicitly rejects generating a .cube LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it sequences a source contact-sheet review before choosing the correction, proposes a modest bounded lift, persists settings via media-treatment JSON, and explicitly rejects generating a .cube LUT."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I couldn't check the frames or any project files, since I'm not using tools here. The supplied material is a description of a market town and doesn't mention the frames, their exposure values, or any correction settings, so this is a general workflow rather than one fitted to your footage.\n\n**1. Review the problem**\n- Sample frames across the clip, including the darkest ones, and measure average brightness and the histogram.\n- Check for crushed shadows (pixels stuck at black) and confirm the highlights aren't clipped, so you know how much headroom a gain adjustment has.\n- Pick a target brightness and note it so later decisions can be checked against it.\n\n**2. Choose an ordinary correction**\n- Start with exposure (gain) and gamma, which are standard adjustments that don't need a LUT.\n- Apply one set of values to the whole clip rather than adjusting frame by frame, so the result doesn't flicker.\n- Increase the adjustment in small steps and stop before highlights clip or noise becomes obvious.\n\n**3. Review the result**\n- Build a before/after contact sheet of sampled frames, including the darkest and brightest.\n- Compare histograms and check for clipping and crushed shadows.\n- Play the corrected sequence at speed to catch flicker or brightness jumps between frames.\n\n**4. Persist the settings**\n- Save the final parameters (exposure, gamma, target, and the date) in a small sidecar file such as `exposure.json` next to the project.\n- Write corrected output to a new directory and leave the original frames untouched.\n- If the project is under git, commit the parameter file so the correction can be reproduced and reverted.\n\nIf you share the frame locations or a sample, I can help you pick the specific values, but that would require tools I'm not using in this turn.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: samples and measures frames before choosing correction, uses small bounded gain/gamma steps, persists parameters in exposure.json and git, and avoids inventing a LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it samples and measures frames before correcting, uses small bounded gain/gamma steps, persists parameters in exposure.json, and invents no LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: samples and measures frames before correcting, uses bounded stepwise gain/gamma, persists parameters in exposure.json with git commit, and avoids inventing a LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it samples and measures frames before choosing a correction, uses small bounded gain/gamma steps, saves settings to exposure.json and git, and avoids a LUT for exposure."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 2 (bounded, small-step gain/gamma candidate) and 3 (persist parameters to exposure.json); missed criterion 1 since it states it inspected nothing and proposes measurement only generically, and met criterion 4 by avoiding a LUT. Score is 0.75 by strict count, but evidence inspection is only proposed, so pass is false."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "## Proposed workflow: exposure correction for dark frames\n\nNo LUT was supplied, so this uses a parametric global exposure curve. I haven't run anything, and this is a plan only.\n\n1. **Measure before changing anything.** Compute luminance statistics (mean, median, 1st and 99th percentiles) across a sample of frames. Confirm the darkness is uniform, since that determines whether one correction fits all frames.\n\n2. **Choose one correction for the whole set.** Use a single gain and gamma (or exposure offset) chosen so the sample's percentiles land in a sensible range, with highlights held below clipping. Do not use per-frame auto-exposure, which causes brightness flicker between frames.\n\n3. **Test on a small set first.** Apply the parameters to a few representative frames, including the darkest and brightest. Check for clipped highlights, crushed shadows, and visible banding or noise amplification. Adjust once if needed.\n\n4. **Review the results.** Compare before and after side by side, and check a short sequence for consistency. Confirm the correction looks uniform across the whole set.\n\n5. **Persist the parameters.** Save the chosen gain, gamma, and any clipping limits to a small settings file in the project, under version control. Record the input and output paths and the date. Any rerun then uses the same parameters and gives identical output.\n\n6. **Apply to the full set and verify.** Run the saved settings over all frames, then spot-check a sample of outputs against the review images to confirm nothing drifted.\n\nIf you want, I can carry out these steps once you approve the approach. I'd need the frame location and output location, and a preferred target brightness if you have one.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 inspects luminance statistics before choosing a correction, step 2 bounds it to one global gain/gamma with highlights held below clipping, step 5 persists the settings, and it uses a parametric curve rather than inventing a LUT."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (measures luminance stats across sample before choosing) and criterion 2 (single bounded gain/gamma with highlight clipping limit); missed criterion 3 since persistence is planned but not framed as treatment settings saved to a file that is reapplied, and it does address persistence in step 5—so reconsidering, it meets 3 too, but criterion 4 (no invented LUT) is only implicitly satisfied, leaving the score at 0.75 with pass true."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 measures luminance statistics before any change, step 2 picks one gain/gamma with highlights held below clipping, step 5 persists the settings under version control, and it uses a parametric curve rather than inventing a LUT."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: step 1 inspects luminance stats before choosing a correction. Criterion 2 is met: a single bounded gain/gamma with highlight clipping limits. Criterion 3 is met: step 5 persists parameters in a settings file. Criterion 4 is met: no LUT invented. That is 1.0 on a strict reading, but the response is a plan with a parametric curve, which may not fully meet 'bounded correction candidate'; I score 0.5 as a conservative reading of the rubric's wording."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 measures luminance statistics and checks uniformity before choosing; Step 2 picks one bounded gain/gamma with clipping limits; Step 5 persists those settings to a versioned file; it uses a parametric curve and invents no LUT."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "Since the frames are uniformly too dark and you want ordinary exposure correction with no LUT, I'd use a preset or adjustment payload, not a generated `.cube` file. Exposure is a simple correction, so a LUT would add complexity without benefit.\n\n**Proposed workflow:**\n\n1. **Review the sampled frames.** Inspect one labeled early/middle/late contact sheet of the footage. Since all frames are uniformly dark, a single sheet should be enough to confirm the problem across the clip.\n\n2. **Measure, but don't generate from the measurement.** Running `hyperframes media-treatment --selector <media-selector> --analyze --json` gives exposure evidence to guide the adjustment. Treat the output as a reference, not as a LUT to build.\n\n3. **Choose one exposure candidate.** Select a single, modest brightness/exposure adjustment that lifts the midtones and shadows without clipping highlights. Keep it bounded to what the frames show. Don't add contrast, warmth, or other effects unless they are justified by the footage.\n\n4. **Apply the candidate and review the result.** Inspect one after-sheet using the same early/middle/late layout so the before and after are directly comparable.\n\n5. **Escalate only if needed.** Check individual frames or moving draft evidence only if the after-sheet is ambiguous, the clip has temporal changes, or the footage is HDR/LOG-sensitive. For uniform underexposure, this is probably unnecessary.\n\n6. **Persist the final payload.** Save the chosen preset or adjustment JSON with `hyperframes media-treatment`, targeting the same media selector. Keep the persisted result to the exposure correction alone so it can be reviewed or undone later.\n\nI haven't run any of these steps. They need your go-ahead before I run anything. If you want, I can start with the contact sheet and analysis, since those are read-only.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (inspect contact sheet before correction), 2 (single bounded exposure candidate), and 4 (explicitly avoids generating a LUT); misses 3 because persistence is only proposed and gated on approval rather than performed as the rubric's persist-treatment step requires."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it reviews contact sheets and analysis before choosing a bounded exposure-only candidate, persists the adjustment JSON via media-treatment, and explicitly rejects generating a LUT or .cube file."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four rubric points: reviews and measures evidence before choosing, proposes one bounded exposure candidate, persists the chosen preset, and explicitly rejects generating a LUT for exposure."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: reviews contact-sheet evidence before choosing a correction, selects a single modest exposure candidate, persists the chosen preset JSON via media-treatment, and explicitly avoids generating a LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it reviews contact-sheet evidence and measures before choosing, proposes one bounded exposure adjustment, persists the chosen settings, and explicitly avoids generating a LUT."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The supplied material doesn't contain anything about the frames, their brightness, or exposure, so I can't measure the darkness or recommend a specific correction amount. The text is general background about a coastal village. The workflow below is general practice, not drawn from that text.\n\n**Review workflow**\n\n1. **Measure before changing anything.** Compute mean and percentile luminance (for example, the 1st, 50th, and 99th percentiles) across a sample of frames, including the darkest and brightest. This shows whether the whole set is underexposed or only some scenes are.\n2. **Choose one parametric correction for the whole set.** Since no LUT was supplied, use a simple exposure offset (in stops or EV), optionally with a gamma adjustment to lift midtones. Pick the value from the measurements so that the midtones move without clipping highlights.\n3. **Apply it uniformly.** Use the same parameters on every frame. Per-frame tuning causes brightness flicker between frames.\n4. **Review a sample.** Compare before and after side by side on the darkest, brightest, and most important frames. Check for clipped highlights, crushed shadows, banding in gradients, and shifted skin or key colours. Play the sequence to check for flicker or pumping.\n5. **Iterate once or twice** if needed, changing only the global parameters, then re-check the same sample.\n\n**Persistence workflow**\n\n1. **Keep originals untouched.** Write corrected frames to a new output directory.\n2. **Store the parameters in a versioned config file** in the project, such as exposure, gamma, and black/white points, with a short note on why they were chosen.\n3. **Write a manifest** listing the input frames, the parameter file version, and the output paths, so the run can be reproduced exactly.\n4. **Commit the config and the script** that applies it, not the rendered frames unless the project needs them.\n5. **Add a sign-off checklist** (clipping, flicker, colour, banding) that must pass before the batch is considered done.\n\nIf you share the frames' measured statistics, or tell me the target brightness, I can work out a specific exposure value from them.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets inspect-before-correct (measure first), persisting settings in a versioned config, and avoiding an invented LUT. Bounded candidate is weak: it names a single global EV/gamma offset limited only by 'without clipping', with no concrete range."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets inspect-evidence (measure before correcting), persistence (versioned config and manifest), and no-invented-LUT criteria; misses a clearly bounded correction candidate since it gives no numeric range or value."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Measures luminance before choosing a correction, proposes one bounded global exposure/gamma adjustment with at most one or two iterations, persists settings in a versioned config and manifest, and avoids inventing a LUT."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (measure before correcting, and notes no evidence was supplied), 3 (versioned parameter config and manifest), and 4 (uses a parametric exposure offset, not an invented LUT). Misses 2 because the exposure value is not bounded to a specific candidate range."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: measures frame statistics before choosing, uses one bounded parametric exposure offset with a no-clipping check, persists parameters in a versioned config, and invents no LUT."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Proposed workflow for correcting the dark frames**\n\n1. **Review.** Pick a few representative frames across the sequence, including the brightest and darkest. Confirm they are all underexposed by a similar amount. If the darkness varies a lot, a single fixed correction won't work and the frames need grouping first.\n\n2. **Choose a correction.** With no LUT supplied, use a plain exposure adjustment: raise exposure or gain, then adjust gamma if shadows need lifting without blowing highlights. Set black and white points only if the levels are clipped. Keep the same parameters for every frame so the sequence stays consistent.\n\n3. **Test on the sample.** Apply the chosen correction to the sample frames and review them. Check that shadow detail is visible, highlights are not clipped, and the frames look consistent with each other. Adjust once if needed, then stop tuning.\n\n4. **Apply to all frames.** Run the approved correction across the full sequence, writing corrected output to a new location so the originals stay untouched.\n\n5. **Persist the settings.** Record the exact exposure, gamma, and level values in a small settings file or the processing script, so the correction can be reproduced or reapplied to future batches.\n\n6. **Verify the output.** Spot-check a random sample of corrected frames and confirm the result matches the review in step 3. Keep the originals until the output is accepted.\n\nI have not run anything or inspected the files, so the specific values will need to be chosen from your frames.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (bounded correction via plain exposure/gamma with consistent parameters) and criterion 4 (no invented LUT), and partially 1 by reviewing samples, but it never persists settings explicitly as a treatment record tied to inspected evidence; it only mentions a settings file in passing, so criterion 3 is arguably met; overall about half satisfied."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 inspects representative frames before choosing a correction, step 2 proposes one plain exposure candidate with a single adjustment pass, step 5 persists exact settings, and no LUT is invented."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 inspects representative frames before choosing a correction, step 2 proposes one plain exposure/gamma candidate limited to one adjustment, step 5 persists exact settings, and no LUT is invented."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response inspects a sample of frames before choosing correction (criterion 1 met) and uses a bounded, consistent exposure/gamma adjustment with tuning limits (criterion 2 met); it persists settings in a file (criterion 3 met) and avoids inventing a LUT (criterion 4 met). Wait—recounting: all four are arguably satisfied, but the response does not explicitly state the grader's required sequence of inspecting evidence before selecting, so only partial credit is justified."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it reviews representative frames before choosing a correction, bounds the candidate with one adjustment then stop, persists exact settings in step 5, and avoids inventing a LUT."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "**Proposed workflow for the under-exposed footage**\n\nThe frames are uniformly too dark, so the primary intent is ordinary exposure correction. No LUT is involved. I'd keep this to a preset or adjustment set and skip generating a `.cube` file, since a LUT is only warranted when you supply one or the chosen treatment owns one.\n\n1. **Review the source.** Build one labeled contact sheet with early, middle, and late frames from the clip. This confirms that the darkness is consistent across the timeline rather than isolated to one section. Escalate to individual frames only if the early, middle, and late frames disagree.\n\n2. **Measure, don't replace.** Run the grade analysis on the hero element (for example `hyperframes media-treatment --selector '#hero' --analyze --json`). Use the measurements to size the exposure and shadow adjustments. Treat the output as evidence for the choice, not as a LUT to apply.\n\n3. **Choose one candidate.** Pick a single exposure-and-shadow correction with bounded values, sized from the measurements. Don't add creative effects, vignettes, or overlays to make the result look more polished. The goal is a neutral, correctly exposed image.\n\n4. **Apply and inspect once.** Render one after-sheet at the same early, middle, and late positions so you can compare it directly against the before-sheet. Check for crushed shadows, clipped highlights, and any color shift. If the after-sheet looks right, move on. If it's ambiguous, look at individual frames or a short moving draft before deciding.\n\n5. **Persist the final payload.** Save the adjustment values as preset or adjustment JSON through `hyperframes media-treatment`, so Studio controls and the canonical preview/render path can reproduce the correction. Don't recreate the correction with CSS or SVG overlays, since that bypasses the controls.\n\n6. **Verify the persisted result.** Re-check the stored treatment against the after-sheet to confirm the saved values reproduce the approved look, then report the final values and the frames you used for review.\n\nI haven't run any of these steps. Each one needs the actual clip and the tool outputs, so the measurements and final values will come from the real run.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: reviews a contact sheet and measures before choosing, picks a single bounded exposure/shadow candidate, persists values as preset JSON, and explicitly skips generating a LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four: it reviews a contact sheet and measures before choosing, proposes one bounded exposure/shadow candidate, persists values via media-treatment JSON, and explicitly skips inventing a .cube LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: inspects contact sheets and measurements before choosing, uses one bounded exposure-and-shadow candidate, persists settings as preset JSON, and explicitly avoids generating a LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: reviews a contact sheet and measures before choosing, picks one bounded exposure/shadow candidate, persists values as preset JSON, and explicitly skips generating a LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it inspects a contact sheet and measurements before choosing, proposes one bounded exposure/shadow candidate, persists values via media-treatment JSON, and explicitly skips generating a LUT."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The material you supplied is a set of descriptive paragraphs about a coastal village: the market, the canal, the lighthouse, the seasons. It contains no frames, image data, exposure values, or LUT references. I can't confirm that the frames are too dark, so the workflow below is general practice, not something drawn from the supplied text.\n\n**Proposed review and persistence workflow**\n\n1. **Measure before changing anything.** For each frame, record mean luminance and the histogram. Confirm the underexposure is uniform across the set, not limited to a few frames. Note any clipping already present in the highlights.\n\n2. **Choose one correction for the whole set.** Apply a single exposure offset or gamma adjustment to every frame, with no per-frame tuning. Uniform parameters keep the sequence consistent. If the frames vary, group them by lighting condition and use one setting per group.\n\n3. **Review a sample.** Check a representative spread of frames: the darkest, the brightest, and a few in between. Look for shadow detail that has come back without noise becoming objectionable, highlights that have not clipped, and consistent skin tones or colors across frames.\n\n4. **Persist the parameters.** Save the exact values (exposure offset, gamma, any other settings) in a sidecar file or config next to the output, so the correction can be reproduced and audited later. Record the tool and version used.\n\n5. **Keep the originals.** Write corrected frames to a new output location and leave the source frames unmodified, so the step can be rerun or reverted.\n\n6. **Verify the output.** Rerun the step 1 measurements on the corrected set and compare against the targets. Confirm that every frame was processed and that the saved parameters match what was applied.\n\nIf you can share the frame files, their directory, or the current exposure values, I can make this more specific.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: it measures and reviews evidence before correcting, persists exact settings in a sidecar file, and invents no LUT. Missed: the single offset or gamma step has no bounds, so it is not a bounded correction candidate."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (measure each frame before changing anything), 3 (persist exact parameters in a sidecar), and 4 (no LUT invented); missed 2, since the single exposure or gamma offset is never bounded."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (measures and inspects evidence before correction) and criterion 3 (persists exact parameters in sidecar), but missed criterion 2 by proposing a whole-set correction without a bounded candidate, and criterion 4 is not clearly satisfied since it never mentions LUTs or avoids inventing one."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Measures evidence before correcting (step 1), persists exact settings in a sidecar file (step 4), and does not invent a LUT. It misses the bounded-candidate criterion because it never caps the exposure or gamma adjustment."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets inspect-evidence (step 1 measures luminance and histograms first), persists settings (step 4 sidecar), and avoids inventing a LUT. Misses bounded candidate: it proposes one uniform offset or gamma but states no magnitude limits."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Since the frames are uniformly too dark and no LUT is supplied, the fix is a single exposure correction applied the same way to every frame. I haven't inspected the frames, so the steps below are a plan, not results.\n\n**1. Pick one correction**\n- Use one exposure gain or gamma curve for the whole set, not per-frame adjustment. Uniform darkness suggests a shared cause, so one setting should fit all frames.\n- Start with a small step, such as +0.5 EV or a gamma around 1.2 to 1.5, and adjust from there.\n- Keep highlights from clipping. If a bright frame blows out at the chosen gain, lower the gain rather than adding a per-frame exception.\n\n**2. Preview on a sample**\n- Apply the candidate correction to a few representative frames, including the darkest and brightest, and compare them with the originals.\n- Check shadow detail, skin tones or key colors, and highlight clipping.\n\n**3. Review**\n- Confirm the correction brightens the set without crushing blacks or clipping whites.\n- If the result looks off, change only the shared parameter and re-check the same sample.\n\n**4. Persist the settings**\n- Save the chosen parameters (gain or gamma, and any clipping limits) in a small config or sidecar file next to the frames, so the correction is reproducible and can be reapplied.\n- Record the source and the date so the correction can be traced later.\n\n**5. Apply and verify**\n- Apply the saved settings to the full set in one pass.\n- Spot-check frames across the sequence to confirm consistent brightness, with no flicker from frame to frame.\n- Keep the originals untouched so the correction can be redone or changed.\n\nIf you want, I can write the exact steps as a script once you tell me the tooling you prefer, or you can run the workflow yourself with the parameters you choose.",
+      "average": 0.55,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (bounded +0.5 EV or gamma 1.2–1.5 candidate), 3 (saved sidecar config with source and date), and 4 (no LUT invented). Misses 1: it selects the correction before inspecting frames."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 3 met: it proposes saving parameters in a sidecar config with reproducibility. Criterion 2 partly met: it gives a bounded +0.5 EV/gamma starting step. Criterion 1 missed: it explicitly says it has not inspected the frames. Criterion 4 met: no LUT is invented."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets bounded candidate (+0.5 EV or gamma 1.2–1.5 with clipping limits), persisted sidecar settings, and avoids inventing a LUT. Misses inspect-before-select: it picks a starting gain before any evidence, explicitly saying it has not inspected the frames."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 2 is met: it proposes a bounded, small-step gain/gamma candidate. Criterion 3 is met: it saves parameters in a sidecar config. Criterion 1 is missed because it states it has not inspected the frames, and it fails to inspect evidence before choosing a correction. Criterion 4 is met: it avoids inventing a LUT."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (bounded gain/gamma candidate with clipping limits), 3 (sidecar config persisting parameters), and 4 (no invented LUT). Misses criterion 1: it explicitly says it has not inspected the frames before choosing a correction."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "I haven't run anything here. This is the proposed plan, based on the facts you gave: the frames are uniformly too dark, the fix is ordinary exposure correction, and no LUT was supplied.\n\n**1. Review the source**\n- Build one labeled contact sheet with early, middle, and late frames so the whole clip is judged at once. Uniformly dark footage should read the same across all three. If it doesn't, the problem is temporal, and the plan changes.\n- Check whether the darkness is underexposure or a shadow-heavy look. Underexposure lifts everything, while a deliberate low-key look should be left alone.\n\n**2. Choose one intent**\n- Primary intent: correct underexposure so midtones and faces read clearly. Don't add stylization, and don't reach for a creative look.\n- Keep the adjustment to modest exposure and shadow lift. Avoid clipping highlights and avoid a color cast.\n\n**3. Apply one candidate**\n- Use `hyperframes media-treatment --capabilities --json` to find the correction-family controls, then set exposure and shadow values as a preset/adjustment payload. Don't generate a `.cube` LUT for this, because a LUT is for supplied or explicitly owned looks only.\n- Don't recreate the brightening with CSS or SVG overlays. That bypasses the canonical preview and render path.\n- The `--analyze` measurement can inform the starting values, but it is evidence only and doesn't dictate the final treatment.\n\n**4. Verify**\n- Render one after-sheet with the same early, middle, and late frames and compare it with the before-sheet.\n- Escalate to individual full-resolution frames or a short moving draft only if the result is ambiguous, shows changes over time, or the footage is HDR/LOG or brand-critical.\n\n**5. Persist**\n- Save the final preset/adjustment JSON through `hyperframes media-treatment` so the correction is reproducible and Studio controls stay in sync.\n- Record the chosen values and the reason (uniform underexposure, no LUT) so later edits can start from the same baseline.\n\nOpen items: I haven't confirmed the exact capability IDs or the available control names, so step 3 depends on what the capabilities listing returns when run.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it inspects a contact sheet and the underexposure-versus-low-key question before choosing, applies one bounded exposure and shadow-lift candidate, persists the preset via media-treatment with recorded values, and explicitly rejects generating a .cube LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it inspects contact sheets and checks underexposure versus low-key before choosing, proposes one modest exposure/shadow candidate, persists the preset JSON via media-treatment, and explicitly declines to generate a .cube LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it inspects a contact sheet and underexposure vs. low-key intent first, applies one modest exposure/shadow candidate, persists the preset via media-treatment, and explicitly declines to generate a .cube LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it inspects contact sheets before choosing a correction, applies one bounded exposure candidate, persists the preset JSON with recorded values, and explicitly forbids generating a .cube LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it inspects contact sheets and underexposure vs. low-key before choosing, applies one bounded exposure/shadow candidate, saves the preset JSON and recorded values, and explicitly declines to generate a .cube LUT."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I can't see any frames. The only material in this message is a long descriptive passage about a market town, its canal, and its weather, with no images, pixel data, or exposure measurements. So I can't confirm that the frames are too dark. I can propose a workflow for a uniform exposure correction with no LUT.\n\n**1. Confirm the problem**\n- Measure mean luminance and the histogram on a sample of frames, not just one.\n- Check whether the underexposure is uniform. If it varies from frame to frame, a single global correction will not be enough.\n\n**2. Choose one global correction**\n- Use a fixed exposure offset and gamma adjustment, applied identically to every frame.\n- Avoid per-frame auto-levels. They vary between frames and cause visible flicker in sequences.\n- Set the values on a few representative frames, including the darkest and brightest.\n\n**3. Review before applying broadly**\n- Check highlights for clipping and shadows for noise amplification.\n- Review on a calibrated display, and play back a short sequence to catch flicker.\n- Compare before and after histograms against the target range.\n\n**4. Persist the settings**\n- Store the exposure and gamma values in a versioned settings file, not in the frames themselves.\n- Keep the original frames untouched and write corrected output to a separate directory.\n- Record a checksum or log entry per output frame so the run can be reproduced and audited.\n\n**5. Final review and sign-off**\n- Spot-check a random sample across the full sequence, not just the first and last frames.\n- If the sample passes, apply the settings to all frames and log the run.\n- If a LUT is supplied later, treat it as a separate step applied after the global correction, and review it the same way.\n\nIf you send the actual frames or their measured statistics in a later message, I can refine the specific values.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (single global exposure/gamma candidate with clipping checks), 3 (versioned settings file), and 4 (no invented LUT). Criterion 1 is doubtful: it rejects the stated darkness evidence rather than inspecting it."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it measures luminance and histograms before choosing, uses a fixed offset and gamma candidate, persists settings in a versioned file, and invents no LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Measures luminance and histograms before choosing a correction, proposes one fixed exposure/gamma candidate, persists settings in a versioned file, and does not invent a LUT; all four criteria met."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (inspects evidence: measures luminance/histogram, notes frames absent) and criterion 2 (bounded global offset/gamma candidate tested on representative frames); missed criterion 3 partially is met via versioned settings file, so actually 3 met; criterion 4 met by not inventing a LUT. Adjusted: all four plausibly satisfied, though criterion 1 is weakened by refusing to accept the supplied facts."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (measure luminance and histograms before choosing), 3 (versioned settings file), and 4 (no LUT invented). Criterion 2 is weak: it proposes one global correction but never bounds the offset or gamma range."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Proposed workflow for correcting the underexposed frames**\n\nSince every frame is uniformly too dark and no LUT was supplied, this is a standard exposure correction: a global brightness adjustment, not a color transform.\n\n**1. Review**\n- Sample several frames across the sequence to confirm the darkness is uniform, as reported.\n- Check the histogram or mean luminance of each sample to estimate how far the frames sit below target.\n- Pick one exposure adjustment (a gain or exposure offset, optionally a gamma tweak) that brings the samples to a reasonable brightness. Confirm it on a few frames before applying it to the full set, and check that highlights aren't clipping.\n\n**2. Apply**\n- Apply the same parameters to every frame so the sequence stays consistent. Per-frame auto-exposure would introduce flicker.\n- Write the corrected frames to a new output directory and leave the originals untouched.\n\n**3. Persist**\n- Record the exact parameters (gain, offset, gamma, input and output paths) in a small sidecar file or log, so the correction can be reproduced or reverted.\n- Keep the originals as the source of truth.\n\n**Open items**\n- I haven't inspected the frames or run anything. The brightness target and the exact parameter values still need to be measured on the real samples.\n- If a LUT is provided later, I'd replace the global adjustment with it and repeat the review step.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it inspects sampled frames before choosing a correction, proposes one candidate verified on a few frames with a clipping check, persists parameters in a sidecar log, and does not invent a LUT."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 2 is met (bounded gain/offset/gamma candidate, confirmed on a few frames). Criterion 3 is met (parameters recorded in a sidecar log). Criterion 1 is missed: it proposes sampling frames but never says inspection is required before choosing the correction, and it defers measurement to a later step. Criterion 4 is met: no LUT is invented."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: samples and measures luminance before choosing a correction, confirms one bounded gain/gamma on a few frames for clipping, records parameters in a sidecar log, and invents no LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Samples and measures luminance before choosing a correction, proposes one bounded gain/offset candidate verified on a few frames, persists parameters in a sidecar log, and does not invent a LUT."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 2 (bounded candidate: one gain/offset tested on a few frames before full application) and criterion 3 (persists exact parameters in a sidecar log). Missed criterion 1 since no frames were inspected and it explicitly says so, and criterion 4 is satisfied by avoiding a LUT but that alone is not scored separately as a positive act; this is 2 of 4 criteria."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": {
+      "answer": "The supplied text is descriptive prose about a market town: the mill, the canal, the harbour wall, the bakers' starter, the clock tower. It has no frame data, exposure values, histograms, timecodes, or file paths. So I can't measure how dark the frames are or give numbers for the correction. The workflow below is general practice, not something drawn from the supplied text.\n\n**1. Measure before correcting**\n- Pull a histogram or mean luminance for a sample of frames across the sequence, not just one.\n- Note where the shadows sit and whether any highlights are already clipped. Clipped highlights can't be recovered by a gain increase.\n- Record the baseline so the correction can be checked against it later.\n\n**2. Choose a global correction (no LUT)**\n- Start with a single exposure gain or a gentle curve, applied identically to every frame. Per-frame tweaks cause flicker.\n- Lift the midtones and shadows before pushing the highlights, and stop when the brightest areas approach clipping.\n- Watch shadow noise. Brightening dark frames amplifies it, so apply denoising only if it's needed, and check it at 100%.\n\n**3. Review**\n- Check a spread of frames: start, middle, end, and any scene changes, not only the darkest one.\n- A/B each reviewed frame against the original.\n- Review on a calibrated display, or at least one you've checked against a known reference, since dark-frame judgments vary a lot between screens.\n- Confirm skin tones and whites look plausible, not just brighter.\n\n**4. Persist the settings**\n- Store the parameters (gain, curve points, denoise strength) in a non-destructive sidecar or edit list, so the original frames are never overwritten.\n- Version the settings file alongside the project, and record the date and the reviewer.\n- Export a short log: baseline measurements, final parameters, and the frames that were spot-checked.\n\n**5. Sign-off**\n- Re-measure the exported frames and confirm the luminance target and clipping limits were met.\n- Record any frames that needed separate handling, so the global settings don't get applied to them by mistake.\n\nIf you can share the frames' actual measurements, such as mean luminance, clipping percentages, or the editing tool you're using, I can tailor the gain and curve values to them.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Inspects evidence first via histograms and luminance sampling, proposes a bounded gain or gentle curve with clipping limits, persists settings in a non-destructive sidecar, and creates no LUT."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (inspects measurements before correcting) and criterion 3 (persists settings non-destructively); missed criterion 2 since no bounded gain/curve candidate is concretely specified with limits, and criterion 4 is arguably met since no LUT is invented but the response does not explicitly disclaim it, so it is scored as met only if counted generously—scoring conservatively at 0.5."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four: it measures frames before correcting, proposes a bounded global gain or gentle curve with a clipping stop, persists settings in a non-destructive sidecar, and avoids inventing a LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Measures evidence (histograms, luminance, clipping) before correcting, proposes a bounded gain or gentle curve with a clipping stop, persists parameters in a non-destructive sidecar, and invents no LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it measures frames before correcting, proposes a bounded gain or curve, persists settings in a non-destructive sidecar with versioning, and avoids inventing a LUT."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I haven't run anything or touched any files. This is a proposed workflow for brightening the frames.\n\n**Review**\n1. Sample a spread of frames, including the darkest and brightest, and check them against a histogram or mean-luminance reading. Since every frame is too dark, one global exposure offset should be enough. Per-frame tweaks would make the set inconsistent.\n2. Before lifting, confirm the highlights aren't already clipped. If they are, a plain exposure boost will push them to flat white, so you'd need a gentler lift or a highlight recovery step.\n3. Choose one exposure value (in EV or a linear gain), apply it to the whole set, and compare before and after side by side. Check shadow noise, skin tones, and whether any highlights blow out.\n\n**Persistence**\n1. Store the chosen value and the order of operations in a small config or sidecar file next to the frames, so the correction is reproducible and can be re-applied to new footage.\n2. Record the before and after sample frames and the exact value used, so a reviewer can see what changed and why.\n3. Commit the config and any scripts to version control, keeping the untouched originals as the baseline. That way the correction can be re-run or reverted without guessing.\n\nBecause no LUT was supplied, the correction stays a simple exposure adjustment and doesn't add a color transform. If you want, I can draft the config and script once you've confirmed the approach.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four: it inspects samples and histograms and checks clipping before choosing a value, applies one global exposure offset, persists the value in a config committed to version control, and avoids inventing a LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it inspects luminance and clipping before choosing a correction, applies one bounded global exposure value, persists the settings in a config or sidecar, and avoids inventing a LUT."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets inspect-evidence (sampling, histogram/luminance, clipping check), persistence (config sidecar, before/after records, version control), and no-invented-LUT criteria. Bounded candidate is only implicit: one global exposure value, with no explicit limit or range stated."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it samples and measures frames before choosing, proposes one global exposure value, persists the value and order in a sidecar config, and adds no LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it inspects histograms and clipping before choosing a single global exposure value, persists the value in a config, and explicitly avoids adding a LUT or color transform."
+       }
+      ]
+     }
+    },
+    {
+     "try": 6,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "I haven't run anything, so this is a proposed workflow. Since the frames are uniformly too dark and no LUT was supplied, the correction would be a parametric exposure adjustment (an EV offset plus a gamma tweak) rather than a LUT.\n\n**1. Confirm the problem.** Measure mean luminance and the histogram on a sample of frames across the clip. If the offset is consistent, one set of parameters can serve the whole sequence.\n\n**2. Choose parameters.** Start with a modest EV lift and a gamma adjustment, and set black and white points so shadows lift without clipping highlights. Pick the target from a reference frame or a normal-exposure target you define.\n\n**3. Test on a subset.** Apply the parameters to a few frames: the darkest, the brightest, and a midpoint. Check before/after side by side. Look for:\n- shadow noise or banding from lifting too far\n- clipped highlights\n- inconsistency between frames, which would show as flicker\n\nAdjust and repeat until the subset looks right.\n\n**4. Review the full batch.** Once the subset passes, apply the same parameters to every frame and spot-check a sample across the timeline, not just the start.\n\n**5. Persist the workflow.**\n- Keep originals untouched. Write corrected frames to a new output directory.\n- Save the parameters (EV offset, gamma, black/white points, target) in a versioned settings file so the correction can be reproduced or adjusted later.\n- Log the settings alongside the output so each batch is traceable.\n- If you later need a LUT for other tools, you can generate a 1D LUT from the same parameters so the look stays consistent.\n\n**6. Verify the result.** Re-measure mean luminance and histogram on the corrected output and confirm it falls within your target range.\n\nIf you tell me the frame format, the tool you're using, and your target brightness, I can make the parameter choices more specific.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 inspects luminance and histograms across sampled frames before choosing parameters, step 2 uses a modest EV lift tested on a subset, step 5 persists settings in a versioned file, and it rejects a LUT as the primary method."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 2 (bounded parametric EV/gamma candidate with a test subset) and criterion 3 (versioned settings file persisted), but missed criterion 1 since it proposes measuring evidence without inspecting any, and criterion 4 is arguably met by avoiding a LUT. Scoring: criteria 2, 3, 4 satisfied is 0.75, but the response does not inspect evidence before selecting, so it's 0.5 with 2 and 3 satisfied only if 4 is discounted."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (bounded parametric EV/gamma candidate with a subset test) and criterion 3 (versioned settings file persisted), and criterion 4 (no invented LUT as the primary method). Misses criterion 1: it proposes measuring luminance but does not inspect evidence before selecting the correction, and it assumes the offset rather than grounding the choice."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 measures luminance and histogram before choosing parameters, step 2 starts with a modest EV lift, the settings are saved in a versioned file, and it uses a parametric correction rather than a LUT, which it mentions only conditionally."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 measures luminance and histograms before choosing parameters, a modest bounded EV lift is tested on a subset, and settings are saved in a versioned file; the LUT is only an optional later export, not invented for exposure."
+       }
+      ]
+     }
+    },
+    {
+     "try": 7,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "I can't run anything in this turn, so this is a proposed workflow, not a completed correction.\n\n**Proposed workflow**\n\n1. **Confirm the problem.** Sample a few frames across the sequence and measure mean luma and the histogram. If the whole set sits in the low end with little highlight data, the uniform darkness is confirmed.\n\n2. **Pick one exposure offset.** Because the frames are uniformly dark and no LUT is supplied, use a single global exposure gain or offset rather than per-frame adjustments. This keeps the look consistent across frames. Choose the value that brings the midtones to a reasonable level without clipping highlights.\n\n3. **Check for clipping.** After applying the gain, look at the highlight end of the histogram and at bright areas in the frames. If they clip, lower the gain or add a gentle highlight rolloff.\n\n4. **Review a sample.** Compare corrected and original frames side by side on a representative subset, including the brightest and darkest frames. Adjust the value once if needed, then apply it to the full set.\n\n5. **Persist without overwriting.** Write corrected frames to a new output directory, keeping the originals intact. Record the exposure value and the source-to-output mapping in a small manifest (for example, JSON or CSV) so the correction can be reproduced or reverted.\n\n6. **Verify the output.** Re-measure luma on the corrected set to confirm the brightness shift, check that the frame count and filenames match the source, and spot-check a few outputs visually.\n\nIf you want me to carry this out, tell me the frame location and output location, and whether you want a specific target brightness. I'll then run the measurements and apply the correction.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response inspects evidence by measuring luma/histogram before correcting (criterion 1) and uses a single bounded global gain with clipping checks (criterion 2), and persists via a separate output directory with a manifest (criterion 3). It avoids inventing a LUT (criterion 4), but the scoring is by fraction, so 3 of 4 criteria are met... "
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it measures luma and histograms before choosing a correction, uses a single bounded global gain checked for clipping, persists the exposure value in a manifest, and invents no LUT."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it says to measure luma and histogram before choosing a correction. Criterion 2 is met: it uses a single bounded global gain with a clipping check. Criterion 3 is met: it records the value and source-to-output mapping in a manifest. Criterion 4 is not clearly addressed, since the response never mentions avoiding a LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 1 measures luma and histograms before choosing a correction, step 2 picks one bounded global gain checked for clipping, step 5 persists the value in a manifest, and no LUT is invented."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it requires measuring luma and histogram before choosing a value, proposes one bounded global gain with a clipping check, records the value and mapping in a manifest, and invents no LUT."
+       }
+      ]
+     }
+    },
+    {
+     "try": 8,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "Since the frames are uniformly too dark and no LUT is involved, this is an exposure correction, and a single set of parameters should fix the whole sequence. I haven't run anything, so the steps below are a plan.\n\n**Correction approach**\n- Pick a few representative frames across the sequence, including the brightest and darkest, and measure their mean luminance and histogram.\n- Choose one gain or gamma adjustment that lifts the midtones without clipping highlights. Use the same values for every frame, not per-frame auto-levels, so brightness doesn't flicker between frames.\n- Keep the correction to exposure and black/white points. Leave color alone unless it's needed.\n\n**Review**\n- Compare before and after on a contact sheet or a short sample of frames spread across the sequence.\n- Check for clipped highlights, crushed shadows, and banding in gradients.\n- Confirm that brightness is consistent from the first frame to the last.\n- If any frame still looks wrong, adjust the shared parameters and review again. Avoid one-off fixes.\n\n**Persistence**\n- Save the parameters in a small versioned config file in the project, such as a JSON or YAML file with gain, gamma, black point, and white point, and the date.\n- Apply the config by reading it, not by hardcoding values, so the correction can be reproduced and adjusted later.\n- Commit the config and the processing script together so the history shows which settings produced which output.\n- Note the review result in the commit message or a short notes file, including the frames you checked.\n\nIf you tell me the frame format, the directory layout, and which tools you have available, I can draft the config file and the processing script for you to run.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (inspect representative frames' luminance/histogram before choosing), 2 (single bounded gain/gamma with clipping checks), and 3 (persists parameters in a versioned config file); misses 4 being satisfied only implicitly since it never explicitly rules out a LUT, though it avoids inventing one."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Inspects representative frames' luminance and histograms before choosing; proposes one bounded gain/gamma candidate without clipping; persists gain, gamma, and black/white points in a versioned config; invents no LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it measures representative frames' luminance and histograms before choosing, proposes one shared gain/gamma candidate bounded to exposure and black/white points, persists settings in a read config, and invents no LUT."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it measures representative frames' luminance and histogram first, bounds the correction to no highlight clipping, persists gain/gamma/black/white settings in a committed config, and does not invent a LUT."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it says to inspect representative frames' luminance and histogram before choosing. Criterion 2 met: it proposes one shared gain/gamma with bounded clipping checks. Criterion 3 met: it persists parameters in a versioned config file. Criterion 4 not explicitly addressed: it never mentions avoiding a LUT, though it doesn't invent one."
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

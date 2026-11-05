@@ -1110,3 +1110,15 @@ test('Gate carry: a path segment beside a cap reads green and a bare cap amount 
   assert.equal(red.length,1,'the bare cap amount still reads');
   assert.match(red[0],/^README\.md: 500 stated beside a cap/);
 });
+
+// Issue 714: an element the site marks data-quote="text" is quoted material (an AI's answer), not the
+// site's prose. A bare cap amount reads green inside one and red in the same page's own prose.
+test('Gate carry: a cap amount inside quoted material reads green and the same amount in the page\'s prose reads red',()=>{
+  const scope=require('./assertion-scope');
+  const rel='docs/noticed/index.html', anchor='<p class="note-label">What the AI answered</p>';
+  const plant=(id,body)=>({[rel]:scope.plantCapMutation(ROOT,{id,rel,anchor,replace:body+anchor})});
+  assert.deepEqual(scope.capLiteralClaims(ROOT,plant('quoted-cap','<pre class="note-opening" data-quote="text">a 500 budget cap</pre>')).claims,[]);
+  const red=scope.capLiteralClaims(ROOT,plant('prose-cap','<p>a 500 budget cap</p>')).claims;
+  assert.equal(red.length,1,'the bare cap amount in the page\'s own prose still reads');
+  assert.match(red[0],/^docs\/noticed\/index\.html: 500 stated beside a cap/);
+});

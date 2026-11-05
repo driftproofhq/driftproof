@@ -91,21 +91,26 @@ function phraseLines() {
   ];
 }
 
-// The blind read on Report 017's kept answers (spec 638), by the page's own h1 and description, so
-// this line moves when the page's words do. It is not a report, so it sits in Optional.
-const BLIND = 'reports/017/blind/index.html';
-function blindLines(root) {
-  const file = path.join(root, 'docs', BLIND);
+// A page listed by its own h1 and description, so its line moves when the page's words do: the blind
+// read on Report 017's kept answers (spec 638) and the placebo-arm cards (spec 691). Neither is a
+// report, so each sits in Optional.
+function pageLines(root, rel) {
+  const file = path.join(root, 'docs', rel);
   if (!fs.existsSync(file)) return [];
   const html = fs.readFileSync(file, 'utf8');
   const decode = (s) => s.replace(/&#39;|&quot;|&lt;|&gt;|&amp;/g, (m) => ({ '&#39;': "'", '&quot;': '"', '&lt;': '<', '&gt;': '>', '&amp;': '&' })[m]);
   const h1 = /<h1[^>]*>([\s\S]*?)<\/h1>/.exec(html), description = /<meta name="description" content="([^"]*)">/.exec(html);
-  if (!h1 || !description) throw new Error(`docs/${BLIND} has no h1 or description`);
+  if (!h1 || !description) throw new Error(`docs/${rel} has no h1 or description`);
   // Issue 661 (CodeQL js/incomplete-multi-character-sanitization): the heading's text by the tokenizer
   // of scripts/html-text.js, never a tag-stripping pattern; each entity decoded once, after the tags are gone.
   const title = htmlToText(h1[1], { skip: ['script', 'style'], decode, collapse: true });
-  return [`- [${title}](${ORIGIN}/${BLIND.replace(/index\.html$/, '')}): ${decode(description[1])}`];
+  return [`- [${title}](${ORIGIN}/${rel.replace(/index\.html$/, '')}): ${decode(description[1])}`];
 }
+const BLIND = 'reports/017/blind/index.html';
+const blindLines = (root) => pageLines(root, BLIND);
+const readerLines = root => require('./reader-pages').pages().flatMap(p => pageLines(root, p.href.slice(1)+'index.html'));
+const NOTICED = 'noticed/index.html';
+const noticedLines = (root) => pageLines(root, NOTICED);
 
 function articleLines(root) {
   return require("./build-sitemap.js").publishedArticles(root, {}).map(a => `- [${a.title.replace(/[\[\]]/g, "")}](${a.url}): ${a.description}`);
@@ -149,7 +154,7 @@ ${answerLines(root).join('\n')}
 - [Authoring](${ORIGIN}/authoring/): writing a skill and an eval suite worth measuring.
 - [Judge policy](${ORIGIN}/judge-policy/): which model judges, and why it is held fixed.
 - [Findings](${ORIGIN}/findings/): what three external audits of 0.10.0 and 0.10.1 found, what is fixed, and what is still open.
-${blindLines(root).map((line) => `${line}\n`).join('')}- [Atom feed](${ORIGIN}/feed.xml)
+${[...blindLines(root), ...readerLines(root)].map((line) => `${line}\n`).join('')}- [Atom feed](${ORIGIN}/feed.xml)
 `;
 }
 
@@ -174,7 +179,7 @@ function renderLlmsFull(root = ROOT) {
     if (!fs.existsSync(path.join(root, 'docs', rel))) throw new Error(`docs/${rel} is missing - run: node scripts/build-markdown.js`);
     return `${r.line} Its full text: <${ORIGIN}/${rel}>`;
   });
-  return `${OPENING}\n${parts.map((p) => `---\n\n${p}\n`).join('\n')}\n---\n\n# Reports\n\n${reports.join('\n')}\n\n# Articles\n\n${articleLines(root).join('\n')}\n`;
+  return `${OPENING}\n${parts.map((p) => `---\n\n${p}\n`).join('\n')}\n---\n\n# Reports\n\n${reports.join('\n')}\n\n# Articles\n\n${articleLines(root).join('\n')}\n\n# Explore the results\n\n${readerLines(root).join('\n')}\n`;
 }
 
 if (require.main === module) {
@@ -193,4 +198,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { renderLlms, renderLlmsFull, fullOrder, blindLines, OPENING };
+module.exports = { renderLlms, renderLlmsFull, fullOrder, blindLines, noticedLines, OPENING };

@@ -1,0 +1,1600 @@
+{
+ "format": "driftproof-judge-notes/1",
+ "report": "018",
+ "report_url": "/reports/018/",
+ "attempt_id": "15f184740eeb8f5b8a59bbca38b7874ef631c46764ad7082f0d8b9920d7503fb",
+ "skill": "grill-me",
+ "repository": "mattpocock/skills",
+ "receipt_hash": "c5f6d257f7ed8cf90e179dc97a94245d5e61e023cb4b42339d70e9d77979665d",
+ "receipt_page": "/r/c5f6d257f7ed8cf90e179dc97a94245d5e61e023cb4b42339d70e9d77979665d/",
+ "receipt_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-018/campaign-3/15f184740eeb8f5b8a59bbca38b7874ef631c46764ad7082f0d8b9920d7503fb.json",
+ "answers_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-018/campaign-3/15f184740eeb8f5b8a59bbca38b7874ef631c46764ad7082f0d8b9920d7503fb-answers.json",
+ "suite_file": "https://github.com/driftproofhq/driftproof/blob/main/specs/408-skill-measurements/suites/mattpocock--skills--grill-me.json",
+ "model": "Claude Haiku 5.5",
+ "judge": "Claude Haiku 5.5",
+ "judge_samples": 5,
+ "date": "2 November 2026",
+ "arms": [
+  {
+   "key": "with_skill",
+   "label": "With the skill"
+  },
+  {
+   "key": "placebo",
+   "label": "With the fake text"
+  },
+  {
+   "key": "baseline",
+   "label": "With nothing"
+  }
+ ],
+ "caveats": [
+  "The judge uses the same model as the target. Self-grading may favor its own model's answers.",
+  "Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings.",
+  "The scores and reasons are the judge model's own words, kept exactly as it wrote them. They are a model's reading of the rubric, not Driftproof's.",
+  "This is one task of three. Each skill was given three text tasks, and one task is not the whole measurement.",
+  "About grill-me and grill-with-docs: each skill's whole text is an instruction to call another skill. These text tasks forbid tools, so each reading reflects that one-line hand-off, not the skill it calls. Both stay in the pre-registered counts."
+ ],
+ "tasks": [
+  {
+   "id": "plan",
+   "number": 1,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. Stress-test this plan in your first written interview round: replace all scheduled billing jobs with events next week. Duplicate handling, rollback and the migration budget are undecided.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/productivity/grill-me/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 caaf8b8de1684f96e26b28f3c29189db5c89cce4b73e1c93d86164f66ef88637; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Identify duplicate billing as a key risk 2. Ask about rollback or coexistence 3. Distinguish decisions from facts not supplied 4. Wait for answers before presenting a final design",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "I'm answering in text only, without the grilling skill, since you've ruled out tool use. Here is round one.\n\n**1. The timeline**\n- Three of the core decisions are still open: duplicate handling, rollback, and the migration budget. What happens if \"next week\" arrives and one of them is still undecided? Do you ship a partial cutover, or does the date move?\n- What is the trigger for \"replace\"? Is it a deadline, a vendor change, or a desire to remove scheduled jobs in general? The answer determines how much scope is actually necessary.\n\n**2. Scheduled jobs versus events**\n- Which billing jobs are you replacing, and how many are there? \"All\" needs an inventory before you can judge it.\n- A scheduled job runs at a time. An event fires when something happens. For each job, what is the event? If a job exists because some events are missing, such as a cutoff, a proration, or a month-end sweep, where does that logic go?\n- What happens to a billing period that has no triggering event? For example, a customer who does nothing in a month still needs an invoice. Who generates that?\n\n**3. Duplicate handling**\n- Events can be delivered more than once. What is your idempotency key for a billing event, and where is it stored?\n- If the same charge is processed twice during cutover, when both the old job and the new event path are live, what prevents double billing?\n- Is there a window in which both systems run in parallel? If so, which one is authoritative, and how do you know?\n\n**4. Rollback**\n- If the event-based path produces wrong charges on day two, what is the rollback? Can you turn the scheduled jobs back on without a gap or double run?\n- Can you revert the events without corrupting state that was already written? If not, rollback is a data repair problem, not a deploy problem. Have you costed that?\n- Who makes the rollback call, and what threshold triggers it?\n\n**5. Migration budget**\n- You have not set a budget. What are you willing to spend in engineering time, customer-facing incidents, and credits or refunds if something goes wrong? Without a number, you cannot choose between a careful migration and a fast one.\n- What does a failed billing run cost per customer, and how many customers are affected by a single bad run?\n\n**6. What would make you stop?**\n- Name the specific signal that would tell you this plan is wrong before you finish. For example: reconciliation mismatch above X, or a count of duplicate charges above zero. If you can't name one, you don't yet know how you'll measure success.\n\nAnswer these in order of how much they block you. Items 3 and 4 are the ones I'd resolve before anything else, because they determine whether a next-week date is realistic at all.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers duplicate billing as a key risk (section 3), asks about rollback and parallel coexistence (sections 3–4), separates open decisions like budget from missing facts like job inventory, and ends with questions rather than a final design."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Duplicate billing is flagged as a key risk (section 3), rollback and parallel coexistence are questioned (section 4), open decisions are separated from unsupplied facts such as the job inventory, and no final design is presented."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Duplicate billing is treated as a key risk (section 3), rollback and parallel-run coexistence are asked about (section 4), open decisions are separated from missing facts like job inventory, and no final design is presented."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (duplicate billing as key risk), 2 (rollback and parallel-run coexistence asked), and 4 (ends with questions, no final design). Criterion 3 is weak: it never explicitly separates supplied facts from unsupplied ones."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Duplicate billing is treated as a key risk (section 3), rollback and parallel-running coexistence are asked about (sections 3-4), the response separates open decisions from unsupplied facts such as job inventory, and it ends by waiting for answers without presenting a final design."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Interview Round 1: Scheduled Billing Jobs to Event-Driven\n\nThe plan is to replace all scheduled billing jobs with event-driven processing next week. Three items are undecided: duplicate handling, rollback, and the migration budget. Each one can break the cutover, so I've started with them.\n\n## 1. Duplicate handling\n- Events can be delivered more than once. What is the idempotency key for each billing action, and where is it stored?\n- If a charge event is processed twice, what prevents a double charge? Is there a dedup window, and what happens when it expires?\n- During the overlap, when old scheduled jobs and new event consumers both run, what stops them from billing the same customer for the same period?\n- Could an event arrive out of order, for example a cancellation before the renewal it cancels? What is the expected result?\n\n## 2. Rollback\n- If the event pipeline fails mid-cycle, how do you return to scheduled jobs? Is the old job still deployable, and has it been tested against current data?\n- Which side is the source of truth during rollback? Can events already processed be reconciled against the scheduled path?\n- What is the rollback trigger? Who decides, and how fast must the decision be made, given that billing errors are usually found after the fact?\n- Can rollback be done without refunds or manual corrections? If not, what is the cost ceiling?\n\n## 3. Migration budget\n- The budget is undecided. What is the minimum needed to run both paths in parallel, and for how long?\n- Who owns the decision, and what happens if the budget is cut partway through?\n- What is the cost of a billing error during migration compared with the cost of keeping the old jobs running longer?\n\n## 4. Scope and timing (not yet discussed, but it affects the three above)\n- \"All scheduled billing jobs\" in one week leaves little room for parallel runs. Is the week for the full cutover or only the first batch?\n- Which jobs carry the most financial risk? Should they move last, once the pattern is proven on lower-risk jobs?\n- Is there a freeze on billing-logic changes that could collide with this week?\n\n## What I need to continue\nPlease answer the open questions in section 1 first, because the other answers depend on the idempotency design. If the answer is \"not yet decided,\" then next week's cutover should wait, since the plan can't be validated without it.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Flags duplicate charging as a key risk (section 1), asks about rollback and old/new overlap (section 2), separates undecided items and undiscussed scope from supplied facts, and asks for answers without presenting a final design."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Flags double charging via duplicate events, asks about rollback and old/new job coexistence, labels unsupplied scope as 'not yet discussed', and withholds a final design pending answers."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Flags duplicate charges as a key risk, asks about rollback and old/new path coexistence, separates the given undecided items from undiscussed scope, and ends by requesting answers without a final design."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Flags duplicate charges as a key risk, asks about rollback and parallel-run coexistence, separates the supplied undecided items from undiscussed scope, and withholds a final design pending answers."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Flags duplicate billing/double charges as a key risk, asks about rollback and old/new coexistence, separates undecided items and undiscussed scope, and presents no final design, waiting for answers."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Verdict:** The plan is not ready to schedule for next week. Three decisions that determine whether a billing cutover is safe are still open: duplicate handling, rollback, and the migration budget.\n\n## Stress points\n\n1. **Duplicate events.** Event delivery is usually at-least-once, so a billing event can arrive more than once. Without an idempotency key per charge, a retry or replay could bill a customer twice. Scheduled jobs often hide this because each run is a single batch.\n\n2. **Ordering and late events.** Scheduled jobs see a settled snapshot. Events can arrive out of order, for example a refund before its charge, or a plan change that lands after the invoice closes. Each handler needs a rule for this.\n\n3. **Missed events.** If an event is dropped or a consumer is down, nothing reruns it automatically. A scheduled job self-heals on its next run. The event version needs a reconciliation job, which keeps some scheduled work in place.\n\n4. **Rollback.** Once events have triggered charges, reverting to the scheduled jobs is not a clean switch. You would need to know which charges came from which path, and avoid billing the same period twice during the overlap. Without a defined rollback, a cutover is effectively one-way.\n\n5. **Cutover window.** Running both paths in parallel (shadow mode, comparing outputs without charging) is the usual way to verify equivalence. The plan does not say whether this happens, and the migration budget determines whether there is time for it.\n\n6. **Timeline.** One week is short for resolving three undecided items, building idempotency and ordering logic, and running a parallel comparison. The schedule is the first thing that will likely slip.\n\n## Interview round 1: questions\n\n1. **Duplicates:** What is the idempotency key for a billing action, and where is it stored? Can a charge be submitted twice under the current design?\n2. **Rollback:** If the event path fails after going live, what is the rollback target, and how long can it take? Who has authority to trigger it?\n3. **Budget:** What is the migration budget, in engineering time, money, or risk tolerance? Is it a hard limit or a target?\n4. **Parallel run:** Will the scheduled jobs and the event handlers run side by side before cutover? For how long, and how will outputs be compared?\n5. **Reconciliation:** What process will detect missed or duplicated events after cutover, and how often does it run?\n6. **Scope:** Does \"all scheduled billing jobs\" include month-end invoicing, proration, and dunning retries? Are any of them time-based in a way events can't replace?\n7. **Why next week:** What is driving the deadline? If it is an external constraint, can it move?\n\nIf the answers to 1 through 4 are not settled, I would recommend moving the date rather than starting the cutover.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (duplicate billing as a key risk), 2 (rollback and parallel-run questions), and 4 (ends with questions, no final design). Criterion 3 is only implicit: it never explicitly separates supplied facts from unsupplied ones."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets duplicate billing as a key risk (stress point 1), asks about rollback and parallel run, and ends with questions without a final design. Misses the explicit distinction between decisions and unsupplied facts."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets duplicate billing as key risk, rollback/coexistence questions, and waiting before a final design. Misses the decisions-versus-unsupplied-facts distinction; it adds unsupplied assumptions like at-least-once delivery and shadow mode."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets duplicate billing as key risk, rollback/coexistence questions, and waits for answers without a final design; misses criterion 3 because it never explicitly separates decisions from unsupplied facts."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets duplicate-billing risk (point 1), rollback/coexistence questions (point 2), and waits for answers without a final design (point 4); it never explicitly separates supplied facts from unsupplied ones (point 3)."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "Round 1. This plan changes how money moves, and three of the four load-bearing decisions are open, so I'll start with those.\n\n**Duplicate handling**\n1. What is the idempotency key for a billing action: subscription ID plus billing period, invoice number, or the event ID? If the key is the event ID, a re-emitted event with a new ID charges twice. What enforces uniqueness, and where?\n2. Your event transport will probably deliver at least once. Are you choosing at-least-once with idempotent consumers, or at-most-once? Which failure would you rather have: a double charge or a missed charge? Your answer determines the design.\n3. Some scheduled jobs are idempotent by accident, because the cron runs once a day and checks \"already billed today.\" Once they become events, that protection disappears. Which of the current jobs depend on it?\n\n**Rollback**\n4. If the consumer charges a card and then fails to record it, what does rollback mean? A refund is a new financial transaction, not an undo. What is the reversal path for each job type?\n5. During a rollback, events emitted after cutover still exist. Do you replay them through the old scheduler, drop them, or reconcile them by hand? Who decides, and what is the runbook?\n6. Can the old scheduler run in shadow mode (computing charges without executing them) during the transition? If not, what does \"rollback\" restore?\n\n**Migration budget**\n7. \"Budget\" is undefined. Is it engineering hours, error rate, dollar exposure from incorrect charges, or downtime? Give me a number. Without one, nothing is a go/no-go criterion.\n8. What is the maximum acceptable number of incorrect charges before you roll back? Who signs off on that number?\n\n**Scope and the \"next week\" date**\n9. Event-driven architectures react to things that happen. \"Invoice on the 1st of each month\" has no triggering event. Who emits it? If a clock or scheduler still has to exist, you haven't removed the scheduled jobs, only moved them.\n10. Is there a complete inventory of scheduled billing jobs, including the side effects they cause (ledger writes, emails, tax calls, dunning, proration)? Which ones are you replacing first, and which are the highest-risk?\n11. You have three undecided items and a one-week target. Which decision is blocking first, and when will each be decided? If they can't be, what gets cut to make the date?\n\n**Operations**\n12. How will you detect a missing event? Do you have a reconciliation job that compares expected charges against emitted events? Who gets paged, and what is the dead-letter policy?\n\n**Before round 2, please answer:**\n- Q2 (at-least-once or at-most-once, and which failure you accept)\n- Q7 (the budget number)\n- Q9 (what emits the time-based triggers)\n\nThose three determine most of the rest. If you can't answer them yet, the plan isn't ready for next week, and I'd recommend pushing the date instead of starting the migration.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Flags duplicate charging via idempotency and at-least-once delivery (1), asks about rollback and shadow-mode coexistence (2), marks budget and other items as undefined (3), and ends by awaiting answers without a final design (4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Flags duplicate charges via idempotency keys (criterion 1), asks about rollback and shadow-mode coexistence (2), separates undefined budget and undecided items from known facts (3), and presents no final design while awaiting answers (4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: flags double-charge and idempotency as key risks (Q1-3), asks about rollback and shadow-mode coexistence (Q4-6), separates undefined budget and undecided items from facts, and ends by waiting for answers without a final design."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Flags duplicate double-charge as a key risk (Q1-2), asks about rollback and shadow-mode coexistence (Q4-6), separates undecided items from missing facts such as the job inventory (Q7, Q10), and presents no final design, only questions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (duplicate billing as key risk via idempotency), 2 (rollback addressed with reversal path and shadow mode), and 4 (ends with questions, no final design); misses 3 partly, as it asks about unsupplied facts but doesn't clearly separate decisions from facts."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Stress test: replacing scheduled billing jobs with events next week\n\n**Verdict:** As written, the plan is not ready for next week. Duplicate handling, rollback, and budget are the three decisions that determine whether a cutover is safe, and none is settled. Billing errors also tend to be costly to reverse. Without an answer to these three, I'd recommend a narrower first step rather than replacing all scheduled jobs at once.\n\n## Risks in the plan\n\n1. **Duplicates are the main billing risk.** Event delivery is usually at-least-once, so the same event can arrive twice. Without idempotency keys (for example, one per invoice or charge attempt), a retry could double-charge a customer. This needs a decision before any event consumer touches money.\n2. **Rollback is weak once money has moved.** Reverting the code does not refund charges that were already sent. Rollback has to mean stopping new work and reconciling what already happened, so it needs its own plan.\n3. **Schedules encode rules that events don't carry.** Cron jobs often include time zones, billing-cycle cutoffs, month-end handling, grace periods, and retry windows. Replacing them with events means each of those rules has to be made explicit.\n4. **Missed or out-of-order events.** An event can be lost or arrive after one that depends on it, such as a payment arriving before its invoice exists. A periodic reconciliation sweep is usually still needed as a safety net.\n5. **The migration budget is unknown.** Without a budget for time and cost, \"all jobs next week\" can't be checked against anything.\n6. **The job inventory isn't defined.** \"All scheduled billing jobs\" needs a list. Invoicing, dunning, usage aggregation, proration, and renewals would each need separate handling.\n\n## Interview round\n\n1. **Duplicates:** Is every billable action keyed by a stable idempotency key, and who owns the dedupe store? Can a double-charge be detected and refunded automatically?\n2. **Rollback:** What is the rollback trigger, and what does it do to in-flight events? Is there a shadow or dual-run period where the scheduler and events both run and their outputs are compared?\n3. **Budget:** What is the migration budget in engineer-days, infrastructure cost, and customer-facing incident tolerance? Is \"next week\" a hard deadline or a target?\n4. **Scope:** Which specific jobs are in scope? Which can move first, and which must stay scheduled?\n5. **Reconciliation:** Will the scheduled sweep stay in place as a safety net? Who reviews its discrepancies?\n6. **Approval:** Who signs off on the cutover for each job, and what evidence do they need to see first?\n\n## Recommendation\n\nPick one low-risk job, such as usage aggregation, which can be re-run without moving money. Run the event path in shadow mode beside the scheduler, compare the outputs, and add duplicate handling and a rollback switch before any job that charges customers is moved. Once the three open decisions are answered, I can turn this into a phased plan with a go/no-go check for each step.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets duplicate-billing risk, rollback/shadow-coexistence questions, and defers the phased plan until answers arrive; distinguishing unsupplied facts from decisions is only implicit."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (duplicate billing as top risk) and 2 (asks about rollback and shadow/dual-run coexistence). Misses 3, since it never separates supplied facts from assumptions, and 4, since it recommends a concrete shadow-mode first step before answers arrive."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets duplicate-billing risk, rollback/shadow-coexistence questions, and defers the final phased plan until answers arrive. Misses criterion 3: it never explicitly separates supplied facts from assumed ones."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (duplicate double-charge risk) and 2 (rollback and shadow-run coexistence questions), and largely 3 by flagging undecided items. Misses 4: it presents a concrete recommended first step before answers arrive."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (duplicate billing flagged as key risk) and criterion 2 (asks about rollback and dual-run coexistence), but misses criterion 3, since it never explicitly separates supplied facts from undecided assumptions, and criterion 4 fails because it ends by offering a recommendation and a plan rather than waiting for answers."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Verdict:** The plan is not ready for next week. Replacing *all* scheduled billing jobs with events in one step, while duplicate handling, rollback, and the migration budget are still undecided, makes the cutover high-risk. Those three open items are the core of the risk, not details to settle later.\n\nI haven't inspected the codebase or the current job inventory, so the questions below are for you to answer.\n\n## Interview round 1\n\n**1. Duplicate handling**\n- Will the event transport deliver at-least-once? If so, what idempotency key identifies a billing action (for example, account + period + charge type)?\n- What happens if a duplicate charge event arrives after the invoice has already been finalized?\n- Who owns deduplication: the producer, the consumer, or a store both sides check?\n\n**2. Rollback**\n- If the event path fails mid-cutover, can the scheduled jobs be re-enabled without double-billing? Which jobs can run concurrently with the event path during a rollback window?\n- Is there a point of no return, such as the first real charge sent through events?\n- What state must be reconciled before reverting, and who runs that reconciliation?\n\n**3. Migration budget**\n- What is the budget in time, engineering hours, or risk tolerance? \"Next week\" plus three undecided items suggests the budget has not been set.\n- What is the acceptable error rate or number of wrongly billed accounts before we roll back?\n\n**4. Coverage and timing**\n- How many scheduled billing jobs exist, and which run at period boundaries (month-end, renewals, proration)?\n- What happens to a billing cycle that straddles the cutover? Which path owns it?\n- Which time zone defines \"due,\" and is it the same in the event producer and the old scheduler?\n\n**5. Ordering and missed events**\n- Does a renewal event depend on a prior state change event? What guarantees ordering?\n- How are events that fail or get dead-lettered detected and replayed? Does anyone get alerted, and how quickly?\n- Is there a reconciliation job that compares expected charges against events actually processed?\n\n## What I'd recommend\n\n1. **Don't cut over all jobs at once.** Move one low-impact job family first, such as a non-charging reminder, then a charging job with a small account cohort.\n2. **Run both paths in shadow mode** for at least one full billing cycle. Compare the events' outputs to the scheduler's outputs and only switch when they match.\n3. **Make idempotency a precondition**, not a follow-up. Don't enable any charging event consumer until duplicate handling is decided and tested.\n4. **Set the rollback trigger and the budget before the date.** Without them, \"next week\" is a schedule, not a plan.\n\n**Bottom line:** Keep the event-driven direction if the team wants it, but move the date. The open decisions should block the cutover, not wait until after it.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: flags duplicate charges as a core risk, asks about rollback and coexistence, and separates unsupplied facts. Misses criterion 4 because it presents a recommended cutover design rather than only waiting for answers."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (duplicate handling as key risk), 2 (rollback and coexistence questions), and 3 (flags unsupplied facts and undecided budget). Missed 4: it presents a four-point recommended design and bottom line before answers arrive."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (duplicate handling as core risk), 2 (rollback and concurrent-coexistence questions), and 3 (states it hasn't inspected the codebase and that the budget is unset). Missed 4: it gives a recommended cutover plan and bottom line before answers arrive."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (duplicate billing as key risk), 2 (asks about rollback/coexistence), and 3 (separates undecided items from unsupplied facts). Misses 4: it presents a final recommendation and design rather than waiting for answers before concluding."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets duplicate-billing risk, rollback/coexistence, and decisions-vs-unsupplied-facts criteria; misses waiting for answers because it presents a phased cutover design and bottom-line recommendation before the questions are answered."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "**Round 1: replacing scheduled billing jobs with events next week**\n\nThe plan has three of its four load-bearing parts undecided: duplicate handling, rollback, and the migration budget. Until those are settled, \"next week\" is a date without a plan behind it. I'll start with the gaps that could cause the most damage.\n\n**Scope and triggers**\n\n1. What is the full list of scheduled billing jobs? \"All\" needs an inventory, with each job's schedule and what it writes.\n2. Which jobs are truly event-driven, and which are time-driven? Monthly invoice runs, trial expirations, dunning retries, and \"due in 7 days\" reminders don't happen when something occurs. They happen when a clock says so. What event fires on a calendar date with no upstream action? If the answer is \"a timer,\" you still have scheduled jobs, just renamed.\n\n**Duplicates**\n\n3. Most event systems deliver at least once. What is the idempotency key for each billing event, and where is it enforced: the producer, the consumer, or the payment provider?\n4. If a charge event is delivered twice, what happens? Does the payment provider reject a duplicate, or does the customer get charged twice?\n\n**Ordering and missed events**\n\n5. Do any billing steps depend on order, such as usage aggregation before invoice generation? Does your event platform guarantee that order?\n6. A scheduled job that fails can be rerun. What happens to an event that is dropped, or that arrives while the consumer is down during a billing window? Who catches it, and how do you know?\n\n**Rollback**\n\n7. Once an event has triggered a charge, rolling back the code does not undo the money. What is the rollback plan for a bad release, and what is the rollback plan for money already moved?\n8. Can you replay events after the fact? How long is the event log retained? If it is short, you cannot reconstruct a billing period.\n9. Will the scheduled jobs stay deployable and disabled-but-ready until you have confirmed the event path? If they are deleted at cutover, rollback is not available.\n\n**Migration budget**\n\n10. What is the budget: engineering time, cloud cost, risk tolerance, or a hard date? \"Undecided\" means the options cannot be compared yet. Which constraint is binding, and what number is the ceiling?\n\n**Verification**\n\n11. How will you show the event path produces the same invoices and charges as the scheduled path? Is there a parallel run, a shadow comparison, or a reconciliation report? Without one, a mismatch shows up as a customer complaint.\n\n**First recommendation**\n\nDon't set the cutover date yet. Settle the duplicate-handling and rollback answers first, since they determine whether the cutover is reversible at all. Then decide the budget, because it determines whether \"all jobs\" is realistic or whether you should move one job type first.\n\nAnswer 1 through 4 and 7 through 10 and I'll run the next round against your answers.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (duplicate billing flagged as key risk), 2 (rollback and coexistence addressed, including keeping jobs disabled-but-ready), and 4 (no final design, asks for answers first); partially misses 3, as it separates undecided budget/duplicates but does not explicitly distinguish supplied facts from assumptions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (duplicate charges flagged as key risk), 2 (rollback and coexistence addressed), and 4 (waits for answers before final design); misses 3, since it never explicitly separates decisions from facts not supplied."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Flags duplicate charges as a key risk (item 1), asks about rollback and keeping jobs disabled-but-ready (item 2), separates missing facts like the job inventory from undecided budget items (item 3), and withholds a final design until answers arrive (item 4)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Duplicate charging is treated as a key risk (criterion 1), rollback and disabled-but-ready coexistence are questioned (2), and it ends by asking for answers without a final design (4). Criterion 3 is only implicit, since it never explicitly separates decisions from unsupplied facts."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets duplicate-billing risk (criterion 1), rollback and disabled-but-ready coexistence (2), and waits for answers without a final design (4); does not explicitly separate unsupplied facts from decisions (3)."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "## Stress test: replacing scheduled billing jobs with events next week\n\nThe plan is not ready to execute. Three decisions are still open, and billing is a path where each of them can cause real financial harm. Here is where I would press.\n\n**1. Delivery semantics change silently.** A scheduler usually runs a job once at a known time. An event bus usually delivers at least once, possibly out of order, possibly late. Billing logic written for the first model can double-charge or skip a charge under the second. Duplicate handling is undecided, so this is the highest risk.\n\n**2. Rollback is undecided, and billing changes are hard to reverse.** Charges sent to customers or payment processors cannot be unsent. Without a tested rollback, a bad cutover means either refunds or manual reconciliation. Whoever owns the plan needs to say what \"roll back\" means once the first event-driven charge has run.\n\n**3. Cutover window is unsafe.** Moving \"next week\" with no rollback and no duplicate guard means the first real billing cycle on the new path is the test. Parallel running in shadow mode, comparing what the scheduler would charge against what events produce, would catch errors before money moves.\n\n**4. Missing events need reconciliation.** If a producer fails, an event never arrives and the charge is silently skipped. The plan needs a periodic check that compares expected billable items against what was actually billed.\n\n**5. Migration budget is undecided.** Without a budget for engineering time, testing, and possible refunds, I can't judge whether one week is realistic. My default assumption is that it isn't.\n\n## Interview round 1: questions for the plan owner\n\n1. **Duplicates:** What is the idempotency key for each charge? Where is it checked, and what happens if the same billing event arrives twice?\n2. **Ordering:** Can events for the same customer or invoice arrive out of order? What does the billing logic do then?\n3. **Rollback:** What is the exact rollback trigger, and how long does it take? Has rollback been tested against production-like data?\n4. **Parallel run:** Will the scheduled jobs and events run side by side before cutover? If not, why not?\n5. **Reconciliation:** What job will detect skipped or double charges, and who reviews its output?\n6. **Budget:** What is the migration budget in engineering days and possible refund exposure? Who approves it?\n7. **Timing:** What is the reason for \"next week\"? Is it a hard deadline, or could cutover move behind shadow testing?\n8. **Ownership:** Who signs off on the go/no-go decision, and what are their criteria?\n\n## What I'd recommend\n\nDo not schedule the cutover yet. First close the duplicate-handling and rollback decisions, then run the event path in shadow mode for at least one full billing cycle before any charge uses it. If the deadline cannot move, the minimum acceptable scope for next week is design sign-off and shadow testing, not a production switch.\n\nI did not use any tools, access systems, or check the actual codebase or job definitions. This assessment relies only on the plan as you described it.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Duplicate billing is named as the highest risk, rollback and coexistence (shadow/parallel run) are questioned, open decisions are separated from stated assumptions, and it asks questions and defers a final design."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Names duplicate double-charging as the highest risk and asks about rollback and parallel running. It flags undecided items and states its reliance on the supplied plan, but its 'What I'd recommend' section leans toward a design before answers arrive."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Flags duplicate charges as the highest risk, asks about rollback and parallel-run coexistence, and notes reliance on the supplied plan. It partly misses criterion 4 by presenting a recommended sequence before the interview answers arrive."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Flags duplicate billing as the highest risk, asks about rollback and shadow-mode coexistence, separates the open decisions from what was supplied, and withholds a final design pending answers."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Flags duplicate billing as the highest risk and asks about rollback and parallel running, and separates undecided items from assumptions. It misses criterion 4 because the 'What I'd recommend' section presents a shadow-mode design before the questions are answered."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Interview Round 1: Replacing scheduled billing jobs with events\n\n**Plan under test:** Replace all scheduled billing jobs with events next week.\n\n**Known gaps:** Duplicate handling, rollback, and the migration budget are undecided.\n\n## Stress-test findings\n\n1. **Timeline risk.** Replacing *all* scheduled billing jobs in one week, with three open design questions, is aggressive. Billing is usually among the most sensitive parts of a system, so a slip or a bad cutover is costly.\n\n2. **Duplicate events are the main correctness risk.** Most event delivery is at-least-once. If a billing event is processed twice, a customer may be charged twice. Until duplicate handling is decided, the plan is not safe to build.\n\n3. **No rollback means no safe cutover.** If the event path fails after the scheduled jobs are removed, there may be no way back. Rollback needs to be designed before the old jobs are turned off.\n\n4. **Unknown migration budget.** Without a budget for time, compute, or people, the scope can't be checked against what's available.\n\n5. **Possible double-run during overlap.** If the scheduled jobs and the events run together during migration, the same charge could be triggered from both paths.\n\n## Questions for the next round\n\n1. **Duplicates:** What is the idempotency key for each billing action? Where will it be stored, and for how long?\n2. **Rollback:** Can the scheduled jobs be re-enabled within minutes? What state would they need to resume from?\n3. **Cutover:** Will jobs and events run in parallel, or will there be a hard switch? Who decides which side is authoritative for each customer?\n4. **Scope:** Are all scheduled billing jobs equally critical, or can some be migrated first as a lower-risk pilot?\n5. **Budget:** What is the maximum acceptable engineering time, and what is the acceptable downtime or billing error rate?\n6. **Verification:** How will you confirm that the event-driven results match the scheduled-job results before turning off the old path?\n\n## Recommendation\n\nDon't commit to replacing all jobs next week. Instead, pick one low-risk billing job, define idempotency and rollback for it, and run it in shadow mode against the scheduled job. Expand only after the duplicate, rollback, and budget questions have clear answers.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (duplicate billing as key risk), 2 (asks about rollback and coexistence), and 3 (separates undecided items from facts, e.g. budget unknown); misses 4 since it ends with a recommendation and a final design rather than explicitly waiting for answers."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (duplicate billing risk) and 2 (rollback and parallel-run questions), but misses 3 by stating unsupplied general claims as fact, and arguably 4 by recommending a shadow-mode pilot before answers arrive."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Flags duplicate billing charges as the main risk and asks about rollback and parallel-run coexistence, and it ends with questions rather than a final design. It does not clearly separate supplied facts from its own assumptions, such as the at-least-once delivery claim."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (duplicate charges as the main risk), 2 (rollback and overlap questions), and 4 (asks questions and defers expansion until answers). Misses 3: it never separates supplied facts from its own assumptions, such as at-least-once delivery."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (duplicate double-charge risk), 2 (rollback and overlap questions), and 4 (asks questions, no final design). Misses 3: it states external claims like at-least-once delivery without marking them as unsupplied."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "# Round 1: Scheduled billing jobs → events\n\nBefore the three open items, I need to know what \"replace\" means and why it has to happen next week.\n\n**Scope and motivation**\n1. What problem do events solve that the scheduled jobs don't? If the answer is \"cleaner architecture,\" what breaks today that justifies a one-week timeline?\n2. Does \"all scheduled billing jobs\" include invoice generation, dunning, renewals, trial expirations, and usage aggregation? Which of these have a hard deadline, such as a payment-processor cutoff or a legal invoicing date?\n3. What event fires each charge? Who emits it: the subscription service, a timer that still exists in disguise, or the payment provider's webhooks? If a timer still emits the event, you haven't removed the scheduler.\n\n**Event semantics**\n4. Are events delivered at-least-once, at-most-once, or exactly-once? Your queue's guarantee decides whether duplicates are a rare edge case or a normal condition.\n5. What is the ordering guarantee per customer? A \"subscription renewed\" event that arrives before \"subscription created\" will produce a wrong charge.\n6. What happens to a billing period when the event is delayed by hours or days? Does the charge still happen for the correct period, or does it catch up and double-bill the next one?\n\n**Duplicate handling (undecided)**\n7. What is the idempotency key for a charge? If it is \"customer + period,\" is the period defined in UTC or the customer's timezone?\n8. If a duplicate charge reaches the payment processor, does the processor's idempotency window cover the gap between retries?\n9. Who gets alerted when a duplicate is detected, and is anything auto-refunded? If nothing is, a duplicate becomes a support ticket.\n\n**Rollback (undecided)**\n10. Once the first event-driven charge runs, what is the rollback path? Re-enabling the scheduled jobs while events are in flight will cause double-processing unless both paths share the same idempotency check.\n11. Can you run both systems in shadow mode for a period, with the event path computing but not charging, and compare outputs? If not, why not?\n12. What is the rollback trigger? Name a number, such as \"more than 0.1% of charges differ from the shadow run,\" or the plan has no rollback.\n\n**Migration budget (undecided)**\n13. What is the budget, in engineering days, dollars, or tolerated customer-facing errors? \"Undecided\" means the plan can't be tested against a limit.\n14. Who approves spending past it, and what is the cost of pausing mid-migration, with half the jobs on each system?\n\n**My first pushback**\nNext week is the weakest part of the plan. The three undecided items are the hardest parts of the migration, and each one needs a decision before the cutover can be safe. My recommendation is to narrow next week's scope to a single billing job, such as usage aggregation or trial expiration, run it in shadow mode, and set the duplicate, rollback, and budget decisions as entry criteria for the full migration.\n\nPlease answer 1–3 and 7–12 first. Those determine whether the rest of the interview matters.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (duplicate handling flagged as key risk, idempotency questions), 2 (rollback/shadow-mode coexistence addressed), and 4 (ends with questions, no final design). Criterion 3 is only partly met: it asks about unknowns but never explicitly separates supplied facts from undecided decisions."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Flags duplicate charges as a key risk, asks about rollback and shadow-mode coexistence, separates undecided items from unsupplied facts, and ends by requesting answers before any final design."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (duplicate handling flagged as key risk with idempotency questions), 2 (rollback and shadow-mode coexistence asked), and 4 (ends by requesting answers before design); misses 3 partially since it doesn't explicitly separate supplied facts from undecided items."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets duplicate billing as a key risk, rollback/shadow-mode coexistence, and waits for answers without a final design; misses explicit separation of supplied facts from undecided decisions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies duplicate handling as a key risk (idempotency, duplicate detection) and asks about rollback/coexistence via shadow mode, marks undecided items, and stops for answers; but it doesn't clearly separate supplied facts from assumptions throughout."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "## Interview Round 1: Replacing Scheduled Billing Jobs with Events\n\n**Scope and timing**\n1. \"All scheduled billing jobs\" next week: which jobs are in scope, and is there a list? Are any of them month-end invoicing or tax-affecting jobs that can't move in a single week?\n2. What is the cutover mechanism? Do the scheduled jobs and the event consumers run side by side for a period, or does the switch happen at once?\n\n**Event design**\n3. What events will trigger billing actions, and who publishes them? If an upstream service fails to emit an event, how is that billing action discovered?\n4. What happens to billing periods that were already due when the cutover happens? Will they be backfilled, skipped, or processed twice?\n\n**Undecided items, which the plan must resolve before cutover**\n5. **Duplicate handling:** Events can be redelivered. What is the idempotency key for each billing action, and where is it stored? Who owns the deduplication check?\n6. **Rollback:** If event-driven billing produces wrong charges, how do we revert? Can we restore scheduled jobs in under an hour, and is there a tested path for reversing charges already issued?\n7. **Migration budget:** What is the budget in time, engineering effort, and money? Who approves it, and what is the trigger for stopping the migration?\n\n**Risk checks**\n8. Have we confirmed that payment providers and invoice generators accept events in the same order and with the same timing as the scheduled runs?\n9. What monitoring will show, within a day, that the event-driven billing totals match the scheduled-job totals for the same period?\n\n**My assessment so far:** Moving all billing jobs in one week, with duplicate handling, rollback, and budget still open, is high risk. I recommend that the plan not proceed until items 5 through 7 have owners and written answers. A phased cutover, starting with one low-risk billing job and running it in parallel with its scheduled version, would let us test items 5 and 6 with real data.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets duplicate-billing risk (item 5, redelivery and idempotency), rollback/coexistence questions (items 2, 6), and waits for answers before proceeding. Misses explicit separation of supplied facts from unsupplied ones."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Flags duplicate handling as a key open risk, asks about coexistence and rollback, separates undecided items from questions about unknown facts, and withholds a final design pending answers."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets duplicate-billing risk (redelivery, 'processed twice'), coexistence and rollback questions, and waits for answers before proceeding. Weaker on separating supplied facts from undecided items and on offering a phased-cutover recommendation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it flags duplicate handling and redelivery as key risks, asks about rollback and coexistence, and withholds a final design. It only partly meets criterion 3, since it never explicitly separates supplied facts from unsupplied ones."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four: flags duplicate handling and idempotency as key risks, asks about rollback and parallel coexistence, separates undecided items from questions, and proposes no final design."
+       }
+      ]
+     },
+     "baseline": null
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": {
+      "answer": "# Interview Round 1: Scheduled billing jobs to event-driven\n\n**Plan under test:** Replace all scheduled billing jobs with events next week.\n\n**Known gaps:** Duplicate handling, rollback, and migration budget are undecided.\n\n## Stress-test questions\n\n**1. Scope**\n- What is the complete list of scheduled billing jobs being replaced? Does \"all\" include invoice generation, proration, dunning, tax recalculation, and usage rollups?\n- Which of these jobs are time-based by business rule (for example, \"bill on the 1st at 00:00 in the customer's time zone\") rather than just implemented on a schedule? An event trigger may not reproduce that rule.\n\n**2. Duplicate handling (undecided)**\n- Event delivery is usually at-least-once. What is the idempotency key for each billing event, and where is it enforced?\n- If an event is delivered twice, is a charge, invoice line, or credit applied twice? What is the test that proves this cannot happen?\n- What happens when a scheduled job and its event-driven replacement both run during the transition window?\n\n**3. Rollback (undecided)**\n- If the event-driven path fails after cutover, how do you return to the scheduled jobs? Can the scheduled jobs still run safely after events have already produced side effects?\n- What is the rollback trigger, and who has authority to pull it? What is the maximum time to roll back?\n- If you cannot roll back cleanly, is the cutover reversible in any meaningful sense?\n\n**4. Ordering and timing**\n- Can events arrive late, out of order, or after a billing cycle has closed? How are they handled?\n- What defines the cycle boundary once billing is triggered by events rather than the clock?\n\n**5. Migration budget (undecided)**\n- What is the budget in engineering time, infrastructure cost, and customer-facing risk? Who approves it?\n- Without a budget, how do you decide between a full cutover and a job-by-job migration?\n\n**6. Verification**\n- What reconciliation compares old and new outputs before the old jobs are turned off? For how long are they run in parallel?\n- What invoice totals, counts, or revenue figures must match, and what tolerance is acceptable?\n\n**7. Timeline**\n- Why next week? Which of the three undecided items would have to be settled before a cutover could be safe?\n- If duplicate handling, rollback, and budget are not resolved, what is the smallest step that can ship next week without changing customer billing?\n\n## Initial assessment\n\nThe plan is not ready as written. Duplicate handling and rollback decide whether a cutover can be undone without double-billing, so they should be settled before any production change. The budget decides how much migration is feasible. I would recommend a dual-run with reconciliation for one low-risk job first, and a go/no-go date set once the three open items have owners and answers.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (duplicate billing as key risk) and 2 (rollback and transition-window coexistence questions). Misses 3, since it never explicitly separates supplied from unsupplied facts, and 4, since it presents an initial design recommendation before answers arrive."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (duplicate billing as a key risk) and 2 (asks about rollback and coexistence during the transition). Missed criterion 3, since it never explicitly separates decisions from unsupplied facts, and criterion 4, since it recommends a dual-run design before answers are in."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (duplicate billing as key risk), 2 (rollback and coexistence questions), and 4 (no final design; only an initial recommendation). Criterion 3 is weak: it marks items as undecided but never clearly separates supplied facts from assumed ones."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets duplicate-billing risk and rollback/coexistence criteria, and presents only a provisional recommendation, not a final design. Misses the explicit separation of supplied facts from unsupplied assumptions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (duplicate billing as key risk), 2 (asks about rollback and coexistence), and 3 (separates undecided items from facts); misses 4 since it ends with a recommendation and initial design rather than waiting for answers before presenting a final design."
+       }
+      ]
+     },
+     "baseline": null
+    }
+   ]
+  },
+  {
+   "id": "constraint",
+   "number": 2,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. Interview me about migrating a read-only dashboard. Facts: queries are slow; caching policy is unset; the database cannot change. Ask only questions whose answers do not depend on other unanswered choices.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/productivity/grill-me/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 caaf8b8de1684f96e26b28f3c29189db5c89cce4b73e1c93d86164f66ef88637; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Respect the fixed database constraint 2. Ask about freshness or latency targets 3. Avoid dependent implementation questions presented as settled 4. Give a recommendation with an explicit question",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "I'll ask one question at a time, starting with the one that defines the migration itself:\n\n1. **What is moving, and where to?** Is this dashboard moving to a new service, a new framework, a new hosting platform, or somewhere else? Naming the source and target will shape every later question.\n\nOnce you answer, I'll move on to the slow queries, the caching policy, and how the read-only constraint limits your options.",
+      "average": 0.4,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Asks one explicit, non-dependent question and avoids settled implementation questions (criterion 3). It never acknowledges the fixed database constraint, never asks about freshness or latency targets, and gives no recommendation."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 3 by asking one independent question without presenting dependent choices as settled; it never acknowledges the fixed database, asks no freshness or latency question, and gives no recommendation."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Respects the fixed database constraint only implicitly and asks no freshness or latency targets; it avoids dependent implementation questions and gives a recommendation with an explicit question, so 2 of 4 criteria met."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Respects the read-only database constraint and avoids settled dependent questions, but never asks about freshness or latency targets and gives no recommendation with its question."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (no database change proposed) and 3 (asks one independent question), but misses 2 (no freshness or latency question) and 4 (explicit question given without a recommendation)."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Here are the questions I can ask now without depending on answers you haven't given yet:\n\n1. How many people use the dashboard, and how many load it at the same time at peak?\n2. What is the slowest query's current response time, and what response time would count as acceptable?\n3. How stale can the displayed data be before it stops being useful? Give an answer in minutes or hours.\n4. Do any users see different data because of their permissions or account, or does every user see the same results?\n5. What runtime or hosting does the dashboard run on today?\n6. Is there a deadline for the migration, and if so, what is it?",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1–3: respects the fixed database, asks latency and freshness targets, and avoids settled dependent implementation questions. Misses criterion 4: it gives no recommendation with an explicit question."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: respects the fixed database, asks about latency and staleness targets, and avoids dependent questions. Misses criterion 4: no recommendation is given alongside its questions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: it never proposes changing the database, asks about latency targets and data staleness, and avoids dependent implementation questions. It misses criterion 4 because it gives no recommendation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (no DB-change questions), 2 (asks acceptable response time and staleness tolerance), and 3 (questions are independent). Missed criterion 4: no recommendation is given with an explicit question."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (no database change proposed), 2 (asks latency target and staleness tolerance), and 3 (no settled dependent questions). Misses 4: no recommendation is given."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Here are the questions I can ask now without depending on answers you haven't given yet:\n\n1. **Which dashboard views or queries are slowest, and roughly how long does each take today?**\n2. **How many people load the dashboard at the same time at peak?**\n3. **How often does the underlying data change, and how stale can a displayed number be before someone notices?**\n4. **Do all viewers need to see the same numbers, or can results differ by user, team, or permission level?**\n5. **Who owns the dashboard's hosting and deployment, and can you add a new service or component to it, such as a cache or a precomputed results table?**",
+      "average": 0.4,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 2 by asking about staleness and latency. Misses 1: Q5 proposes a precomputed results table, which would change the database. Misses 3: Q5 depends on unanswered caching choices. Misses 4: no recommendation is given."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it never proposes changing the database. Criterion 2 met: it asks about latency and staleness tolerance. Criterion 3 missed: question 5 asks about hosting and adding a cache, which depends on unanswered choices. Criterion 4 missed: no recommendation is given."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 2 by asking about data staleness tolerance. Q5 proposes a precomputed table, which conflicts with the fixed database, and it presumes a cache despite the unset policy. No recommendation is given."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 2 (asks about staleness tolerance) and criterion 3 (questions are independent). Missed criterion 1, since Q5 proposes a precomputed results table despite the fixed database, and criterion 4, since no recommendation is given."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets freshness criterion via the staleness question and avoids settled dependent implementation questions. Misses the DB constraint, since the precomputed-table idea implies a DB change, and gives no recommendation."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "Here are the questions I can ask now without depending on answers you haven't given yet:\n\n1. **What does \"migrating\" mean here?** Are you moving the dashboard to a new host, a new framework, or a new service, or changing where it reads its data? Everything below depends on this.\n\n2. **What is the dashboard's current stack?** Which language, framework, and rendering approach does it use (server-rendered, SPA, or something else)?\n\n3. **Who uses it, and how many at once?** Roughly how many users view it, and how many are typically active at the same time?\n\n4. **Which views or widgets are the slow ones?** Can you name the pages or panels whose queries are slowest, and roughly how long each takes now?\n\n5. **How old can the displayed numbers be?** If a figure was computed five minutes ago, would that be acceptable, or must it always reflect the latest database state? This sets the freshness requirement, which the unset caching policy depends on.\n\nOnce you answer these, I can ask about caching scope, invalidation, and where to put the cache.",
+      "average": 0.35,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only the freshness criterion (Q5). It never acknowledges the fixed database constraint and floats changing the data source. It asks questions it says depend on Q1, and gives no recommendation."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Respects the fixed database constraint implicitly and asks about freshness (Q5), but Q1 and Q2 are not about the database constraint; criterion 3 is partially met since questions depend on unanswered choices; criterion 4 is missed as no recommendation is given."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets freshness/latency questions (Q4-Q5) and avoids settled dependent questions, but misses the database constraint by offering 'changing where it reads its data' and gives no recommendation."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 2 by asking about freshness (Q5). Misses 1: it never acknowledges the fixed database and floats changing the data source. Misses 3: it says questions don't depend on unanswered choices, yet Q1 says everything depends on it. Misses 4: it gives no recommendation."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 2 by asking about freshness (Q5). It never acknowledges the fixed database and even floats changing the data source. Q1 says everything depends on it, yet Q2–5 are asked anyway. It gives no recommendation."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Here are the questions I need answered before I can plan the migration. Each one stands on its own.\n\n1. **Scope:** How many distinct pages or views does the dashboard have, and roughly how many charts or tables are on each?\n2. **Slow queries:** Which queries or views feel slowest, and about how long does each take now?\n3. **Stack:** What language and framework is the dashboard built with today?\n4. **Data freshness:** When the underlying data changes, how long can the dashboard show older numbers without anyone complaining? Seconds, minutes, or hours?\n5. **Audience:** Roughly how many people use the dashboard at the same time at peak?\n6. **User-specific data:** Do all users see the same numbers, or do some views depend on who is logged in?\n7. **Deadline:** Is there a date by which the migration needs to be finished?",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (asks about data freshness tolerance) and criterion 3 (questions stand independently). Misses criterion 1, since it never acknowledges the fixed database, and criterion 4, since it offers no recommendation."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (asks about data freshness tolerance) and criterion 3 (questions are independent). Misses criterion 4, which requires a recommendation with an explicit question. Criterion 1 is not clearly satisfied, since the database constraint is never acknowledged."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets freshness-target question (Q4), avoids dependent questions presented as settled, and does not propose altering the database; misses any explicit recommendation with its question."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: never proposes changing the fixed database, asks about data freshness, and avoids settled dependent questions. Misses criterion 4: it gives no recommendation alongside its questions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets freshness-tolerance question (4), avoids settled dependent implementation questions (3), and proposes no database changes (1). Misses criterion 4: no recommendation is given, only questions."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Here are the questions I can ask now without depending on answers you haven't given yet:\n\n1. **What is the target response time?** For example, \"under 2 seconds for the main page\" or \"under 500 ms per widget.\" Do you have a current measurement?\n2. **Which views or widgets are slowest?** If you have timings or query logs, which ones are they?\n3. **How fresh does the data need to be?** Would showing numbers that are up to a few minutes old be acceptable, or do users need live values?\n4. **Do all users see the same data, or does each user's view depend on their permissions or filters?**\n5. **Roughly how many people use the dashboard at peak, and how often do they load it?**\n6. **What language and framework is the dashboard built with?**\n7. **Is there any caching infrastructure already in place, such as Redis, Memcached, or a CDN in front of the app?**",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (no DB-change proposals), 2 (asks about latency and freshness targets), and 3 (questions are factual, not settled dependent choices); misses criterion 4 because it gives no recommendation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1–3: it never proposes changing the database, asks about latency targets (Q1) and freshness (Q3), and avoids settled dependent questions. Misses criterion 4: it gives no recommendation."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (asks latency and freshness targets) and criterion 3 (no settled dependent questions). Misses criterion 4 (no recommendation given) and does not explicitly acknowledge the fixed database constraint (criterion 1)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met: asks about latency and freshness targets (Q1, Q3) and avoids settled dependent questions. Partly met: never explicitly acknowledges the fixed database constraint. Missed: gives no recommendation with its questions."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (respects fixed database constraint) is missed since no question acknowledges the DB cannot change; criterion 2 is met via target response time and freshness questions; criterion 3 is partly met but the question on cache infrastructure and framework are reasonable, yet Q7 presumes caching choices; criterion 4 is missed because no recommendation is given."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "Here are the questions I can ask now without depending on answers you haven't given yet:\n\n1. **Where is the dashboard moving to?** Is the destination a new service, a different framework, or the same app on new infrastructure?\n2. **Which queries are slowest, and how slow are they?** Please give rough latencies, or the names of the queries or screens.\n3. **What is the target load time for the dashboard?** Give a number if you have one.\n4. **Does every viewer see the same data, or does the data differ by user, team, or tenant?**\n5. **How many people load the dashboard at peak, and how many requests per minute is that?**\n6. **How often do the underlying rows change?** Give a rough rate, such as per minute, per hour, or per day.\n7. **Do the slow queries run when a user loads the page, or on a schedule?**\n8. **Which database engine and version are in use?**\n9. **Is a read replica, a copy of the data, or any other read-only store available to you?**\n10. **Which dashboard widgets do people open most often?**",
+      "average": 0.55,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the database-constraint and latency/freshness criteria (Q3, Q6), but misses the recommendation criterion entirely and has dependent questions like Q9 on the unsettled destination."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the fixed-database and latency/freshness criteria (Q3, Q6). Misses the recommendation criterion entirely, and Q9 (replica availability) depends on the unanswered destination in Q1."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: no questions contradict the fixed database; criterion 2 met: asks for target load time. Criterion 3 missed: asks dependent-free questions but Q1/Q2 mix; criterion 4 missed: no recommendation given with an explicit question."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Respects the fixed database constraint implicitly and asks about latency targets (Q3), but Q2 and Q5 lean into dependent implementation details and the response offers no explicit recommendation with a question, so criterion 4 is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: respects the fixed database, asks latency (Q3) and freshness (Q6) targets, and avoids settled dependent questions. Misses criterion 4: it gives no recommendation with an explicit question."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I'll ask one question at a time, starting with the ones that don't depend on other answers. Here are the first questions:\n\n1. **What is the dashboard built with today?** Please name the framework or language and the hosting setup, such as a single server, containers, or serverless.\n2. **Which database engine is it on?** Please include the version if you know it. This is a fact about the constraint you described, so I'm asking it before any design choices.\n3. **How many people load the dashboard, and how often?** Please give rough numbers for daily users and peak concurrent users.\n4. **Do you have timing data for the slow queries?** If so, which dashboard views or queries are slowest, and how long do they take now?\n5. **How current does the data need to be?** For example, must a view reflect changes within seconds, within minutes, or is a daily refresh acceptable?\n6. **Does every user see the same data, or does access depend on who is logged in?**\n7. **Is there a deadline or required cutover window for this migration?**\n\nAnswer whichever of these you can. I'll follow up with the questions that depend on your answers.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (respects the fixed database), 2 (asks about data freshness), and 3 (no dependent questions presented as settled); misses 4, since it gives no recommendation with an explicit question."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (keeps the database fixed), 2 (asks about data freshness and timing), and 3 (no dependent choices presented as settled); misses 4 because it gives no recommendation alongside its questions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (no change to the fixed database), 2 (asks about latency timing and data freshness), and 3 (no dependent questions presented as settled); misses criterion 4 because it gives no recommendation alongside its questions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets 1-3: respects the fixed database, asks about freshness, and avoids settled dependent implementation questions. Misses 4: it gives no recommendation with an explicit question."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: keeps the database fixed, asks about freshness and timing, and avoids dependent questions. Misses criterion 4 because it gives no recommendation alongside its questions."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Here are the questions I'd ask first. Each can be answered on its own.\n\n1. What is the dashboard built with today (language, framework, and where it's hosted)?\n2. Which database engine and version does it read from?\n3. Which dashboard views or queries are the slowest, and roughly how long do they take now?\n4. How many tables do those slow queries touch, and what are the approximate row counts of the largest ones?\n5. About how many people load the dashboard per day, and what's the peak number at the same time?\n6. Is there a deadline for the migration, and if so, when is it?\n7. Who owns the database, and can you get read access to a replica or a copy of the data for testing?",
+      "average": 0.4,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (respects the fixed database) and 3 (questions are independent), but misses 2 (no freshness or latency-target question) and 4 (no recommendation given)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only the database-constraint criterion: it never proposes changing the database. It misses the latency/freshness target question, gives no recommendation, and Q4 depends on Q3 yet is framed as independent."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (respects fixed database, no DB changes proposed) and 3 (questions are independent). Misses 2 (no freshness or latency-target question) and 4 (no recommendation given)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Respects the fixed database and asks independent questions (criteria 1 and 3 met), but never asks about freshness or latency targets (criterion 2 missed) and gives no recommendation with an explicit question (criterion 4 missed)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Respects the fixed database by not proposing changes (criterion 1), but never asks about latency or freshness targets, Q4 depends on Q3 despite claiming each stands alone, and no recommendation is given."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "Here are the questions I'd start with. None depends on another answer.\n\n1. What does \"migrating\" mean here: moving the dashboard to a new framework or host, moving where its data comes from, or both?\n2. Which dashboards or views are slow, and do you have measured latencies for them?\n3. How fresh must the displayed numbers be: seconds, minutes, hours, or daily?\n4. Roughly how many people load the dashboard, and how often, at peak?\n5. Must every page load read from the database, or is it acceptable to serve data from a separate store that the dashboard keeps in sync?\n6. Who owns the caching decision, and when can that owner make it?\n7. Is there a deadline or cutover window?\n8. Can the old and new dashboards run side by side so their output can be compared?",
+      "average": 0.45,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the database constraint and asks about latency and freshness, but Q5 depends on the freshness answer while the response claims no dependencies, and no recommendation is given."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only criterion 2 is met: Q3 asks about freshness. It misses 1 by questioning the fixed database constraint (Q1, Q5), misses 3 by claiming no question depends on another while Q5 depends on Q3 and Q6, and misses 4 by giving no recommendation."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the database-constraint and freshness/latency criteria (Q2, Q3, Q5), but Q5 depends on the unanswered freshness question despite the claim that none depends on another, and no recommendation is given."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (respects the fixed database) and 2 (asks about freshness and latency). Misses 3, since Q5 depends on the freshness answer despite the claim that none do, and misses 4, since it gives no recommendation."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met: respects the fixed database, asks about latency and freshness targets. Missed: claims no question depends on another, yet Q5 depends on Q1 and Q3; gives no recommendation."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Here are the first questions. Each can be answered on its own.\n\n1. **Freshness:** How old can the dashboard's data be before someone would notice or complain: seconds, minutes, hours, or a day?\n2. **Audience:** Roughly how many people view the dashboard at the same time at peak, and how many total?\n3. **Viewer scope:** Do all viewers see the same data, or does each viewer's data depend on their identity or permissions?\n4. **Slow queries:** Which dashboard views or queries are slowest for you right now? If you can, name the one that matters most.\n5. **Current stack:** What language and framework is the dashboard written in, and does it use an ORM or hand-written SQL?\n6. **Hosting:** Where will the migrated dashboard run: your existing servers, a cloud provider, or something else?\n\nOnce you answer these, I'll ask follow-ups about the caching policy and the query layer.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Freshness is asked (Q1), dependent questions are not presented as settled, and the DB constraint is respected without proposing changes. It gives no recommendation with an explicit question, so criterion 4 is missed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (respects fixed DB, no DB-change questions) and 2 (asks freshness). Missed 3: questions 5 and 6 and the implied follow-up on query layer are dependent implementation questions; 4: no explicit recommendation given."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1–3: respects the fixed database, asks about freshness, and avoids settled dependent implementation questions. Misses criterion 4, since it gives no recommendation."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Respects the fixed database constraint by not proposing DB changes and asks about freshness (criterion 2 met), but the questions lean on implementation (stack/ORM, hosting) and the response ends without an explicit recommendation, missing criterion 4; criterion 3 is arguably met since questions are framed as independent, so score is 0.5 from criteria 1 and 2 (plus 3 is borderline)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: respects the fixed database, asks about freshness, and avoids dependent questions. Misses criterion 4: it gives no recommendation alongside its explicit questions."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Here are the questions I'd start with. Each can be answered on its own, without deciding anything else first.\n\n1. **Latency target:** How fast should a dashboard page load be, in seconds at the 95th percentile?\n2. **Freshness:** How old can the displayed data be before users would see it as wrong: seconds, minutes, hours, or a day?\n3. **Traffic:** About how many people load the dashboard per hour, and how many at peak?\n4. **Slow queries:** How many distinct queries does one page load run, and roughly how long does the slowest one take?\n5. **Shared database:** Do other applications or jobs use the same database, and do they run at times that overlap with dashboard use?\n6. **Data change pattern:** Which parts of the data change rarely (for example, historical totals), and which change often (for example, today's figures)?",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: respects the fixed database, asks freshness and latency targets, and avoids dependent implementation questions. Misses criterion 4 because it gives no recommendation alongside its questions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: it respects the fixed database, asks about latency and freshness targets, and keeps questions independent. It misses criterion 4 because it gives no recommendation with an explicit question."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 3: it respects the fixed database, asks about freshness and latency, and avoids settled dependent questions. It misses criterion 4 because it gives no recommendation alongside its explicit questions."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Respects the fixed database constraint implicitly and asks about latency and freshness (criteria 1 and 2 met); but it does not give a recommendation with an explicit question (criterion 4 missed), and criterion 3 is arguably met since questions are independent, so score is 0.75 at most. Scoring conservatively: 0.5 total, failing overall."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: respects the fixed database, asks about latency and freshness targets, and avoids settled dependent questions. Misses criterion 4 because it gives no recommendation."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": {
+      "answer": "I'm answering in text only, without the grilling skill, as you asked. Each question below can be answered on its own.\n\n1. Which dashboard views are the slowest, and how long does each take today? Please paste or describe the worst offending query, including its filters and time range.\n2. What latency is acceptable for a page load, in seconds, for the slowest view?\n3. How stale can the data be before someone would notice or care? Give a number in minutes or hours, or say it must be live.\n4. How many people load this dashboard at once at peak, and how many are typical?\n5. Do the slow queries run over unbounded or user-chosen date ranges, or over fixed windows?\n6. Is the database's read-only status enforced at the database user level, or only by the application?\n7. Are you allowed to run anything between the dashboard and the database, such as a cache or a read-only copy of the data, given that the database itself stays as it is?\n8. Who owns the database, and who must approve any new service you'd add?",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (respects the fixed database, asking Q6-Q7 with it stated as unchanged), 2 (asks latency and staleness targets, Q2-Q3), and 3 (questions are posed, not settled). Misses 4: it gives no recommendation."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it respects the fixed read-only database and asks about latency and freshness targets. Criterion 3 missed: Q7 presents a cache as settled-permitted while being a dependent choice. Criterion 4 missed: no recommendation is given with a question, only plain questions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1–3: it respects the read-only database, asks about latency and staleness targets, and avoids settled dependent questions. It misses criterion 4 because it gives no recommendation alongside its questions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (respects the read-only database constraint), 2 (asks latency and staleness targets), and 3 (questions are independent); missed criterion 4 because no recommendation accompanies the questions."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: the response never proposes changing the database and works within the read-only constraint. Criterion 2 is met: it asks about acceptable latency and staleness. Criterion 3 is missed: Q7 asks about caches or copies while the response has not settled whether any service is allowed, and Q5 and Q6 are dependent questions. Criterion 4 is missed: the response gives no recommendation."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": {
+      "answer": "Here are the questions I'd start with. Each one can be answered without knowing the others.\n\n1. **What does \"migrating\" mean here?** Is the dashboard moving to a new host, framework, or platform, or is the goal to move the read path to a different data store? The database stays put, so I need to know what is changing.\n2. **What stack is the dashboard built on today**, including language, framework, and where it runs?\n3. **How large is the data?** Roughly how many rows are in the tables behind the slowest queries, and how fast do they grow per day?\n4. **Which dashboard views or queries are the slowest**, and what load time would count as acceptable?\n5. **How many people use the dashboard at once**, and roughly how many requests per minute does it get at peak?\n6. **How old can the displayed data be?** Would a few minutes of staleness be acceptable, or does every view need to reflect the latest data?\n7. **Are there other writers to the database**, such as batch jobs or application services? Or is it purely read-only apart from the initial data load?\n8. **Is there a deadline for the migration**, and is there anything that must stay unchanged during it?",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1–3: respects the fixed database, asks about latency and freshness targets, and avoids settled dependent implementation questions. Misses criterion 4 because it gives no recommendation, only questions."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Respects the fixed database constraint and asks about latency targets and freshness, but misses criteria 3 and 4: it asks dependent-ish questions like stack and migration target, and gives no recommendation with an explicit question."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (respects fixed database) and 2 (asks latency and staleness targets); misses 3, since it claims every question is independent when Q2 depends on Q1, and misses 4, offering no recommendation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: respects the fixed database ('the database stays put') and asks about latency and staleness targets. Missed: gives no recommendation alongside its questions, though each question is explicit."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: respects the fixed database by stating it stays put and asking what changes. Criterion 2 met: asks about acceptable load time and data staleness. Criterion 3 missed: asks dependent-looking stack and data-size questions as settled. Criterion 4 missed: gives no recommendation."
+       }
+      ]
+     }
+    },
+    {
+     "try": 6,
+     "with_skill": {
+      "answer": "Here are the questions I need answered before we can plan the migration. Each one stands on its own.\n\n1. **Load:** How many people view the dashboard at peak, and how many page loads or query executions does that produce per minute?\n2. **Slow queries:** Which dashboard views or queries are slowest, and how long does each take now? If you have no measurements, can you get them?\n3. **Query variation:** Do most viewers see identical results, or do the queries change per user, filter, or date range? Roughly how many distinct parameter combinations are in use?\n4. **Write pattern:** How often does the underlying data change: continuously, on a schedule, or only in occasional bulk loads? When it changes, when does it change?\n5. **Freshness:** What is the oldest data a viewer can see without it being a problem, in minutes, hours, or days? Is there any figure that must always be exact at the moment it is shown?\n6. **Consumers:** Do people act on the numbers in real time, or do they review them periodically? Do any other systems read this data, or is the dashboard the only consumer?\n7. **Hosting:** Where does the dashboard run today, and what is the newest environment you are allowed to deploy to?\n8. **Deadline:** Is there a date by which the migration must be live, and is there a date by which the current setup must be shut down?\n9. **Ownership:** Who approves changes to how the dashboard displays data, and who gets paged if it breaks?\n\nAnswering these will tell us the required freshness, the load we have to serve, and the constraints on hosting and timing. Once they're in, I'll ask the next round.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1–3: no database change proposed, freshness is asked (Q5), and questions stand independently. Misses criterion 4: no recommendation is given, only questions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: no database changes proposed (fixed constraint respected), asks about freshness targets (Q5), and questions stand independently. Missed: gives no recommendation alongside its explicit questions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (no database changes proposed), 2 (asks freshness tolerance in Q5), and 3 (questions are framed as standalone, not settled implementation choices); missed 4 because it gives no recommendation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets freshness (Q5), avoids settled dependent implementation questions, and never proposes changing the database. Misses the rubric's required recommendation alongside the explicit question."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (no database changes proposed), 2 (Q5 asks about freshness), and 3 (questions are largely independent). Missed criterion 4: it gives no recommendation alongside its questions."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": {
+      "answer": "Here are the questions, each answerable on its own:\n\n1. Where is the dashboard moving to: a new host, a new framework, or a different platform?\n2. What database engine and version does it run on today?\n3. Roughly how many people use the dashboard at peak, and how many at once?\n4. Which dashboard screens or queries are the slowest, and about how long does each take now?\n5. How often does the underlying data change: continuously, hourly, daily, or on some other schedule?\n6. How stale can a displayed number be before someone would object? Give a number of minutes or hours if you have one.\n7. Do all users see the same data, or does any view depend on who is logged in?\n8. Does the dashboard run any writes, even incidental ones like logging or session updates?\n9. Is there an existing ORM or query layer, or do the screens send raw SQL?\n10. Is there a deadline for the migration, and if so, when?",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (no database change proposed), 2 (freshness question in Q6), and 3 (questions are independent). Missed criterion 4: no recommendation is given alongside an explicit question."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (no DB change proposed), 2 (asks freshness tolerance in Q6), and 3 (questions are independent). Missed criterion 4: no recommendation is given with an explicit question."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: it never proposes changing the fixed database, asks freshness tolerance (Q6), and keeps questions independent. Missed criterion 4: no recommendation accompanies any question."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: respects the fixed database, asks about staleness tolerance, and avoids dependent questions. Missed: gives no recommendation with an explicit question."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (no database change proposed), 2 (asks about staleness and current latency), and 3 (questions are independent), but misses 4 because it gives no recommendation with an explicit question."
+       }
+      ]
+     }
+    },
+    {
+     "try": 7,
+     "with_skill": {
+      "answer": "Here are my first questions. Each one stands on its own, so you can answer them in any order.\n\n1. **Latency target:** What load time would make the dashboard acceptable to its users? Give a number for the typical page view, and one for the worst case if you have one.\n2. **Staleness tolerance:** When a user opens the dashboard, how old can the data be before it's wrong for their purpose? Seconds, minutes, hours, or a day?\n3. **Query inventory:** How many distinct queries does a single dashboard view run, and roughly how many of them are the slow ones?\n4. **Traffic:** About how many people open the dashboard per hour at peak, and how many open it at the same moment?\n5. **Data change pattern:** Does the underlying data change only through a known process, such as a nightly load, or can it change at any time from many sources?\n6. **Ownership:** Who needs to be able to change the dashboard's queries or its refresh behavior after the migration: you alone, a team, or non-engineers?",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: it never proposes changing the database, asks about latency and staleness targets, and its questions are independent. It misses criterion 4 because it gives no recommendation alongside its questions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: it proposes no database changes, asks about latency and staleness targets, and presents no dependent questions as settled. It misses criterion 4 because it gives no recommendation alongside its questions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (no database changes proposed), 2 (asks latency and staleness targets), and 3 (questions are standalone fact-finding). Missed 4: it gives no recommendation, only questions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets freshness/latency questions (Q1-2), respects the fixed database by proposing no DB changes, and avoids dependent settled questions; misses the required recommendation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: respects the fixed database, asks about latency and staleness targets, and avoids settled dependent questions. Misses criterion 4 because it gives no recommendation alongside its questions."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": {
+      "answer": "Here are the questions. Each one stands on its own, so you can answer in any order.\n\n1. **Which dashboard views or queries are slowest?** If you can, list the top three or four with rough load times.\n2. **How many people use the dashboard at once, at a typical time and at peak?**\n3. **Does every viewer see the same data, or does any part of the data depend on who is logged in?**\n4. **What is the current stack?** Tell me the language, framework, and any ORM or query builder the dashboard uses.\n5. **Is there a read replica or any other copy of the data today?** I'm asking whether one exists, not whether you want one.\n6. **Is there a hard budget or a list of approved services for new infrastructure?**\n7. **Where is the migration going?** Tell me the target host or platform, such as a new server, a container platform, or a serverless environment.\n8. **Do you need the dashboard to show data that is a few minutes old, or does it need to be live?** Give the longest delay you could accept, even if it's a rough guess.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (no database change proposed) and 2 (asks freshness tolerance in Q8). Misses 3: Q7's target platform depends on unanswered budget and stack questions, yet it's presented as independent. Misses 4: no recommendation is given."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the database-constraint and freshness-question criteria. Misses dependent-question avoidance, since the target-platform question depends on unanswered budget and stack choices, and gives no recommendation."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (no DB change proposed) and criterion 2 (Q8 asks about freshness/latency). Misses criterion 3: Q7 (platform) depends on unanswered budget and stack questions yet is presented as standalone. Misses criterion 4: no recommendation is given."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the database-constraint and freshness criteria (Q8), but misses dependent-question avoidance (target host depends on budget and stack, yet is presented as independent) and gives no recommendation."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it respects the fixed database by asking about replicas and not changing the DB. Criterion 2 met: question 8 asks about freshness/delay. Criterion 3 missed: questions 4 and 7 (stack, target platform) are dependent implementation questions asked without tying them to other choices. Criterion 4 missed: no recommendation is given."
+       }
+      ]
+     }
+    },
+    {
+     "try": 8,
+     "with_skill": {
+      "answer": "I'll ask one question at a time. Each answer below stands on its own, so none depends on a choice you haven't made yet.\n\n1. **Staleness:** For a given number on the dashboard, how old can the data be before someone would call it wrong? Give an answer in seconds, minutes, or hours.\n\n2. **Audience:** How many people load the dashboard at the same time at peak, roughly?\n\n3. **Who sees what:** Do all viewers see identical results, or do the queries change based on the logged-in user, team, or filters?\n\n4. **Slow queries:** Which dashboard panels are slowest today, and what are their rough load times?\n\n5. **Query count:** How many separate queries does one page load run? Are any of them repeated within the same load?\n\n6. **Deadline:** Is there a date by which the migration must ship, or a window when the dashboard can't change?\n\nStart with question 1. Its answer sets how much of the rest matters.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: respects the fixed database, asks staleness and latency questions, and avoids settled dependent questions. Misses criterion 4 because it gives no recommendation, only a starting question."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets freshness (Q1) and does not violate the fixed database; misses the criterion on dependent questions, since it claims none depend while saying Q1 sets the rest, and gives no recommendation."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the freshness question (Q1) and does not violate the fixed database. Misses criterion 3: it claims questions are independent, yet says Q1 sets how much the rest matters. Misses criterion 4: no substantive recommendation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: no database changes proposed, asks staleness and load-time targets, and gives a recommendation (start with Q1) with explicit questions. Missed: the claim that no question depends on another contradicts the note that Q1 sets how much the rest matters."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks about staleness and load-time targets, avoids settled dependent questions, and ends with an explicit question. It never mentions the fixed database constraint, and the claimed one-question-at-a-time format contradicts listing six questions."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": null
+    }
+   ]
+  },
+  {
+   "id": "followup",
+   "number": 3,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. Continue the interview. We already agreed on a weekly digest, an opt-in audience and a 24-hour rollback window. Delivery channel is undecided; provider selection depends on the channel.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/productivity/grill-me/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 caaf8b8de1684f96e26b28f3c29189db5c89cce4b73e1c93d86164f66ef88637; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Do not reopen settled decisions without reason 2. Ask about channel first 3. Defer provider choice until channel is known 4. Do not claim agreement or start implementation",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "Let's start with the one I think is most likely to break the plan.\n\n**1. What does the 24-hour rollback actually roll back?** Once a digest is delivered by email or push, you can't recall it. If the rollback only applies before the send job runs, it's a \"cancel the scheduled batch\" window, not a rollback. Which do you mean?\n- (a) Cancel or hold a scheduled weekly send for up to 24 hours after it's queued.\n- (b) Undo a sent digest, which means you need a channel that supports recall, such as in-app content you can unpublish.\n- (c) Revert the content or subscriptions behind the digest, while already-sent copies stay sent.\n\nYour answer narrows the channel choice more than anything else, so I'd settle it before picking a provider.\n\n**2. Does \"opt-in\" mean double opt-in?** This decides where consent is stored and what proof you need. If a user is opted in but never confirmed, can a digest go to them at all? If the audience is opted in per topic, what happens when a user opts in and then out during the 24-hour window?\n\n**3. Who can stop a bad digest, and how fast?** If wrong content goes out Friday evening, is the approval gate a human, an automated check, or nothing? If it's a human, who is on the hook when they're unavailable?\n\n**4. What is the unsubscribe path, and does it need to be instant?** For email, one-click unsubscribe is required in practice. For in-app or push, the mechanism differs. Whatever channel you pick, a user who opts out mid-batch should not get the rest of that batch. Do you need that guarantee, or is \"takes effect next week\" acceptable?\n\nAnswer 1 first. If you choose (a), I'd treat the rollback as a scheduling control and not describe it as a delivery control, and then we can compare channels on whether they support scheduling, unsubscribe, and provider-side suppression lists.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: no false agreement or implementation, provider deferred until channel is known, and settled decisions revisited with reasons. Missed: it does not ask about the delivery channel first; it leads with the rollback question."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Defers provider choice until the channel is known and claims no agreement or implementation, but opens by reopening the agreed 24-hour rollback window instead of asking about the channel first."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Defers provider choice until channel is settled and avoids claiming agreement or implementing, but reopens the settled rollback and opt-in decisions and does not ask about channel first."
+       },
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Met criteria 3 (defers provider choice) and 4 (no claimed agreement or implementation); criterion 1 is arguable since reasons are given; missed criterion 2 because it asks about rollback first, not the channel."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Defers provider choice until channel is known and claims no agreement or implementation (0.25 each); it asks about the rollback first rather than the channel, and reopens the agreed rollback and opt-in terms."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Got it: weekly digest, opt-in audience, 24-hour rollback window. Next is the delivery channel.\n\n**Question 1: Which channel should carry the digest?** Options so far include email, in-app, and push. Which one (or which combination) fits your audience best?\n\n**Question 2: How does the 24-hour rollback window apply to the channel you pick?** Once a message is sent, it generally can't be recalled. For email, Slack, or SMS, the rollback would probably have to cover the period between when a digest is scheduled or queued and when it goes out. For in-app content, it could cover the published version itself. Which of these did you mean?\n\nYour answers will narrow the provider choice, so I'll hold that decision until the channel is settled.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Restates the settled weekly digest, opt-in audience, and 24-hour window without changing them; asks about the channel first; defers provider choice until the channel is settled; claims no implementation or formal agreement."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about the delivery channel first and defers provider choice until it is settled. Does not restart the agreed digest, audience, or rollback decisions, and does not claim agreement or begin implementation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks about the channel first and explicitly defers provider choice until it is settled, with no implementation or false agreement claimed. Question 2 partly reopens the agreed 24-hour rollback window by questioning its scope, which is only partly justified by channel dependence."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Channel is asked first (criterion 2), provider choice is explicitly deferred (3), and no agreement is claimed or implementation started (4). Question 2 partly reopens the agreed 24-hour rollback window by asking what it means, so criterion 1 is not fully met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Keeps the settled digest, opt-in, and rollback decisions without reopening them, asks about the channel first, defers provider choice, and claims no agreement or implementation."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Next open item: **delivery channel**, since the provider choice depends on it. Which channel should the weekly digest use?\n\n- **Email:** Works well for a weekly cadence and opt-in audiences. Needs an email sending provider with bounce and unsubscribe handling.\n- **In-app:** No external provider, but readers must open the product to see it.\n- **Chat (Slack, Teams, or similar):** Suits internal or team audiences. Needs each workspace's app integration and approval.\n- **SMS or push:** Better for short alerts than a weekly digest. Adds per-message cost and carrier or platform rules.\n\nMy recommendation is email for a weekly, opt-in digest. It fits the cadence and consent model best, and it leaves the most provider options open. If your audience is mainly internal teams, chat may be the better fit.\n\nWhich channel do you want? If you have more than one in mind, tell me the primary one.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "It leaves the weekly, opt-in, and rollback decisions unreopened, asks for the channel first, defers provider choice, and claims no agreement or implementation (0.25 each)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Does not reopen the weekly, opt-in, or rollback decisions; asks for the delivery channel first; defers provider choice; claims no agreement and starts no implementation."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Does not reopen the settled digest, opt-in, or rollback decisions, asks about the delivery channel first, defers provider selection, and neither claims agreement nor starts implementation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (does not reopen the settled weekly/opt-in/rollback decisions), 2 (asks about channel first), and 3 (defers provider choice until channel is known); misses 4 only partially-no, it does not claim implementation or agreement, so actually all four are met, but the response's recommendation of email somewhat pre-empts channel selection, so score 0.75 reflects a minor deduction on criterion 3."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response does not reopen settled decisions (digest, opt-in, rollback), asks about delivery channel first, defers provider choice until channel is known, and does not claim agreement or start implementation."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "Understood, text only, nothing run. Delivery channel is the blocker, since provider selection depends on it, so I'll start there.\n\n1. **Channel:** Which channels are you considering: email, in-app, Slack, SMS, push, or something else? If more than one is plausible, which one would you pick if you had to choose today, and why?\n\n2. **Channel constraints:** Does the audience already have a verified address or handle for that channel? If someone opts in on the web but has no email verified, what happens to their digest?\n\n3. **Rollback meaning:** When you say \"24-hour rollback window,\" what can actually be undone? Options include retracting a digest that hasn't been sent, cancelling a scheduled send, reverting an opt-in, or recalling content already delivered. Which of these are in scope?\n\n4. **Rollback vs. delivered content:** If a digest has already reached inboxes or devices, can you recall it? If not, does the 24-hour window only protect unsent digests? Who is accountable if a bad digest goes out inside the window?\n\n5. **Opt-in:** Is opt-in double confirmed, or is a single checkbox enough? Can people opt out at any time, and does the opt-out take effect immediately or on the next weekly run?\n\n6. **Digest content and source:** Where does the digest content come from, and who approves it before a weekly send? Is there a human review step, or is it fully automated?\n\n7. **Scale and cadence:** How many recipients do you expect at launch and at six months? What time zone and day govern \"weekly\"?\n\n8. **Failure handling:** If the provider is down on send day, do you retry, skip the week, or queue for the next run? Does a skipped digest count against the 24-hour window?\n\nStart with questions 1 and 3. Those two decide the provider shortlist and the shape of the rollback feature. Answer those, and we can move to the others.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (does not reopen the weekly/opt-in/24h decisions), 2 (asks about channel first), and 3 (defers provider choice until channel is known); missed 4 in that it does not claim agreement, yet it never starts implementation and only asks questions, so arguably met. Rubric scores as 0.75 overall on the strict reading."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Response does not reopen the agreed weekly digest, opt-in audience, or 24-hour rollback, asks about channel first, defers provider choice until channel is known, and does not claim agreement or start implementation. Criterion 1 is weakly violated since question 3 probes the rollback window's meaning, which arguably reopens a settled decision."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets channel-first (Q1, 'I'll start there'), defers provider choice until channel is known, and claims no agreement or implementation. Misses 'do not reopen settled decisions': Q3-5 re-ask rollback scope and opt-in confirmation despite those being agreed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 2 (asks about channel first) and 3 (defers provider choice until channel known), but missed criterion 1 by reopening settled rollback-window and opt-in decisions, and the response does not claim agreement or start implementation so criterion 4 is satisfied; with 0.25 per criterion this totals 0.75, but the reopened settled decisions on rollback and opt-in violate criterion 1, leaving 0.75 satisfied at most."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (no settled decisions reopened: weekly, opt-in, 24h rollback honored), 2 (asks about channel first), and 3 (defers provider choice until channel known); missed 4 criterion only partially—it does not claim agreement or start implementation, so actually all four are satisfied; however the response's 'Understood' acknowledgement is not a claim of agreement, so criterion 4 is met too."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Here's where we are: weekly digest, opt-in audience, and a 24-hour rollback window. Delivery channel is still open, and the provider depends on it.\n\nThe rollback window needs a channel-specific answer. For in-app or web content, rollback can mean removing or hiding the digest within 24 hours. For email, SMS, or push, a message that has already left your system can't be recalled, so rollback would mean holding sends for 24 hours before dispatch. That changes the design, so it's worth settling before choosing a channel.\n\nQuestions for the next round:\n\n1. **Which channels are candidates?** For example: email, in-app, Slack, SMS, push. You can pick more than one.\n2. **Does rollback need to work after a digest is sent?** If yes, external channels need a 24-hour send delay. If no, rollback can apply only to content that's still on your platform.\n3. **What's the expected audience size?** This affects provider pricing and sending limits more than anything else.\n4. **Do you have existing channel infrastructure?** An existing email list, Slack workspace, or app notification system would narrow the provider options.\n5. **What does opt-in mean for each channel?** Email and SMS usually have specific consent and unsubscribe requirements. Who handles those obligations on your side?\n\nOnce you answer, I can compare provider options against the channel and the rollback constraint.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks about channel first and defers provider choice, with no false agreement or implementation. It partly misses criterion 1: it reopens the agreed 24-hour rollback window, though it gives a channel-based reason."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Restates the settled digest, opt-in, and rollback decisions and gives a stated reason for revisiting rollback; asks about channel first; defers provider choice until channel is known; claims no new agreement and starts no implementation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks about channel first and defers provider choice until the channel is known, with no agreement claimed or implementation started. It partly reopens the settled 24-hour rollback window, though it gives a channel-based reason for doing so."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (channel is the first question), 3 (provider comparison deferred until channel is known), and 4 (no claimed agreement, no implementation); criterion 1 is partly strained because it re-examines the agreed 24-hour rollback, though it gives a channel-based reason."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 3 (defers provider choice until channel is known) and 4 (no false agreement, no implementation). Misses criterion 1, since question 2 reopens the agreed 24-hour rollback, and criterion 2, since rollback analysis precedes the channel question."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Here's where we are:\n\n**Agreed so far**\n- **Cadence:** weekly digest\n- **Audience:** opt-in only\n- **Rollback window:** 24 hours\n\n**Still open**\n- **Delivery channel:** not yet chosen. Provider selection depends on this, so it's blocked until we decide.\n\n**Next question:** Which channel should the digest go out on? The main options are:\n- **Email:** the most common fit for a weekly digest, with mature providers and easy opt-in and unsubscribe handling.\n- **In-app:** no external provider needed, but people only see it when they open the product.\n- **Slack or Teams:** good if the audience is mostly inside one workspace, but it limits who can receive it.\n- **SMS or push:** better for urgent alerts than a weekly summary, so I'd rule these out for this use case.\n\nIf you don't have a preference, I'd recommend email. It suits a weekly digest, and the opt-in and rollback requirements are easiest to meet there. Which channel do you want, or should I note email as the default and move on to provider selection?",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (no reopening settled decisions) and criterion 2 (asks about channel first), but it does not fully defer provider choice, since it says provider selection is blocked and offers to move on to it, and the 'Agreed so far' framing is acceptable. Criterion 4 is met since no agreement is claimed beyond recap and no implementation starts. Criterion 3 is arguably unmet, as the response defaults to email and suggests noting it and moving to provider selection."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: settled decisions are restated, not reopened. Criterion 2 met: it asks about channel first. Criterion 3 missed: it recommends email and offers to move to provider selection, not clearly deferring provider. Criterion 4 met: no claimed agreement on undecided items or implementation started."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Restates the agreed cadence, audience, and rollback without reopening them, asks about the channel first, defers provider choice, and claims no new agreement or implementation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2, and 4: it restates settled decisions without reopening them, asks about channel first, and claims no agreement on channel. Missed criterion 3, since it offers to move to provider selection on an email default before the channel is confirmed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: settled decisions (weekly, opt-in, 24h rollback) are not reopened. Criterion 2 met: asks about channel first. Criterion 3 met: defers provider selection until channel is known. Criterion 4 missed: it claims 'Agreed so far' and recommends email as default, which leans toward treating the channel as decided, though it does not start implementation. Partial credit under strict grading; the agreement framing is the main gap."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "Let's start with the rollback window, since it constrains the channel more than anything else.\n\n**What exactly can be rolled back within 24 hours?** Once a digest is delivered, you can't unsend it. So the answer depends on what \"rollback\" means:\n\n1. **Retract the send:** Only possible if the channel holds messages before delivery, such as a queued in-app feed or a draft that's sent on a schedule. Email and SMS can't do this once they leave your system.\n2. **Retract the content:** The digest stays in a dashboard or feed and can be edited or pulled. This works with in-app or web delivery, not with email.\n3. **Revert the subscription:** Undo the opt-in or the audience change, so future digests stop. This works on any channel, but it doesn't touch anything already sent.\n\nWhich of these do you mean? If it's (1) or (2), your choice narrows to channels you own end to end, and a third-party provider becomes less central. If it's (3), the channel can be almost anything, and the rollback window only governs the audience state, not the messages.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Meets criteria 1, 3, and 4: it doesn't reopen settled decisions, doesn't pick a provider, and claims no agreement or implementation. Misses criterion 2 because it asks about rollback first, not the delivery channel."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 2 met: it asks about rollback first, not channel, so it misses asking about channel first. Criterion 1 is met: settled decisions are not reopened. Criterion 3 is met: provider choice is deferred. Criterion 4 is met: no agreement is claimed and no implementation starts."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it does not reopen settled decisions, defers provider choice, and claims no agreement or implementation. It misses criterion 2 because it opens with the rollback window rather than asking about the delivery channel first."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it does not reopen the digest, opt-in, or 24-hour window, defers provider choice, and claims no agreement. Misses criterion 2, since it opens with the rollback question rather than asking about channel first."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: does not reopen settled decisions, defers provider choice until channel is known, and claims no agreement or implementation. Missed: asks about the rollback window first instead of the delivery channel."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Here's where we are: weekly digest, opt-in audience, 24-hour rollback window. Delivery channel is still open, and the provider choice depends on it, so I'll start there.\n\n1. **Which channels are you considering?** For example email, in-app notifications, SMS, push, or a chat integration. Can you rank them, or name any you've already ruled out?\n2. **What is the expected volume?** Roughly how many opted-in recipients do you expect at launch, and how many within a year? Delivery cost and provider limits depend heavily on this.\n3. **Do recipients need to act on the digest, or only read it?** If they act on it, we'll need a link-tracking and deep-link requirement.\n4. **Who controls the send timing?** Is a fixed weekly time enough, or do users need to pick their own day or time zone?\n5. **What does the 24-hour rollback cover?** Does it mean recalling a digest that has already been sent, cancelling it before it goes out, or undoing the subscription change? The answer affects whether the channel can support recall at all.\n\nOnce you answer the channel question, I can work through the provider criteria for that channel.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about channel first (Q1), defers provider choice until channel is known, and claims no agreement or implementation; Q5 clarifies the rollback's scope rather than reopening the settled decision."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about channel first (Q1), defers provider choice until channel is known, and starts no implementation or agreement claims. Q5 reopens the rollback only with a stated reason tied to channel recall."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about channel first (Q1) and defers provider choice until channel is known, without claiming agreement or starting implementation; it treats the settled decisions as settled, though Q5 edges toward re-scoping the rollback window."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about channels first (criterion 2), defers provider choice until channel is known (3), and claims no agreement or implementation (4). Settled decisions are restated, not reopened (1)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks about channels first (question 1), defers provider choice until the channel is known, and does not claim agreement or start implementation. Question 5 probes the already-agreed 24-hour rollback scope, which partly reopens a settled decision."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Next question: **which delivery channel should the weekly digest use?** Provider selection follows from this, so it's the main open decision.\n\nThe options, with the main tradeoff for each:\n\n- **Email:** Opt-in subscribers expect it, it works without an app, and it has the most mature provider options. It's the usual default for a weekly digest, but deliverability and unsubscribe handling need attention.\n- **In-app or on-site feed:** No third-party provider needed and easy to roll back, but people only see it if they return.\n- **Chat or messaging (Slack, Discord, Telegram, etc.):** Good for a team or community audience that already lives there. Each platform has its own API, consent rules, and rate limits, so it narrows the provider choice.\n- **Push notification:** Poor fit for a weekly digest, since it's a long-form summary and push is built for short, time-sensitive alerts.\n\nIf you have no strong preference, I'd suggest email. It fits an opt-in audience, has the widest set of providers, and a 24-hour rollback is easiest to honor when sends are queued and can be held before they go out.\n\nWhich channel do you want? If it's email, the next questions are expected volume and whether you already have a sending domain.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: keeps the settled digest, opt-in, and 24-hour rollback decisions, asks about channel first, defers provider choice, and claims no agreement or implementation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (asks about channel first), 3 (defers provider choice until channel known), and 1 (doesn't reopen digest/opt-in/rollback decisions); misses 4 partly by offering a channel recommendation and stating email-specific next steps, but does not claim agreement or start implementation, so 4 is arguably satisfied, yielding full marks uncertain. Scoring 0.75 reflects strict reading of 'Do not claim agreement' being met but the response treats channel as the next question while implicitly steering toward a provider."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks the channel question first, defers provider selection, does not reopen the digest, opt-in, or rollback decisions, and claims no agreement or implementation (criteria 1-4 all met)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about the delivery channel first, defers provider choice until the channel is known, leaves the settled digest, opt-in, and rollback decisions alone, and claims no agreement or implementation."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four criteria: it leaves the settled digest, opt-in, and rollback decisions alone, asks about the channel first, names no provider, and claims no agreement or implementation."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "Let's start with the blocker, since provider selection depends on it.\n\n1. **Which delivery channel do you actually need: email, in-app, push, or SMS?** Pick one as primary. If the answer is \"all of them,\" what happens when a user has opted in to email but not push? Each channel brings its own provider, consent rules, and cost, so \"undecided\" means the provider question is open too.\n\n2. **What does \"24-hour rollback\" mean for a digest that has already been sent?** Email can't be recalled. Push notifications can't be unsent either. If rollback only covers the content in your system, such as hiding or editing the digest on the web, say so. If it has to cover delivery, then the channel has to support cancellation, and that may rule out some options. Which one are you promising?\n\n3. **What does \"opt-in\" consist of?** Is it a single checkbox, or double opt-in with confirmation? Where is consent stored, and how do users withdraw it? If someone opts out on Tuesday, can a digest still go out Wednesday because the send job was already queued?\n\n4. **Define \"weekly\" precisely.** Which timezone decides the send time: the user's or yours? What happens to a user who opted in mid-week? And if a digest would be empty, do you skip it or send an empty one? Your answer changes the scheduler design, and it changes what \"rollback\" has to undo.\n\nMy recommendation: if rollback has to cover actual delivery, email with a short scheduled-send delay is the simplest way to meet it. Push and SMS can't be held back in the same way. Tell me whether that constraint is real before we settle the channel.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about the delivery channel first, defers provider choice, and claims no agreement or implementation. Its rollback and opt-in questions are tied to channel feasibility, so they do not reopen settled decisions without reason."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks about the delivery channel first and does not claim agreement or start implementation; it leans toward reopening the settled 24-hour rollback by questioning whether that constraint is real, so criterion 1 is weakly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks about channel first (met), defers provider choice (met), and claims no agreement or implementation (met), but reopens the settled 24-hour rollback and opt-in decisions without strong reason (missed)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (asks about channel first), 3 (defers provider choice), and 4 (no claimed agreement or implementation). Partly misses criterion 1: it reopens the agreed 24-hour rollback and opt-in details and recommends a channel without a new reason."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 2 met: asks about the delivery channel first. Criterion 3 met: defers provider choice until channel is known. Criterion 1 missed: reopens the settled weekly digest/opt-in/24-hour rollback decisions by probing them and recommending email. Criterion 4 met: does not claim agreement or begin implementation."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Next question: **which delivery channel should the weekly digest use?**\n\nThe options I'd consider:\n\n1. **Email**: Works for an opt-in audience and is easy to roll back if we send a digest in error. Providers are typically transactional email services.\n2. **In-app notification**: Keeps everything inside the product, but only reaches people who open it.\n3. **Push notification**: Good for quick alerts, but a weekly digest is long for a push, so it would probably just link to the full content.\n4. **Chat or messaging integration** (Slack, Teams, SMS): Useful for specific audiences, but adds integration and consent requirements.\n\nI'd lean toward **email** for a weekly digest with an opt-in audience. It fits the 24-hour rollback window, since a queued send can be held or cancelled before it goes out.\n\nWhich channel do you want, or should we compare two of these in more detail first? Once it's chosen, I'll move to provider selection.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Does not reopen the weekly digest, opt-in, or rollback decisions; asks for the delivery channel first; defers provider selection; claims no agreement and starts no implementation."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about the delivery channel first, leaves the settled digest, opt-in audience and rollback decisions alone, defers provider selection until the channel is chosen, and claims no agreement or implementation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (does not reopen settled decisions), 2 (asks about channel first), and 3 (defers provider selection until channel is chosen); misses 4 only partly—it says 'I'll move to provider selection' but does not claim agreement or start implementation, so it actually satisfies 4 too, yielding full marks."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about the delivery channel first, leaves the digest, opt-in, and rollback decisions alone, defers provider selection until after the channel is chosen, and claims no agreement or implementation."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 2 (asks about channel first) and 3 (defers provider selection), but missed 1 and 4: it reopens settled decisions by listing channel options that conflict with the agreed opt-in/rollback framing only loosely, and it claims implicit agreement by leaning toward email and tying it to the 24-hour window without flagging the settled-decision boundary."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Got it. Weekly digest, opt-in audience, and a 24-hour rollback window are settled. The open decision is the delivery channel, and provider selection depends on it, so that's the next question.\n\n**Which channel should the weekly digest go out on?**\n\n- **Email:** Familiar to most people, works well for a weekly cadence, and is easy to make opt-in with a clear unsubscribe.\n- **In-app notification or feed:** Reaches only people who are already using the product, but it's more work to build and is easier to miss.\n- **Push notification:** Gets attention, but it's a poor fit for a weekly digest and tends to raise opt-out rates.\n- **SMS:** Hard to justify for a digest, and it adds compliance overhead.\n- **Other:** Slack, Teams, a webhook, or something else specific to your setup.\n\nIf you want a default, email fits a weekly opt-in digest best. Which one do you want, or is it a mix? Once you answer, I'll move on to provider selection.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Settled decisions are restated without reopening them, the channel is asked first, provider choice is deferred until after the channel answer, and no implementation is started."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Does not reopen settled decisions (digest, opt-in, rollback), asks about channel first and defers provider selection, but implicitly treats the channel as an open question with a recommended default rather than purely asking; no claimed agreement or implementation. Criteria 1-3 met, 4 met, so near-full."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criteria 1-3 are met: settled decisions are not reopened, it asks about channel first, and defers provider choice. It fails criterion 4 only partially, since it says 'Got it' and 'settled' but does not claim agreement on the channel or start implementation; the rubric's 0.25 weights yield 0.75 for three fully satisfied criteria, with criterion 4 arguably met too."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Settled decisions are restated without reopening them, the channel question is asked first, provider choice is explicitly deferred, and nothing is implemented or agreement falsely claimed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (does not reopen settled decisions), 2 (asks about channel first), and 3 (defers provider choice until channel known); misses 4 by saying 'Got it' and 'Once you answer, I'll move on to provider selection', which implicitly claims agreement on the settled items rather than only restating them."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": {
+      "answer": "Here's what we have so far:\n\n- **Cadence:** weekly digest\n- **Audience:** opt-in only\n- **Rollback window:** 24 hours\n- **Open:** delivery channel, which determines the provider\n\nSince the provider depends on the channel, let's settle the channel first. Which channels are you considering?\n\n1. **Email**\n2. **In-app or web notification**\n3. **Push notification** (mobile)\n4. **SMS**\n5. **Chat integration** (Slack, Teams, Discord, etc.)\n6. **Something else**\n\nFollow-up questions once you've picked:\n\n- **Volume:** roughly how many subscribers do you expect in the first year?\n- **Content:** is the digest text only, or does it include images, links, or attachments?\n- **Consent:** do you need to record and prove opt-in (for example, under GDPR or CAN-SPAM), or only honor an unsubscribe?\n- **Ownership:** will you manage subscriber lists yourself, or does the channel's platform own them?\n- **Rollback:** within the 24-hour window, what does \"rollback\" mean: unsending, retracting a published edition, or correcting a later send?",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (no reopening of cadence, opt-in audience, rollback), 2 (asks about channel first), and 3 (defers provider until channel known); missed 4 is satisfied too since it doesn't claim agreement on channel or start implementation, but it recaps prior decisions as 'what we have so far' which is acceptable, so all four are arguably met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response does not reopen the settled cadence, audience, or rollback decisions, asks about the delivery channel first, defers provider choice until channel is known, and does not claim agreement or start implementation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks about the channel first, defers provider choice, and does not claim agreement or start implementation. It partly misses criterion 1: the rollback question reopens the meaning of the settled 24-hour window."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Restates cadence, opt-in audience, and 24-hour rollback as settled, asks about the channel first, defers provider choice, and neither claims new agreement nor starts implementation."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response does not reopen the weekly/opt-in/24-hour decisions, asks about the delivery channel first with options, defers provider choice until channel is known, and claims no agreement or implementation."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Next question: **which delivery channel should the weekly digest use?**\n\nOptions to consider:\n\n- **Email**: reaches opt-in subscribers directly and is the most common choice for weekly digests.\n- **In-app notification or feed**: only reaches users who are already active in the product.\n- **Chat or messaging app (e.g., Slack, Discord, SMS)**: suits a specific community, but usually needs per-platform setup and consent handling.\n- **Multiple channels**: possible, but it would multiply the provider decisions and the 24-hour rollback logic.\n\nOnce you pick a channel, I'll ask about the provider options for it. The recorded decisions so far are the weekly cadence, opt-in audience, and 24-hour rollback window.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks about delivery channel first and defers provider choice until channel is known, without reopening settled decisions or claiming agreement; it does not claim implementation. The criterion about not claiming agreement is met because it only restates recorded decisions. Full credit is withheld only because the question-first framing is hard to judge fully."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about the delivery channel first, defers provider choice until the channel is known, leaves the settled cadence, opt-in and rollback decisions unchanged, and claims no agreement or implementation."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "It keeps the settled cadence, opt-in audience, and rollback window, asks about the delivery channel first, defers provider choice until the channel is known, and claims no new agreement or implementation."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "It keeps the settled decisions without reopening them, asks about the delivery channel first, defers provider choice until the channel is known, and claims no agreement or implementation."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 2 (asks about channel first) and criterion 3 (defers provider choice); missed criterion 1 by not reopening settled decisions? Actually it did not reopen them, so 1 met; criterion 4 met too, yielding 1.0 on strict reading. Corrected below."
+       }
+      ]
+     }
+    },
+    {
+     "try": 6,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "Next question: **which delivery channel should the weekly digest use?**\n\nProvider selection follows from this choice, so it's the right thing to settle first. The likely options are:\n\n- **Email:** the most common choice for a weekly digest. It fits opt-in audiences well and suits a 24-hour rollback window, since a message can be held or superseded before the window closes.\n- **In-app:** no external provider needed, but readers only see the digest when they open the product.\n- **Chat (e.g., Slack or Teams):** works for team audiences, but requires each reader to have connected an account.\n- **SMS or push:** better for short alerts than a weekly digest. Probably not a good fit here.\n\nFor a weekly digest with an opt-in audience, email is the usual default. Which channel do you want? If you have constraints, such as an existing provider, a compliance requirement, or an audience that doesn't read email, tell me and I'll factor them in before we pick a provider.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks the channel question first, defers provider choice until channel is known, does not reopen the digest, opt-in, or rollback decisions, and claims no agreement or implementation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 2 (asks about delivery channel first) and 3 (explicitly defers provider selection until channel is known) and 1 (does not reopen the settled digest/opt-in/rollback decisions); missed criterion 4 nowhere violated—response does not claim agreement or start implementation, so actually all four are met, but it stays text-only and asks a question rather than implementing, so 1.0 would be justified; score reduced slightly for the unsolicited channel-option survey."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 2 (asks about channel first) and 3 (defers provider choice until channel is known); missed criterion 1 by reopening the digest/opt-in question only loosely, and criterion 4 is met since it does not claim agreement or start implementation. Score recomputed on rubric: criteria 2, 3, and 4 satisfied, so 0.75 would be the strict count."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four criteria: it leaves the settled digest, opt-in audience and rollback decisions alone, asks about the channel first, defers provider choice, and claims no agreement or implementation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks about delivery channel first and defers provider choice until channel is known, without reopening settled decisions or claiming agreement; it does, however, state a default ('email is the usual default') and does not start implementation. Criterion 1 is met since no settled decisions are reopened. Scoring: criteria 1, 2, 3, 4 each 0.25 gives 1.0; but the response volunteers a leaning toward email, which arguably pre-empts the open channel question, so criterion 3 is weakened, giving 0.75."
+       }
+      ]
+     }
+    },
+    {
+     "try": 7,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "Here's where we are:\n\n**Agreed so far**\n- **Cadence:** weekly digest\n- **Audience:** opt-in only\n- **Rollback window:** 24 hours\n\n**Still open**\n- **Delivery channel:** undecided. The provider depends on it, so we'll pick the provider after the channel.\n\n**Next question:** Which delivery channel do you want for the weekly digest? The likely options are:\n\n1. **Email**, which usually needs an email-sending provider and a way to handle unsubscribes.\n2. **In-app**, which needs no outside provider but only reaches users who open the product.\n3. **Push notifications**, which need a push provider and per-device opt-in.\n4. **Chat integration** (for example Slack or Teams), which fits team audiences but needs each workspace to connect.\n\nWhich of these fits your audience best, or should some combination be supported? If you're unsure, tell me who the digest is for and how they usually read updates, and I can recommend one.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (doesn't reopen cadence/audience/rollback), 2 (asks about channel first), and 3 (defers provider choice); misses 4 partially? It doesn't claim agreement falsely nor start implementation, so 4 is also met, but it summarizes 'Agreed so far' which is acceptable; scoring all four yields 1.0."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Restates the agreed cadence, audience, and rollback without reopening them, asks about the delivery channel first, defers provider choice until the channel is known, and starts no implementation."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Restates the three agreed decisions without reopening them, asks about the delivery channel first, defers provider choice until the channel is known, and starts no implementation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (no reopening of cadence, audience, rollback), 2 (asks about channel first), and 3 (defers provider until channel known); misses 4 partially by not claiming agreement? It restates decisions as 'Agreed so far' without claiming new agreement, so it is actually satisfied; still, scored 0.75 because it's borderline on criterion 4 wording."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "It restates the settled cadence, audience, and rollback window without reopening them, asks about the delivery channel first, defers provider choice until the channel is known, and starts no implementation."
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

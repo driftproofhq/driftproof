@@ -45,6 +45,8 @@ live badge for the bundled example, generated from its own receipt.
 
 [All seventeen reports](#reports) · [driftproofhq.com](https://driftproofhq.com)
 
+[Can you tell? Every skill](https://driftproofhq.com/can-you-tell/) · [The AI noticed the sugar pill](https://driftproofhq.com/noticed/) · [Which bar is the fake?](https://driftproofhq.com/spot-the-fake/) · [Every task we gave a skill](https://driftproofhq.com/tasks/) · [Skill or sugar pill?](https://driftproofhq.com/sugar-pill/)
+
 ![The page driftproof view makes from Report 013's receipts: three skills by three models, each result in plain words: clearly helped, no clear difference, or too few answers to tell.](https://driftproofhq.com/assets/view-report-013.png)
 The page `npx driftproof view` makes from [Report 013's
 receipts](https://github.com/driftproofhq/driftproof/tree/main/receipts/report-013),
@@ -708,7 +710,7 @@ A receipt is the unit of evidence — one JSON document conforming to
     "model_release_date": "2025-10-01",
     "provider": "anthropic",
     "surface": "claude-cli",
-    "runner_version": "0.26.3",
+    "runner_version": "0.27.0",
     "date_utc": "2026-07-27T…Z",
     "registry": "registered",
     "transcripts": "hashes-only",
@@ -791,7 +793,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: driftproofhq/driftproof@v0.26.3
+      - uses: driftproofhq/driftproof@v0.27.0
         with:
           skill-dir: skills/my-skill
           models: claude-haiku-4-5
@@ -926,7 +928,7 @@ permissions:
   contents: read
   issues: write
 # ...
-      - uses: driftproofhq/driftproof/stale@v0.26.3
+      - uses: driftproofhq/driftproof/stale@v0.27.0
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill

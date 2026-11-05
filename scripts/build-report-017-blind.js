@@ -175,7 +175,7 @@ function pageHtml({ data, paired, suite, receipt, receiptRel, answersRel, skippe
   // and OG description from it (spec 020 AC-14, A-638-3); the page declares none of its own.
   const main = '<main class="blind-page">'
     + '<h1>' + esc(TITLE) + '</h1>'
-    + p(description, 'lede') + p(INTRO) + p(howOf(skill)) + p(GAME) + p(blind.HONESTY, 'blind-honesty') + p(CUES, 'blind-cues')
+    + p(description, 'lede') + '<p><a href="/can-you-tell/">Try every skill, both models, and the fake vs nothing twist</a></p>' + p(INTRO) + p(howOf(skill)) + p(GAME) + p(blind.HONESTY, 'blind-honesty') + p(CUES, 'blind-cues')
     + p(pickLine(skill, skipped)) + p(readingWords({ reading: placeboReading(receipt).reading, line: blind.readingLine(receipt) }, skill))
     + p(scopeLine({ receipt, data, suite, skillText }), 'blind-scope') + p(counts, 'blind-counts') + p(spreadOf(data.pairs.length)) + p(SOURCE, 'blind-source-note')
     + '<section class="blind" data-island="blind-read" data-blind-source="' + source + '"><h2>The pairs</h2>'

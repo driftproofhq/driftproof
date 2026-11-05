@@ -1,0 +1,101 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Issue 688: the sugar pill page's own layout, on the site's dark shell. Each skill is a card of
+   stock; its two measurements sit side by side where the track is wide enough and stack at phone
+   width. Colours, sizes, radii and widths are tokens (spec 025 AC-3). The only motion is in the
+   reduced-motion guard at the end (spec 025 AC-7). */
+.pill-page { max-width: var(--w-wide); }
+.pill-page .lede { font-size: var(--t-h3); line-height: 1.4; color: var(--shell-text); max-width: var(--w-read-long); }
+.pill-how { color: var(--shell-muted); }
+
+.pill-key { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: var(--s-1) 0; margin: var(--s-3) 0; }
+.pill-key summary { cursor: pointer; min-height: var(--touch); display: flex; align-items: center; font-weight: 500; }
+.pill-key dl { margin: 0 0 var(--s-2); }
+.pill-key dt { font-family: var(--sans); font-weight: 500; margin-top: var(--s-2); color: var(--shell-text); }
+.pill-key dd { margin: 0; color: var(--shell-muted); }
+
+.pill-grouping { color: var(--shell-muted); font-size: var(--t-fine); }
+.pill-chips, .pill-chipbar { display: flex; flex-wrap: wrap; gap: var(--s-1); margin: var(--s-2) 0 var(--s-3); }
+.pill-chips a, .pill-chipbar button {
+  display: inline-flex; align-items: center; min-height: var(--touch); padding: 0 var(--s-2);
+  border: 1px solid var(--border-strong); border-radius: var(--radius);
+  background: var(--surface); color: var(--shell-text); text-decoration: none;
+  font: inherit; font-size: var(--t-fine); cursor: pointer;
+}
+.pill-chips a:hover, .pill-chipbar button:hover { border-color: var(--shell-accent); color: var(--shell-accent); }
+.pill-chipbar button[aria-pressed="true"] { background: var(--shell-accent); color: var(--desk); border-color: var(--shell-accent); }
+.pill-search { display: grid; gap: var(--s-1); margin: 0 0 var(--s-3); max-width: var(--w-read); }
+.pill-search label { display: grid; gap: var(--s-1); font-size: var(--t-fine); color: var(--shell-muted); }
+.pill-search input { min-height: var(--touch); padding: 0 var(--s-2); font: inherit; color: var(--shell-text); background: var(--deep); border: 1px solid var(--border-strong); border-radius: var(--radius); }
+.pill-status { margin: 0; color: var(--shell-muted); font-size: var(--t-fine); }
+
+.pill-group { margin: var(--s-4) 0; }
+.pill-group h2 { font-size: var(--t-h3); margin-bottom: var(--s-2); }
+.pill-skills { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-2); }
+/* A card takes the whole track: the chrome's reading measure on list items (docs/tokens.css, loaded
+   after this sheet) is lifted here with one more class, so two measurements can sit side by side. */
+.pill-page .pill-skills > li, .pill-page .pill-caveats li { max-width: none; }
+.pill-card { margin: 0; padding: 0; border-radius: var(--radius); }
+.pill-card > summary {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--s-2); align-items: baseline;
+  padding: var(--s-2) var(--s-3); cursor: pointer; min-height: var(--touch); list-style: none;
+}
+.pill-card > summary::-webkit-details-marker { display: none; }
+.pill-name { font-family: var(--display); font-size: var(--t-h3); color: var(--ink); }
+.pill-repo { font-family: var(--mono); font-size: var(--t-mono-sm); color: var(--ink-muted); justify-self: end; }
+.pill-desc { grid-column: 1 / -1; color: var(--ink-muted); font-size: var(--t-fine); max-width: var(--w-read-long); margin-top: var(--s-1); }
+.pill-open { grid-column: 1 / -1; color: var(--accent-ink); font-size: var(--t-fine); font-weight: 500; margin-top: var(--s-1); }
+.pill-card[open] .pill-open { display: none; }
+
+.pill-body { padding: 0 var(--s-3) var(--s-3); border-top: 1px solid var(--rule); }
+/* Two measurements side by side from the card width's minimum (the track beside the rail is about
+   900px at 1280px wide); one under the other on a phone. */
+.pill-models { display: grid; gap: var(--s-3) var(--s-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--w-card-min)), 1fr)); margin-top: var(--s-2); }
+.pill-measure { min-width: 0; }
+.pill-measure h3 { margin: var(--s-2) 0 0; }
+.pill-when { color: var(--ink-muted); font-size: var(--t-fine); margin: 0 0 var(--s-2); }
+.pill-ways { width: 100%; margin: var(--s-2) 0; font-size: var(--t-fine); background: none; box-shadow: none; }
+.pill-ways caption { text-align: left; caption-side: bottom; color: var(--ink-muted); font-size: var(--t-mono-sm); padding-top: var(--s-1); }
+.pill-ways th, .pill-ways td { white-space: normal; padding: var(--s-1); vertical-align: top; border-bottom: 1px solid var(--rule); min-width: 0; }
+.pill-ways thead th { color: var(--ink-muted); font-weight: 500; font-size: var(--t-mono-sm); }
+.pill-ways th[scope="row"] { font-family: var(--mono); font-size: var(--t-mono-sm); color: var(--ink-muted); overflow-wrap: break-word; min-width: 7ch; }
+.pill-figure { display: block; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pill-spread { color: var(--ink-muted); margin-left: 0.3em; font-size: var(--t-mono-sm); }
+.pill-bar { display: block; width: 100%; height: 10px; margin-top: var(--s-1); }
+.pill-arm-with-skill { fill: var(--accent-ink); }
+.pill-arm-placebo { fill: var(--mixed); }
+.pill-arm-baseline { fill: var(--ink-muted); }
+.pill-bar-spread { fill: var(--ink); opacity: 0.45; }
+.pill-reading { margin: var(--s-2) 0; }
+.pill-label { color: var(--ink-muted); }
+.pill-reading code { font-size: var(--t-mono-sm); }
+.pill-handoff, .pill-caveats { font-size: var(--t-fine); color: var(--ink-muted); }
+.pill-caveats { margin: var(--s-2) 0; padding-left: var(--s-3); }
+.pill-caveats li { margin: var(--s-1) 0; }
+/* The reading's word takes the ink of the state it names, as the receipt pages' stamps do: a
+   separation up in the stamp pad's ink, a separation down in the regression ink. */
+.pill-fake[data-reading="ABOVE_PLACEBO"] > strong, .pill-none[data-verdict="PASSED"] > strong { color: var(--accent-ink); }
+.pill-fake[data-reading="BELOW_PLACEBO"] > strong, .pill-none[data-verdict="REGRESSED"] > strong { color: var(--reg); }
+.pill-caveats strong { color: var(--ink); }
+.pill-links { margin: var(--s-2) 0 0; }
+.pill-about { margin-top: var(--s-5); border-top: 1px solid var(--border); padding-top: var(--s-3); color: var(--shell-muted); }
+
+@media (max-width: 640px) {
+  .pill-card > summary, .pill-body { padding-inline: var(--s-2); }
+  .pill-repo { justify-self: start; grid-column: 1 / -1; }
+  .pill-ways thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .pill-ways tr { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .pill-ways th[scope="row"] { border-bottom: 0; padding-bottom: 0; }
+  .pill-ways td { border-bottom: 0; }
+  .pill-ways tr { border-bottom: 1px solid var(--rule); padding-bottom: var(--s-1); }
+  .pill-ways td::before { content: attr(data-way); display: block; font-size: var(--t-mono-sm); color: var(--ink-muted); }
+}
+
+/* The one motion on this page, guarded: once the island has mounted, a card that opens rises in and
+   its bars grow from the left. Without script, and under a reduced-motion preference, the bars are
+   drawn full and nothing moves. */
+@media (prefers-reduced-motion: no-preference) {
+  .pill-picker.is-mounted .pill-card[open] > .pill-body { animation: pill-rise 360ms ease-out both; }
+  @keyframes pill-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .pill-picker.is-mounted .pill-bar rect { transform: scaleX(0.02); transform-box: fill-box; transform-origin: left center; transition: transform 700ms ease-out; }
+  .pill-picker.is-mounted .pill-card.is-live .pill-bar rect { transform: scaleX(1); }
+}

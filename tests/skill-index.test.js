@@ -323,13 +323,17 @@ const titleOf = (html) => { const m = /<title>([\s\S]*?)<\/title>/i.exec(html); 
 const descOf = (html) => { const m = /<meta\s+name="description"\s+content="([^"]*)"/i.exec(html); return m ? decode(m[1]) : null; };
 const dataOf = (tag, k) => { const m = new RegExp(`\\sdata-${k}="([^"]*)"`).exec(tag); return m ? decode(m[1]) : null; };
 const PAIR = /<dt>([\s\S]*?)<\/dt>\s*<dd>([\s\S]*?)<\/dd>/g;
+// Issue 716: a row ends with its Send this result block (spec 694), which restates the row and which spec 694's
+// check holds to the reader; the row's own content is what comes before it.
+const SEND_BLOCK = /\s*<div class="send-result" data-island="send-result"[\s\S]*<\/details><\/div>\s*$/;
 function rowsOf(html) {
   const rows = [];
   for (const m of html.matchAll(/(<article\b[^>]*class="skill-row"[^>]*>)([\s\S]*?)<\/article>/g)) {
     const fields = {};
     const order = [];
-    for (const f of m[2].matchAll(PAIR)) { const k = textOf(f[1]); fields[k] = { text: textOf(f[2]), html: f[2] }; order.push(k); }
-    rows.push({ tag: m[1], html: m[0], inner: m[2], receipt: dataOf(m[1], 'receipt'), source: dataOf(m[1], 'source'), evidence: dataOf(m[1], 'evidence'), freshness: dataOf(m[1], 'freshness'), fields, order });
+    const inner = m[2].replace(SEND_BLOCK, '');
+    for (const f of inner.matchAll(PAIR)) { const k = textOf(f[1]); fields[k] = { text: textOf(f[2]), html: f[2] }; order.push(k); }
+    rows.push({ tag: m[1], html: m[0], inner, receipt: dataOf(m[1], 'receipt'), source: dataOf(m[1], 'source'), evidence: dataOf(m[1], 'evidence'), freshness: dataOf(m[1], 'freshness'), fields, order });
   }
   return rows;
 }
@@ -353,7 +357,8 @@ const partsOf = (html) => [textOf(html), titleOf(html) || '', descOf(html) || ''
 const stripBuildDate = (html) => html.replace(/<time data-build-date datetime="\d{4}-\d{2}-\d{2}">\d{4}-\d{2}-\d{2}<\/time>/g, '<time data-build-date></time>');
 const SKELETON = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>t</title>\n</head>\n<body>\n<main></main>\n</body>\n</html>\n';
 const mainOf = (html) => { const m = /<main\b[^>]*>([\s\S]*)<\/main>/.exec(html); return m ? m[1] : null; };
-const outsideMain = (html) => textOf(html.replace(/<head>[\s\S]*?<\/head>/i, ' ').replace(/<main\b[\s\S]*<\/main>/, ' '));
+// Issue 716: the plain-word cards' mount (spec 689) follows a page's markers, and spec 689 holds it; it is not the chrome.
+const outsideMain = (html) => textOf(html.replace(/<head>[\s\S]*?<\/head>/i, ' ').replace(/<main\b[\s\S]*<\/main>/, ' ').replace(/<!--driftproof:cards-->[\s\S]*?<!--\/driftproof:cards-->/, ' '));
 // What the chrome alone writes at a path: outside <main>, and inside an empty <main>.
 function chromeOf(p, headings = []) {
   const fixture = headings.map(x=>'<h2>'+x+'</h2>').join('');

@@ -379,6 +379,29 @@ test('AC-11: --check reproduces the page and the island, and refuses one changed
   }
 });
 
+// A-638-5, issue 693: the link record is identified by what it records, not its
+// ordinal position. Every assertion below reads the matching section itself.
+function assertBlindLinkAmendment(amendments, selectedSkill) {
+  const note = "Added a link, after the opening panel, to a blind read of " + selectedSkill + "'s kept answers. Counts, readings and receipts are unchanged.";
+  const sections = [...amendments.matchAll(/<section id="amendment-(\d+)">([\s\S]*?)<\/section>/g)];
+  const matches = sections.filter(([, , body]) => [...body.matchAll(/<p>([\s\S]*?)<\/p>/g)].some(m => textOf(m[1]) === note));
+  assert.equal(matches.length, 1, 'one amendment records the blind-page link and preserves counts, readings and receipts');
+  const [section, number, body] = matches[0];
+  const heading = /<h3>([\s\S]*?)<\/h3>/.exec(body);
+  assert.ok(heading, 'the matching amendment has its own heading');
+  const date = /^Amendment ([1-9]\d*), (\d{1,2}) ([A-Za-z]+) (\d{4})$/.exec(textOf(heading[1]));
+  assert.ok(date, 'the matching amendment is dated');
+  assert.equal(date[1], number, 'the heading agrees with its section number');
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const month = months.findIndex(m => date[3] === m || date[3] === m.slice(0,3));
+  assert.ok(month >= 0, 'a real month');
+  const day = Number(date[2]), year = Number(date[4]), parsed = new Date(Date.UTC(year, month, day));
+  assert.equal(parsed.getUTCFullYear(),year);
+  assert.equal(parsed.getUTCMonth(),month);
+  assert.equal(parsed.getUTCDate(),day, 'a real calendar day');
+  return section;
+}
+
 test('AC-12: sitemap, head, llms.txt and one link from Report 017 with a dated amendment', () => {
   assert.ok(read('sitemap-pages.xml').includes('<loc>https://driftproofhq.com' + URL_PATH + '</loc>'));
   assert.equal(require('../scripts/build-head-tags.js').render(html, PAGE), html, 'the head builder leaves the page as it is');
@@ -390,11 +413,28 @@ test('AC-12: sitemap, head, llms.txt and one link from Report 017 with a dated a
   assert.equal((report.match(new RegExp('href="' + URL_PATH + '"', 'g')) || []).length, 1, 'one link');
   assert.ok(textOf(report).includes('Can you tell which answer had the skill? Try a blind read of ' + skill + '\'s kept answers.'), 'the link line names the page\'s skill');
   const { amendments } = splitReportBody(report);
-  // The record is a dated section in the report's own form (spec 627 A-627-8), appended after the
-  // hand-off note's Amendment 1 so the recorded prefix stays.
-  assert.match(amendments, new RegExp('<section id="amendment-1">[\\s\\S]*</section><section id="amendment-2"><h3>Amendment 2, \\d+ \\w+ \\d{4}</h3><p>Added a link, after the opening panel, to a blind read of ' + skill + '(?:\'|&#39;)s kept answers\\. Counts, readings and receipts are unchanged\\.</p></section>$'));
+  assertBlindLinkAmendment(amendments, skill);
   const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts/build-report-baselines.mjs'), '--check'], { cwd: ROOT, encoding: 'utf8' });
   assert.equal(r.status, 0, r.stdout + r.stderr);
+});
+
+
+test('AC-12 plants: the link amendment stays dated and specific when later amendments follow', () => {
+  const { amendments } = splitReportBody(read('reports/017/index.html'));
+  const record = assertBlindLinkAmendment(amendments, skill);
+  assert.doesNotThrow(() => assertBlindLinkAmendment(amendments + '<section id="amendment-99"><h3>Amendment 99, 4 Nov 2026</h3><p>A later unrelated change.</p></section>', skill));
+  const renumbered = record.replace(/amendment-\d+/, 'amendment-42').replace(/Amendment \d+,/, 'Amendment 42,');
+  assert.doesNotThrow(() => assertBlindLinkAmendment(amendments.replace(record,renumbered),skill));
+  const plants = [
+    '',
+    record.replace(/<h3>[\s\S]*?<\/h3>/, '<h3>Amendment 2</h3>'),
+    record.replace(/, \d{1,2} [A-Za-z]+ \d{4}/, ', 31 Feb 2026'),
+    record.replace(/Amendment \d+,/, 'Amendment 97,'),
+    record.replace(skill, 'another-skill'),
+    record.replace('Counts, readings and receipts are unchanged.', 'The results changed.'),
+    record.replace('Added a link, after the opening panel,', 'Added an unrelated note,')
+  ];
+  for (const planted of plants) assert.throws(() => assertBlindLinkAmendment(amendments.replace(record,planted),skill));
 });
 
 test('AC-13: building moves no receipt, answers, suite or Report 017 reading', () => {

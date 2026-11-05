@@ -213,7 +213,9 @@ function findFirst(node, tag) {
 }
 
 function toMarkdown(html, rel) {
-  const tree = parse(html);
+  // The plain-word markers (spec 689) are chrome on the word they wrap: the copy carries the word as the
+  // page's body wrote it, so no copy moves when a word gains or loses its card.
+  const tree = parse(require('./glossary-terms.js').unwrapTerms(html));
   const main = findMain(tree);
   if (!main) throw new Error(`${rel}: no <main>`);
   const h1 = findFirst(main, 'h1');

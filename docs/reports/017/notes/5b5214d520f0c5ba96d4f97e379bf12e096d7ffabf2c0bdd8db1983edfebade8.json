@@ -1,0 +1,932 @@
+{
+ "format": "driftproof-judge-notes/1",
+ "report": "017",
+ "report_url": "/reports/017/",
+ "attempt_id": "5b5214d520f0c5ba96d4f97e379bf12e096d7ffabf2c0bdd8db1983edfebade8",
+ "skill": "tdd",
+ "repository": "mattpocock/skills",
+ "receipt_hash": "8a54b710d73e61ff14ffb7a027676a17b57a5d8077fa08b578b37e307e16a816",
+ "receipt_page": "/r/8a54b710d73e61ff14ffb7a027676a17b57a5d8077fa08b578b37e307e16a816/",
+ "receipt_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/5b5214d520f0c5ba96d4f97e379bf12e096d7ffabf2c0bdd8db1983edfebade8.json",
+ "answers_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/5b5214d520f0c5ba96d4f97e379bf12e096d7ffabf2c0bdd8db1983edfebade8-answers.json",
+ "suite_file": "https://github.com/driftproofhq/driftproof/blob/main/specs/408-skill-measurements/suites/mattpocock--skills--tdd.json",
+ "model": "Claude Sonnet 5.5",
+ "judge": "Claude Haiku 5.5",
+ "judge_samples": 5,
+ "date": "1 November 2026",
+ "arms": [
+  {
+   "key": "with_skill",
+   "label": "With the skill"
+  },
+  {
+   "key": "placebo",
+   "label": "With the fake text"
+  },
+  {
+   "key": "baseline",
+   "label": "With nothing"
+  }
+ ],
+ "caveats": [
+  "Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings.",
+  "The scores and reasons are the judge model's own words, kept exactly as it wrote them. They are a model's reading of the rubric, not Driftproof's.",
+  "This is one task of three. Each skill was given three text tasks, and one task is not the whole measurement."
+ ],
+ "tasks": [
+  {
+   "id": "test",
+   "number": 1,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. The agreed public seam is reserve(stock, amount), returning remaining stock. For stock 4 and amount 2, the required result is 2. Draft the first test and the next step in a test-first cycle.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/engineering/tdd/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 5505d25bbaa8fc14a79e4d20163936958992a2995b7f1dd1d6197edc9ed722e0; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Test the public reserve interface 2. Assert the independently given value 2 3. Run or propose the failing test before implementation 4. Describe one minimal implementation step rather than all tests at once",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "## First test (red)\n\nThe language wasn't specified, so this is Jest-style JavaScript. It tests only at the agreed seam, `reserve(stock, amount)`, and the expected value is a literal from the spec, not recomputed.\n\n```js\nimport { reserve } from \"./reserve\";\n\ntest(\"reserving 2 from a stock of 4 leaves 2\", () => {\n  expect(reserve(4, 2)).toBe(2);\n});\n```\n\n## Next step in the cycle\n\n1. **Confirm red.** Run the test and check that it fails for the right reason: `reserve` doesn't exist yet, or it returns the wrong value. A test that never failed proves nothing.\n2. **Go green with the minimum code.** Write only enough to pass this one test:\n   ```js\n   export function reserve(stock, amount) {\n     return stock - amount;\n   }\n   ```\n   Don't add validation, negative-stock handling, or other speculative behavior yet.\n3. **Pick the next slice.** Choose the next behavior at the same seam, but only from what the facts support. One candidate is what `reserve` should do when `amount` exceeds `stock`. The spec doesn't say, so that needs a decision first. Then write one new failing test and repeat.\n\nRefactoring is not part of this loop. It belongs to the review stage.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(stock, amount) seam, asserts the independently given value 2 for (4, 2), proposes the failing test before implementation, and describes one minimal implementation step rather than all tests at once."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(stock, amount) seam, asserts the given value 2, proposes running the failing test before implementation, and describes one minimal implementation step for a single test."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests only the public reserve(stock, amount) seam, asserts the literal given value 2 for (4, 2), proposes running the failing test before implementation, and describes a single minimal implementation step with the next slice deferred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests only the public reserve(stock, amount) seam, asserts the independently given value 2 for stock 4 and amount 2, proposes running the test red before implementation, and describes one minimal implementation step."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(stock, amount) seam, asserts the given value 2, proposes running the test red before implementing, and gives one minimal implementation step."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I'm assuming Python with pytest syntax since no language was given. The cycle is the same in any language.\n\n## Step 1: Red, the first test\n\n```python\ndef test_reserve_returns_remaining_stock():\n    assert reserve(4, 2) == 2\n```\n\nThis goes through only the agreed seam, `reserve(stock, amount)`, and checks the one example we have: stock 4 and amount 2 gives 2. Run it before writing any implementation. It should fail because `reserve` doesn't exist yet (a `NameError` or `ImportError`). That confirms the test can fail and is checking the right thing.\n\n## Step 2: Green, the next step\n\nWrite the smallest code that makes that test pass. Two options:\n\n- **Fake it:** `def reserve(stock, amount): return 2`. This is the strictest version, and a second example would then force you to generalize.\n- **Obvious implementation:** `def reserve(stock, amount): return stock - amount`. This is fine here because the rule is trivial and clearly implied by \"returning remaining stock.\"\n\nI'd go with the obvious implementation. Run the test, confirm it passes, and only then consider refactoring (there's nothing to clean up yet).\n\n## Step 3: What comes after\n\nStart the next red-green loop with another example that pins the behavior, such as `reserve(10, 3) == 7`. If you faked it in step 2, that example is what forces the real implementation.\n\nThe facts you've given don't say what should happen when `amount` exceeds `stock`, when `amount` is zero, or when either value is negative. I haven't invented answers for those. Each one needs your decision (return a value, raise an error, and so on) before it gets its own test.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(stock, amount) seam, asserts the given value 2 for stock 4 and amount 2, proposes running the test to see it fail before implementing, and describes one minimal implementation step with later tests deferred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: tests the public reserve seam, asserts the given value 2 for (4, 2), proposes running the failing test before implementation, and describes one minimal implementation step."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response tests the public reserve(stock, amount) seam, asserts the given value 2, proposes running the failing test before implementation, and describes one minimal implementation step."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response tests only the public reserve(stock, amount) seam, asserts the given value reserve(4, 2) == 2, runs the test to confirm failure before implementation, and describes one minimal implementation step rather than all tests at once."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(stock, amount) seam, asserts the given value reserve(4, 2) == 2, proposes running the test red before implementation, and describes one minimal implementation step with a deferral of further tests."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Step 1 (Red): the first test**\n\nThe language and test framework weren't specified, so this is framework-neutral pseudocode. Adapt the syntax to your stack.\n\n```\ntest \"reserve returns remaining stock after reserving an amount\":\n    result = reserve(4, 2)\n    assert result == 2\n```\n\nThis test goes through only the agreed public seam, `reserve(stock, amount)`, and states the required behavior: stock 4, amount 2, remaining 2.\n\nRun it before writing any implementation. It should fail, either because `reserve` doesn't exist yet (a compile or import error) or because it returns the wrong value. Confirm it fails for that reason, not because of a typo in the test.\n\n**Step 2 (Green): the next step**\n\nWrite the simplest code that makes the test pass. A literal is allowed at this stage:\n\n```\nfunction reserve(stock, amount):\n    return 2\n```\n\nThis is deliberately naive. It proves the test is wired to the seam and can go green.\n\n**Step 3 (Triangulate, then Refactor)**\n\nA hard-coded return is only justified until a second example contradicts it. So the next test should use different values, for example:\n\n```\ntest \"reserve subtracts amount from stock\":\n    assert reserve(10, 3) == 7\n```\n\nThat fails against the literal `2`, which forces the real implementation:\n\n```\nfunction reserve(stock, amount):\n    return stock - amount\n```\n\nBoth tests are then green. Refactor only if there's duplication or unclear naming to clean up.\n\n**Not yet covered**\n\nThe facts you gave don't say what happens when `amount > stock`, when `amount` is zero, or when inputs are negative. Don't invent that behavior. Each of those needs an agreed rule (error, clamp, or something else) before it gets a test of its own.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: the test calls the public reserve(4, 2) seam, asserts the given value 2, proposes running the failing test before implementation, and describes one minimal green step (return 2)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve seam, asserts the given value 2, requires the test to fail before implementation, and describes one minimal literal-return step, though it also previews later steps."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(4, 2) seam, asserts the given value 2, proposes running the failing test before implementation, and adds one minimal step at a time (literal return, then a second triangulating test)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(stock, amount) seam, asserts the given value 2 for reserve(4, 2), requires running the test to see it fail before implementing, and describes a single minimal green step."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(stock, amount) seam, asserts the independently given value 2 for reserve(4, 2), proposes the failing test before implementation, and describes one minimal green step (return 2) before triangulating."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "## First test (red)\n\nThe seam is `reserve(stock, amount)`, which returns the remaining stock. The expected value is a literal taken from the spec, not recomputed as `stock - amount`, so the test isn't tautological.\n\n```js\nimport { reserve } from \"./reserve\";\n\ntest(\"reserving 2 from a stock of 4 leaves 2\", () => {\n  expect(reserve(4, 2)).toBe(2);\n});\n```\n\nI used JS/Jest-style syntax since no language was given. The shape carries over to any framework.\n\n## Next step in the cycle\n\n1. **Confirm red.** Run the test and check that it fails for the right reason: `reserve` doesn't exist yet, or returns the wrong value. A test that has never failed hasn't shown it can.\n2. **Go green with minimal code.** Write only enough to pass this one test:\n   ```js\n   export function reserve(stock, amount) {\n     return stock - amount;\n   }\n   ```\n   Returning a hard-coded `2` would also satisfy the test, but `stock - amount` is the simplest honest implementation of the stated behavior. Don't add validation or other speculative handling yet.\n3. **Pick the next slice.** Write a second failing test only once the first is green. Candidates are reserving more than is in stock, or reserving 0. The facts given don't define those behaviors, so I'd confirm the intended results with you before writing them. Each new test should stay at the `reserve(stock, amount)` seam.\n\nRefactoring is not part of this loop. It belongs to the review stage.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(stock, amount) interface, asserts the independently given value 2 for stock 4 and amount 2, proposes running the failing test before implementation, and describes one minimal implementation step rather than all tests at once."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(stock, amount) seam, asserts the given value 2 for stock 4 and amount 2, proposes running the test red before implementation, and describes one minimal implementation step rather than all tests at once."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(stock, amount) seam, asserts the independently given value 2, proposes the red test before implementation, and describes a single minimal implementation step."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: tests the public reserve(stock, amount) seam, asserts the given value 2, proposes running the failing test before implementation, and describes one minimal implementation step."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(stock, amount) seam, asserts the given value 2, proposes the test as red before implementation, and describes one minimal implementation step."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "## First test (red)\n\nI'm assuming Python with pytest, since no language was given. The shape carries over to any xUnit-style framework.\n\n```python\nfrom inventory import reserve\n\ndef test_reserve_returns_remaining_stock():\n    assert reserve(4, 2) == 2\n```\n\nRun it now and confirm it fails for the right reason. With no `reserve` defined yet, that means an `ImportError`. Once a stub exists, it should be a wrong-result failure rather than a crash. Seeing it fail for the expected reason shows the test can actually catch a problem.\n\n## Next step (green, then refactor)\n\nWrite the simplest code that makes this one test pass:\n\n```python\ndef reserve(stock, amount):\n    return stock - amount\n```\n\nYou could hardcode `return 2`, which is the strictest form of \"simplest thing\". Subtraction is just as small, and it's the obvious intent. If you prefer strict triangulation, hardcode first and let the second test force the generalization.\n\nThen rerun the test and confirm it's green. There's nothing to refactor yet, so commit and move on.\n\n## After that\n\nAdd the next failing test before touching the implementation. I'd pick one that pins down the contract at its edge, for example:\n\n```python\ndef test_reserve_entire_stock_leaves_zero():\n    assert reserve(4, 4) == 0\n```\n\nThis will likely pass immediately, which is fine as a characterization of the boundary. The more informative next test is what happens when `amount > stock`. That behavior isn't specified in the supplied facts, so it needs a decision from you (raise an error, clamp to zero, or something else) before I'd write that test.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: tests the public reserve(4, 2) interface, asserts the given value 2, proposes the failing test before implementation, and describes one minimal implementation step."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: tests public reserve(4, 2), asserts the given value 2, has the failing test run before implementation, and describes one minimal implementation step."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(stock, amount) interface, asserts the given value 2 for reserve(4, 2), proposes running the failing test before implementation, and describes one minimal implementation step with subsequent tests deferred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: tests the public reserve(4, 2) interface, asserts the given value 2, proposes running the failing test before implementation, and describes one minimal implementation step."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(4, 2) interface, asserts the given value 2, proposes running the test red before implementing, and describes one minimal green step (subtraction or hardcoded 2) rather than all tests at once."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Step 1 (Red): first test**\n\nThe language and framework aren't specified, so this is a framework-neutral sketch (shown in Python/pytest style):\n\n```python\ndef test_reserve_returns_remaining_stock():\n    assert reserve(4, 2) == 2\n```\n\nRun it before writing any implementation. It should fail because `reserve` doesn't exist yet (a NameError or ImportError). That failure confirms the test is actually exercising the seam.\n\n**Step 2 (Green): minimal implementation**\n\nWrite the simplest thing that makes the test pass:\n\n```python\ndef reserve(stock, amount):\n    return stock - amount\n```\n\nSubtraction is the smallest honest implementation. Returning a hardcoded `2` would also pass, but the next test would force the generalization anyway, so going straight to `stock - amount` is a reasonable shortcut.\n\n**Next step in the cycle**\n\n1. Run the test and confirm it passes.\n2. Refactor if anything needs it. At this size, nothing does.\n3. Pick the next behavior and write a failing test for it. The facts given only define the happy path, so any further behavior is a decision for you to make rather than something I should assume. Candidates:\n   - `reserve(4, 4)` returns `0` (exact depletion, which should already pass).\n   - `reserve(4, 5)` where the amount exceeds stock. What should happen here, such as raising an error or returning something else? This is the most valuable next test because it will force a real design decision.\n   - `reserve(4, 0)` or a negative amount.\n\nI'd suggest the over-reservation case next, once you've decided the intended behavior.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response tests the public reserve(4, 2) seam, asserts the given value 2, proposes running the test red before implementing, and describes one minimal implementation step (stock - amount)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response tests the public reserve(stock, amount) seam, asserts the given value 2, requires the test to fail before implementation, and describes one minimal implementation step rather than all tests at once."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(4, 2) interface, asserts the given value 2, proposes running the test red before implementing, and gives one minimal implementation step (stock - amount)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(4, 2) interface, asserts the given value 2, proposes running the test red before implementing, and describes one minimal green step (stock - amount)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Tests the public reserve interface and asserts the given value 2 for reserve(4, 2); proposes the failing test before implementation. Misses one-minimal-step: it also writes the implementation and suggests a list of further tests, not just one step."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "**Seam (agreed):** `reserve(stock, amount)` → remaining stock.\n\n**Red: first test**\n\nThe expected value `2` comes from the supplied example, not from recomputing `stock - amount` in the assertion.\n\n```js\ntest(\"reserving 2 of 4 in stock leaves 2\", () => {\n  expect(reserve(4, 2)).toBe(2);\n});\n```\n\n(Adapt the syntax to whatever test runner the project uses. The shape is one call through the public seam and one literal expected value.)\n\n**Confirm red:** Run it and check that it fails because `reserve` doesn't exist or doesn't return 2, not because of a typo or import error.\n\n**Green: minimal implementation**\n\nWrite only enough to pass this one test. Strictly minimal would be returning the literal `2`, but `stock - amount` is an equally small step that is honest about the behavior, and it doesn't add anything speculative:\n\n```js\nfunction reserve(stock, amount) {\n  return stock - amount;\n}\n```\n\n**Next step in the cycle**\n\nRun the test and confirm it's green. Then pick the next vertical slice, one test at a time. Based only on the facts given, I don't know the rules for edge cases, so I'd ask you before writing the next test. For example:\n\n- What should `reserve(2, 5)` do (amount exceeds stock): throw, return 0, or return an unchanged stock?\n- Are zero or negative amounts valid?\n\nOnce you answer, the next cycle is a new failing test for that behavior through the same `reserve` seam. Refactoring is left to the review stage, not this loop.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(stock, amount) seam, asserts the independently given literal 2, proposes the failing test before implementation, and describes one minimal implementation step with the next cycle deferred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(4, 2) seam with the literal given value 2, proposes the failing test before implementation, and describes one minimal implementation step rather than all tests."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: tests the public reserve seam, asserts the literal given value 2, proposes the failing test before implementation, and describes one minimal implementation step."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Calls the public reserve(4, 2) seam, asserts the independently given value 2, proposes the failing test before implementation, and describes one minimal green step rather than all tests."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: calls the public reserve(4, 2) seam, asserts the given literal 2, proposes the failing test before implementation, and gives one minimal green step."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**First test (red)**\n\nThe language and framework aren't specified, so here it is in Python/pytest style. Adjust the syntax to your stack.\n\n```python\ndef test_reserve_returns_remaining_stock():\n    assert reserve(4, 2) == 2\n```\n\nRun it before writing any implementation. It should fail, because `reserve` doesn't exist yet (a `NameError` or `ImportError`). That confirms the test is actually exercising the seam.\n\n**Next step (green)**\n\nWrite the simplest code that makes this one test pass:\n\n```python\ndef reserve(stock, amount):\n    return stock - amount\n```\n\nSubtraction is the smallest honest implementation. Hard-coding `return 2` would also pass, but with a single example, `stock - amount` is just as small and doesn't need a second test to force generalization.\n\nRun the test and confirm it's green.\n\n**Then the cycle continues**\n\n1. Refactor only if something is unclear. Nothing needs it yet.\n2. Pick the next behavior and write it as a new failing test through the same `reserve(stock, amount)` seam. The facts you gave don't define behavior for amount greater than stock, zero or negative amounts, or non-integer input, so those are decisions to make with whoever owns the requirement rather than guesses. The natural next candidate is the over-reservation case, for example `reserve(2, 5)`. Its expected outcome (an error, a clamp to 0, or something else) needs to be specified before the test can be written.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(stock, amount) seam, asserts the given value 2 for (4, 2), requires the test to fail before implementation, and describes one minimal green step."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(stock, amount) seam, asserts the given value 2 for reserve(4, 2), has the failing test run before implementation, and describes only one minimal implementation step at a time."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (tests the public reserve(stock, amount) seam), 2 (asserts the given value 2), and 4 (one minimal implementation step); misses 3 because the failing test is only proposed to be run before implementation, not explicitly run or confirmed failing—actually it says 'Run it before writing any implementation' and expects failure, which satisfies 3 as a proposal, so rubric fully met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(stock, amount) seam, asserts the given value 2 for reserve(4, 2), proposes running the failing test before implementation, and describes one minimal implementation step rather than all tests at once."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(4, 2) seam, asserts the given value 2, has the failing test run before implementation, and describes one minimal implementation step before a single next test."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**First test (red)**\n\nLanguage wasn't specified, so this is a language-neutral sketch, shown in Python/pytest style:\n\n```python\ndef test_reserve_returns_remaining_stock():\n    assert reserve(4, 2) == 2\n```\n\nRun it and confirm it fails for the right reason: `reserve` doesn't exist yet (NameError/ImportError), not a typo in the test.\n\n**Next step (green)**\n\nWrite the simplest code that passes, going through only the agreed seam `reserve(stock, amount)`:\n\n```python\ndef reserve(stock, amount):\n    return stock - amount\n```\n\n(Returning a hard-coded `2` is also a legitimate minimal step, but the subtraction is just as small and is the obvious implementation here.)\n\nRun the test, confirm it's green, then commit or checkpoint.\n\n**Then, the next cycle**\n\nPick the next behavior and write a new failing test through the same seam. A good candidate is the boundary where the amount exceeds the stock, for example `reserve(1, 2)`. The facts you gave don't say what the required behavior is there (raise an error, return 0, or return unchanged stock), so that's a decision to settle with you before writing that test. A safer alternative that needs no decision is `reserve(4, 4) == 0`, which would pass immediately and so serves as a characterization check rather than a driver of new code.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response tests reserve(4, 2) through the public seam, asserts the given value 2, proposes the failing test before implementation, and describes one minimal step (stock - amount)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: tests the public reserve(4, 2) seam, asserts the given value 2, proposes running the test red before implementing, and describes one minimal green step."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": ""
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(stock, amount) seam, asserts the given value 2, proposes running the failing test before implementation, and describes one minimal implementation step."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tests the public reserve(stock, amount) seam, asserts the given value reserve(4, 2) == 2, proposes the failing test before implementation, and describes one minimal implementation step rather than all tests at once."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "coupling",
+   "number": 2,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. Review this test idea: spy on a private normalizeCart helper and assert it is called once, then assert total equals items.reduce with the production formula. The public requirement is a two-item order totaling 15.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/engineering/tdd/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 5505d25bbaa8fc14a79e4d20163936958992a2995b7f1dd1d6197edc9ed722e0; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Identify private-helper coupling 2. Identify the duplicated-formula expectation 3. Replace it with an observable total of 15 4. Keep the test at the public order interface",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "This test idea has two problems, and both are anti-patterns from the TDD skill.\n\n**1. Spying on private `normalizeCart` is implementation-coupled.**\n- Asserting it's called once checks how the code works, not what it does.\n- If you inline the helper, rename it, or call it twice (say, for caching), the test breaks even though the behavior is unchanged.\n- It can also pass while the total is wrong, because it says nothing about the result.\n\n**2. Asserting `total` equals `items.reduce(...)` with the production formula is tautological.**\n- The expected value is recomputed the same way the code computes it, so it passes by construction.\n- If the formula is wrong (say it ignores quantity or double-counts), the test is wrong in the same way and still passes.\n- It never uses the actual requirement, which is 15.\n\n**What to do instead**\n\nTest through the public interface with an independent expected value taken from the spec:\n\n```\norder with two items (e.g. prices 10 and 5)  →  total is 15\n```\n\n- The literal `15` is the independent source of truth.\n- Choose item values that make the answer unambiguous. Prices 10 and 5 work, and a quantity-2 case can be a later slice.\n- Make no assertions about `normalizeCart`. If it matters, the public result will reflect it. For instance, if normalization merges duplicate SKUs, test that as its own behavior: two entries of the same SKU produce the right total.\n\n**Before writing it**\n\nThe skill says to agree the seam first. My proposal is the public order/cart total function or method, whatever the caller uses to get a total.\n- **Catches:** wrong summing, wrong item handling, and any normalization effects that reach the total.\n- **Misses:** internal edge cases of the helper that don't change the observable total, which is fine.\n\nCan you confirm that seam, or tell me what the public entry point is called? Then we'd do one red test for the 15 case, make it pass with the minimal implementation, and add further slices (quantities, empty cart, duplicates) one at a time.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response flags private-helper coupling (criterion 1), identifies the tautological reduce-formula expectation (criterion 2), replaces it with a literal observable total of 15 (criterion 3), and keeps the test at the public order/cart total interface (criterion 4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four rubric points: flags private normalizeCart spy as implementation coupling, identifies the tautological reduce-formula expectation, replaces it with literal total of 15, and keeps the test at the public order/cart total interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four rubric points: flags spying on private normalizeCart as implementation coupling, calls the reduce-based expectation tautological, replaces it with a literal total of 15, and keeps the test at the public cart total interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the private normalizeCart spy as implementation coupling, flags the reduce-based expectation as tautological, replaces it with an observable total of 15, and keeps the test at the public cart/order interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response identifies the private normalizeCart spy as implementation-coupled, flags the reduce-based expectation as tautological, replaces it with a literal total of 15, and keeps the test at the public interface."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Verdict:** I wouldn't write the test this way. It checks the implementation rather than the requirement, and it could pass while the requirement is broken.\n\n**Problems**\n\n1. **Spying on `normalizeCart` tests how, not what.** Asserting it's called once pins an internal detail. Inlining the helper, renaming it, or calling it twice (harmless if it's pure) would fail the test with no change in behavior. It also usually means reaching into private state, which couples the test to the file layout.\n\n2. **Asserting `total` equals `items.reduce(...)` with the production formula is a tautology.** If the formula is wrong (say, it ignores quantity or discounts), the test recomputes the same wrong answer and passes. The expected value should come from the requirement, not from the code under test.\n\n3. **It never checks the stated requirement.** The public requirement is that a two-item order totals 15, and nothing in the proposed test asserts 15.\n\n**What I'd do instead**\n\n- Call the public API with a concrete two-item order and assert the total is the literal `15`. For example, items priced 10 and 5, or whatever fixture fits your domain. Hard-code the expected value so the test is independent of the implementation.\n- Drop the spy entirely. If `normalizeCart` matters, it's covered through the public result. If it has meaningful logic of its own, such as merging duplicates or dropping invalid lines, test that through public inputs that exercise it, like a cart with duplicate SKUs.\n- Add a few behavior-level cases only if they reflect real requirements: an empty cart totals 0, quantities greater than 1, and rounding if prices are fractional.\n\n**Sketch**\n\n```\norder = createOrder([{ price: 10, qty: 1 }, { price: 5, qty: 1 }])\nexpect(order.total).toBe(15)\n```\n\nThe fixture shape here is a placeholder, since I haven't seen your actual types. The key point is the literal expected value, with no mocks and no recomputation.\n\n**When a spy is justified:** only if the helper is a real collaboration boundary, such as an injected dependency with side effects, and the call itself is the observable behavior. A private pure function doesn't qualify.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies spying on the private normalizeCart as implementation coupling, flags the reduce-formula expectation as a tautology, replaces it with a literal total of 15, and keeps the test at the public order API."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four criteria: flags the private normalizeCart spy as coupling to internals, identifies the reduce-formula expectation as a tautology, replaces it with a literal total of 15, and keeps the test on the public API."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies private-helper coupling (spying on normalizeCart), flags the reduce-formula tautology, replaces it with a literal total of 15, and keeps the test at the public order API. All four criteria met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies private-helper coupling (spying pins internals, couples to file layout), flags the reduce-formula expectation as a tautology, replaces it with a literal total of 15, and keeps the test at the public order API."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four rubric points: flags spying on private normalizeCart as implementation coupling, identifies the reduce-formula expectation as a tautology, replaces it with a literal total of 15, and keeps the test at the public order interface."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Verdict:** I wouldn't write the test this way. It checks how the code works, not what it promises, and it never asserts the one thing the requirement states.\n\n**Problems**\n\n1. **Spying on private `normalizeCart` couples the test to the implementation.** If someone inlines the helper, renames it, or calls it twice for caching or validation, the test fails even though behavior is unchanged. Conversely, it can pass while the total is wrong.\n2. **\"Called once\" has no business meaning.** Nothing in the requirement says normalization happens exactly once. It's an incidental detail that makes the test brittle.\n3. **Asserting `total == items.reduce(...)` with the production formula is a tautology.** If the formula is wrong (say, it ignores quantity or discounts), the test's expected value is wrong in the same way and still passes. The expected value should come from an independent source, not a copy of the code under test.\n4. **It doesn't verify the actual requirement.** The public requirement is that a two-item order totals 15, and nothing in the proposed test pins that number.\n\n**Better approach**\n\n- Exercise only the public API. Build a two-item order with concrete values that sum to 15 (for example 10 + 5, or whatever fits your domain) and assert the total is exactly `15`.\n- Hard-code the expected value. A literal `15` is the independent oracle.\n- If normalization matters (trimming, dedupe, defaulting quantity), cover it with separate public-behavior tests. For example, feed in a messy cart and assert the resulting total or output, rather than asserting that a helper ran.\n- Add a few edge cases around the requirement if they're relevant: empty cart, quantity greater than 1, and rounding or currency precision if applicable.\n\n**Rule of thumb:** if you can refactor the internals without changing behavior and the test breaks, the test is checking the wrong thing. Here, it would break on a harmless refactor and stay green on a wrong total.\n\nI haven't seen your code, so the item values above are only illustrative.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (flags spying on private normalizeCart as implementation coupling), 2 (identifies the reduce-with-production-formula expectation as a tautology), and 3 (replaces it with a hard-coded observable total of 15); misses criterion 4 partly by suggesting the test use concrete values but not explicitly pinning to the public order interface throughout."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four criteria: flags spying on private normalizeCart as implementation coupling, flags the production-formula expectation as a tautology, replaces it with a hard-coded total of 15, and keeps the test on the public API."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response identifies private-helper coupling (point 1), flags the tautological production-formula expectation (point 3), replaces it with a hard-coded total of 15, and keeps the test at the public API."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four rubric points: flags private normalizeCart spying as coupling, identifies the reduce-formula tautology, asserts a hard-coded total of 15, and keeps tests at the public API."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Cites helper coupling (problem 1), the tautological production-formula expectation (problem 3), replaces it with a hard-coded total of 15, and keeps the test on the public API."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "**Verdict: don't write this test. It hits two of the anti-patterns, and neither assertion checks the requirement.**\n\n**1. Spying on private `normalizeCart` is implementation-coupled.**\n- \"Called once\" says nothing about what the user gets. If you inline, rename, or split the helper, the test fails even though the total is still right.\n- If the helper were broken but still got called once, the test would pass.\n- The tell is that it breaks on a refactor with no behavior change.\n\n**2. Asserting `total === items.reduce(...)` with the production formula is tautological.**\n- The expected value is computed the same way the code computes it, so it passes by construction. If the formula is wrong, the test is wrong in the same way.\n- The expected value needs an independent source. Here the spec gives you one: **15**.\n\n**What to do instead**\n- Test at the public seam, the one that takes an order and returns its total, and assert on the literal from the requirement.\n- Per the skill's rules, confirm that seam with you before I write anything. Proposed seam: the public order/checkout total interface. It catches wrong totals, bad item handling, and normalization bugs that show up in the result. It misses internal wiring, which is fine, since that isn't behavior.\n\nIllustrative shape (the item prices are made up, as the only fact I have is the total):\n\n```ts\nit(\"totals a two-item order to 15\", () => {\n  const order = createOrder([\n    { sku: \"A\", price: 10, qty: 1 },\n    { sku: \"B\", price: 5, qty: 1 },\n  ]);\n  expect(order.total).toBe(15);\n});\n```\n\n**Process notes**\n- Write this one test first and watch it fail (red), then write the minimum code to pass it (green). Then add the next behavior as its own slice, such as empty cart or quantities above 1, instead of writing a batch up front.\n- If `normalizeCart` does something that matters, like merging duplicate SKUs or dropping zero-quantity lines, cover that through the public interface with its own literal-valued test. For example, \"duplicate SKUs of 10 and 5 still total 15\".\n\nIf you tell me the real public function name and item shape, and confirm the seam, I can write the actual test.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Criterion 1: flags spying on private normalizeCart as implementation coupling. Criterion 2: identifies the reduce-with-production-formula expectation as tautological. Criterion 3: replaces it with a literal total of 15. Criterion 4: keeps the test at the public order total interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies private-helper coupling (spying on normalizeCart breaks on refactors), flags the tautological reduce-formula expectation, replaces it with the literal 15, and keeps the test at the public order total interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies spying on private normalizeCart as implementation coupling (criterion 1), flags the reduce-based expectation as tautological (criterion 2), replaces it with a literal total of 15 (criterion 3), and keeps the test at the public order interface (criterion 4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four rubric points: flags spying on private normalizeCart as implementation coupling, identifies the tautological reduce-formula expectation, replaces it with the literal total of 15, and keeps the test at the public order interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies private-helper spy coupling, flags the tautological reduce-formula expectation, replaces it with a literal total of 15, and keeps the test at the public order total interface."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Verdict: don't write it this way.** Both assertions are weak, and neither checks the actual requirement.\n\n**1. Spying on private `normalizeCart` and asserting it's called once**\n- It pins the test to an implementation detail. Inlining the helper, renaming it, or calling it twice (say, for caching or validation) would break the test even though behavior is unchanged.\n- It proves nothing about correctness. A helper that's called exactly once can still return the wrong data.\n- Spying on a private function usually means reaching into module internals or changing visibility just for the test, which is a design smell.\n\n**2. Asserting `total` equals `items.reduce(...)` with the production formula**\n- This is tautological. The test recomputes the answer with the same logic as the code under test, so if the formula is wrong (bad rounding, wrong tax or discount handling, a double-counted item), the test is wrong in the same way and still passes.\n- It also duplicates logic you now have to keep in sync in two places.\n\n**3. What's missing**\nThe stated public requirement is concrete: a two-item order totals 15. The proposed test never asserts that number.\n\n**Better approach**\n- Call the public API with a fixed two-item cart whose items sum to 15, for example prices 10 and 5, and assert `total === 15` using a hardcoded literal. This is independent of the implementation and fails if the formula is wrong.\n- If `normalizeCart` does something meaningful (merging duplicates, dropping zero-quantity lines, trimming input), cover it through public inputs and outputs. For example, a cart with duplicate SKUs should produce the correct total.\n- Add a few boundary cases through the public interface: empty cart, single item, quantity greater than 1, and any rounding or decimal edge you care about.\n- If you want some check on the helper's contract, extract it into its own module and test it directly as a public unit, rather than spying on it.\n\n**Summary:** replace the spy and the mirrored `reduce` with a literal-value test of the public requirement (two items → 15), plus a few behavior-level edge cases.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four rubric points: flags spying on private normalizeCart as implementation coupling, identifies the tautological reduce formula, replaces it with a literal total of 15, and keeps the test at the public order interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies private-helper spy coupling, flags the tautological reduce formula, replaces it with a hardcoded total of 15, and keeps the test at the public cart/order API."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four criteria: it flags spying on the private normalizeCart as implementation coupling, identifies the mirrored reduce as tautological, replaces it with a literal total of 15, and keeps the test on the public API."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (flags spying on private normalizeCart as implementation coupling), 2 (identifies the tautological reduce-mirroring formula), and 3 (replaces with a hardcoded total of 15), but criterion 4 is only partly kept, since it recommends extracting the helper into its own module for direct testing, which departs from keeping tests at the public interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four criteria: flags private-helper coupling (spying on an internal), identifies the tautological reduce-formula expectation, replaces it with a literal total of 15, and keeps the test at the public cart interface."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Verdict:** I wouldn't write this test as described. Both assertions check how the code works rather than what it promises, and neither checks the stated requirement.\n\n**Problems**\n\n1. **Spying on private `normalizeCart`, called once**\n   - This pins an implementation detail. Inlining the helper, renaming it, or calling it twice (say, for caching or validation) breaks the test while behavior stays correct.\n   - It says nothing about whether the total is right. The helper can be called exactly once and still produce a wrong result.\n   - Reaching into a private member usually means the test is at the wrong level. If the helper has logic worth testing, test it through the public API, or extract it as its own public unit.\n\n2. **Asserting `total === items.reduce(<production formula>)`**\n   - This is a tautology. The test recomputes the answer with the same formula as the code, so if the formula is wrong (wrong tax, discount, or rounding), both sides are wrong in the same way and the test passes.\n   - It also never mentions 15, the one concrete fact you know from the requirement.\n\n**Better approach**\n\nTest through the public interface with a hard-coded expected value from the requirement:\n\n```ts\nit(\"totals a two-item order to 15\", () => {\n  const order = [\n    { sku: \"A\", price: 10, qty: 1 },\n    { sku: \"B\", price: 5,  qty: 1 },\n  ];\n  expect(calculateTotal(order)).toBe(15);\n});\n```\n\nThe names and item shape here are illustrative, so adapt them to your real API. Pick inputs where the answer is obvious by hand, and where a wrong formula (for example, summing prices while ignoring quantity) would give a different number. Using `{price: 5, qty: 2}` and `{price: 5, qty: 1}` is a good variant, since it also totals 15 and exercises quantity handling.\n\n**Optional additions**\n- A second case with different values (such as a single item or an empty cart) so a hard-coded `15` can't pass by accident.\n- Edge cases the requirement implies, such as rounding or zero quantity, each with a literal expected value.\n- If `normalizeCart` does real work, such as merging duplicate SKUs or dropping invalid lines, cover that with public-level tests whose inputs trigger it and whose outputs show the effect, rather than a call-count assertion.\n\n**Summary:** drop the spy, drop the mirrored `reduce`, and assert the literal `15` through the public entry point.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response flags the private normalizeCart spy as implementation coupling, identifies the mirrored reduce as a tautology, replaces it with a literal total of 15, and keeps the test at the public calculateTotal interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response identifies private normalizeCart spy as implementation-detail coupling (criterion 1), flags the reduce mirror as a tautological duplicated formula (criterion 2), replaces it with a literal observable total of 15 (criterion 3), and keeps the test at the public calculateTotal interface (criterion 4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four criteria: it flags the private normalizeCart spy as implementation coupling, calls out the mirrored reduce as a tautology, asserts a literal 15, and keeps the test at the public calculateTotal interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response identifies spying on private normalizeCart as implementation-detail coupling, flags the reduce-mirror expectation as a tautology, replaces it with a literal 15, and keeps the test at the public calculateTotal interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies private-helper coupling (spying on normalizeCart), flags the mirrored reduce formula as a tautology, replaces it with a literal toBe(15), and keeps the test at the public calculateTotal interface."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "This test idea has two problems, and both are anti-patterns from the TDD skill.\n\n**1. Spying on private `normalizeCart` (implementation-coupled)**\n- \"Called once\" says nothing about what the user gets. It only records how the code is currently structured.\n- The test breaks if you inline the helper, rename it, or call it twice for a good reason, even though behavior is unchanged.\n- It breaks the rule that tests go through public interfaces, and it forces a mock of an internal collaborator.\n\n**2. Asserting total equals `items.reduce` with the production formula (tautological)**\n- The expected value is computed the same way the code computes it, so the test passes by construction. If the formula is wrong, both sides are wrong in the same way and the test still passes.\n- Expected values need an independent source of truth. You already have one: the requirement says a two-item order totals **15**.\n\n**What to do instead**\n- Assert against the literal from the spec: build a two-item order through the public interface and expect the total to be `15`. For example, items priced 10 and 5, though use whatever pair the requirement actually specifies.\n- Drop the spy entirely. If `normalizeCart` matters, its effect shows up in the total, so a behavior-level test covers it. If some input needs normalizing (duplicates, quantities, and so on), add that as its own slice with its own literal expected total.\n- Name the test for the capability, e.g. \"order with two items totals 15\".\n\n**Before writing it**\nThe skill requires agreeing on seams first. My proposal is a single seam, the public order/checkout function that returns the total. It catches wrong totals and regressions from refactoring the internals, but it won't pinpoint which internal step failed. Does that seam match your public interface, or is the total exposed somewhere else?\n\nThen run the loop in order: write that one failing test (red), add only enough code to pass it (green), and move to the next slice. Any cleanup of `normalizeCart` belongs in the review stage, not in this cycle.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four rubric points: flags the private normalizeCart spy as implementation coupling, identifies the tautological reduce-formula expectation, replaces it with the observable literal total of 15, and keeps the test at the public order interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response flags the spy on private normalizeCart as implementation coupling, identifies the reduce-formula expectation as tautological, replaces it with a literal total of 15, and keeps the test at the public order interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four rubric points: flags spying on the private normalizeCart as implementation coupling, flags the reduce-based expectation as tautological, replaces it with a literal total of 15, and keeps the test at the public order interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four rubric points: flags spying on private normalizeCart as implementation coupling, identifies the tautological reduce-formula expectation, replaces it with the observable literal total of 15, and keeps the test at the public order interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response flags the private normalizeCart spy as implementation coupling, identifies the tautological reduce-formula expectation, replaces it with a literal total of 15, and keeps the test at the public order interface."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Verdict: don't write it as proposed.** Both assertions are weak, and neither checks the stated requirement.\n\n**1. Spying on the private `normalizeCart` and asserting it's called once**\n- It tests how the code works, not what it does. If someone inlines the helper, renames it, or calls it twice for a good reason, the test fails even though the behavior is still correct.\n- It can pass while the behavior is wrong, because a helper being called once says nothing about whether the result is right.\n- Spying on a private member usually means reaching into internals, which is a sign the test is at the wrong level.\n\n**2. Asserting `total` equals `items.reduce(...)` with the production formula**\n- This is a tautology. The test recomputes the answer with the same logic as the code under test, so if the formula is wrong (a wrong discount, a missed quantity), both sides are wrong in the same way and the test passes.\n- It never uses the one concrete fact you have: the expected total is 15.\n\n**What to do instead**\n- Test through the public interface only. Build a two-item order whose values sum to 15 (for example 10 and 5, or whatever matches your real pricing), call the public function, and assert `total === 15` with a literal.\n- The literal is what makes the test an independent check. It fails if the formula changes in a way that violates the requirement, and it survives refactors of `normalizeCart`.\n- If normalization matters to the outcome (messy input shapes, string prices, duplicate lines), cover that with inputs that need normalizing and assert the correct final total. That exercises the helper without coupling to it.\n- If `normalizeCart` has enough logic to deserve its own tests, that's a signal to extract it into a public, separately tested unit rather than spy on it as a private.\n\n**Minimal shape**\n```\norder = twoItemOrder()        // items that should total 15\nresult = checkout(order)      // public API\nexpect(result.total).toBe(15)\n```\n\nI'd add further cases (empty cart, quantity greater than 1) only if the requirements actually define them. The facts you gave only cover the two-item, total-15 case.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four criteria: flags spying on the private normalizeCart as coupling, identifies the tautological reduce expectation, replaces it with a literal total of 15, and keeps the test at the public interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the private-helper spy as coupling to internals, flags the reduce-based expectation as a duplicated-formula tautology, replaces it with a literal total of 15, and keeps the test at the public interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response flags spying on private normalizeCart as coupling to internals (criterion 1), identifies the reduce-with-production-formula assertion as a tautology (criterion 2), replaces it with a literal total of 15 (criterion 3), and keeps the test at the public checkout/order interface (criterion 4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four criteria: flags the private normalizeCart spy as coupling, calls the reduce-with-production-formula assertion a tautology, replaces it with a literal total of 15, and keeps the test at the public checkout interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Flags spying on the private helper as internals coupling, identifies the reduce-formula assertion as a tautology, replaces it with a literal total of 15, and keeps the test at the public checkout interface."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Verdict:** I wouldn't write the test as proposed. Both assertions are weak, and neither checks the public requirement.\n\n**Problems**\n\n1. **Spying on the private `normalizeCart` helper couples the test to implementation.** If someone inlines, renames, or batches that helper, the test fails even though behavior is unchanged. \"Called once\" is also incidental: it says nothing about whether the total is correct. Private helpers should be exercised through the public API.\n\n2. **Asserting `total === items.reduce(...)` with the production formula is a tautology.** If the formula is wrong (wrong field, missing quantity, bad rounding), the test reimplements the same bug and still passes. Expected values should come from the requirement, not from the code under test.\n\n3. **It skips the one concrete requirement you have.** The spec says a two-item order totals 15, so assert that literal value.\n\n**Better test**\n\nUse the public entry point, build a two-item order whose correct total is 15, and assert the hardcoded number. The names and shape below are illustrative, since I don't know your actual API:\n\n```js\nit(\"totals a two-item order to 15\", () => {\n  const order = { items: [{ price: 10, qty: 1 }, { price: 5, qty: 1 }] };\n  expect(calculateTotal(order)).toBe(15);\n});\n```\n\n**Optional additions**\n\n- If normalization matters to the outcome (merging duplicates, dropping invalid lines, defaulting quantity), add a case whose input needs it and assert the resulting total. That covers the helper's behavior without knowing it exists.\n- Add an empty cart or a quantity greater than 1 only if the requirements define those cases.\n- If you really need to prove a collaborator is called, spy on a public or injected dependency boundary, not a private function.\n\nThe main change is to replace both assertions with one behavioral assertion against a known constant.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four rubric points: flags spying on private normalizeCart as implementation coupling, identifies the reduce-with-production-formula expectation as a tautology, replaces it with a hardcoded total of 15, and keeps the test at the public calculateTotal interface."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response flags spying on the private normalizeCart helper as implementation coupling, calls the production-formula expectation a tautology, replaces it with a literal total of 15, and tests through the public calculateTotal(order) interface."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (flags private-helper spying as implementation coupling), 2 (identifies the reimplemented-formula tautology), and 3 (replaces with a hardcoded total of 15); misses 4 partly since the example uses a hypothetical calculateTotal entry point rather than clearly confirming the public order interface, though it does direct tests through the public API."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Criterion 1 met: it flags spying on the private normalizeCart helper as implementation coupling. Criterion 2 met: it identifies that asserting against items.reduce with the production formula is a tautology. Criterion 3 met: it replaces both with a hardcoded total of 15. Criterion 4 met: the example calls a public entry point, calculateTotal(order)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies private-helper coupling (point 1), flags the duplicated-formula expectation as a tautology (point 2), replaces it with a hardcoded total of 15 (point 3), and keeps the test at the public order entry point (point 4)."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "agreement",
+   "number": 3,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A teammate asks you to test all billing internals before a new refund feature. No public test seam has been agreed. Explain the next action and one proposed seam with its limits.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/engineering/tdd/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 5505d25bbaa8fc14a79e4d20163936958992a2995b7f1dd1d6197edc9ed722e0; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Propose agreeing a public refund seam first 2. Name an observable refund outcome 3. State what that seam misses 4. Avoid starting a broad private-method suite",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "**Next action: agree on the seams before writing any test.** Testing \"all billing internals\" isn't something to start on. It couples tests to implementation details, so they'd break on refactors without any behavior changing. And per the TDD loop, no test gets written at an unconfirmed seam. So the next step is to ask your teammate which public interface we should test through, and get explicit confirmation on it.\n\n**Proposed seam: the public refund entry point of the billing module**, something like `refund(paymentId, amount)` returning a result (success, partial refund, rejection). We'd drive the new feature test-first through it, one slice at a time. The first tracer bullet would be a simple case, such as a full refund of a settled payment, with the expected amount taken from a literal in the spec rather than recomputed in the test.\n\n**What it catches:**\n- Wrong refund outcomes: amounts, statuses, rejection of invalid requests (over-refunding, refunding an unpaid charge)\n- Regressions in the refund behavior that callers actually depend on, and these survive internal refactors\n\n**What it misses:**\n- Internal billing logic that the refund path doesn't touch, such as invoicing, proration, and tax calculation. Those would need their own agreed seams if they matter.\n- Real payment-provider behavior, if the provider is faked at the boundary. A contract or integration check would be needed for that.\n- Rare edge cases deep inside the internals. That's the deliberate tradeoff: effort goes to critical paths and complex logic first.\n\nI haven't looked at the codebase, so the actual function name and shape are a guess. Before confirming, I'd want to check where the billing module's public surface really is. Does that seam sound right to your teammate, or is there a different boundary they'd prefer?",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Proposes confirming the public refund entry point as the seam first, names observable outcomes (amounts, statuses, rejections), states what it misses (proration, provider behavior, deep internals), and avoids a broad private-method suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response proposes agreeing on a public refund seam before testing, names observable outcomes (amounts, statuses, rejections), states what the seam misses (internals, provider behavior, deep edge cases), and avoids a broad private-method suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it proposes agreeing the public refund seam first, names observable outcomes (amounts, statuses, rejections), states what the seam misses, and rejects testing all internals."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: proposes agreeing the public refund seam first, names observable outcomes (success, partial refund, rejection), states what the seam misses, and rejects a broad internals suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response proposes agreeing on the public refund seam first, names observable outcomes (amounts, statuses, rejections), explicitly states what the seam misses, and avoids a broad internals/private-method suite. All four criteria met."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Next action:** Don't start writing tests against billing internals yet. First, agree on a test seam with your teammate. Testing \"all internals\" directly would pin the tests to private structure, so they'd break on any refactor and wouldn't tell you whether refunds behave correctly. The decision to settle is: what is the smallest public surface through which the refund feature's billing effects can be observed?\n\nI haven't looked at the code (no tools used here), so the following is a proposal based only on what you've told me.\n\n**Proposed seam: a narrow `BillingLedger` interface (read-side) plus a fake payment-provider port.**\n\n- **Ledger read interface:** expose something like `getBalance(accountId)` and `listEntries(accountId)` as the public way to observe billing state. Refund tests would perform a charge, issue a refund through the public refund API, then assert on the resulting ledger entries and balance.\n- **Payment-provider port:** put the external gateway behind an interface, with an in-memory fake in tests. This lets you assert on what was sent to the provider (amount, idempotency key) and simulate failures like declines or timeouts.\n\n**Limits:**\n\n- It only verifies behavior visible through the ledger and the provider calls. Internal steps (proration math, rounding helpers, state machines) are covered only indirectly. If a bug hides in an intermediate value that never reaches the ledger, these tests won't catch it.\n- It does not deliver \"test all billing internals.\" If specific internals are risky (e.g. currency rounding), they'd need their own targeted unit tests, agreed separately.\n- The fake provider can drift from the real gateway's behavior, so it doesn't replace a few contract or sandbox tests against the real provider.\n- Adding the read interface may require a small production code change, which the team should approve since it widens the public API.\n\n**To confirm with your teammate:** whether the ledger is the right source of truth for billing state, and whether adding a read-only accessor is acceptable. Once that's agreed, I can look at the code and sketch the tests.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Proposes agreeing a public refund seam first, names observable outcomes (ledger entries/balance, provider calls), and states limits; misses the explicit avoidance framing only partially but does warn against pinning tests to private structure."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it proposes agreeing a public seam first, names observable ledger entries and balance as outcomes, lists what the seam misses, and rejects a private-internals suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it says to agree a public seam first, names observable ledger entries and balance after a refund, states what the seam misses, and rejects a suite on private internals."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it says to agree a public seam first, names observable outcomes (ledger entries and balance after a refund), states the seam's limits, and rejects a broad internals suite."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (proposes agreeing on a public seam first), 2 (names observable outcomes: ledger balance/entries and provider calls), and 3 (states limits: misses intermediate values and internals). Missed 4 is arguably satisfied since it explicitly warns against testing private structure, so the response effectively meets all four; score reflects strict reading."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Next action:** Don't start testing billing internals yet. With no agreed public seam, tests written now would bind to private details and break on refactor. First, get agreement with your teammate (and whoever owns billing) on what the refund feature needs to observe and trigger in billing. Then write tests against that boundary only.\n\n**Proposed seam: a narrow `RefundableLedger` interface owned by billing.**\n\nBilling exposes a small public interface the refund feature depends on, for example:\n\n- `getChargeSummary(chargeId)` returns the amount charged, amount already refunded, and currency\n- `applyRefund(chargeId, amount, idempotencyKey)` records the refund and returns a result (success, or a typed failure such as over-refund or unknown charge)\n\nRefund tests use an in-memory fake of this interface. A small set of contract tests runs the same cases against both the fake and the real billing implementation, so the fake can't silently drift.\n\n**Limits:**\n\n- **It isn't \"all billing internals.\"** It covers only what refunds touch: charge totals, refund recording, and idempotency. Tax, proration, invoicing, and retries stay untested by this seam. If those matter for refunds, they need their own seams.\n- **The fake can diverge.** Contract tests reduce this but only cover the behaviors you've written down.\n- **It doesn't verify external effects.** Payment-provider calls, webhooks, and settlement timing sit behind billing and need separate integration tests.\n- **It requires a small billing change.** Someone has to extract the interface, so the billing owner must agree to it as a public contract.\n- **Concurrency is only partly covered.** Idempotency keys help with duplicate requests, but race conditions in the real store need tests against the real implementation.\n\nIf the team decides full internal coverage is really needed, I'd treat that as a separate effort, scoped by risk, rather than a prerequisite for the refund work.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: proposes agreeing the public seam first, names observable outcomes (success or typed over-refund/unknown-charge failure), lists what the seam misses, and avoids a private-method suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it proposes agreeing the public seam first, names observable outcomes (applyRefund success or typed failure, charge totals), states what the seam misses, and avoids a broad private-internals suite."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (agree public seam first), 2 (names observable outcomes like charge totals and typed failures), and 3 (states limits clearly); misses 4 partly by not explicitly avoiding a broad private-method suite, though it implicitly does so."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response proposes agreeing on a public refund seam first, names observable outcomes (getChargeSummary amounts, applyRefund success or typed failure), lists what the seam misses, and advises against a broad internals suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it proposes agreeing the public refund seam first, names observable outcomes (success or typed over-refund/unknown-charge failure), lists what the seam misses, and rejects a broad private-internals suite."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "**Next action: don't write any tests yet.** Testing \"all billing internals\" conflicts with the TDD approach here. Tests belong at public seams, and none has been agreed. No test gets written at an unconfirmed seam, so the next step is to agree on one with your teammate.\n\nI haven't looked at the codebase, so the seam below is a proposal to confirm, not something I've verified exists.\n\n**Proposed seam: the billing module's public refund entry point**\n\nThis is the interface a caller uses to request a refund, for example \"refund this order for this amount\". The test observes only what that interface returns, plus what billing state is visible through other public reads, such as the order's balance or refund status.\n\n- **Catches:** wrong refund amounts, refunds exceeding what was paid, double refunds, and refunds on ineligible orders. These are the behaviors the new feature promises, and they survive refactors of billing internals.\n- **Misses:** internal calculation edge cases that the public interface can't reach, and real payment-provider behavior (I'd fake that boundary rather than mock internals). It also doesn't cover concurrency or race conditions, or anything that only goes wrong in private helpers.\n\n**Questions to put to your teammate:**\n1. Is this the right public interface for refunds, or does a different boundary (an API endpoint, a service class) fit better?\n2. Are the \"misses\" acceptable, or does one of them (such as concurrent refunds) deserve its own seam?\n3. Does the feature need other seams, such as the refund notification or the ledger entry?\n\nOnce the seam is confirmed, I'd work in vertical slices: one failing test for the simplest refund behavior, the minimal code to pass it, then the next behavior. If the shape of the interface is itself in question, I can consult the `codebase-design` skill first.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response proposes agreeing on a public refund entry point seam first, names observable outcomes (refund amounts, double refunds, eligibility), states misses (internal edge cases, concurrency, private helpers), and avoids a broad private-method suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Proposes agreeing a public refund seam first, names observable outcomes (wrong amounts, over-refunds, double refunds, ineligible orders), states explicit misses, and avoids a private-method suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response proposes agreeing on a public refund entry-point seam first, names observable outcomes (refund amounts, double refunds, eligibility), states what the seam misses, and avoids a private-method suite."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (proposes agreeing the refund seam first), 2 (names observable outcomes like refund amounts and double refunds), and 3 (states misses clearly); criterion 4 is not explicitly addressed, though it avoids private-method testing."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Proposes agreeing on a public refund seam first, names observable outcomes (refund amounts, double refunds, balance/status), states explicit misses, and avoids a private-method suite."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Next action: agree on a seam before writing any tests.** Testing \"all billing internals\" directly would couple the tests to private structure, so every refactor would break them, and it would effectively create an unreviewed API. I haven't looked at the code (per your constraints), so this is based only on what you've told me.\n\nI'd take three steps, in order:\n\n1. **Ask the teammate what behavior must be protected.** Examples: a refund never exceeds the amount captured, refunds are idempotent, partial refunds update the balance correctly, and ledger entries stay consistent. Tests should target these outcomes, not internal functions.\n2. **Name the existing public entry points** that billing is already reached through (service interface, API handlers, or whatever callers use today), and check whether they can express those behaviors.\n3. **Get agreement on one seam** (below), and only then write tests against it.\n\n**Proposed seam: a narrow `BillingService` facade** exposing the operations the refund feature actually touches, such as `charge`, `refund`, and `getLedger(accountId)`. Its dependencies (payment provider, clock, persistence) are injected, so tests can substitute fakes.\n\nWhat it gives you:\n- Tests assert on observable results (ledger state, returned amounts, errors), not on internal calls.\n- Internals can be refactored freely without breaking tests.\n- The refund feature gets a stable, reviewable contract.\n\nLimits:\n- **It doesn't test \"all internals.\"** Calculation edge cases buried in private helpers are only covered if they're reachable through the facade. Anything that can't be reached this way is either dead code or a sign that the facade is too narrow.\n- **Fakes can drift from reality.** The payment provider fake may behave differently from the real one, so you'd still want a small number of contract or integration tests against the real provider's sandbox.\n- **Concurrency and persistence behavior** (double-submitted refunds, transaction isolation) are only trustworthy if tested with a real or realistic database, not an in-memory fake.\n- **Introducing the facade is itself a change.** If current callers bypass it, they need migrating, or the seam only covers new code paths.\n\nIf the team decides the facade is too much for this release, the fallback is characterization tests through the existing public API, with a note listing which internals remain uncovered.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: proposes agreeing a public BillingService seam first, names observable refund outcomes (never exceeds captured amount, idempotency, ledger consistency), states its limits, and rejects a private-method suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Proposes agreeing on a public BillingService facade seam before tests, names observable refund outcomes like never exceeding captured amount, lists the seam's limits, and rejects a private-internals suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Proposes agreeing on a public BillingService facade seam before any tests, names observable refund outcomes like refund never exceeding captured amount, states the seam's limits, and rejects a broad private-internals suite."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (agree on a seam first), 2 (names observable outcomes like ledger state and returned amounts), and 4 (explicitly avoids testing private internals); criterion 3 is satisfied too, as limits are stated clearly, so it should be 1.0 — but the response does explicitly list limits, so the score is 1.0."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: proposes agreeing a public seam first, names observable refund outcomes like 'refund never exceeds amount captured', states the facade's limits, and rejects a broad private-method suite."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Next action:** Don't start writing tests against billing internals yet. First, get agreement with your teammate (and whoever owns billing) on what the test boundary is. \"Test all billing internals\" has no agreed seam, so any tests written now would couple to private details, break on refactors, and likely need rewriting. The concrete step is a short conversation or a note settling: (1) which refund behaviors must be verified (amounts, partial vs. full, idempotency, ledger/invoice effects, failure paths), and (2) the single place tests are allowed to hook in.\n\n**Proposed seam: a refund-facing billing service interface.**\nExpose a narrow, public interface, e.g. `BillingService.refund(chargeId, amount, reason)` plus read-only queries such as `getBalance(accountId)` and `getLedgerEntries(accountId)`. The payment provider and clock sit behind injected adapters, so tests can substitute fakes. Tests drive the refund through that interface and assert on observable outcomes (ledger entries, balances, emitted events, returned errors).\n\n**Limits:**\n- It won't cover \"all internals.\" Private calculations (proration, tax rounding, retry scheduling) are only verified indirectly through their effect on outputs, so some edge cases may need extra inputs to be reached.\n- Fakes for the payment provider can drift from real provider behavior, so you still need a small set of contract or sandbox tests outside this seam.\n- Read-only query methods add API surface that exists mainly for testing, so they need an owner and should stay minimal.\n- If a needed behavior can't be observed through the interface, that's a signal to extend the seam deliberately, not to reach into internals.\n- I haven't looked at the codebase, so the names above are illustrative. The real seam should follow whatever boundaries already exist.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it proposes agreeing the public refund seam first, names observable outcomes (ledger entries, balances, events, errors), states the seam's limits, and avoids a broad private-method suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response proposes agreeing on the refund seam and behaviors first, names observable outcomes (ledger entries, balances, events, errors), states limits including indirect coverage of private logic, and explicitly avoids a broad private-method suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response proposes agreeing on a public refund seam before testing, names observable outcomes (ledger entries, balances, events, errors), lists the seam's limits, and explicitly avoids a broad internals or private-method suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response proposes agreeing the refund seam first, names observable outcomes (ledger entries, balances, events, errors), lists what the seam misses, and advises against starting a broad internals test suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response meets all four criteria: it says to agree the test boundary before writing tests, names observable outcomes such as ledger entries and balances, lists the seam's limits, and advises against testing billing internals now."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "**Next action: agree on the seam(s) with your teammate before any test gets written.** No test goes in until a seam is confirmed, and \"test all billing internals\" is the opposite of that. Internal-coupled tests break on refactor without any change in behavior, and they spread effort across every edge case instead of the critical paths. So I'd push back on the scope and ask: \"What's the public interface for refunds, and which seams should we test?\"\n\nOnce the seam is confirmed, we'd work in vertical slices: one failing test, the minimal code to pass it, then the next. We'd skip writing all the tests up front.\n\n**Proposed seam: the billing module's public `refund` entry point** (whatever the caller-facing function or API endpoint ends up being, for example `refund(orderId, amount)` returning a result).\n\n- **What it catches:** observable refund behavior, such as a valid refund succeeding and reducing the balance, a refund larger than the amount paid being rejected, and a repeated refund request not paying out twice. These are the things users and callers care about, and the tests survive internal refactors.\n- **What it misses:**\n  - Logic inside billing internals (rounding helpers, ledger bookkeeping) is only exercised indirectly, so a bug there shows up only if some refund scenario reaches it.\n  - Real payment-provider behavior (timeouts, partial failures, webhooks) isn't covered unless we also agree on a separate seam at the provider adapter boundary.\n  - Rare edge cases won't each get a test. That's deliberate, since we'd prioritize the critical paths.\n\nTwo things I can't determine without looking at the code: what the actual public interface is called, and whether a second seam at the payment-provider boundary is warranted. I'd ask your teammate to confirm or adjust the proposed seam, and once they do, the first tracer-bullet test would be the simplest happy-path refund.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (proposes agreeing public refund seam first), 2 (names observable outcomes like balance reduction and rejected over-refund), and 3 (states what the seam misses); criterion 4 is satisfied by explicitly rejecting testing all internals, but the response also says to push back on scope rather than just avoid a private-method suite, so it's arguably met too, giving full credit."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four: proposes agreeing a public refund seam first, names observable outcomes (valid refund reduces balance, over-refund rejected, no double payout), states what the seam misses, and rejects testing all internals."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it proposes agreeing on the public refund seam first, names observable outcomes (balance reduction, no double payout), states what the seam misses, and rejects the broad internals suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it proposes agreeing the public refund seam first, names observable outcomes (refund succeeds and reduces balance, over-refund rejected, no double payout), states what the seam misses, and rejects a broad internals suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it proposes agreeing a public refund seam first, names observable outcomes like balance reduction and no double payout, states what the seam misses, and rejects the broad internals suite."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Next action:** Don't start writing tests against private billing internals. Reach an agreement with your teammate on a seam first, and narrow \"all billing internals\" to what the refund feature actually touches. Testing every internal now would pin tests to implementation details that the refund work will likely change. I also haven't looked at the code in this session, so the seam below is a proposal to confirm against the real module boundaries, not a description of what exists.\n\nTwo things from the repo snapshot are worth checking before any branch work: HEAD is detached (the branch shows as `HEAD`), and no recent commits were listed. Settle which base the refund work builds on, probably `main`.\n\n**Proposed seam: a small billing service interface with injected dependencies**\n\n- Tests call one public entry point for billing state, for example \"get the charge and its balance\" and \"apply a refund\".\n- The payment gateway and the clock are passed in, so tests can supply a fake gateway and a fixed time.\n- Existing behavior gets characterization tests through this interface. The refund feature gets tests for amounts, partial and repeated refunds, and failure paths.\n\n**Limits:**\n\n- It only verifies what is observable at the interface. An internal calculation, such as proration or rounding, is covered only if its result shows up in the returned state.\n- A fake gateway can drift from the real provider's behavior, so it doesn't replace a few integration or sandbox checks.\n- It adds a public surface that must be maintained, and the team needs to agree it's worth that cost.\n- It won't give you \"all internals\" coverage. Anything not reachable through the seam stays untested until it's either exposed deliberately or covered by a later, separately agreed seam.\n\nI'd suggest taking this proposal to your teammate, confirming the entry points and the gateway boundary, and only then writing tests.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response proposes agreeing a public seam first, names observable refund outcomes (returned state, partial and repeated refunds), lists explicit seam limits, and advises against testing private internals."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Proposes agreeing a public billing seam first, names observable refund outcomes via returned state and balance, states seam limits, and rejects a broad private-internals suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends agreeing a public refund seam first, names observable outcomes (returned balance/state for amounts, partial and repeated refunds), states the seam's limits, and avoids a broad private-internals suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Proposes agreeing a public billing-service seam before tests, names refund outcomes via returned state and balance, states explicit limits, and rejects starting a private-internals suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Proposes agreeing a public seam first, names observable refund outcomes via returned balance and state, states the seam's limits, and rejects a broad private-internals suite."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Next action:** Don't start writing tests against billing internals yet. First, agree on a public test seam with your teammate (and whoever owns billing). Testing \"all internals\" directly would couple the tests to private structure, so they'd break on every refactor and wouldn't tell you whether refunds actually work. The useful step is a short conversation to settle: what behavior the refund feature must guarantee, and which boundary the tests may touch.\n\n**Proposed seam: a billing service interface at the module boundary, with the payment provider faked behind it.**\n\nConcretely, tests call the public operations billing already exposes (or would expose), such as \"create charge,\" \"issue refund,\" and \"get balance/ledger entries,\" and assert on observable outcomes: ledger entries, resulting balances, refund status, emitted events. The external payment gateway is replaced by an in-memory fake injected at construction time. Internal calculation, proration, and persistence code are exercised indirectly through those calls.\n\n**Limits:**\n\n- **Not \"all internals.\"** Private helpers, rounding functions, and state-machine details are covered only through the public path. If a branch can't be reached via the seam, that's a signal to either add a case or reconsider whether the code is needed, not a reason to open it up.\n- **Fake fidelity.** The in-memory gateway only behaves as realistically as you build it. Real-provider quirks (partial-refund rules, async webhooks, idempotency-key handling, rate limits) won't be caught, so you'd still want a small number of contract or sandbox tests against the real provider.\n- **Persistence is simplified** if you use an in-memory store. Concurrency issues, such as double refunds from simultaneous requests, and database constraints need a separate test against a real database.\n- **Existing behavior is uncharacterized.** The seam covers what you choose to assert. Pre-existing billing paths the refund feature touches (e.g., invoice totals, tax, proration) need explicit characterization tests first, or regressions there will slip through.\n- **It's a proposal.** I haven't looked at the code in this session, so whether this interface already exists, or needs a thin wrapper, is something to confirm with the team.\n\nA reasonable scope is to cover the refund-adjacent paths through this seam, plus the few billing flows the refund feature modifies, rather than the entire billing surface.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it proposes agreeing on a public refund seam first, names observable outcomes like refund status and ledger entries, lists what the seam misses, and rejects a broad private-internals suite."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (agree on public seam first), 2 (observable outcomes like ledger entries, balances, refund status), and 4 (avoids broad private-method suite); criterion 3 met too, since it lists limits like fake fidelity and persistence simplification. Scoring as 0.75 would be wrong on that count, but the rubric's 0.25-per-criterion scheme gives 1.0 if all four are satisfied."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it proposes agreeing a public seam first, names observable outcomes (ledger entries, balances, refund status), lists what the seam misses, and rejects a broad private-internals suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it proposes agreeing a public seam first, names observable outcomes like refund status and ledger balances, lists what the seam misses, and rejects a private-method suite."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it proposes agreeing a public seam first, names observable refund outcomes like refund status and ledger entries, lists the seam's limits, and rejects a broad private-internals suite."
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

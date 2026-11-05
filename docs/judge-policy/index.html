@@ -70,13 +70,14 @@
 <details class="nav-menu"><summary>Menu</summary></details>
 <nav class="site-nav" aria-label="Site">
 <a href="/reports/">Reports</a>
+<a href="/skills/">Skills</a>
+<a href="/how-it-works/">How it works</a>
+<details class="docs-menu"><summary>For builders</summary><div class="docs-menu-list">
+<a href="/#quickstart">Install</a>
+<a href="/#how-it-works">How a skill is tested</a>
 <a href="/benchmark-gap/">Gap calculator</a>
 <a href="/leaderboard-noise/">Leaderboard noise</a>
-<a href="/skills/">Skills</a>
-<a href="/findings/">Findings</a>
 <a href="/paper/">Paper</a>
-<details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
-<a href="/#how-it-works">How it works</a>
 <a href="/methodology/">Methodology</a>
 <a href="/neutrality/">Neutrality</a>
 <a href="/interop/">Interop</a>
@@ -102,7 +103,7 @@
 </ol></div></nav><!--/driftproof:layout-->
 <main class="docs">
   <h1>One grader, fixed, and cheap on purpose</h1>
-  <p class="lede">Another model, the grader, scores every answer. For our reports it is one fixed model, and a cheap one, by design; a report that uses another grader says so.</p>
+  <p class="lede">Another model, the grader, scores every answer. For our reports it is one fixed model, and a cheap one, by design; a report that uses another <!--driftproof:term--><a class="term" href="/glossary/#term-judge" data-entry="term-judge" data-name="Judge" data-plain="The judge, also called the grader, is an AI model, sometimes the same one that answered, that scores each answer against a guide written for the task. It is an AI, not a person, and it can be wrong.">grader</a><!--/driftproof:term--> says so.</p>
 
   <section>
   <div class="split">
@@ -121,7 +122,7 @@
   <section>
   <h2 id="plain-what-it-cannot-do">What the grader cannot do</h2>
   <div class="cols2">
-    <div class="tile"><h3>It may favour its own family</h3><p>A grader can be a little kinder to writing like its own. Comparing each model with and without the skill reduces this; it does not remove it.</p></div>
+    <div class="tile"><h3>It may favour its own family</h3><p>A grader can be a little kinder to writing like its own. Comparing each model with and without the <!--driftproof:term--><a class="term" href="/glossary/#term-skill" data-entry="term-skill" data-name="Skill" data-plain="A file of instructions that people add to an AI assistant, such as Claude, to make it better at a job. Driftproof tests whether a skill really helps.">skill</a><!--/driftproof:term--> reduces this; it does not remove it.</p></div>
     <div class="tile"><h3>It cannot mark what it cannot do</h3><p>On hard tasks the grader's own ability is the ceiling. Scores bunch in the middle and spreads widen, which makes a change harder to call, not easier.</p></div>
     <div class="tile"><h3>It scores in coarse steps</h3><p>Its scores fall on a coarse grid of about 0.05 to 0.1. That is why a change has to be at least 0.05, about one step, before it is called.</p></div>
     <div class="tile"><h3>A broken reply is not a score</h3><p>A reply that cannot be read as a score between zero and one is recorded as not measured. It is never counted as a result.</p></div>
@@ -132,7 +133,7 @@
   <details class="fold precise"><summary>The judge policy in full, with its terms</summary>
   <h3>The judge is deliberately fixed and cheap.</h3>
   <p class="lede">Driftproof grades every generation with an LLM judge. That judge is <strong>fixed at <code>claude-haiku-5-5</code></strong> and changed only rarely. This page says why, and states the limitations plainly - a judge you can't inspect is not evidence.</p>
-  <p>The fixed Haiku judge applies to the reports Driftproof publishes; a receipt you produce records whichever judge its surface and configuration ran, in <code>run.judge</code>. In the installed tool the judge follows your own configuration rather than this pin, and the receipt records which judge ran.</p>
+  <p>The fixed Haiku judge applies to the reports Driftproof publishes; a <!--driftproof:term--><a class="term" href="/glossary/#term-receipt" data-entry="term-receipt" data-name="Receipt" data-plain="The dated file that records one test: the skill, the model, every score and the result. Anyone can check that it has not changed since it was sealed.">receipt</a><!--/driftproof:term--> you produce records whichever judge its <!--driftproof:term--><a class="term" href="/glossary/#term-surface" data-entry="term-surface" data-name="Surface" data-plain="How the model was reached: through a paid programming interface or through a subscription command-line tool. The same model can behave a little differently over the two.">surface</a><!--/driftproof:term--> and configuration ran, in <code>run.judge</code>. In the installed tool the judge follows your own configuration rather than this pin, and the receipt records which judge ran.</p>
 
   <p>On 18 October 2026 the operator changed the published campaign judge to Haiku 5.5: <q>we want atleast haiku 5.5 as the judge</q>. Issue 408 holds that judge fixed while Sonnet 5.5 and Opus 5.5 answer the same suites. The change resets comparison with results graded by another judge. Earlier reports retain the judges they actually ran.</p>
   <!-- issue408:historical-judges:start -->
@@ -158,7 +159,7 @@
   <!--driftproof:anchor--><span id="why-a-fixed-cheap-judge" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Why a fixed, cheap judge</h2>
   <div class="card">
     <p>Driftproof measures how a skill's effect <em>moves</em> as the model under it changes. If the <em>judge</em> also moved from report to report, a change in the verdict could come from the skill, the target model, or the grader - three variables, one number. Pinning the judge removes one of them: <strong>the judge is held constant so the target model is the only thing that varies</strong> across a drift comparison.</p>
-    <p>Cheap is a feature, not a compromise. A frontier judge would cost more than the runs it grades and would tempt per-report upgrades that quietly break comparability. Haiku is fast, inexpensive, and - paired with anchored rubrics and repeated sampling - stable enough that a verdict rests on band separation, not on the judge's brilliance.</p>
+    <p>Cheap is a feature, not a compromise. A frontier judge would cost more than the runs it grades and would tempt per-report upgrades that quietly break comparability. Haiku is fast, inexpensive, and - paired with anchored rubrics and repeated sampling - stable enough that a verdict rests on <!--driftproof:term--><a class="term" href="/glossary/#term-band" data-entry="term-band" data-name="Band" data-plain="The range a score is given instead of one number: the average plus or minus the usual spread of the scores. Two bands that do not overlap are what a report calls separated.">band</a><!--/driftproof:term--> separation, not on the judge's brilliance.</p>
   </div>
 
   <!--driftproof:anchor--><span id="determinism-where-the-surface-allows-it" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Determinism where the surface allows it</h2>
@@ -181,8 +182,8 @@
     <ul>
       <li><strong>Style affinity.</strong> An LLM judge can favor prose that resembles its own. A Haiku judge grading a Haiku-family generation may be marginally kinder to it than to another family's output. Anchored rubrics (a fully-correct answer scores ~0.80, not 1.0) and with/without-skill differencing blunt this, but it is not zero.</li>
       <li><strong>Ceiling on hard suites.</strong> A cheap judge cannot reliably grade a task it could not itself do well. On genuinely hard rubrics the judge's own competence is the ceiling on grading accuracy; scores compress toward the middle and bands widen, which correctly makes verdicts <em>harder</em> to claim rather than falsely confident.</li>
-      <li><strong>Quantization.</strong> The judge emits scores on a coarse ~0.05–0.1 grid, so a confident grade often collapses to a zero-width "point band". This is exactly why the drift rule adds a <strong>0.05 minimum-effect floor</strong> on top of band separation - see any report's methodology.</li>
-      <li><strong>Parse failures fail closed.</strong> A judge reply that is empty, cut off at its output cap, unparseable, or carries a score that is not a number between 0 and 1 is refused and recorded as unmeasured, never a score and never a silent pass. The transcript hashes in receipt <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md">spec v0.3</a> let a reader check the raw judge outputs a verdict was built from.</li>
+      <li><strong>Quantization.</strong> The judge emits scores on a coarse ~0.05–0.1 grid, so a confident grade often collapses to a zero-width "point band". This is exactly why the drift rule adds a <strong>0.05 minimum-effect floor</strong> on top of band <!--driftproof:term--><a class="term" href="/glossary/#term-separated" data-entry="term-separated" data-name="Separated" data-plain="The two ranges of scores, with the skill and without it, do not overlap, and the gap is at least the effect floor. It is what a report means by a clear difference, and it is not proof that the skill caused it.">separation</a><!--/driftproof:term--> - see any report's methodology.</li>
+      <li><strong>Parse failures fail closed.</strong> A judge reply that is empty, cut off at its output cap, unparseable, or carries a score that is not a number between 0 and 1 is <!--driftproof:term--><a class="term" href="/glossary/#term-refusal" data-entry="term-refusal" data-name="Refusal" data-plain="A result that reports no verdict because the run could not stand behind one. It is published as a refusal rather than guessed at.">refused</a><!--/driftproof:term--> and recorded as unmeasured, never a score and never a silent pass. The transcript hashes in receipt <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md">spec v0.3</a> let a reader check the raw judge outputs a verdict was built from.</li>
     </ul>
   </div>
 
@@ -190,9 +191,11 @@
   </details>
 </main>
 <!--driftproof:layout-end--></div><!--/driftproof:layout-end-->
+<!--driftproof:cards--><div class="jargon-cards" data-island="jargon-cards"><p class="jargon-note">Words with a dotted line link to the glossary, where each is explained in plain words.</p></div><!--/driftproof:cards-->
 <!--driftproof:foot--><footer class="site">
 <p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
 <p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/maintainer/">Maintainer</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+<p class="foot-links"><a href="/can-you-tell/">Can you tell? Every skill</a> · <a href="/noticed/">The AI noticed the sugar pill</a> · <a href="/spot-the-fake/">Which bar is the fake?</a> · <a href="/tasks/">Every task we gave a skill</a> · <a href="/sugar-pill/">Skill or sugar pill?</a></p>
 </footer><!--/driftproof:foot-->
 <!--driftproof:scripts--><script src="/copy-button.js" defer></script>
 <script type="module" src="/islands/loader.js"></script><!--/driftproof:scripts-->

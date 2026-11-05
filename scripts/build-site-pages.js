@@ -172,6 +172,84 @@ function heroReceipt(V, receipt) {
   });
 }
 
+// ── the doors (spec 687 AC-2) ───────────────────────────────────────────────
+// Three ways in, each a card with a small line drawing (inline SVG in the page's own colour), a
+// title and three links. The curious door carries spec 640 AC-13's words for the step-by-step page.
+// No reading time is claimed anywhere (spec 640 AC-12).
+const DOOR_ICONS = {
+  curious: '<svg class="door-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><title>A question mark</title><path d="M16 3.5a12.5 12.5 0 1 0 0 25 12.5 12.5 0 0 0 0-25Z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12.4 12.6a3.8 3.8 0 1 1 5.6 3.4c-1.3.7-2 1.4-2 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="23" r="1.3" fill="currentColor"/></svg>',
+  users: '<svg class="door-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><title>A magnifying glass</title><circle cx="13.5" cy="13.5" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.8 19.8 28 28" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M9.5 13.5a4 4 0 0 1 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+  makers: '<svg class="door-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><title>A receipt with a stamp</title><path d="M8 3.5h16v25l-2.7-2-2.6 2-2.7-2-2.7 2-2.6-2L8 28.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M11.5 10h9M11.5 14.5h9M11.5 19h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="21" cy="21" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6" transform="rotate(-12 21 21)"/></svg>',
+};
+function doors() {
+  const door = (key, title, links) => `<article class="door door-${key}">
+${DOOR_ICONS[key]}
+<p class="door-title">${title}</p>
+<ul>
+${links.map(([h, t]) => `<li><a href="${h}">${t}</a></li>`).join('\n')}
+</ul>
+</article>`;
+  return [
+    door('curious', 'Just curious', [['/how-it-works/', 'New to this? See how it works, step by step'], ['/reports/017/blind/', 'Can you tell which answer had the skill?'], ['/reports/', 'Read the reports'], ...require('./reader-pages').pages().filter(p => p.href !== '/sugar-pill/').map(p => [p.href, p.label])]),
+    door('users', 'I use AI skills', [['/skill-lookup/', 'Look up a skill'], ['/skills/', 'Do popular AI skills help?'], ['/placebo/', "See your file's fake"], ['/sugar-pill/', 'Skill or sugar pill?']]),
+    door('makers', 'I make skills', [['#quickstart', 'Install in Claude Code'], ['#ci', 'Run it in CI: npx and the GitHub Action'], ['/methodology/', 'Read the methodology']]),
+  ].join('\n');
+}
+
+// ── the latest finding, as a picture (spec 687 AC-3) ────────────────────────
+// The latest report's own headline and tally, read from stats.json (scripts/site-data.mjs reads them
+// off the report's page and its summary row), so the next report moves the picture and no count is
+// typed here. One tile per skill counted, grouped by reading in the report's order; the tiles carry
+// no text and no digit, so spec 037 AC-6's numeral reading has nothing to find inside the drawing,
+// and every count is printed once in the legend inside a data-stat element (spec 020 AC-9). The
+// caveats keep every summary sentence except the repeated headline sentence.
+// The tile classes are the site's plain words for a reading, mapped by label; a reading these do not
+// name draws flat (is-flat), so a new plain word never draws as a stronger one.
+const TILE_CLASS = { 'beat the fake': 'is-up', 'below the fake': 'is-down', 'too few answers to tell': 'is-few', 'not measured': 'is-none' };
+const tileClassOf = (label) => TILE_CLASS[label] || 'is-flat';
+function findingTiles(items, total) {
+  const tiles = items.flatMap((it) => Array(it.count).fill(tileClassOf(it.label)));
+  if (tiles.length !== total) throw new Error(`the tally's counts sum to ${tiles.length}, not its total ${total}`);
+  const perRow = total > 24 ? 12 : total > 12 ? 8 : 6;
+  const rows = Math.ceil(total / perRow);
+  const W = 30, H = 40, GAP = 6, RX = 2;
+  const width = perRow * (W + GAP) - GAP;
+  const height = rows * (H + GAP) - GAP;
+  const rects = tiles.map((cls, i) => `<rect class="tile ${cls}" x="${(i % perRow) * (W + GAP)}" y="${Math.floor(i / perRow) * (H + GAP)}" width="${W}" height="${H}" rx="${RX}"/>`);
+  return `<svg class="finding-tiles" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="finding-legend" xmlns="http://www.w3.org/2000/svg">
+<title>One small card per skill counted, in the ink of its reading; the line under the cards gives the counts.</title>
+${rects.join('\n')}
+</svg>`;
+}
+function latestFinding(S, V) {
+  const n = V('latest_report_number');
+  const items = [];
+  for (let i = 1; S[`latest_tally_${i}_count`]; i++) items.push({ count: Number(V(`latest_tally_${i}_count`)), label: String(V(`latest_tally_${i}_label`)), i });
+  const points = [];
+  for (let i = 1; S[`latest_point_${i}_lead`]; i++) points.push({ lead: String(V(`latest_point_${i}_lead`)), text: String(V(`latest_point_${i}_text`)), i });
+  const stat = (key, cls = '') => `<span${cls ? ` class="${cls}"` : ''} data-stat="${key}">${esc(V(key))}</span>`;
+  // NEVER A CUT FINDING (A-687-1): the short form and the whole sentence are printed as the data layer
+  // read them, and a value that is elided refuses the build rather than reaching the page.
+  for (const k of ['latest_report_claim', 'latest_report_sentence']) if (/…|\.\.\./.test(String(V(k)))) throw new Error(`${k} is elided: ${V(k)}`);
+  // THE LEGEND NAMES ONLY THE READINGS THE REPORT COUNTED AT LEAST ONCE (A-687-1); every tile is still
+  // drawn from the whole tally, so the counts shown sum to the report's N by construction.
+  const shown = items.filter((it) => it.count > 0);
+  if (items.length && shown.reduce((a, b) => a + b.count, 0) !== Number(V('latest_tally_total'))) throw new Error('the legend\'s counts do not sum to the tally\'s total');
+  const tally = items.length ? `${findingTiles(items, Number(V('latest_tally_total')))}
+<p class="finding-legend" id="finding-legend">Of the ${stat('latest_tally_total')} skills counted:${shown.map((it) => ` <span class="tile-key ${tileClassOf(it.label)}"></span>${stat(`latest_tally_${it.i}_count`)} ${stat(`latest_tally_${it.i}_label`)}`).join(',')}.</p>` : '';
+  return `<aside class="card finding" aria-labelledby="finding-heading">
+<p class="finding-eyebrow">The newest finding</p>
+<h2 id="finding-heading" class="finding-heading">Report ${stat('latest_report_number')}: <a href="/reports/${esc(n)}/">${stat('latest_report_title')}</a></h2>
+<p class="finding-claim">${stat('latest_report_claim')}</p>
+<p class="finding-sentence">${stat('latest_report_sentence')}</p>
+${tally}
+<ul class="finding-caveats">
+${points.map((p) => `<li><b data-stat="latest_point_${p.i}_lead">${esc(p.lead)}</b> ${stat(`latest_point_${p.i}_text`)}</li>`).join('\n')}
+</ul>
+<p class="finding-link"><a class="cta" href="/reports/${esc(n)}/">Read the report</a></p>
+</aside>`;
+}
+
 // ── the homepage ────────────────────────────────────────────────────────────
 function homepage() {
   const S = stats();
@@ -210,29 +288,30 @@ function homepage() {
     ['substrates_measured', 'models measured on'],
   ].map(([k, label]) => `<p class="stat"><span class="stat-value" data-stat="${k}">${esc(V(k))}</span> <span class="stat-label">${label}</span></p>`).join('\n');
 
-  // THE PROMISE FIRST, THE EVIDENCE UNDER IT (spec 037). The first screen asks the
-  // question, gives the Claude Code plugin as the first install, and links a receipt
-  // and the findings; everything a specialist wants is further down. Spec 171's leaderboard-noise
-  // line is the last line of the hero's text, under its links (spec 175).
-  const exampleHash = example.receipt_hash;
+  // THE OPENING FOR A READER WHO DOES NOT WRITE CODE (spec 687, Maverick's ruling of 4 Nov 2026).
+  // The first screen says in everyday words what a skill is and what Driftproof does with it, then
+  // offers three doors: for the curious, for people who use skills, for people who make them. The
+  // install commands move behind the makers' door, to #quickstart on this page, where spec 037's
+  // readers find them in the same order as before. Spec 171's leaderboard-noise line and the
+  // invisible-space line stay in the hero, under the doors (spec 175 A-175-3).
+  // The finding card beside the opening is the latest report's own headline and tally, drawn as a
+  // picture with the report's caveats (latestFinding, below).
   const plugin = ['claude plugin marketplace add driftproofhq/driftproof', 'claude plugin install driftproof@driftproofhq'];
   const copy = (c) => `<span class="copy-cta"><code>${esc(c)}</code><button type="button" data-copy="${esc(c)}">Copy</button></span>`;
   const main = `<main class="screens">
 <section id="hero" class="screen is-wide">
-<div>
-<h1>Is the gap your skill makes real, or noise? Did it hold on the last model release?</h1>
-<p class="hero-sub">A SKILL.md teaches an AI coding agent how you like things done. A skill's own tests passing is one answer. Driftproof asks two more: whether the scores with the skill and without it separate beyond their spread, and whether that held when the model changed. Each answer is a dated, hash-verified receipt, and when there were too few draws to tell, the receipt says so.</p>
-<div class="install-first">
-<p class="install-label">Install in Claude Code</p>
-${plugin.map(copy).join('\n')}
-<p class="muted">Then run <code>/driftproof:start</code> on a skill in your repository. For CI, <a href="#ci">npx and the GitHub Action</a> are further down.</p>
+<div class="hero-words">
+<h1>Someone says this AI skill makes the assistant better. Does it?</h1>
+<p class="hero-sub">An AI skill is a file of instructions that people add to an AI assistant, such as Claude, to make it better at a job. Driftproof tests whether a skill really helps, the way a medicine is tested against a sugar pill. The latest reports give the AI the same tasks three ways: with the skill, with a fake of the same length, and with nothing added. Then it scores every answer, again and again. Every result is a dated receipt anyone can check.</p>
 </div>
-<p class="hero-links"><a class="cta" href="/r/${esc(exampleHash)}/">See a receipt</a> <a href="/findings/">Read the findings</a> <a href="/reports/${esc(V('latest_report_number'))}/">Read the latest report</a></p>
-<p class="gap-line"><a href="/how-it-works/">New to this? See how it works, step by step</a></p>
+<div class="doors">
+${doors()}
+</div>
+<div class="hero-more">
 <p class="gap-line">A piece by Maverick: <a href="/leaderboard-noise/">quoted AI benchmark gaps, checked against their own sampling noise</a>.</p>
 <p class="gap-line">Found by Driftproof: <a href="/invisible-space/">the invisible space that AI graders got backwards</a>. Try the quiz.</p>
 </div>
-${heroReceipt(V, example)}
+${latestFinding(S, V)}
 </section>
 
 <section id="stats" class="screen is-wide">
@@ -242,24 +321,12 @@ ${statBand}
 <p class="gap-line">Comparing two benchmark scores? The <a href="/benchmark-gap/">gap calculator</a> says whether the gap is bigger than the benchmark's own sampling noise.</p>
 </section>
 
-<section id="states" class="screen is-text">
-<h2>What a receipt can say</h2>
-<ul class="states">
-<li><strong>Passing.</strong> A case separated upward under the band rule: the two ranges do not overlap and the move clears the effect floor. That is a separation detected under the rule, not proof that the skill moved the score.</li>
-<li><strong>Regressed.</strong> A case separated downward under the same rule.</li>
-<li><strong>No separation detected.</strong> The ranges overlap at this sample size, which is not evidence that nothing changed.</li>
-<li><strong>Not enough draws.</strong> Not enough draws to conclude at this effect floor. The receipt prints how many draws per arm would have been needed, or that no number of draws reaches the floor at the spreads it measured.</li>
-${casesItem()}
-<li><strong>Not measured.</strong> The receipt carries no verdict, and its page names every reason, such as a run that does not record that a model answered it.${receiptWords(example).label === 'Not measured' ? ' The receipt in the card above is one.' : ''}</li>
-</ul>
-<p>Every receipt has its own page, with its verdict, its two arms and a way to verify it yourself. <a href="/how-this-is-built/">How this is built</a> describes how the tool itself is checked.</p>
-</section>
-
 <section id="how-it-works" class="screen is-bleed">
 <div class="bleed-inner">
-<h2>How it works</h2>
+<p class="section-eyebrow">For the curious</p>
+<h2>How a skill is tested</h2>
 <ol class="steps">
-<li>Run your skill's tests twice: with the skill, and without it.</li>
+<li>Run the skill's test tasks twice: with the skill, and without it.</li>
 <li>Draw each answer several times and score each draw several times, so every result is a range, not one fragile number.</li>
 <li>Call it a separation only when the ranges don't overlap and the move clears the floor. When the ranges overlap, say no separation detected at this sample size; when the draws were too few to tell, say so.</li>
 </ol>
@@ -271,6 +338,44 @@ ${panels}
 <img class="bandplot" src="/${esc(V('example_receipt_plot_play'))}" alt="The same two ranges, drawn from the bundled example receipt." width="640" height="200">
 <p class="muted">Move the floor and change what counts as a band to see the verdict change. This is the bundled example receipt's own per-case data.</p>
 </div>
+<p class="gap-line"><a href="/how-it-works/">Walk through one real test, step by step</a>, or <a href="/reports/017/blind/">try to tell which answer had the skill</a>.</p>
+</div>
+</section>
+
+<section id="latest" class="screen is-wide">
+<p class="section-eyebrow">The reports</p>
+<h2>Latest report</h2>
+${reportCard(latest, HOME_CARD_STAT, { counts: false })}
+<p>The latest report reads each skill against a same-length placebo as well as against no skill: a text of the skill's length in bytes, in its place, drawn from a fixed corpus chosen without reference to any task. <a href="/placebo/">Fake my file</a> shows the text Driftproof would use for your file, in your browser, before you measure it. On a run that kept its answers, the results page and <code>driftproof blind</code> show each task's two answers without saying which used your file, ask you to pick, and after your picks say how often you were right beside the judge's scores. In Claude Code, <code>/driftproof:blind</code> opens it.</p>
+<p><a href="/reports/">All <span data-stat="reports_published">${esc(V('reports_published'))}</span> reports</a></p>
+<p><a href="${drift.HREF}">${esc(drift.TEXT.h1)}</a>: what each receipt read, model by model.</p>
+<p class="writing">Writing: <a href="/writing/three-releases/">${esc(latest.essay_links[0].title.value)}</a>, the launch essay reading all ${esc(V('reports_published_word'))} reports on what a moving model does to encoded expertise.</p>
+</section>
+
+<section id="users" class="screen is-text">
+<p class="section-eyebrow">For people who use AI skills</p>
+<h2>Using a skill someone else wrote?</h2>
+<p>Paste its link and see whether it has been measured, or browse the skills already on record. <a href="/skill-lookup/">Look up a skill</a>. <a href="/skills/">Do popular AI skills help?</a></p>
+<p>Before you measure a file of your own, <a href="/placebo/">see its fake</a>: the same-length text that stands in for the sugar pill.</p>
+</section>
+
+<section id="states" class="screen is-wide">
+<div class="states-grid">
+<div>
+<p class="section-eyebrow">For people who make skills</p>
+<h2>What a receipt can say</h2>
+<p>A skill's own tests passing is one answer. Driftproof asks two more: whether the scores with the skill and without it separate beyond their spread, and whether that held when the model changed. Each answer is a dated, hash-verified receipt, and when there were too few draws to tell, the receipt says so.</p>
+<ul class="states">
+<li><strong>Passing.</strong> A case separated upward under the band rule: the two ranges do not overlap and the move clears the effect floor. That is a separation detected under the rule, not proof that the skill moved the score.</li>
+<li><strong>Regressed.</strong> A case separated downward under the same rule.</li>
+<li><strong>No separation detected.</strong> The ranges overlap at this sample size, which is not evidence that nothing changed.</li>
+<li><strong>Not enough draws.</strong> Not enough draws to conclude at this effect floor. The receipt prints how many draws per arm would have been needed, or that no number of draws reaches the floor at the spreads it measured.</li>
+${casesItem()}
+<li><strong>Not measured.</strong> The receipt carries no verdict, and its page names every reason, such as a run that does not record that a model answered it.${receiptWords(example).label === 'Not measured' ? ' The receipt in the card beside this list is one.' : ''}</li>
+</ul>
+<p>Every receipt has its own page, with its verdict, its two arms and a way to verify it yourself. <a href="/how-this-is-built/">How this is built</a> describes how the tool itself is checked.</p>
+</div>
+${heroReceipt(V, example)}
 </div>
 </section>
 
@@ -313,15 +418,6 @@ npx driftproof run my-skill --models claude-haiku-4-5
 cat receipts/*.summary.md              # read the receipt + human summary</code></pre>
 <p>Wire it into a repository with the <a href="https://github.com/driftproofhq/driftproof#verification-in-ci-github-action--badge">GitHub Action</a> (<code>uses: driftproofhq/driftproof@v${esc(V('version'))}</code>): it re-runs the suite on every push, uploads the receipts, and fails the job when a case separated downward. <code>driftproof badge</code> turns a receipt into a badge that carries the model and the date it was measured.</p>
 <p><img alt="driftproof badge: ${esc(require('../lib/verdict.js').verdictFromReceipt(example).message)}" src="https://img.shields.io/endpoint?url=https://driftproofhq.com/badges/commit-message-conventions.json"></p>
-</section>
-
-<section id="latest" class="screen is-wide">
-<h2>Latest report</h2>
-${reportCard(latest, HOME_CARD_STAT, { counts: false })}
-<p>The latest report reads each skill against a same-length placebo as well as against no skill: a text of the skill's length in bytes, in its place, drawn from a fixed corpus chosen without reference to any task. <a href="/placebo/">Fake my file</a> shows the text Driftproof would use for your file, in your browser, before you measure it. On a run that kept its answers, the results page and <code>driftproof blind</code> show each task's two answers without saying which used your file, ask you to pick, and after your picks say how often you were right beside the judge's scores. In Claude Code, <code>/driftproof:blind</code> opens it.</p>
-<p><a href="/reports/">All <span data-stat="reports_published">${esc(V('reports_published'))}</span> reports</a></p>
-<p><a href="${drift.HREF}">${esc(drift.TEXT.h1)}</a>: what each receipt read, model by model.</p>
-<p class="writing">Writing: <a href="/writing/three-releases/">${esc(latest.essay_links[0].title.value)}</a>, the launch essay reading all ${esc(V('reports_published_word'))} reports on what a moving model does to encoded expertise.</p>
 </section>
 
 <section id="subscribe" class="screen is-text">
@@ -425,7 +521,9 @@ const TYPE_NOTES = {
     'Keeps the skills and their tasks the same and measures them with two instruments, two different test tools, saying what each can and cannot show.'],
 };
 const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight',
-  'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen'];
+  'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen',
+  'nineteen', 'twenty', 'twenty-one', 'twenty-two', 'twenty-three', 'twenty-four', 'twenty-five', 'twenty-six',
+  'twenty-seven', 'twenty-eight', 'twenty-nine', 'thirty'];
 const word = (n) => (WORDS[n] === undefined ? String(n) : WORDS[n]);
 function reportTypes(R) {
   return [...new Set((R || reports()).map((r) => r.type.value))];
@@ -538,6 +636,8 @@ function reportsIndex() {
 <p>Every report Driftproof has published, newest first. ${esc(V('reports_published'))} reports, ${esc(V('receipts_published'))} receipts, all of them dated and hash-verified.</p>
 </div>
 <p><a href="${drift.HREF}">${esc(drift.TEXT.h1)}</a>: what each receipt read, model by model, across the reports.</p>
+<p><a href="/sugar-pill/">${esc(require('./sugar-pill-page.js').TEXT.h1)}</a>: pick what you want help with and see what each of Reports 017 and 018's skills did against a same-length fake and against nothing.</p>
+<p><a href="/spot-the-fake/">Which bar is the fake?</a> A quick guessing game with the reports’ real score ranges.</p>
 ${cards}
 </section>
 
@@ -667,44 +767,12 @@ function notFoundPage() {
 
 // ── /glossary/ and /report-types/ ───────────────────────────────────────────
 //
-// Ten terms, two sentences each, every one linking to the section it is taken
-// from. The definitions are the site's own words for what the methodology and
-// spec/RECEIPT.md already say; the link is what lets a reader check that claim
-// rather than take it.
-const M = 'https://driftproofhq.com/methodology/';
-const CORE = `/methodology/#the-core-with-vs-without-sampled-banded`;
-const RULE = `/methodology/#the-drift-verdict-rule-anti-false-positive`;
-const SURFACES = `/methodology/#providers-surfaces-and-neutrality`;
-const FORMAT = `/methodology/#receipts-are-an-open-format`;
-const RECEIPT_SPEC = 'https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md';
-const BANDS = `/methodology/#where-a-band-comes-from`;
-
-const TERMS = [
-  ['drift report', 'A dated comparison of two runs of the same eval suite, asking whether a skill still helps after something underneath it moved. It names what moved, reports a verdict per cell, and links the receipts every figure came from.', RULE, 'the drift verdict rule'],
-  ['receipt', 'The dated, hash-verified JSON file a single run emits: the skill and its content hash, the model, the surface, every case score, and the comparison between the two arms. It is the unit of evidence on this site, and every published number traces to one.', RECEIPT_SPEC, 'the receipt specification'],
-  ['band', 'The range a score carries instead of a single number, because a scorer asked twice does not answer identically twice. A band is a descriptive spread, the mean plus or minus one sample standard deviation across n generations scored by the fixed judge, and whether two bands overlap decides whether a separation is detected under the rule.', CORE, 'with vs without, sampled, banded'],
-  ['effect floor', 'The smallest lift that counts as a lift, below which a difference is reported as no effect however the bands fall. It exists because a score can move by a rounding artefact of the scoring grid and mean nothing at all.', RULE, 'the drift verdict rule'],
-  ['substrate', 'The model underneath the skill: a specific version, from a specific provider, at a specific tier. Driftproof exists because the substrate moves while the skill file stands still.', SURFACES, 'providers, surfaces and neutrality'],
-  ['surface', 'How the model was reached: a metered API or a subscription CLI. The same model over two surfaces is not guaranteed to behave identically, so every receipt records which one it ran on.', SURFACES, 'providers, surfaces and neutrality'],
-  ['refusal', 'A published result that reports no verdict, because the run could not stand behind one. A refusal is an outcome and not an error, and publishing it is the alternative to guessing.', RULE, 'the drift verdict rule'],
-  ['cell', 'One skill measured on one substrate: the smallest unit a report gives a verdict to. A report is a grid of cells, and a cell that refuses does not sink the ones that did not.', CORE, 'with vs without, sampled, banded'],
-  ['arm', 'One side of the comparison: the run WITH the skill, or the baseline run without it. Every case is run in both arms, and the difference between the two arms is the only thing a lift can mean.', CORE, 'with vs without, sampled, banded'],
-  ['lattice', 'The four verification levels a receipt can carry: UNVERIFIED, DECLARED, TESTED and FORMAL. A number Driftproof measured itself is TESTED; a number imported from another tool is DECLARED, recorded but not verified, and never given a pass or fail verdict.', FORMAT, 'receipts are an open format'],
-  // The two words every report table since 007 uses and this page did not
-  // define (spec 025 AC-19). A reader who meets `(legacy)` beside a band had
-  // nowhere to look it up.
-  ['generation sampling', 'Running each arm more than once, so that a band measures the model writing a different answer and not only the judge re-reading one. A receipt that ran no generation sampling carries a legacy band, and one that ran it carries a generation band.', BANDS, 'where a band comes from'],
-  ['band source (legacy, generation)', 'The label a report table puts beside a band, saying which instrument produced it. A legacy band is the judge re-scoring a single generation; a generation band is the across-draw spread of several.', BANDS, 'where a band comes from'],
-  // Spec 440 (spec 025 A-025-14): the arm spec/RECEIPT.md v0.14 adds, in spec 440's own words.
-  ['placebo arm', 'An optional third arm, answered with a text of exactly the skill text\'s length in bytes in the skill\'s place, drawn from a fixed corpus chosen without reference to any task, which can by chance bear on a case. Its reading is the verdict\'s own case rule applied to the skill against that text, given beside the verdict and never in its place.', RECEIPT_SPEC, 'the receipt specification'],
-  // Spec 438 (spec 025 A-025-14): the two fields spec/RECEIPT.md v0.15 adds, in spec 438's own words.
-  ['context file', 'Any Markdown file, such as a CLAUDE.md, an AGENTS.md or a shared rules file, measured as a subject in place of a skill. Its exact bytes are the with-skill system text and their sha256 is its content hash; the receipt records its kind as context_file.', RECEIPT_SPEC, 'the receipt specification'],
-  ['delivery', 'How a run was configured to deliver its subject, recorded on every receipt: injected, the runner puts the subject text into each with-skill request it builds; installed, a harness loaded the subject from where it was installed, which only an import says; unknown, an imported source that does not say. It records the configuration, not that a request was sent.', RECEIPT_SPEC, 'the receipt specification'],
-  // Issue 490: terms for the capture, saved progress and configured grader pair.
-  ['repository capture', 'A capture mode that grades the reply and captured text changes from a fresh pinned starter repository, with coding tools available. The receipt discloses observed tool evidence and capture omissions; availability alone does not prove execution.', '/methodology/#repository-capture', 'repository capture'],
-  ['checkpoint', 'Durable run progress that retains finished draws and saved judge samples for a compatible resume. A pause or resume leaves the verdict rules unchanged and records the run segments in the final receipt.', '/methodology/#checkpoint-pause-resume', 'checkpoint, pause and resume'],
-  ['crossed judging', 'A historical R-2 pairing: Sonnet judged Haiku and Haiku judged Sonnet. Sonnet 5.5 now judges both targets; self-grading is disclosed.', '/methodology/#crossed-judging', 'R-2 judge configuration'],
-];
+// THE ENTRIES LIVE IN scripts/glossary-terms.js (spec 689): each has a plain line, the fuller definition
+// and the section it is taken from. The same entries are the plain-word cards the shared chrome step writes
+// on every other page's first use of an entry's word, so the glossary and the cards cannot disagree. The
+// definitions are the site's own words for what the methodology and spec/RECEIPT.md already say; the link
+// is what lets a reader check that claim rather than take it.
+const { TERMS } = require('./glossary-terms.js');
 
 // THE QUOTED RULE IS A SENTENCE, and the template does not add to it (fix pass
 // R8). This paragraph used to append a full stop to a value that already carried
@@ -713,21 +781,20 @@ const TERMS = [
 // fixed there, because a quotation cannot be repaired anywhere but at its source.
 function glossaryPage() {
   const V = reader(stats());
-  const entries = TERMS.map(([term, body, href, label]) => {
-    // A SLUG, not the term with its spaces swapped. "band source (legacy,
-    // generation)" produced `term-band-source-(legacy,-generation)`, an id
-    // carrying brackets and a comma, which is a fragment nobody can link by hand.
-    const id = `term-${term.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
+  const entries = TERMS.map(({ id, name, plain, body, href, label }) => {
     // ONE CELL PER TERM (spec 125 A-125-9): the list takes two columns on a wide track, and a <div>
-    // around each pair is what lets a term and its definition share one cell.
-    return `<div><dt id="${id}">${term.charAt(0).toUpperCase()}${term.slice(1)}</dt>
-<dd>${body} <a href="${esc(href)}">Source: ${esc(label)}</a>.</dd></div>`;
+    // around each pair is what lets a term and its definition share one cell. The plain line comes first
+    // (spec 689 AC-1): it is the card's text, and the fuller definition follows it with its source.
+    return `<div><dt id="${id}">${name.charAt(0).toUpperCase()}${name.slice(1)}</dt>
+<dd><p class="term-plain">${esc(plain)}</p>
+<p class="term-full">${body} <a href="${esc(href)}">Source: ${esc(label)}</a>.</p></dd></div>`;
   }).join('\n');
+  const count = `${word(TERMS.length).charAt(0).toUpperCase()}${word(TERMS.length).slice(1)}`;
   const main = `<main class="screens">
 <section id="glossary" class="screen">
 <div class="split">
 <div><h1>Glossary</h1></div>
-<p>${word(TERMS.length).charAt(0).toUpperCase()}${word(TERMS.length).slice(1)} words this site uses in a particular way, two sentences each, every one linking to the section it comes from. The verdict rule, in the methodology's own words: ${esc(V('verdict_rule'))}</p>
+<p>${count} words this site uses in a particular way. Each entry opens in plain words, then gives the fuller meaning, and links to the section it comes from. The verdict rule, in the methodology's own words: ${esc(V('verdict_rule'))}</p>
 </div>
 <dl class="glossary">
 ${entries}
@@ -736,7 +803,7 @@ ${entries}
 </main>`;
   return shell({
     title: 'Glossary | Driftproof',
-    description: `${word(TERMS.length).charAt(0).toUpperCase()}${word(TERMS.length).slice(1)} words this site uses in a particular way, two sentences each, every one linking to the section of the methodology or the receipt spec it comes from.`,
+    description: `${count} words this site uses in a particular way. Each entry opens in plain words, then gives the fuller meaning, and links to the section it comes from.`,
     main,
   });
 }
@@ -992,7 +1059,10 @@ function patchMethodology(html, root = ROOT) {
     if (!out.includes(before)) throw new Error('docs/methodology/index.html: the skill.tokens citation is no longer where it was');
     out = out.replace(before, `(<code>skill.tokens</code>${tokensCitation(root)}`);
   }
-  return out;
+  // THE PATCH ENDS WITH THE PLAIN-WORD PASS (spec 689), the same one the shared chrome step runs, so a
+  // committed page is this function's own fixed point: the fenced section it re-cuts takes its markers
+  // back, and spec 025 AC-17, which calls this function on the committed page, reads it unchanged.
+  return require('./glossary-terms.js').applyTerms(out);
 }
 
 // ── docs/interop.md: the receipt version it names (spec 004 A-004-3) ────────
@@ -1023,8 +1093,9 @@ function patchInteropPage(html, root = ROOT) {
   const dropLink = '<p><a href="/drop-results/">Read a results file in your browser</a>.</p>';
   html = html.replace(dropLink + '\n', '');
   html = html.replace(/(<p class="lede">[\s\S]*?<\/p>)/, '$1\n' + dropLink);
-  return html.replace(/receipt spec v\d+\.\d+;/, 'receipt spec v' + version + ';')
-    .replace(/Prior schema versions \(v0\.1 to v0\.\d+, v0\.3\.1 among them, and v0\.14 as receipt\.placebo\.schema\.json\)/, `Prior schema versions (v0.1 to v${prior}, v0.3.1 among them, and v0.14 as receipt.placebo.schema.json)`);
+  // The plain-word pass last, as patchMethodology ends (spec 689): the patched page is its own fixed point.
+  return require('./glossary-terms.js').applyTerms(html.replace(/receipt spec v\d+\.\d+;/, 'receipt spec v' + version + ';')
+    .replace(/Prior schema versions \(v0\.1 to v0\.\d+, v0\.3\.1 among them, and v0\.14 as receipt\.placebo\.schema\.json\)/, `Prior schema versions (v0.1 to v${prior}, v0.3.1 among them, and v0.14 as receipt.placebo.schema.json)`));
 }
 const PATCHES = { 'interop/index.html': patchInteropPage, 'methodology/index.html': patchMethodology, 'interop.md': patchInteropMd, 'spec/receipt.schema.json': () => fs.readFileSync(path.join(ROOT, 'spec', 'receipt.schema.json'), 'utf8') };
 
@@ -1093,6 +1164,8 @@ function maintainerPage() {
 <li>Paper: ${a('/paper/', P.title)} (preprint, Zenodo, ${a(P.concept_doi_url, P.concept_doi_url.replace(/^https:\/\//, ''))}), written by ${a(me, 'Maverick')} and published under the project name ${esc(P.author)}.</li>
 <li>${a('/reports/', 'Reports')}: dated measurements of whether agent skills still help after each model release.</li>
 </ul>
+
+${require('./reader-pages').section()}
 
 <h2 id="merged-upstream">Merged upstream</h2>
 <p>Tags name the first qualifying GitHub release after the merge, with commit ancestry verified at observation time. Release links point to notes that mention this PR outside HTML comments.${except}</p>
@@ -1551,10 +1624,15 @@ function acrossModelsPage() {
 
 // Issue 640: the step-by-step walk-through, built from one sealed Report 017 receipt (scripts/how-it-works.js).
 const howItWorksPage = () => require('./how-it-works.js').page(shell);
+// Issue 688: pick what you want help with, see what each skill did, from Reports 017 and 018's sealed
+// receipts (scripts/sugar-pill-page.js). Required when rendered: that module reads the report builders.
+const sugarPillPage = () => require('./sugar-pill-page.js').page(shell);
 
 const TARGETS = {
+  ...require('./build-tasks.js').targets(shell),
   'placebo/index.html': placeboPage,
   'how-it-works/index.html': howItWorksPage,
+  'sugar-pill/index.html': sugarPillPage,
   [drift.REL]: acrossModelsPage,
   'index.html': homepage,
   'glossary/index.html': glossaryPage,
@@ -1587,7 +1665,10 @@ function main() {
   for (const [rel, patch] of Object.entries(PATCHES)) {
     const dest = path.join(DOCS, rel);
     const before = fs.readFileSync(dest, 'utf8');
-    const out = patch(before);
+    // A PATCHED PAGE GOES THROUGH THE SHARED CHROME STEP as a rendered one does (spec 689): the plain-word
+    // markers and every other fence are re-cut over the patched page, so the committed page is this
+    // builder's whole output and `--check` reads it against the same bytes build-head-tags.js writes.
+    const out = rel.endsWith('.html') ? headTags.render(patch(before), rel) : patch(before);
     if (before === out) continue;
     if (check) { stale.push(rel); continue; }
     fs.writeFileSync(dest, out);
@@ -1601,6 +1682,7 @@ function main() {
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.writeFileSync(dest, out);
   }
+  require('./reader-pages').run(check);
   if (check && stale.length) {
     console.error(`stale site pages - run: node scripts/build-site-pages.js\n  ${stale.join('\n  ')}`);
     process.exit(1);
@@ -1610,4 +1692,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { reportName, BENCHMARK_GAP_PRESETS, BENCHMARK_GAP_FAMOUS, paperPage, maintainerPage, shell, heroReceipt, receiptWords, casesItem, reportCard, HOME_CARD_STAT, statePlot, plotState, subscribedPage, reportTypes, typeNote, word, bandFacts, bandsSection, floorFigure, checksSchemaVersion, tokensSchemaVersion, patchMethodology, receiptSchemaVersion, patchInteropMd, PATCHES, homepage, reportsIndex, glossaryPage, reportTypesPage, notFoundPage, redirectStub, STUBS, TERMS, TARGETS, reader, stats, reports, buildCards };
+module.exports = { reportName, BENCHMARK_GAP_PRESETS, BENCHMARK_GAP_FAMOUS, paperPage, maintainerPage, shell, heroReceipt, receiptWords, casesItem, reportCard, HOME_CARD_STAT, doors, latestFinding, findingTiles, tileClassOf, statePlot, plotState, subscribedPage, reportTypes, typeNote, word, bandFacts, bandsSection, floorFigure, checksSchemaVersion, tokensSchemaVersion, patchMethodology, receiptSchemaVersion, patchInteropMd, PATCHES, homepage, reportsIndex, glossaryPage, reportTypesPage, notFoundPage, redirectStub, STUBS, TERMS, TARGETS, reader, stats, reports, buildCards };

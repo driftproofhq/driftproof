@@ -18,10 +18,10 @@
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon-180.png" sizes="180x180">
 <link rel="icon" href="/icon-512.png" sizes="512x512" type="image/png">
-<meta name="description" content="18 words this site uses in a particular way, two sentences each, every one linking to the section it comes from. The verdict rule, in the methodology's…">
+<meta name="description" content="Twenty-five words this site uses in a particular way. Each entry opens in plain words, then gives the fuller meaning, and links to the section it comes…">
 <meta property="og:site_name" content="Driftproof">
 <meta property="og:title" content="Glossary | Driftproof">
-<meta property="og:description" content="18 words this site uses in a particular way, two sentences each, every one linking to the section it comes from. The verdict rule, in the methodology's…">
+<meta property="og:description" content="Twenty-five words this site uses in a particular way. Each entry opens in plain words, then gives the fuller meaning, and links to the section it comes…">
 <meta property="og:image" content="https://driftproofhq.com/og.7a9c3a6e.png">
 <meta property="og:url" content="https://driftproofhq.com/glossary/">
 <meta property="og:type" content="article">
@@ -31,7 +31,7 @@
   "@context": "https://schema.org",
   "@type": "WebPage",
   "name": "Glossary | Driftproof",
-  "description": "18 words this site uses in a particular way, two sentences each, every one linking to the section it comes from. The verdict rule, in the methodology's…",
+  "description": "Twenty-five words this site uses in a particular way. Each entry opens in plain words, then gives the fuller meaning, and links to the section it comes…",
   "url": "https://driftproofhq.com/glossary/",
   "isPartOf": {
     "@type": "WebSite",
@@ -70,13 +70,14 @@
 <details class="nav-menu"><summary>Menu</summary></details>
 <nav class="site-nav" aria-label="Site">
 <a href="/reports/">Reports</a>
+<a href="/skills/">Skills</a>
+<a href="/how-it-works/">How it works</a>
+<details class="docs-menu"><summary>For builders</summary><div class="docs-menu-list">
+<a href="/#quickstart">Install</a>
+<a href="/#how-it-works">How a skill is tested</a>
 <a href="/benchmark-gap/">Gap calculator</a>
 <a href="/leaderboard-noise/">Leaderboard noise</a>
-<a href="/skills/">Skills</a>
-<a href="/findings/">Findings</a>
 <a href="/paper/">Paper</a>
-<details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
-<a href="/#how-it-works">How it works</a>
 <a href="/methodology/">Methodology</a>
 <a href="/neutrality/">Neutrality</a>
 <a href="/interop/">Interop</a>
@@ -92,10 +93,17 @@
 </header><!--/driftproof:nav-->
 <!--driftproof:layout--><div class="page-grid is-screens is-sheet">
 <nav class="page-toc" aria-label="On this page"><div class="rail-in"><p class="eyebrow">On this page</p><ol>
+<li><a href="#term-skill">Skill</a></li>
 <li><a href="#term-drift-report">Drift report</a></li>
 <li><a href="#term-receipt">Receipt</a></li>
 <li><a href="#term-band">Band</a></li>
+<li><a href="#term-draw">Draw</a></li>
+<li><a href="#term-separated">Separated</a></li>
 <li><a href="#term-effect-floor">Effect floor</a></li>
+<li><a href="#term-baseline">Baseline</a></li>
+<li><a href="#term-placebo-arm">Placebo arm</a></li>
+<li><a href="#term-judge">Judge</a></li>
+<li><a href="#term-case-rule">Case rule</a></li>
 <li><a href="#term-substrate">Substrate</a></li>
 <li><a href="#term-surface">Surface</a></li>
 <li><a href="#term-refusal">Refusal</a></li>
@@ -104,9 +112,9 @@
 <li><a href="#term-lattice">Lattice</a></li>
 <li><a href="#term-generation-sampling">Generation sampling</a></li>
 <li><a href="#term-band-source-legacy-generation">Band source (legacy, generation)</a></li>
-<li><a href="#term-placebo-arm">Placebo arm</a></li>
 <li><a href="#term-context-file">Context file</a></li>
 <li><a href="#term-delivery">Delivery</a></li>
+<li><a href="#term-router">Router</a></li>
 <li><a href="#term-repository-capture">Repository capture</a></li>
 <li><a href="#term-checkpoint">Checkpoint</a></li>
 <li><a href="#term-crossed-judging">Crossed judging</a></li>
@@ -115,45 +123,84 @@
 <section id="glossary" class="screen">
 <div class="split">
 <div><h1>Glossary</h1></div>
-<p>18 words this site uses in a particular way, two sentences each, every one linking to the section it comes from. The verdict rule, in the methodology's own words: Where bands touch or overlap, or a move is below the floor, the report says no separation detected at this sample size: never drift, and never that nothing changed.</p>
+<p>Twenty-five words this site uses in a particular way. Each entry opens in plain words, then gives the fuller meaning, and links to the section it comes from. The verdict rule, in the methodology's own words: Where bands touch or overlap, or a move is below the floor, the report says no separation detected at this sample size: never drift, and never that nothing changed.</p>
 </div>
 <dl class="glossary">
+<div><dt id="term-skill">Skill</dt>
+<dd><p class="term-plain">A file of instructions that people add to an AI assistant, such as Claude, to make it better at a job. Driftproof tests whether a skill really helps.</p>
+<p class="term-full">A directory holding a SKILL.md, whose instructions are sent with every request in the with-skill arm and are measured by their content hash, so a receipt names the exact bytes it read. The skill's own test cases are the tasks a run asks. <a href="/methodology/#the-core-with-vs-without-sampled-banded">Source: with and without the skill</a>.</p></dd></div>
 <div><dt id="term-drift-report">Drift report</dt>
-<dd>A dated comparison of two runs of the same eval suite, asking whether a skill still helps after something underneath it moved. It names what moved, reports a verdict per cell, and links the receipts every figure came from. <a href="/methodology/#the-drift-verdict-rule-anti-false-positive">Source: the drift verdict rule</a>.</dd></div>
+<dd><p class="term-plain">A report that asks whether a skill still helps after something underneath it changed, such as a new version of the model.</p>
+<p class="term-full">A dated comparison of two runs of the same eval suite, asking whether a skill still helps after something underneath it moved. It names what moved, reports a verdict per cell, and links the receipts every figure came from. <a href="/methodology/#the-drift-verdict-rule-anti-false-positive">Source: the drift verdict rule</a>.</p></dd></div>
 <div><dt id="term-receipt">Receipt</dt>
-<dd>The dated, hash-verified JSON file a single run emits: the skill and its content hash, the model, the surface, every case score, and the comparison between the two arms. It is the unit of evidence on this site, and every published number traces to one. <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md">Source: the receipt specification</a>.</dd></div>
+<dd><p class="term-plain">The dated file that records one test: the skill, the model, every score and the result. Anyone can check that it has not changed since it was sealed.</p>
+<p class="term-full">The dated, hash-verified JSON file a single run emits: the skill and its content hash, the model, the surface, every case score, and the comparison between the two arms. It is the unit of evidence on this site, and every published number traces to one. <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md">Source: the receipt specification</a>.</p></dd></div>
 <div><dt id="term-band">Band</dt>
-<dd>The range a score carries instead of a single number, because a scorer asked twice does not answer identically twice. A band is a descriptive spread, the mean plus or minus one sample standard deviation across n generations scored by the fixed judge, and whether two bands overlap decides whether a separation is detected under the rule. <a href="/methodology/#the-core-with-vs-without-sampled-banded">Source: with vs without, sampled, banded</a>.</dd></div>
+<dd><p class="term-plain">The range a score is given instead of one number: the average plus or minus the usual spread of the scores. Two bands that do not overlap are what a report calls separated.</p>
+<p class="term-full">The range a score carries instead of a single number, because a scorer asked twice does not answer identically twice. A band is a descriptive spread, the mean plus or minus one sample standard deviation across n generations scored by the fixed judge, and whether two bands overlap decides whether a separation is detected under the rule. <a href="/methodology/#the-core-with-vs-without-sampled-banded">Source: with vs without, sampled, banded</a>.</p></dd></div>
+<div><dt id="term-draw">Draw</dt>
+<dd><p class="term-plain">One answer the model gave to a task. Each task is asked several times, so a result is a range of scores rather than one number.</p>
+<p class="term-full">Each arm is generated several times, and more until the spread across draws settles. The judge scores every draw several times, and a receipt records how many draws each arm had. <a href="/methodology/#where-a-band-comes-from">Source: where a band comes from</a>.</p></dd></div>
+<div><dt id="term-separated">Separated</dt>
+<dd><p class="term-plain">The two ranges of scores, with the skill and without it, do not overlap, and the gap is at least the effect floor. It is what a report means by a clear difference, and it is not proof that the skill caused it.</p>
+<p class="term-full">Separation is detected under the rule when the two bands do not overlap and the move clears the effect floor; it is a detection under the rule, not proof that the skill moved the score. Where bands touch or overlap, or a move is below the floor, the report says no separation detected at this sample size. <a href="/methodology/#the-drift-verdict-rule-anti-false-positive">Source: the drift verdict rule</a>.</p></dd></div>
 <div><dt id="term-effect-floor">Effect floor</dt>
-<dd>The smallest lift that counts as a lift, below which a difference is reported as no effect however the bands fall. It exists because a score can move by a rounding artefact of the scoring grid and mean nothing at all. <a href="/methodology/#the-drift-verdict-rule-anti-false-positive">Source: the drift verdict rule</a>.</dd></div>
-<div><dt id="term-substrate">Substrate</dt>
-<dd>The model underneath the skill: a specific version, from a specific provider, at a specific tier. Driftproof exists because the substrate moves while the skill file stands still. <a href="/methodology/#providers-surfaces-and-neutrality">Source: providers, surfaces and neutrality</a>.</dd></div>
-<div><dt id="term-surface">Surface</dt>
-<dd>How the model was reached: a metered API or a subscription CLI. The same model over two surfaces is not guaranteed to behave identically, so every receipt records which one it ran on. <a href="/methodology/#providers-surfaces-and-neutrality">Source: providers, surfaces and neutrality</a>.</dd></div>
-<div><dt id="term-refusal">Refusal</dt>
-<dd>A published result that reports no verdict, because the run could not stand behind one. A refusal is an outcome and not an error, and publishing it is the alternative to guessing. <a href="/methodology/#the-drift-verdict-rule-anti-false-positive">Source: the drift verdict rule</a>.</dd></div>
-<div><dt id="term-cell">Cell</dt>
-<dd>One skill measured on one substrate: the smallest unit a report gives a verdict to. A report is a grid of cells, and a cell that refuses does not sink the ones that did not. <a href="/methodology/#the-core-with-vs-without-sampled-banded">Source: with vs without, sampled, banded</a>.</dd></div>
-<div><dt id="term-arm">Arm</dt>
-<dd>One side of the comparison: the run WITH the skill, or the baseline run without it. Every case is run in both arms, and the difference between the two arms is the only thing a lift can mean. <a href="/methodology/#the-core-with-vs-without-sampled-banded">Source: with vs without, sampled, banded</a>.</dd></div>
-<div><dt id="term-lattice">Lattice</dt>
-<dd>The four verification levels a receipt can carry: UNVERIFIED, DECLARED, TESTED and FORMAL. A number Driftproof measured itself is TESTED; a number imported from another tool is DECLARED, recorded but not verified, and never given a pass or fail verdict. <a href="/methodology/#receipts-are-an-open-format">Source: receipts are an open format</a>.</dd></div>
-<div><dt id="term-generation-sampling">Generation sampling</dt>
-<dd>Running each arm more than once, so that a band measures the model writing a different answer and not only the judge re-reading one. A receipt that ran no generation sampling carries a legacy band, and one that ran it carries a generation band. <a href="/methodology/#where-a-band-comes-from">Source: where a band comes from</a>.</dd></div>
-<div><dt id="term-band-source-legacy-generation">Band source (legacy, generation)</dt>
-<dd>The label a report table puts beside a band, saying which instrument produced it. A legacy band is the judge re-scoring a single generation; a generation band is the across-draw spread of several. <a href="/methodology/#where-a-band-comes-from">Source: where a band comes from</a>.</dd></div>
+<dd><p class="term-plain">The smallest gap that counts. A smaller difference is not called a change, however the ranges fall, because the grader scores in coarse steps.</p>
+<p class="term-full">The smallest lift that counts as a lift, below which a difference is reported as no effect however the bands fall. It exists because a score can move by a rounding artefact of the scoring grid and mean nothing at all. <a href="/methodology/#the-drift-verdict-rule-anti-false-positive">Source: the drift verdict rule</a>.</p></dd></div>
+<div><dt id="term-baseline">Baseline</dt>
+<dd><p class="term-plain">The run without the skill: the same tasks and the same model, with nothing added. Every score with the skill is compared against it.</p>
+<p class="term-full">The arm run without the skill text, against which the with-skill arm is read: the lift is the with-skill mean minus the baseline mean. A placebo arm, where a report has one, is read against the baseline too. <a href="/methodology/#the-core-with-vs-without-sampled-banded">Source: with and without the skill</a>.</p></dd></div>
 <div><dt id="term-placebo-arm">Placebo arm</dt>
-<dd>An optional third arm, answered with a text of exactly the skill text's length in bytes in the skill's place, drawn from a fixed corpus chosen without reference to any task, which can by chance bear on a case. Its reading is the verdict's own case rule applied to the skill against that text, given beside the verdict and never in its place. <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md">Source: the receipt specification</a>.</dd></div>
+<dd><p class="term-plain">A fake skill: a text of the same length as the skill, built from sentences chosen without looking at any task. The skill is scored against the fake as well as against nothing, the way a medicine is tested against a sugar pill.</p>
+<p class="term-full">An optional third arm, answered with a text of exactly the skill text's length in bytes in the skill's place, drawn from a fixed corpus chosen without reference to any task, which can by chance bear on a case. Its reading is the verdict's own case rule applied to the skill against that text, given beside the verdict and never in its place. <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md">Source: the receipt specification</a>.</p></dd></div>
+<div><dt id="term-judge">Judge</dt>
+<dd><p class="term-plain">The judge, also called the grader, is an AI model, sometimes the same one that answered, that scores each answer against a guide written for the task. It is an AI, not a person, and it can be wrong.</p>
+<p class="term-full">One fixed grader scores every answer in a report several times, so a moved result cannot come from a changed grader; the judge's model, instructions and sampling are recorded on the receipt. The judge policy says when the grader changes and what it cannot do. <a href="/judge-policy/#plain-why-one-grader">Source: why one grader</a>.</p></dd></div>
+<div><dt id="term-case-rule">Case rule</dt>
+<dd><p class="term-plain">A reading that takes each test task on its own. A skill clearly helped if it scored clearly higher on at least one task and clearly lower on none, and clearly hurt if it scored clearly lower on any.</p>
+<p class="term-full">The rule reads each case's two bands under the effect floor and combines the cases: separated upward on at least one case and downward on none reads as helped, and downward on any case reads as hurt. The aggregate figures over all cases are given beside it and can point the other way. <a href="/how-it-works/#step-4">Source: repeat, then read the case rule</a>.</p></dd></div>
+<div><dt id="term-substrate">Substrate</dt>
+<dd><p class="term-plain">The model underneath the skill, down to its exact version and the company that serves it. Skills stand still while the model underneath them moves.</p>
+<p class="term-full">The model underneath the skill: a specific version, from a specific provider, at a specific tier. Driftproof exists because the substrate moves while the skill file stands still. <a href="/methodology/#providers-surfaces-and-neutrality">Source: providers, surfaces and neutrality</a>.</p></dd></div>
+<div><dt id="term-surface">Surface</dt>
+<dd><p class="term-plain">How the model was reached: through a paid programming interface or through a subscription command-line tool. The same model can behave a little differently over the two.</p>
+<p class="term-full">How the model was reached: a metered API or a subscription CLI. The same model over two surfaces is not guaranteed to behave identically, so every receipt records which one it ran on. <a href="/methodology/#providers-surfaces-and-neutrality">Source: providers, surfaces and neutrality</a>.</p></dd></div>
+<div><dt id="term-refusal">Refusal</dt>
+<dd><p class="term-plain">A result that reports no verdict because the run could not stand behind one. It is published as a refusal rather than guessed at.</p>
+<p class="term-full">A published result that reports no verdict, because the run could not stand behind one. A refusal is an outcome and not an error, and publishing it is the alternative to guessing. <a href="/methodology/#the-drift-verdict-rule-anti-false-positive">Source: the drift verdict rule</a>.</p></dd></div>
+<div><dt id="term-cell">Cell</dt>
+<dd><p class="term-plain">One skill tested on one model. A report is a grid of cells, and each cell gets its own verdict.</p>
+<p class="term-full">One skill measured on one substrate: the smallest unit a report gives a verdict to. A report is a grid of cells, and a cell that refuses does not sink the ones that did not. <a href="/methodology/#the-core-with-vs-without-sampled-banded">Source: with vs without, sampled, banded</a>.</p></dd></div>
+<div><dt id="term-arm">Arm</dt>
+<dd><p class="term-plain">One side of the comparison: the run with the skill, or the run without it. Some reports add a third arm, the fake.</p>
+<p class="term-full">One side of the comparison: the run WITH the skill, or the baseline run without it. Every case is run in both arms, and the difference between the two arms is the only thing a lift can mean. <a href="/methodology/#the-core-with-vs-without-sampled-banded">Source: with vs without, sampled, banded</a>.</p></dd></div>
+<div><dt id="term-lattice">Lattice</dt>
+<dd><p class="term-plain">The four levels of trust a receipt can carry, from a number nobody checked, through one Driftproof measured itself, to one checked by a formal proof.</p>
+<p class="term-full">The four verification levels a receipt can carry: UNVERIFIED, DECLARED, TESTED and FORMAL. A number Driftproof measured itself is TESTED; a number imported from another tool is DECLARED, recorded but not verified, and never given a pass or fail verdict. <a href="/methodology/#receipts-are-an-open-format">Source: receipts are an open format</a>.</p></dd></div>
+<div><dt id="term-generation-sampling">Generation sampling</dt>
+<dd><p class="term-plain">Asking the model the same task several times, so the range measures the model giving different answers and not only the grader re-reading one answer.</p>
+<p class="term-full">Running each arm more than once, so that a band measures the model writing a different answer and not only the judge re-reading one. A receipt that ran no generation sampling carries a legacy band, and one that ran it carries a generation band. <a href="/methodology/#where-a-band-comes-from">Source: where a band comes from</a>.</p></dd></div>
+<div><dt id="term-band-source-legacy-generation">Band source (legacy, generation)</dt>
+<dd><p class="term-plain">A label beside a range saying how it was measured: from one answer scored several times, or from several answers each scored several times.</p>
+<p class="term-full">The label a report table puts beside a band, saying which instrument produced it. A legacy band is the judge re-scoring a single generation; a generation band is the across-draw spread of several. <a href="/methodology/#where-a-band-comes-from">Source: where a band comes from</a>.</p></dd></div>
 <div><dt id="term-context-file">Context file</dt>
-<dd>Any Markdown file, such as a CLAUDE.md, an AGENTS.md or a shared rules file, measured as a subject in place of a skill. Its exact bytes are the with-skill system text and their sha256 is its content hash; the receipt records its kind as context_file. <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md">Source: the receipt specification</a>.</dd></div>
+<dd><p class="term-plain">A file of standing instructions, such as a CLAUDE.md or an AGENTS.md, tested in place of a skill.</p>
+<p class="term-full">Any Markdown file, such as a CLAUDE.md, an AGENTS.md or a shared rules file, measured as a subject in place of a skill. Its exact bytes are the with-skill system text and their sha256 is its content hash; the receipt records its kind as context_file. <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md">Source: the receipt specification</a>.</p></dd></div>
 <div><dt id="term-delivery">Delivery</dt>
-<dd>How a run was configured to deliver its subject, recorded on every receipt: injected, the runner puts the subject text into each with-skill request it builds; installed, a harness loaded the subject from where it was installed, which only an import says; unknown, an imported source that does not say. It records the configuration, not that a request was sent. <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md">Source: the receipt specification</a>.</dd></div>
+<dd><p class="term-plain">How the skill's text reached the model in a run: put into each request by Driftproof, loaded by a tool that had it installed, or not recorded.</p>
+<p class="term-full">How a run was configured to deliver its subject, recorded on every receipt: injected, the runner puts the subject text into each with-skill request it builds; installed, a harness loaded the subject from where it was installed, which only an import says; unknown, an imported source that does not say. It records the configuration, not that a request was sent. <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md">Source: the receipt specification</a>.</p></dd></div>
+<div><dt id="term-router">Router</dt>
+<dd><p class="term-plain">A skill that hands the job to another skill or tool instead of doing it itself. The text tasks here can only test what a router writes back, not the work it hands off, so a router gets no verdict.</p>
+<p class="term-full">A skill whose instructions delegate the task to another skill or tool, so a text-only run tests its written response and not the delegated work. Report 015 Amendment 1 records the limit: a router's receipt gives no verdict, because the skill it hands off to was not tested, and its rows are left out of the headline counts. <a href="/reports/015/#amendment-1">Source: Report 015 Amendment 1</a>.</p></dd></div>
 <div><dt id="term-repository-capture">Repository capture</dt>
-<dd>A capture mode that grades the reply and captured text changes from a fresh pinned starter repository, with coding tools available. The receipt discloses observed tool evidence and capture omissions; availability alone does not prove execution. <a href="/methodology/#repository-capture">Source: repository capture</a>.</dd></div>
+<dd><p class="term-plain">A way of testing where the model works inside a fresh copy of a code repository, with its tools, and the changes it makes are graded along with its reply.</p>
+<p class="term-full">A capture mode that grades the reply and captured text changes from a fresh pinned starter repository, with coding tools available. The receipt discloses observed tool evidence and capture omissions; availability alone does not prove execution. <a href="/methodology/#repository-capture">Source: repository capture</a>.</p></dd></div>
 <div><dt id="term-checkpoint">Checkpoint</dt>
-<dd>Durable run progress that retains finished draws and saved judge samples for a compatible resume. A pause or resume leaves the verdict rules unchanged and records the run segments in the final receipt. <a href="/methodology/#checkpoint-pause-resume">Source: checkpoint, pause and resume</a>.</dd></div>
+<dd><p class="term-plain">Saved progress of a run, so a paused or interrupted run can continue without redoing finished work.</p>
+<p class="term-full">Durable run progress that retains finished draws and saved judge samples for a compatible resume. A pause or resume leaves the verdict rules unchanged and records the run segments in the final receipt. <a href="/methodology/#checkpoint-pause-resume">Source: checkpoint, pause and resume</a>.</p></dd></div>
 <div><dt id="term-crossed-judging">Crossed judging</dt>
-<dd>A historical R-2 pairing: Sonnet judged Haiku and Haiku judged Sonnet. Sonnet 5.5 now judges both targets; self-grading is disclosed. <a href="/methodology/#crossed-judging">Source: R-2 judge configuration</a>.</dd></div>
+<dd><p class="term-plain">An older grading setup in which two models graded each other's answers. One grader now scores both.</p>
+<p class="term-full">A historical R-2 pairing: Sonnet judged Haiku and Haiku judged Sonnet. Sonnet 5.5 now judges both targets; self-grading is disclosed. <a href="/methodology/#crossed-judging">Source: R-2 judge configuration</a>.</p></dd></div>
 </dl>
 </section>
 </main>
@@ -161,6 +208,7 @@
 <!--driftproof:foot--><footer class="site">
 <p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
 <p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/maintainer/">Maintainer</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+<p class="foot-links"><a href="/can-you-tell/">Can you tell? Every skill</a> · <a href="/noticed/">The AI noticed the sugar pill</a> · <a href="/spot-the-fake/">Which bar is the fake?</a> · <a href="/tasks/">Every task we gave a skill</a> · <a href="/sugar-pill/">Skill or sugar pill?</a></p>
 </footer><!--/driftproof:foot-->
 <!--driftproof:scripts--><script src="/copy-button.js" defer></script>
 <script type="module" src="/islands/loader.js"></script><!--/driftproof:scripts-->

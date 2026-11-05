@@ -389,6 +389,7 @@ function whatIsPage() {
   const main = `<main class="prose answers">
 <h1>${esc(A.h1)}</h1>
 ${paragraph(A.intro, 'what-is intro', 'lede')}
+${require('./reader-pages').section()}
 ${sec('what-it-measures', A.headings.measures, paras(A.measures, 'what-is measures'))}
 ${sec('what-it-does-not', A.headings.not, paras(A.not, 'what-is not'))}
 ${sec('how-it-differs', A.headings.differs, `${paras(A.differs, 'what-is differs')}

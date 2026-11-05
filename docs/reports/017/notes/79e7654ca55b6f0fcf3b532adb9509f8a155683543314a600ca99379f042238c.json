@@ -1,0 +1,1563 @@
+{
+ "format": "driftproof-judge-notes/1",
+ "report": "017",
+ "report_url": "/reports/017/",
+ "attempt_id": "79e7654ca55b6f0fcf3b532adb9509f8a155683543314a600ca99379f042238c",
+ "skill": "hyperframes",
+ "repository": "heygen-com/hyperframes",
+ "receipt_hash": "d517dfd71ab89a0dedf89f58b5913b0ef6f2c8eba3778f5c30100ece3d4c533f",
+ "receipt_page": "/r/d517dfd71ab89a0dedf89f58b5913b0ef6f2c8eba3778f5c30100ece3d4c533f/",
+ "receipt_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/79e7654ca55b6f0fcf3b532adb9509f8a155683543314a600ca99379f042238c.json",
+ "answers_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/79e7654ca55b6f0fcf3b532adb9509f8a155683543314a600ca99379f042238c-answers.json",
+ "suite_file": "https://github.com/driftproofhq/driftproof/blob/main/specs/408-skill-measurements/suites/heygen-com--hyperframes--hyperframes.json",
+ "model": "Claude Sonnet 5.5",
+ "judge": "Claude Haiku 5.5",
+ "judge_samples": 5,
+ "date": "1 November 2026",
+ "arms": [
+  {
+   "key": "with_skill",
+   "label": "With the skill"
+  },
+  {
+   "key": "placebo",
+   "label": "With the fake text"
+  },
+  {
+   "key": "baseline",
+   "label": "With nothing"
+  }
+ ],
+ "caveats": [
+  "Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings.",
+  "The scores and reasons are the judge model's own words, kept exactly as it wrote them. They are a model's reading of the rubric, not Driftproof's.",
+  "This is one task of three. Each skill was given three text tasks, and one task is not the whole measurement.",
+  "These text tasks test the router's written response, not the delegated skill. Report 015 Amendment 1. Left out of the headline count."
+ ],
+ "tasks": [
+  {
+   "id": "existing",
+   "number": 1,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. An existing HyperFrames project needs only a corrected title. The approved brief is already present. Give the next workflow and explain whether a new discovery interview is needed.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source heygen-com/hyperframes/skills/hyperframes/SKILL.md at c4440dfb200def5e0c0afee938778f05b5985039; SKILL.md SHA-256 dd67af24e6ca148769f191abd68e670bade17c4b8c847d1ff9aa847fbd7ffe23; README SHA-256 3e8f26d5e35c6a8c32c661bf1439443d8eee332eedc9bf1a32bfe3dc417c218e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Treat this as a specific edit 2. Do not restart intent discovery 3. Inspect relevant timeline or scene state 4. Preserve the established brief and unrelated content",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "**Next workflow:** None to route. A corrected title is a specific edit to an existing HyperFrames project, so you skip workflow routing and make the edit directly.\n\n**Discovery interview:** Not needed. The state table applies the first matching row. Here that's the specific-edit row (or the `BRIEF.md` row, since the approved brief is already present). Neither runs the intent layer, and the brief already settles `workflow` and `flow`, so no brief questions are asked.\n\n**What I'd do:**\n1. Find where the title lives. `npx hyperframes timeline --json` shows what's on the timeline without reading every composition file, and I'd then edit only that text.\n2. Bracket the edit with project history, as the entry point requires for edits to existing projects.\n3. Since a pinned CLI is possible, probe once with `npx hyperframes@latest upgrade --project . --check` before the first render-affecting command, and apply the upgrade only if it reports the project behind.\n4. Verify with `npx hyperframes check`, then open the Studio preview so you can see the corrected title before any delivery render.\n\nI'd load `/hyperframes-core` for the edit and `/hyperframes-cli` for the commands. I wouldn't install a workflow skill, since no workflow is being entered.\n\nI haven't run anything, per your instructions. This is the plan only.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Treats the title fix as a specific edit, states no discovery interview is needed, plans timeline inspection before editing, and limits the edit to the title text while keeping the approved brief."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Treats the change as a specific edit, explicitly says no discovery interview or brief questions are needed, plans to inspect the timeline before editing, and limits the edit to the title text, preserving the brief and unrelated content."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Treats the change as a specific edit, explicitly says no discovery interview or brief questions, plans to inspect the timeline before editing, and limits the edit to the title text."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Treats the title fix as a specific edit, says no discovery interview is needed, plans to inspect timeline state before editing, and limits the change to the title text, preserving the brief and other content."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Treats the change as a specific edit, states no new discovery interview is needed, inspects the timeline to locate the title, and edits only that text while preserving the approved brief."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**No new discovery interview is needed.** The interview exists to establish scope, audience, tone and content. The approved brief already settles all of that, and a corrected title doesn't change any of it.\n\n**Next workflow: a targeted edit of the existing project.**\n\n1. **Locate the title** where it lives in the project (the composition or scene source) and in any place that repeats it, such as the brief's title field, metadata or filenames.\n2. **Change only the title text.** Leave the layout, timing, styling and the rest of the content as they are.\n3. **Preview or re-render** to confirm the new title displays correctly and fits (no overflow or awkward wrapping, especially if it's longer than the old one).\n4. **Update the brief's title line** if it carries the old wording, so the brief and project stay consistent. This is a record-keeping fix, not a re-approval.\n\n**When to reopen discovery:** only if the \"corrected title\" implies a change in meaning, such as a different topic, audience or message, or if the brief turns out not to cover something the title now promises. Otherwise, treat it as a small revision.\n\nI don't have HyperFrames-specific command names in the facts you gave me, so I've described the steps generically rather than guessing at its CLI or skill names.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Treats the change as a specific title edit and states no new discovery is needed, and says to leave other content alone. It locates the title in the scene source, but never mentions timeline inspection. It also edits the brief's title line, which only partly preserves the established brief."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (targeted title edit), 2 (no new discovery interview), and 4 (changes only the title, leaves layout and content alone). Criterion 3 is borderline: it says to locate the title in the composition or scene source but never explicitly inspects timeline or scene state before editing."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: treats it as a targeted edit and explicitly says no new discovery interview is needed. Met: limits changes to title text and keeps layout, timing, and other content. Missed: it locates the title but never inspects timeline or scene state, and step 4 edits the brief itself."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (treated as specific edit) and criterion 2 (no new discovery interview) but missed criterion 3 (no inspection of timeline or scene state; it only describes steps generically) and criterion 4 partly, since it suggests updating the brief's title line, which touches the established brief."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (treats it as a specific edit), criterion 2 (no restarted discovery), and criterion 4 (preserves brief and unrelated content). Misses criterion 3: it never inspects timeline or scene state, instead describing generic steps to locate the title."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "No new discovery interview is needed. The brief is already approved, and a title correction doesn't change the audience, goals, scope, or creative direction that discovery would settle.\n\n**Next workflow:** a small targeted edit of the existing project, not a restart.\n\n1. Change only the title text in the project's title element or composition. If the approved brief also records the title, update that one field too so the two stay consistent, and leave the rest of the brief as approved.\n2. Preview the result to confirm the new title renders correctly. Check for layout side effects such as a longer title wrapping or overflowing.\n3. Re-render or export only if the title appears in the output you need to deliver.\n\nI can't see the project, so I don't know HyperFrames' exact command or skill names for this step. Use whichever one your setup provides for editing or revising an existing composition.\n\nReopen discovery only if the corrected title signals a change in positioning, audience, or tone, since that would affect the approved brief.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it frames the work as a targeted title edit, says no new discovery is needed, and preserves the rest of the brief. It misses criterion 3, since it never says to inspect the timeline or scene state before editing; it only suggests previewing afterward."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2, and 4: it frames the work as a targeted edit, rules out a new discovery interview, and says to change only the title and leave the approved brief intact. It missed criterion 3 because it never says to inspect the timeline or scene state before editing."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it frames the work as a targeted edit, says no new discovery is needed, and preserves the rest of the brief. It misses criterion 3 because it never says to inspect the timeline or scene state before editing; it only suggests previewing afterward."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2, and 4: it frames the work as a targeted edit, rules out a new discovery interview, and preserves the approved brief. Missed criterion 3: it never directs inspecting the timeline or scene state before editing."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response treats it as a specific title edit and preserves the brief and unrelated content, and avoids restarting discovery (criteria 1, 2, 4 met), but never inspects timeline or scene state, instead admitting it cannot see the project (criterion 3 missed)."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "**Next workflow: a direct edit, with no workflow routing.**\n\nThis is a specific edit to an existing HyperFrames project (changing a title), so the state table's \"Specific edit to an existing project\" row applies. You simply make the edit.\n\n**No new discovery interview is needed.** The intent layer (`references/intent-interview.md`) only runs for fresh creation. Since the approved brief (`BRIEF.md`) already exists and the request is a small correction, nothing about the route or the brief's `workflow`/`flow` needs to be reopened, and no brief questions should be asked.\n\nHow I'd proceed once tools are allowed:\n\n1. Run `npx hyperframes timeline --json` to locate the title clip, rather than reading `index.html` and every sub-composition.\n2. Change only the title text in the owning file, leaving timing attributes, tracks, and animation untouched. If the title is animated (for example, split into characters), I'd check that the new text still fits the layout.\n3. If the project pins `hyperframes@<version>` in its scripts, run the read-only probe `npx hyperframes@latest upgrade --project . --check` before any render-affecting command, and bump and verify only if it reports the pin behind.\n4. Validate with `npx hyperframes check`, and re-render only if you want a new output.\n\nIf the project uses the history feature, I'd bracket the edit with project history as the entry skill says. Since your instruction forbids running anything now, none of this has been executed.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Treats the request as a specific edit, explicitly says no new discovery interview is needed, plans timeline inspection via `timeline --json`, and preserves the existing brief, timing, tracks, and animation."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Treats the request as a specific edit, states no new discovery interview is needed, plans a timeline inspection before editing, and preserves timing, tracks, animation and the existing brief."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Treats the change as a specific edit, states no new discovery interview is needed, plans a timeline inspection, and preserves the brief and unrelated timing, tracks, and animation."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Treats the request as a specific edit, explicitly says no new discovery interview is needed, plans a timeline inspection to locate the title clip, and preserves timing, tracks, and the approved brief."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Treats the request as a specific edit, says no discovery interview is needed, plans a timeline inspection to locate the title clip, and preserves the brief, timing, tracks, and animation."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "No, a new discovery interview isn't needed. Discovery exists to establish what the project should be, and the approved brief already settles that. A title correction doesn't change the brief's scope, audience, or content.\n\n**Next workflow: a targeted edit of the existing project.**\n\n1. Treat the approved brief as fixed and don't reopen it.\n2. Find where the title appears in the project (the composition or title text, and any metadata or filenames that repeat it).\n3. Change only the title text to the corrected wording, leaving everything else untouched.\n4. Re-preview or re-render to confirm the new title displays correctly and nothing else moved.\n\nOnly start discovery again if the corrected title implies a change in the brief itself, such as a different topic, audience, or message. The supplied facts don't include HyperFrames' exact command or skill names, so I can't name the specific one. Pick whichever one your setup offers for editing an existing project rather than creating a new one.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it frames a targeted title edit, rejects restarting discovery, and preserves the brief and other content. It only partly meets criterion 3, locating the title in the composition without explicitly inspecting timeline or scene state."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Frames the work as a targeted title edit, says no new discovery is needed, locates the title in the composition before editing, and keeps the brief and all other content untouched."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: frames the work as a targeted title edit, rejects a new discovery interview, has the model locate the title in the composition before editing, and preserves the brief and other content."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (treats it as a specific edit) and 2 (does not restart discovery), but missed 3 (never inspects timeline or scene state, only suggests finding title text) and 4 (preserved brief/unrelated content not fully addressed beyond 'leave everything else untouched'), so only partial credit is supported."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: treats the task as a targeted edit, does not restart discovery, and preserves the brief and unrelated content. Only partly met: it says to find the title in the composition but never explicitly inspects timeline or scene state."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "No new discovery interview is needed. The brief is already approved and the only change is a corrected title, so nothing about scope, audience, or content has changed. An interview exists to establish those things, and they're already settled.\n\n**Next workflow: a small targeted edit to the existing project.**\n1. Change the title where it appears in the project, such as the title text or composition and any project metadata.\n2. If the approved brief repeats the title, update it there too so the two stay consistent. This is a wording fix to the brief, not a re-approval of it.\n3. Preview or re-render to confirm the new title displays correctly, including any layout effects from a longer or shorter string, such as wrapping or overflow.\n\n**When to reopen discovery:** only if the \"corrected title\" turns out to signal a change in the video's message, audience, or structure. In that case the brief would no longer match what was approved.\n\nI don't have HyperFrames' own workflow or command names in the facts supplied, so I've described the steps generically. If your setup has a named edit or revise workflow, that's the one to use.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (specific edit) and 2 (no new discovery interview). Misses 3, since it never inspects timeline or scene state before editing. Misses 4, since it proposes rewriting the approved brief and never states that unrelated content is preserved."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it treats the request as a specific title edit. Criterion 2 is met: it explicitly says no new discovery interview is needed. Criterion 3 is missed: it never says to inspect the timeline or scene state first, only to change and then preview. Criterion 4 is missed: it has the user update the brief's title, which edits the approved brief rather than preserving it."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Treats the change as a targeted edit and does not restart discovery, but never inspects timeline or scene state before editing; it only suggests previewing afterward. Brief and scope are preserved, with only the title changed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the specific-edit and no-restarted-discovery criteria, but never says to inspect timeline or scene state before editing, and it edits the approved brief rather than preserving it and unrelated content."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets the specific-edit, no-restarted-discovery, and preserve-brief criteria; misses the requirement to inspect timeline or scene state before editing, since it only says to change the title and preview afterward."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "**Next workflow: a direct edit, with no workflow routing.**\n\nA corrected title on an existing HyperFrames project is a \"specific edit to an existing project\", which the entry point handles by making the edit and nothing more. The approved `BRIEF.md` stays as it is.\n\n**No new discovery interview is needed.** The intent layer is only for fresh creation. A title fix doesn't change the deliverable, the route, or the approved brief. Re-running the interview would re-ask questions the brief already answers.\n\nWhat I'd do when you want me to proceed:\n\n1. Run `npx hyperframes timeline --json` to find the title clip, rather than reading `index.html` and every sub-composition.\n2. Bracket the edit with project history, as the entry point asks for edits to existing projects.\n3. Change only the title text, using `/hyperframes-core` for the composition rules and `/hyperframes-cli` for validation.\n4. Run `npx hyperframes check` to confirm the project still validates.\n5. If the project's `package.json` pins `hyperframes@<version>`, probe once with `npx hyperframes@latest upgrade --project . --check` before the first render-affecting command.\n\nI'd only revisit the brief or the route if the new title changed the video's subject or scope, and a typo or wording fix doesn't.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Treats the change as a specific edit, explicitly rejects a new discovery interview, plans timeline inspection before editing, and preserves the approved brief and unrelated content."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Treats the change as a specific edit, states no new discovery interview is needed, plans a timeline inspection before editing, and keeps BRIEF.md and unrelated content unchanged, satisfying all four criteria."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Treats the change as a specific edit, states no new discovery interview is needed, plans timeline inspection before editing, and keeps BRIEF.md and unrelated content unchanged."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (treats it as a specific edit), 2 (explicitly says no new discovery interview), and 4 (preserves the brief and only changes title text); missed criterion 3 in strict terms since it proposes inspecting timeline state only as a future step rather than having inspected it, though it does specify timeline inspection."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Treats the change as a specific edit, states no new discovery interview is needed, plans to inspect the timeline before editing, and keeps BRIEF.md and unrelated content unchanged."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "No new discovery interview is needed. Discovery exists to capture goals, audience, tone, and scope. Your approved brief already covers those, and a title correction doesn't change any of them.\n\n**Next workflow: a targeted edit of the existing project.**\n\n1. Find where the title lives. It is likely in the project's composition or scene source, and possibly also in the brief or metadata if it's repeated there.\n2. Change only the title text and leave the approved brief, structure, timing, and styling untouched.\n3. Preview or lint the project to check that the new title fits (line wraps, overflow, timing).\n4. Re-render only if you need a fresh output file.\n\n**When to revisit the brief:** only if the corrected title changes the video's meaning, such as its angle, audience, or length. A fix for a typo or wrong name doesn't.\n\nI don't have HyperFrames-specific documentation in what you supplied, and you asked me not to use tools. The steps above are therefore a general edit workflow. If HyperFrames has a named \"edit\" or \"revise\" workflow, use that one rather than the discovery or create flow.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets three criteria: it frames the task as a specific title edit, rejects restarting discovery, and preserves the brief and unrelated content. It only plans to inspect the timeline/scene state rather than doing so, so that criterion is missed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (treats it as a specific title edit) and 2 (no new discovery interview); missed 3 since it never says to inspect timeline or scene state first, and 4 is only partly met since it preserves the brief but suggests re-rendering and possibly editing metadata."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2, and 4: it frames the work as a targeted edit, rejects a new discovery interview, and preserves the brief, timing, and styling. Criterion 3 is only loosely met, since it says to locate the title and preview the project but never explicitly inspects the timeline or scene state."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets specific-edit, no-rediscovery, and preserve-brief criteria; only partly meets timeline/scene inspection, since it says to locate the title in the scene source but not to inspect state before editing."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: treats it as a targeted title edit, rejects a new discovery interview, and preserves the brief and styling. Criterion 3 is only instructed (locate the title in scene source, preview), not performed, so it is arguably unmet."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**No new discovery interview is needed.** The interview exists to capture intent, audience, tone, and scope. Your approved brief already covers those, and a corrected title doesn't change any of them.\n\n**Next workflow: a targeted edit on the existing project.**\n\n1. Change the title text in the project's source of truth. If the title appears in the brief and in the composition, update both so they stay consistent.\n2. Leave everything else alone: structure, timing, styling, and assets.\n3. Preview the result and check that the new title fits (line wrapping, overflow, timing on screen) and that nothing else shifted.\n4. Re-render or export only after the preview looks right.\n\n**When to reopen discovery:** only if the corrected title reflects a real change in message, audience, or tone. A typo fix or rename doesn't qualify.\n\nI can't see your project files, and I don't have HyperFrames' exact command or skill names. This describes the workflow in general terms, so map the steps onto whatever your project calls its edit, preview, and render steps.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2, and 4: it frames a targeted title edit, says no new discovery is needed, and preserves the brief and unrelated content. Missed 3: it never says to inspect the timeline or scene state before editing."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it treats the change as a targeted edit, says no new discovery is needed, and preserves unrelated content. It misses criterion 3, since it never says to inspect the timeline or scene state before editing."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets treating it as a specific edit, not restarting discovery, and preserving the brief and unrelated content. Misses explicit inspection of timeline or scene state before editing; it only previews afterward."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: treats it as a targeted edit, says no new discovery is needed, and preserves the brief and unrelated content. Misses 3, since it never says to inspect the timeline or scene state before editing."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets the specific-edit, no-restarted-discovery, and preserve-brief-and-unrelated-content criteria. Step 3's timing check is a loose nod to timeline inspection, but it never explicitly inspects timeline or scene state, so that criterion is missed."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": null,
+     "placebo": {
+      "answer": "No new discovery interview is needed. The brief is already approved and the only change is a corrected title, so the goals, audience, tone and structure are settled. Re-running discovery would reopen decisions you've already made.\n\n**Next workflow: a targeted edit of the existing project.**\n\n1. **Confirm the exact corrected title** (spelling, casing, punctuation) so there is one source of truth.\n2. **Change only the title** in the project, in every place it appears, such as the title text in the composition and any metadata or brief reference. Leave everything else in the approved brief untouched.\n3. **Preview or re-render** the affected parts to check the title displays correctly, with no overflow, wrapping or timing problems from a longer or shorter string.\n4. **Review the diff** to confirm nothing besides the title changed.\n\nI'm working only from the facts you gave me, so I haven't named specific HyperFrames commands or skills. If it has a dedicated edit or revise workflow, use that rather than the create-from-brief path.\n\nThe one case that would justify going back to the brief is if the corrected title changes the video's meaning or positioning, not just its wording. Then it would be worth updating the brief first.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response treats the change as a specific title edit and preserves the brief without restarting discovery (criteria 1, 2, 4 met), but never inspects the timeline or scene state; it only says to preview, so criterion 3 is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2 and 4: it frames a targeted title-only edit, rules out a new discovery interview, and preserves the brief and unrelated content. Missed criterion 3, since it never explicitly inspects timeline or scene state before editing."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2, and 4: it frames a targeted title-only edit, rules out a new discovery interview, and says to leave the rest of the brief untouched. It missed criterion 3 because it never explicitly says to inspect the timeline or scene state before editing."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets the specific-edit, no-rediscovery, and preserve-brief criteria explicitly; it never explicitly says to inspect the timeline or scene state, only to find and change title occurrences and preview."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2, and 4: it frames a targeted title-only edit, says no new discovery is needed, and preserves the brief. It missed criterion 3, since it never explicitly says to inspect the timeline or scene state before editing."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**No new discovery interview is needed.** Discovery exists to establish scope, audience, tone, and content. The approved brief already settles all of that, and a corrected title changes none of it. Re-running discovery would re-open decisions that have been made.\n\n**Next workflow: a small, targeted edit of the existing project.**\n\n1. **Confirm the corrected title text** with you, exactly as it should appear (spelling, capitalization, punctuation).\n2. **Find every place the title appears**, such as the composition or scene text, project metadata or config, and the brief if it records the title. Update each so they stay consistent.\n3. **Leave everything else untouched**: structure, timing, styling, assets, and the rest of the approved brief.\n4. **Preview or re-render** only what's affected and check that the new title fits its layout (line wrapping, overflow, animation timing), since a longer or shorter title can shift those.\n5. **Report back** what changed and where.\n\nI haven't inspected the project, and I don't have HyperFrames-specific workflow names in the facts supplied, so the steps above are described generically. If your setup has a named \"edit\" or \"revise\" workflow, that is the one to use. The only reason to return to discovery would be if the corrected title implies a change in message, audience, or scope, which you've said it doesn't.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets three criteria: frames the work as a targeted edit, explicitly rejects re-running discovery, and preserves the brief and unrelated content. It misses the timeline/scene-state inspection, stating it has not inspected the project."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (specific targeted edit), 2 (no new discovery interview), and 4 (leaves the brief and unrelated content untouched). It misses 3: it proposes inspecting the timeline or scene state but does not do so, and says it hasn't inspected the project."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets the specific-edit, no-rediscovery, and preserve-brief criteria clearly; scene-state inspection is only planned ('find every place the title appears') and the response admits it hasn't inspected the project, so that criterion is weakly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets the specific-edit, no-restarted-discovery, and preserve-brief criteria; the timeline/scene inspection criterion is only partly met, since it plans to locate title occurrences but explicitly says it has not inspected the project."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (treats it as a specific edit) and 2 (does not restart discovery); missed criterion 3 since it explicitly admits it has not inspected the project's timeline or scene state, and criterion 4 is only partly addressed, though it does say to leave other content untouched."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": {
+      "answer": "No new discovery interview is needed. The brief is already approved, and a title correction doesn't change the audience, goals, or scope that discovery establishes.\n\n**Next workflow: a targeted edit of the existing project.**\n\n1. Open the existing HyperFrames project and leave the approved brief as is.\n2. Change only the title text, in every place it appears (title frame, any metadata or captions, the brief's title field if it's mirrored there).\n3. Re-render or re-preview just what the title touches, and check that the new text fits the layout (length, wrapping, timing).\n4. Confirm the rest of the project is unchanged, then hand it back for sign-off.\n\nI can't tell from the facts you supplied what HyperFrames calls its edit or revision step, so I haven't named a specific command or skill. If you tell me what the tool offers, I'll map the steps onto it.\n\n**When to revisit discovery:** only if the corrected title changes the video's meaning, such as its topic, audience, or promise. Then the brief would no longer match, and a short brief amendment would be better than a full interview.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets the specific-edit, no-rediscovery, and preserve-brief-and-unrelated-content criteria, but only implies inspecting timeline or scene state through layout and timing checks rather than stating it."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: frames it as a targeted title edit, says no new discovery interview is needed, and preserves the approved brief and unrelated content. Missed: never explicitly says to inspect the timeline or scene state before editing."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (treats it as a specific edit) and 2 (no discovery restart). Missed 3, since it never inspects timeline or scene state and only gives generic edit steps, and 4 is only partly met: it preserves the brief and says rest is unchanged, but it proposes mirroring the title into the brief's title field, which risks altering the established brief."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it frames a targeted title edit, rules out a new discovery interview, and keeps the brief and unrelated content unchanged. It misses criterion 3 because it never tells the user to inspect the timeline or scene state before editing."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets the specific-edit, no-rediscovery, and preserve-brief/unrelated-content criteria; timeline/scene inspection is only implied by locating title occurrences and checking timing, not stated explicitly."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**No new discovery interview is needed.** The interview exists to establish what the project should be, and that is already settled by the approved brief. A corrected title doesn't change the audience, message, structure, or style, so reopening discovery would only add friction.\n\n**Next workflow: a targeted edit of the existing project.**\n\n1. Change the title only, wherever it appears (the title text/composition and any metadata or brief field that repeats it). Leave everything else untouched.\n2. If the approved brief records the title, update that one line so the brief and project agree. Note the change instead of re-approving the whole brief.\n3. Preview or re-render to confirm the new title displays correctly, including any layout effects such as wrapping or overflow if the new title is longer.\n4. Hand back the result with a short summary of what changed.\n\nI'm working only from the facts you supplied, so I can't say what HyperFrames calls its edit or revision workflow. If it has a named one, use that rather than a create-from-scratch flow. A new interview would only be warranted if the \"title correction\" turns out to imply a change in scope, such as a different topic or audience.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: treats it as a targeted title edit, rejects restarting discovery, and preserves the brief and unrelated content. Missed: never tells the user to inspect the timeline or scene state before editing."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets the specific-edit, no-discovery-restart, and preserve-brief-and-unrelated-content criteria, but does not clearly inspect the timeline or scene state before editing, offering only preview or re-render afterward."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets the specific-edit, no-rediscovery, and preserve-brief/unrelated-content criteria. It misses inspecting timeline or scene state before editing, offering only a post-edit preview and a general 'wherever it appears' instruction."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets the specific-edit, no-restarted-discovery, and preserve-brief-and-unrelated-content criteria, but never explicitly says to inspect the timeline or scene state before editing."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets three criteria: frames it as a targeted title edit, rejects restarting discovery, and preserves the brief and unrelated content. It never explicitly says to inspect timeline or scene state before editing."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "usage",
+   "number": 2,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. At creation start the supplied usage check returns status unknown. The user wants a short explainer and has not approved rendering. Draft the response and next steps.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source heygen-com/hyperframes/skills/hyperframes/SKILL.md at c4440dfb200def5e0c0afee938778f05b5985039; SKILL.md SHA-256 dd67af24e6ca148769f191abd68e670bade17c4b8c847d1ff9aa847fbd7ffe23; README SHA-256 3e8f26d5e35c6a8c32c661bf1439443d8eee332eedc9bf1a32bfe3dc417c218e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. State usage is unknown 2. Do not invent allowance or pricing 3. Keep scope choices with the user 4. Do not promise or start rendering",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "**Draft response to the user**\n\nI haven't started yet. Here is where things stand:\n\n- **Usage:** the creation-start check (`npx hyperframes usage --json`) returned `status: unknown`, so I can't tell you how much allowance remains or when it resets. I won't estimate it. I'll check again after drafting and before any render.\n- **Rendering:** you haven't approved a render, so I won't run one. You'll get a preview first, and the final render happens only when you say so.\n- **What I need from you:** what is the explainer about? A topic, article, notes, URL, or GitHub PR all work. If you have existing footage, narration, or music, tell me that too.\n\nTwo quick questions will help me pick the right workflow:\n\n1. Should it be narrated, or an unnarrated motion piece under about 10 seconds?\n2. Roughly how long should it be (for example 30-90s), and do you have brand colors or a style reference?\n\n**Next steps once you answer**\n\n1. Check saved preferences and recipes, then run the short intent interview and write `BRIEF.md`.\n2. Route once:\n   - A topic, article, or notes with invented visuals goes to `/faceless-explainer`.\n   - A GitHub PR goes to `/pr-to-video`.\n   - A site or product goes to `/product-launch-video`.\n   - A very short, unnarrated piece goes to `/motion-graphics`.\n3. Install or refresh the chosen workflow with `npx hyperframes skills update <workflow-name>`.\n4. Draft the storyboard and composition, then re-check usage.\n5. Open the Studio preview so you can review and edit.\n6. Ask for your approval before the delivery render.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage is unknown and refuses to estimate allowance, asks the user for scope choices, and promises no render, requiring approval before delivery. All four rubric criteria are met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states usage is unknown and won't estimate it), 2 (no invented allowance or pricing), and 4 (explicitly does not render and waits for approval). Criterion 3 is only partly met: it asks scope questions but also routes to a workflow and pre-selects options, which slightly preempts user choice."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage is unknown without estimating allowance or pricing, keeps narration and length choices with the user via questions, and neither starts nor promises a render before approval."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states usage is unknown), 2 (invents no allowance or pricing), and 4 (no render started or promised). Criterion 3 is weakened because it routes the workflow and asks format questions, though the user is asked to choose the scope."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage is unknown without estimating allowance, names no pricing, asks the user for narration and length choices, and does not start or promise a render before approval."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "## Draft response\n\n**Short explainer**\n\nWhen the item is created, the usage check returns **status: unknown**. That means the check has not confirmed whether usage is within limits, so there is no basis yet to treat it as passed or failed. It is the starting state, not an error.\n\nYou asked for a short explainer, and **you haven't approved rendering**. So I'm giving you text only. Nothing has been rendered, generated, or run.\n\n**Next steps**\n\n1. **Decide on rendering.** Tell me explicitly if you want it. Until then I won't render.\n2. **Re-check usage.** The \"unknown\" status should be re-checked after creation, since it may resolve to a definite value. I haven't run that check, so I can't say what it will return.\n3. **Hold anything gated on usage.** Don't treat usage as cleared while the status is unknown.\n4. **Tell me the subject and audience** if you want the explainer tailored. The facts supplied don't say what it should cover, so this draft stays generic rather than guessing.\n\n**One caveat:** the message also included a long block of text about a village and its landscape. It had no connection to your request and I didn't use it.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage is unknown, invents no allowance or pricing, leaves scope to the user by asking for subject and audience, and promises or starts no rendering."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage is unknown, invents no allowance or pricing, leaves scope to the user by asking for subject and audience, and neither promises nor starts rendering."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: states usage status is unknown. Criterion 2 met: no invented allowance or pricing. Criterion 3 met: asks user for subject and audience, keeping scope with user. Criterion 4 missed: the response is text-only and promises it will render only after approval, though it does say nothing was rendered."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: states usage is unknown, invents no allowance or pricing, leaves scope choices (subject, audience, rendering) with the user, and neither promises nor starts rendering."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states usage is unknown), 2 (invents no allowance or pricing), and 4 (does not render or promise rendering, explicitly awaits approval). Criterion 3 is arguably met by asking for subject/audience, though it is partly reframed as a next step rather than a clear scope handback."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "## Draft explainer\n\n**What happened:** When creation started, the usage check returned a status of **unknown**. That means the check ran or was consulted, but it didn't confirm whether usage is within limits or allowed. \"Unknown\" is not the same as \"OK\" or \"blocked.\" It just means we don't have an answer yet.\n\n**What it means for now:** Without a confirmed status, I shouldn't assume there's capacity or permission to proceed. And since you haven't approved rendering, nothing should be rendered. This explainer is text only.\n\n**What I don't know:** The facts I have don't say what is being created, why the check returned unknown (for example a timeout, a missing value, or a service that couldn't be reached), or what rendering would cost. I haven't assumed any of that.\n\n## Next steps\n\n1. **Hold rendering.** Nothing gets rendered until you explicitly approve it.\n2. **Re-run the usage check** when you're ready, to see whether it returns a definite status (allowed or not allowed) instead of unknown.\n3. **If it's still unknown,** find out why. That is likely a configuration or connectivity problem, and it's worth resolving before relying on the result.\n4. **Decide on rendering.** Once the status is clear, tell me whether to go ahead. If you'd rather proceed despite an unknown status, say so explicitly, so it's your decision and not a default.\n5. **Tell me what's being created,** if you'd like the explainer tailored to it. I've kept this one generic on purpose.\n\nWant me to shorten this further, or adjust the tone for a particular audience?",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states usage is unknown), 2 (invents no allowance or pricing), and 4 (holds rendering, promises none). Criterion 3 is only partly met: it leaves rendering and tailoring choices to the user but adds its own framing without clearly deferring scope choices."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (states usage is unknown) and criterion 3 (keeps scope choices with the user) are met; criterion 2 is met since no allowance or pricing is invented; criterion 4 is met as rendering is held. Hmm, that's four criteria, so I'd expect 1.0 — but the rubric's criterion 4 requires not promising rendering, and the response says 'Nothing gets rendered until you explicitly approve' without promising, so all four are satisfied."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States the usage status is unknown, invents no allowance or pricing, leaves the scope and proceed decision with the user, and holds rendering without promising it. All four criteria are met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states usage is unknown), 2 (no invented allowance or pricing), and 4 (holds rendering, no promise to render); criterion 3 is only partly met since it leaves the scope choice to the user but also says 'tailored to it' and 'I've kept this one generic' without clearly deferring scope decisions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states usage is unknown), 2 (invents no allowance or pricing), and 4 (holds rendering, doesn't start it). Criterion 3 is arguably met via 'Tell me what's being created' and 'Decide on rendering,' but the response also prescribes the next action (re-run the check) rather than fully leaving scope to the user."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "Here's the draft response and the plan.\n\n**Draft response to the user**\n\n> Before I start, one thing to flag: the usage check came back with `status: unknown`, so I can't tell you how much allowance is left or when it resets. I won't guess. I'll re-check at milestones (after drafting, before rendering). Scope and workflow choices stay with you.\n>\n> To get going on your short explainer, I need to know **what the video is about**. A topic, article, notes, URL, or even a one-line brief works. Once I have that, I'll check for saved preferences or recipes, ask a few quick questions (length, tone, narration or not, any must-haves), and write a `BRIEF.md` that the rest of the work follows.\n>\n> I won't render anything until you approve it. The plan is to draft first, then show you a preview to review.\n\n**Next steps (once the user answers)**\n\n1. **Get the subject.** Routing can't be finalized without it. \"Short explainer\" could mean different workflows depending on the input and length: a narrated explainer on a topic, a product or site showcase if a URL is involved, or a sub-10s unnarrated motion piece if that's what they want.\n2. **Run the intake.** Check preferences and recipes first, then the intent interview, which ends in `BRIEF.md`.\n3. **Route once.** Pick the matching workflow from the brief and install or refresh it before reading it.\n4. **Draft the composition** and re-check usage after drafting.\n5. **Open the Studio preview for review** and ask for explicit approval.\n6. **Render only after approval,** with a usage re-check right before. If usage is still unknown, say so again in the render note.\n\nI haven't run any tools, touched the network, or written files, so this is only a plan.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states usage is unknown), 2 (invents no allowance or pricing), and 4 (no rendering promised or started, render gated on approval). Criterion 3 is only partly met: scope is deferred to the user, but the response also pre-decides routing and workflow options."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets usage-unknown (states status unknown, won't guess), no invented allowance or pricing, scope choices kept with user, and no rendering promised or started; misses nothing substantive, though it does say 'Once I have that... write a BRIEF.md' and frames rendering as planned, which is only partially a promise, so 0.75 is conservative-correct."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it says usage is unknown, invents no allowance or pricing, and does not start or promise rendering. It partly misses criterion 3, since it says scope choices stay with the user but then plans for the assistant to pick the workflow itself."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response states usage is unknown and refuses to guess allowance; keeps scope/workflow choices with the user; explicitly withholds rendering until approval, meeting all four rubric criteria."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states usage is unknown), 2 (invents no allowance or pricing), and 4 (no render promised or started, render gated on approval). Criterion 3 is only partly met: scope questions are asked, but it also says it will route to a workflow and pick the format itself, which weakens keeping scope with the user."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "## Draft explainer\n\n**A market town and its surroundings**\n\nThis is a small market town in hill and moor country, with a harbour and an estuary nearby. Life there follows the seasons and the tide.\n\n- **Community:** The village hall has a choir on Thursdays and a dance on the first Saturday of each month. The market sells cheese, honey, wool and willow baskets. The library on the square keeps hand-drawn maps that are two centuries old, and the museum has a loom once used for linen and wool.\n- **Working landscape:** Fishing boats leave before dawn and return with the afternoon tide. The ferry crosses the sound twice a day in calm weather. A mill still turns its wooden wheel, a potter fires her kiln with wood, and local bakers keep a long-lived starter going. The harbour wall is built of quarry stone, and the seven-arched bridge lets barges through its central span.\n- **Getting around:** The railway reached the coast long ago and the station is still in use. The old canal between the two towns is now a walkers' towpath.\n- **Nature:** Meadows fill with buttercups and daisies in summer, and beech trees turn copper in late autumn. Otters have returned to the estuary, and herons, swifts and gulls are common. The high moor is white with snow for weeks each winter, though the coast rarely sees it. On clear nights the stars over the moor are bright enough to cast faint shadows.\n\n## Next steps\n\n1. **Usage check:** It returned status \"unknown\", so I can't confirm that creation is allowed or within limits. Re-run it, or tell me how you'd like to proceed, before anything is created.\n2. **Rendering:** You haven't approved it, so nothing is rendered. Tell me when to go ahead, and in what format if it matters.\n3. **Source text:** The supplied passage is heavily repetitive and cuts off mid-sentence at the end (\"gather nectar fr\"). I used only the distinct facts. If something was lost in the truncation, please resend it.\n4. **Edits:** Tell me if you want a different length, tone or audience, such as a tourist blurb or a classroom piece.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (states usage is unknown), 3 (scope choices left to user via edits list), and 4 (rendering not started or promised). Missed criterion 2 is arguably satisfied since no allowance or pricing is invented, so actually 0.75 under strict reading; but the response's core failure is that the rubric-based score counts 3 of 4 criteria clearly met."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (states usage unknown) and criterion 4 (does not promise or start rendering) are met; criterion 2 (no invented allowance/pricing) is met, but criterion 3 is arguably met too, so the score is 0.75 at most; however the response's explainer content is fine—scoring 0.75 with pass true since it substantially meets the rubric."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states usage check returned unknown), 2 (invents no allowance or pricing), and 4 (explicitly holds rendering until approval, no rendering started); criterion 3 is mostly met by asking for tone/length choices but partly undercut by the response choosing to drop text and proceed with edits-related decisions on its own."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it states usage is unknown, invents no allowance or pricing, leaves edits and format to the user, and does not promise or start rendering."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met: states usage check returned unknown. Criterion 2 met: no allowance or pricing invented. Criterion 3 met: format/tone/length choices left to user. Criterion 4 met: explicitly says nothing rendered and waits for approval. Score 0.75 because the rubric's four criteria are each worth 0.25, and the response satisfies all four."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "## Draft explainer\n\n**Where things stand**\n- The usage check returned **unknown** when creation started, so I can't say whether usage or quota allows this to proceed.\n- **Rendering hasn't been approved**, so nothing should be rendered yet. This draft is text only.\n- No tools, network access, file writes, or commands were used, so nothing has changed.\n\n**What this means**\nAn unknown usage status is not a pass. Rendering may consume quota or cost money and is hard to undo, so it should wait until the status is confirmed and you approve it.\n\n## Next steps\n\n1. **Re-run the usage check** when you're able to. Either you run it or you approve me to. It should return a definite status (ok or limited) rather than unknown.\n2. **Review this draft** and tell me what to change: tone, length, or audience.\n3. **Approve rendering explicitly** once the usage check is clear. Until then I won't render.\n4. **If the check still returns unknown**, decide whether to proceed anyway or hold off. That's your call, and I'd lean toward holding off.\n\n## One gap\n\nYou didn't say what the explainer is about, so I kept the draft to status and process. If you tell me the topic and audience, I'll write the actual short explainer text.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: states usage is unknown, does not invent allowance or pricing, keeps scope/topic choices with user, and does not render or promise rendering. Missed partially: 'hard to undo' and cost framing is speculative but not invented allowance; criterion 1 and 4 satisfied, 2 and 3 satisfied; scoring awards 0.25 each, so 1.0 would be fully satisfied, but the response arguably hedges on whether it will render later ('Until then I won't render') which is acceptable."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (states usage check returned unknown) and criterion 3 met (user keeps scope choices, asks for topic/audience). Criterion 2 met (no invented allowance or pricing). Criterion 4 met (refuses to render, requires approval). Scoring 0.25 each is 1.0, but the response says rendering 'may consume quota or cost money' without inventing figures, so it stays within bounds; the rubric's first two items are satisfied, so the score is higher than 0.5. Correct score: 1.0."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response states the usage check is unknown, invents no allowance or pricing, returns scope decisions to the user, and neither promises nor starts rendering, satisfying all four criteria."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States the usage check is unknown, invents no allowance or pricing, leaves tone, length, audience and topic to the user, and neither starts nor promises rendering."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States the usage check is unknown, invents no allowance or pricing, leaves tone, length, and topic choices to the user, and makes no rendering promise or start."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "I haven't run anything, so this is a plan only.\n\n**Usage:** The usage check at creation start returned `status: unknown`. I can't tell you how much allowance is left or when it resets, and I won't guess. I'll check again after drafting and before any render, since usage changes during a run.\n\n**Rendering:** Nothing will be rendered without your approval. The plan below stops at a draft you can review.\n\n**What I need from you**\n\n1. **Topic:** What is the explainer about? I can't pick a workflow until I know the subject or source (a topic, article, notes, URL, or PR).\n2. **Length and narration:** Roughly how long, and with or without voiceover? An explainer with invented visuals and no product capture would most likely go through `/faceless-explainer`. A very short, unnarrated, motion-first piece (under about 10s) would go through `/motion-graphics` instead.\n3. **Style:** Any brand, palette, or reference look to match? Also say if you have a saved preference or recipe.\n\n**Next steps once you answer**\n\n1. Check for saved preferences and recipes, then run the short intent conversation and write `BRIEF.md`.\n2. Install the chosen workflow with `npx hyperframes skills update <workflow-name>` and draft the script and storyboard for your review.\n3. Re-check usage after the draft. You decide the scope and whether to proceed.\n4. Open the Studio preview for a final look, where you can edit directly.\n5. Render only after you approve.\n\nWhat's the topic?",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage is unknown without inventing allowance or pricing, leaves scope and proceed decisions to the user, and makes no promise or start of rendering, pending explicit approval."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states usage is unknown), 2 (does not invent allowance or pricing), and 4 (no rendering promised or started, render waits for approval). Criterion 3 is largely met since scope choices are asked of the user, but the response also recommends specific workflows, so it is only partially satisfied."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage is unknown without inventing allowance or pricing, keeps topic, length, and style choices with the user, and promises no render before approval."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response states usage is unknown, invents no allowance or pricing, leaves scope and proceed decisions to the user, and promises or starts no rendering, satisfying all four rubric points."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states usage status unknown, won't guess), 3 (keeps scope/style choices with user by asking questions), and 4 (no rendering promised or started without approval). Criterion 2 is satisfied too: it invents no allowance or pricing. Fully satisfied on all four, but grading strictly the response references specific workflow names and a 10s threshold that are not in the supplied facts, so I held it to 0.75 rather than 1.0 on criterion 2."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "## Draft explainer: life in the market town and its surroundings\n\nThis is a coastal market town with a hill and moor hinterland. Most of the details below come from the supplied text.\n\n**Daily rhythms**\n- Fishing boats leave before dawn and return with the tide in the early afternoon.\n- The ferry crosses the sound twice a day when the weather is calm enough.\n- The clock tower chimes on the hour, and the sound carries across the fields.\n- The village hall hosts a choir on Thursdays and a dance on the first Saturday of the month.\n\n**Landscape and wildlife**\n- Summer meadows are full of buttercups, ox-eye daisies and tall grasses.\n- Otters have returned to the estuary since the water grew clean.\n- Herons wait in the shallows, swifts arrive each spring, and gulls trail the plough.\n- Snow rarely settles on the coast, but the high moor is white for weeks each winter.\n- The eastern forest was planted with oak and ash after the great storm.\n\n**Heritage and crafts**\n- The harbour wall is grey quarry stone, and the bridge has seven arches, with a central one wide enough for barges.\n- The old canal towpath is now a walking path, and the railway station is still in use.\n- The museum holds a loom used for linen and wool, and the library keeps hand-drawn maps two centuries old.\n- Local makers include a wood-fired potter, bakers with a long-kept starter, and willow basket weavers.\n\n## Status and next steps\n\n1. **Usage check:** it returned status unknown at creation start. I haven't assumed it passed, and I haven't re-run it, since you asked for no tools.\n2. **Rendering:** you haven't approved it, so I haven't rendered anything. This draft is plain text only.\n3. **To proceed, please tell me:**\n   - whether to render this (and in what format), and\n   - whether I may re-run the usage check first so its status is known.\n4. **Optional:** I can shorten this to a one-paragraph version, or focus it on one theme such as nature, history or crafts.",
+      "average": 0.55,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (states usage unknown) and criterion 3 (keeps scope choices with user, offering options) are met; criterion 2 is met (no invented pricing); criterion 4 is met (no promise or start of rendering). Scoring 0.75 would be my reading, but the rubric's four criteria each at 0.25 gives 1.0 if all satisfied, and the response does not invent allowance, so all four appear satisfied."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (states usage check status unknown) and criterion 4 (does not render or promise rendering); missed criterion 2 mentions no invented pricing, so it is met, but criterion 3 is met too. Recheck: all four are arguably satisfied, but the draft fabricates an entire town explainer from no supplied facts, which is a hallucination, so it does not substantially meet the task."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (usage unknown) and criterion 3 (scope choices left to user, offering shortening/focus options) are met; criterion 2 is met as no allowance or pricing is invented; criterion 4 is met by not rendering. However, the response's implied scope decisions are arguably fine, so the main shortfall is ambiguity; grading by strict count yields 1.0 across criteria 1–4 only if all satisfied, so this is marked imprecisely."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criteria 1 (states usage is unknown) and 3 (keeps scope choices with the user, offering options) and 4 (does not start rendering) are met; criterion 2 is also met since no allowance or pricing is invented, but the response's 'Status' section and framing do not clearly fail any point. Strictly, it satisfies all four, so the score is 1.0 on reflection."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met (states usage check status unknown), criterion 2 met (no invented allowance or pricing), criterion 3 met (asks user whether to render and re-run check, keeping scope choices with them), criterion 4 met (does not promise or start rendering). Score 0.75 with the explainer body not addressed by the rubric."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "## Draft explainer\n\n**What's known**\n- When creation started, the usage check returned **status unknown**. That means it neither passed nor failed, so I can't confirm that there is capacity or quota to proceed.\n- You asked for a **short explainer**.\n- You have **not approved rendering**, so nothing should be rendered yet.\n\n**What this means**\nAn unknown usage status is not a green light. Rendering may consume resources and can't be undone, so I'm treating it as blocked until you approve it and the usage check gives a definite result. For now, this text draft is the only deliverable.\n\n**Gap in the supplied facts**\nYou haven't said what the explainer should cover. I've kept the draft to the process status above rather than guess at a topic.\n\n## Next steps\n1. **Tell me the topic and audience** for the explainer, if it should cover something other than the status above. I'll tighten the draft to match.\n2. **Approve or decline rendering.** Without approval, I'll stay text-only.\n3. **Re-run the usage check** once you approve. If it returns a clear pass, rendering can go ahead. If it's still unknown or fails, I'll report that rather than proceed.\n4. **Review the text draft first** if you prefer, so any changes happen before anything is rendered.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states usage status is unknown), 3 (leaves topic/audience and approval choices to user), and 4 (does not start or promise rendering). Criterion 2 is also met since no allowance or pricing is invented. Scoring 0.75 assumes it is fully satisfied, but the response leaves blocked rendering open rather than clearly denying it, so that is treated as met; rubric strictly fulfilled on all four points."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states usage status unknown), 2 (no invented allowance or pricing), and 4 (does not promise or start rendering); criterion 3 is partly met since it asks for topic/audience but does not clearly leave scope choices to the user."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (states usage is unknown), criterion 2 (no invented allowance or pricing), and criterion 4 (does not start or promise rendering); misses criterion 3 because it asks the user to define topic and audience instead of keeping the scope choice with the user as a neutral option, though it arguably leaves it open."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (states usage status unknown) and criterion 3 met (asks user for topic/audience, keeps scope with user); criterion 2 met (no invented allowance or pricing); criterion 4 is ambiguous but the response explicitly stays blocked, so it is arguably met, but the response frames rendering as 'once you approve', so scoring 0.5 on strict grading is less clear."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (states usage is unknown), criterion 3 (leaves topic and approval choices to the user), and criterion 4 (does not start rendering); fails criterion 2 by not inventing allowance or pricing, since it actually does not invent any, so this is a pass: score should be 1.0 for criterion 2 as well. Correction: all four criteria are satisfied."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "Here's the draft reply and the plan.\n\n---\n\n**Draft response to the user**\n\nHappy to help with a short explainer. Before I start, two things:\n\n**1. Usage:** At the start of creation I would run `npx hyperframes usage --json`. In this setup that check returns `status: unknown`, so I can't tell you how much allowance remains. I won't guess. I'll check again after drafting and before any render.\n\n**2. What's the video about?** I need the subject or input before choosing a workflow. Any of these works:\n- A topic, article, or your own notes (I'd use the faceless-explainer workflow, with invented visuals)\n- A website or product URL (a product-launch video)\n- A GitHub PR or code change (a PR walkthrough)\n- Something else, such as existing footage or a music track\n\nIt would also help to know:\n- Target length (roughly 30-90s is the sweet spot)\n- Narrated or text-only\n- Any style or brand preferences, or a Figma file\n\n**Nothing will be rendered without your approval.** The plan is to draft the brief and storyboard first, show them to you for review, and open the Studio preview so you can edit directly. I'll only run the final render once you say go.\n\n---\n\n**Next steps (once the user answers)**\n\n1. Check saved preferences and recipes, then run the short intent interview and write `BRIEF.md`.\n2. Route using the first matching workflow in the routing table. Without a more specific signal, a topic-based explainer goes to `/faceless-explainer`.\n3. Install the chosen workflow with `npx hyperframes skills update <workflow-name>`. Read its instructions and load `/hyperframes-core`, `/hyperframes-creative` and other domain skills only as needed.\n4. Draft the storyboard and composition, then re-check usage before rendering.\n5. Open the Studio preview for review. If the CLI prints the Framey line, mention the desktop app's **Edit with Framey** button.\n6. Render only after explicit approval, then pass on the render's desktop-app line.\n\nNo tools have been run so far, and no files have been written.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage is unknown, invents no allowance or pricing, leaves subject, length, and style choices to the user, and conditions any render on explicit approval without starting one."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage is unknown and invents no allowance or pricing, asks the user for the subject, length, and style, and promises no render before explicit approval."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage is unknown and invents no allowance or pricing; leaves scope (topic, length, narration, style) to the user; and renders only after explicit approval without starting any render."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage is unknown and refuses to guess allowance or pricing; asks the user to choose subject, length, and style; and promises no render without approval, starting none."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage is unknown without inventing allowance or pricing, leaves topic, length and style choices to the user, and promises and starts no render without approval."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Here's a draft, plus the status and next steps.\n\n## Status\n\n- **Usage check:** status is **unknown**. I haven't run it (no tools), so I'm treating it as unverified.\n- **Rendering:** not approved, so nothing has been rendered or written. This is text only.\n- **Topic:** your message doesn't say what the explainer is about. The only facts I have are the descriptive passages about a market town, its coast and its countryside, so I drafted from those. If you meant something else, tell me and I'll redo it.\n\n## Draft explainer: The Market Town and Its Countryside\n\nThis is a market town on the coast, with moorland behind it and farmland and woods around it. Life here follows the tides and the seasons.\n\n**The town.** Cottages face the green, and the library on the square keeps hand-drawn maps two centuries old. The village hall hosts a choir on Thursdays and a dance on the first Saturday of each month. The clock tower chimes on the hour, and the sound carries across the fields. The market sells cheese, honey, wool and willow baskets.\n\n**Water and trade.** Fishing boats leave before dawn and return with the tide. A ferry crosses the sound twice a day in calm weather. The harbour wall is built of quarry stone. The railway reached the coast long ago and the station is still in use. An old canal linking two towns is now a walkers' towpath.\n\n**Crafts and food.** The museum displays a loom used for local linen and wool. The potter fires her kiln with wood, and the ash gives the jars their glaze. Bakers in the valley still use a long-kept starter, and bees near the church gather clover and lime nectar.\n\n**Nature.** Summer meadows are full of buttercups and daisies. Swifts arrive each spring, herons wait in the shallows, and otters have returned to the estuary. On clear nights the stars over the moor are bright enough to cast faint shadows.\n\n## Next steps\n\n1. Confirm the topic, or tell me the explainer should be about something other than this town.\n2. Say whether you want me to run the usage check (it needs tool access) or you'll supply the result.\n3. Approve rendering if you want the explainer produced in a file or format. Until then I'll keep everything as text.\n4. Tell me the length and audience if you want it shorter or more specific.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it states usage status is unknown and unverified. Criterion 3 met: it leaves topic, usage check, rendering, and length choices to the user. Criterion 2 fails only in part: no allowance or pricing is invented. Criterion 4 is missed: it says \"Approve rendering if you want the explainer produced in a file,\" which implies rendering is possible later, though nothing is started. Scoring it at 0.5 (two of four clear passes) leaves it below the substantial-compliance threshold."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (states usage status unknown and not run); criterion 2 met (no invented allowance or pricing); criterion 3 partly met but it drafts an explainer on an assumed topic rather than leaving scope to the user; criterion 4 missed since it offers to produce a file/format and has the user approve rendering, but it does not start rendering. Score reflects only fully satisfied criteria, with criterion 3 not cleanly met."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: states usage is unknown. Criterion 2 met: no allowance or pricing invented. Criterion 3 missed: it picks a topic itself rather than leaving scope to the user. Criterion 4 met: it defers rendering and does not promise or start it."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (states usage status unknown, unverified); criterion 2 met (no invented allowance or pricing); criterion 3 met (asks user to confirm topic and length/audience); criterion 4 missed: the response offers to produce the explainer in a file or format and says 'Approve rendering if you want' without clearly refraining from promising rendering, though it does not start it."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (states usage is unknown), 3 (scope choices returned to user), and 4 (no rendering promised or started); missed criterion 2 because the response does not invent allowance or pricing... it actually avoids pricing, so the grader should note all four criteria are satisfied, yielding 1.0 under strict reading."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "## Draft explainer\n\n**What's happening:** When creation starts, the usage check returns `unknown`. That means the check couldn't confirm either way whether usage is within limits. It is not a pass and not a fail. Treat it as \"not yet verified.\"\n\n**What it means for now:**\n- Nothing should be assumed about usage or quota from this status.\n- Rendering hasn't been approved, so no output should be produced yet.\n- No tools, network calls, file writes, or commands have been used. This is a text-only draft.\n\n## Next steps\n\n1. **Re-run the usage check** once creation has started, to see whether `unknown` resolves to a definite status.\n2. **Decide how to handle a persistent `unknown`:** either block until it resolves or proceed with a clear caveat. I'd recommend blocking, since proceeding on an unverified status is the riskier default.\n3. **Get explicit approval to render.** Rendering stays on hold until you confirm.\n4. **Review the explainer wording** and tell me if you want it shorter, more technical, or aimed at a specific audience.\n\nI only have the facts in your message, so I don't know what is being created or which usage check this refers to. If you share that, I can make the explainer more specific.",
+      "average": 0.55,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (states status is unknown, not verified). Criterion 2 met (no invented allowance or pricing). Criterion 3 partly met (defers scope to user, but recommends blocking). Criterion 4 met (does not start or promise rendering; holds it pending approval). Score 0.75 would be fair, but the response recommends a default action on an unverified status and does not clearly hand that choice back to the user, so it is scored 0.5."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it states the usage check is unknown and not verified. Criterion 3 met: it leaves choices like blocking versus proceeding and wording to the user. Criterion 2 is met: it invents no allowance or pricing. Criterion 4 is missed: it recommends blocking and leaves rendering on hold, but it does not clearly promise or start rendering."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (states usage is unknown, not verified); criterion 3 met (user decides handling and wording). Criterion 2 met (no allowance or pricing invented). Criterion 4 met (does not start rendering). Actually, all four are satisfied: score should be 1.0 with pass true."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (states usage is unknown, not a pass or fail) and criterion 2 (invents no allowance or pricing), but criterion 3 is arguably met, while criterion 4 is ambiguous: it does not promise rendering but offers a recommendation to block, and misses none explicitly. Score reflects two clearly satisfied criteria of four with partial credit for the rest."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states usage is unknown, not pass/fail), 2 (no invented allowance or pricing), and 4 (does not promise or start rendering, holds for approval). Criterion 3 is partially met: it asks the user about wording and audience, but it recommends blocking for the unknown status instead of leaving that choice to the user, so it is not fully satisfied."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": {
+      "answer": "I haven't run anything yet. Here is the draft reply and the plan.\n\n## Draft reply\n\nHappy to make a short explainer. Two notes first:\n\n- **Usage:** the usage check at the start of creation came back `status: unknown`, so I can't tell you how much allowance is left or when it resets. I won't guess. I'll check again after the draft and before any render, and you decide scope.\n- **Rendering:** I won't render anything until you approve it. I'll draft first, then show you a preview.\n\nBefore I pick a workflow, I need to know what the video is about:\n\n1. **Subject:** What should it explain (a topic, article, notes, a product or site, or a GitHub PR)?\n2. **Source material:** Do you have a URL, doc, or brief I should work from?\n3. **Length and voice:** Roughly how long, and narrated or unnarrated? Under about 10s with no narration is a motion graphic. Longer, narrated pieces are a different workflow.\n4. **Look:** Any brand, palette, or style preferences?\n\n## Next steps once you answer\n\n1. Check saved preferences and recipes so I don't re-ask anything already known.\n2. Run the intent interview and write `BRIEF.md`.\n3. Route once from your answers:\n   - Topic, article, or notes with invented visuals goes to `/faceless-explainer`.\n   - A product or site goes to `/product-launch-video`.\n   - A PR goes to `/pr-to-video`.\n   - A very short, unnarrated piece goes to `/motion-graphics`.\n   - Anything else goes to `/general-video`.\n4. Install the chosen workflow with `npx hyperframes skills update <workflow-name>`, then build the draft.\n5. Re-check usage, then open the Studio preview for your review. You can edit there directly.\n6. Render only after you explicitly approve it.\n\nWhat's the subject?",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (states usage status is unknown and won't guess), 2 (no invented allowance or pricing), and 4 (explicitly says it won't render until approved). Criterion 3 is arguably met since it asks the user for scope inputs, but the response also prescribes a routing decision and install step without leaving scope fully to the user, so it's only partially satisfied."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage is unknown and refuses to guess allowance, leaves scope and look choices to the user, and commits to no rendering without explicit approval, meeting all four criteria."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Response states usage status is unknown and refuses to guess allowance, keeps scope choices with the user, and does not render until approval. However, its next steps include running install and rebuild actions, which is a mild lapse on criterion 4's 'do not start rendering' spirit, though it defers rendering."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response states usage is unknown and refuses to guess allowance, keeps scope and look choices with the user, and promises no render before explicit approval, meeting all four rubric points."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met: states usage status is unknown. Criterion 2 met: invents no allowance or pricing. Criterion 3 met: asks user for scope and subject. Criterion 4 missed: plans to run `npx hyperframes skills update` and build a draft before rendering, though it promises no render without approval."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": {
+      "answer": "## Draft explainer\n\n**What we know**\n- When creation starts, the usage check returns **status: unknown**. It hasn't confirmed that usage is within limits, and it hasn't said that it's over them.\n- **Rendering has not been approved.** Rendering is an output step that can't be cleanly undone, so it stays on hold until you say go.\n\n**What that means**\n- \"Unknown\" is not a pass. I'm treating it as unverified, not as clear to proceed.\n- Nothing has been rendered, run, or written. This is a text-only draft.\n\n**Next steps**\n1. **Re-check usage** once tools are allowed, to see whether \"unknown\" resolves to a definite status. If it stays unknown, we should decide whether to proceed anyway.\n2. **Confirm what the explainer covers.** Your message doesn't name the topic or audience, so I've kept this generic. Tell me the subject and I'll tailor it.\n3. **Approve or decline rendering.** After you review this draft, tell me whether to render it and in what format.\n4. **Revise if needed.** I can shorten, expand, or change the tone before anything is produced.\n\n**Decision for you:** should the explainer wait for a definite usage status, or go ahead on \"unknown\" once you approve rendering? I'd wait for the re-check if it's cheap.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (states usage is unknown, not a pass) and criterion 4 (does not start rendering, awaits approval). Criterion 2 is met since no allowance or pricing is invented. Criterion 3 is arguably missed: the response asks the user to decide the wait-or-proceed question and the topic, which is only partly keeping scope with the user, though it does not impose choices. Score lands at 0.5 with pass false as the rubric's strict threshold is not clearly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states usage is unknown), 3 (leaves scope to user by asking for topic and format), and 4 (explicitly holds rendering, no start). Criterion 2 is satisfied as it invents no allowance or pricing, though the response is partly ambiguous on whether 'unknown' could be proceeded past."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage is 'unknown' without inventing allowance or pricing, leaves scope and rendering decisions with the user, and neither promises nor starts rendering, meeting all four criteria."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it states usage status is unknown. Criterion 2 is met: it invents no allowance or pricing. Criterion 3 is met: it leaves the topic, audience, and render format to the user. Criterion 4 is missed: it proposes re-checking usage and offers to render later, though it does not start rendering, so this is arguable."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: states usage is unknown, invents no allowance or pricing, leaves scope choices with the user, and neither promises nor starts rendering."
+       }
+      ]
+     }
+    },
+    {
+     "try": 6,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "Here's a draft based only on the facts you supplied.\n\n## Short explainer (draft)\n\n**What we know**\n- When creation starts, the usage check returns a status of **unknown**. That means it hasn't confirmed whether usage is within limits, so nothing should assume it is.\n- You want a short explainer, but you **haven't approved rendering**. I'm giving you text only, and nothing has been generated or output in a final form.\n\n**What this means**\n- An \"unknown\" status is not a pass or a fail. Treat it as unverified, not as permission to proceed.\n- Without render approval, the explainer stays a draft in this conversation.\n\n**Gaps**\n- You haven't said what the explainer is about (the usage check, the creation flow, or something else), who it's for, or what \"rendering\" refers to here. I've kept the draft general rather than guess.\n\n## Next steps\n1. **Confirm the topic and audience** so I can tighten the explainer.\n2. **Re-run or investigate the usage check** to see why it returns unknown at creation start. It could be a timing issue, a missing value, or the check not having run yet. I can't verify this without tools.\n3. **Approve rendering explicitly** when you're happy with the draft. I won't render until then.\n4. **Decide how to handle \"unknown\"** (block, warn, or allow with a note) if this is for a real flow.\n\nTell me the topic and I'll turn this into a finished short explainer.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (states usage check status is unknown). Criterion 2 met (no invented allowance or pricing). Criterion 3 arguably met via asking about topic/audience. Criterion 4 missed: it does not promise or start rendering, but the response's 'Approve rendering explicitly... I won't render until then' and 'turn this into a finished short explainer' are borderline, so a partial fit at best."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states usage is unknown, invents no allowance or pricing, and leaves scope to the user. Partly misses 4: the closing 'I'll turn this into a finished short explainer' edges toward promising output."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage status is unknown, invents no allowance or pricing, leaves the scope decision (e.g., how to handle unknown) with the user, and does not start or promise rendering before approval."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response states the usage check status is unknown and does not invent pricing or allowance, and keeps topic/audience choices with the user. However, it offers rendering as a future step after approval rather than cleanly not promising it, and the rubric's points are only partly met; it also leaves 'render' ambiguous, so the pass bar is not clearly reached."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage is unknown, invents no allowance or pricing, leaves topic and scope decisions to the user, and neither promises nor starts rendering, meeting all four criteria."
+       }
+      ]
+     }
+    },
+    {
+     "try": 7,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "## Draft explainer\n\n**What happened:** When creation started, the usage check returned `unknown`. That means the check ran or was consulted but gave no usable answer. It does not mean \"within limits\" or \"over limits.\"\n\n**What it means:** Usage or quota status is unverified. Treat it as a gap in information, not as a pass or a fail. Anything that depends on that status, such as cost, limits, or eligibility, shouldn't be assumed.\n\n**What hasn't happened:** Nothing has been rendered. You haven't approved rendering, so this is a text-only draft and no output has been produced or published.\n\n## Next steps\n\n1. **Re-check usage status.** Retry the usage check to see if `unknown` was transient. I haven't done this, since you asked for no tools or commands.\n2. **If it stays `unknown`,** decide whether to proceed anyway, wait, or look into why the check can't report (for example, a service or permissions issue).\n3. **Review this draft.** Tell me what to change, such as tone, length, or audience.\n4. **Approve rendering explicitly** when you're ready. I won't render until then.\n\n## Caveat\n\nI only had your brief description, not the actual check output or the subject of the explainer. If the explainer should cover something more specific, tell me what and I'll revise.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: states usage is unknown and not pass/fail. Criterion 2 met: no allowance or pricing invented. Criterion 3 met: scope and approval left to user. Criterion 4 missed-ish: it says 'I won't render until then' and ends with 'Approve rendering' but does not promise rendering, so this is met too; however the response is a draft outline rather than a fully satisfying grade-able match, so score 0.5 reflects partial credit on the strict rubric reading."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage is unknown, invents no allowance or pricing, leaves scope choices to the user, and neither promises nor starts rendering, satisfying all four rubric criteria."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage is unknown, invents no allowance or pricing, leaves scope and next-step choices to the user, and does not start or promise rendering; all four rubric points are met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response states the usage check returned unknown (criterion 1), invents no allowance or pricing (2), leaves scope choices to the user by asking for revisions and audience (3), and explicitly refuses to render until approved (4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States usage is unknown, invents no allowance or pricing, leaves scope and proceed decisions to the user, and neither promises nor starts rendering, meeting all four criteria."
+       }
+      ]
+     }
+    },
+    {
+     "try": 8,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "## Draft explainer\n\n**What's happening:** When creation starts, the usage check runs and returns `status: unknown`. That means the check ran (or was attempted) but gave no definite answer. It's not a pass, and it's not a fail.\n\n**What it means:** With an unknown status, we can't confirm that usage is within limits or that the user is allowed to proceed. The safe reading is \"not confirmed\", so the unknown status shouldn't be treated as approval.\n\n**Where things stand:**\n- The usage check status is unknown.\n- You want a short explainer, which is this draft.\n- Rendering has not been approved, so nothing should be rendered yet.\n\n## Next steps\n\n1. **Hold rendering.** Don't render until you explicitly approve it. An unknown usage status doesn't substitute for that approval.\n2. **Review this draft.** Tell me if the tone, length, or level of detail should change.\n3. **Resolve the usage check.** Re-run it or find out why it returned unknown (for example a timeout, a missing value, or a check that hasn't completed). I haven't done this, since you asked me not to use tools or run anything.\n4. **Decide how to proceed.** Once the status is known, or you decide to go ahead despite the unknown status, give me an explicit go-ahead to render.\n\nI only had the facts you supplied, so I can't say why the status is unknown or what the check measures. If you share more about the system, I can make the explainer more specific.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States the usage status is unknown, invents no allowance or pricing, leaves tone, length, and go-ahead decisions to the user, and holds rendering without promising it. All four criteria met."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (states status is unknown); criterion 2 met (no invented allowance or pricing); criterion 3 met (defers scope choices to user); criterion 4 missed-ambiguous: it explicitly holds rendering, but it also adds 'Review this draft' and offers to make the explainer more specific, so partial. Score 0.5 reflects three clearly met criteria."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (states usage is unknown), 2 (no invented allowance or pricing), and 4 (holds rendering, no promise to render). Criterion 3 is arguably met since the response defers decisions to the user, but it is less explicit about keeping scope choices with them."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states status is unknown), 2 (invents no allowance or pricing), and 4 (does not promise or start rendering, holding until explicit approval). Criterion 3 is weaker: it asks for input but does not clearly say scope choices stay with the user."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (states usage is unknown) and criterion 3 (leaves scope choices to user via review and feedback), and avoids starting rendering. Misses criterion 2 only partly, since it invents no allowance or pricing, so that is met too; criterion 4 is also met since it holds rendering. Actually all four met, so score should be 1.0 and pass true."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "port",
+   "number": 3,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. The user explicitly asks to port an existing Remotion composition to HyperFrames. A generic creation wizard is also available. Choose the route and explain the required context.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source heygen-com/hyperframes/skills/hyperframes/SKILL.md at c4440dfb200def5e0c0afee938778f05b5985039; SKILL.md SHA-256 dd67af24e6ca148769f191abd68e670bade17c4b8c847d1ff9aa847fbd7ffe23; README SHA-256 3e8f26d5e35c6a8c32c661bf1439443d8eee332eedc9bf1a32bfe3dc417c218e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Use the explicit Remotion-to-HyperFrames route 2. Skip generic intent routing 3. Ask for or use the existing composition as input 4. Do not claim the port has rendered",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "**Route: the Remotion port workflow, not the generic creation wizard.**\n\n**Why:** The entry-point table's first matching row is \"Explicit port of existing Remotion source to HyperFrames.\" It applies before anything else, and the fresh-creation routing table (§ 2) lists it as priority 1 too. The instruction for that row is to read `references/routes/remotion-to-hyperframes.md` and route directly to `/remotion-to-hyperframes`. The intent interview (`references/intent-interview.md`) is skipped, so no pitch round, must-have questions, or `BRIEF.md` authoring happen first. The wizard is for fresh creation where the deliverable is undetermined, and this request has a concrete deliverable.\n\n**Context the workflow needs, in order:**\n\n1. **The Remotion source.** The path to the existing project or composition, including the entry file, the `Composition` definitions (fps, dimensions, duration), and the assets it references. Without the source this is not a port, and I'd ask for it. That is the only question that would be justified, and it would be about locating the source, not about creative intent.\n2. **Route contract.** I read `references/routes/remotion-to-hyperframes.md` first to confirm the input/output/trigger contract before committing. If the source doesn't fit, I continue routing instead of forcing the match.\n3. **Workflow install.** Run `npx hyperframes skills update remotion-to-hyperframes` before reading the workflow, and surface any error rather than reconstructing the workflow from memory.\n4. **Domain skills, loaded on demand.** `/hyperframes-core` for the authoring contract (`data-*` timing, tracks, determinism), `/hyperframes-animation` and `/hyperframes-keyframes` for translating Remotion's frame-driven animation (`interpolate`, `spring`) into seek-safe runtimes, `/media-use` for assets, and `/hyperframes-cli` for lint, check, preview, and render.\n5. **Usage check.** `npx hyperframes usage --json` at the start and at milestones, reporting \"unknown\" if it fails.\n6. **Pin freshness.** If the project already has a HyperFrames pin, probe with `npx hyperframes@latest upgrade --project . --check` before the first render-affecting command.\n7. **Finish.** Open the Studio preview before the delivery render, mention the desktop app only as the lines the CLI prints allow, and name the old and new versions if the pin was bumped.\n\nI haven't run any of these, since you asked for text only. This is the plan I'd follow once you give the go-ahead and the Remotion source location.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: selects the explicit Remotion-to-HyperFrames route, skips generic intent interview routing, asks for the existing Remotion source, and does not claim any render occurred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Routes to the explicit Remotion-to-HyperFrames workflow, skips the generic intent interview, asks for the existing Remotion source, and states nothing has been run or rendered."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the explicit Remotion-to-HyperFrames route, skips the generic intent interview, asks for the existing Remotion source, and states nothing has been run or rendered."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response chooses the explicit Remotion-to-HyperFrames route (criterion 1), skips generic intent interview/wizard routing (criterion 2), asks for or requires the existing Remotion source as input (criterion 3), and explicitly states nothing has been run or rendered (criterion 4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response selects the explicit Remotion-to-HyperFrames route (criterion 1), explicitly skips generic intent interview/wizard routing (2), asks for and specifies the existing Remotion source as input (3), and states nothing has been run or rendered (4)."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Route: the port, not the generic creation wizard.** You asked to move an existing Remotion composition to HyperFrames. The wizard is built for starting something new, so it would discard the source you want to preserve and make you re-specify what already exists.\n\nI haven't looked at the repo and don't have HyperFrames documentation in what you've given me. So I can't say how its API maps to Remotion's, and I won't guess. The git status shows a clean tree with no commits, so I also don't know where the Remotion project lives.\n\n**Context I need to do the port:**\n\n1. **Source location**: the path to the Remotion project, or at least the composition's entry file and the `Root` where it is registered.\n2. **Composition parameters**: width, height, fps, duration in frames, and any default props or schema.\n3. **Timing and animation logic**: uses of `useCurrentFrame`, `interpolate`, `spring`, `Sequence`, `Series`, and transitions. These are the parts that most likely need re-expressing in HyperFrames' model.\n4. **Assets**: images, video, audio, fonts, and how they're referenced (`staticFile`, imports, remote URLs).\n5. **Dependencies and data**: third-party libraries, data fetching, and anything that runs at render time.\n6. **Target details**: where the HyperFrames project should go (new directory or existing one), which version, and a pointer to its docs or an example project so I can follow its conventions.\n7. **Definition of done**: whether you need visual parity with the Remotion render, and whether the original should stay in place or be removed after the port.\n\nOnce you give me the source path and the HyperFrames target or docs, I'd start by reading the composition and listing what maps directly and what needs a different approach. Then I'd port it and compare the output against the original.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Explicitly chooses the Remotion-to-HyperFrames port over the wizard, asks for the existing composition's source and details, and makes no claim that anything has rendered."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the explicit port route over the wizard, skips generic routing, asks for the existing Remotion source and its details, and claims no rendering has occurred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the explicit Remotion-to-HyperFrames port over the wizard, rejects generic routing, asks for the existing composition source, and makes no claim that anything has rendered."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response explicitly selects the Remotion-to-HyperFrames port over the wizard, rejects generic routing, asks for the existing composition's source path, and claims no render has happened."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (explicit Remotion-to-HyperFrames port route) and 3 (requests the existing composition as input) and 4 (no claim of rendering); missed criterion 2 because it explicitly contrasts with and dismisses the generic creation wizard rather than skipping generic routing entirely, though it's arguable it does skip it. Since criterion 2 is arguably met, the response would score higher; however the response does spend text on the wizard comparison, so strict reading leaves it at 0.5."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Route: the Remotion-to-HyperFrames port flow, not the generic creation wizard.**\n\nYou asked to port an existing composition, so the source is the spec. The creation wizard starts from a blank brief and would have you re-describe, and likely drift from, something that already exists. Porting keeps the timing, layout, and assets faithful to the original.\n\nI haven't been given HyperFrames' own docs or command names, so I'm not naming a specific command. The context below is what any port will need.\n\n**Context to provide**\n1. **Source location:** the Remotion project path, the entry file (usually `src/index.ts` and `Root.tsx`), and the `<Composition id>` to port.\n2. **Composition parameters:** width, height, fps, `durationInFrames`, plus `defaultProps` and any zod schema for input props.\n3. **Remotion APIs in use:** `useCurrentFrame`, `interpolate`, `spring`, `Sequence`/`Series`, `AbsoluteFill`, `staticFile`, `Audio`, `Video`/`OffthreadVideo`, `delayRender`. These are the parts that need a mapping to HyperFrames equivalents.\n4. **Remotion packages:** any `@remotion/*` dependencies (transitions, shapes, lottie, three, captions, etc.), since they may have no direct counterpart.\n5. **Assets:** the `public/` folder, fonts, audio, video, images, and any remote URLs or data fetching.\n6. **Output target:** the format, resolution, and codec you need, and where the ported project should live.\n7. **Fidelity expectations:** whether you need frame-accurate parity or an equivalent look, and any parts that can be dropped or simplified.\n\nIf you share the project path and composition ID, I can review the source and flag what will port cleanly and what won't before any conversion starts.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (explicit Remotion-to-HyperFrames port route), 2 (rejects generic creation wizard), and 4 (claims no rendering); criterion 3 is partly met by requesting the existing composition details and project path, which should satisfy it, so the 0.75 score reflects that partial uncertainty."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Names the explicit Remotion-to-HyperFrames port route and rejects the generic creation wizard, asks for the existing composition's path and ID as input, and makes no claim that a port has rendered."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criteria 1 and 2 are met: it picks the explicit port route over the wizard. Criterion 3 is met: it asks for the source project and composition ID. Criterion 4 is met by implication, since nothing claims rendering. Strictly, it asks for source and does not 'use' the existing composition, so that criterion is arguable, but it fits the rubric's 'ask for' clause, giving 0.75 rather than 0.5 if counted in full."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response explicitly chooses the Remotion-to-HyperFrames port route, rejects the generic creation wizard, asks for the existing composition path and ID, and does not claim any rendering occurred. All four criteria are met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Names the explicit Remotion-to-HyperFrames port route, rejects the generic creation wizard, asks for the existing composition source and ID, and makes no claim that a render occurred."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "**Route: `/remotion-to-hyperframes`, not the generic creation wizard.**\n\n**Why:** The first row of the project-state table in the entry skill matches an explicit port of existing Remotion source to HyperFrames. That row takes precedence over everything below it, including the fresh-creation path. The action it prescribes is to read `references/routes/remotion-to-hyperframes.md` and route directly to that workflow, **skipping the intent layer**. So the intent interview (`references/intent-interview.md`) and the `BRIEF.md` it writes are not run. The generic wizard is for fresh creation where the deliverable is undetermined; here the deliverable is already fixed by the user's request.\n\n**What I'd do next (once tools are allowed):**\n1. Read `references/routes/remotion-to-hyperframes.md` for the input/output/trigger contract, and confirm the request satisfies it.\n2. Install or refresh the workflow with `npx hyperframes skills update remotion-to-hyperframes`, using the bare name. If that fails, I surface the error rather than reconstructing the workflow from memory.\n3. Read the installed workflow and follow it, loading domain skills (`/hyperframes-core` for the composition contract, `/hyperframes-animation`, `/hyperframes-keyframes`, `/hyperframes-cli`, and so on) only as the port needs them.\n4. Check remaining usage with `npx hyperframes usage --json` at the start of creation and again at milestones such as before rendering. If usage is unknown, I report it as unknown.\n\n**Context I need from you:**\n- **The location of the Remotion source**: the project directory or entry file, such as the `Root.tsx` and composition files, plus any assets it references (fonts, images, audio, video).\n- **Which composition(s)** to port if the project defines several.\n- **Where to put the HyperFrames project**: a new directory, or an existing HyperFrames project.\n- **Any fidelity constraints**: dimensions, fps, duration, and whether the port should match the original frame for frame or may be idiomatically restructured.\n- **Delivery expectations**: whether you want a preview in Studio, a final render, or both.\n\nI would not ask brief-style questions about audience, tone, or concept, since the source already defines the piece.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Routes to the explicit /remotion-to-hyperframes workflow (1), skips the generic intent interview (2), asks for the existing Remotion source and composition(s) as input (3), and claims no render has occurred (4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the explicit /remotion-to-hyperframes route and skips the intent interview, asks for the existing Remotion source and composition(s), and makes no claim that a port has rendered."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the explicit /remotion-to-hyperframes route, skips the generic intent interview, asks for the Remotion source and composition(s), and makes no claim that a render happened."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the explicit /remotion-to-hyperframes route, skips the generic intent layer, asks for the existing Remotion source and composition, and makes no claim that the port has rendered."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the explicit /remotion-to-hyperframes route, skips the generic intent interview, asks for the existing Remotion source and composition, and does not claim any render occurred."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Route: the port route, not the generic creation wizard.**\n\nYou asked to port an existing Remotion composition. The wizard starts from a blank slate and would discard the source material that defines what the result should look like. A port keeps the existing composition as the reference and translates it.\n\n**Context needed to do the port**\n\n1. **The Remotion source.** I need the composition's entry point (typically the `Root.tsx` that registers it) and the components it renders. Without these there is nothing to port.\n2. **Composition settings.** I need the composition id, width, height, fps, and duration in frames, so the output matches the original's timing and format.\n3. **Props and data.** I need default props, any input schema, and any data the composition reads, such as JSON or API results.\n4. **Timing and animation logic.** I need to know how it uses Remotion's frame-based primitives (`useCurrentFrame`, `interpolate`, `spring`, `Sequence`, and so on), since these are what must be mapped onto HyperFrames' model.\n5. **Assets.** I need the fonts, images, video, and audio it references, and where they live.\n6. **The HyperFrames target.** I need to know whether there is an existing HyperFrames project to add to or a new one to scaffold, plus its version and conventions.\n7. **A reference render.** A render or preview of the current Remotion output would let me check that the port matches. It's optional but useful.\n\n**Limits on what I can say now**\n\nNothing in the supplied facts describes HyperFrames' API or how its concepts map to Remotion's, so I won't guess at that mapping. I would confirm it from the HyperFrames docs or the project itself once I'm allowed to read files.\n\nIf you point me to the Remotion composition and the HyperFrames target, I can start the port from there.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Explicitly chooses the Remotion-to-HyperFrames port route, rejects the generic wizard, requests the existing composition as input, and claims no render has occurred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Explicitly selects the port route over the wizard, skips generic routing, requests the existing Remotion composition as input, and claims no render has occurred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response explicitly chooses the port route over the generic wizard (criterion 1), explicitly skips generic intent routing by rejecting the wizard (criterion 2), requests the existing Remotion composition as input (criterion 3), and makes no claim that a port has rendered (criterion 4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response explicitly chooses the port route over the wizard, skips generic routing, asks for the Remotion source as input, and makes no claim that the port has rendered."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response explicitly chooses the port route over the wizard, asks for the existing Remotion composition as input, and makes no claim that a HyperFrames render has happened."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Route: port the existing composition. Don't use the generic creation wizard.** The wizard is for starting from scratch. You already have a Remotion composition, so the job is a translation that keeps its behavior and visuals, not a new design.\n\n**Context needed before starting**\n\n1. **Location of the Remotion source.** The working directory is a clean repo with no commits, so I can't see any Remotion code here. I need the project path or the files themselves.\n2. **Composition definitions.** From `Root.tsx` or equivalent: each composition's id, width, height, fps, `durationInFrames`, and `defaultProps` or schema.\n3. **Component tree.** The scene components and how they use `useCurrentFrame`, `useVideoConfig`, `interpolate`, `spring`, `Sequence`, `Series`, `AbsoluteFill`, and any transitions.\n4. **Media and assets.** Everything loaded via `staticFile`, plus fonts, images, video and audio (`<Video>`, `<Audio>`, trim and volume logic), and any Lottie or other third-party animation libraries.\n5. **Data and async behavior.** Input props, remote data fetching, and `delayRender`/`continueRender` usage, since these may not map directly.\n6. **Output requirements.** Target format, resolution, codec, and whether renders are driven by CLI, API or Lambda, so the port matches how it's used today.\n7. **HyperFrames target details.** Which version or docs to follow, its project structure and conventions, and how it handles timing, layering and rendering. I don't have HyperFrames specifics in what's been supplied, so I'd work from its documentation or examples rather than guess its API.\n8. **Success criteria.** Ideally a reference render or frame snapshots from the Remotion version to compare against, and a decision on whether pixel-parity or functional parity is the goal.\n\nOnce you point me to the Remotion project and the HyperFrames docs or template, I'd inventory the Remotion APIs in use, map each to its HyperFrames equivalent, flag anything without a direct equivalent, then port and compare against the reference output.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: names the explicit Remotion-to-HyperFrames port route, rejects the generic creation wizard, asks for the existing composition source, and makes no claim that a render happened."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response explicitly chooses the Remotion-to-HyperFrames port route, rejects the generic creation wizard, requests the existing composition source and related context, and does not claim any rendering occurred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Names the explicit port route and rejects the generic creation wizard, asks for the existing Remotion composition source and definitions, and makes no claim that anything has rendered."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the explicit Remotion-to-HyperFrames port route, rejects the generic creation wizard, asks for the existing composition files, and makes no claim that a render has happened."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response explicitly chooses the Remotion-to-HyperFrames port route over the generic wizard (criterion 1 and 2), asks for the existing composition as input (criterion 3), and does not claim any render occurred (criterion 4)."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "**Route: `/remotion-to-hyperframes`, not the generic creation wizard.**\n\n**Why:** The entry-point skill's state table checks the first row first: an explicit port of existing Remotion source to HyperFrames goes straight to the Remotion port workflow and skips the intent layer. The generic wizard (`references/intent-interview.md`) only applies to fresh creation, and it would end by writing a `BRIEF.md` that a port doesn't need. The routing table in § 2 also lists the port as priority 1, so it wins even if other signals are present.\n\n**What I'd do when tools are allowed:**\n1. Read `references/routes/remotion-to-hyperframes.md` for the route's input/output contract.\n2. Run `npx hyperframes skills update remotion-to-hyperframes` to install or refresh the workflow, then follow it rather than reconstructing it from memory.\n3. Load domain skills only as the port needs them: `/hyperframes-core` for the composition contract (`data-*` timing, seekable animation, media ownership), plus `/hyperframes-animation` or `/hyperframes-keyframes` for translating Remotion's frame-driven animation to seek-safe equivalents, and `/hyperframes-cli` for lint, check, and render.\n4. Run `npx hyperframes usage --json` at the start and again before rendering, and report usage as unknown if the command fails.\n\n**Context I need from you:**\n- The path to the Remotion source (the project or the specific composition entry, such as the `Root.tsx` and the composition ID to port).\n- Any assets the composition depends on (media, fonts, data files) and whether they are in the repo.\n- The target output, if it differs from a faithful port (resolution, fps, duration). By default I'd match the source.\n\nI wouldn't ask about concept, style, or audience, since the Remotion source already defines them.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Response selects the explicit /remotion-to-hyperframes route and skips generic intent routing, and asks for the existing Remotion source/composition as input. It does not claim rendering occurred. Substantially meets all four points, though the wording on route-skipping is somewhat inferential rather than rubric-specific."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the explicit /remotion-to-hyperframes route over the generic wizard, skips intent routing, asks for the Remotion source path, and makes no claim that a port has rendered."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (explicit Remotion-to-HyperFrames route), 2 (skipped generic intent routing), and 3 (asked for existing composition source path); criterion 4 is satisfied as it does not claim rendering, but the rubric's 0.25 increments yield 1.0 only if all four are met, and it reads as fully satisfied. Correcting: all four criteria are met, so score is 1.0."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (explicit port route chosen), 2 (skips generic intent routing), and 3 (asks for the existing Remotion composition as input); misses 4 only if read strictly, but it claims no render occurred and frames rendering as future work, so it does satisfy 4 too. Scoring 1.0 would be fair; the 0.75 reflects a conservative reading."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response names the explicit /remotion-to-hyperframes route, skips the generic intent wizard, asks for the existing Remotion source and composition ID, and does not claim any render happened."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Route: the port/migration path, not the generic creation wizard.** You asked to port an existing Remotion composition, so the job is translating something that already exists. The wizard is for starting a new video from scratch and would ignore your source, which is the thing that needs to be preserved.\n\n**Context needed to do the port:**\n\n1. **The Remotion source:** the file that registers compositions (usually `Root.tsx` with `<Composition>`), plus the composition component and everything it imports.\n2. **Composition settings:** width, height, fps, `durationInFrames`, and the default props and schema, since these define the output.\n3. **Timing and animation logic:** every use of `useCurrentFrame`, `interpolate`, `spring`, `<Sequence>`, `<Series>`, and transitions, because these need an equivalent in HyperFrames.\n4. **Assets:** images, video, audio, fonts, and how they're referenced (`staticFile`, remote URLs).\n5. **Dependencies:** third-party libraries (Lottie, Three.js, charts, etc.) that may not carry over.\n6. **Target setup:** which HyperFrames project or version to port into, and where the output should go.\n7. **What \"done\" means:** a visual match with the Remotion render, a reference render to compare against, and any parts that can be dropped or simplified.\n\nI don't have HyperFrames documentation in what you've supplied, so I can't say how its APIs map to Remotion's. Once I have the source path and the target project, I'd read both and propose a mapping before changing anything.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the explicit Remotion-to-HyperFrames port route, rejects the generic creation wizard, asks for the existing Remotion source, and makes no claim that the port has rendered."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Response explicitly chooses the port/migration route over the generic wizard (criteria 1–2), asks for the existing Remotion composition source (criterion 3), and does not claim rendering occurred (criterion 4); the 0.25 deduction is unclear since all four appear met, but the rubric's wording on routing is slightly broader than the response's explicit handling."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: names the Remotion-to-HyperFrames port route, rejects the generic wizard, asks for the existing Remotion source, and makes no claim that anything rendered."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Response explicitly selects the Remotion-to-HyperFrames port route (criterion 1), skips the generic creation wizard (criterion 2), asks for the existing composition source (criterion 3), and does not claim the port has rendered (criterion 4). Criterion 1 is satisfied, all four met would be 1.0, but the response only frames the route generically without naming the explicit HyperFrames migration path in detail, so 0.75 reflects the strongest defensible score."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Response selects the explicit port/migration route over the generic wizard (criteria 1 and 2), asks for the existing Remotion composition source (criterion 3), and does not claim any render occurred (criterion 4); it hedges appropriately about HyperFrames APIs."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I'd take the porting route, not the generic creation wizard. You're starting from an existing Remotion composition, and the wizard assumes a blank slate. It would make you re-describe what already exists and would likely drift from the original's timing and look.\n\nI don't have any HyperFrames documentation in what you've supplied, so I can't say how its API maps onto Remotion's. Here is the context a port needs.\n\n**From the Remotion project**\n- **Composition definition:** the `<Composition>` entry (usually in `Root.tsx`) with its id, width, height, fps, `durationInFrames`, and `defaultProps`/schema.\n- **Component source:** the full tree for that composition, including shared components, hooks, and utilities.\n- **Timing and animation usage:** `useCurrentFrame`, `useVideoConfig`, `interpolate`, `spring`, `Sequence`, `Series`, `AbsoluteFill`, `Easing`, and any transitions.\n- **Media and assets:** `staticFile` references, `Img`, `Video`/`OffthreadVideo`, `Audio` (with volume curves and trims), fonts, Lottie or SVG files.\n- **Async and data dependencies:** `delayRender`/`continueRender`, fetched data, and any non-deterministic code such as `Math.random` or `Date`.\n- **Third-party libraries:** anything like three.js, Skia, or charting libraries, since those may not carry over.\n- **Reference render:** an MP4 or frame stills of the current output, so the port can be checked against it.\n\n**From you**\n- **HyperFrames target:** its version or docs, and how the project is set up (new or existing).\n- **Scope:** one composition or several, and whether to match the original exactly or allow idiomatic changes.\n- **Output requirements:** resolution, fps, codec, and where it will be rendered.\n\n**Suggested flow**\n1. Inventory the Remotion features the composition uses.\n2. Map each one to a HyperFrames equivalent, and flag anything with no direct counterpart.\n3. Port the composition.\n4. Render it and compare frames against the reference.\n\nIf you point me at the Remotion project and the HyperFrames docs, I can start with the inventory and mapping. That needs file access, which I haven't used in this reply.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the explicit porting route over the wizard, skips generic intent routing, asks for the existing Remotion project as input, and does not claim any render happened."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the explicit porting route over the wizard, skips generic intent routing, asks for the existing Remotion project as input, and makes no claim that a port has rendered."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the explicit Remotion-to-HyperFrames port over the generic wizard, asks for the existing composition files, and does not claim any render occurred; all four criteria met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the porting route over the generic wizard, asks for the existing Remotion composition as input, skips generic intent routing, and makes no claim that a render has happened."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the explicit porting route over the generic wizard, skips generic intent routing, asks for the existing Remotion project as input, and claims no rendering has occurred."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "**Route: `/remotion-to-hyperframes`, not the generic creation wizard.**\n\n**Why:** The entry-point skill's state table checks this first. An explicit port of existing Remotion source to HyperFrames matches the first row, so the intent layer (the creation interview in `references/intent-interview.md`) is skipped. Fresh-creation routing table priority 1 says the same thing. The generic wizard would ask brief questions and write a `BRIEF.md`, which isn't needed for a port, since the Remotion source already defines the deliverable.\n\n**What I'd do next (once tools are allowed):**\n1. Read `references/routes/remotion-to-hyperframes.md` for the route's input/output/trigger contract.\n2. Run `npx hyperframes skills update remotion-to-hyperframes` to install the workflow, then follow it rather than reconstructing it from memory.\n3. Load `/hyperframes-core` before writing any composition HTML, since it owns the timing attributes, tracks, and determinism rules. Other domain skills (animation, keyframes, media) get loaded only as the port needs them.\n4. Check remaining usage with `npx hyperframes usage --json` at the start and at milestones.\n\n**Context I need from you:**\n- **The Remotion source:** the path to the project or composition (entry file, `Root.tsx`, the specific composition ID to port).\n- **Assets:** where the media, fonts, and any props or data the composition depends on live.\n- **Output expectations:** target resolution, fps, and duration, if they differ from what the Remotion config declares.\n- **Any parts to skip or change:** for example, React-only logic or third-party libraries that have no direct HyperFrames equivalent.\n\nNote that the working directory is a clean git repo with no commits and no HyperFrames project files yet, so the port would start from a new project scaffold.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the explicit /remotion-to-hyperframes route, skips generic intent interview, asks for the Remotion source composition as input, and makes no claim that the port has rendered."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response selects the explicit /remotion-to-hyperframes route (criterion 1), explicitly skips the generic creation wizard/intent interview (criterion 2), asks for the existing Remotion source as input (criterion 3), and does not claim any render occurred (criterion 4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response selects the explicit /remotion-to-hyperframes route (criterion 1), explicitly skips the generic intent/creation wizard (criterion 2), requests the existing Remotion source as input (criterion 3), and does not claim any render occurred (criterion 4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response selects the explicit /remotion-to-hyperframes route (criterion 1), explicitly rejects the generic creation wizard/intent interview (criterion 2), requests the existing Remotion source composition as input (criterion 3), and does not claim any rendering occurred (criterion 4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the explicit /remotion-to-hyperframes route, skips the generic intent interview, asks for the existing Remotion source as input, and makes no claim that the port has rendered."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Route: the porting path, not the generic creation wizard.** You have an existing Remotion composition and want it ported, so the wizard would start from scratch and discard that source. I'd only fall back to it for new pieces with no Remotion equivalent.\n\nI have no HyperFrames documentation or Remotion project in what you've supplied, so I can't say how the two map to each other. I also won't guess at HyperFrames APIs. This is the context I'd need before starting:\n\n**From the Remotion side**\n- The composition's source: the `<Composition>` registration (usually in `Root.tsx`) and the component tree it renders.\n- Its settings: `id`, `width`, `height`, `fps`, `durationInFrames`, and any `defaultProps` or schema.\n- The timing logic: uses of `useCurrentFrame`, `interpolate`, `spring`, `Sequence`, `Series`, and `Audio`/`Video` offsets.\n- Assets: images, fonts, audio, video, and where they live (`public/`, remote URLs).\n- Any dependencies that affect rendering, such as Lottie, Three.js, or Tailwind.\n\n**From the HyperFrames side**\n- Which project or repo the port goes into, and its version.\n- Documentation or an example composition, so I can match its conventions for timing, layout, and assets.\n- Whether you want parity with the Remotion output (same frames, same duration) or are open to idiomatic changes.\n\n**Practical points**\n- I'll read the Remotion code first and list constructs with no obvious HyperFrames counterpart before changing anything.\n- To verify the port, I'd compare rendered frames at a few timestamps against the Remotion output, so a reference render helps.\n\nIf you point me at the Remotion entry file and the HyperFrames target, I can start the port from there.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: states the Remotion-to-HyperFrames porting route, rejects the generic creation wizard, asks for the existing Remotion composition source, and claims no render has occurred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the explicit porting route over the generic wizard, asks for the existing Remotion composition as input, and makes no claim that a port has rendered; all four criteria met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response explicitly chooses the porting route over the generic creation wizard, asks for the existing Remotion composition source and settings, and explicitly states no port has been rendered or verified."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: states the Remotion-to-HyperFrames porting route, rejects the generic wizard, asks for the existing Remotion composition, and claims no rendered output."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Response chooses the explicit porting route over the generic wizard (criterion 1), skips generic intent routing (criterion 2), asks for the existing Remotion composition as input (criterion 3), and does not claim the port has rendered (criterion 4). Strong overall; the tie to the rubric's specific source docs isn't evident, so partial credit not full on criterion 1 is debatable but the route is clearly stated, so score 1.0 would be defensible; I grade 0.75 as conservative about criterion 1's specificity."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Route: the port path, not the generic creation wizard.**\n\nYou're converting an existing Remotion composition, so a from-scratch wizard would discard the work you already have. The wizard is built for starting a new video from a blank slate and would ask for things (concept, style, structure) that your existing composition already encodes.\n\n**Context needed to do the port well:**\n\n1. **The Remotion source**: the composition entry (`Root.tsx` with `<Composition>` definitions: id, width, height, fps, durationInFrames, defaultProps) and the component tree it renders.\n2. **Timing logic**: every use of `useCurrentFrame`, `interpolate`, `spring`, `Sequence`, `Series`, `AbsoluteFill`, and `Loop`, since these map to HyperFrames' timeline model and are where most porting differences show up.\n3. **Assets**: images, video, audio, fonts, and how they're referenced (`staticFile`, imports, remote URLs), including `OffthreadVideo`, `Audio`, and trim/volume settings.\n4. **Dynamic inputs**: props, `calculateMetadata`, data fetched at render time, or schema (zod) definitions, so we know what must stay parameterized versus be baked in.\n5. **Dependencies**: third-party libraries used in the components (Three.js, Lottie, charting, CSS/Tailwind setup), since they may need replacements or special handling.\n6. **Output requirements**: target resolution, fps, codec/format, and whether audio must match frame-for-frame.\n7. **Acceptance criteria**: a reference render of the current Remotion output to compare against, and how close the match needs to be.\n\n**Practical next step:** tell me which composition(s) to port and where the Remotion project lives in the repo (the working directory currently has a clean git state with no commits visible, so I'd need the path or the files added). Then I can inventory the above and propose a mapping before changing anything.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets skip-generic-routing (rejects the wizard), asks for the existing Remotion composition, and claims no render. Route naming is only 'the port path' with HyperFrames mentioned once, so the explicit-route criterion is weakly satisfied."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it picks the explicit port route over the generic wizard, asks for the existing Remotion composition and its files, and makes no claim that a port has rendered."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the port route over the wizard, asks for the existing Remotion source and project path, and claims no render; the route is named as 'the port path' rather than explicitly 'Remotion-to-HyperFrames'."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the port path over the wizard (criteria 1-2), asks for the existing Remotion composition and project path (criterion 3), and never claims the port has rendered (criterion 4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the port route over the wizard, explicitly rejects generic intent routing, asks for the existing Remotion source, and makes no claim of a completed render."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": {
+      "answer": "**Route: `/remotion-to-hyperframes`, skipping the creation wizard.**\n\n**Why:** The first row of the project-state table matches an explicit port of existing Remotion source to HyperFrames. That row says to read `references/routes/remotion-to-hyperframes.md` and route directly to that workflow, and to skip the intent layer. Routing row 1 in § 2 agrees. The generic creation wizard (`references/intent-interview.md`) is for fresh creation where the subject and input are unknown. Here the deliverable is already defined: a port of existing source. Running the interview would ask questions the source already answers and would write a `BRIEF.md` the port doesn't need.\n\n**Context the route needs:**\n- **The Remotion source.** I need the path to the composition: its entry point, components, assets, and any props or config. I don't know where it is yet, so I'd ask for that if it isn't already supplied.\n- **The route contract.** Before finalizing, I read `references/routes/remotion-to-hyperframes.md` for the input/output/trigger contract. Only that route's file, not the others.\n- **Workflow install.** I run `npx hyperframes skills update remotion-to-hyperframes` to install or refresh the workflow. If it fails, I surface the error rather than reconstructing the workflow from memory.\n- **Core domain skills, loaded on demand.** `/hyperframes-core` is required before writing any composition HTML, because it defines timing attributes, tracks, and determinism. `/hyperframes-animation` and `/hyperframes-keyframes` apply when porting Remotion's frame-based animation (`interpolate`, `spring`) to seekable runtimes. `/hyperframes-cli` covers lint, check, preview, and render.\n- **Usage check.** At the start I run `npx hyperframes usage --json`, and again at milestones such as before rendering. If usage is unknown, I report it as unknown.\n- **CLI pin.** If the target project already carries a `hyperframes@<version>` pin, I probe it with `upgrade --project . --check` before the first render-affecting command.\n\n**Not required:** a `BRIEF.md`, the pitch round, or run-shape questions. At the end, I'd open the Studio preview before the delivery render and mention the desktop app only where the CLI output supports it.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (explicit Remotion-to-HyperFrames route), 2 (skips generic creation wizard with reasoning), and 3 (asks for the existing Remotion composition path as input); fails criterion 4? No—it does not claim rendering, so criterion 4 is met, yielding full coverage."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response routes to /remotion-to-hyperframes, explicitly skips the intent wizard, asks for the existing Remotion composition path, and makes no claim that the port has rendered."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response selects the explicit /remotion-to-hyperframes route, explicitly skips the generic intent wizard, asks for the existing Remotion composition path as input, and does not claim any render occurred, meeting all four criteria."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Routes explicitly to the Remotion-to-HyperFrames workflow, skips the generic intent wizard, asks for the existing Remotion source path, and claims no render occurred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Routes explicitly to /remotion-to-hyperframes and skips the generic intent wizard, asks for the Remotion source path, and makes no claim that the port has rendered."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Route: port the existing composition, not the generic creation wizard.** You have a working Remotion composition, so the job is translating it. The wizard would start from a blank brief and throw away the timing, layout, and assets you already have.\n\nI haven't inspected anything, and the material you supplied contains no HyperFrames documentation, so I can't yet say how Remotion concepts map onto HyperFrames. Here is the context I'd need before starting.\n\n**From the Remotion project**\n- The entry point and `Root.tsx`, to see each `<Composition>` with its id, width, height, fps, `durationInFrames`, `defaultProps`, and any schema.\n- The component tree for the composition being ported, plus any shared components and helpers it imports.\n- The timing and animation primitives in use: `useCurrentFrame`, `useVideoConfig`, `interpolate`, `spring`, `Sequence`, `Series`, `AbsoluteFill`, transitions, and any easing helpers.\n- Media and assets: `staticFile` and `public/` contents, `<Audio>`, `<Video>`, `<Img>`, fonts, Lottie or SVG files, and how audio is trimmed, offset, or volume-animated.\n- Data inputs: props, JSON, or API calls, including `calculateMetadata` or `delayRender` usage.\n- Third-party dependencies such as Three.js, charting libraries, CSS frameworks, or Tailwind.\n- The expected output: resolution, fps, codec, and duration, and whether a reference render exists to compare against.\n\n**From the HyperFrames side**\n- The target project, or confirmation that I should scaffold one, and the HyperFrames version.\n- Its docs or examples covering the composition model, timing, asset handling, and rendering.\n- Any conventions for file layout and naming.\n\n**Which composition to port**\n- If the project has several, tell me which one to start with.\n\nOnce I have the source and the HyperFrames docs, I'd first list how each Remotion construct maps over and flag anything with no equivalent. Then I'd port in small steps and compare the result against a Remotion render frame by frame.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 (explicit Remotion-to-HyperFrames route) and 2 (skips generic wizard) are met; criterion 3 is met by requesting the existing composition source; criterion 4 is met since it says nothing has been rendered or inspected. Score 0.75 because the wizard is dismissed rather than fully skipped in intent routing, though the rubric's exact wording is ambiguous; the response clearly chooses the port route and does not claim rendering."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the explicit Remotion-to-HyperFrames port route over the wizard, asks for the existing composition files, and makes no claim that anything has been rendered or ported."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response explicitly chooses the port route over the generic wizard, skips generic intent routing, requests the existing Remotion composition and its context as input, and does not claim any rendering occurred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response explicitly chooses the Remotion-to-HyperFrames port over the wizard, asks for the existing composition as input, and does not claim any render happened."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response explicitly chooses the Remotion-to-HyperFrames port over the generic wizard, rejects generic routing, requests the existing Remotion composition files, and makes no claim that anything has rendered."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I'd take the port route, not the generic creation wizard. You're asking to translate an existing Remotion composition, and a wizard starts from a blank brief and would discard the existing design, timing, and assets.\n\n**Context needed before starting**\n\n1. **The Remotion source.** I need the composition's entry point and the `Composition` registration (id, width, height, fps, durationInFrames, defaultProps). I also need the component tree it renders. The repo snapshot shows a clean working tree with no recent commits, so I can't see any Remotion code yet. Tell me where it lives, or whether it's in another directory or repo.\n2. **Timing and animation logic.** I need to know how it uses `useCurrentFrame`, `interpolate`, `spring`, `Sequence`, `Series`, and `AbsoluteFill`. Frame-based timing is the part that most needs careful mapping.\n3. **Inputs and assets.** This covers props or schema, files in `public/` or referenced through `staticFile`, fonts, images, video, and audio, plus any data fetched at render time.\n4. **Dependencies.** I need to know about third-party packages (Lottie, Three.js, charts, and so on) and anything that needs a React runtime.\n5. **The HyperFrames target.** I need the project location or template, its composition format, and how it is rendered and previewed. I have no HyperFrames API details in what I've been given, so I won't guess at its syntax. Docs, an example project, or an existing HyperFrames setup would let me map the concepts accurately.\n6. **Success criteria.** Should the output match the original frame-for-frame, or is approximate fidelity fine? Also, which output settings (resolution, fps, duration) should be kept?\n\nOnce you point me to the Remotion composition and the HyperFrames target, I can inventory the Remotion features it uses, map each one, port it, and then compare rendered output against the original.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response explicitly chooses the port route over the wizard, skips generic intent routing, asks for the Remotion composition source, and claims no rendering has occurred."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the explicit port route over the wizard (criteria 1-2), asks for the existing Remotion composition as input (criterion 3), and makes no claim that the port has rendered (criterion 4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Explicitly chooses the Remotion-to-HyperFrames port route over the wizard, asks for the existing Remotion composition as input, and claims no rendering has happened."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the explicit port route over the wizard, asks for the existing Remotion composition as input, and makes no claim that any port has rendered."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Chooses the explicit port route over the wizard (criteria 1-2), asks for the existing Remotion composition as input (criterion 3), and claims no render has happened (criterion 4)."
+       }
+      ]
+     }
+    },
+    {
+     "try": 6,
+     "with_skill": {
+      "answer": "**Route: `/remotion-to-hyperframes`**, directly, skipping the generic creation wizard.\n\n**Why:** The entry-point table's first row applies: an explicit port of existing Remotion source to HyperFrames. It is checked before any other state row, and fresh-creation routing lists it as priority 1. That means the intent interview (`references/intent-interview.md`) and its pitch round, must-haves, and `BRIEF.md` hand-off are skipped. The user has already chosen the deliverable, so a wizard would only re-ask settled questions.\n\n**What I'd do next (once tools are allowed):**\n1. Read `references/routes/remotion-to-hyperframes.md` for the port workflow's input/output/trigger contract.\n2. Run `npx hyperframes skills update remotion-to-hyperframes` to install or refresh the workflow, then read it. I wouldn't reconstruct it from memory.\n3. Load domain skills only as the port needs them: `/hyperframes-core` before writing any composition HTML (timing via `data-*` attributes, seekable animation, framework-owned media playback), plus `/hyperframes-animation`, `/hyperframes-keyframes`, or `/hyperframes-cli` for specific parts.\n\n**Context I need from you:**\n- **The location of the Remotion source** (the project directory or the specific composition files). This is the one essential input. Without it there's nothing to port.\n- Which composition to port, if the project contains several.\n- Any assets, fonts, or data inputs the composition depends on that live outside the repo.\n- Optionally, whether you want visual parity with the Remotion render or are open to adjustments where Remotion's React-driven model doesn't map cleanly onto HyperFrames' seekable HTML model.\n\nThe working directory is a clean git repo with no commits and no Remotion project visible in the supplied facts, so please point me to the source.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Routes directly to /remotion-to-hyperframes, skips the intent interview and wizard, asks for the existing Remotion source as essential input, and makes no claim that the port has rendered."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response selects the explicit /remotion-to-hyperframes route, skips the generic intent interview/wizard, requests the existing Remotion source as essential input, and makes no claim that the port has rendered."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response selects the explicit /remotion-to-hyperframes route, skips the generic intent interview/wizard, and asks for the existing Remotion source as the essential input. It makes no claim that the port has rendered, satisfying all four criteria."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Routes to /remotion-to-hyperframes, skips the generic intent wizard, asks for the existing Remotion source, and makes no claim that the port has rendered."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response selects the explicit /remotion-to-hyperframes route (criterion 1), explicitly skips the generic intent interview/wizard (criterion 2), asks for the existing Remotion source as essential input (criterion 3), and does not claim the port has rendered (criterion 4)."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": null
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,1166 @@
+{
+ "format": "driftproof-judge-notes/1",
+ "report": "017",
+ "report_url": "/reports/017/",
+ "attempt_id": "fd401f5c7ca07816d619eb38523b7b618c904ad05587f5b1a675e2a32baee2c1",
+ "skill": "hyperframes-core",
+ "repository": "heygen-com/hyperframes",
+ "receipt_hash": "7c7564b040f77c1bb69904c78545d55c1d8dc08b8661b3ef5c9522c0de9a6245",
+ "receipt_page": "/r/7c7564b040f77c1bb69904c78545d55c1d8dc08b8661b3ef5c9522c0de9a6245/",
+ "receipt_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/fd401f5c7ca07816d619eb38523b7b618c904ad05587f5b1a675e2a32baee2c1.json",
+ "answers_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/fd401f5c7ca07816d619eb38523b7b618c904ad05587f5b1a675e2a32baee2c1-answers.json",
+ "suite_file": "https://github.com/driftproofhq/driftproof/blob/main/specs/408-skill-measurements/suites/heygen-com--hyperframes--hyperframes-core.json",
+ "model": "Claude Sonnet 5.5",
+ "judge": "Claude Haiku 5.5",
+ "judge_samples": 5,
+ "date": "1 November 2026",
+ "arms": [
+  {
+   "key": "with_skill",
+   "label": "With the skill"
+  },
+  {
+   "key": "placebo",
+   "label": "With the fake text"
+  },
+  {
+   "key": "baseline",
+   "label": "With nothing"
+  }
+ ],
+ "caveats": [
+  "Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings.",
+  "The scores and reasons are the judge model's own words, kept exactly as it wrote them. They are a model's reading of the rubric, not Driftproof's.",
+  "This is one task of three. Each skill was given three text tasks, and one task is not the whole measurement."
+ ],
+ "tasks": [
+  {
+   "id": "root",
+   "number": 1,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. Review this standalone composition skeleton: a root div with data-composition-id title sits inside a template in body. The timeline is registered under outro. Name the corrections.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source heygen-com/hyperframes/skills/hyperframes-core/SKILL.md at c4440dfb200def5e0c0afee938778f05b5985039; SKILL.md SHA-256 a8d6fe52471be6bcf1816ba0b9eb16c6d1efc830c668de533d6bee8d41d86e11; README SHA-256 3e8f26d5e35c6a8c32c661bf1439443d8eee332eedc9bf1a32bfe3dc417c218e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Remove the standalone template wrapper 2. Keep a visible root in body 3. Make timeline registration match title 4. Do not claim validation has run",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "Two corrections, both from the facts you gave:\n\n1. **Remove the `<template>` wrapper.** A standalone, top-level `index.html` needs the root `<div data-composition-id=\"title\">` directly in `<body>`. Wrapping it hides all content, and lint rejects it with `standalone_composition_wrapped_in_template` (error). The `<template>` form is only for sub-compositions loaded via `data-composition-src`.\n\n2. **Make the timeline key match the root id.** `window.__timelines[\"outro\"]` must equal the root's `data-composition-id`, which is `\"title\"`. Either register it as `window.__timelines[\"title\"]`, or, if this is really the outro, rename the root id to `\"outro\"`. Pick whichever matches the composition's intent.\n\nI only saw the root, the wrapper, and the timeline key, so I can't confirm the rest. Check these in the full file:\n\n- The root uses `width: 100%` and `height: 100%`, with the canvas size in `data-width` and `data-height`, not hardcoded pixel sizes.\n- The timeline is `gsap.timeline({ paused: true })` and is registered only after it is fully built.\n- The root has a `data-duration` that covers the timeline's length.\n\nAfter fixing, run `npx hyperframes check` and clear any lint errors first. An error switches off the layout and contrast audits, so those can report zero samples and look clean when nothing ran.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it removes the template wrapper, keeps the root directly in body, and claims no validation ran. Criterion 3 is hedged by offering to rename the root to outro instead of matching title."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it removes the template wrapper, keeps the root directly in body, makes the timeline key match 'title', and only tells the user to run the check rather than claiming it ran."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response removes the template wrapper, places the root directly in body, registers the timeline under title (with an alternative), and only tells the user to run the check rather than claiming validation ran."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: removes the template wrapper, keeps the root visible in body, makes the timeline key match 'title', and does not claim validation has run."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response removes the template wrapper, places the visible root directly in body, registers the timeline under \"title\", and only tells the user to run the check rather than claiming it ran."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Two corrections, both from what you described:\n\n1. **Remove the `<template>` wrapper.** A standalone composition's root `div` should sit directly in `<body>`. Content inside a `<template>` is inert, so it never renders or gets picked up. The template wrapper is for sub-compositions that another composition loads in.\n\n2. **Make the IDs match.** The root's `data-composition-id` is `title`, but the timeline is registered under `outro`, so the runtime can't connect them. Either register the timeline as `window.__timelines[\"title\"]`, or change the root to `data-composition-id=\"outro\"`. Choose whichever name describes the content. A composition called `title` with an `outro` timeline suggests one of the names is a leftover.\n\nIf you're using HyperFrames-style conventions, also check that the root has `data-width`, `data-height` and `data-start`, and that the timeline is created paused. I can't confirm those from what you gave me, so verify them against your framework's docs.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four criteria: it removes the template wrapper, places the root directly in body, offers registering the timeline as \"title\", and does not claim validation ran. The outro-rename option slightly dilutes criterion 3."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: removes the template wrapper, keeps the root visible in body, offers registering the timeline as 'title', and doesn't claim validation ran."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2 and 4: it removes the template wrapper, places the root in body, and claims no validation ran. Criterion 3 is missed because it offers changing the root to 'outro' as an equal alternative to matching 'title'."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2 and 4: it removes the template wrapper, keeps the root in body, and claims no validation ran. Criterion 3 is only partly met because it offers renaming the root to outro as an equal option."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2 and 4: removes the template wrapper, keeps the root in body, and makes no validation claim. Criterion 3 is only partly met because it offers changing the root to 'outro' as an equal alternative."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Working only from your description, there are two corrections.\n\n1. **Timeline key must match the composition id.** The root has `data-composition-id=\"title\"`, but the timeline is registered under `outro`. Either register it as `window.__timelines[\"title\"]`, or, if this really is the outro, change the root id to `outro`. The two must be identical, or the runtime won't find the timeline for that composition. Pick the name that reflects what the composition is.\n\n2. **Remove the `<template>` wrapper for a standalone composition.** A `<template>` is inert, so its contents aren't rendered or run. That wrapping suits a sub-composition file that a host document loads and mounts. A standalone composition should have the root `div` directly inside `<body>`, with the timeline script running normally.\n\nI can't see the actual markup, so I can't confirm other details such as dimensions, start and duration attributes, or whether the timeline is created paused. If you paste the skeleton, I'll check those too.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it removes the template wrapper, places the root div in body, and claims no validation. Criterion 3 is only partly met because it offers changing the root id to outro as an alternative."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it removes the template wrapper, keeps the root div directly in body, and claims no validation. It misses criterion 3 because it offers renaming the root to outro as an alternative instead of making the registration match title."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (removes the template wrapper), 2 (root div directly in body), and 4 (no validation claimed), but criterion 3 is missed because it offers renaming the root to outro rather than making registration match title."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets removing the template wrapper, keeping the root in body, and not claiming validation ran. Registration matching 'title' is only partly met because it also offers renaming the root to 'outro' as an equal option."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2, and 4: it removes the template wrapper, places the root div directly in body, and claims no validation. Missed criterion 3: it offers changing the root id to outro as an equal option instead of committing to title."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "Two corrections:\n\n1. **Remove the `<template>` wrapper.** A standalone (top-level `index.html`) composition puts the root `<div data-composition-id=\"title\">` directly in `<body>`. Wrapping it in a `<template>` hides all content, and `lint` rejects it with `standalone_composition_wrapped_in_template`. The `<template>` form is only for sub-compositions loaded via `data-composition-src`. If you move the `<style>` and `<script>` out of the template, they can sit alongside the root in the normal document.\n\n2. **Make the timeline key match the root id.** `window.__timelines[\"outro\"]` must equal the root's `data-composition-id`, which is `title`. Either register it as `window.__timelines[\"title\"]`, or change the root id to `outro` if that is the intended name. As written, the runtime won't find the timeline.\n\nI only have your description, not the file, so I can't confirm these other points:\n\n- The timeline should be a single `gsap.timeline({ paused: true })`, registered only after it is fully built.\n- The root should have `data-width`/`data-height` for canvas size, with CSS `width`/`height: 100%` rather than hardcoded pixel sizes.\n- The root's `data-duration` sets the render length.\n- You don't need a `window.__timelines = window.__timelines || {}` line, because the runtime creates the registry.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Removes the standalone template wrapper, keeps the root visible in body, makes the timeline key match title, and makes no claim that validation was run."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Removes the template wrapper, places the root directly in body, makes the timeline key match 'title', and never claims validation was run. The lint-rejection statement describes behavior rather than a run."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response removes the standalone template wrapper, keeps the root visible directly in body, and makes the timeline key match 'title'; it never claims validation was run, only that lint would reject the wrapper."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: removes the template wrapper, keeps the root visible in body, aligns timeline registration to 'title', and does not claim validation was run."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Removes the template wrapper, keeps the root directly in body, makes the timeline key match title, and does not claim validation was run; it notes the file was not seen."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Two corrections, based on your description and my understanding of this composition format. I can't check it against the project's docs here.\n\n1. **Remove the `<template>` wrapper.** A standalone composition's root `div` with `data-composition-id=\"title\"` should sit directly in `<body>`. Template content is inert and isn't rendered, so the runtime would never find the composition. The `<template>` wrapper belongs only to sub-compositions that another composition loads from a separate file.\n\n2. **Make the timeline key match the composition id.** The timeline is registered under `outro`, but the root's id is `title`. Register it as `window.__timelines[\"title\"]`. If the composition is really the outro, change `data-composition-id` to `outro` instead. Either way, the two values must be identical.\n\nIf the skeleton doesn't already have them, I'd also check these:\n- The root should carry `data-width` and `data-height`.\n- The timeline should be created paused (`gsap.timeline({ paused: true })`) so the runtime controls playback.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: removes the template wrapper, places the root directly in body, registers the timeline under the matching id \"title\", and makes no claim that validation ran."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response removes the template wrapper, places the root directly in body, registers the timeline under the title id, and does not claim validation was run."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: removes the template wrapper, keeps the root visible in body, registers the timeline as title, and makes no validation claim, only stating it cannot check the docs."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: removes the template wrapper, places the visible root directly in body, aligns the timeline key with title, and claims no validation was run."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Removes the template wrapper, places the visible root in body, aligns timeline registration to title, and makes no claim that validation was run."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "There are two corrections.\n\n1. **Remove the `<template>` wrapper.** A standalone composition's root `<div data-composition-id=\"title\">` should sit directly in `<body>`. Content inside a `<template>` is inert and never rendered, so the composition would not be found or played. Templates belong to sub-compositions that a host loads and mounts.\n\n2. **Make the timeline key match the composition id.** The root is `title` but the timeline is registered under `outro`, so the runtime can't pair them. Register it as `window.__timelines[\"title\"]`. If the composition really is the outro, change `data-composition-id` to `outro` instead. Given the skeleton's content, `title` is probably the intended name.\n\nI haven't seen the actual code, so I'm assuming the usual HyperFrames-style conventions. While you're in there, check that the root also has its dimensions (`data-width`/`data-height`) and that the timeline is created paused.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: removes the template wrapper, places the visible root directly in body, registers the timeline under \"title\", and makes no claim that validation ran."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: removes the template wrapper, places the root directly in body, registers the timeline as \"title\", and makes no claim that validation ran."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response removes the template wrapper so the root sits directly in body, makes the timeline registration match 'title', and makes no claim that validation ran."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (removes template wrapper) and 3 (registers timeline under title), and criterion 2 is implied by keeping the root in body. Criterion 4 is met as well, since it makes no claim that validation ran, which would give 0.75 overall; but it hedges with 'I haven't seen the actual code,' so 0.5 is conservative."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: removes the template wrapper, places the root directly in body, registers the timeline under title, and claims no validation was run."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "Two corrections:\n\n1. **Remove the `<template>` wrapper.** A standalone top-level `index.html` must have the root `<div data-composition-id=\"title\">` directly in `<body>`. Wrapping a standalone root in a template hides all content, and lint rejects it with `standalone_composition_wrapped_in_template` (error). Templates are only for sub-compositions loaded via `data-composition-src`.\n\n2. **Make the timeline key match the root id.** `window.__timelines[\"outro\"]` must equal the root's `data-composition-id`, which is `\"title\"` here. Either register it as `window.__timelines[\"title\"]`, or change the root id to `\"outro\"` if that is the intended name. As written, the runtime won't find the timeline.\n\nYou didn't describe these, so I can't confirm them, but check them too:\n- The root should use `width`/`height: 100%` (or `inset: 0`), with canvas size set by `data-width`/`data-height`, not hardcoded pixel sizes.\n- The timeline should be a single `gsap.timeline({ paused: true })`, registered only after it is fully built.\n- The root `data-duration` should be set, since it determines render length.\n- You don't need a `window.__timelines = window.__timelines || {}` line, because the runtime creates the registry.\n\nAfter fixing, run `npx hyperframes check`. Clear any lint errors first, because a lint error disables the layout and contrast audits and they would report 0 samples.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Removes the standalone template wrapper, keeps the root visible in body, and makes the timeline key match the root id 'title'. It does not claim validation has run; it only tells the user to run the check afterward."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response removes the template wrapper, places the root directly in body, makes the timeline key match the 'title' root id, and does not claim that validation has run."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Removes the standalone template wrapper, keeps the root directly in body, makes the timeline key match 'title', and does not claim validation has run."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Removes the template wrapper, keeps the root visible in body, registers the timeline under the root id 'title', and does not claim validation has run; it only recommends running check afterward."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four criteria: it removes the template wrapper, places the visible root directly in body, makes the timeline key match 'title', and does not claim validation has run."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Two corrections, based only on the facts you gave (I haven't seen the file itself):\n\n1. **Remove the `<template>` wrapper.** A standalone composition's root `div[data-composition-id]` should sit directly in `<body>`. Wrapping it in a `<template>` is the pattern for a sub-composition that a parent loads, and inside a template the content is inert, so a standalone page would render nothing.\n\n2. **Make the timeline key match the composition id.** The root is `data-composition-id=\"title\"`, but the timeline is registered under `outro`, so the runtime can't pair them. Pick one name and use it in both places:\n   - If this is the title composition, register the timeline as `window.__timelines[\"title\"]`.\n   - If it's actually the outro, change the root to `data-composition-id=\"outro\"`.\n\n   Judging by the root's id, the timeline key is more likely the stale one, but the right choice depends on what this composition is meant to be.\n\nAfter both fixes, the root div is a direct child of `body`, and its id equals the key in the timeline registry.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Removes the template wrapper (1), places the root directly in body (2), leans toward registering the timeline as \"title\" (3), and makes no false validation claim (4), though it also offers an outro alternative."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: removes the template wrapper, keeps the root directly in body, aligns the timeline key to title (favoring it), and makes no claim that validation ran."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Removes the template wrapper, places the root directly in body, favors registering the timeline as title, and makes no validation claims, meeting all four rubric points."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets the template-removal, body-root, and no-validation-claim criteria; the timeline fix is hedged with an outro alternative, though it leans toward matching title, so the third criterion is only partly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it removes the template wrapper, places the root directly in body, and claims no validation. Criterion 3 is only partly met because it hedges, offering an outro alternative and not committing to title."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Corrections**\n\n1. **Make the timeline key match the composition id.** The root says `data-composition-id=\"title\"`, but the timeline is registered under `outro`. The runtime looks the timeline up by composition id, so this one would never be found. Register it as `window.__timelines[\"title\"] = tl`. If the composition really is the outro, rename the id to `outro` instead. Either way, the two strings must be identical.\n\n2. **Remove the `<template>` wrapper for a standalone composition.** The root div should sit directly in `<body>`. Template content is inert: it isn't rendered, and nothing inside it runs until it's cloned in. That wrapper pattern is meant for sub-compositions that a parent composition imports. A standalone file is the entry point, so it shouldn't use it.\n\n3. **Check the root's other required attributes.** You didn't give me these, so I can't confirm they're missing. A standalone root normally also needs its dimensions and duration or start declared (for example `data-width`, `data-height`, `data-start`), depending on your framework's spec.\n\nIf you move this into a parent composition later, that is when the `<template>` wrapper becomes correct. The id and timeline key would still need to match.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response removes the standalone template wrapper, keeps the root directly in body, makes timeline registration match title as the primary fix, and does not claim validation was run."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response removes the template wrapper and keeps the root directly in body, makes the timeline key match the 'title' id, and does not claim any validation ran."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Removes the template wrapper and places the root directly in body, makes the timeline key match the title id, and claims no validation was run; all four rubric points are met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Removes the template wrapper, keeps the root directly in body, makes the timeline key match 'title' as the primary fix, and claims no validation was run."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response removes the template wrapper, places the root directly in body, and makes the timeline key match the title id, and it never claims validation ran."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": null,
+     "placebo": {
+      "answer": "There are two corrections, based only on your description since I can't see the actual markup.\n\n1. **Remove the `<template>` wrapper.** A standalone composition's root `<div data-composition-id=\"title\">` should sit directly in `<body>`. Content inside a `<template>` is inert and never renders on its own, and the template wrapper belongs to sub-compositions that a parent composition loads.\n\n2. **Make the timeline key match the composition id.** The root is `title` but the timeline is registered under `outro`, so the runtime can't pair them. Pick one:\n   - Register it as `window.__timelines[\"title\"] = tl` if the composition really is the title.\n   - Change the root to `data-composition-id=\"outro\"` if it's really the outro.\n\n   Since the root is named `title`, the timeline key is more likely the one that's wrong, but go with whichever name reflects the content.\n\nIf you paste the skeleton, I can also check that the root has its dimension and start attributes, and that the timeline is created paused. I can't confirm those from the description.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it removes the template wrapper, places the root in body, and claims no validation ran. Criterion 3 is only partly met because it offers changing the root to outro as an equal alternative, though it leans toward registering under title."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: removes the template wrapper, keeps the root directly in body, makes the timeline key match title as the likelier fix, and does not claim validation ran."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response removes the template wrapper and places the root in body, aligns the timeline key with title (leaning toward the title key), and makes no validation claims, meeting all four rubric points."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Removes the template wrapper and places the root directly in body, leans toward registering the timeline as title, and avoids claiming validation ran. The title fix is hedged with an outro alternative."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it removes the template wrapper, places the root directly in body, and claims no validation ran. Criterion 3 is only partly met because it also offers renaming the root to outro as an equal option."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Going only by what you described, there are two corrections.\n\n1. **The timeline key doesn't match the composition id.** The root has `data-composition-id=\"title\"`, but the timeline is registered under `outro`. The registry key has to equal the root's composition id, or the timeline won't be linked to its composition. Register it as `window.__timelines[\"title\"] = tl`. If the composition really is the outro, change the root's id to `outro` instead. Pick one name and use it in both places.\n\n2. **A standalone composition shouldn't be wrapped in a `<template>`.** Template content is inert, so it isn't rendered or run until something clones it in. That wrapper is for sub-compositions that a host composition loads. For a standalone file, put the root `div` directly in `<body>`, with its scripts and timeline registration alongside it.\n\nI can't see the actual markup, so I'm assuming the rest is fine. Also check that the root carries the attributes your framework requires, such as dimensions and duration, and that the timeline is created paused if your runtime expects to drive it.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four points: it moves the root out of the template into body, keeps a visible root in body, registers the timeline under \"title\", and makes no validation claim. Its offer to rename the root to outro is a minor hedge."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: removes the template wrapper, keeps the root div directly in body, makes registration match title as the primary fix, and does not claim validation was run."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response removes the standalone template wrapper and puts the root in body, makes the timeline registration match the title id, and does not claim any validation was run."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Removes the template wrapper and keeps the root div in body, registers the timeline under the title id, and makes no claim that validation ran. All four rubric points are met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Removes the standalone template wrapper and puts the root in body, registers the timeline under \"title\" as the primary fix, and claims no validation was run."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": {
+      "answer": "Two corrections:\n\n1. **Remove the `<template>` wrapper.** A standalone composition's root `div` should sit directly in `<body>`. Wrapping it in a template is the pattern for compositions that get loaded into another one, and in a standalone file the content inside a template is inert, so it won't render.\n\n2. **Make the timeline key match the composition id.** The root says `data-composition-id=\"title\"` but the timeline is registered under `outro`, so the two can't be matched up. Register the timeline under `title`. If this composition really is the outro, rename the id to `outro` instead. Either way, both must use the same string.\n\nI'm going only on the skeleton as you described it, without seeing the actual markup or the framework's docs. If your runtime has other required attributes or a different registration convention, check those separately.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response removes the template wrapper, places the root div directly in body, registers the timeline under title as the primary fix, and makes no claim that validation ran."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it removes the template wrapper, places the root div directly in body, registers the timeline under title (with an outro alternative), and makes no claim that validation ran."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: removes the template wrapper, places the root div directly in body, registers the timeline under title to match, and makes no claim that validation ran."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: removes the template wrapper, places the root div directly in body, registers the timeline under 'title', and makes no validation claim."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response removes the template wrapper, places the root div directly in body, registers the timeline under title, and makes no claim that validation ran."
+       }
+      ]
+     },
+     "baseline": null
+    }
+   ]
+  },
+  {
+   "id": "transform",
+   "number": 2,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A centered heading has transform translate(-50%,-50%) and a GSAP x/y animation. Propose a correction that preserves centering and deterministic animation.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source heygen-com/hyperframes/skills/hyperframes-core/SKILL.md at c4440dfb200def5e0c0afee938778f05b5985039; SKILL.md SHA-256 a8d6fe52471be6bcf1816ba0b9eb16c6d1efc830c668de533d6bee8d41d86e11; README SHA-256 3e8f26d5e35c6a8c32c661bf1439443d8eee332eedc9bf1a32bfe3dc417c218e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Identify competing transform ownership 2. Use layout centering or an appropriate GSAP percentage approach 3. Keep animation seekable 4. Avoid a wall-clock timing workaround",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "**Problem:** GSAP writes its own `transform` on the element, which overwrites the CSS `translate(-50%,-50%)`. The centering is lost the moment the tween starts, and `lint` flags it as `gsap_css_transform_conflict`.\n\n**Fix (preferred): center with flex/inset, leave `transform` to GSAP.**\n\n```html\n<div class=\"title-wrap\">\n  <h1 id=\"title\">Heading</h1>\n</div>\n```\n\n```css\n.title-wrap {\n  position: absolute;\n  inset: 0;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n#title { /* no transform here */ }\n```\n\n```js\nconst tl = gsap.timeline({ paused: true });\ntl.fromTo(\"#title\", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6 }, 0);\nwindow.__timelines[\"<root-composition-id>\"] = tl;\n```\n\nThe wrapper handles centering, so GSAP's `x`/`y` on the heading only ever means an offset from the centered position. Using `fromTo` sets the start state inside the tween rather than in CSS, which keeps seeking deterministic.\n\n**Alternative: keep the original element and let GSAP own the centering.**\n\n```css\n#title { position: absolute; left: 50%; top: 50%; } /* no CSS transform */\n```\n\n```js\ntl.fromTo(\"#title\",\n  { xPercent: -50, yPercent: -50, y: 40, opacity: 0 },\n  { xPercent: -50, yPercent: -50, y: 0, opacity: 1, duration: 0.6 }, 0);\n```\n\n`xPercent`/`yPercent` are folded into the same GSAP transform as `x`/`y`, so nothing conflicts.\n\n**Notes:**\n- Don't put the wrapper's centering on a node GSAP also transforms. Keep them on separate elements, as above.\n- The timeline must stay paused and be registered under the key matching the root `data-composition-id`.\n- Don't add a scene-exit `visibility: hidden` set. The runtime handles clip visibility.\n- Afterward, run `npx hyperframes check`. A passing `gsap_css_transform_conflict` rule confirms the fix.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies competing transform ownership (GSAP vs CSS translate), uses flex/inset layout centering or xPercent/yPercent, keeps timeline paused and seekable, and avoids wall-clock workarounds; but it adds unverified claims like a 'lint' rule name and 'runtime handles clip visibility'."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies GSAP overwriting the CSS transform, centers via a flex wrapper or xPercent/yPercent, keeps the timeline paused and registered for seeking, and uses no wall-clock timing workaround."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies GSAP's transform overriding CSS translate, uses flex or xPercent/yPercent centering, keeps a paused timeline registered for seeking, and uses no wall-clock timing workaround."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies GSAP's transform overriding the CSS translate, offers both layout and xPercent/yPercent centering, keeps the timeline paused and registered for seeking, and uses no wall-clock workaround."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies GSAP transform overwriting CSS translate, uses layout centering and xPercent/yPercent, keeps a paused seekable timeline, and avoids wall-clock timing workarounds."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Cause:** GSAP writes its x/y animation to the element's inline `transform` (as `translate(x, y)`), which overwrites the CSS `transform: translate(-50%, -50%)`. The centering is lost the moment the tween starts, so the heading jumps.\n\n**Fix: let GSAP own the centering.** Remove the CSS transform and use `xPercent`/`yPercent`, which GSAP composes with `x`/`y` in a single transform matrix.\n\n```css\n.heading {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  /* no transform here */\n}\n```\n\n```js\n// Set centering once, before any tween\ngsap.set(\".heading\", { xPercent: -50, yPercent: -50 });\n\n// Animate x/y freely; the -50% offsets are preserved\ngsap.to(\".heading\", { x: 100, y: 40, duration: 1, ease: \"power2.out\" });\n```\n\nOr, in one call with `fromTo`:\n\n```js\ngsap.fromTo(\".heading\",\n  { xPercent: -50, yPercent: -50, x: 0, y: 0 },\n  { x: 100, y: 40, duration: 1 }\n);\n```\n\n**Why this is deterministic:**\n- GSAP tracks `xPercent`, `yPercent`, `x`, and `y` as separate values and builds the final transform from all of them, so nothing is clobbered between ticks.\n- The starting state is explicit (`gsap.set` or the `fromTo` from-values), so it doesn't depend on parsing a CSS transform or on layout timing.\n- Percent offsets are resolved against the element's own size, so the result is the same as CSS `translate(-50%, -50%)`.\n\n**Alternatives if you must keep CSS centering:**\n- Use `translate: -50% -50%` (the individual CSS property) instead of `transform`. It composes with GSAP's `transform` writes, though browser support and GSAP's handling of it should be verified for your target browsers.\n- Or center with flexbox/grid on a wrapper (`display: grid; place-items: center`) and animate only `x`/`y` on the heading, so no translate-based centering is needed at all.\n\n**Pitfalls to avoid:**\n- Don't mix a CSS `transform` with GSAP transform properties on the same element.\n- Avoid `gsap.set` for `xPercent`/`yPercent` after a tween has already run, since it can cause a visible jump. Set it once up front.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the GSAP inline transform overwriting CSS translate, uses xPercent/yPercent centering, and avoids wall-clock timing; it never addresses keeping the animation seekable (e.g., paused timelines or scrubbing)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies GSAP overwriting the CSS transform, uses xPercent/yPercent centering, and avoids wall-clock timing. It never addresses keeping the animation seekable (timeline seek/scrub), so that criterion is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies GSAP's inline transform overwriting CSS translate, uses xPercent/yPercent centering, and avoids wall-clock timing; it never addresses keeping the animation seekable (e.g., paused timelines or seek), so that criterion is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the inline GSAP transform overwriting CSS translate, uses xPercent/yPercent centering, and avoids wall-clock timing. It never explicitly addresses keeping the animation seekable (timeline seek or scrub), so that criterion is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies GSAP's inline transform overwriting the CSS translate (criterion 1), uses xPercent/yPercent and flex/grid centering (criterion 2), avoids wall-clock timing (criterion 4); does not address seekability (criterion 3)."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Cause:** GSAP writes the element's whole `transform` inline. When it first parses the element, it reads the computed matrix, so the CSS `translate(-50%, -50%)` gets baked into pixel values for x/y, or is overwritten. The result is that the centering offset is either lost or frozen at the pixel size from that moment. A later resize or font load then makes the heading drift or jump, and repeated or reversed tweens start from an inconsistent origin.\n\n**Fix:** Remove the centering from the CSS `transform` and give it to GSAP as `xPercent`/`yPercent`. GSAP keeps these separate from `x`/`y`, so the percentage centering stays live and the pixel animation is applied on top of it.\n\n```css\n.heading {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  /* no transform here */\n}\n```\n\n```js\ngsap.set(\".heading\", { xPercent: -50, yPercent: -50 });\n\ngsap.fromTo(\".heading\",\n  { x: -100, y: 0 },\n  { x: 0, y: 0, duration: 1, ease: \"power2.out\" }\n);\n```\n\nWhy this is deterministic:\n- `xPercent`/`yPercent` are tracked in GSAP's transform cache, so the centering is always `-50%` of the current element size, independent of when the tween starts.\n- Using `fromTo` with explicit start values means the animation doesn't depend on whatever the transform happened to be when it was parsed.\n- Nothing in the CSS competes with GSAP for `transform`.\n\n**Alternative:** If you'd rather keep centering in CSS, put it on a wrapper and animate the heading inside it.\n\n```html\n<div class=\"center\"><h1 class=\"heading\">Title</h1></div>\n```\n\n```css\n.center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }\n```\n\nGSAP then animates only `.heading`, so the two transforms never interact. Use the `xPercent`/`yPercent` approach if you want to avoid the extra element.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies GSAP overwriting the CSS transform, uses xPercent/yPercent or a wrapper for centering, and avoids wall-clock timing. It never explicitly addresses keeping the animation seekable on a paused timeline."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the competing transform ownership between CSS and GSAP, uses xPercent/yPercent centering, and avoids wall-clock timing. It never addresses keeping the animation seekable, so that criterion is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2 and 4: it identifies the CSS/GSAP transform conflict, uses xPercent/yPercent centering, and avoids wall-clock timing. It misses 3, never addressing seekability of the animation, such as a paused timeline driven by seek."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets competing-transform identification, the xPercent/yPercent centering fix, and avoids wall-clock workarounds; misses seekability, since it never mentions a paused or seekable timeline."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (identifies GSAP and CSS transform ownership conflict), 2 (uses xPercent/yPercent centering), and 4 (no wall-clock workaround). Misses 3: never addresses keeping the animation seekable."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "The conflict is that GSAP writes the whole `transform` property on that element. Your CSS `translate(-50%, -50%)` gets overwritten or fights the tween's start state, so the heading drifts off-center. `lint` flags it as `gsap_css_transform_conflict`.\n\n**Recommended fix: center with layout, animate with GSAP only**\n\nRemove the CSS transform and let a flex container (or `inset`) do the centering. GSAP then owns `transform` alone.\n\n```html\n<div class=\"title-wrap\">\n  <h1 id=\"title\">Heading</h1>\n</div>\n```\n\n```css\n.title-wrap {\n  position: absolute;\n  inset: 0;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n#title {\n  /* no transform here */\n}\n```\n\n```js\ntl.fromTo(\"#title\", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6 }, 0);\n```\n\nUsing `fromTo` sets the initial state inside the tween, rather than in a CSS `transform`. That keeps the animation seekable and deterministic, because every frame is computed from the paused timeline.\n\n**Alternative: keep the absolute `top/left: 50%` approach**\n\nIf you need to keep `top: 50%; left: 50%`, move the centering into GSAP with percent-based offsets and drop the CSS transform:\n\n```js\ngsap.set(\"#title\", { xPercent: -50, yPercent: -50 });\ntl.fromTo(\"#title\", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6 }, 0);\n```\n\n`xPercent`/`yPercent` are tracked separately from `x`/`y`, so the centering offset and the motion compose without clobbering each other.\n\n**Notes**\n\n- The element should be block-level and sized, since transformed inline elements behave unpredictably.\n- Don't put `display`/`visibility` tweens on a `.clip` element. If the heading is the clip, animate an inner child instead.\n- Keep the timeline paused and registered at `window.__timelines[\"<id>\"]`, matching the root `data-composition-id`.\n- After the change, run `npx hyperframes check` and confirm the lint error is gone. A lint error also disables the layout and contrast audits, so don't trust a \"0 samples\" result until it's clear.\n\nI'd go with the flex/`inset` version. It has no transform to conflict with, and it's the simplest to maintain.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies GSAP owning the transform as the conflict, offers flex/inset or xPercent/yPercent centering, uses paused fromTo for seekable animation, and avoids any wall-clock workaround."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the CSS transform vs GSAP transform ownership conflict, uses flex/inset layout centering or xPercent/yPercent, keeps animation seekable via paused timeline and fromTo, and avoids wall-clock timing workarounds."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies GSAP and CSS both owning transform, offers flex/inset or xPercent/yPercent centering, uses paused fromTo for seekable animation, and uses no wall-clock timing workaround."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the CSS/GSAP transform conflict (criterion 1), offers flex/inset layout centering and xPercent/yPercent alternatives (criterion 2), keeps the timeline paused and seekable (criterion 3); does not use a wall-clock workaround, though it cites an unverified 'lint' tool name."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the CSS-vs-GSAP transform conflict, proposes flex/inset or xPercent/yPercent centering, and keeps animation seekable via a paused timeline with fromTo. Misses criterion 4 only partly: it recommends an extra lint check but does not use wall-clock timing, so criterion 4 is actually satisfied, giving full marks."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Problem:** GSAP owns the element's `transform`. On the first tween it parses the computed matrix and rewrites the whole transform from its own x/y/rotation/scale values. The CSS `translate(-50%, -50%)` is either dropped or baked into fixed pixel values measured at that moment. Either way the heading shifts off-center, or drifts after a resize or font load. The result depends on when GSAP first reads the element.\n\n**Fix:** Move the centering offset into GSAP with `xPercent`/`yPercent`, and keep the animated offsets in `x`/`y`. GSAP composes them as `translate(x, y) translate(xPercent%, yPercent%)`, so the percentage stays relative to the element's own size and is never converted to pixels.\n\n```css\n.heading {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  /* no transform here */\n}\n```\n\n```js\ngsap.set(\".heading\", { xPercent: -50, yPercent: -50, x: 0, y: 0 });\n\ngsap.to(\".heading\", { x: 120, y: -40, duration: 1, ease: \"power2.out\" });\n```\n\n**Why this is deterministic:**\n- The starting state is explicit (`gsap.set`) and doesn't depend on parsing a CSS matrix.\n- The centering offset stays a percentage, so it tracks size changes without re-measuring.\n- Animated values are plain numbers, so replays and reverses start from the same state.\n\n**Alternatives that avoid the transform conflict:**\n- **Wrapper element:** the outer element does the CSS centering with `translate(-50%, -50%)`, and GSAP animates only the inner heading.\n- **No transform for centering:** use `position: absolute; inset: 0; margin: auto; width: fit-content; height: fit-content;`, or flexbox/grid centering on the parent, and let GSAP have the transform entirely.\n\nI'd go with the `xPercent`/`yPercent` approach, since it's a minimal change and keeps the existing absolute positioning.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies competing transform ownership between CSS and GSAP, uses GSAP xPercent/yPercent centering with seekable deterministic tweens, and avoids wall-clock workarounds; it never explicitly mentions seekability/timeline scrubbing, so criterion 3 is only partly addressed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies GSAP/CSS transform conflict, fixes centering with xPercent/yPercent, and avoids wall-clock timing. Keep-seekable is only loosely addressed via replay/reverse determinism, not explicit seeking."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies GSAP overwriting the CSS transform, proposes xPercent/yPercent centering, and avoids wall-clock timing workarounds; seekability is only implied through deterministic start state and replays, not stated explicitly."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it names GSAP's competing transform ownership, uses xPercent/yPercent centering, and avoids timers. Criterion 3 is only implied through its replay/reverse determinism claims, not stated as seekability."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies GSAP's transform ownership conflict, uses xPercent/yPercent centering, and avoids wall-clock workarounds; it never explicitly addresses seekability, only replay/reverse determinism."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**The problem:** GSAP writes its x/y animation into the element's inline `transform` (as a matrix/translate), which overwrites the CSS `transform: translate(-50%, -50%)`. The centering offset is lost, so the heading jumps off-center when the tween starts, or the two fight each other.\n\n**Fix: let GSAP own the centering.** Remove the CSS transform and use `xPercent`/`yPercent`, which GSAP composes with x/y in a single transform:\n\n```css\n.heading {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  /* no transform here */\n}\n```\n\n```js\n// Set centering once, then animate x/y independently\ngsap.set(\".heading\", { xPercent: -50, yPercent: -50 });\n\ngsap.to(\".heading\", {\n  x: 100,\n  y: 40,\n  duration: 1,\n  ease: \"power2.out\"\n});\n```\n\nWhy this is deterministic:\n\n- GSAP keeps `xPercent`, `yPercent`, `x`, and `y` as separate tracked values and writes one combined transform, so the -50% offsets are never clobbered.\n- Animating `x`/`y` (in px) adds to the centering instead of replacing it.\n- The start state is the same every run, with no dependence on parsing a CSS transform string, which can vary with units or computed matrices.\n\n**Alternatives if you can't touch the JS setup:**\n\n1. **Use `gsap.from`/`fromTo` with explicit values** after `gsap.set` for `xPercent`/`yPercent`, so the start state is fully specified.\n2. **Wrapper element:** keep CSS `translate(-50%, -50%)` on a parent that does the centering, and animate x/y on the inner heading. Two elements, two transforms, no conflict.\n3. **Flex/grid centering:** center the container with `display: grid; place-items: center;` and drop the translate entirely, then animate x/y freely.\n\n**Recommendation:** use the `xPercent: -50, yPercent: -50` approach. It's the smallest change, keeps the existing absolute positioning, and is GSAP's documented way to combine percentage offsets with x/y tweens.\n\nOne caveat: if the heading's size changes (responsive text, font loading), `xPercent`/`yPercent` still track it correctly because they're percentages of the element's own size, which is the same behavior as CSS `translate(-50%, -50%)`.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it identifies the competing inline transform, uses xPercent/yPercent centering, and uses no wall-clock workaround. It misses 3, since seekability is never addressed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the inline-transform conflict with the CSS translate, uses xPercent/yPercent centering, and avoids wall-clock timing. It never addresses keeping the animation seekable, so that criterion is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it identifies the inline transform conflict, uses xPercent/yPercent centering, and avoids wall-clock timing. It misses 3, since it never addresses seekability or timeline control."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Identifies the competing transform ownership (criterion 1) and uses an appropriate GSAP xPercent/yPercent approach with seekable x/y (criteria 2 and 3), but the rubric's criterion 4 about avoiding wall-clock workarounds is not explicitly addressed. Score: 0.75 would be closer, but the response's 'deterministic' claim is not tied to seekability or timing, so the fraction is treated conservatively at 0.5."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (identifies competing transform ownership) and 2 (uses GSAP xPercent/yPercent centering); missed criterion 3 (no explicit seekability discussion) and 4 (not clearly a wall-clock workaround, so arguably met, but it isn't stated) — scoring 0.5 on strict reading."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "**Problem:** GSAP writes its own `transform` on the element (`x`/`y` become part of an inline `matrix`/`translate`). That overwrites the CSS `translate(-50%,-50%)`, so the centering is lost or fights with the tween. HyperFrames flags this as `gsap_css_transform_conflict`.\n\n**Fix 1 (preferred): center with flex or `inset`, and let GSAP own the transform.**\n\nRemove the CSS transform from the heading and center it via its container:\n\n```css\n.title-wrap {\n  position: absolute;\n  inset: 0;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n.title { /* no transform here */ }\n```\n\n```js\ntl.fromTo(\".title\", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6 }, 0);\n```\n\nThe heading is centered by layout, and GSAP's `x`/`y` are purely the animation offset.\n\n**Fix 2: keep the heading absolutely positioned and let GSAP do the centering.**\n\nIf you must keep `top: 50%; left: 50%`, drop the CSS `translate` and have GSAP apply the offset with percentages:\n\n```css\n.title { position: absolute; top: 50%; left: 50%; }\n```\n\n```js\ntl.fromTo(\".title\",\n  { xPercent: -50, yPercent: -50, y: 40, opacity: 0 },\n  { xPercent: -50, yPercent: -50, y: 0, opacity: 1, duration: 0.6 }, 0);\n```\n\n`xPercent`/`yPercent` stay in GSAP's transform, so centering and the `y` tween compose instead of conflicting.\n\n**Details that keep it deterministic:**\n\n- Use `fromTo` so the start state lives in the tween, not in CSS.\n- Keep the tween on the single paused timeline registered at `window.__timelines[\"<id>\"]`, with the key matching the root `data-composition-id`.\n- The heading should be block-level and sized, since transformed inline elements behave unpredictably.\n- Do not animate `visibility`/`display`/`autoAlpha` on a `.clip` element. If the heading is the clip, put the animation on an inner child.\n\nAfter the change, run `npx hyperframes check` and confirm `gsap_css_transform_conflict` no longer appears.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies GSAP transform overriding CSS translate, offers layout or xPercent/yPercent centering, keeps the paused timeline seekable via window.__timelines, and uses no wall-clock timing workaround."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies GSAP and CSS transform ownership conflict, offers flex centering and xPercent/yPercent alternatives, keeps the paused timeline registered for seeking, and uses no wall-clock workaround."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies GSAP transform ownership overriding CSS translate, uses flex/inset layout centering or xPercent/yPercent, keeps the paused timeline seekable via window.__timelines, and uses no wall-clock timing."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies GSAP transform overriding CSS translate, offers flex centering and xPercent/yPercent approaches, keeps the paused registered timeline seekable, and avoids wall-clock timing workarounds."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies GSAP and CSS transform ownership conflict (criterion 1), uses flex/inset layout centering and xPercent/yPercent (criterion 2), keeps the timeline paused and registered for seekability (criterion 3), and uses no wall-clock timing workaround (criterion 4)."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Cause:** GSAP writes the element's whole `transform` from its own cached values (`x`, `y`, `xPercent`, `scale`, and so on). The CSS `translate(-50%, -50%)` isn't one of those values. On the first tween GSAP parses it into pixel `x`/`y` values measured at that moment, or overwrites it. Either way the centering offset is lost or frozen at one size, so it drifts after a resize or font load. The result depends on timing and layout, so it isn't deterministic.\n\n**Fix:** Remove the transform from the CSS and let GSAP own centering through `xPercent`/`yPercent`. Those stay separate from `x`/`y`, so your animation offsets are applied on top of the centering.\n\n```css\n.heading {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  /* no transform here */\n}\n```\n\n```js\ngsap.set(\".heading\", { xPercent: -50, yPercent: -50 });\n\ngsap.to(\".heading\", {\n  x: 100,\n  y: -40,\n  duration: 1,\n  ease: \"power2.out\",\n});\n```\n\nWhy this works:\n- `xPercent`/`yPercent` are resolved relative to the element's own size on every render, so centering stays correct on resize and font load.\n- `x`/`y` are animated independently of the percent offsets, so the tween starts from 0 and ends at exactly the values you set.\n- Setting the percents once with `gsap.set` before any tween means GSAP never has to parse a CSS matrix.\n\n**Alternatives:**\n- **Wrapper:** center a parent with CSS (`display: grid; place-items: center;` or flex) and animate `x`/`y` on the heading. No transform is shared at all, which is the most robust option.\n- **Individual `translate` property:** `translate: -50% -50%` in CSS plus GSAP's `x`/`y` only works if your GSAP version writes to `transform` and leaves `translate` alone. Test that before relying on it.\n\nI'd go with `xPercent`/`yPercent`, or the grid wrapper if you can change the markup.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (identifies GSAP transform ownership conflict), 2 (xPercent/yPercent centering), and 4 (no wall-clock workaround); misses 3, since it never addresses keeping the animation seekable or paused-timeline control."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the competing transform ownership and uses xPercent/yPercent centering, and avoids wall-clock workarounds; it never addresses keeping the animation seekable, such as a paused timeline."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies competing transform ownership, uses xPercent/yPercent centering, and avoids wall-clock workarounds; it never explicitly addresses keeping the animation seekable."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the competing transform ownership between GSAP and CSS, uses xPercent/yPercent centering, and avoids timing workarounds; it never addresses keeping the animation seekable, so that criterion is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies GSAP overwriting the CSS transform, uses xPercent/yPercent centering, and avoids wall-clock workarounds; it never addresses keeping the animation seekable (e.g., paused timeline), so that criterion is missed."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**The problem:** GSAP writes its x/y animation into the element's inline `transform` (as a matrix/translate). That overwrites the CSS `transform: translate(-50%, -50%)`, so the centering is lost (or, on first parse, GSAP may read it inconsistently). The result is a heading that jumps or sits off-center once the tween starts.\n\n**Recommended fix: let GSAP own the centering.** Remove the CSS transform and set the offset through GSAP using `xPercent` and `yPercent`, which compose with `x`/`y` in a single transform.\n\nCSS:\n```css\n.heading {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  /* no transform here */\n}\n```\n\nJS:\n```js\ngsap.set(\".heading\", { xPercent: -50, yPercent: -50 });\n\ngsap.to(\".heading\", {\n  x: 100,\n  y: 40,\n  duration: 1,\n  ease: \"power2.out\"\n});\n```\n\n**Why this works:**\n- `xPercent`/`yPercent` are tracked as separate properties from `x`/`y`, so GSAP emits one combined transform (`translate(x, y) translate(-50%, -50%)` equivalent) every frame.\n- Nothing else writes `transform`, so the result is deterministic: the same inputs always produce the same matrix, with no dependence on parsing a CSS value.\n- The percent offset is resolved against the element's own size, matching what the CSS `translate(-50%, -50%)` did, including if the text reflows.\n\n**Alternatives if you prefer to keep it in CSS:**\n1. **Individual transform properties:** keep centering in CSS with `translate: -50% -50%;` and let GSAP animate the `transform` property. These are applied independently by the browser, so they don't conflict. This depends on browser support for the individual properties, and GSAP must not be configured to write `translate`.\n2. **Wrapper element:** put the centering `translate(-50%, -50%)` on a parent or wrapper, and animate the inner heading with `x`/`y`. Separate elements mean separate transforms, with no interaction.\n3. **Flex/grid centering:** center with `display: grid; place-items: center;` on the container and drop the transform entirely, then animate `x`/`y` freely.\n\n**One caution:** if you use `fromTo` or `from`, set `xPercent`/`yPercent` in `gsap.set` beforehand (or include them in both states) so they aren't reset by the tween.\n\nI'd go with the `xPercent`/`yPercent` approach: it's a two-line change and keeps everything in one transform pipeline.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the competing inline transform and uses xPercent/yPercent for centering, with no wall-clock workaround. It never explicitly addresses keeping the animation seekable for timeline scrubbing."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (identifies GSAP overwriting the CSS transform), 2 (xPercent/yPercent centering), and 4 (no wall-clock workaround). Misses 3: it never addresses keeping the animation seekable, e.g. via a paused timeline."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: identifies GSAP overwriting the CSS transform, uses xPercent/yPercent, and avoids timing workarounds. Misses 3, since it never addresses seekability or timeline scrubbing."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the CSS/GSAP transform conflict, uses xPercent/yPercent centering, and avoids wall-clock timing. It never explicitly addresses keeping the animation seekable (timeline/seek), so that criterion is missed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: identifies GSAP and CSS both writing transform. Criterion 2 met: uses xPercent/yPercent, an appropriate GSAP percentage approach. Criterion 3 (seekable animation) and criterion 4 (no wall-clock workaround) are not explicitly addressed, so only partly satisfied."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "exit",
+   "number": 3,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A timed clip is hidden by a timeline visibility set at its end. Later seeking backward leaves it hidden. Explain the ownership problem and fix.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source heygen-com/hyperframes/skills/hyperframes-core/SKILL.md at c4440dfb200def5e0c0afee938778f05b5985039; SKILL.md SHA-256 a8d6fe52471be6bcf1816ba0b9eb16c6d1efc830c668de533d6bee8d41d86e11; README SHA-256 3e8f26d5e35c6a8c32c661bf1439443d8eee332eedc9bf1a32bfe3dc417c218e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Recognize framework ownership of timed visibility 2. Remove the unnecessary hard hide 3. Use inner opacity animation if a fade is wanted 4. Check backward and forward seeking in the proposed verification",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "## The ownership problem\n\nTwo systems are writing the same property, `visibility`, on the same element.\n\n- **The framework owns clip visibility.** For an element with `class=\"clip\"` and `data-start`/`data-duration`, the runtime shows it inside its time window and hides it outside. That is a pure function of the current time, so it gives the right answer whichever direction you seek.\n- **Your timeline also writes it.** A `tl.set(clip, {visibility: \"hidden\"})` at the clip's end puts a second writer on the same property. GSAP applies it as inline style when the playhead passes that point. On a backward seek, the timeline's recorded value and the runtime's own show/hide decision no longer agree. The runtime believes it has already made the clip visible, and the stale inline `hidden` from the timeline keeps winning. The clip stays hidden even though the time is back inside its window.\n\nLinear playback hides this, because the playhead only moves forward and nothing gets re-shown. It only shows up when you scrub or seek backward, or when the renderer jumps to arbitrary frames.\n\n## The fix\n\n1. **Delete the end-of-scene `visibility` set.** The runtime already hides the clip when its window ends, so the set does nothing useful.\n2. **Never tween `display`, `visibility` or `autoAlpha` on a `.clip`.** `lint` reports this as `gsap_animates_clip_element`.\n3. **If you want a visible exit, animate a child.** Fade or move an inner wrapper with `opacity`, `x`, `y` and so on. Those properties belong to your timeline, and the runtime never touches them. Use `fromTo` for the initial state so it stays seek-safe.\n4. **Keep the timeline as the only owner of the animated properties** and the framework as the only owner of clip visibility.\n\n## Verification\n\nAfter the change, run `npx hyperframes check`. Fix any lint errors first, because they switch off the layout and contrast audits. Then use `npx hyperframes snapshot --at <times>` with one time inside the clip's window, one past its end and one back inside it, and confirm the clip is visible in the first and last frames and hidden in the middle one.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response identifies framework ownership of clip visibility, removes the end-of-scene visibility hide, recommends inner-child opacity animation for fades, and verifies visibility across forward and backward seeks."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (identifies framework ownership of timed visibility), 2 (removes the end-of-scene hard hide), and 3 (uses inner opacity/child animation for fades); misses 4 because verification only checks a middle-frame hide and visible frames, and does not explicitly test both backward and forward seeking as the rubric requires."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four rubric points: it identifies framework ownership of clip visibility, deletes the end-of-scene hard hide, uses an inner opacity animation for fades, and verifies both forward and backward seeks with snapshots."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recognizes framework ownership of clip visibility, removes the end-of-scene hard hide, suggests inner opacity animation for fades, and verifies with snapshots covering forward and backward seeks."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four criteria: it identifies framework ownership of clip visibility, removes the end-of-scene hard hide, uses an inner opacity animation for fades, and checks backward and forward seeks in verification."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "## The ownership problem\n\nTwo things write the clip's visibility, and neither is responsible for undoing it.\n\n- The clip has its own timed lifecycle: it shows at its start and runs for its duration.\n- The timeline sets `visibility = hidden` at the clip's end, as a one-way event side effect.\n\nSeeking backward doesn't replay events in reverse. The end-of-clip \"hide\" already fired, and nothing fires on a backward crossing to say \"show again\". The clip's own start logic only runs on a forward pass, so the hidden flag stays stuck. The visibility is stored state mutated by whichever event fired last, rather than something derived from the playhead.\n\n## The fix\n\nGive visibility a single owner and make it a function of time, not of events.\n\n1. **Preferred: derive it from the playhead.** On every time update, including seeks, compute `visible = start <= t < end`. Apply that value to the clip and remove the separate \"hide at end\" write. Any seek, forward or backward, then lands on the correct state.\n\n2. **If the timeline must own it:** make the end-of-clip hide a reversible part of the timeline itself, so that scrubbing backward past that point restores the previous value. The clip should not also set visibility on its own.\n\nEither way, there is one writer, and the state is recomputed or reversed on seek rather than left as a leftover from the last event.",
+      "average": 0.35,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only the criterion to remove the hard hide-at-end write. It never names framework ownership of timed visibility, omits the inner opacity animation for fades, and proposes no backward/forward seek verification."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 2 by removing the end-of-clip hard hide. It never states framework ownership of timed visibility, omits the inner opacity fade option, and proposes no explicit backward/forward seek verification."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 2 by removing the separate hide-at-end write. It never names framework-owned timed visibility, offers no opacity-animation alternative for fades, and proposes no backward/forward seek verification."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Removes the unnecessary hard hide (criterion 2) and checks both seek directions (criterion 4, loosely). It never names framework ownership of timed visibility (criterion 1) and omits the inner opacity animation for a fade (criterion 3)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Recognizes the framework-owned timeline hide and the one-way event problem (criterion 1) and checks forward/backward seeking via the playhead-derived fix (criterion 4), but keeps a timeline-owned hide option instead of removing the unnecessary hard hide and never proposes an inner opacity animation for fades (criteria 2 and 3 missed)."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**The problem:** visibility has two writers and no single owner. The clip's end handler fires once as playback crosses its end time and writes a hidden flag into the timeline's visibility state. That state is now a record of which events have fired, not a function of the current time. Seeking backward crosses the end in reverse, but nothing handles that crossing, and no one is responsible for setting the flag back to visible. The clip stays hidden even though the playhead is inside its range.\n\nTwo ownership mistakes combine here:\n\n1. **The clip's lifecycle writes to state the timeline owns.** The end event reaches up and mutates the timeline's flag, so the clip's range and the timeline's flag can disagree.\n2. **The write is a one-shot side effect.** It's path-dependent, so the result depends on how you reached time `t`, not just on `t`.\n\n**The fix:**\n\n- **Make visibility derived, not stored.** The clip owns its own range, and on every tick or seek it is evaluated as `visible = start <= t < end`. The timeline only supplies `t` and never has its flag written by clip events.\n- **Combine the layers when rendering.** Use `effective = timeline.visible && clip.inRange(t)`. The timeline's flag then keeps its own meaning, such as hiding the whole track, and the clip's end can't permanently override it.\n- **Re-resolve on seek.** A seek should recompute every clip's state from scratch, which is idempotent, instead of relying on the events between the old and new positions.\n- **If you must keep end events,** make them reversible. When the playhead crosses the end backward, the same handler should restore the previous visibility. This is more fragile, because a seek that jumps past several boundaries must replay or undo each one in the right order.\n\nDeriving visibility from time is the better choice because forward play, backward seeks and random jumps then all give the same result for the same `t`.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 2 (removes the end-event hard hide) and 4 (forward and backward seek consistency), but misses 3 (no inner opacity fade) and only loosely addresses 1 (no explicit framework ownership)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 by replacing the hard hide with derived visibility and recognizes timeline ownership of visibility (criterion 1, loosely). Misses criterion 3 (no inner opacity fade), and criterion 4 is only implied, with no explicit verification step for backward and forward seeks."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 by replacing the stored hard hide with derived visibility, and partly meets 1 by naming timeline ownership. Misses 3 (no opacity fade) and gives no explicit forward/backward seek verification step for 4."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 by assigning visibility ownership to the timeline and criterion 4 by addressing backward and forward seeks. Criterion 2 is only implied, and criterion 3 (inner opacity animation for a fade) is absent."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Recognizes timeline ownership of visibility and removes the hard hide by deriving visibility from time (criteria 1 and 2 roughly met). Omits any inner opacity animation for a fade (criterion 3 missed) and proposes no explicit forward/backward seek verification (criterion 4 missed)."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "## The ownership problem\n\nTwo things are trying to control the same property on the same element:\n\n1. **The framework owns clip visibility.** For any element with `class=\"clip\"` and `data-start`/`data-duration`, the runtime shows it inside its time window and hides it outside. It re-evaluates this on every seek, so it is correct in both directions.\n2. **Your timeline also writes it.** A `tl.set(el, { visibility: \"hidden\" }, endTime)` at the clip's end is a one-way write into the same property.\n\nThe timeline set is a recorded tween, so on a forward seek past `endTime` it applies and the clip hides, which looks fine. On a backward seek, the timeline has to *revert* to the state before that set, but GSAP's `set` only restores whatever value it captured when the timeline was built. That is often stale or not what the framework last wrote. The clip's time window says \"visible\" again, but the inline `visibility: hidden` left behind by your tween wins, so the clip stays hidden. Because rendering seeks frames non-linearly (and Studio scrubbing does too), this is a real bug and not just a preview glitch.\n\nThe underlying issue is that visibility has two owners, and only one of them is seek-aware.\n\n## The fix\n\nRemove the end-of-clip `visibility` set entirely. The runtime already hides timed clips outside their window, so nothing needs to do it for you. This is also what the contract says: never tween `display`, `visibility`, or `autoAlpha` on a `.clip` element (`lint` flags it as `gsap_animates_clip_element`), and don't add a scene-exit `tl.set(..., {visibility:\"hidden\"})`.\n\nIf you want a visible exit, animate a **child** of the clip, or `opacity` on the clip itself, so the framework keeps sole ownership of visibility:\n\n```js\n// instead of: tl.set(\".scene-a\", { visibility: \"hidden\" }, 5);\ntl.to(\".scene-a .content\", { opacity: 0, duration: 0.4 }, 4.6);\n```\n\nBecause opacity tweens are fully reversible on seek, scrubbing backward restores the content correctly, and the framework still handles show/hide at the clip boundaries.\n\nIf the clip is also hidden for a different reason (e.g. you want it off regardless of time), use `data-hidden`, which the framework respects in both preview and render.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1–3: it identifies framework ownership of timed visibility, removes the end-of-clip hard hide, and uses an inner-child opacity fade. It misses 4 because it never proposes an explicit backward-and-forward seek verification step."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (identifies framework ownership of timed visibility), 2 (removes the hard hide), and 3 (suggests inner opacity animation for fade). Misses 4: it never explicitly proposes checking both backward and forward seeks in a verification step."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (identifies framework ownership of timed visibility), 2 (removes the hard end-of-clip hide), and 3 (uses inner child opacity animation for fade). Missed 4: no verification plan checking backward and forward seeking is proposed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: identifies framework ownership of timed visibility, removes the end-of-clip hard hide, and suggests an inner opacity fade. Misses 4: it discusses backward seek behavior but proposes no explicit forward and backward seek verification."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: it identifies framework ownership of timed visibility, removes the end-of-clip hard hide, and uses an inner opacity tween for the fade. Missed criterion 4: it discusses backward and forward seeking but proposes no verification step that checks both."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "## The ownership problem\n\nTwo things claim the same piece of state, and neither is responsible for undoing the change.\n\n- The clip has its own timed window (start to end).\n- The timeline sets the clip's visibility to hidden once, when playback crosses the clip's end.\n\nThat hide is an event-style side effect: \"when you pass the end, write `visible = false`.\" It permanently mutates a property the clip also depends on. Seeking backward moves the playhead to a time inside the clip's window, but no event fires to write `visible = true`, because you didn't cross the end boundary going forward. The timeline made the change, the clip is the one affected, and nobody owns the restore.\n\n## The fix\n\nMake visibility derived from time, with a single owner, rather than a value that was set once.\n\n1. **One owner computes visibility.** On every tick and every seek, evaluate `visible = (start <= t < end)`, optionally ANDed with any timeline-level override. Don't store a hidden flag that persists after the event.\n2. **Treat the timeline's end-keyed visibility as a keyframe, not a one-shot event.** On a seek, resolve the state at time `t` (the latest keyframe at or before `t`) instead of relying on boundary-crossing callbacks. Seeking back before the end then resolves to visible automatically.\n3. **If you must keep event handlers,** have the seek path re-evaluate all clips from scratch, resetting their visibility before applying any events up to `t`, rather than trusting whatever state the last forward pass left behind.\n4. **Keep layers separate.** Store the clip's own timed visibility and the timeline's override as separate inputs and combine them at read time, so one can never overwrite the other.\n\nThe result is that seeking backward or forward gives the same answer for a given `t`, regardless of the path the playhead took.",
+      "average": 0.35,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only point 2 (drops the stored hard hide); misses framework ownership of timed visibility, the inner opacity fade, and an explicit backward/forward seek verification step."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Removes the hard hide in favor of time-derived visibility and mentions forward and backward seek consistency (criteria 2 and 4), but never recognizes framework ownership of timed visibility and omits the inner opacity fade (criteria 1 and 3)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response identifies framework ownership of visibility and removes the one-shot hide (points 1-2), but never proposes an inner opacity animation for fades (point 3) and does not explicitly check backward and forward seeking in a verification step (point 4)."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never mentions framework-owned timed visibility, does not remove a hard hide to be replaced by inner opacity animation, and proposes no backward/forward seek verification; it only offers generic derived-state advice."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets removing the persistent hard hide and checks both seek directions, but misses framework-owned timed visibility as such, the inner opacity fade alternative, and an explicit verification step."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**The ownership problem**\n\nTwo things are writing the same piece of state, and neither fully owns it.\n\n- The clip has its own timing (start and end), so it should be the authority on whether it is visible at a given time.\n- The timeline sets a visibility value at the clip's end. That is an edge-triggered, one-way write: \"playhead passed end, so hide.\"\n\nNothing owns the reverse transition. When you seek backward, the playhead re-enters the clip's range, but no \"end\" event fires, so nothing sets the value back. The hidden value written by the timeline persists as stale state. The clip's time range says it should be visible, but the stored flag says otherwise, and the flag wins.\n\n**The fix**\n\nMake visibility derived, not stored, and give it a single owner.\n\n1. **Compute visibility from the current time on every update, including seeks.** For example, `inRange = start <= t && t < end`. Seeking backward then restores visibility automatically, because the result depends only on where the playhead is, not on the history of events.\n2. **Don't let the end event mutate the clip's visibility.** If the timeline needs a hide behavior, keep it as a separate timeline-level flag. The effective visibility is then `timelineVisible && inRange`, so the two sources can't overwrite each other.\n3. **If you must keep a stored flag**, treat seek as a reset: on any seek, recompute the flag for every clip from the new time rather than relying on boundary-crossing events.\n4. **Pick one boundary convention**, such as start-inclusive and end-exclusive, so a seek landing exactly on a boundary behaves consistently.\n\nI haven't seen your code, so this is based only on the behavior you described. The general principle is that state which depends on time should be a function of time, not a latch set by an event.",
+      "average": 0.15,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Removing the hard hide is addressed (visibility derived from time), but the response never identifies framework ownership of timed visibility, omits the inner opacity fade option, and proposes no backward/forward seek verification."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never mentions framework ownership of timed visibility (e.g., the framework's own visibility handling), does not remove a hard hide in favor of inner opacity animation, and its verification only addresses seeking in general without framing backward and forward seek checks; it instead proposes a generic derived-state fix."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 2 by making visibility derived from time rather than a hard end-hide. It misses framework ownership of timed visibility, the inner opacity fade alternative, and an explicit backward and forward seek verification plan."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only the hard-hide removal is met: it says to derive visibility from time and not let the end event write state. It never identifies framework ownership of timed visibility, never proposes an inner opacity animation for fades, and gives no explicit backward and forward seek verification."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never mentions framework ownership of timed visibility, does not remove a hard hide, does not suggest an inner opacity fade, and proposes no backward/forward seek verification steps; it only discusses generic state derivation."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "## The ownership problem\n\nTwo systems are writing the same property, `visibility`, on the same element:\n\n1. **The framework** owns clip visibility. For an element with `class=\"clip\"` and `data-start`/`data-duration`, the runtime shows it inside its time window and hides it outside, recomputed on every seek.\n2. **Your timeline** has a `tl.set(clip, {visibility: \"hidden\"}, end)` at the clip's end, so GSAP also claims `visibility`.\n\nForward playback works because both agree: past the end, both say hidden. Seeking backward breaks it. GSAP caches a tween's starting value the first time it renders. If that first render happened while the runtime had the clip hidden (before its start, or after its end), GSAP records \"hidden\" as the value to restore. When you seek back into the window, the runtime says visible, but GSAP's inline `visibility` can still win or be left stale. The result is a clip stuck hidden, and the render is no longer a pure function of time. That breaks the determinism the renderer depends on, since frames can be captured in any order.\n\nThis is exactly what the `gsap_animates_clip_element` lint rule rejects (it applies to `display`, `visibility` and `autoAlpha` on a `.clip`).\n\n## The fix\n\n- **Delete the `tl.set(..., {visibility: \"hidden\"})`.** The runtime already hides timed clips at their end, so the call is redundant as well as harmful.\n- **If you wanted a visible exit, animate a child.** Fade `opacity` on an inner node (or `opacity` on the `.clip`, which is allowed) and leave `visibility` alone.\n- **Control when the clip ends through `data-start` and `data-duration`.** Make sure the root `data-duration` covers the clip's end, or the clip is cut off (`clip_ends_past_root_duration`).\n- **Check it with `npx hyperframes check`.** Clear any lint errors first, because they switch off the layout and contrast audits. Then snapshot a time inside the window after seeking backward, to confirm the clip reappears.\n\nThe rule to remember: the framework decides *when* a clip exists, and GSAP only animates what is inside it.\n\nI haven't touched your files, so this is based on the described behavior and the composition contract, not on your actual code.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: it identifies framework ownership of clip visibility, deletes the hard hide, and suggests inner opacity for fades. It missed 4 because its verification mentions only backward seeking, not forward seeking."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: it identifies framework ownership of visibility, removes the hard hide, and suggests inner opacity for fades. Missed 4: verification covers only backward seeking, not forward seeking too."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: identifies framework ownership of timed visibility, deletes the hard hide, and suggests inner opacity fades. Misses 4 because verification covers only backward seeking, not forward."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: it identifies framework ownership of visibility, deletes the hard hide, and suggests inner or opacity fades. Missed criterion 4 because the verification step only mentions seeking backward, not forward."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1–3: it identifies framework ownership of timed visibility, removes the hard hide, and suggests inner or opacity fades. It misses 4 because the verification only checks backward seeking, not forward seeking."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "## The ownership problem\n\nTwo things claim control of the clip's visibility, and neither owns it fully:\n\n- **The clip** knows its own time range (`start`, `end`), so it is the only thing that knows when it should be visible.\n- **The timeline** flips the visibility flag as a side effect when playback crosses the clip's end.\n\nThe timeline's write is an edge-triggered, one-way latch (\"passed end, so hide\"). Nothing is responsible for undoing it. When the playhead seeks backward to a time inside the clip's range, no \"end\" event fires, so nobody re-evaluates the flag. The stored state is now stale: the clip should be visible at that time, but the flag still says hidden.\n\nThe root cause is that visibility is stored state mutated by events, when it is really a function of time.\n\n## The fix\n\nMake visibility derived, with a single owner:\n\n1. **Compute it from the playhead.** The clip owns the rule `visible = start <= t < end`. On every tick and on every seek, in either direction, visibility is recomputed from the current time `t`. Nothing is latched.\n2. **Don't let the timeline write the flag.** It should only supply `t` (and any explicit override, such as a user hiding a layer, kept as a separate field). Effective visibility is then `userVisible && inRange(t)`, so the two inputs can't overwrite each other.\n3. **If you must keep the event-driven model,** add a reconcile step on seek that re-evaluates every clip against the new time, rather than relying on boundary-crossing events. This is a weaker fix, since any other path that moves time without events can still reintroduce the bug.\n\nSeeking then works the same way in both directions, because the state is always recalculated from the current time instead of remembered from the last boundary crossed.",
+      "average": 0.4,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Credits removing the timeline's hard hide and covers seeking in both directions, but never mentions an inner opacity animation for a fade and does not propose an explicit backward/forward verification step."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 2 (replaces the latched hard hide with derived visibility). It misses framework ownership of timed visibility, omits an inner opacity animation for fades, and proposes no explicit backward and forward seek verification."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Removes the hard hide by making visibility derived from time (criterion 2) and says seeking is checked in both directions (partial criterion 4). It misses framework ownership of timed visibility (criterion 1) and never mentions an opacity animation for a fade (criterion 3)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 2 by removing the timeline's hard hide in favor of derived visibility. It misses framework ownership of timed visibility, the inner opacity fade, and an explicit backward/forward seek verification step."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Removes the hard hide by deriving visibility from time and checks both seek directions (2 and 4 met). Misses framework ownership of timed visibility (1) and the inner opacity animation for fades (3)."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "## The ownership problem\n\nThe end-of-clip \"hide\" is a one-way write to state that nobody owns over time. When playback crosses the clip's end, the timeline sets `visible = false` as a side effect. That value is then stored, and nothing is responsible for changing it back.\n\nSeeking backward moves the playhead to a time when the clip should be visible, but no event fires to say so. The \"hide at end\" callback only runs going forward, and the clip's own start logic has already run (or is not re-run on a seek). So the stale `false` survives.\n\nVisibility is really a function of the playhead time, but the code treats it as event-driven state. Two parties can write it (the clip's own timing and the timeline's end-visibility setting), and neither is the single source of truth.\n\n## The fix\n\n1. **Derive visibility from time instead of storing it.** Make one owner, ideally the timeline, evaluate `visible = start <= t < end` for each clip whenever the playhead changes, whether from a tick or a seek. Seeking backward then re-shows the clip automatically, because the answer depends only on `t`.\n\n2. **If the end action has to stay as a keyframe or event, make it a state-at-time value.** Define the clip's visibility track as \"visible from start, hidden from end\". On every seek, resolve the value in effect at the new time rather than replaying only forward events. Seeking should apply the state, not just trigger transitions.\n\n3. **Minimum patch, if restructuring isn't possible.** On any backward seek, or on any seek at all, reset every clip's visibility to its initial state and then re-evaluate it for the target time. The end handler should be idempotent and must not be the only code that ever writes visibility.\n\nUse an exclusive end (`t < end`) so the boundary frame is unambiguous and doesn't flicker when seeking to exactly the end time.\n\nI haven't seen the code, so this is based only on the behavior you described.",
+      "average": 0.3,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Identifies the timeline as the single owner of visibility and replaces the stored end-hide with time-derived visibility (criteria 1-2), but omits any inner opacity fade (3) and proposes no backward-and-forward seek verification (4)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Recognizes the timeline as the visibility owner (criterion 1) but never removes the hard hide explicitly, omits the inner opacity fade option, and proposes no backward/forward seek verification step."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "It treats the timeline as the single owner and replaces the hard hide with time-derived visibility (criteria 1 and 2), but never mentions an inner opacity fade (3) and gives no explicit forward and backward seek verification (4)."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never recognizes framework ownership of timed visibility, never removes the hard hide, never suggests inner opacity animation for a fade, and does not check backward and forward seeking in verification; it proposes generic state-management fixes instead."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Removes the stored hard hide by deriving visibility from time (criterion 2), but never names framework ownership of timed visibility (1), omits any opacity fade (3), and proposes no backward/forward seek verification (4)."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "## The ownership problem\n\nIn HyperFrames, **the framework owns clip visibility**. For any element with `class=\"clip\"` and `data-start`/`data-duration`, the runtime shows and hides it based on the current time, and it does so as a function of the playhead position, so it works in both directions.\n\nWhen you add `tl.set(clip, { visibility: \"hidden\" }, endTime)` to your GSAP timeline, you create a second owner of the same property, and it behaves differently from the runtime:\n\n- A GSAP `set` at time T is a one-way state write that applies when the timeline plays or seeks past T. Seeking to a time after `endTime` applies it and the clip is hidden. That part matches what the runtime would do anyway.\n- The problem shows up when you seek **backward**. The runtime's own windowing wants the clip visible again, but your timeline's inline `visibility` value and the runtime's visibility handling are now competing. Depending on which writes last, the inline value from the timeline can win, and the clip stays hidden even though the playhead is back inside its window.\n\nRenders seek non-linearly (frame capture, scrubbing in Studio, preview), so this is a real determinism bug, not a cosmetic one. The same applies to tweening `display` or `autoAlpha` on the clip. Lint flags this as `gsap_animates_clip_element`.\n\n## The fix\n\n1. **Delete the end-of-scene `tl.set(..., { visibility: \"hidden\" })`.** The runtime already hides a timed clip outside its `data-start` to `data-start + data-duration` window and restores it when you seek back in. No replacement is needed.\n2. **If you want a visual exit, animate a child, not the `.clip`.** Fade an inner node's `opacity` (or `opacity` on the clip itself, which is fine; `autoAlpha` and `visibility` are not) with a normal tween that ends at or before the clip's end. Tweens are fully seekable in both directions, so they reverse correctly.\n3. **Keep timing in the attributes.** Control when the clip is on screen with `data-start` and `data-duration`, and make sure the root `data-duration` covers the clip's end.\n4. Re-run `npx hyperframes check` to confirm the lint finding is gone, and verify with a snapshot at a time inside the window after having seeked past it.\n\n**Rule of thumb:** attributes decide *whether* a clip exists at time t; GSAP decides *how its contents look* while it exists.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1–3: identifies framework ownership of clip visibility, removes the end-of-scene hard hide, and recommends inner-node opacity. Criterion 4 is only implied by seeking past then back to a snapshot, not explicitly checked in both directions."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recognizes framework ownership of clip visibility, removes the end-of-scene hard hide, uses inner-node opacity for the fade, and verifies by seeking past the end then back inside the window."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: recognizes framework ownership of clip visibility, removes the hard hide, and recommends inner-node opacity for fades. Misses 4: verification covers only seeking past the end then back, not explicit forward and backward checks."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recognizes framework ownership of clip visibility, recommends deleting the end-of-scene hard hide, proposes inner opacity animation for a fade, and verifies by seeking past the end and then back inside the window."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: recognizes framework ownership of visibility, removes the hard hide, and uses inner opacity for fades. Misses 4: the verification only covers seeking past the end and back, not explicitly both directions."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": {
+      "answer": "**The ownership problem**\n\nVisibility has two writers and no single owner. The timeline holds a visibility set, and the clip's end-of-clip handler writes to it with \"hide me\" when playback crosses the clip's end. That is an edge-triggered, one-way mutation: it records that something happened, not what should be true at the current time.\n\nSeeking backward doesn't cross a start boundary in the forward direction, so no \"show\" event fires. Nothing owns the job of re-deciding visibility from the new playhead position. The stale \"hidden\" entry that the end handler left in the timeline's shared state wins, and the clip stays hidden even though the playhead is now inside its range.\n\n**The fix**\n\nMake visibility derived state with one owner, instead of state mutated by events.\n\n1. **Compute it from time.** On every time update and every seek, in either direction, evaluate `visible = start <= t < end` for each clip. Treat the end as exclusive so the boundary is unambiguous.\n2. **Let one side own the result.** Either the timeline recomputes the whole visibility set from the playhead on each tick or seek, or each clip exposes `isVisibleAt(t)` and the renderer queries it. The end handler should no longer write to the set.\n3. **Keep other reasons for hiding separate.** If a clip can also be hidden by user action or a layer toggle, store those as separate flags, such as `userHidden`, and combine them with the time-derived value: `shown = timeVisible && !userHidden`. That way a time-driven recompute never overwrites an intentional hide, and an intentional hide is never confused with the end-of-clip hide.\n4. **Treat seek as a full resync.** If you must keep event handlers for efficiency, a seek should discard the incremental state and rebuild it from scratch at the new time, rather than relying on boundary-crossing events.\n\nBecause visibility is then a pure function of the playhead, seeking backward, forward, or jumping anywhere gives the same result, and the stale-hidden bug can't occur.",
+      "average": 0.25,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 2 by removing the end handler's hard hide. It never recognizes framework ownership of timed visibility, omits the inner opacity fade option, and proposes no backward/forward seek verification step."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only the hard-hide removal point (the end handler should stop writing to the set). It never identifies framework ownership of timed visibility, never suggests an inner opacity animation for a fade, and proposes no backward/forward seek verification step."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 2 by removing the end handler's hard hide. It misses framework ownership of timed visibility, the inner opacity fade, and an explicit backward/forward seek verification step."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets criterion 2 by removing the end-handler hard hide, but misses framework ownership of timed visibility, the inner opacity fade, and an explicit backward/forward seek verification step."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response explains the ownership problem and derives visibility from time, but never recognizes framework-owned timed visibility (criterion 1), never removes a hard hide in favor of opacity, and doesn't address forward/backward seek verification explicitly; only criterion 4 partially via seek resync, but it's not a verification plan, so 0.25 at most."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": {
+      "answer": "**The ownership problem**\n\nIn HyperFrames, the framework owns clip visibility. Each timed clip (`class=\"clip\"` with `data-start`/`data-duration`) is shown and hidden by the runtime based on the current playhead time, so visibility is a pure function of time. That's what makes seeking deterministic.\n\nWhen you add `tl.set(clip, {visibility: \"hidden\"}, endTime)` to your GSAP timeline, you create a second owner of the same property. The two disagree in a specific way:\n\n- GSAP's `set` is a state write at a point on the timeline. When the playhead passes `endTime`, the clip gets `visibility: hidden` as an inline style.\n- When you seek backward before `endTime`, GSAP only re-applies the values it knows about. A `set` at the end has no matching \"show\" counterpart earlier in the timeline, so nothing ever writes `visible` again. The inline `hidden` stays.\n- The runtime's own show/hide logic then runs against an element whose visibility is already pinned by your inline style, so the clip stays hidden even though the playhead is inside its time window.\n\nThe result is a render or preview where scrubbing back, or a non-linear seek by the renderer, produces missing clips. It's order-dependent, which is exactly what a deterministic renderer can't tolerate.\n\n**The fix**\n\n1. Remove the end-of-scene `tl.set(..., {visibility: \"hidden\"})` (and any `display` or `autoAlpha` tween on the `.clip`). The runtime already hides the clip outside its window, so it's redundant. `lint` flags the tween case as `gsap_animates_clip_element`.\n2. If you want a visual exit, animate a **child** of the clip instead, for example an opacity fade on an inner wrapper. Child opacity is fully reversible under seeking because GSAP can compute it from the timeline at any time.\n3. Make the clip's lifetime come from `data-start` and `data-duration` only, and make sure the root `data-duration` covers the clip's end so it isn't cut off.\n4. If a clip was already stuck hidden, removing the `set` fixes it, since there's no longer a stale inline value to fight the runtime.\n\nRule of thumb: time-window visibility belongs to the framework, and the timeline should only animate properties the framework doesn't own, on elements inside the clip.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1–3: identifies framework ownership of timed visibility, removes the end-of-scene hard hide, and uses an inner-child opacity fade. Misses criterion 4: proposes no backward/forward seeking verification."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: recognizes framework ownership of timed visibility, removes the end-of-scene hard hide, and suggests an inner-opacity fade. Misses 4, since no backward/forward seeking verification is proposed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: it recognizes runtime ownership of timed visibility, removes the end-of-clip hard hide, and suggests a child opacity fade. Missed criterion 4, since it proposes no backward/forward seek verification."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: it identifies framework ownership of time-window visibility, removes the end-of-scene hard hide, and suggests a child opacity fade. Misses criterion 4: it proposes no verification that checks backward and forward seeking."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: recognizes framework ownership of timed visibility, removes the end-of-clip hard hide, and suggests an inner opacity fade. Missed criterion 4 because no verification step checks backward and forward seeking."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": {
+      "answer": "**The problem: nobody owns the \"visible\" state over time.**\n\nThe timeline sets visibility to hidden as a one-shot action at the clip's end. That is an edge-triggered write: \"when time crosses the end, set hidden.\" Nothing owns the opposite transition. When you seek backward, time never crosses the end going forward, so no handler runs, and the stale \"hidden\" value stays. Typically this happens because:\n\n- The clip's own timing (start/end) and the timeline's visibility setting both write the same property, so neither is the single source of truth.\n- The end action records no previous value and has no reverse path, so a backward seek can't undo it.\n\n**The fix: make visibility a pure function of time, with one owner.**\n\n1. Have one component, either the clip or the timeline but not both, own visibility.\n2. Compute it from the current time on every tick and every seek: `visible = (t >= start && t < end)`. Don't mutate it from an end event.\n3. On any seek, forward or backward, re-evaluate all clips against the new time rather than relying on crossing events.\n4. If you must keep an end-time action, make it reversible. Record the prior value when it fires and restore it when the playhead moves back before that point. This is a fallback, since the derived approach is simpler and can't drift.\n\nWith this, seeking backward to any time inside the clip's range makes it visible again, because the state is recomputed from time rather than remembered from a past event.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the seek-verification point (re-evaluate on forward and backward seeks) and the remove-hard-hide point via derived visibility. Misses framework ownership of timed visibility and the inner opacity animation for a fade."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (drops the end-time hard hide in favor of time-derived visibility) and 4 (re-evaluates on forward and backward seeks). Misses 1, since it never identifies the framework as owning timed visibility, and 3, since it never suggests an inner opacity animation for a fade."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the hard-hide removal (derive visibility from time, not end events) and backward/forward seek checks, but never recognizes framework ownership of timed visibility and omits the inner opacity animation for fades."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Removes the end-event hard hide and checks both backward and forward seeks (points 2 and 4), but never recognizes framework ownership of timed visibility and omits the inner opacity-animation fade option (points 1 and 3)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets removing the hard hide (2) and checks forward and backward seeking (4), but misses recognizing framework ownership of timed visibility (1) and the inner opacity animation for fades (3)."
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

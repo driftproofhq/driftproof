@@ -88,11 +88,25 @@ Against the same-length placebo: case rule: at least one case scored below the s
 
 Against no skill: No verdict: delegated skill not tested.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: UNDERPOWERED
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: No verdict: delegated skill not tested. [Report 015 receipt](https://driftproofhq.com/r/e2403573b7370d33e8b7d18f8287d7a90abe1ed18feb1cab482baa909f0b7b67/)
 
 Receipt `1dba083778de982f27fcbfa8e3bde3fc03c91802316ba58a2137deae5ef23c30`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-1dba083778de982f.1a5c532b.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, find-skills (vercel-labs/skills), Report 017, 2026-11-01. On at least one task it scored below the fake. Against no skill: No verdict: delegated skill not tested. These text tasks test the router's written response, not the delegated skill. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. Receipt: https://driftproofhq.com/r/1dba083778de982f27fcbfa8e3bde3fc03c91802316ba58a2137deae5ef23c30/
+
+[Why a router gets no verdict: Report 015 Amendment 1](https://driftproofhq.com/reports/015/#amendment-1)
+
+Keep this whole message together so the limits travel with the result.
 
 ### grill-me mattpocock/skills
 
@@ -112,11 +126,23 @@ Against no skill: The skill clearly hurt: 0.678 with it and 0.749 without, on 3 
 - constraint (underpowered): with the skill 0.466667 plus or minus 0.028868; without it 0.58125 plus or minus 0.116305.
 - followup (separated-down): with the skill 0.7 plus or minus 0.122474; without it 0.88 plus or minus 0.057009.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: UNDERPOWERED
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: Too few answers to tell. [Report 015 receipt](https://driftproofhq.com/r/0088086baf03cabea487b4555ba4c30ffee50e9e9eb831d856b7b3bb84f43aa5/)
 
 Receipt `ad5aacbe99af3e9356543dc4efe0760dfcf7300aae59a5e173369eaa136e4e96`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-ad5aacbe99af3e93.c7a9ab8e.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, grill-me (mattpocock/skills), Report 017, 2026-11-01. There were too few answers, or they varied too much, to tell it from the fake. Against no skill: The skill clearly hurt: 0.678 with it and 0.749 without, on 3 test tasks. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. About grill-me and grill-with-docs: each skill's whole text is an instruction to call another skill. These text tasks forbid tools, so each reading reflects that one-line hand-off, not the skill it calls. Both stay in the pre-registered counts. Receipt: https://driftproofhq.com/r/ad5aacbe99af3e9356543dc4efe0760dfcf7300aae59a5e173369eaa136e4e96/
+
+Keep this whole message together so the limits travel with the result.
 
 ### grill-with-docs mattpocock/skills
 
@@ -136,11 +162,23 @@ Against no skill: The skill clearly hurt: 0.906 with it and 0.922 without, on 3 
 - adr (not-separated): with the skill 1 plus or minus 0; without it 1 plus or minus 0.
 - revision (underpowered): with the skill 0.966667 plus or minus 0.028868; without it 0.857143 plus or minus 0.093223.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: UNDERPOWERED
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: Clearly hurt. [Report 015 receipt](https://driftproofhq.com/r/8ff7ff4aa7543fbb0deb23ee464666f7e83b3ec9ec034ba4f46cfcce71b2a8fc/)
 
 Receipt `09e0d9f8092405058e0bde94b23385ca6599266cb018f965edbe4dddedd0ab5b`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-09e0d9f809240505.5c3d08d3.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, grill-with-docs (mattpocock/skills), Report 017, 2026-11-01. On at least one task it scored below the fake. Against no skill: The skill clearly hurt: 0.906 with it and 0.922 without, on 3 test tasks. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. About grill-me and grill-with-docs: each skill's whole text is an instruction to call another skill. These text tasks forbid tools, so each reading reflects that one-line hand-off, not the skill it calls. Both stay in the pre-registered counts. Receipt: https://driftproofhq.com/r/09e0d9f8092405058e0bde94b23385ca6599266cb018f965edbe4dddedd0ab5b/
+
+Keep this whole message together so the limits travel with the result.
 
 ### agent-browser vercel-labs/agent-browser
 
@@ -154,11 +192,25 @@ Against the same-length placebo: case rule: at least one case scored above the s
 
 Against no skill: No verdict: delegated skill not tested.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: UNDERPOWERED
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: No verdict: delegated skill not tested. [Report 015 receipt](https://driftproofhq.com/r/f4bce7c9f27d9cfc6add44c9eb1bd239d2d6c55d8131ff95a432eaa8458c47c6/)
 
 Receipt `5c56836a4ec21cb3cda2ad5552f4b4bb53876b72e5a512def9b632a948488a3e`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-5c56836a4ec21cb3.0c028534.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, agent-browser (vercel-labs/agent-browser), Report 017, 2026-11-01. On at least one task it scored above the fake, and on none below. Against no skill: No verdict: delegated skill not tested. These text tasks test the router's written response, not the delegated skill. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. Receipt: https://driftproofhq.com/r/5c56836a4ec21cb3cda2ad5552f4b4bb53876b72e5a512def9b632a948488a3e/
+
+[Why a router gets no verdict: Report 015 Amendment 1](https://driftproofhq.com/reports/015/#amendment-1)
+
+Keep this whole message together so the limits travel with the result.
 
 ### improve-codebase-architecture mattpocock/skills
 
@@ -176,11 +228,23 @@ Against no skill: The skill clearly helped: 0.783 with it and 0.704 without, on 
 - adr (separated-up): with the skill 0.95 plus or minus 0; without it 0.75 plus or minus 0.070711.
 - report (underpowered): with the skill 0.7 plus or minus 0; without it 0.75 plus or minus 0.05.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: PLACEBO_BELOW_BASELINE
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: Too few answers to tell. [Report 015 receipt](https://driftproofhq.com/r/63f198b3d801d7a5d008195273b96aad18638c7a45b9e4de71a995525357f82e/)
 
 Receipt `4fba7a9b04033dee6c13a9c615ff264cc2175f10958c0a5ba1ed2aa19d4ad401`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-4fba7a9b04033dee.ee6f51fa.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, improve-codebase-architecture (mattpocock/skills), Report 017, 2026-11-01. On at least one task it scored above the fake, and on none below. Against no skill: The skill clearly helped: 0.783 with it and 0.704 without, on 3 test tasks. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. Receipt: https://driftproofhq.com/r/4fba7a9b04033dee6c13a9c615ff264cc2175f10958c0a5ba1ed2aa19d4ad401/
+
+Keep this whole message together so the limits travel with the result.
 
 ### tdd mattpocock/skills
 
@@ -198,11 +262,23 @@ Not enough draws to conclude at this effect floor. Draws needed: no draw count a
 - coupling (underpowered): with the skill 1 plus or minus 0; without it 0.966667 plus or minus 0.028868.
 - agreement (underpowered): with the skill 0.966667 plus or minus 0.028868; without it 0.966667 plus or minus 0.028868.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: UNDERPOWERED
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: Too few answers to tell. [Report 015 receipt](https://driftproofhq.com/r/b3cd3ced76180ed975ee3b80073889f2f469a350295428e05f4c73e83127a6b8/)
 
 Receipt `8a54b710d73e61ff14ffb7a027676a17b57a5d8077fa08b578b37e307e16a816`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-8a54b710d73e61ff.64017d1e.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, tdd (mattpocock/skills), Report 017, 2026-11-01. There were too few answers, or they varied too much, to tell it from the fake. Against no skill: Too few answers to tell: 0.989 with the skill and 0.972 without, but the scores varied too much to call it. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. Receipt: https://driftproofhq.com/r/8a54b710d73e61ff14ffb7a027676a17b57a5d8077fa08b578b37e307e16a816/
+
+Keep this whole message together so the limits travel with the result.
 
 ### hyperframes-cli heygen-com/hyperframes
 
@@ -220,11 +296,23 @@ Against no skill: The skill clearly helped: 0.919 with it and 0.592 without, on 
 - timeline (separated-up): with the skill 0.908333 plus or minus 0.066458; without it 0.592857 plus or minus 0.133631.
 - render (separated-up): with the skill 0.9 plus or minus 0; without it 0.483333 plus or minus 0.028868.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: UNDERPOWERED
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: Clearly helped. [Report 015 receipt](https://driftproofhq.com/r/643d86919b8b34178b4a0336afa7835ea0e42e061d2265a2898c2c0301063b99/)
 
 Receipt `bd80739ac0b870b4c7be48caf2c2423dbb691bc504314835722e6f7db64a6789`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-bd80739ac0b870b4.3cbd763f.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, hyperframes-cli (heygen-com/hyperframes), Report 017, 2026-11-01. On at least one task it scored above the fake, and on none below. Against no skill: The skill clearly helped: 0.919 with it and 0.592 without, on 3 test tasks. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. Receipt: https://driftproofhq.com/r/bd80739ac0b870b4c7be48caf2c2423dbb691bc504314835722e6f7db64a6789/
+
+Keep this whole message together so the limits travel with the result.
 
 ### hyperframes heygen-com/hyperframes
 
@@ -238,11 +326,25 @@ Against the same-length placebo: case rule: at least one case scored above the s
 
 Against no skill: No verdict: delegated skill not tested.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: UNDERPOWERED
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: No verdict: delegated skill not tested. [Report 015 receipt](https://driftproofhq.com/r/0aba83f8316912473981b79d945c81c443f47de415bdac61098b5dac642afdde/)
 
 Receipt `d517dfd71ab89a0dedf89f58b5913b0ef6f2c8eba3778f5c30100ece3d4c533f`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-d517dfd71ab89a0d.ead711ae.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, hyperframes (heygen-com/hyperframes), Report 017, 2026-11-01. On at least one task it scored above the fake, and on none below. Against no skill: No verdict: delegated skill not tested. These text tasks test the router's written response, not the delegated skill. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. Receipt: https://driftproofhq.com/r/d517dfd71ab89a0dedf89f58b5913b0ef6f2c8eba3778f5c30100ece3d4c533f/
+
+[Why a router gets no verdict: Report 015 Amendment 1](https://driftproofhq.com/reports/015/#amendment-1)
+
+Keep this whole message together so the limits travel with the result.
 
 ### setup-matt-pocock-skills mattpocock/skills
 
@@ -260,11 +362,23 @@ Against no skill: The skill clearly helped: 0.893 with it and 0.671 without, on 
 - labels (underpowered): with the skill 0.8 plus or minus 0.119024; without it 0.671429 plus or minus 0.121988.
 - monorepo (underpowered): with the skill 0.95 plus or minus 0.05; without it 0.75 plus or minus 0.192354.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: UNDERPOWERED
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: Clearly helped. [Report 015 receipt](https://driftproofhq.com/r/6983aa785fcd5d04730835a4a3b24ad45d0692ce4b95521bddaf31150a8e1f86/)
 
 Receipt `176b26bcac810bddb1878dc76b1503232d7ccc6bff62c8e8fb022180f3487c78`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-176b26bcac810bdd.1d25a28a.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, setup-matt-pocock-skills (mattpocock/skills), Report 017, 2026-11-01. On at least one task it scored above the fake, and on none below. Against no skill: The skill clearly helped: 0.893 with it and 0.671 without, on 3 test tasks. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. Receipt: https://driftproofhq.com/r/176b26bcac810bddb1878dc76b1503232d7ccc6bff62c8e8fb022180f3487c78/
+
+Keep this whole message together so the limits travel with the result.
 
 ### handoff mattpocock/skills
 
@@ -282,11 +396,23 @@ Against no skill: The skill clearly hurt: 0.766 with it and 0.804 without, on 3 
 - privacy (separated-down): with the skill 0.7375 plus or minus 0.047871; without it 0.93 plus or minus 0.075829.
 - destination (underpowered): with the skill 0.81 plus or minus 0.143178; without it 0.75 plus or minus 0.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: UNDERPOWERED
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: Clearly helped. [Report 015 receipt](https://driftproofhq.com/r/4a48502d6e950adac2c40f49b84d5d1f7c3863aa8724cfb3aeb4603f7b3b70d9/)
 
 Receipt `c99347fd5003d4ce8f8af82defa7c3480943b1d348dc35c73845f59cf9776258`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-c99347fd5003d4ce.a3857863.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, handoff (mattpocock/skills), Report 017, 2026-11-01. On at least one task it scored below the fake. Against no skill: The skill clearly hurt: 0.766 with it and 0.804 without, on 3 test tasks. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. Receipt: https://driftproofhq.com/r/c99347fd5003d4ce8f8af82defa7c3480943b1d348dc35c73845f59cf9776258/
+
+Keep this whole message together so the limits travel with the result.
 
 ### frontend-design anthropics/skills
 
@@ -304,11 +430,23 @@ Not enough draws to conclude at this effect floor. Draws needed: no draw count a
 - brief (underpowered): with the skill 0.983333 plus or minus 0.028868; without it 0.95 plus or minus 0.
 - content (underpowered): with the skill 0.82 plus or minus 0.09083; without it 0.875 plus or minus 0.086603.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: PLACEBO_BELOW_BASELINE
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: Too few answers to tell. [Report 015 receipt](https://driftproofhq.com/r/05a14c53c635688d45acf8c62836a7d47ded2c60e9b78c4a7edef3a5e5329854/)
 
 Receipt `0868c96e9921658415dfbc23245185d69a3b867f1af4a146f0adb0d0c75cd007`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-0868c96e99216584.ff5c07e7.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, frontend-design (anthropics/skills), Report 017, 2026-11-01. On at least one task it scored above the fake, and on none below. Against no skill: Too few answers to tell: 0.934 with the skill and 0.936 without, but the scores varied too much to call it. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. Receipt: https://driftproofhq.com/r/0868c96e9921658415dfbc23245185d69a3b867f1af4a146f0adb0d0c75cd007/
+
+Keep this whole message together so the limits travel with the result.
 
 ### reddit-automation flowkit-labs/skills
 
@@ -326,11 +464,23 @@ Against no skill: The skill clearly hurt: 0.740 with it and 0.810 without, on 3 
 - reply (underpowered): with the skill 0.766667 plus or minus 0.028868; without it 0.7875 plus or minus 0.047871.
 - rules (separated-down): with the skill 0.6875 plus or minus 0.062915; without it 0.783333 plus or minus 0.028868.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: UNDERPOWERED
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: Clearly hurt. [Report 015 receipt](https://driftproofhq.com/r/bdbb7f978fdd9d4da60bf9d8dba76159cdc7f37b946f3735ff31acecc5ba4b3a/)
 
 Receipt `634c8503a6289ce2d01baf865a4baaca5d3fe1a3d78dc16f971b86db1fa56d87`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-634c8503a6289ce2.c2c41f14.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, reddit-automation (flowkit-labs/skills), Report 017, 2026-11-01. On at least one task it scored below the fake. Against no skill: The skill clearly hurt: 0.740 with it and 0.810 without, on 3 test tasks. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. Receipt: https://driftproofhq.com/r/634c8503a6289ce2d01baf865a4baaca5d3fe1a3d78dc16f971b86db1fa56d87/
+
+Keep this whole message together so the limits travel with the result.
 
 ### triage mattpocock/skills
 
@@ -348,11 +498,23 @@ Against no skill: The skill clearly helped: 0.899 with it and 0.631 without, on 
 - evidence (underpowered): with the skill 0.933333 plus or minus 0.028868; without it 0.8375 plus or minus 0.094648.
 - ready (separated-up): with the skill 0.875 plus or minus 0.086603; without it 0.466667 plus or minus 0.028868.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: PLACEBO_ABOVE_BASELINE
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: Clearly helped. [Report 015 receipt](https://driftproofhq.com/r/d31b2f40eced27b77786d4fa004f3a8cac901918bb82fbf199588a3aa3b5716e/)
 
 Receipt `89b67ed69a5a7368214cac086f1ef50b57e19c4644af33d71f456663ead117e8`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-89b67ed69a5a7368.c7e611f1.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, triage (mattpocock/skills), Report 017, 2026-11-01. On at least one task it scored above the fake, and on none below. Against no skill: The skill clearly helped: 0.899 with it and 0.631 without, on 3 test tasks. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. Receipt: https://driftproofhq.com/r/89b67ed69a5a7368214cac086f1ef50b57e19c4644af33d71f456663ead117e8/
+
+Keep this whole message together so the limits travel with the result.
 
 ### prototype mattpocock/skills
 
@@ -370,11 +532,23 @@ Against no skill: The skill clearly helped: 0.887 with it and 0.401 without, on 
 - ui (separated-up): with the skill 0.916667 plus or minus 0.028868; without it 0.51875 plus or minus 0.212027.
 - unclear (separated-up): with the skill 0.7625 plus or minus 0.062915; without it 0.45 plus or minus 0.05.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: UNDERPOWERED
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: Clearly helped. [Report 015 receipt](https://driftproofhq.com/r/cb33a80a2e7db6d3d612b4ea17dcd7648b245fe68eb6adc08989983b6e2a98db/)
 
 Receipt `2026a8968d1a5ae85d33c02e634987021b04edd9ba568a9e1d2436f56621ab89`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-2026a8968d1a5ae8.46b7c4ca.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, prototype (mattpocock/skills), Report 017, 2026-11-01. On at least one task it scored above the fake, and on none below. Against no skill: The skill clearly helped: 0.887 with it and 0.401 without, on 3 test tasks. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. Receipt: https://driftproofhq.com/r/2026a8968d1a5ae85d33c02e634987021b04edd9ba568a9e1d2436f56621ab89/
+
+Keep this whole message together so the limits travel with the result.
 
 ### media-use heygen-com/hyperframes
 
@@ -392,11 +566,23 @@ Against no skill: The skill clearly helped: 0.897 with it and 0.769 without, on 
 - logo (underpowered): with the skill 0.94 plus or minus 0.082158; without it 0.81 plus or minus 0.119373.
 - grade (underpowered): with the skill 0.9 plus or minus 0; without it 0.89 plus or minus 0.074162.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: UNDERPOWERED
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: Clearly helped. [Report 015 receipt](https://driftproofhq.com/r/65231f29050580d7e14324c7aff5bfc053844d5c11093958713393e98283c26c/)
 
 Receipt `9b55433e219fb065e304806bceea6aee214d3b3fb55eaa11244eef5ef5533586`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-9b55433e219fb065.3ffe509c.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, media-use (heygen-com/hyperframes), Report 017, 2026-11-01. On at least one task it scored above the fake, and on none below. Against no skill: The skill clearly helped: 0.897 with it and 0.769 without, on 3 test tasks. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. Receipt: https://driftproofhq.com/r/9b55433e219fb065e304806bceea6aee214d3b3fb55eaa11244eef5ef5533586/
+
+Keep this whole message together so the limits travel with the result.
 
 ### grilling mattpocock/skills
 
@@ -414,11 +600,23 @@ Against no skill: The skill clearly helped on 1 of 3 test tasks: the frontier ta
 - settled (underpowered): with the skill 0.7 plus or minus 0.05; without it 0.7 plus or minus 0.089443.
 - finish (underpowered): with the skill 0.433333 plus or minus 0.08165; without it 0.56 plus or minus 0.124499.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: PLACEBO_BELOW_BASELINE
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: Clearly helped. [Report 015 receipt](https://driftproofhq.com/r/a270d6454735f29e9dae390c064d7e3efd1500cb1e8a3c96dcd3a3900f697e35/)
 
 Receipt `667515dbf9bc6f239ba757bf64e0f301488eb7dfe30d2ce1bbb6c3231890a6e3`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-667515dbf9bc6f23.675c8c81.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, grilling (mattpocock/skills), Report 017, 2026-11-01. On at least one task it scored above the fake, and on none below. Against no skill: The skill clearly helped on 1 of 3 test tasks: the frontier task decided it. Over all 3, the averages were 0.657 with it and 0.670 without. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. Receipt: https://driftproofhq.com/r/667515dbf9bc6f239ba757bf64e0f301488eb7dfe30d2ce1bbb6c3231890a6e3/
+
+Keep this whole message together so the limits travel with the result.
 
 ### hyperframes-animation heygen-com/hyperframes
 
@@ -436,11 +634,23 @@ Against no skill: The skill clearly helped: 0.872 with it and 0.556 without, on 
 - runtime (separated-up): with the skill 0.7 plus or minus 0.093541; without it 0.266667 plus or minus 0.132916.
 - template (separated-up): with the skill 0.933333 plus or minus 0.028868; without it 0.5625 plus or minus 0.075.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: UNDERPOWERED
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: Clearly helped. [Report 015 receipt](https://driftproofhq.com/r/b9f499c15c4f83c9a4e1171e88681271c6d6d2cc8637bac97659c5c05a6ab0ce/)
 
 Receipt `932a427a39bc105f634287f8af286d9ff5c6f58665aa3d719321ca00efaa8a4b`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-932a427a39bc105f.ff2bc7f0.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, hyperframes-animation (heygen-com/hyperframes), Report 017, 2026-11-01. On at least one task it scored above the fake, and on none below. Against no skill: The skill clearly helped: 0.872 with it and 0.556 without, on 3 test tasks. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. Receipt: https://driftproofhq.com/r/932a427a39bc105f634287f8af286d9ff5c6f58665aa3d719321ca00efaa8a4b/
+
+Keep this whole message together so the limits travel with the result.
 
 ### hyperframes-registry heygen-com/hyperframes
 
@@ -454,11 +664,25 @@ Against the same-length placebo: case rule: at least one case scored above the s
 
 Against no skill: No verdict: delegated skill not tested.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: PLACEBO_ABOVE_BASELINE
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: No verdict: delegated skill not tested. [Report 015 receipt](https://driftproofhq.com/r/ff6bb0a23b2b250c71181de274ba684ac5706558cd3214e08acc637823290029/)
 
 Receipt `5fc27143c0cb1bc36e6915a4f162edec66f29a89168e7c75c02ccd251248d2bf`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-5fc27143c0cb1bc3.a3537ca1.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, hyperframes-registry (heygen-com/hyperframes), Report 017, 2026-11-01. On at least one task it scored above the fake, and on none below. Against no skill: No verdict: delegated skill not tested. These text tasks test the router's written response, not the delegated skill. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. Receipt: https://driftproofhq.com/r/5fc27143c0cb1bc36e6915a4f162edec66f29a89168e7c75c02ccd251248d2bf/
+
+[Why a router gets no verdict: Report 015 Amendment 1](https://driftproofhq.com/reports/015/#amendment-1)
+
+Keep this whole message together so the limits travel with the result.
 
 ### design-mobile-apps designed-by-ai/skills
 
@@ -476,11 +700,23 @@ Against no skill: The skill clearly helped: 0.823 with it and 0.739 without, on 
 - shots (separated-up): with the skill 0.92 plus or minus 0.075829; without it 0.733333 plus or minus 0.028868.
 - ids (underpowered): with the skill 0.7 plus or minus 0; without it 0.716667 plus or minus 0.028868.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: UNDERPOWERED
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: Clearly helped. [Report 015 receipt](https://driftproofhq.com/r/ea6c4a25fbedb8012f5ad2eb94eebdc68a77247a3183f9696d53d6c8940fd273/)
 
 Receipt `9fa7bc62d8703ea066da8b40f0b3adc7c51a153f524155767b5c9e24f4042c1e`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-9fa7bc62d8703ea0.ec82294e.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, design-mobile-apps (designed-by-ai/skills), Report 017, 2026-11-01. On at least one task it scored above the fake, and on none below. Against no skill: The skill clearly helped: 0.823 with it and 0.739 without, on 3 test tasks. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. Receipt: https://driftproofhq.com/r/9fa7bc62d8703ea066da8b40f0b3adc7c51a153f524155767b5c9e24f4042c1e/
+
+Keep this whole message together so the limits travel with the result.
 
 ### hyperframes-core heygen-com/hyperframes
 
@@ -498,11 +734,23 @@ Against no skill: The skill clearly helped: 0.914 with it and 0.651 without, on 
 - transform (separated-up): with the skill 0.95 plus or minus 0.05; without it 0.7 plus or minus 0.05.
 - exit (separated-up): with the skill 0.81 plus or minus 0.089443; without it 0.34 plus or minus 0.155724.
 
+See the question and the judge's notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge's scores and reasons, one try at a time. Without it, the kept answers sit beside this row's receipt in the repository, under Receipts at the end of the report.
+
 The placebo against no skill, shown here and not counted: UNDERPOWERED
 
 Context only, not this measurement: Report 015 read this skill in a separate, earlier run on 2026-10-18: Clearly helped. [Report 015 receipt](https://driftproofhq.com/r/4be11a73543e9b0a137bee99dbe5f25beaa7f69e5103b45865862654fec3e8ec/)
 
 Receipt `7c7564b040f77c1bb69904c78545d55c1d8dc08b8661b3ef5c9522c0de9a6245`
+
+**Preview and copy this result**
+
+The finding, with its limits
+
+[View card image](https://driftproofhq.com/cards/receipt-7c7564b040f77c1b.b25910c6.png)
+
+On Claude Sonnet 5.5, judged by Claude Haiku 5.5, hyperframes-core (heygen-com/hyperframes), Report 017, 2026-11-01. On at least one task it scored above the fake, and on none below. Against no skill: The skill clearly helped: 0.914 with it and 0.651 without, on 3 test tasks. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length text from a fixed corpus, judged by Haiku 5.5. Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings. It does not show how these skills do beyond three text tasks each, written by Driftproof for Report 015's twenty skills from the Skills.sh snapshot of 2026-10-17, on Claude Sonnet 5.5 judged by Claude Haiku 5.5. Receipt: https://driftproofhq.com/r/7c7564b040f77c1bb69904c78545d55c1d8dc08b8661b3ef5c9522c0de9a6245/
+
+Keep this whole message together so the limits travel with the result.
 
 ## Method
 
@@ -575,7 +823,7 @@ Plan SHA-256 `3f008b21d542b85b90a5e37c60672c62788b9742319ca1f1fde8c906c419f3f4`.
 
 Read and built by:
 
-- `scripts/prepare-report-017.js`, SHA-256 `1fe1ca4efd96300ba8de45df6f679768a3fba53b726638c5823b1ddce1c6f36c`
+- `scripts/prepare-report-017.js`, SHA-256 `b61c1f00f86bb5b38d869324da697ea8dad5cd61b41a8b6597a0391b75a992a3`
 - `specs/613-placebo-skills-report/publication.cjs`, SHA-256 `fba3577194bab75b0ac4c993b4567008c418e17178ef4399e560a71ff2754050`
 - `specs/613-placebo-skills-report/tally.cjs`, SHA-256 `a7d334796f32591a9488baa2286e3ba9462305ff6a92b8b2f0c7695a96a415dd`
 - `specs/613-placebo-skills-report/run-campaign.cjs`, SHA-256 `db070608736eb9401fb8acf6a15cf800deeefbd706b18a92383242ef6609af6a`
@@ -600,6 +848,14 @@ Added a link, after the opening panel, to a blind read of handoff's kept answers
 ### Amendment 3, 3 Nov 2026
 
 Reworded the line against no skill in the rows where the overall averages with and without the skill do not point the verdict's way: it names the task that decided it and gives the averages over all the tasks. The verdict is decided per task, so those averages can sit equal or point the other way. Counts, readings and receipts are unchanged.
+
+### Amendment 4, 4 Nov 2026
+
+Added, under each task of every row with a receipt, a way to open that task's prompt and rubric, the kept answers with the skill, with the fake text and with nothing, and the judge's scores and reasons for one try at a time. Counts, readings and receipts are unchanged.
+
+### Amendment 5, 4 Nov 2026
+
+Added Send this result to each row, with a fixed message that keeps its reading, model, judge, report, caveats and receipt together. A router row also links Report 015 Amendment 1, which says why a router gets no verdict. Counts, readings and receipts are unchanged.
 
 ## Receipts
 

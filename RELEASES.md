@@ -8,6 +8,58 @@ makes this one a record.
 
 ---
 
+## v0.27.0 - 2026-11-05
+
+### What's new
+
+- **A home page for people who don't write code.** It explains in plain words what an AI skill is and how Driftproof tests one, the way a medicine is tested against a sugar pill. Three doors lead on from there: just curious, I use AI skills, I make skills. The newest finding sits on the page with its full caveat.
+- **Skill or sugar pill?** Pick what you want help with and see what each skill did against a fake instruction file of the same length, read straight from the reports.
+- **Which bar is the fake?** A thirty-second game over Reports 017 and 018.
+- **The AI noticed the sugar pill.** Real answers from the fake-file runs where the AI pointed out that its instructions were empty or off-topic, picked by a fixed rule.
+- **Can you tell?** For every measured skill, on both models: read two answers to the same task and guess which one had the skill.
+- **Every task we gave a skill** (`/tasks/`). The exact prompt and scoring guide for each test task, with copy buttons, so anyone can try it themselves.
+- **The judge's notes.** On Reports 017 and 018, open any task to see the question, the answers with the skill, with the fake and with nothing, and the scores and reasons the judge gave.
+- **Plain-word cards.** Tap or focus a technical word such as "judge", "band" or "placebo" to see a one-line explanation.
+- **Send this result.** A share button on each result whose message keeps the finding and its limits together.
+- No measured number, verdict or ranking changes in this release.
+- PR 712: Router label on the sugar pill page and share previews carries its reason and link (#711)
+- PR 710: Glossary: the Router entry no longer quotes the router label (#709)
+- PR 708: Pre-release audit: /tasks/ on every discovery surface, unique task page descriptions (#707)
+- PR 706: Every new reader page reachable from home, footer and llms.txt (#702)
+- PR 705: Send this result: a share button whose sentence keeps the caveat (#694)
+- PR 704: Every task we gave a skill, with its scoring guide, at /tasks/ (#703)
+- PR 701: Plain-word cards for jargon on every reader page (#689)
+- PR 700: See the question and the judge's notes behind every task score (#690)
+- PR 699: Can you tell? for every skill on both models (#693)
+- PR 698: The AI noticed the sugar pill: real placebo-arm answers, by a fixed rule (#691)
+- PR 696: Skill or sugar pill? Pick what you want help with, see what each skill did (#688)
+- PR 697: A home page and menu for non-technical readers, and a design lift (#687)
+- PR 695: Which bar is the fake? A thirty-second game over Reports 017 and 018 (#692)
+- PR 686: Release 0.26.3: release-log entry (#685)
+
+- PR 715: 0.27.0 sweep 1: spec 143's runtimes link specs/; spec 188's cap scan skips quoted material (#714)
+
+
+- PR 717: 0.27.0 sweep 2: the skill lookup's rows carry no card markers; page tests and gate figures follow the reader pages (#716)
+
+- PR 719: 0.27.0 sweep 3: the skill pages' share caveat reads its text with the tokenizer (#718)
+
+### Engineering log
+
+**Merged from dev by a refresh, after the draft.** `release-prepare --stage refresh` lists every merge on dev between `43eaddd46910` and `88c9fe78ce7f`, the commit the refresh merged, so this release ships each of them, and `release-record.json`'s `source_commit` moves to `88c9fe78ce7f`, where the next release's list starts.
+
+- PR 715, merge `88c9fe78`: 0.27.0 sweep 1: spec 143's runtimes link specs/; spec 188's cap scan skips quoted material (#714)
+
+**Merged from dev by a refresh, after the draft.** `release-prepare --stage refresh` lists every merge on dev between `88c9fe78ce7f` and `af994d75efe9`, the commit the refresh merged, so this release ships each of them, and `release-record.json`'s `source_commit` moves to `af994d75efe9`, where the next release's list starts.
+
+- PR 717, merge `af994d75`: 0.27.0 sweep 2: the skill lookup's rows carry no card markers; page tests and gate figures follow the reader pages (#716)
+
+**Merged from dev by a refresh, after the draft.** `release-prepare --stage refresh` lists every merge on dev between `af994d75efe9` and `2d845a8a752a`, the commit the refresh merged, so this release ships each of them, and `release-record.json`'s `source_commit` moves to `2d845a8a752a`, where the next release's list starts.
+
+- PR 719, merge `2d845a8a`: 0.27.0 sweep 3: the skill pages' share caveat reads its text with the tokenizer (#718)
+
+---
+
 ## v0.26.3 - 2026-11-03
 
 ### What's new

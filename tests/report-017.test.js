@@ -508,7 +508,10 @@ test('A-627-7: the published page carries the hand-off note after the caveat and
   const blind = '<section id="amendment-2"><h3>Amendment 2, 2 Nov 2026</h3><p>Added a link, after the opening panel, to a blind read of handoff&#39;s kept answers. Counts, readings and receipts are unchanged.</p></section>';
   // Issue 671 (A-627-9) appends the reworded verdict line's entry after both, so the recorded prefix stays.
   const reworded = '<section id="amendment-3"><h3>Amendment 3, 3 Nov 2026</h3><p>Reworded the line against no skill in the rows where the overall averages with and without the skill do not point the verdict&#39;s way: it names the task that decided it and gives the averages over all the tasks. The verdict is decided per task, so those averages can sit equal or point the other way. Counts, readings and receipts are unchanged.</p></section>';
-  assert.equal(splitReportBody(html).amendments, entry + blind + reworded);
+  // Issue 690 (A-627-10) appends the judge-notes entry after the three, so the recorded prefix stays.
+  const notes = '<section id="amendment-4"><h3>Amendment 4, 4 Nov 2026</h3><p>Added, under each task of every row with a receipt, a way to open that task&#39;s prompt and rubric, the kept answers with the skill, with the fake text and with nothing, and the judge&#39;s scores and reasons for one try at a time. Counts, readings and receipts are unchanged.</p></section>';
+  const sent = '<section id="amendment-5"><h3>Amendment 5, 4 Nov 2026</h3><p>Added Send this result to each row, with a fixed message that keeps its reading, model, judge, report, caveats and receipt together. Counts, readings and receipts are unchanged.</p></section>';
+  assert.equal(splitReportBody(html).amendments, entry + blind + reworded + notes + sent);
   // Without the note the page is the same, but for the note's elements, its record and the record's
   // entry in the contents rail; the summary row is the same.
   const rail = '<li><a href="#amendments">Amendments</a></li>\n';
@@ -516,9 +519,17 @@ test('A-627-7: the published page carries the hand-off note after the caveat and
   const without = B.buildReport({ ...B.parse([]), handoff: [] });
   assert.equal(notesOf(without.html).length, 0);
   // Without the note, the section keeps the other entries alone, under their published numbers.
-  assert.equal(splitReportBody(without.html).amendments, '<h2 id="amendments">Amendments</h2>' + blind + reworded);
+  assert.equal(splitReportBody(without.html).amendments, '<h2 id="amendments">Amendments</h2>' + blind + reworded + notes + sent);
   const noteEntry = entry.slice('<h2 id="amendments">Amendments</h2>'.length);
-  assert.equal(html.replace(/<p class="handoff-note">[\s\S]*?<\/p>/g, '').replace(noteEntry, ''), without.html);
+  // A-627-11 (issue 694): the same hand-off note also travels in both share payloads.
+  // Verify exactly those added copies before removing that exact text for the old no-other-change oracle.
+  const shareBlocks = [...html.matchAll(/<div class="send-result"[\s\S]*?<\/details><\/div>/g)].map(m => m[0]);
+  const escapedNote = esc(NOTE017);
+  const withNote = shareBlocks.filter(block => block.includes(escapedNote));
+  assert.equal(withNote.length, Object.keys(HANDOFF).length);
+  for (const block of withNote) assert.equal(block.split(escapedNote).length - 1, 2, 'payload and visible preview each keep the whole note');
+  const withoutShareNote = html.replace(/<div class="send-result"[\s\S]*?<\/details><\/div>/g, block => block.split(escapedNote + ' ').join(''));
+  assert.equal(withoutShareNote.replace(/<p class="handoff-note">[\s\S]*?<\/p>/g, '').replace(noteEntry, ''), without.html);
   assert.deepEqual(done.built.summary, without.summary);
   assert.deepEqual(done.built.campaign.pub, without.campaign.pub);
 });

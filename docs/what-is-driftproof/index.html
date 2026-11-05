@@ -71,13 +71,14 @@
 <details class="nav-menu"><summary>Menu</summary></details>
 <nav class="site-nav" aria-label="Site">
 <a href="/reports/">Reports</a>
+<a href="/skills/">Skills</a>
+<a href="/how-it-works/">How it works</a>
+<details class="docs-menu"><summary>For builders</summary><div class="docs-menu-list">
+<a href="/#quickstart">Install</a>
+<a href="/#how-it-works">How a skill is tested</a>
 <a href="/benchmark-gap/">Gap calculator</a>
 <a href="/leaderboard-noise/">Leaderboard noise</a>
-<a href="/skills/">Skills</a>
-<a href="/findings/">Findings</a>
 <a href="/paper/">Paper</a>
-<details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
-<a href="/#how-it-works">How it works</a>
 <a href="/methodology/">Methodology</a>
 <a href="/neutrality/">Neutrality</a>
 <a href="/interop/">Interop</a>
@@ -93,6 +94,7 @@
 </header><!--/driftproof:nav-->
 <!--driftproof:layout--><div class="page-grid is-sheet">
 <nav class="page-toc" aria-label="On this page"><div class="rail-in"><p class="eyebrow">On this page</p><ol>
+<li><a href="#explore-the-results">Explore the results</a></li>
 <li><a href="#what-it-measures-2">What it measures</a></li>
 <li><a href="#what-it-does-not-measure">What it does not measure</a></li>
 <li><a href="#how-it-differs-from-a-skill-s-own-tests-and-from-other-eval-">How it differs from a skill's own tests and from other eval tools</a></li>
@@ -105,23 +107,24 @@
 </ol></div></nav><!--/driftproof:layout-->
 <main class="prose answers">
 <h1>What is Driftproof?</h1>
-<p class="lede">Driftproof (driftproofhq): open-source agent skill evaluation and regression testing across model releases. It runs a skill's own tests with the skill and without it, scores every answer several times, and calls a change only when it is clearly bigger than the usual spread. Each result is a dated, hash-verified receipt.</p>
+<p class="lede">Driftproof (driftproofhq): open-source agent <!--driftproof:term--><a class="term" href="/glossary/#term-skill" data-entry="term-skill" data-name="Skill" data-plain="A file of instructions that people add to an AI assistant, such as Claude, to make it better at a job. Driftproof tests whether a skill really helps.">skill</a><!--/driftproof:term--> evaluation and regression testing across model releases. It runs a skill's own tests with the skill and without it, scores every answer several times, and calls a change only when it is clearly bigger than the usual spread. Each result is a dated, hash-verified receipt.</p>
+<section class="reader-pages"><!--driftproof:anchor--><span id="explore-the-results" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Explore the results</h2><p><a href="/can-you-tell/">Can you tell? Every skill</a> · <a href="/noticed/">The AI noticed the sugar pill</a> · <a href="/spot-the-fake/">Which bar is the fake?</a> · <a href="/tasks/">Every task we gave a skill</a> · <a href="/sugar-pill/">Skill or sugar pill?</a></p></section>
 <section id="what-it-measures">
 <!--driftproof:anchor--><span id="what-it-measures-2" class="toc-anchor"></span><!--/driftproof:anchor--><h2>What it measures</h2>
 <p>For each task in a skill's own test set, Driftproof asks the model twice: once with the skill's instructions loaded, and once with the task alone. The model answers each way several times. What the skill adds is the average with the skill minus the average without it.</p>
-<p>A receipt records what produced its numbers: the model, the tools, the skill and the tasks by their content, and the grader with its instructions. The stale command compares those with what would run today and says what has moved.</p>
+<p>A <!--driftproof:term--><a class="term" href="/glossary/#term-receipt" data-entry="term-receipt" data-name="Receipt" data-plain="The dated file that records one test: the skill, the model, every score and the result. Anyone can check that it has not changed since it was sealed.">receipt</a><!--/driftproof:term--> records what produced its numbers: the model, the tools, the skill and the tasks by their content, and the <!--driftproof:term--><a class="term" href="/glossary/#term-judge" data-entry="term-judge" data-name="Judge" data-plain="The judge, also called the grader, is an AI model, sometimes the same one that answered, that scores each answer against a guide written for the task. It is an AI, not a person, and it can be wrong.">grader</a><!--/driftproof:term--> with its instructions. The stale command compares those with what would run today and says what has moved.</p>
 </section>
 <section id="what-it-does-not">
 <!--driftproof:anchor--><span id="what-it-does-not-measure" class="toc-anchor"></span><!--/driftproof:anchor--><h2>What it does not measure</h2>
 <p>A clear difference is what these tests saw, not proof that the skill itself changed. Raw scores across companies are background, never a ranking.</p>
-<p>Any constant style preference the judge holds toward a provider is present in both the with-skill and the baseline run for that provider, so taking the difference reduces it, though it is not cancelled.</p>
+<p>Any constant style preference the judge holds toward a provider is present in both the with-skill and the <!--driftproof:term--><a class="term" href="/glossary/#term-baseline" data-entry="term-baseline" data-name="Baseline" data-plain="The run without the skill: the same tasks and the same model, with nothing added. Every score with the skill is compared against it.">baseline</a><!--/driftproof:term--> run for that provider, so taking the difference reduces it, though it is not cancelled.</p>
 </section>
 <section id="how-it-differs">
 <!--driftproof:anchor--><span id="how-it-differs-from-a-skill-s-own-tests-and-from-other-eval-" class="toc-anchor"></span><!--/driftproof:anchor--><h2>How it differs from a skill's own tests and from other eval tools</h2>
 <p>A skill's own tests passing is one answer. Driftproof asks two more: whether the scores with the skill and without it separate beyond their spread, and whether that held when the model changed.</p>
 <p>What each other tool measures, and whether it compares a task with the skill and without it, as its own docs say. The full table: <a href="/compare/">What each evaluation tool measures</a>.</p>
 <ul>
-<li><strong>claude plugin eval (Claude Code)</strong>. What it measures: How reliably a plugin (including a skill shipped as a plugin) leads Claude to the right outcome on eval cases, and what it contributes against a no-plugin baseline (<a href="https://code.claude.com/docs/en/plugin-evals">source, read 30 September 2026</a>). With and without the skill: Yes, by default: a with-plugin arm and a no-plugin arm, reported as WITH, W/OUT and delta; --ablation none turns it off (<a href="https://code.claude.com/docs/en/plugin-evals">source, read 30 September 2026</a>).</li>
+<li><strong>claude plugin eval (Claude Code)</strong>. What it measures: How reliably a plugin (including a skill shipped as a plugin) leads Claude to the right outcome on eval cases, and what it contributes against a no-plugin baseline (<a href="https://code.claude.com/docs/en/plugin-evals">source, read 30 September 2026</a>). With and without the skill: Yes, by default: a with-plugin <!--driftproof:term--><a class="term" href="/glossary/#term-arm" data-entry="term-arm" data-name="Arm" data-plain="One side of the comparison: the run with the skill, or the run without it. Some reports add a third arm, the fake.">arm</a><!--/driftproof:term--> and a no-plugin arm, reported as WITH, W/OUT and delta; --ablation none turns it off (<a href="https://code.claude.com/docs/en/plugin-evals">source, read 30 September 2026</a>).</li>
 <li><strong>alibaba/skill-up</strong>. What it measures: A Skill's behaviour across declarative cases (response, tool calls and workspace changes), optionally compared with and without the Skill; it also evaluates agents and workspaces without a Skill (<a href="https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/README.md#L54">source, read 30 September 2026</a>; <a href="https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/README.md#L52">source, read 30 September 2026</a>). With and without the skill: Yes, opt-in: benchmark mode (benchmark.enabled: true or --baseline) runs each case with_skill and without_skill and reports the delta; disabled by default (<a href="https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/docs/guide/writing-evals.md#L865">source, read 30 September 2026</a>; <a href="https://github.com/alibaba/skill-up/blob/7f1ff9b8e2d7c654728de526867f2f7e7b78ea51/docs/guide/writing-evals.md#L879">source, read 30 September 2026</a>).</li>
 <li><strong>NVIDIA SkillEvaluator</strong>. What it measures: Three tiers: static validation (safety, well-formedness), deduplication (repeated or overlapping guidance), and live evaluation of whether the skill helps a real agent, reported on five dimensions (security, correctness, discoverability, effectiveness, efficiency) (<a href="https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/README.md#L14-L15">source, read 30 September 2026</a>; <a href="https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L7-L8">source, read 30 September 2026</a>; <a href="https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/README.md#L29">source, read 2 October 2026</a>; <a href="https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/reports.mdx#L246-L247">source, read 2 October 2026</a>). With and without the skill: Yes, by default in Tier <a href="https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L7">3</a>: a with-skill arm and a baseline arm in a sandbox; --skip-baseline removes the baseline and the lift (<a href="https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L17-L20">source, read 30 September 2026</a>; <a href="https://github.com/NVIDIA/SkillEvaluator/blob/d0157411fe6c6eb949f832983bf671dfd1b9c701/docs/tier3-live-evaluation.mdx#L7">source, read 2 October 2026</a>).</li>
 <li><strong>agent-skills-eval</strong>. What it measures: Whether a SKILL.md makes a model better at the task on the skill's evals/evals.json prompts, judged against declared assertions (<a href="https://github.com/darkrishabh/agent-skills-eval/blob/f10ae2b3c93055cadd82c02a3b7fe4cfbd9a4645/README.md#L11">source, read 30 September 2026</a>). With and without the skill: Yes, opt-in: --baseline (config baseline: true) runs each eval with_skill and without_skill; the default is false (<a href="https://github.com/darkrishabh/agent-skills-eval/blob/f10ae2b3c93055cadd82c02a3b7fe4cfbd9a4645/README.md#L118">source, read 30 September 2026</a>; <a href="https://github.com/darkrishabh/agent-skills-eval/blob/f10ae2b3c93055cadd82c02a3b7fe4cfbd9a4645/README.md#L173">source, read 30 September 2026</a>).</li>
@@ -131,7 +134,7 @@
 <!--driftproof:anchor--><span id="the-published-evidence" class="toc-anchor"></span><!--/driftproof:anchor--><h2>The published evidence</h2>
 <p>Every published report, newest first.</p>
 <ul>
-<li><a href="/reports/018/">Report 018</a>: a same-length placebo text</li>
+<li><a href="/reports/018/">Report 018</a>: a same-length <!--driftproof:term--><a class="term" href="/glossary/#term-placebo-arm" data-entry="term-placebo-arm" data-name="Placebo arm" data-plain="A fake skill: a text of the same length as the skill, built from sentences chosen without looking at any task. The skill is scored against the fake as well as against nothing, the way a medicine is tested against a sugar pill.">placebo</a><!--/driftproof:term--> text</li>
 <li><a href="/reports/017/">Report 017</a>: a same-length placebo text</li>
 <li><a href="/reports/016/">Report 016</a>: Popular rules files vs. a placebo: most made Claude write more</li>
 <li><a href="/reports/015/">Report 015</a>: Skills.sh snapshot <a href="/reports/015/">2026-10-17</a>: text tasks</li>
@@ -140,9 +143,9 @@
 <li><a href="/reports/011/">Report 011</a>: Claude Opus 5.5, the day after its release, three skills</li>
 <li><a href="/reports/010/">Report 010</a>: repeated ADR evaluations across two Claude Code configurations</li>
 <li><a href="/reports/009/">Report 009</a>: three skills under two eval harnesses</li>
-<li><a href="/reports/008/">Report 008</a>: Claude Fable 5.1, no separation detected across the release in either arm</li>
+<li><a href="/reports/008/">Report 008</a>: Claude Fable 5.1, no <!--driftproof:term--><a class="term" href="/glossary/#term-separated" data-entry="term-separated" data-name="Separated" data-plain="The two ranges of scores, with the skill and without it, do not overlap, and the gap is at least the effect floor. It is what a report means by a clear difference, and it is not proof that the skill caused it.">separation</a><!--/driftproof:term--> detected across the release in either arm</li>
 <li><a href="/reports/007/">Report 007</a>: the baseline is the noisy arm</li>
-<li><a href="/reports/006/">Report 006</a>: the skill text moves, the substrate holds still</li>
+<li><a href="/reports/006/">Report 006</a>: the skill text moves, the <!--driftproof:term--><a class="term" href="/glossary/#term-substrate" data-entry="term-substrate" data-name="Substrate" data-plain="The model underneath the skill, down to its exact version and the company that serves it. Skills stand still while the model underneath them moves.">substrate</a><!--/driftproof:term--> holds still</li>
 <li><a href="/reports/005/">Report 005</a>: what does a skill cost to run?</li>
 <li><a href="/reports/004/">Report 004</a>: does encoded expertise still lift output on the frontier tier?</li>
 <li><a href="/reports/003/">Report 003</a>: do skill verdicts hold across a model release?</li>
@@ -194,9 +197,11 @@
 </ul>
 </main>
 <!--driftproof:layout-end--></div><!--/driftproof:layout-end-->
+<!--driftproof:cards--><div class="jargon-cards" data-island="jargon-cards"><p class="jargon-note">Words with a dotted line link to the glossary, where each is explained in plain words.</p></div><!--/driftproof:cards-->
 <!--driftproof:foot--><footer class="site">
 <p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
 <p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/maintainer/">Maintainer</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+<p class="foot-links"><a href="/can-you-tell/">Can you tell? Every skill</a> · <a href="/noticed/">The AI noticed the sugar pill</a> · <a href="/spot-the-fake/">Which bar is the fake?</a> · <a href="/tasks/">Every task we gave a skill</a> · <a href="/sugar-pill/">Skill or sugar pill?</a></p>
 </footer><!--/driftproof:foot-->
 <!--driftproof:scripts--><script src="/copy-button.js" defer></script>
 <script type="module" src="/islands/loader.js"></script><!--/driftproof:scripts-->

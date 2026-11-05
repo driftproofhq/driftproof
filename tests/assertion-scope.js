@@ -436,6 +436,8 @@ const BAND_SITE_KIND = {
   'lib/verdict.js': 'comparison',
   // Spec 128: a receipt's sheet draws one test task's two arms side by side, read through bandOf.
   'lib/band-plot.js': 'comparison',
+  // Issue 692: three per-task ranges use the same band reader as receipt plots.
+  'scripts/build-spot-the-fake.js': 'comparison',
   // Issue 207, spec 190: separation reads recomputed sealed draw evidence through bandOf.
   'lib/view.js': 'comparison',
   // Issue 205, spec 188: conditional planning reads verified generation bands through bandOf.
@@ -729,6 +731,8 @@ function capSubjects(root) {
   return new RegExp([...parts].join('|'), 'i');
 }
 const RECORDED_OUTPUT = /^\s*(projected (calls|cost):|✗ ABORT \(cost guard\))/m;
+// An element the site marks as quoted text, with its content (issue 714).
+const QUOTED_ELEMENT = /<([a-z][a-z0-9]*)\b[^>]*\bdata-quote="text"[^>]*>[\s\S]*?<\/\1>/gi;
 
 // The constants a cap number may be traced to, READ OUT OF THE SOURCE rather
 // than listed: every exported config name carrying MAX, plus the sampling
@@ -891,6 +895,9 @@ function capLiteralClaims(root, overrides = {}, { numberWord = CAP_NUMBER_WORD }
     if (!/\.(md|html)$/.test(rel)) continue;
     if (FROZEN_PROSE.test(rel) || FROZEN_PROSE_FILE.test(rel)) continue;
     let text = overrides[rel] != null ? overrides[rel] : fs.readFileSync(path.join(root, rel), 'utf8');
+    // Issue 714: material a page quotes (an AI's answer, a task's prompt) is marked data-quote="text",
+    // the site's mark for quoted material; it is not the site's prose stating a cap.
+    if (/\.html$/.test(rel)) text = text.replace(QUOTED_ELEMENT, '');
     // Only the CURRENT version's release entry is live prose; the ones below it
     // are dated records of versions already shipped.
     if (path.basename(rel) === 'RELEASES.md') {
@@ -1812,6 +1819,6 @@ function workflowRunSubjects(root, { readDir = fs.readdirSync, readFile = (f) =>
 module.exports = {
   probeCopies, probeCopyExceptionProblems, probeCopiesCheck, PROBE_COPY_EXCEPTIONS, productFunctionExports,
   releaseEntryFacts, RELEASE_ENTRY_FACTS, publishedInvocations, WORDS, NARROWING_CLASSES, archiveReceipts, bandSites, WINDOW_SCOPES, productPathReaches, orphanModules, undeclaredHarnessOnly, HARNESS_ONLY_LIB, judgeSampleViolations, ATTRS_CARRYING_PROSE, attributeText, visibleText, documentText, countClaims, publishedFiles, signedReceiptClaims, FROZEN_SCHEMA, scanTimeoutLiterals,
-  capLiteralClaims, capConstantNames, proseBlocks, capLiterals, capSubjects, CAP_MUTATIONS, CAP_WORD_PLANTS, CAP_NUMBER_WORD_NARROWED, plantCapMutation, FROZEN_PROSE, RECORDED_OUTPUT,
+  capLiteralClaims, capConstantNames, proseBlocks, capLiterals, capSubjects, CAP_MUTATIONS, CAP_WORD_PLANTS, CAP_NUMBER_WORD_NARROWED, plantCapMutation, FROZEN_PROSE, RECORDED_OUTPUT, QUOTED_ELEMENT,
   workflowRunSubjects, declaresTrigger, workflowStructure, readShell, exclusionCheckMode, sourceHistory, SOURCE_ROOT_COMMIT, publishExclusionHits, isInternalNarrative, PUBLISH_GOVERNANCE_SET,
   releaseVersionLiteralCheck, nextReleaseVersions, freezeLiteralFiles, specGateAndProbeFiles, pipefailQuietGrepCheck };

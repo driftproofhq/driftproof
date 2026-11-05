@@ -105,11 +105,7 @@ main.receipt-page { min-width: 0; overflow-wrap: anywhere; margin: 2.6rem auto 3
   main.receipt-page { margin: 1.8rem 0.6rem 2.6rem; padding: 1.8rem 1.1rem 1.6rem; }
 }
 
-/* ── the homepage's first screen and How this is built (spec 037) ─────────── */
-.install-first { margin: 1.5rem 0 1rem; }
-.install-first .copy-cta { margin: 0.4rem 0; }
-.install-label { font-weight: 600; margin-bottom: 0.25rem; }
-.hero-links { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; }
+/* ── the homepage's states list (spec 037; the first screen's rules moved to tokens.css, spec 687) ── */
 .states li { margin: 0.5rem 0; }
 
 /* Issue 408: skill evidence uses the existing paper/ink contrast pairs. */
@@ -417,3 +413,76 @@ main.receipt-page { min-width: 0; overflow-wrap: anywhere; margin: 2.6rem auto 3
 .drop-results-zone { border: 1px dashed currentColor; padding: 2rem 1rem; }
 .drop-results-page dt { font-weight: bold; }
 .drop-results-page dd { margin: 0 0 .75rem; }
+
+/* Issue 690 (spec 690): the question and the judge's notes behind every task score. The openers sit
+   on the desk in the shell tokens, as the blind read's controls do; the panel is a sheet of paper in
+   the ink tokens, its three arms side by side when the row is wide and stacked when it is narrow.
+   Motion: none, but the scroll to an opened panel, which the island makes plain under
+   prefers-reduced-motion. */
+.judge-notes { container-type: inline-size; margin: var(--s-2) 0; min-width: 0; overflow-wrap: anywhere; }
+.judge-notes-lead { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1); margin: 0; }
+button.judge-open { min-height: var(--touch); padding: .35rem .9rem; font: inherit; cursor: pointer; color: var(--shell-text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius); }
+.placebo-tasks button.judge-open, .verdict-tasks button.judge-open { min-height: 0; padding: 0 .4rem; margin-right: .15rem; font: inherit; font-family: var(--sans); }
+button.judge-open:focus-visible, .judge-panel button:focus-visible, .judge-panel a:focus-visible, .judge-title:focus-visible { outline: 2px solid var(--shell-accent); outline-offset: 2px; }
+.judge-status { margin: var(--s-1) 0 0; }
+.judge-status:empty { display: none; }
+.judge-panel { background: var(--sheet); color: var(--ink); border: 1px solid var(--sheet-rule); border-radius: var(--radius); padding: var(--s-3); margin-top: var(--s-2); min-width: 0; }
+.judge-panel a { color: var(--accent-ink); }
+.judge-panel h4, .judge-panel h5 { color: var(--ink); margin: 0; }
+.judge-panel h5 { margin-top: var(--s-3); font-size: var(--t-fine); text-transform: none; }
+.judge-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-1); }
+.judge-title { font-family: var(--display); font-weight: 400; font-size: var(--t-h3); }
+.judge-title:focus { outline: none; }
+.judge-panel button { min-height: var(--touch); padding: .35rem .9rem; font: inherit; cursor: pointer; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); }
+.judge-panel button:disabled { color: var(--ink-muted); cursor: default; }
+.judge-meta, .judge-stepper-note { color: var(--ink-muted); font-size: var(--t-fine); margin: var(--s-1) 0 0; }
+.judge-prompt { margin: var(--s-1) 0 0; white-space: pre-wrap; }
+.judge-stepper { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) var(--s-2); margin-top: var(--s-1); }
+.judge-try { font-weight: 500; }
+.judge-arms { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-2); margin-top: var(--s-2); }
+.judge-arm { min-width: 0; border-top: 1px solid var(--sheet-rule); padding-top: var(--s-1); }
+.judge-arm h5 { margin-top: 0; }
+.judge-answer { margin: var(--s-1) 0 0; overflow-wrap: anywhere; font-family: var(--sans); font-size: var(--t-body); line-height: 1.6; background: color-mix(in srgb, var(--sheet) 85%, var(--ink)); border: 1px solid var(--sheet-rule); border-radius: var(--radius); padding: var(--s-1); }
+.judge-answer.is-clipped { max-height: 18em; overflow: hidden; position: relative; }
+.judge-answer.is-clipped::after { content: ""; position: absolute; inset: auto 0 0 0; height: 4em; background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--sheet) 85%, var(--ink))); }
+button.judge-more { margin-top: var(--s-1); }
+.judge-average { margin: var(--s-1) 0 0; font-size: var(--t-fine); }
+.judge-marks { margin: var(--s-1) 0 0; padding-left: 1.3em; font-size: var(--t-fine); line-height: 1.45; }
+.judge-marks li { margin: 0 0 .4em; }
+.judge-score { font-weight: 600; font-family: var(--values); }
+.judge-none { color: var(--ink-muted); font-size: var(--t-fine); }
+.judge-caveats { margin: var(--s-1) 0 0; padding-left: 1.3em; font-size: var(--t-fine); line-height: 1.45; }
+.judge-links { margin: var(--s-2) 0 0; font-size: var(--t-fine); }
+@container (max-width: 44rem) { .judge-arms { grid-template-columns: minmax(0, 1fr); } .judge-answer.is-clipped { max-height: 12em; } .judge-panel { padding: var(--s-2); } }
+.judge-rubric { margin: var(--s-1) 0 0; font-size: var(--t-fine); }
+.judge-rubric p { margin: 0; white-space: pre-wrap; }
+.judge-rubric-items { margin: .4em 0 0; padding-left: 1.3em; line-height: 1.45; }
+.judge-rubric-source { margin-top: .6em; color: var(--ink-muted); font-size: var(--t-mono-sm); overflow-wrap: anywhere; }
+
+/* Shared answer typography, issue 702. */
+:is(.tell-answer, .judge-answer) :is(h4,h5,h6) { font-family: var(--display); color: var(--ink); font-size: var(--t-h3); line-height: 1.25; font-weight: 500; margin: 1.2rem 0 .6rem; }
+:is(.tell-answer, .judge-answer) > :first-child { margin-top: 0; }
+:is(.tell-answer, .judge-answer) p { margin: 0 0 .85rem; max-width: none; }
+:is(.tell-answer, .judge-answer) :is(ul,ol) { margin: .5rem 0 1rem; padding-left: 1.4rem; }
+:is(.tell-answer, .judge-answer) li { margin-bottom: .4rem; }
+:is(.tell-answer, .judge-answer) code { color: inherit; font-family: var(--mono); font-size: var(--t-mono-sm); background: none; border: 0; padding: 0; }
+:is(.tell-answer, .judge-answer) pre { color: inherit; font-family: var(--mono); font-size: var(--t-mono-sm); white-space: pre-wrap; overflow-wrap: anywhere; background: transparent; border: 1px solid var(--sheet-rule); border-radius: var(--radius); padding: .7rem; margin: .75rem 0; }
+:is(.tell-answer, .judge-answer) pre code { white-space: inherit; }
+
+/* Issue 694: a fixed message that keeps the finding and its limits together. */
+.send-result { margin-block: var(--s-4); max-width: 100%; }
+.send-result button { font: inherit; cursor: pointer; min-height: 44px; padding: var(--s-1) var(--s-2); border: 1px solid currentColor; border-radius: var(--radius); }
+.send-result-button { color: var(--paper); background: var(--ink); }
+.send-result button[hidden] { display: none; }
+.send-preview { margin-block-start: var(--s-2); }
+.send-preview > summary { cursor: pointer; min-height: 44px; display: list-item; align-content: center; }
+.send-paper { color: var(--ink); padding: var(--s-4); border: 1px solid var(--ink); border-radius: var(--radius); background: var(--paper); }
+.send-paper [data-preview] { overflow-wrap: anywhere; white-space: normal; line-height: 1.65; }
+.send-eyebrow { font-weight: 700; }
+.send-actions { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: center; }
+.send-result textarea { box-sizing: border-box; width: 100%; min-height: 12em; font: inherit; }
+.send-status:empty { display: none; }
+.send-result :focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+
+.send-paper p, .send-paper a { color: var(--ink); }
+.send-actions button { background: var(--paper-2); color: var(--ink); }

@@ -5495,8 +5495,11 @@ gate.section('report 010 (published path)');
   gate.check('report 010: the page is published (no noindex, no DRAFT) and its eyebrow type is a label REPORT-STYLE.md lists',
     page10 != null && !/name="robots" content="noindex"/.test(page10) && !/DRAFT/.test(page10) && labels10.includes(type10),
     { type: type10 });
+  // The sentence is read as a reader sees it, tags and the chrome's fenced markers dropped (spec 041
+  // A-041-14, issue 689): the page must still say it, and no markup around a word changes that.
+  const text10 = String(page10 || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ');
   gate.check('report 010: no receipt directory exists for a report that publishes none',
-    !fs.existsSync(path.join(SCAN_ROOT, 'receipts', 'report-010')) && /no Driftproof receipts/.test(page10 || ''));
+    !fs.existsSync(path.join(SCAN_ROOT, 'receipts', 'report-010')) && /no Driftproof receipts/.test(text10));
   const sums10 = fs.existsSync(path.join(ev10, 'raw-SHA256SUMS'))
     ? new Map(fs.readFileSync(path.join(ev10, 'raw-SHA256SUMS'), 'utf8').split('\n').filter(Boolean).map((l) => [l.slice(66), l.slice(0, 64)]))
     : new Map();
@@ -6675,6 +6678,17 @@ if (!ROOT_IS_PUBLISHED_TREE) {
       status: r.status,
       tail: String((r.stdout || '') + (r.stderr || '')).trim().split('\n').slice(-6).join('\n'),
     });
+}
+
+// Issue 702: every discovered reader builder participates in repository staleness.
+if (!ROOT_IS_PUBLISHED_TREE) {
+  gate.section('reader pages and notes are current (issue 702)');
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'build-site-pages.js'), '--check'], {
+    cwd: ROOT, encoding: 'utf8', timeout: 1800000, maxBuffer: 32 << 20,
+  });
+  gate.check('site regeneration checks every discovered reader builder', r.status === 0 && !r.error, {
+    status: r.status, tail: String((r.stdout || '') + (r.stderr || '')).trim().split('\n').slice(-8).join('\n'),
+  });
 }
 
 const summary = gate.summarize();

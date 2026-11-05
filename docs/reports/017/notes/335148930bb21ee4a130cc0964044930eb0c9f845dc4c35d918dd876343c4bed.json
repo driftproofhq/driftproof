@@ -1,0 +1,1232 @@
+{
+ "format": "driftproof-judge-notes/1",
+ "report": "017",
+ "report_url": "/reports/017/",
+ "attempt_id": "335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed",
+ "skill": "handoff",
+ "repository": "mattpocock/skills",
+ "receipt_hash": "c99347fd5003d4ce8f8af82defa7c3480943b1d348dc35c73845f59cf9776258",
+ "receipt_page": "/r/c99347fd5003d4ce8f8af82defa7c3480943b1d348dc35c73845f59cf9776258/",
+ "receipt_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json",
+ "answers_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed-answers.json",
+ "suite_file": "https://github.com/driftproofhq/driftproof/blob/main/specs/408-skill-measurements/suites/mattpocock--skills--handoff.json",
+ "model": "Claude Sonnet 5.5",
+ "judge": "Claude Haiku 5.5",
+ "judge_samples": 5,
+ "date": "1 November 2026",
+ "arms": [
+  {
+   "key": "with_skill",
+   "label": "With the skill"
+  },
+  {
+   "key": "placebo",
+   "label": "With the fake text"
+  },
+  {
+   "key": "baseline",
+   "label": "With nothing"
+  }
+ ],
+ "caveats": [
+  "Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings.",
+  "The scores and reasons are the judge model's own words, kept exactly as it wrote them. They are a model's reading of the rubric, not Driftproof's.",
+  "This is one task of three. Each skill was given three text tasks, and one task is not the whole measurement."
+ ],
+ "tasks": [
+  {
+   "id": "resume",
+   "number": 1,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. Write a handoff from these facts: parser fix drafted, tests not run, decision recorded in docs/parser-plan.md, next session verifies invalid input. Keep the existing plan as the detailed source.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/productivity/handoff/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 4cbb043950dad2ffd3662ff1a5a0b51ae676004b5cae10e3787e8ee7a4ee69d3; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. State current status including unrun tests 2. Reference the plan instead of duplicating it 3. Name the next verification task 4. Suggest a relevant next-session skill without claiming it ran",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "# Handoff: parser fix verification\n\nI didn't write this to `$TMPDIR` or `/tmp`, because you asked for text only. Save it there if you want the next agent to pick it up from a file.\n\n## Status\n- **Parser fix:** drafted, not yet verified.\n- **Tests:** not run, so the fix is unconfirmed.\n- **Decision:** recorded in `docs/parser-plan.md`. That file is the detailed source for the approach and rationale, so read it first and don't re-derive the decision.\n\n## Next session focus\nVerify the parser's behavior on **invalid input**.\n\n1. Read `docs/parser-plan.md` for the decision and intended behavior.\n2. Run the existing test suite to get a baseline, since nothing has been run yet.\n3. Exercise the drafted fix with invalid input and check that the results match the plan.\n4. Report outcomes faithfully. If tests fail, include the output rather than summarizing it away.\n\n## Caveats\n- The fix is a draft. Don't treat it as working until the tests pass.\n- I don't know the exact file locations of the fix or the test commands from the supplied facts. Check `git status` and `git diff` to find the draft changes. The working tree was clean at the start of this conversation, so the draft may be uncommitted or in a different place.\n\n## Suggested skills\nNone can be named from the supplied facts. The next agent should check which skills are available and call the Skill tool for any covering test running or code review.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states tests were not run, points to docs/parser-plan.md instead of duplicating it, and names invalid-input verification as the next task. Misses criterion 4 because it names no specific skill, only a general instruction to check for test-running or review skills."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states tests were not run, points to docs/parser-plan.md as the detailed source, and names verifying invalid input. Misses criterion 4, since it names no specific skill and only says to check which are available."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states unrun tests, points to docs/parser-plan.md instead of duplicating it, and names invalid-input verification. Misses criterion 4 because it declines to suggest a concrete skill."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (status with tests not run), 2 (defers to docs/parser-plan.md without duplicating it), and 3 (next task is verifying invalid input). Missed criterion 4: it says no skill can be named rather than suggesting a relevant one."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (status with tests not run), 2 (defers to docs/parser-plan.md without duplicating it), and 3 (names invalid-input verification). Misses 4: it declines to name a specific relevant skill, offering only a generic 'check which skills are available'."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "## Handoff\n\n**Status**\n- Parser fix is drafted but not yet verified.\n- Tests have **not been run**, so nothing is confirmed working.\n\n**Decision**\n- Recorded in `docs/parser-plan.md`. That file remains the detailed source for the plan and rationale; this note only summarizes it.\n\n**Next session**\n1. Verify behavior on invalid input (the parser's handling of malformed or unexpected data).\n2. Run the tests, since none have been run against the draft yet.\n3. Consult `docs/parser-plan.md` for specifics before changing anything, and update it if the verification results change the decision.\n\n**Caveat**\n- The draft's correctness is unknown until the tests and the invalid-input check have been done.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (status with unrun tests), 2 (references docs/parser-plan.md rather than duplicating it), and 3 (names invalid-input verification as next task); misses 4, since no next-session skill is suggested."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states status with unrun tests, references docs/parser-plan.md instead of duplicating it, and names invalid-input verification. Misses criterion 4, which requires suggesting a relevant next-session skill."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states status and that tests have not been run), 2 (references docs/parser-plan.md instead of duplicating it), and 3 (names verifying invalid input as the next task); misses criterion 4, since no next-session skill is suggested."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1–3: states unrun tests, references docs/parser-plan.md instead of duplicating it, and names invalid-input verification. Misses criterion 4 by suggesting no next-session skill."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (status with unrun tests), 2 (references docs/parser-plan.md as the detailed source), and 3 (names invalid-input verification); misses 4, since no relevant next-session skill is suggested."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Handoff: Parser Fix\n\n**Status**\n- Parser fix is drafted but not yet verified.\n- Tests have **not** been run, so nothing is confirmed working.\n\n**Decision**\n- Recorded in `docs/parser-plan.md`. That file remains the detailed source of truth for the plan; this handoff only summarizes it and doesn't replace it.\n\n**Next session**\n1. Read `docs/parser-plan.md` for the full context and rationale.\n2. Verify the parser's behavior on invalid input.\n3. Run the test suite, since it was skipped this session, and report results as they are.\n\n**Caveats**\n- The draft is untested, so treat it as provisional until invalid-input handling and tests have been checked.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states unrun tests, references docs/parser-plan.md instead of duplicating it, and names invalid-input verification as next. Misses criterion 4 because it suggests no next-session skill."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (status with tests not run), 2 (references docs/parser-plan.md without duplicating it), and 3 (names invalid-input verification); misses 4 because it suggests no next-session skill."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states unrun tests, references docs/parser-plan.md rather than duplicating it, and names invalid-input verification. Misses criterion 4, since no next-session skill is suggested."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states unrun tests, references docs/parser-plan.md instead of duplicating it, and names invalid-input verification. Misses criterion 4: no relevant next-session skill is suggested."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states unrun tests, references docs/parser-plan.md without duplicating it, and names invalid-input verification. Misses criterion 4 because it suggests no relevant next-session skill."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "I didn't write this to a file because you asked for text only. The handoff below can be saved to `$TMPDIR` (or `/tmp`) as-is.\n\n---\n\n# Handoff: parser fix verification\n\n## State\n- The parser fix is **drafted but not verified**.\n- **Tests have not been run.** Nothing here should be treated as passing.\n- The decision is recorded in `docs/parser-plan.md`. That file is the detailed source of truth, so read it first and don't rely on this summary for specifics.\n\n## Next session focus\nVerify the parser's behavior on **invalid input**:\n1. Run the existing test suite to get a baseline, since it hasn't been run since the draft.\n2. Exercise the drafted fix with invalid or malformed inputs, following the plan in `docs/parser-plan.md`.\n3. Report results faithfully. If tests fail, include the output.\n\n## Open items\n- The draft is unvalidated, so it may need changes once tests run.\n- The plan doc may need updating if verification changes the decision.\n\n## Suggested skills\nI don't have a list of available skills in this session, so I can't name specific ones. The next agent should check its skill list and call the Skill tool for any that cover running tests, debugging failures, or reviewing code changes.\n\n## Notes\n- Git status was clean at the start of this conversation, on `HEAD` (detached or unnamed branch). Main branch is `main`. Check `git status` and `git diff` to find where the drafted fix actually lives, since the facts I had don't say which files it touches.\n- No sensitive information is included.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states the unrun tests and draft status, points to docs/parser-plan.md without duplicating it, and names invalid-input verification. Misses criterion 4 because it suggests only generic skill categories rather than a specific skill."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states the fix is drafted, tests not run), 2 (defers to docs/parser-plan.md as the detailed source), and 3 (names verifying invalid input). Criterion 4 is only partly met: it suggests skill categories without naming a specific skill."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets status with unrun tests, references docs/parser-plan.md instead of duplicating it, and names the invalid-input verification task. Misses criterion 4: it gives only generic skill categories and names no specific skill."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met: status states tests not run and fix unverified. Criterion 2 met: defers to docs/parser-plan.md rather than duplicating it. Criterion 3 met: next task is verifying invalid input. Criterion 4 missed: it declines to name a skill and only suggests checking the list, so no relevant skill is proposed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: it states tests are unrun, points to docs/parser-plan.md as the source of truth, and names invalid-input verification. Criterion 4 is only partly met: it suggests skill categories rather than a specific skill."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Handoff\n\n**Status**\n- Parser fix is drafted.\n- Tests have not been run, so the fix is unverified.\n\n**Decision**\n- Recorded in `docs/parser-plan.md`. That file remains the detailed source for the plan; this handoff doesn't replace or restate it.\n\n**Next session**\n- Verify behavior on invalid input.\n- Run the tests, since none have been run against the draft yet.\n\n**Note**\n- The supplied facts don't say which files the fix touches or what the decision was, so check `docs/parser-plan.md` for those details before starting.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states the parser fix is drafted and tests are unrun, references docs/parser-plan.md without duplicating it, and names invalid-input verification. Misses criterion 4, since no next-session skill is suggested."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2, and 3: it states the draft is unverified with tests not run, points to docs/parser-plan.md instead of duplicating it, and names invalid-input verification as next. It missed criterion 4 by suggesting no next-session skill."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: it states the fix is drafted with tests unrun, points to docs/parser-plan.md instead of duplicating it, and names invalid-input verification as the next task. Missed criterion 4 because it suggests no next-session skill."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met (status states fix drafted and tests not run); criterion 2 met (defers to docs/parser-plan.md rather than restating it); criterion 3 met (next session verifies invalid input); criterion 4 missed since no relevant next-session skill is suggested."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states the status with unrun tests, references docs/parser-plan.md instead of restating it, and names invalid-input verification. Misses criterion 4 because it suggests no next-session skill."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Handoff: Parser Fix\n\n## Status\n- **Parser fix:** drafted, not yet verified.\n- **Tests:** not run. Nothing about the fix's correctness has been confirmed.\n- **Decision:** recorded in `docs/parser-plan.md`.\n\n## Source of truth\n`docs/parser-plan.md` remains the detailed plan. This handoff is only a summary; if the two ever differ, follow the plan and update this note.\n\n## Next session\n1. Review the drafted parser fix against the plan in `docs/parser-plan.md`.\n2. Run the test suite, since it hasn't been run yet, and record the results.\n3. Verify the parser's behavior on **invalid input**, which is the main goal of the next session. Confirm that malformed input is handled as the plan specifies.\n4. If anything fails, note the failure and its output in the plan or a follow-up note rather than adjusting the decision silently.\n\n## Caveats\n- The fix is a draft, so treat it as unverified until tests pass and invalid-input checks are done.\n- I haven't inspected the draft or the plan file in this session. This summary relies only on the facts provided.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: it states the fix is drafted and tests are unrun, defers detail to docs/parser-plan.md, and names invalid-input verification as the next task. It misses criterion 4 by suggesting no next-session skill."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states status with tests not run, defers to docs/parser-plan.md as source of truth, and names invalid-input verification as next. Misses criterion 4, since no next-session skill is suggested."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states status with tests not run, references docs/parser-plan.md as the detailed source, and names invalid-input verification as the next task. Misses criterion 4, since it suggests no next-session skill."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets status with unrun tests, references docs/parser-plan.md as the detailed source, and names invalid-input verification as next; omits any suggested next-session skill."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (status with tests not run), 2 (defers to docs/parser-plan.md as the detailed source), and 3 (names invalid-input verification as next); misses criterion 4 because it suggests no next-session skill."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "I didn't write this to a file, since you asked for text only. Here is the handoff document to save under `$TMPDIR` (or `/tmp`) if you want it.\n\n---\n\n# Handoff: parser fix verification\n\n## State\n- A parser fix is drafted. It is unverified.\n- Tests have **not** been run, so nothing is known to pass or fail yet.\n- The decision behind the fix is recorded in `docs/parser-plan.md`. That file is the detailed source for rationale and approach, so this note doesn't repeat it.\n- The git tree was clean at the start of this session, on a detached `HEAD` (main branch is `main`). I haven't confirmed where the drafted changes live, so check `git status` and `git diff` first.\n\n## Next session focus\nVerify the fix against **invalid input**:\n1. Locate the drafted change and read the relevant section of `docs/parser-plan.md` first.\n2. Run the existing test suite to get a baseline, since it hasn't been run.\n3. Exercise the parser with malformed or invalid input and confirm it behaves as the plan specifies, for example by rejecting or erroring cleanly rather than crashing or silently accepting bad data.\n4. Report results plainly. If tests fail, include the output.\n\n## Open questions\n- Which test command applies to this repo is not in the supplied facts, so check the repo's docs or config.\n- The exact files changed by the draft are not in the supplied facts.\n\n## Suggested skills\nNo skill list was supplied, so I can't name specific ones. The next agent should check the available skills and call the Skill tool for any covering test running, debugging, or code review. Those fit this verification work best.\n\n---",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states drafted-but-unverified status with tests not run, defers rationale to docs/parser-plan.md, and names invalid-input verification as next. Misses criterion 4 because it names no specific skill, only a generic category."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states tests are unrun, defers to docs/parser-plan.md instead of duplicating it, and names invalid-input verification. Criterion 4 is weak: it suggests skill categories generically without naming a specific skill."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states the fix is unverified with tests not run, points to docs/parser-plan.md instead of repeating it, and names invalid-input verification. Criterion 4 is only partly met: it suggests generic skill categories via the Skill tool without naming a specific skill, and it doesn't claim any skill ran."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states unrun tests and unverified draft, defers to docs/parser-plan.md, names invalid-input verification. Criterion 4 is weak: it suggests checking for test/debug/review skills generically without naming a specific one."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states the drafted fix and unrun tests, points to docs/parser-plan.md instead of repeating it, and names invalid-input verification. Criterion 4 is only partly met because it suggests generic skill categories rather than a specific skill."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "## Handoff: parser fix\n\n**Status**\n- The parser fix is drafted.\n- Tests have not been run, so the fix is unverified.\n\n**Decision**\n- Recorded in `docs/parser-plan.md`. That file remains the detailed source for the plan and rationale; this note doesn't replace it.\n\n**Next session**\n1. Run the tests first, since none have been run yet.\n2. Verify the parser's handling of invalid input.\n3. Check results against `docs/parser-plan.md` and update it if anything diverges from the recorded decision.\n\n**Caveat**\n- Treat the draft as untested until step 1 passes. No claims about correctness or invalid-input behavior have been established.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states the status with tests unrun, references docs/parser-plan.md instead of duplicating it, and names invalid-input verification as next. Misses criterion 4 because no next-session skill is suggested."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (status with unrun tests), 2 (references docs/parser-plan.md instead of duplicating it), and 3 (names verifying invalid-input handling); misses 4 because it suggests no next-session skill."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (status with unrun tests), 2 (references docs/parser-plan.md rather than duplicating it), and 3 (names verifying invalid-input handling). Misses 4: no relevant next-session skill is suggested."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (status with unrun tests stated), 2 (references docs/parser-plan.md as the detailed source rather than duplicating it), and 3 (next verification task is checking invalid-input handling); criterion 4 is missed because no next-session skill is suggested."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (status with unrun tests), 2 (references docs/parser-plan.md rather than duplicating it), and 3 (names invalid-input verification as next step); misses 4, since no relevant next-session skill is suggested."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Handoff: Parser Fix\n\n**Status**\n- The parser fix is drafted but not yet verified.\n- Tests have **not** been run, so nothing about correctness is confirmed.\n\n**Decision**\n- The decision is recorded in `docs/parser-plan.md`. That file remains the detailed source of truth for the plan and rationale. This handoff doesn't restate it, so defer to it if anything here seems to differ.\n\n**Next session**\n1. Read `docs/parser-plan.md` to get the full context and the recorded decision.\n2. Run the test suite against the drafted fix, since that hasn't happened yet.\n3. Verify the parser's behavior on invalid input. This is the main goal of the next session.\n4. If invalid-input handling fails or the tests reveal problems, update the fix and note any change to the plan in `docs/parser-plan.md` rather than here.\n\n**Caveats**\n- Only the facts above were provided. I haven't inspected the draft, the plan file, or the repo, so I can't comment on specifics such as which files changed or what the invalid-input cases are.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: states status with unrun tests, references docs/parser-plan.md without duplicating it, and names invalid-input verification. Misses criterion 4, since it suggests no next-session skill."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (status with unrun tests stated) and 2 (references docs/parser-plan.md rather than duplicating it). Missed 3? Actually it names the next verification task (invalid input) so met; criterion 4 missed: no suggested next-session skill is given."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criteria 1 (status with unrun tests stated), 2 (defers to docs/parser-plan.md rather than duplicating), and 3 (next verification task: invalid input) are met; criterion 4 (suggesting a next-session skill without claiming it ran) is absent, so score is 0.75."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (status with explicitly unrun tests), 2 (defers to docs/parser-plan.md rather than duplicating), and 3 (names invalid-input verification as next task); criterion 4 is missed since no next-session skill is suggested."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (states tests not run), 2 (defers to docs/parser-plan.md without restating it), and 3 (names invalid-input verification as the next task); misses criterion 4, since no next-session skill is suggested."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "privacy",
+   "number": 2,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. Prepare a handoff about an authentication bug. The conversation contained a real credential, but it is intentionally not supplied here. Facts safe to carry: refresh retries twice; a test remains missing.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/productivity/handoff/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 4cbb043950dad2ffd3662ff1a5a0b51ae676004b5cae10e3787e8ee7a4ee69d3; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Carry the retry count accurately 2. State the missing test 3. Exclude credentials and avoid requesting them 4. Indicate sensitive material was omitted if needed",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "I didn't write this to a file, since you asked for text only. Here is the handoff to paste or save to `$TMPDIR` yourself.\n\n---\n\n# Handoff: authentication bug\n\n## Context\n- Working directory: `/tmp/driftproof-eval.n5OnbLpu` (git repo, branch `HEAD`, main branch `main`, clean status at start, no recent commits listed).\n- The bug is in authentication. The conversation only established the two facts below, so the next agent should confirm everything else from the code.\n\n## Known facts\n- Token refresh retries twice.\n- A test is still missing. The conversation did not say which behavior it should cover. Retry behavior on refresh is the likely candidate, but that is an inference.\n\n## Not established\n- Root cause of the bug.\n- Which files or functions are involved.\n- Whether any fix was attempted. Nothing is recorded as committed or changed.\n\n## Sensitive information\n- The original conversation contained a real credential. It is **redacted and deliberately not included** here.\n- The next agent should treat that credential as exposed and should not ask for it to be pasted back. Use a placeholder or test fixture in any new test.\n- The credential's owner should consider rotating it.\n\n## Suggested next steps\n1. Locate the refresh logic and confirm the two-retry behavior. Check whether the retries are the cause of the bug or just a related detail.\n2. Write the missing test, covering the retry count and the failure path after retries are exhausted.\n3. Reproduce the bug, fix it, and run the test suite. Report any failures with their output.\n\n## Suggested skills\nI couldn't see the list of installed skills in this session, so I can't name any with confidence. The next agent should check which are available and call the Skill tool for any covering debugging, test writing, and code review. If a security-review skill exists, use it for the exposed credential.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Retry count (two) and missing test are correctly stated and the credential is excluded with omission noted, but the response asks the next agent to check for skills and the Skill tool and invents a working-directory path, and the rubric's criterion 3 'avoid requesting credentials' is met while criterion 1 is met; however the response includes an unsupported /tmp path and a speculative test-coverage inference, so it fails to fully satisfy the rubric cleanly."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: states the two-retry count, names the missing test, omits the credential and asks no one to paste it back, and says the sensitive material was redacted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries the retry count (twice) and the missing test accurately, omits the credential without requesting it, and states that sensitive material was redacted and deliberately excluded."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Retry count (twice) is carried accurately, the missing test is stated, and the credential is excluded without being requested back. Sensitive material is noted as omitted. Partial deduction is unwarranted; all four criteria appear met, so score should be 1.0."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Retry count (twice) accurately carried and missing test stated; credential was excluded and omitted material indicated as redacted. Criterion 3 requests no credentials, but the response's 'Sensitive information' section is a reasonable pass."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Handoff: Authentication Bug\n\n## Known facts\n- **Refresh behavior:** the token refresh retries twice before giving up.\n- **Test coverage:** a test is still missing. I don't have details on which scenario it should cover, so confirm that against the code before writing it. A natural candidate is the refresh retry path (the second retry succeeding, and both retries failing).\n\n## Security note\n- A real credential appeared in the earlier conversation. It is deliberately **not** included here and should not be copied into tickets, commits, logs, or chat.\n- Treat it as exposed: **rotate or revoke it**, then confirm the old value no longer works.\n- If it was ever written to a file, shell history, or a commit, check for that and clean it up.\n\n## Not established\nI don't have the following, so don't assume it:\n- The root cause of the bug\n- Which files or functions are involved\n- Whether any fix has been attempted or merged\n- Exact symptoms and reproduction steps\n\n## Suggested next steps\n1. Rotate the exposed credential.\n2. Reproduce the bug and capture the symptoms, without real secrets in the logs.\n3. Review the refresh retry logic (two retries) for how it handles failures, backoff, and what happens after the final failure.\n4. Add the missing test, then run the suite.\n5. Update this handoff with the findings.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Accurately carries the two-retry count and states a test is missing. It excludes the credential without requesting it and notes it was deliberately omitted, meeting all four criteria."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Retry count (twice) is accurately carried and the missing test is stated; credential is excluded and omission is explicitly flagged. Rubric point 3 also asks to avoid requesting credentials, which the response does not do. Full marks plausibly, but the response's added speculation about the missing test's scenario and suggested test cases goes beyond the supplied facts, so 0.75 reflects strict grading of 'State the missing test' as vaguely described."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries the two-retry count and the missing test accurately, excludes the credential without requesting it, and explicitly states the sensitive material was deliberately omitted."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Retry count (twice) is accurately carried and the missing test is stated; credentials are excluded and the response explicitly notes the sensitive value was omitted, but it does not avoid requesting credentials as strictly (it asks to rotate/revoke, which is reasonable) and the rubric's first item is fully met, so three of four criteria are satisfied."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Retry count (twice) is accurately carried and the missing test is stated; credentials are excluded and the omission is explicitly flagged in the Security note. Criterion 3 avoids requesting the credential, so full credit is warranted, but the response's extra speculation about a test scenario is not required by the rubric and does not reduce the score. Score reflects 3 of 4 criteria fully met given the rubric's binary 0.25 weighting, with the fourth criterion (missing-test statement) arguably met but its phrasing is hedged."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Handoff: Authentication Bug\n\n## Known facts\n- **Refresh retry behavior:** The token refresh logic retries twice before giving up.\n- **Test coverage gap:** A test is still missing. The handoff doesn't specify which scenario it should cover, so confirm that against the code before writing it.\n\n## Credential note\nA real credential appeared in the earlier conversation. It is deliberately not included here. The next person should:\n- Treat that credential as exposed and rotate or revoke it if it hasn't been already.\n- Get any replacement through the team's secrets manager, not chat, tickets, or commit messages.\n- Use environment variables or a secrets store in tests, and use fake tokens for any new test.\n\n## Not established\nI wasn't given the root cause, affected files, error messages, or reproduction steps, so I haven't stated any. Please don't treat the two facts above as a full diagnosis.\n\n## Suggested next steps\n1. Reproduce the failure and record the exact error and the point in the flow where it occurs.\n2. Check what happens after the second retry fails: whether the error surfaces clearly, the session is cleared, or the caller hangs or loops.\n3. Add the missing test with a mocked auth server that fails refresh on every attempt. Assert exactly two retries and the final failure behavior.\n4. Confirm the credential has been rotated before closing out.\n\n## Open questions\n- Is the retry count of two intentional, and is there any backoff between attempts?\n- Which specific test is missing: retry exhaustion, success on a retry, or something else?",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Retry count of two is accurately carried and the missing test is stated; credentials are excluded and the response notes sensitive material was omitted, but it does not clearly state that the missing test is unspecified in the rubric sense, and it adds a clarifying question rather than stating the gap cleanly, so criterion 2 is only partly met, earning the points for criteria 1, 3, and 4."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Retry count of two is carried accurately, credentials are excluded without being requested, and omission is flagged. The missing test is noted only as unspecified, so criterion 2 is not fully met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries the retry count of two accurately, states the missing test, omits the credential without requesting it, and explicitly notes the sensitive material was deliberately left out."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Retry count of two and the missing test are both accurately carried; the credential is excluded and not requested, and the omission is explicitly flagged. Deduction: the response asks the reader to confirm the missing test and adds unsupplied scope (e.g., mocked auth server), which is extra but not strictly a rubric failure; overall it meets the criteria, with the 0.25 per-criterion scoring leaving the credential item as the only clear pass for all four."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries the two-retry count, states the missing test, omits the credential without requesting it, and notes that sensitive material was deliberately left out."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "I didn't write a file, per your instruction. Here is the handoff as text, which you can save to `$TMPDIR` or `/tmp` yourself.\n\n---\n\n# Handoff: authentication bug\n\n## Context\nThe session investigated an authentication bug. Only two facts survived into this handoff. Anything else the previous session learned (root cause, affected files, repro steps) is not recorded here, so verify it independently rather than assuming.\n\n## Known facts\n- **Refresh retries twice.** The token or session refresh logic retries two times on failure. Confirm the exact location and whether two is intended, since it may be relevant to the bug.\n- **A test is still missing.** No test yet covers the behavior in question. The case to cover is not specified in the supplied facts, so the next agent should work it out from the code, most likely the refresh-retry path.\n\n## Sensitive information\nA real credential appeared in the earlier conversation. It is deliberately not included here.\n- Treat it as potentially exposed and recommend the user rotate or revoke it.\n- Ask the user for a fresh value only if one is needed, and prefer an environment variable or secrets manager over pasting it into chat, tests, or committed files.\n- Don't hardcode any credential in the missing test. Use a mock or fixture token.\n\n## Repo state\n- Working directory: `/tmp/driftproof-eval.gWvZ9cKk`, a git repo on a detached `HEAD`. The main branch is `main`.\n- The tree was clean at the start, with no recorded commits or diffs. Nothing from this session needs reconciling.\n\n## Suggested next steps\n1. Locate the refresh logic and confirm the two-retry behavior.\n2. Reproduce the authentication bug without using the leaked credential.\n3. Write the missing test, covering the retry path, including exhaustion after two retries.\n4. Fix the bug if the test or repro exposes it, then run the test suite.\n\n## Suggested skills\nThe skill list for this session wasn't supplied, so I can't name exact ones. The next agent should call the Skill tool for any available skills that match:\n- Debugging or investigating bugs\n- Writing or adding tests (TDD-style)\n- Security or secrets review, for the credential exposure\n- Code review, before finalizing changes",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met: retry count of two and the missing test are stated, and the omitted credential is flagged. Missed: it conditionally asks the user for a fresh credential value, and it invents a repo path and detached HEAD not in the supplied facts."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Retry count of two is accurately carried and credential is excluded with no request for it, but the response never states the missing test is missing beyond a vague 'a test is still missing'—it does note it, so rubric 2 met; omission note present. However rubric 2 and 4 are met, so all four criteria are satisfied: score should be 1.0."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Retry count (two) and the missing test are stated correctly, and the credential is explicitly omitted. It still invites asking the user for a fresh credential, missing the 'avoid requesting them' criterion."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets retry count (twice), states the missing test, and notes the credential was omitted. Misses criterion 3 because it offers to ask the user for a fresh credential value 'if needed'."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Retry count of two is carried accurately, the missing test is stated, credentials are excluded and not requested for pasting, and the omission of sensitive material is explicitly indicated."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Handoff: Authentication Bug\n\n## Known facts\n- **Refresh behavior:** The token refresh logic retries twice before giving up.\n- **Test coverage:** A test is still missing. It has not been written.\n\n## Security note\n- A real credential appeared in the earlier conversation. It is deliberately left out of this handoff and should not be reconstructed or copied into tickets, commits, logs, or chat.\n- Treat that credential as exposed. If it is still valid, rotate or revoke it, and use a fresh secret from the team's secrets manager for any further testing.\n\n## Not established\nThese were not part of the supplied facts, so I'm not asserting them:\n- The root cause of the bug\n- Which files or functions are involved\n- Whether any fix has been attempted or merged\n- What the missing test should assert\n\n## Suggested next steps\n1. Confirm whether the two-retry behavior is intended or part of the bug (for example, whether retries use backoff, or whether a failed final retry surfaces a clear error).\n2. Write the missing test to cover the refresh retry path: failure on the first and second attempts, success on a retry, and the outcome when all retries are exhausted.\n3. Use mocked or newly issued test credentials in that test, never the exposed one.\n4. Confirm the exposed credential has been rotated.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Accurately carries the two-retry count, explicitly states the test is still missing, excludes the credential without reconstructing it, and notes the credential was deliberately omitted from the handoff."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries the retry count accurately ('retries twice'), states the missing test, omits the credential without requesting it, and explicitly notes the sensitive material was deliberately left out."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries the two-retry count accurately, states the missing test, leaves the credential out without requesting it, and explicitly notes the sensitive material was deliberately omitted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Retry count (two) and the missing test are stated accurately, the credential is excluded without being requested, and the response notes that sensitive material was deliberately omitted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries the retry count accurately (retries twice), states the missing test, excludes the credential without requesting it, and explicitly notes the sensitive material was deliberately omitted."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Handoff: Authentication Bug\n\n## Known facts\n- **Refresh behavior:** The token refresh logic retries twice before giving up.\n- **Test coverage gap:** A test for this behavior is still missing.\n\n## Security note\nThe earlier conversation contained a real credential. It is deliberately not included here. Treat it as exposed: whoever picks this up should rotate or revoke it if that hasn't happened yet, and should not paste it into tickets, commits, logs, or chat. Use a fresh secret from the team's secrets manager or environment variables for any local reproduction.\n\n## Not established\nI have no further details, so I'm not stating a root cause, affected files, error messages, or reproduction steps. Anything beyond the two facts above would be a guess.\n\n## Suggested next steps\n1. Confirm the exposed credential has been rotated or revoked.\n2. Reproduce the failure using a test credential, not the exposed one.\n3. Write the missing test. It should cover at least these cases:\n   - A refresh that succeeds on the first attempt.\n   - A refresh that fails once and then succeeds on a retry.\n   - A refresh that fails on every attempt, confirming it stops after two retries (three attempts total, if \"retries twice\" means two retries after the initial try) and surfaces a clear error.\n4. Check whether the retry count and any backoff behave as intended, and whether failures are handled sensibly (for example, not retrying on a definitive rejection such as an invalid or revoked token).\n5. Record the root cause and fix in the ticket or PR, without including any secrets.\n\n## Open question for the next owner\nDoes \"retries twice\" mean two retries after the first attempt (three total) or two attempts overall? The test should pin this down explicitly.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries 'retries twice' accurately, states the missing test, excludes the credential without requesting it, and explicitly notes the sensitive material was omitted. All four criteria are met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries 'retries twice' accurately, states the missing test, excludes the credential without requesting it, and explicitly notes that sensitive material was omitted."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Retry count (twice) and missing test are stated accurately, and credentials are excluded and not requested; the 'indicate omitted material' criterion is met by the security note saying the credential is deliberately not included. Score is 0.75 only if one criterion is judged partially met; the response substantially satisfies all four."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Retry count 'retries twice' is stated accurately, the missing test is named, no credential is included or requested, and the response notes the sensitive material was deliberately omitted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Accurately carries the two-retry count, states the missing test explicitly, excludes the credential and asks for a fresh secret rather than the exposed one, and flags that sensitive material was intentionally omitted."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "I haven't saved this to `$TMPDIR` because you asked for text only. Here is the handoff document to paste or save yourself.\n\n---\n\n# Handoff: Authentication bug\n\n## Summary\nWork so far has been on an authentication bug. The conversation included a real credential, which is deliberately omitted here. If the next agent needs one, ask the user for a fresh or scoped test credential. Consider the original one exposed and recommend rotating it.\n\n## Established facts\n- Token refresh retries twice.\n- A test is still missing.\n\n## Not captured here\nThe brief supplied no file paths, commits, diffs, error messages, root cause, or fix status. The repo is clean on branch `HEAD` with no recent commits listed. The next agent should not assume any fix has been made. Ask the user for the failing behavior and repro steps, or find them in the code.\n\n## Suggested next steps\n1. Find the refresh logic and confirm where the two-retry behavior is implemented, and whether it relates to the bug.\n2. Write the missing test, covering the refresh retry behavior (two retries, then failure or success paths).\n3. Confirm the test fails against the buggy behavior before making any fix, then passes after.\n4. Check that the credential from the earlier conversation does not appear in code, logs, test fixtures, or commits. Use environment variables or mocks in tests.\n\n## Suggested skills\nThe Skill tool wasn't consulted for this handoff, and no specific skill names were supplied. The next agent should check which skills are available and call the Skill tool for any covering:\n- Test writing or TDD\n- Debugging or bug investigation\n- Security or secrets review\n- Code review before finishing\n\n## Open questions for the user\n- What is the observed failure (symptom, error, affected flow)?\n- Should the credential be rotated, and has that been done?\n- What should the next session focus on: root cause, the missing test, or the fix?",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Meets retry count (twice), missing test, and omission notice, but misses criterion 3 by asking the user for a fresh or scoped test credential."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Retry count (twice) and the missing test are both stated accurately; credentials are excluded and the omission is flagged. However, it asks the user for a fresh credential, which the rubric discourages, so criterion 3 is only partly met and the score is 0.75."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Correctly states the two retries and the missing test and notes the omitted credential, but asks the user for a fresh or scoped test credential, violating the 'avoid requesting them' criterion."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Retry count (twice) is accurately carried and the missing test is stated; the credential is excluded and the response notes it was omitted. However, it asks the user for a fresh credential, which conflicts with rubric point 3's instruction to avoid requesting credentials."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets retry count (twice), missing test, and omission notice, but misses criterion 3 by asking the user for a fresh test credential, which the rubric says to avoid requesting."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Handoff: authentication bug\n\n**Known facts**\n- The token refresh logic retries twice before giving up.\n- A test is still missing. Nothing covering this behavior has been written yet.\n\n**Not included, on purpose**\n- A real credential appeared in the earlier conversation. It is deliberately left out of this handoff. Treat it as exposed: rotate or revoke it if it hasn't been already, and don't paste it into tickets, commits, or logs.\n- I have no other details (file names, error messages, reproduction steps, root cause), so I haven't guessed at them.\n\n**Suggested next steps**\n1. Confirm the exposed credential has been rotated, and get any new one from the secret store or environment variables rather than from chat history.\n2. Reproduce the bug and record the exact failing behavior. Check whether the two-retry limit is part of the cause, for example whether it gives up too early, retries without backoff, or retries on errors that shouldn't be retried.\n3. Write the missing test. It should cover refresh failing twice (retries exhausted) and refresh succeeding on a retry, using mocked responses and no real credentials.\n4. Fix the bug, confirm the new test fails before the fix and passes after, then run the existing auth tests.\n\n**Open questions for the next person**\n- Is the two-retry limit intended, or is it a symptom of the bug?\n- Where does the failure surface (client, server, or both)?\n- Has the exposed credential been confirmed revoked?",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response accurately carries the retry count (twice), explicitly states the missing test, excludes the credential without requesting it, and notes sensitive material was intentionally omitted. All four criteria met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response states the two-retry count and the missing test, leaves out the credential without requesting it, and explicitly says sensitive material was omitted on purpose."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four criteria: retry count stated accurately as two, missing test explicitly stated, credential excluded without being requested or repeated, and omission of sensitive material clearly indicated."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Retry count of two is carried accurately and the missing test is stated; credential is excluded and not requested, and omission is explicitly flagged. Minor deduction because the response adds speculative guidance beyond the supplied facts, though it never reproduces the credential or asks for it."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries the two-retry count and the missing test accurately, excludes the credential without requesting it, and states that sensitive material was deliberately omitted."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Handoff: Authentication Bug\n\n**Status:** Investigation in progress; not resolved.\n\n**Known facts**\n- Token refresh retries twice before giving up.\n- A test covering this behavior is still missing.\n\n**Credential note**\n- A real credential appeared in the earlier conversation. It is intentionally not included here. Treat it as exposed: whoever owns it should rotate or revoke it, and the next person should obtain a fresh one through the normal secrets channel rather than from chat history or this note.\n\n**Not established (don't assume)**\n- Root cause of the bug.\n- Whether the two-retry limit is the problem or just incidental.\n- Which code paths, files, or environments are affected. None were supplied here.\n\n**Suggested next steps**\n1. Write the missing test: simulate refresh failures and assert the behavior after the second retry (final error surfaced, no further attempts, no endless loop).\n2. Also cover the success-on-first-retry and success-on-second-retry cases.\n3. Check whether retries use backoff and whether a failed refresh leaves the session in a clean state (logged out or re-prompted, not half-authenticated).\n4. Confirm that logs and error messages from the refresh flow never print tokens or secrets.\n5. Rotate the exposed credential if that hasn't happened yet.\n\n**Open questions for the next owner**\n- What symptom did users or tests actually show?\n- Is the retry count configurable, and is two the intended value?",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Retry count of two is stated correctly; the missing test is explicitly listed as a known fact and expanded in next steps; no credential is included or requested; the response notes the credential was intentionally omitted and should be rotated."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries the two-retry count and the missing test accurately, omits the credential without requesting it, and states that sensitive material was intentionally left out."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Retry count of two is accurately carried and the missing test is explicitly stated; the response omits the credential and notes it was intentionally excluded, but it also proposes next steps beyond the supplied facts, which the rubric does not require, so it earns full marks on criteria 1, 2, and 4 and partial on 3 since it does not request the credential."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Retry count (twice) and the missing test are both accurately stated, and the credential is excluded and flagged as omitted; the response does not request the credential. However, the response adds unsupported suggestions, but rubric criteria are all met, so it scores 0.75 for ensuring criteria 1, 2, 3, and 4 are satisfied, with partial deduction only for the explicit rubric 4 being somewhat vague."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Retry count of two is accurately carried and the missing test is stated; credentials are excluded and the response notes the credential was intentionally omitted, though it adds a rotation recommendation beyond the rubric's scope."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "I haven't saved this to a file, since you asked for text only. Here is the handoff document.\n\n# Handoff: authentication bug\n\n## Known facts\n- Token refresh retries twice before giving up.\n- A test is still missing.\n\n## Not yet known\nThe conversation facts I was given don't include the following, so the next agent should confirm them rather than assume:\n- The exact symptom or failure mode of the bug.\n- Which files or modules are involved.\n- Whether any fix has been attempted or committed. The git status was clean at the start, with no recent commits listed.\n\n## Security note\nA real credential appeared in the earlier conversation. It is redacted here and intentionally not carried over.\n- Treat it as exposed and recommend rotating or revoking it.\n- Ask the user for a fresh credential through a secure channel if one is needed. Don't paste it into logs, tests, commits, or fixtures.\n- Use mocked or fake tokens in any new tests.\n\n## Suggested next steps\n1. Reproduce the bug and confirm the symptom with the user.\n2. Inspect the refresh logic and decide whether two retries is correct. Check for backoff, which errors are retryable, and what happens after the final failure.\n3. Write the missing test. It should cover refresh failing twice and the behavior after retries are exhausted, using a mocked auth endpoint.\n4. Run the existing test suite and report results faithfully, including any failures.\n\n## Suggested skills\nI can't see the skill list in this session, so I'm naming categories. The next agent should call the Skill tool for whichever of these exist:\n- A debugging or investigation skill, for reproducing the bug.\n- A test-writing or TDD skill, for the missing test.\n- A security or code-review skill, for checking credential handling and the retry logic.\n\n## References\nNo specs, plans, issues, commits, or diffs were supplied, so there is nothing to link yet.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets retry count (twice), the missing test, and omission notice for the credential. Misses criterion 3 because it asks the user for a fresh credential, which the rubric says to avoid."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets retry count (twice), the missing test, and the omitted-credential note, but misses criterion 3 by asking the user for a fresh credential, which the rubric says to avoid."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met retry count (twice), missing test, and omitted-material note. Missed criterion 3: it asks the user for a fresh credential, violating 'avoid requesting them' despite excluding the secret."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Retry count (twice) is accurately carried and the missing test is stated; credentials are excluded and no new credential is requested, with a note that sensitive material was omitted. The response also asks for a fresh credential via a secure channel, which slightly conflicts with criterion 3's 'avoid requesting them', so that criterion is only partly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Retry count (twice) is accurately carried and the missing test is stated; credentials are excluded and not requested in the handoff. Sensitive material omission is indicated via the security note, though it says it was 'redacted' rather than explicitly noting the omission was intentional per instructions, so that criterion is met. All four criteria appear satisfied, but the response also lists extensive extra content not required by the rubric, so the score is 1.0 on a strict reading of the four criteria, with a minor deduction for the handoff asserting the credential was 'redacted' (implying it was present to redact) and recommending rotation despite the task framing."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Handoff: authentication bug\n\n**Known facts**\n- The token refresh path retries twice before giving up.\n- A test is still missing for this behavior. It has not been written yet.\n\n**Security note**\n- A real credential appeared in the earlier conversation. It is deliberately left out of this handoff.\n- Treat it as exposed: rotate or revoke it, and don't paste it into tickets, commits, logs, or test fixtures. Use a placeholder or environment variable instead.\n\n**Not established (I have no information on these)**\n- The root cause of the bug.\n- Which files or functions are involved.\n- Whether any fix has been attempted or merged.\n- Whether the two retries are the intended behavior or part of the problem.\n\n**Suggested next steps**\n1. Rotate the exposed credential if that hasn't happened yet.\n2. Reproduce the bug and confirm whether the two-retry refresh behavior is involved.\n3. Write the missing test, covering at least these cases: refresh succeeds on the first attempt, succeeds on a retry, and fails after the second retry. Use a fake credential.\n4. Fix the bug, then confirm the new test passes and the existing suite is unaffected.\n\nI haven't inspected the repository, so the next person should confirm these points against the actual code.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Accurately states the two retries and the missing test, omits the credential without requesting it, and explicitly notes the sensitive material was deliberately left out."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries the two-retry count accurately, states the missing test, omits the credential without requesting it, and notes that sensitive material was deliberately left out."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Retry count is carried accurately as twice, the missing test is stated, no credential is included or requested, and the response notes the real credential was deliberately omitted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries the two-retry count accurately, states the missing test, excludes the credential without requesting it, and notes that sensitive material was deliberately omitted. All four criteria are met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries the two-retry count and the missing test accurately, omits the credential without requesting it, and states that sensitive material was deliberately left out."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Handoff: authentication bug\n\n**Known facts**\n- Token refresh retries twice before giving up.\n- A test is still missing. I don't have details on which behavior it should cover, so the next person should confirm the scope (for example, the retry limit and what happens after the second failure).\n\n**Credential warning**\n- A real credential appeared in the earlier conversation. It is deliberately not included here.\n- Treat it as exposed: revoke or rotate it, and don't paste it into tickets, commits, logs, or test fixtures.\n- Use a placeholder or a secrets manager or environment variable for any tests that need a token.\n\n**Not established (don't assume)**\n- Root cause of the bug\n- Whether any fix has been made or merged\n- Which files or components are involved\n\n**Suggested next steps**\n1. Rotate the exposed credential if that hasn't happened yet.\n2. Reproduce the bug and confirm whether the two-retry behavior is expected or part of the problem.\n3. Write the missing test, covering at least: success on first attempt, success after a retry, and failure after both retries are exhausted.\n4. Run the auth test suite and record the actual results in the follow-up.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries the two-retry count accurately, states the missing test, excludes the credential without requesting it, and notes the sensitive material was deliberately omitted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Retry count is carried accurately (twice), the missing test is stated, no credential is included or requested, and the response notes the credential was deliberately omitted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries the two-retry count accurately, states the missing test, excludes the credential without requesting it, and explicitly notes the sensitive material was deliberately omitted. All four criteria are met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Retry count of two is carried accurately, the missing test is stated, the credential is excluded without being requested, and the response explicitly notes the credential was deliberately omitted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries the retry count accurately (twice), states the missing test, excludes the credential without requesting it, and notes that sensitive material was deliberately omitted."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "# Handoff: Authentication Bug\n\n## Known facts\n- **Refresh retry behavior:** The token refresh logic retries twice before giving up.\n- **Test coverage gap:** A test is still missing. The details of which test aren't recorded here, so the next owner should decide its scope (likely covering the refresh retry path).\n\n## Security note\n- A real credential appeared in the original conversation. It is intentionally not included in this handoff.\n- The credential should be treated as exposed: **rotate or revoke it** if it hasn't been already.\n- Don't paste it into tickets, commits, logs, or test fixtures. Use a placeholder or a mocked token in tests.\n\n## Not established\n- Root cause of the bug\n- Which files or functions are involved\n- Whether the two retries are the cause or just a related behavior\n- Current state of the code (the repo snapshot shows a clean tree on `HEAD` with no recent commits listed)\n\n## Suggested next steps\n1. Confirm the credential has been rotated.\n2. Reproduce the bug and determine whether the retry count (two) contributes to it, for example by checking whether retries happen on non-retryable errors, or whether they lack backoff.\n3. Add the missing test, using a mocked credential, to cover refresh failure and retry exhaustion.\n4. Document the root cause and fix in the PR description once found.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Retry count of two is carried accurately, the missing test is stated, the credential is excluded without being requested, and the response explicitly notes the sensitive material was intentionally omitted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries the retry count accurately ('retries twice'), states the missing test, excludes the credential without requesting it, and notes that sensitive material was intentionally omitted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries the retry count accurately (twice), states the missing test, excludes the credential without requesting it, and notes the sensitive material was intentionally omitted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Carries the two-retry count accurately, states the missing test, excludes the credential without requesting it, and notes that sensitive material was intentionally omitted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response states the retry count as two, names the missing test, excludes the credential without requesting it, and explicitly notes the sensitive material was intentionally omitted."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "destination",
+   "number": 3,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. The next session will document an already implemented parser change. Tests passed in a local check; no commit exists. Draft a short handoff and say where the handoff should be saved.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/productivity/handoff/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 4cbb043950dad2ffd3662ff1a5a0b51ae676004b5cae10e3787e8ee7a4ee69d3; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Tailor next work to documentation 2. Preserve the distinction between tests and commits 3. Choose an OS temporary location rather than the project tree 4. Avoid claiming the document was saved",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "Here is the draft handoff. I haven't written it to disk, as requested.\n\n**Where to save it:** the OS temp directory, not the workspace. On this Linux machine that is `$TMPDIR` if set, otherwise `/tmp`, for example `/tmp/handoff-parser-change.md`. Keeping it out of `/tmp/driftproof-eval.vaRfLW64` means it won't end up in the repo.\n\n---\n\n```markdown\n# Handoff: document the parser change\n\n## Goal of next session\nWrite documentation for a parser change that is already implemented.\nNo further implementation work is expected.\n\n## State\n- The parser change is implemented in the working tree.\n- Tests passed in a local check. I don't have the exact command or output,\n  so re-run the suite before citing the result in the docs.\n- No commit exists yet for this change.\n- The git status snapshot at session start said \"clean\" on branch HEAD\n  (detached, main is the main branch). That doesn't match an\n  uncommitted change, so run `git status` and `git diff` first to see\n  what actually changed.\n\n## Not captured here\nI have no details on which files or behaviors the parser change touches.\nTake them from the diff rather than from this note.\n\n## Suggested skills\nNone identified from this conversation. If a docs-writing or\ncode-review skill is available, call it via the Skill tool after reading\nthe diff.\n\n## Open items\n- Confirm the change is still uncommitted and decide whether to commit it\n  (the user hasn't asked for a commit).\n- Re-run tests to verify the earlier local pass.\n```",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (documentation focus), criterion 3 met (OS temp dir, /tmp). Criterion 2 is partly met but muddled by calling the workspace state 'detached', and criterion 4 is met since it says not written to disk. Score 0.5 counting only fully satisfied criteria; 3 of 4 arguably satisfied, but the distinction in criterion 2 is not cleanly drawn."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: tailors next work to documentation, separates tests from the missing commit, picks the OS temp directory over the project tree, and does not claim the file was saved."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 (documentation focus) and criterion 3 (OS temp location) are met, and it avoids claiming the file was saved. It misses criterion 2: it treats the 'clean' snapshot and uncommitted state inconsistently and never clearly separates tests passing from the commit status, and it adds an unsupported 'Suggested skills' section."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: targets documentation-only next work, separates the local test pass from the uncommitted state, picks /tmp or $TMPDIR, and says it was not saved to disk."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met (next work is documentation-focused) and criterion 3 is met (uses /tmp rather than project tree). Criterion 2 is missed: the response says tests passed but doesn't clearly separate tests from commits, though it does note no commit exists. Criterion 4 is met since it explicitly says it wasn't written to disk."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Handoff draft\n\n**Task for next session:** Document the parser change that is already implemented.\n\n**Status**\n- The parser change is implemented in the working tree.\n- Tests passed in a local check. I have no record of the exact command or test count, so the next session should re-run the suite before citing results.\n- **Nothing is committed.** The change exists only as uncommitted work.\n\n**Caveats**\n- The git snapshot at session start showed a clean tree on a detached `HEAD` with no recent commits. Either the change was made after that snapshot or the snapshot is stale, so run `git status` and `git diff` first to see what actually changed.\n- Because `HEAD` is detached, create a branch (off `main`) before committing, or the commit could be orphaned.\n\n**Next steps**\n1. Run `git status` and `git diff` to identify the changed files.\n2. Re-run the tests to confirm they still pass.\n3. Write the documentation, describing the behavior change from the diff rather than from memory.\n4. Commit the code and docs on a new branch, if the user wants a commit.\n\n## Where to save it\n\nSave it as `/tmp/driftproof-eval.4y4rM1Kp/HANDOFF.md` at the repository root. It's easy to find at the start of the next session. I don't know of any existing docs convention here, so if the repo has a `docs/` directory or a notes location, use that instead. Keep it out of the commit, since it's a transient note and not project documentation.\n\nI haven't written the file, as you asked for no file writes.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (documentation-focused next work), 2 (tests vs. commits kept distinct), and 4 (states the file was not written). Misses 3: it proposes a /tmp path but contradictorily says 'at the repository root' and uses a mismatched temp directory name."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Next steps are framed around writing documentation (criterion 1); it keeps tests passed separate from the uncommitted state (2); it picks /tmp (3); and it says \"I haven't written the file\" (4). The \"at the repository root\" wording is a minor inconsistency."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tailors next steps to writing docs, separates the local test pass from the uncommitted state, uses an OS temp path (/tmp), and states the file was not written. The 'at the repository root' wording contradicts the /tmp path."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2 and 4: next steps target documentation, tests and commits are kept distinct, and it states it did not write the file. Criterion 3 is muddied by saying the /tmp path is 'at the repository root'."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it targets documentation, separates passing tests from uncommitted work, and says the file was not written. It misses criterion 3 by placing the handoff at the repository root, not an OS temp location."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Suggested location:** `/tmp/driftproof-eval.EPJCCB5c/HANDOFF.md` (repo root). I haven't checked for an existing docs or notes convention, so if the repo has one, use that instead. Since nothing is committed, a root-level file is easy to find and easy to delete.\n\n**Draft handoff:**\n\n```markdown\n# Handoff: parser change documentation\n\n## Status\n- The parser change is already implemented.\n- Tests passed in a local check.\n- Nothing is committed yet; the change exists only in the working tree.\n\n## Next task\nDocument the parser change (what changed, why, and any behavior differences for callers).\n\n## Before you start\n- Run `git status` and `git diff` to see exactly what the change touches. This handoff doesn't list files or behavior, so read the diff rather than relying on memory.\n- Re-run the tests to confirm they still pass. The earlier pass was a local check only.\n\n## Notes\n- No commit exists, so decide with the user whether to commit the code change and docs together or separately.\n- Branch context: main branch is `main`; the session started on `HEAD` with no recent commits listed.\n```\n\n**Caveat:** the git status snapshot from the start of this session showed a clean tree and no commits, which doesn't match \"implemented but uncommitted.\" The change may have been made after that snapshot, or in a different checkout. That's why the draft tells the next session to verify with `git status` and `git diff` first.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2, and 4: the handoff targets documentation, separates passing local tests from uncommitted work, and doesn't claim a save. Missed 3: it suggests a /tmp path but labels it \"repo root\"."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets tailoring to documentation, test/commit distinction, and not claiming the file was saved; misses the temp-location criterion because it suggests a /tmp path but labels it 'repo root'."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets tailored documentation next work, the tests-versus-commits distinction, and no claim of saving. Misses the temp-location criterion: it proposes /tmp but labels it \"(repo root)\" and favors a root-level file."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (documentation-focused next work), 2 (tests passed only locally, nothing committed), and 4 (says 'suggested location', no claim of saving). Missed criterion 3: it gives a /tmp path but labels it 'repo root' and argues for a root-level file."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: the next task is documentation, tests and commits are kept distinct, and no save is claimed. Misses 3 because it suggests an OS /tmp path but labels it \"(repo root)\", which contradicts the project-tree-avoidance requirement."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "**Save location:** I can't write it in this session, so here is the draft to save as `handoff-parser-change.md` in the OS temp directory (`$TMPDIR`, else `/tmp`, or `%TEMP%` on Windows), not in the workspace. On this Linux machine that would be `/tmp/handoff-parser-change.md`.\n\n---\n\n# Handoff: Document the parser change\n\n**Next session goal:** Write documentation for the parser change that is already implemented.\n\n**State**\n- The parser change is implemented in the working tree.\n- Tests passed in a local check (I don't have the exact command or output, so re-run to confirm before citing).\n- **No commit exists.** The change is uncommitted. Git status at session start was clean on branch `HEAD` (detached; main branch is `main`), so the diff should contain only this change.\n- Repo: `/tmp/driftproof-eval.RHVf3lbs`\n\n**Not covered here**\n- The specifics of what changed in the parser were not supplied. Read the diff (`git diff`, `git status`) rather than relying on this note.\n\n**Next steps**\n1. Inspect the uncommitted diff to understand the change.\n2. Re-run the tests to confirm they still pass.\n3. Write the documentation, matching the existing doc style.\n4. Ask the user before committing, since nothing is committed yet.\n\n**Suggested skills**\n- No specific skill is required. If a documentation or code-review skill is available in the next session, call it via the Skill tool.\n\n**Sensitive info:** none included.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Next work is tailored to writing documentation, tests and commits are kept distinct (tests passed locally, no commit), the save path is an OS temp directory, and it does not claim the file was saved."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four: next work is documentation, tests passed is kept separate from the uncommitted state, the draft targets /tmp rather than the project tree, and it says the file was not saved."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four: next work targets documentation, tests and the uncommitted state are kept distinct, /tmp is chosen over the project tree, and the response does not claim the file was saved."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four criteria: next work is documentation, tests are kept separate from the uncommitted state, the handoff targets /tmp rather than the project tree, and it does not claim the file was saved."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (next work is documentation); criterion 2 met (states tests passed locally, no commit). Criterion 3 missed: it cites the project tree path /tmp/driftproof-eval.RHVf3lbs and a temp location, but the save path is OS temp, so this is met partially at best; criterion 4 met (says it cannot save, does not claim saved). Strict reading: the response states the repo path as the working directory, not the project tree, so 3 is satisfied; score 0.75 maybe, but I'm scoring conservatively."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "## Suggested location\n\nSave it as `HANDOFF.md` at the repo root: `/tmp/driftproof-eval.jw2qf7YH/HANDOFF.md`. The next session starts in that directory, so it will find the file there. It also stays out of source and test directories. Since no commit exists, either leave it untracked or keep it out of the eventual parser commit.\n\n## Draft\n\n```markdown\n# Handoff: parser change documentation\n\n## Status\n- The parser change is already implemented.\n- Tests passed in a local check.\n- Nothing is committed. No commit exists for this work.\n\n## Next task\nDocument the parser change. Do not re-implement it.\n\n## Before starting\n- Run `git status` and `git diff` to see what actually changed. The details of the change are not recorded here, so take them from the diff.\n- Re-run the tests if you want fresh confirmation. The passing result above came from a single local check.\n\n## Open items\n- Commit the change, with or without the docs. This has not been decided.\n- Main branch is `main`. The session started on `HEAD`, which may be a detached state, so confirm the branch before committing.\n```\n\n## Caveat\n\nThe git snapshot from the start of the session showed a clean tree and no recent commits. That doesn't match an implemented but uncommitted change. The snapshot may have been taken before the edits, or the change may live somewhere else. I've told the next session to verify with `git status` and `git diff` rather than assume.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response tailors next work to documentation and separates tests from commits, but it saves to a project-tree path (/tmp/driftproof-eval.jw2qf7YH/HANDOFF.md under repo root) rather than an OS temp location, and it does not claim saving, so only criteria 1, 2 and 4 are met — no wait, it is not claimed saved, so criterion 4 is met; total 0.75 minus criterion 3 miss."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (handoff tailored to documenting the change) and criterion 2 (distinguishes tests passed from uncommitted, no commit). Misses criterion 3 because it saves to the project root rather than an OS temp location, and criterion 4 because it asserts the file is saved at a specific path."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets tailoring to documentation, the tests-versus-commits distinction, and avoiding a claim that the file was saved; misses the OS temp location, choosing the repo root with a mismatched /tmp path."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it targets documentation without re-implementing, keeps tests separate from the uncommitted state, and doesn't claim the file was saved. It misses criterion 3 by placing HANDOFF.md at a repo root in the project tree, not an OS temp location."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (next task is documenting, not re-implementing), 2 (tests vs. uncommitted state kept distinct), and 4 (does not claim the file was saved). Missed 3: it places the handoff at the repo root, which is the project tree."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Handoff draft**\n\n> **Status:** The parser change is implemented. Tests passed in a local check. Nothing has been committed (no commit exists), and the working tree state is not recorded here beyond that.\n>\n> **Next session's task:** Document the parser change that is already in place. Do not reimplement it.\n>\n> **Before documenting:**\n> 1. Review the uncommitted diff to confirm exactly what changed in the parser, since this note doesn't list specifics.\n> 2. Re-run the tests if you want fresh confirmation. The earlier pass was a single local check and I have no details on which suites ran.\n>\n> **Open items:**\n> - Change is uncommitted; decide whether to commit before or after the docs are written.\n> - Branch is currently detached/unnamed (`HEAD`); main branch is `main`. Create or switch to a branch before committing.\n\n**Where to save it:** I'd put it at the repository root as `HANDOFF.md`, i.e. `/tmp/driftproof-eval.1f8S5G0M/HANDOFF.md`. It's easy for the next session to find, and it stays out of source and docs directories. Since nothing is committed, either leave it untracked or delete it once the documentation is done, so it doesn't end up in the history by accident. If the project already has a notes or docs convention, follow that instead.\n\nI haven't written the file, per your instructions. Say the word and I'll save it.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met tailoring to documentation, the tests-versus-commits distinction, and not claiming the file was saved. Missed the temp-location criterion: it recommended the repository root with an invented /tmp path."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2, and 4: it targets documentation, separates the local test pass from the missing commit, and says the file wasn't saved. Missed criterion 3: it recommends the repository root, then gives an inconsistent /tmp path."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2, and 4: it tailors next work to documentation, separates passing tests from the absence of a commit, and says the file was not written. Missed criterion 3: it recommends the repository root, which contradicts its /tmp path."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it keeps the next task on documentation, separates passing tests from the absence of a commit, and says the file was not written. It misses 3 because it recommends the repository root, which is the project tree, and its /tmp path contradicts that recommendation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (documentation-focused next work), 2 (separates passed tests from the absent commit), and 4 (states the file was not written). Misses 3: it recommends the repository root, not an OS temp location."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "I haven't written anything, per your instructions. Here is the draft and the intended save location.\n\n**Where to save:** `$TMPDIR` if set, otherwise `/tmp`, for example `/tmp/handoff-parser-change-docs.md`. It should go directly in that directory, not in the workspace (`/tmp/driftproof-eval.A87Rrewg`), even though the workspace happens to be under `/tmp`.\n\n**Draft:**\n\n```markdown\n# Handoff: document the parser change\n\n## Goal of next session\nWrite documentation for the parser change that is already implemented.\n\n## State\n- The parser change is implemented in the working tree.\n- Tests passed in a local check (the exact command and output were not\n  recorded in this conversation).\n- No commit exists for the change.\n\n## Not captured here\n- Which files changed and what the change does. Run `git status` and\n  `git diff` (main branch is `main`) to see it, rather than relying on\n  this note.\n- The session-start git snapshot showed a clean tree, so it can't be used\n  to identify the changes.\n\n## Suggested first steps\n1. Inspect `git status` / `git diff` to learn the actual change.\n2. Re-run the test suite to confirm the passing result still holds.\n3. Write the documentation, referencing code by path rather than copying it.\n4. Don't commit unless asked.\n\n## Suggested skills\nNone identified from the available facts. If a docs-writing skill is\navailable in the next session, use it.\n```",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (documentation-focused next steps); criterion 2 met (tests vs. commits kept distinct). Criterion 3 missed: it recommends $TMPDIR or /tmp, which is an OS temp location, so this is met too. Criterion 4 met: it never claims the file was saved. Adjusting: all four appear satisfied, but the response names a workspace path under /tmp that it calls the 'workspace', which does not violate the rubric."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: the handoff targets documentation. Criterion 2 is met: it separates the passing local test check from the absent commit. Criterion 3 is met: it picks $TMPDIR or /tmp rather than the project tree. Criterion 4 is missed: it says 'Here is the draft and the intended save location' and gives a concrete save path, which reads as a save and risks implying the document was saved."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four criteria: the next work is tailored to documentation, tests and the missing commit are kept distinct, the handoff targets $TMPDIR or /tmp rather than the project tree, and it does not claim the file was saved."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response tailors next steps to documentation, keeps the local test pass separate from the missing commit, names $TMPDIR or /tmp instead of the project tree, and says nothing was saved."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: targets documentation work, keeps tests passed separate from the missing commit, picks /tmp or $TMPDIR outside the project tree, and does not claim the file was saved."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Suggested location:** `/tmp/driftproof-eval.irIS192m/HANDOFF.md` (repo root). The next session will find it right away, and it stays out of the commit unless someone adds it. Since the directory is under `/tmp`, it may not survive a cleanup, so copy it somewhere durable if the work needs to outlast this machine.\n\n**Draft:**\n\n```markdown\n# Handoff: parser change documentation\n\n## Status\n- The parser change is already implemented in the working tree.\n- Tests passed in a local check.\n- Nothing is committed yet. No commit exists for this change.\n\n## Next session\n- Document the parser change.\n- Before writing, run `git status` and `git diff` to confirm exactly which files changed. The git snapshot taken at the start of this session showed a clean tree, so it may be stale.\n- Decide with the user when to commit (target branch: `main`; the repo is currently on `HEAD`, which may be detached).\n\n## Not yet verified\n- The test command and scope used in the local check weren't recorded. Re-run the tests before committing.\n- The list of changed files and the behavior change are not recorded here. Take them from the diff.\n```\n\nI left out specifics such as filenames, the test command, and what the parser change does, because none of that was in the facts you gave me. If you give me those details, I can fill them in.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: next work is tailored to documenting the change, tests and commits are kept distinct, an OS temp path is chosen, and it does not claim the file was saved. The '(repo root)' label is contradictory but does not defeat any criterion."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: targets the documentation work, separates passed local tests from the uncommitted state, and does not claim the file was saved. Criterion 3 is only partly met: it picks an /tmp location but mislabels it as '(repo root)'."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: targets documentation, separates passed tests from the uncommitted state, and avoids claiming a save. Criterion 3 is muddied by labeling the /tmp path as '(repo root)'."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets tailoring to documentation, keeps tests separate from commits, and avoids claiming the file was saved. It picks a /tmp location, but labels that path '(repo root)', which muddles the temp-versus-project-tree choice."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets tailoring to documentation, keeps tests (passed locally) distinct from the uncommitted state, and avoids claiming the file was saved. Weakened on the temp-location criterion: it labels the /tmp path as '(repo root)', a contradiction."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "## Draft handoff\n\n```markdown\n# Handoff: parser change documentation\n\n**Status:** The parser change is implemented. Tests passed in a local check. Nothing is committed yet.\n\n**Next task:** Document the parser change.\n\n**Before starting:**\n- Run `git status` and `git diff` to find where the change lives. This handoff doesn't name the files.\n- Re-run the test suite to confirm it still passes. The earlier result came from a local check only.\n- The change is uncommitted, so it could be lost or overwritten. Commit it, or confirm with the user how they want it committed, before or alongside the docs.\n\n**Open items:**\n- Which files and functions changed (fill in from the diff)\n- Where the docs should live (match existing docs conventions)\n- Whether the commit should include the docs or be separate\n\n**Not done:** commit, push, PR.\n```\n\n## Where to save it\n\nSave it as `HANDOFF.md` at the repo root: `/tmp/driftproof-eval.6A46I3Hj/HANDOFF.md`. The next session will start in that directory and find it easily. Keep it untracked, or add it to `.git/info/exclude`, so it doesn't end up in the parser commit. Delete it once the docs are done.\n\n## Discrepancy to check\n\nThe git snapshot shows a clean tree on `HEAD` with no commits listed. That doesn't match \"implemented but uncommitted\", since an uncommitted change would normally show as modified files. The snapshot was taken at the start of the session, so the change may have been made elsewhere, in another worktree, or after the snapshot. The next session should verify where the change actually is before documenting it.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2, and 4: the next task is documentation, tests and commits are kept distinct, and saving is not claimed. Missed criterion 3: it places HANDOFF.md at the repo root, inside the project tree, not an OS temp location."
+       },
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Meets criteria 1, 2 and 4 (documentation focus, tests vs. commits distinction, no false save claim) but misses 3: it recommends the repo root and gives a non-matching /tmp path."
+       },
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Meets tailoring to documentation, the tests-versus-commits distinction, and avoids claiming a save; misses the temp-location criterion by choosing the repo root with a fabricated /tmp path."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (docs-focused next work), 2 (tests vs. uncommitted change kept distinct), and 4 (says where to save, doesn't claim it was saved); misses 3 because it directs saving to the repo root and gives a mismatched /tmp path."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it targets documentation, separates passing local tests from the uncommitted change, and doesn't claim a save. It misses criterion 3 by placing HANDOFF.md at the repo root in the project tree, and cites a /tmp path that doesn't match the session's directory."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "I haven't written anything, as you asked. This is the draft, and it should be saved at `$TMPDIR/handoff.md`, or `/tmp/handoff.md` if `$TMPDIR` is unset (likely here on Linux). It should go outside the workspace (`/tmp/driftproof-eval.Zo6IqGZa`), not inside the repo.\n\n```markdown\n# Handoff: document the parser change\n\n## Focus of next session\nWrite documentation for the parser change that is already implemented.\n\n## State\n- The parser change is implemented in the working tree.\n- Tests passed in a local check. I have no details on which suite or command was run, so re-run before citing results.\n- Nothing is committed. The branch is HEAD (detached or unborn) and main is the main branch.\n- The git status snapshot at session start was clean, so it doesn't show which files changed. Run `git status` and `git diff` to find the change.\n\n## Not captured here\nThe code itself lives in the diff. Read it directly rather than relying on this note.\n\n## Open items\n- Confirm the change is still uncommitted and the tests still pass.\n- Ask the user whether the docs should be committed, and whether the code change should be committed with them. Don't commit without approval.\n\n## Suggested skills\n- None confirmed for this task. If a documentation or code-review skill is available in the next session, call the Skill tool for it before writing the docs.\n```",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it targets documentation work, separates local test results from the uncommitted state, uses /tmp or $TMPDIR outside the repo, and does not claim the file was saved."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: work is focused on documentation, tests versus uncommitted state are kept separate, the handoff targets an OS temp path outside the repo, and it does not claim the file was saved."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: tailors next work to documentation, keeps tests separate from the uncommitted state, uses /tmp or $TMPDIR outside the repo, and does not claim the file was saved."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Focuses next work on documenting the parser change, keeps tests separate from the uncommitted state, chooses $TMPDIR or /tmp outside the project tree, and does not claim the file was saved."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: targets next session at documentation, separates untested-local tests from uncommitted changes, picks /tmp outside the repo, and does not claim the file was saved."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Here's a draft handoff. I haven't saved it anywhere.\n\n**Suggested location:** `/tmp/driftproof-eval.xNii6pnA/HANDOFF.md`, at the repo root, so the next session finds it first. If you'd rather keep it out of the working tree, `.git/HANDOFF.md` works too, since git won't track it.\n\n```markdown\n# Handoff: parser change documentation\n\n## Status\n- The parser change is already implemented in the working tree.\n- Tests passed in a local check. I don't have the exact command or output, so re-run them before relying on the result.\n- Nothing is committed. No commit for this change exists yet.\n\n## Next session's task\n- Document the parser change (what changed and why).\n- Read the actual diff first (`git status`, `git diff`) and base the docs on it, not on this note.\n\n## Caveats\n- The git status snapshot taken at the start of this session showed a clean tree on `HEAD`, which may mean a detached HEAD. That doesn't match an uncommitted change, so the snapshot is probably stale. Verify the real state before doing anything.\n- If the work should be committed, create or switch to a branch first. The main branch is `main`.\n```\n\nIf you give me the changed file names or the test command, I can fill in the placeholders.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2 and 4: it targets documenting the parser change, separates passing tests from the uncommitted state, and says it hasn't saved the file. Criterion 3 is missed because it calls the /tmp path 'at the repo root' and offers a project-tree alternative."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets tailored documentation next work, keeps tests separate from the absent commit, and avoids claiming the file was saved. It misses the temp-location criterion: it picks a /tmp path but calls it 'at the repo root' and offers a project-tree alternative."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met 1 (documents the parser change), 2 (keeps tests and commits distinct), and 4 (says it wasn't saved). Missed 3: it picks a /tmp path but also says 'at the repo root' and offers a path inside .git, which is contradictory."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tailors next work to documenting the parser change, keeps tests passed separate from the uncommitted state, chooses a /tmp location as primary, and says it has not saved the file. The 'at the repo root' wording is inconsistent."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2 and 4: the next task is documenting the parser change, tests are kept separate from the uncommitted state, and it says it did not save the file. Misses criterion 3 because it picks a /tmp path but then says to put it 'at the repo root' and offers a .git alternative, contradicting the temp-location choice."
+       }
+      ]
+     },
+     "baseline": null
+    },
+    {
+     "try": 5,
+     "with_skill": {
+      "answer": "I haven't written any files, per your instructions. Here is the draft.\n\n**Where to save it:** the OS temp directory, not the workspace. On this Linux machine that is `$TMPDIR` if set, otherwise `/tmp`, for example `/tmp/handoff-parser-docs.md`.\n\n---\n\n# Handoff: document the parser change\n\n## Goal for next session\nWrite documentation for a parser change that is already implemented.\n\n## State\n- The parser change is implemented.\n- Tests passed in a local check. I don't have the exact command or output, so re-run the tests before citing them in the docs.\n- **No commit exists.** The change is uncommitted in the working tree of `/tmp/driftproof-eval.IZwpfaGa` (git repo, main branch `main`, currently on `HEAD`).\n- The session-start git status snapshot read \"clean\", so verify the actual state with `git status` and `git diff` before relying on it.\n\n## Not duplicated here\nThe implementation details are in the working-tree diff. Read `git diff` rather than relying on a summary here.\n\n## Next steps\n1. Run `git status` and `git diff` to see exactly what changed in the parser.\n2. Re-run the tests to confirm they still pass.\n3. Write the documentation based on the diff and the observed behavior.\n4. Commit only if the user asks. No commit has been authorized.\n\n## Open questions\n- Which doc location or format the user wants (README, changelog, inline docs). This wasn't specified.\n\n## Suggested skills\nNone were identified in the supplied context. The next agent should check which skills are available and call the Skill tool for any that cover documentation or changelog writing.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (documentation tailored); criterion 2 met (distinguishes passed tests from uncommitted, no-commit state). Criterion 3 missed: it saves to /tmp, which is the OS temp location, so it is met; but criterion 4 is ambiguous since it says 'Here is the draft' and gives a save path without claiming a save occurred, so it is met too, giving 1.0 under strict reading."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (tailored to documentation), 2 (distinguishes tests from commits, noting no commit exists), and 3 (uses /tmp, an OS temp location). Misses criterion 4: it names a specific save path with a 'Where to save it' heading and a concrete path, but never claims the file was saved, so this actually passes; the response does fail by inventing a repo path (/tmp/driftproof-eval.IZwpfaGa) that differs from the actual working directory."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: tailors next work to documentation, separates passed tests from the missing commit, chooses /tmp over the project tree, and does not claim the file was saved."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four points: frames next work as documentation, separates passing tests from the missing commit, picks /tmp over the project tree, and does not claim the handoff was saved."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (tailored to documentation) and criterion 2 (separates tests from commits, noting no commit exists); misses criterion 3 by naming a workspace path ('/tmp/driftproof-eval.IZwpfaGa') that differs from the actual working directory, and criterion 4 is met since it never claims the file was saved."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Here's a draft handoff. I haven't saved it, since you asked for text only.\n\n```markdown\n# Handoff: parser change documentation\n\n## Status\n- The parser change is already implemented.\n- Tests passed in a local check.\n- No commit exists yet, so the change lives only in the working tree.\n\n## Next session's task\nDocument the parser change. The code is done; no further implementation is expected.\n\n## Before starting\n1. Run `git status` and `git diff` to find exactly what changed. The change is uncommitted, and the git snapshot I had at the start showed a clean tree, so confirm the working tree still holds it.\n2. Re-run the tests if you need confirmation. The passing result was from a local check only, not CI.\n\n## Open items\n- Commit the change (not done).\n- Fill in: files touched, the behavior change, and any edge cases. I wasn't given these details, so I haven't guessed.\n```\n\n**Where to save it:** put it at the repo root as `/tmp/driftproof-eval.hCXkJZdo/HANDOFF.md`. The next session will see it right away when it opens the directory. Since nothing is committed, leave the file untracked, or add it to `.git/info/exclude`, so it doesn't end up in the parser commit. Delete it once the documentation is done.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met tailoring to documentation, keeping tests separate from commits, and not claiming the file was saved. Missed the temp-location point: it picks /tmp but calls it the repo root, and the path ID doesn't match the working directory."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2, and 4: it targets documentation work, separates passing local tests from the uncommitted state, and says it did not save the file. Missed 3: it says 'repo root' but gives a /tmp path, which is contradictory."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets points 1, 2 and 4: next work is documentation, tests and commits are kept distinct, and it says it hasn't saved the file. Point 3 is muddled: it picks /tmp but also says 'at the repo root', and the directory name doesn't match the working directory."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2, and 4: next work is documentation-only, tests are separated from the uncommitted state, and it says the file is not saved. Criterion 3 is undercut by calling the /tmp path 'repo root'."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets tailoring to documentation, the tests-vs-commit distinction, and not claiming a save. Misses the temp-location point: it calls /tmp 'the repo root' and uses a made-up directory suffix."
+       }
+      ]
+     },
+     "baseline": null
+    },
+    {
+     "try": 6,
+     "with_skill": null,
+     "placebo": {
+      "answer": "Here is a draft handoff. I haven't saved it, since you asked for text only.\n\n**Suggested location:** `/tmp/driftproof-eval.O56gE691/HANDOFF.md` (the repo root). The next session will start in that directory, so it will find the file there. Keep it out of the eventual commit, or delete it once the docs are written.\n\n---\n\n# Handoff: document the parser change\n\n**Status**\n- The parser change is already implemented. No further code work is needed.\n- Tests passed in a local check.\n- **Nothing is committed.** The change exists only as uncommitted working-tree modifications.\n\n**Next task**\nWrite the documentation for the parser change.\n\n**Before you start**\n1. Run `git status` and `git diff` to see exactly what changed. The session-start git snapshot showed a clean tree, so it predates the change and doesn't describe it.\n2. Re-run the tests if you want to confirm the passing result. I don't have the command or output from the earlier check.\n3. Base the docs on the actual diff, not on this note. It doesn't list the changed files or the behavior change.\n\n**Open items**\n- Decide whether to commit the implementation before, after, or together with the docs. The main branch is `main`, and the session started on `HEAD`.\n- The changed files, the test command, and the behavior change are not recorded here. Fill them in from the diff.\n\n---",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (tailors next work to writing docs), 2 (separates passing tests from uncommitted state), and 4 (says it was not saved). Missed 3: it picks a /tmp path but labels it the repo root, which contradicts the temp-location requirement."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1, 2, and 4 (documentation-focused next work, tests vs. commits kept distinct, no claim of saving). Misses 3: it labels the /tmp path as 'the repo root' and uses a directory name that doesn't match the working directory."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets tailoring to documentation, the tests-vs-commits distinction, and not claiming the file was saved. Misses the temp-location criterion: the /tmp path is labeled 'the repo root' and doesn't match the environment's directory."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets tailoring to documentation, keeps tests (passed locally) distinct from commits (none), and explicitly avoids claiming the file was saved. The temp path is muddled, labeled as 'the repo root' with a mismatched directory ID, so the OS-temp criterion is only partly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets tailoring to documentation, keeps tests passed separate from the uncommitted state, and says it did not save the file; the /tmp path is OS temp but is wrongly labeled 'the repo root'."
+       }
+      ]
+     },
+     "baseline": null
+    }
+   ]
+  }
+ ]
+}

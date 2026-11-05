@@ -1,0 +1,1209 @@
+{
+ "format": "driftproof-judge-notes/1",
+ "report": "017",
+ "report_url": "/reports/017/",
+ "attempt_id": "bfc0fd31bf2c53d679e22d467a049c6f8a5e2209265a755d14c5d2ca68a1ef02",
+ "skill": "grill-with-docs",
+ "repository": "mattpocock/skills",
+ "receipt_hash": "09e0d9f8092405058e0bde94b23385ca6599266cb018f965edbe4dddedd0ab5b",
+ "receipt_page": "/r/09e0d9f8092405058e0bde94b23385ca6599266cb018f965edbe4dddedd0ab5b/",
+ "receipt_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/bfc0fd31bf2c53d679e22d467a049c6f8a5e2209265a755d14c5d2ca68a1ef02.json",
+ "answers_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/bfc0fd31bf2c53d679e22d467a049c6f8a5e2209265a755d14c5d2ca68a1ef02-answers.json",
+ "suite_file": "https://github.com/driftproofhq/driftproof/blob/main/specs/408-skill-measurements/suites/mattpocock--skills--grill-with-docs.json",
+ "model": "Claude Sonnet 5.5",
+ "judge": "Claude Haiku 5.5",
+ "judge_samples": 5,
+ "date": "1 November 2026",
+ "arms": [
+  {
+   "key": "with_skill",
+   "label": "With the skill"
+  },
+  {
+   "key": "placebo",
+   "label": "With the fake text"
+  },
+  {
+   "key": "baseline",
+   "label": "With nothing"
+  }
+ ],
+ "caveats": [
+  "Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings.",
+  "The scores and reasons are the judge model's own words, kept exactly as it wrote them. They are a model's reading of the rubric, not Driftproof's.",
+  "This is one task of three. Each skill was given three text tasks, and one task is not the whole measurement.",
+  "About grill-me and grill-with-docs: each skill's whole text is an instruction to call another skill. These text tasks forbid tools, so each reading reflects that one-line hand-off, not the skill it calls. Both stay in the pre-registered counts."
+ ],
+ "tasks": [
+  {
+   "id": "decision",
+   "number": 1,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. Interview me about a reservation design and propose documentation to preserve decisions. Facts: a hold lasts 10 minutes; capture happens only at confirmation. The term booking is currently used for both a hold and a confirmed reservation.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/engineering/grill-with-docs/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 7de372c13488f1ee96cc11cd8907b56b6809cc93eef776eeddd37de6b6cbe3fe; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Identify the ambiguous domain term 2. Ask an unresolved design question 3. Propose a glossary distinction consistent with supplied facts 4. Do not record an undecided choice as an accepted decision",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "I'm not calling the grilling and domain-modeling skills, since you asked for text only. I'll run the interview inline, and each question comes with my recommended answer so you can accept or push back.\n\n## The central problem: \"booking\" means two things\n\nA hold (10 minutes, nothing captured) and a confirmed reservation (payment captured) have different lifecycles, different failure modes, and different owners of the risk. Using one word for both will cause bugs in code, support conversations, and analytics (\"how many bookings did we get?\").\n\n**Q1. Which term gets which meaning?**\nMy recommendation: **Hold** for the temporary claim on inventory, **Reservation** for the confirmed, paid state, and retire **booking** as a domain term. If \"booking\" must remain in user-facing copy, define it in the glossary as UI language only.\n\n**Q2. Are a hold and a reservation two entities, or one entity with a state?**\nMy recommendation: one aggregate with explicit states (`held → confirmed | expired | released`). That keeps inventory accounting in one place. But the glossary still names the states distinctly, so \"booking\" can't creep back in.\n\n## Hold behavior\n\n**Q3. What starts the 10-minute clock, and is it fixed?**\nRecommendation: it starts when the hold is created server-side, using the server clock, and is not extendable by the client. If you want extensions (for example, during payment entry), make that a separate, explicit decision.\n\n**Q4. What happens at exactly 10:00 if the user is mid-confirmation?**\nThis is the race that matters most. Recommendation: confirmation must atomically check that the hold is still valid and transition it to confirmed. If capture is in flight at expiry, the hold stays valid until the capture outcome is known, and the inventory is not released early.\n\n**Q5. How is expiry enforced: lazily (checked on access) or by a sweeper?**\nRecommendation: both. Lazy checks guarantee correctness, because an expired hold is never honored even if the sweeper is late. The sweeper only reclaims inventory promptly.\n\n**Q6. Can one user hold the same inventory more than once, and is there a per-user cap?**\nRecommendation: one active hold per user per inventory item, with a small cap overall, to limit inventory-hoarding abuse.\n\n## Capture at confirmation\n\n**Q7. \"Capture only at confirmation\" — do you authorize at hold time, or touch no payment at all until confirmation?**\nThis is the biggest unstated fact. Recommendation: no payment interaction at hold time, so there is no authorization to expire or void. The cost is that capture can fail at confirmation, so the hold is not a guarantee of sale.\n\n**Q8. If capture fails after a valid hold, what happens?**\nRecommendation: the hold stays active until its original expiry so the user can retry with another payment method. No reservation exists until capture succeeds.\n\n**Q9. How do you make confirmation idempotent?**\nRecommendation: an idempotency key per confirmation attempt, tied to the hold ID, so a double click or retry can never capture twice.\n\n**Q10. What if capture succeeds but the reservation write fails, or the hold expired during capture?**\nRecommendation: treat capture and reservation creation as one recoverable workflow, with a reconciliation job and an automatic refund path for captured-but-unreserved payments. Decide explicitly whether a late successful capture on an expired hold is honored (if inventory is still free) or refunded.\n\n## Cancellation and edge cases\n\n**Q11.** Can a user release a hold early? Recommendation: yes, and it returns inventory immediately.\n**Q12.** Are cancellation and refund rules for confirmed reservations in scope for this design? Recommendation: out of scope here, but record that as a deliberate boundary.\n\n## Proposed documentation\n\n**`docs/glossary.md`** (or `CONTEXT.md`)\n- **Hold**: a temporary, unpaid claim on inventory lasting 10 minutes from server-side creation.\n- **Reservation**: a confirmed claim on inventory, created only after successful payment capture.\n- **Confirmation**: the atomic action that validates a live hold, captures payment, and produces a reservation.\n- **Expiry / Release**: the two ways a hold ends without becoming a reservation.\n- **Booking**: *deprecated.* Do not use in code or specs. It formerly meant both hold and reservation. User-facing copy only, if at all.\n\n**ADRs** (short, one decision each):\n1. **ADR-001: Separate \"hold\" from \"reservation\" terminology.** Context is the ambiguity of \"booking\". The decision is the two terms and the retirement of \"booking\". The consequences are a rename pass across code, API fields, and analytics, with a migration note for existing `booking_*` names.\n2. **ADR-002: Holds last 10 minutes, are server-clocked, and are non-extendable.** Includes lazy expiry plus sweeper.\n3. **ADR-003: Payment is captured only at confirmation, with no authorization at hold time.** The consequences are that a hold doesn't guarantee a sale, that failed capture leaves the hold live, and that idempotency keys are required.\n4. **ADR-004: Confirmation is atomic with respect to hold validity, with reconciliation for capture/reservation mismatches.** Pending your answer to Q10.\n\nAnswer Q1, Q4, Q7, and Q10 first, since those four determine the shape of everything else. Once you've answered, I can draft the glossary and ADR text in full.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: identifies the 'booking' ambiguity, asks unresolved questions, and proposes a Hold/Reservation glossary consistent with the facts. Misses criterion 4: ADR-002 and ADR-003 record undecided choices (non-extendable holds, no authorization at hold time) as decisions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies 'booking' as ambiguous, asks many open design questions, and proposes a hold/reservation glossary consistent with the facts. It misses criterion 4: ADRs 001–003 record recommended, unconfirmed choices as accepted decisions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the 'booking' ambiguity, asks many unresolved design questions, and proposes a hold/reservation glossary consistent with the facts. It misses criterion 4: ADRs 1–3 state undecided choices (non-extendable holds, no pre-authorization) as decisions, though ADR-4 is flagged pending."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: it identifies the 'booking' ambiguity, asks unresolved questions, and proposes a Hold/Reservation glossary consistent with the facts. It misses criterion 4 because ADR-001, ADR-002 (non-extendable, server-clocked), and the glossary's server-side start are written as decisions though the user never confirmed them."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: flags 'booking' as ambiguous, asks many open questions, and proposes a consistent Hold/Reservation glossary. Missed 4: ADR-002 and ADR-003 record undecided choices (non-extendable holds, no authorization at hold time) as accepted decisions."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Reservation design interview\n\n## What I take from your facts\n\n- A **hold** is temporary and lasts 10 minutes.\n- **Capture** (taking payment) happens only at **confirmation**, never at hold time.\n- **\"Booking\"** currently means both a hold and a confirmed reservation. This is the biggest risk, because \"cancel a booking\" or \"booking expired\" can mean different things depending on who is speaking.\n\nMy recommendation: retire \"booking\" as a domain term. Use **Hold** for the temporary claim and **Reservation** for the confirmed one. Keep \"booking\" only as informal or UI copy, if at all.\n\n## Interview questions\n\nI've put my suggested default after each question, so you can answer with \"yes\" or \"no, because...\".\n\n**Terminology**\n1. Is a confirmed reservation the same entity as the hold that preceded it (a status change), or a new entity created from it? *Default: one entity with a status, unless holds and reservations have different lifecycles or data.*\n2. Do users, support staff, and the API all use the same words? *Default: one glossary, with UI copy allowed to differ but mapped explicitly.*\n\n**Hold lifecycle**\n3. Does the 10 minutes start at creation or at the first user action? Is it fixed, or can it be extended or refreshed? *Default: starts at creation, fixed, no extension.*\n4. Who enforces expiry: a timer or job, a TTL in the store, or a check at read time? What happens if confirmation arrives at 10:00.5? *Default: the server's clock is authoritative, and expiry is checked at confirmation as well as by a sweeper.*\n5. When a hold expires, is inventory released immediately? Is the expired hold kept for audit? *Default: release immediately, retain the record with status `expired`.*\n6. Can one user hold the same inventory twice, or hold many items at once? Is there a cap? *Default: a per-user limit.*\n\n**Confirmation and capture**\n7. Capture happens only at confirmation. Is that authorize-then-capture in a single step, or is there a separate authorization earlier? *Default: no payment interaction before confirmation.*\n8. If capture fails, what state is the hold in? Does the hold survive for a retry until it expires? *Default: it stays `held` until expiry, and the user can retry.*\n9. If capture succeeds but the hold expired a moment earlier (a race), who wins? *Default: capture is only attempted on a live hold, with an atomic transition under a lock or conditional write.*\n10. Is confirmation idempotent? What happens on a double click or a client retry? *Default: yes, keyed by an idempotency key.*\n\n**After confirmation**\n11. Can a confirmed reservation be cancelled or modified? Are refunds in scope? *Default: out of scope for this design, but recorded as an open question.*\n\n**Operations**\n12. What should be logged or metered (holds created, expired, converted, capture failures)? Are conversion rate and expiry rate tracked?\n\n## Proposed documentation\n\nKeep it small, and put each decision in one place.\n\n1. **`docs/glossary.md`** (or `CONTEXT.md`)\n   - Definitions for Hold, Reservation, Confirmation, Capture, Expiry, and Release.\n   - A \"Do not use\" entry for *booking*, with a note on which term to use instead.\n   - Mapping from each domain term to code identifiers, API fields, and UI copy.\n\n2. **`docs/adr/0001-hold-vs-reservation-terminology.md`**\n   - Records the decision to split \"booking\" into two terms, why, and the migration plan for existing names.\n   - Format: Context, Decision, Consequences, Status.\n\n3. **`docs/adr/0002-hold-duration-and-expiry.md`**\n   - The 10-minute duration, when the clock starts, who enforces expiry, and the race with confirmation.\n\n4. **`docs/adr/0003-capture-only-at-confirmation.md`**\n   - Why no payment interaction happens at hold time, the failure behavior, and idempotency.\n\n5. **`docs/reservation-lifecycle.md`**\n   - A state diagram: `held → confirmed`, `held → expired`, `held → released` (user abandons), plus the transitions allowed and what triggers each.\n   - The invariants, for example \"capture occurs only on the `held → confirmed` transition.\"\n\n6. **Code-level anchors**\n   - Rename types and fields to match the glossary (`Hold`, `Reservation`), or add a comment on any legacy `booking` name pointing to the glossary.\n   - Tests named after the invariants, such as \"capture is never called for an expired hold.\"\n\n7. **`docs/open-questions.md`**\n   - Unresolved items from the interview (cancellation, refunds, extensions), each with an owner, so the gaps are visible instead of implicit.\n\n## Suggested order\n\nAnswer questions 1, 3, 4 and 9 first. They determine the data model and the glossary. I can then draft the glossary and the first two ADRs from your answers.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks unresolved design questions, and proposes a Hold/Reservation glossary consistent with the facts. It partly misses the last criterion: ADR 0001 is framed as recording the term-split decision before the user has accepted it."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks many unresolved design questions, proposes a Hold/Reservation glossary consistent with the facts, and labels undecided items as defaults or open questions rather than accepted decisions."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "It identifies the overloaded term 'booking', asks unresolved design questions, proposes a Hold/Reservation glossary consistent with the facts, and frames undecided items as defaults to confirm rather than accepted decisions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks unresolved design questions, and proposes a Hold/Reservation glossary consistent with the facts. However, it records defaults as proposed answers, which partially conflicts with criterion 4 about not recording undecided choices as accepted decisions."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks unresolved design questions, proposes a Hold/Reservation glossary consistent with the facts, and labels defaults and ADR content as proposals rather than accepted decisions."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Reservation design interview\n\n## What I take as settled\n- A **hold** lasts 10 minutes.\n- **Capture** (payment) happens only at confirmation, never at hold time.\n- **\"Booking\"** currently means both a hold and a confirmed reservation. This is the main ambiguity to fix.\n\n## Questions, most important first\n\n**Terminology**\n1. Do you want to split the concept into two terms, e.g. **hold** (temporary, uncaptured) and **reservation** (confirmed, captured)? My recommendation is yes, and to retire \"booking\" or restrict it to casual, user-facing copy.\n2. Where does \"booking\" appear today (code, DB tables, API fields, UI, support docs)? Which of those are hard to rename?\n\n**Hold lifecycle**\n3. When does the 10 minutes start: on hold creation, or when the user reaches checkout?\n4. Can a hold be extended or refreshed? If so, how many times, and does that reset the full 10 minutes?\n5. What happens at expiry: is inventory released immediately, or after a grace period? Who enforces it (a timer, a sweeper job, or lazy checks on read)?\n6. Can a user hold multiple items at once? Is there a per-user or per-item cap to prevent hoarding?\n\n**Confirmation and capture**\n7. What if confirmation arrives at or after the 10-minute mark, e.g. the user is mid-payment when the hold expires? Does the hold win, or the clock?\n8. What if capture fails or is declined? Does the hold stay alive until its original expiry, or is it released?\n9. How do you make confirmation idempotent (double clicks, retries, webhooks arriving twice)?\n10. Is there a case where capture happens but inventory is already gone (e.g. expiry race)? What's the refund or compensation path?\n\n**After confirmation**\n11. Are cancellation, modification and refund in scope? Does capture ever get reversed, and does that change what \"reservation\" means?\n12. What are the states and transitions you want? My draft: `held → confirmed`, `held → expired`, `held → released` (user cancels), `confirmed → cancelled`.\n\n**Operational**\n13. Which source of truth decides availability: the DB, a cache, or an external inventory system?\n14. What should be observable: hold-to-confirmation conversion, expiry rate, capture failures?\n\n## Proposed documentation to preserve decisions\n\n1. **Glossary (`docs/glossary.md`)**: one canonical definition each for *hold*, *reservation*, *capture*, *expiry*, plus a deprecated-terms table (e.g. \"booking → say *hold* or *reservation*\"). This directly addresses the current ambiguity.\n2. **ADR 001: Hold duration and expiry semantics**: the 10-minute rule, when the clock starts, what happens at expiry, and the extension policy. Include alternatives considered and why they were rejected.\n3. **ADR 002: Capture only at confirmation**: the rationale (e.g. avoiding refunds on abandoned holds), the consequences (decline handling, the risk that inventory is lost between hold and capture), and the failure-path decisions.\n4. **ADR 003: Retiring \"booking\"**: the naming decision, a migration plan for code, schema and UI, and what is intentionally left unchanged.\n5. **State diagram (`docs/reservation-lifecycle.md`)**: states, transitions, triggering events, and which transitions are irreversible.\n6. **Edge-case table**: race conditions (expiry vs. confirm, duplicate confirms, capture failure), each with the agreed behavior and an owner of the decision.\n7. **Open questions log**: anything from the list above you can't answer yet, with an owner and a date, so unresolved items don't silently become implementation choices.\n\nEach ADR should carry a status (proposed, accepted, superseded) and a date, so later changes add a new record instead of rewriting history.\n\n## Where to start\nAnswer questions 1, 3, 7 and 8 first. They determine the glossary and the first two ADRs, and the rest of the design depends on them.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks unresolved design questions, proposes hold/reservation glossary distinction consistent with facts, and records open choices as questions rather than accepted decisions."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks many unresolved design questions, proposes a hold/reservation glossary consistent with the facts, and marks ADRs as proposed with undecided items framed as questions."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies \"booking\" as the ambiguous term, asks many unresolved design questions, proposes a hold/reservation glossary consistent with the facts, and marks the state diagram as a draft and ADRs as proposed rather than accepted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks many unresolved design questions, proposes a hold/reservation glossary consistent with the facts, and marks the state transitions as a draft rather than recording undecided choices as accepted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks unresolved design questions, proposes hold/reservation glossary consistent with facts, and marks open items as undecided rather than accepted."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "I'm skipping the skill loading since you asked for text only, so this is a grilling-style interview built on the facts you gave me.\n\n## Interview\n\nI'll start with the question that matters most and give a recommended answer for each, so you can accept or push back.\n\n**Q1. What are the two concepts called?**\n\"Booking\" currently means both a hold and a confirmed reservation, so the same word has two lifecycles and two sets of rules.\n- *Recommendation:* use **Hold** for the temporary 10-minute claim and **Reservation** for the confirmed, captured state. Retire \"booking\" as a domain term, or reserve it for informal or UI copy only.\n- Do you agree, or does the business already use \"booking\" for one of these in customer-facing language?\n\n**Q2. Is a Hold a separate entity, or a state of a Reservation?**\n- *Recommendation:* make it a state machine on one record (`held → confirmed | expired | cancelled`) if the inventory and customer data are the same. Use separate entities only if holds and reservations have different owners, retention, or schemas.\n\n**Q3. What starts and ends the 10 minutes?**\n- Does the clock start at hold creation, or at the first checkout step?\n- Can a hold be extended, renewed, or re-created by the same customer? If so, how many times?\n- What happens to a hold when its expiry races a confirmation that is already in flight?\n- *Recommendation:* the server is the sole source of time, expiry is stored as an absolute timestamp, and the confirmation path re-checks it atomically.\n\n**Q4. What exactly does \"capture happens only at confirmation\" mean?**\n- Is capture the payment capture? Is there an authorization at hold time, or no payment interaction at all until confirmation?\n- If capture fails at confirmation, does the hold survive for the remaining time, or is it released immediately?\n- *Recommendation:* a failed capture leaves the hold intact until expiry, so the customer can retry. Confirm that is acceptable for inventory.\n\n**Q5. What happens on expiry?**\n- Is release of inventory eager (timer or job) or lazy (checked on read)?\n- Is there a grace period, or is expiry a hard cutoff?\n- Is an expired hold kept for audit or analytics, or deleted?\n\n**Q6. What does a hold guarantee?**\n- Is inventory exclusively reserved for the 10 minutes, or only soft-reserved and potentially oversold?\n- How do concurrent holds on the last unit resolve?\n\n**Q7. Is confirmation idempotent?**\n- If the client retries confirm, must capture happen exactly once?\n- Which idempotency key is used?\n\n**Q8. What do users see?**\n- Does the UI show a countdown?\n- What does the customer see at expiry, and what do receipts and emails call the thing?\n\nI'd settle Q1 first, since it determines the vocabulary for everything else. Then Q3 and Q4, which carry the most risk.\n\n## Proposed documentation\n\n**1. Glossary (`CONTEXT.md` or `docs/glossary.md`)**\n\n| Term | Definition |\n|---|---|\n| **Hold** | Temporary claim on inventory lasting 10 minutes. No capture occurs. |\n| **Reservation** | A confirmed hold. Capture has succeeded. |\n| **Confirmation** | The action that captures payment and converts a hold into a reservation. The only point where capture happens. |\n| **Expiry** | Automatic release of a hold at its 10-minute limit. |\n| *Avoid:* \"booking\" | Ambiguous. It formerly meant both a hold and a reservation. |\n\n**2. ADRs (`docs/adr/`)**\n\n- **ADR-0001: Split \"booking\" into Hold and Reservation.** Context is the term overload. The decision depends on Q1 and Q2. Consequences cover a rename in code, API, and UI, plus a migration of existing data and fields.\n- **ADR-0002: Holds last 10 minutes.** Records the duration, when the clock starts, the extension policy, and the expiry mechanism (Q3 and Q5).\n- **ADR-0003: Capture occurs only at confirmation.** Records why there is no capture or authorization at hold time, the failure behavior, and idempotency (Q4 and Q7).\n\nEach ADR should record status, context, decision, alternatives considered, and consequences. I'd write them as we settle each question, not afterward.\n\nPlease answer Q1 first and I'll continue from there.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the overloaded 'booking' term, asks many unresolved design questions, and proposes a Hold/Reservation glossary consistent with the facts. It misses criterion 4: ADR titles and records such as ADR-0001 and ADR-0002 state undecided choices as decisions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: identifies 'booking' overload, asks open questions, and proposes a consistent Hold/Reservation glossary. Misses 4: ADR-0001 'Split booking into Hold and Reservation' is recorded as decided while Q1 is open."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies 'booking' as ambiguous, asks unresolved questions, and proposes a Hold/Reservation glossary consistent with the facts. ADR-0001 is titled as a decision though Q1 is unanswered, so criterion 4 is weakly missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the overloaded 'booking' term, asks unresolved questions, and proposes a fact-consistent Hold/Reservation glossary. Misses criterion 4: ADR-0001 is titled as a decided 'Split', though Q1 is still open."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies 'booking' as ambiguous, asks unresolved questions, and proposes a Hold/Reservation glossary consistent with the facts. It misses criterion 4: ADR-0001 is titled as an accepted split decision even though Q1 is unresolved."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Reservation design interview\n\n## What I've taken from your facts\n\n- A **hold** lasts 10 minutes.\n- **Capture** (payment) happens only at **confirmation**.\n- **\"Booking\"** currently means both a hold and a confirmed reservation. This is the biggest risk, because \"cancel a booking\" or \"booking expired\" means different things depending on which one is meant.\n\nMy recommendation is to retire \"booking\" as a domain term. Use **Hold** for the temporary claim and **Reservation** for the confirmed one. If \"booking\" must stay in the UI or API for compatibility, define it as an alias for one of them only.\n\n## Questions\n\nI'd go through these in order, since later answers depend on earlier ones.\n\n1. **Identity:** When a hold is confirmed, is it the same record that changes state, or does a new Reservation get created and the Hold closed? This decides whether they are one entity with states or two entities.\n2. **Expiry:** Is the 10 minutes counted from hold creation only, or can it be extended, for example while the user is on the payment page? What happens if confirmation starts at 9:59 and capture takes a while?\n3. **Expiry enforcement:** Does the inventory release at exactly 10 minutes, via a scheduled job or a lazy check on read? Can a stale hold ever block someone else?\n4. **Capture failure:** If capture fails at confirmation, does the hold survive for the remaining time, get released immediately, or allow a retry?\n5. **Late capture:** If capture succeeds after the hold has expired, do you refund, honor the reservation if inventory is still free, or fail? Who decides?\n6. **Idempotency:** If confirmation is submitted twice (double-click or retry), how do you guarantee a single capture?\n7. **Limits:** Can one user hold multiple items at once? Is there a cap, to prevent hoarding inventory?\n8. **After confirmation:** Are cancellation, modification, and refund in scope? If so, are they separate states of a Reservation?\n9. **Existing usage:** Where does \"booking\" appear today (tables, API fields, endpoints, UI copy, analytics)? Which of those would a rename break?\n\n## Proposed documentation\n\nEach document records one kind of decision, so none of them drifts into duplicating another.\n\n| Document | Purpose | Contents |\n|---|---|---|\n| `docs/glossary.md` | Fix the vocabulary | Hold, Reservation, Capture, Confirmation, Expiry. For \"booking\": a deprecated term and a mapping to the new ones, with the places it still appears. |\n| `docs/adr/0001-hold-and-reservation-terms.md` | Record the naming decision | Context (one word for two things), decision, consequences, and the migration plan for code and API names. |\n| `docs/adr/0002-hold-duration-and-expiry.md` | Record the 10-minute rule | Duration, what starts and stops the timer, extension policy, release mechanism, and the late-capture outcome. |\n| `docs/adr/0003-capture-at-confirmation.md` | Record the payment rule | Why capture happens only at confirmation, failure and retry behavior, idempotency approach. |\n| `docs/reservation-lifecycle.md` | Show the state model | A state diagram (Held → Confirmed / Expired / Released, plus post-confirmation states if in scope) with the allowed transitions and what triggers each. |\n| `docs/open-questions.md` | Track the unknowns | Unanswered items from this interview, with an owner for each, so assumptions don't quietly become decisions. |\n\nTwo practices keep these from going stale:\n- Use the glossary terms exactly in code, tests, and commit messages, and link each ADR from the code that implements it.\n- Never edit an accepted ADR. Supersede it with a new one, so the history of decisions stays intact.\n\nIf you answer questions 1, 2, and 5 first, I can draft the glossary and the first two ADRs from your answers.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks multiple unresolved design questions, proposes a Hold/Reservation glossary consistent with the facts, and frames open items as questions or recommendations rather than accepted decisions."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as ambiguous, asks many unresolved design questions, proposes a Hold/Reservation glossary consistent with the facts, and records no undecided choice as accepted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks many unresolved design questions, proposes a Hold/Reservation glossary distinction matching the facts, and frames the naming choice as a recommendation rather than an accepted decision."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the 'booking' overloading, asks many unresolved design questions, proposes a Hold/Reservation glossary consistent with the facts, and frames the naming choice as a recommendation rather than an accepted decision."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as ambiguous, asks unresolved design questions, proposes a Hold/Reservation glossary consistent with the facts, and frames the naming choice as a recommendation rather than an accepted decision."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Reservation design interview\n\n## What I take as settled\n- A **hold** lasts 10 minutes.\n- **Capture** (taking payment) happens only at confirmation, never at hold time.\n- \"Booking\" currently means both a hold and a confirmed reservation. That ambiguity is the main documentation risk.\n\n## Recommendation on terminology\nSplit the term now, before more code and docs depend on it:\n- **Hold**: temporary, expires after 10 minutes, no payment captured.\n- **Reservation**: confirmed, payment captured.\n- **Booking**: retire it, or allow it only as an informal umbrella in user-facing copy and never as a type, table, or field name.\n\nTell me if you disagree, since this shapes the questions below.\n\n## Interview questions\nI'd answer these in order, since earlier answers change later ones.\n\n**1. Vocabulary and lifecycle**\n1. Is a hold a separate entity from a reservation, or one entity with a status? Which do you prefer, and why?\n2. What are the states and transitions? For example: held → confirmed, held → expired, held → released, confirmed → cancelled. Which did I miss?\n3. Where does \"booking\" appear today (code, DB, API, UI, support docs)? Which of those are hard to rename, such as public API fields?\n\n**2. Hold behavior**\n4. Is the 10 minutes fixed, or configurable per resource or tenant? Is it measured from creation or last activity?\n5. Can a hold be extended or renewed? If so, how many times?\n6. What happens at expiry: does a background job release inventory, or is expiry checked lazily on read? What is the tolerance for a hold lingering past 10 minutes?\n7. Can one user hold multiple items at once? Is there a cap?\n\n**3. Confirmation and capture**\n8. What if confirmation arrives at minute 10:01? Is there a grace period, and who decides: the clock on your server or the payment provider's callback?\n9. What if capture fails or is declined? Does the hold survive for a retry, or is it released?\n10. What if capture succeeds but the hold already expired and the inventory was taken? Do you refund, or oversell?\n11. How do you make confirmation idempotent against double-clicks and retried requests?\n\n**4. Concurrency and inventory**\n12. What is the source of truth for availability, and how do you prevent two holds on the same inventory?\n13. Do holds count against availability immediately?\n\n**5. Cancellation and money**\n14. Are refunds or cancellation fees in scope for this design, or deferred?\n\n## Proposed documentation\nKeep it small and tied to the decisions:\n\n1. **`docs/glossary.md`**: the canonical definitions of Hold, Reservation, Capture, Expiry, and the status of \"booking\" (deprecated or umbrella). Include a \"do not use\" column.\n2. **`docs/adr/0001-separate-hold-from-reservation.md`**: records the terminology split, the alternatives considered (single \"booking\" with a status field), and the consequences, including the rename migration plan.\n3. **`docs/adr/0002-capture-only-at-confirmation.md`**: records why no payment is captured at hold time, and the failure modes it accepts (declined payment after hold, expired hold at confirmation).\n4. **`docs/adr/0003-hold-duration-and-expiry.md`**: the 10-minute rule, how it is measured, how expiry is enforced, and the grace-period decision.\n5. **`docs/reservation-lifecycle.md`**: a state diagram plus a table of invariants, for example \"capture occurs at most once per reservation\" and \"an expired hold never becomes a reservation\".\n6. **Code-level pointers**: a short comment on the hold and reservation types linking to the glossary, and a lint or grep check that flags new uses of \"booking\" in identifiers.\n\nEach ADR should state its status (proposed, accepted, superseded) and the date, so later changes supersede rather than silently overwrite.\n\n## Where to start\nAnswer questions 1–3 first. They determine whether ADR 0001 describes one entity or two, and everything else builds on that.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks open design questions, proposes a Hold/Reservation glossary consistent with the facts, and marks ADRs as proposed, leaving undecided points like grace period open."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks unresolved design questions, proposes a Hold/Reservation glossary split consistent with the facts, and marks the ADRs as proposed rather than accepted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks open design questions, proposes a Hold/Reservation glossary consistent with the facts, and marks the ADRs as proposed rather than accepted."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term (1), asks several unresolved design questions (2), proposes a Hold/Reservation glossary split consistent with the facts (3), but its ADR 0001 is framed as a recommended decision rather than explicitly marked proposed, which is only partly careful about undecided choices (4 partly met)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks many unresolved design questions, proposes a hold/reservation glossary split consistent with the facts, and keeps undecided items like the grace period as open questions."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "I'm skipping the Skill calls and any file writes, since you asked for text only. Below is the interview, with a recommended answer for each question, followed by the documentation I'd write once you've answered.\n\n## The core problem: \"booking\" means two things\n\nYour facts show the overload. A hold is temporary (10 minutes) and has no payment captured. A confirmed reservation is durable and is the point where capture happens. \"Booking\" currently covers both, so a sentence like \"cancel the booking\" or \"the booking expired\" is ambiguous. I'd resolve this before the other questions.\n\n**Q1. What should we call each thing?**\nMy recommendation: **Hold** for the temporary state and **Reservation** for the confirmed one. Retire \"booking\" as a domain term, or keep it only as an informal umbrella for \"either of these\", and say so explicitly in the glossary. You already use \"hold\" and \"reservation\" in your own facts, so this adds no new vocabulary.\n\n**Q2. Are a hold and a reservation two entities or one entity with a state?**\nMy recommendation: one aggregate with distinct states (`held`, `confirmed`, `expired`, `cancelled`). A hold converts into a reservation rather than being replaced by it, so inventory and identifiers stay stable. The catch is that \"booking\" in code then probably maps to this aggregate, so the rename needs to be deliberate.\n\n**Q3. What happens at minute 10?**\n- Does expiry release inventory immediately, or on a sweeper schedule?\n- If confirmation arrives at 10:00.5, who wins?\n\nMy recommendation: the server clock is authoritative, expiry is evaluated lazily at confirm time (so a late confirm fails even if the sweeper hasn't run), and the sweeper only reclaims inventory.\n\n**Q4. Is the 10 minutes fixed or configurable?**\nIs it per resource type, per customer, or global? Can it be extended (for example while the user is on the payment page)? My recommendation: a single global constant for now, and an ADR noting that extension was considered and rejected, if that's the case.\n\n**Q5. Capture only at confirmation. What does confirmation consist of?**\n- Is it \"payment authorized and captured atomically with the state change to confirmed\"?\n- If capture fails, does the hold survive until its original expiry, or does it end immediately?\n- Is there any authorization at hold time, or zero contact with the payment provider?\n\nMy recommendation: no payment-provider contact at hold time, and a failed capture leaves the hold intact until its original expiry so the user can retry.\n\n**Q6. Idempotency and double-confirm.** What happens if confirm is submitted twice, such as a double-click or a retry after a timeout? My recommendation: an idempotency key per hold, so a second confirm returns the existing reservation and never captures twice.\n\n**Q7. Concurrency.** Can two holds exist on the same inventory unit? Presumably not, but then is the hold the inventory lock? If so, a hold must be created atomically with an availability check.\n\n**Q8. Cancellation and refunds.** Can a hold be cancelled by the user (releasing inventory early)? Can a reservation be cancelled, and does that trigger a refund? That is outside your stated facts, but it determines whether \"cancelled\" is a state at all.\n\nI'd take these one at a time, starting with Q1, because the answer changes how every later question is phrased.\n\n## Proposed documentation\n\n**1. Glossary: `CONTEXT.md` or `docs/glossary.md`**\n\n| Term | Definition |\n|---|---|\n| **Hold** | A temporary claim on inventory that lasts 10 minutes. No payment is captured. |\n| **Reservation** | A confirmed claim on inventory. Payment is captured at the moment of confirmation. |\n| **Confirmation** | The transition from hold to reservation, which includes payment capture. |\n| **Expiry** | The end of a hold's 10-minute window. Inventory is released. |\n| **Booking** | *Avoid.* Ambiguous legacy term. Say \"hold\" or \"reservation\". |\n\nInclude an \"Avoid / legacy\" column or section so code reviewers can flag the old term.\n\n**2. ADRs in `docs/adr/`**\n\n- **ADR-0001: Split \"booking\" into Hold and Reservation.** Context is the ambiguity. Decision is the two terms. Consequences are renaming in code, API, UI copy, and analytics events, plus a migration plan for the legacy term.\n- **ADR-0002: Holds last 10 minutes and expiry is checked at confirm time.** Record the rejected alternatives, such as configurable durations, extensions, and sweeper-only expiry.\n- **ADR-0003: Payment is captured only at confirmation.** Record why there is no authorization at hold time, the failure-handling behavior, and the idempotency approach.\n\nEach ADR would be short: status, context, decision, alternatives considered, consequences.\n\nAnswer Q1 and I'll move to Q2. If you'd rather keep \"booking\" as the umbrella term, say so, and I'll adjust the glossary and ADR-0001 accordingly.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies 'booking' as ambiguous (criterion 1), asks unresolved design questions (criterion 2), proposes a Hold/Reservation glossary consistent with facts (criterion 3). Criterion 4 is partially met: it recommends decisions like the 10-minute constant and idempotency but labels them as recommendations pending answers, so they are not recorded as accepted; likely satisfied, scoring 1.0 is arguable."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: identifies the overloaded 'booking' term, asks unresolved design questions, and proposes a Hold/Reservation glossary consistent with the facts. Misses criterion 4: ADR-0002 and ADR-0003 state undecided choices (lazy expiry, idempotency, failure handling) as decisions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies 'booking' as ambiguous, asks unresolved design questions, and proposes a Hold/Reservation glossary consistent with the facts. It misses the last criterion: ADR-0002 and ADR-0003 record undecided choices (expiry-at-confirm, idempotency, no authorization) as decisions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1–3: flags 'booking' as ambiguous, asks open design questions, and proposes a Hold/Reservation glossary consistent with the facts. Criterion 4 is partly missed: ADR-0002's title states lazy expiry at confirm time as decided, though it was only recommended."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1–3: identifies the overloaded 'booking' term, asks unresolved questions (Q1–Q8), and proposes a Hold/Reservation glossary consistent with the facts. Misses criterion 4: ADR titles like 'expiry is checked at confirm time' and 'idempotency approach' record choices still posed as open questions."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Reservation design interview\n\nI'll start with the terminology problem, since it will distort every other decision if left unresolved. My recommendation is to reserve **booking** for the confirmed state only, call the temporary state a **hold**, and retire \"booking\" as a generic word. The questions below will test that.\n\n## Questions (answer in any order)\n\n**Vocabulary**\n1. Do users, support staff, and the API all use \"booking\" for both states today? Which of those would be costly to rename (public API fields, database tables, customer-facing copy)?\n2. Is a hold ever shown to customers as a \"booking\"? If so, would they be surprised that it can vanish after 10 minutes?\n\n**Hold lifecycle**\n3. What does a hold reserve: inventory only, or also a price quote? If the price changes during the 10 minutes, which price applies?\n4. Can a hold be extended, renewed, or released early? Is there a maximum number of extensions?\n5. What happens at minute 10 exactly: is expiry enforced lazily on read, by a sweeper job, or by a TTL in the store? How much clock skew or lateness is acceptable?\n6. Can one user hold the same item multiple times, and is there a per-user or per-session cap?\n\n**Confirmation and capture**\n7. I'm assuming \"capture\" means payment capture. Is that right, or does it mean capturing inventory?\n8. Is any payment authorization created at hold time, or is nothing touched until confirmation?\n9. What if confirmation starts at minute 9:59 and payment takes 30 seconds? Does the hold survive until the capture result is known, or can it expire mid-payment?\n10. If capture fails or is declined, does the hold remain, and for how long?\n11. How do you make confirmation idempotent, so a retry cannot capture twice?\n\n**Failure and edge cases**\n12. If a hold expires but the capture succeeds late (a race), who wins: the payment or the expiry? What is the refund or rebooking path?\n13. What do cancellation and refund look like after confirmation? Is that in scope for this design?\n\n**Ownership**\n14. Which decisions are settled and which are still open? I'll record them separately.\n\n## Proposed documentation\n\n| Document | Purpose |\n|---|---|\n| `docs/glossary.md` | One authoritative definition per term (hold, booking/reservation, confirmation, capture, expiry). Lists banned or ambiguous uses, including \"booking\" for a hold. |\n| `docs/adr/0001-hold-vs-booking-terminology.md` | Records the split, the alternatives considered, the rename scope, and migration notes for the API and database. |\n| `docs/adr/0002-hold-duration-and-expiry.md` | Records the 10-minute duration, how expiry is enforced, and extension policy. The duration should be a named config value, not a magic number. |\n| `docs/adr/0003-capture-only-at-confirmation.md` | Records why nothing is captured at hold time, the consequences (declines are discovered late), and the handling of the expiry-versus-capture race. |\n| `docs/reservation-lifecycle.md` | State diagram (held → confirmed, held → expired, held → released, confirmed → cancelled) with allowed transitions and the event that triggers each. |\n| `docs/invariants.md` | Testable rules, for example: \"capture occurs only on the held→confirmed transition,\" \"an expired hold never becomes confirmed,\" \"confirmation is idempotent.\" |\n| `docs/open-questions.md` | Unresolved items from this interview, each with an owner and a date. |\n\nEach ADR should follow a short template: context, decision, alternatives, consequences, status. Keep the glossary linked from the README and from code comments near the state enums, so the terms stay consistent where the code is written.\n\nStart with questions 1, 7, 9, and 12. Their answers decide the content of the first three ADRs.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: identifies the 'booking' overload, asks many unresolved questions, and proposes a hold/booking split. Misses 4: the lifecycle diagram includes confirmed→cancelled and the invariants list idempotency as a rule, though Q11 and Q13 leave both open."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the overloaded 'booking' term, asks many unresolved design questions, proposes a hold/booking glossary split consistent with the facts, and marks the split as a recommendation rather than a decision."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the 'booking' ambiguity, asks unresolved questions, and proposes a glossary split consistent with the facts. It partly misses criterion 4: ADR 0001 is framed to 'record the split' before the user has confirmed it."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the 'booking' overloading (criterion 1), asks unresolved questions such as price-change and capture-race handling (2), proposes a hold-versus-booking glossary split consistent with the facts (3), and labels the terminology split a recommendation, with open items routed to open-questions.md (4)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks unresolved design questions, proposes a hold/booking glossary split consistent with facts, and marks open items in open-questions.md; but Q-set and ADR 0003 partly record capture-at-confirmation as settled, which is supplied fact, so criterion 4 is mostly met."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Reservation design interview\n\n## What I take as given\n- A **hold** lasts 10 minutes.\n- **Capture** (taking payment) happens only at **confirmation**.\n- \"Booking\" currently means both a hold and a confirmed reservation, which is the main ambiguity to resolve.\n\n## Terminology first\nBecause one word covers two states, every later question is ambiguous until it's split. My recommendation:\n\n- **Hold**: temporary claim on inventory, expires after 10 minutes, no money taken.\n- **Reservation**: confirmed, payment captured.\n- **Retire \"booking\"** from code, UI, and docs, or reserve it as a UI-only umbrella term that never appears in the domain model.\n\n**Q1.** Do you accept hold/reservation as the pair, or do you prefer other names? Does anything outside the codebase (UI copy, support, partner APIs) already depend on \"booking\"?\n\n## Questions on the hold\n2. When does the 10 minutes start: on creation, or when the user reaches checkout? Is it fixed or can it be extended (for example, while a payment is in progress)?\n3. What happens at expiry: is inventory released immediately, or is there a grace period? Who owns the expiry (a TTL in the store, a sweeper job, or lazy check on read)?\n4. Can one user hold multiple items at once? Is there a cap per user or per inventory unit?\n5. If a user re-selects the same item, does it create a new hold or refresh the existing one?\n\n## Questions on confirmation and capture\n6. What if confirmation arrives after the hold has expired but the inventory is still free? Do you re-acquire it, or reject?\n7. What if capture fails or is slow? Does the hold stay alive during the payment attempt, and what is the user shown?\n8. Is authorization before capture (a card pre-auth) allowed, or is there strictly no contact with the payment provider until confirmation?\n9. How do you make confirmation idempotent so a retry or double click cannot capture twice?\n\n## Questions on the aftermath\n10. Can a reservation be cancelled or modified, and does that trigger a refund? Is that a separate state, and does it need its own term?\n11. What must be audited: hold created, expired, confirmed, capture result?\n\n## Proposed documentation\nSmall and durable, so decisions survive team turnover:\n\n1. **`CONTEXT.md` (glossary / ubiquitous language)**: definitions of hold and reservation, the deprecated term \"booking\" with a note on what to say instead, plus capture, confirmation, and expiry.\n2. **ADR 0001: Split \"booking\" into hold and reservation**: context, decision, consequences (renames needed in code, API, UI), and any migration or compatibility notes.\n3. **ADR 0002: Hold duration is 10 minutes**: rationale, whether it's configurable, the start-time rule, and expiry mechanism.\n4. **ADR 0003: Capture only at confirmation**: why no pre-auth, how failure is handled, and the idempotency approach.\n5. **State diagram (`docs/reservation-lifecycle.md`)**: Hold → Expired, Hold → Reservation (on confirm), and later states such as Cancelled, with the transition triggers and which side effects occur at each.\n6. **Open questions list**: anything unanswered above, with an owner, so gaps are visible rather than implied.\n\nKeep ADRs to about one page each and link them from the glossary so the vocabulary and its reasons stay together.\n\n## Where to start\nAnswer Q1 first, then Q2, Q3, and Q6. They determine the state machine, and the rest of the docs follow from it. If you give me answers, I'll draft the glossary and the first ADR text for you to review.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks unresolved questions, and proposes a hold/reservation split consistent with the facts. It loses the fourth point because ADR 0003 presumes 'no pre-auth', which Q8 leaves open."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the overloaded term 'booking', asks unresolved questions, and proposes a glossary split consistent with the facts. It partly misses criterion 4: ADR 0003 is titled 'why no pre-auth' although Q8 leaves pre-auth undecided."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the ambiguous 'booking' term, asks many unresolved design questions, and proposes a hold/reservation glossary consistent with the facts. It loses credit because ADR 0001 drafts the hold/reservation split as a decision before the user accepts it (Q1 is still open)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term (criterion 1), asks unresolved questions like Q1 and Q2/Q3 (criterion 2), proposes a hold/reservation glossary consistent with the facts (criterion 3); it records the 10-minute and capture-at-confirmation facts as given, but treats hold/reservation naming and expiry questions as open, so criterion 4 is mostly met, though 'Hold duration is 10 minutes' is drafted as an ADR title, a minor risk."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as overloaded across hold and reservation, asks unresolved questions (Q1–Q11), proposes a glossary consistent with the facts, and marks the terminology and pre-auth choices as open."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": null,
+     "placebo": {
+      "answer": "# Reservation design interview\n\nThe main problem is that \"booking\" means two different things. I'd settle that first, because every other decision depends on it.\n\n## 1. Vocabulary\n\nMy recommendation: **hold** for the temporary 10-minute claim, **reservation** for the confirmed one, and retire \"booking\" as a domain term (keep it only in user-facing copy if marketing insists).\n\n- Do you accept that split? If not, what names do you prefer?\n- Where does \"booking\" appear today (code, DB columns, API routes, UI, support docs)? Which of those can be renamed, and which are public contracts that need aliases?\n- Is a hold a separate entity from a reservation, or one entity with a status? I lean toward one entity with explicit states (`held`, `confirmed`, `expired`, `cancelled`), unless holds and reservations have different lifecycles or ownership.\n\n## 2. Hold lifecycle\n\n- Does the 10 minutes start at hold creation or at checkout start? Can it be extended or renewed, and how many times?\n- What happens at expiry: is inventory released immediately by a timer, or lazily on the next read? Which is the source of truth for \"expired\", a stored timestamp or a background job? I recommend a stored `expires_at` checked on read, with a sweeper only for cleanup.\n- What if confirmation arrives at 10:01? Is there a grace window, or is it a hard failure?\n- Can one user hold multiple items at once? Is there a cap per user or session?\n- Are holds tied to an authenticated user or an anonymous session?\n\n## 3. Capture and confirmation\n\nFact: capture happens only at confirmation.\n\n- Is there any authorization (a card hold) at hold time, or is no payment interaction happening before confirmation?\n- If capture fails at confirmation, does the hold remain valid for retry until it expires? I recommend yes, with a retry limit.\n- If capture succeeds but the hold has already expired and the inventory was resold, what is the remedy: automatic refund, or priority re-allocation? This is the most dangerous race in the design, so please answer it explicitly.\n- Is confirmation idempotent? What key prevents double capture on a retried request?\n\n## 4. Concurrency and inventory\n\n- What is the unit being held (a room, a seat, a time slot, a quantity)?\n- What guarantees no double-holding: a database constraint, a lock, or optimistic versioning?\n- Can an operator or admin override or release a hold?\n\n## 5. After confirmation\n\n- What are the cancellation and refund rules? Does cancelling a reservation ever return to a \"held\" state? I recommend no.\n- What do users see when a hold expires mid-checkout?\n- What events or notifications are emitted for hold created, expired, and confirmed?\n\n## Proposed documentation\n\nKeep it small, so it actually gets maintained:\n\n1. **`docs/glossary.md`** defines *hold*, *reservation*, *confirmation*, *capture*, *expiry*, and explicitly deprecates *booking*, with a table mapping old usages to new terms. This is the highest-value document.\n2. **`docs/adr/0001-hold-vs-reservation-terminology.md`** records the naming decision, the alternatives considered, and the migration plan for existing code and APIs.\n3. **`docs/adr/0002-hold-duration-and-expiry.md`** records the 10-minute duration, when the clock starts, how expiry is enforced, and the grace-window decision.\n4. **`docs/adr/0003-capture-at-confirmation.md`** records why capture happens only at confirmation, the failure and retry behavior, and the expired-hold-after-capture remedy.\n5. **`docs/reservation-lifecycle.md`** has a state diagram (`held → confirmed`, `held → expired`, `confirmed → cancelled`) listing allowed transitions, who triggers each, and side effects.\n6. **A short \"Open questions\" section** in the lifecycle doc, so unresolved items are visible rather than silently assumed.\n\nEach ADR should follow context, decision, consequences, and status, and each should carry a date and the facts it relies on (10-minute hold, capture only at confirmation) so future changes can be traced back to them.\n\nIf you want to start somewhere, answer sections 1 and 3 first. Naming and the late-capture race drive most of the rest.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as overloaded for hold and reservation, asks many unresolved design questions, proposes a hold/reservation glossary consistent with the 10-minute and capture-at-confirmation facts, and keeps open items marked as open rather than recorded as decided."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as an overloaded term, asks multiple open design questions, proposes a hold/reservation glossary consistent with the 10-minute and capture-at-confirmation facts, and frames undecided items as questions or recommendations rather than accepted decisions."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks many unresolved design questions, proposes a hold/reservation glossary consistent with the 10-minute and capture-at-confirmation facts, and frames open choices as recommendations or questions rather than accepted decisions."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as ambiguous, asks many unresolved design questions, proposes a hold/reservation glossary consistent with the 10-minute and capture-at-confirmation facts, and frames open items as recommendations or questions rather than accepted decisions."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as ambiguous, asks open design questions, proposes a hold/reservation glossary consistent with the 10-minute and capture-at-confirmation facts, and labels undecided items as recommendations or open questions."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Reservation design interview\n\n## What I take as settled\n- A hold lasts 10 minutes.\n- Payment capture happens only at confirmation.\n- \"Booking\" currently means both a hold and a confirmed reservation. This is the main ambiguity to fix.\n\n## Recommendation up front\nSplit the term. Use **Hold** for the temporary 10-minute claim and **Reservation** for the confirmed, paid one. Retire \"booking\" from code and docs, or keep it only as an informal umbrella term, and say so in the glossary. Otherwise statements like \"a booking expires after 10 minutes\" will be true for one meaning and false for the other.\n\n## Questions\n\n**Lifecycle and terms**\n1. When a hold is confirmed, is it the same record that changes state, or does confirmation create a new Reservation and close the Hold? I'd suggest one record with explicit states, unless holds and reservations have different data or retention needs.\n2. What are the terminal states? For example: hold expired, hold released by the user, confirmation failed, reservation cancelled.\n3. Does anything else use \"booking\", such as API routes, DB tables, UI copy, or analytics events? Which of those can be renamed and which are public contracts?\n\n**The 10-minute hold**\n4. When does the clock start: at hold creation or when the user reaches checkout? Is the 10 minutes fixed or configurable per resource?\n5. Can a hold be extended or refreshed? If so, how many times?\n6. Who enforces expiry: a timestamp checked at read time, a background sweeper, or both? What is the source of truth for \"now\"?\n7. What happens if confirmation arrives at 10:00 exactly, or while expiry is running? Which one wins?\n\n**Capture at confirmation**\n8. If capture fails or is declined, does the hold stay alive for a retry until it expires, or is it released immediately?\n9. If capture succeeds but marking the reservation confirmed fails, what is the recovery path? Is there an idempotency key per confirmation attempt?\n10. If the hold expires while a payment is in flight, do you refund, or do you still honor the reservation?\n11. Is anything authorized, such as a card verification, at hold time, or is the payment method untouched until confirmation?\n\n**Inventory and concurrency**\n12. Does a hold decrement availability immediately? What guarantees that two users can't hold the last unit at once?\n13. Can one user have multiple concurrent holds on the same resource?\n\n**Cancellation and money**\n14. Are cancellation and refund rules out of scope for now, or part of this design?\n\n## Proposed documentation\n\n1. **Glossary** (`docs/glossary.md`): defines Hold, Reservation, Confirmation, Capture, and Expiry, and states that \"booking\" is deprecated or what it now means. Doing this first removes the ambiguity everywhere else.\n2. **ADR 001, Separate Hold from Reservation terminology**: context (one word, two meanings), decision, consequences, and the rename scope from question 3.\n3. **ADR 002, Hold duration and expiry mechanism**: the 10-minute value, when the clock starts, extension policy, and who enforces expiry.\n4. **ADR 003, Capture only at confirmation**: the rationale, the failure and retry behavior, and idempotency.\n5. **State diagram** (`docs/reservation-lifecycle.md`): states, allowed transitions, and what triggers each one. Include the expiry-versus-confirmation race.\n6. **Invariants list**, a short section in the lifecycle doc: for example, \"no capture without an active hold\" and \"a unit is never held by two users at once.\" These can later become tests.\n7. **Open questions log**: unresolved items from the list above, each with an owner and a date, so unanswered questions don't get lost.\n\nKeep ADRs short and immutable. When a decision changes, add a new ADR that supersedes the old one. Keep the glossary and state diagram as living documents.\n\nIf you answer questions 1, 4, 8, and 12 first, I can draft the glossary and the first two ADRs from them.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks many unresolved design questions, proposes a Hold/Reservation glossary consistent with the facts, and frames undecided items as open questions or examples rather than accepted decisions."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks many unresolved design questions, and proposes a Hold/Reservation split consistent with the facts. It partly misses criterion 4: the proposed invariant that a unit is never held by two users is undecided (question 12) but is stated as a rule."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks multiple unresolved design questions, proposes a Hold vs Reservation glossary consistent with the facts, and labels open items as unresolved rather than recording them as decided."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks many unresolved design questions, proposes a Hold/Reservation glossary consistent with the 10-minute and confirmation-capture facts, and records open choices as questions or proposed ADRs."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks many unresolved design questions, proposes a Hold/Reservation glossary consistent with the facts, and records only the supplied facts as settled while leaving other choices open."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "# Reservation design interview and documentation proposal\n\n## What I'm taking as given\n- A hold lasts 10 minutes.\n- Payment capture happens only at confirmation, never at hold time.\n- \"Booking\" currently means both a hold and a confirmed reservation. This is the main risk, because the two have different lifetimes, payment states, and failure modes.\n\n## Interview questions\nAnswer in any order. The first three block the most downstream decisions.\n\n**Vocabulary**\n1. Do you want to retire \"booking\" entirely, or reserve it for one meaning? My suggestion is **hold** for the temporary state, **reservation** for the confirmed one, and \"booking\" only as informal or UI language. Does that fit how customers and staff talk?\n2. Is a hold a separate entity from a reservation, or one entity with a status (`held → confirmed | expired | released`)? This determines the schema, the IDs, and what \"booking ID\" in existing logs and APIs refers to.\n\n**Hold lifecycle**\n3. What starts the 10 minutes: hold creation, or arrival at checkout? Is the expiry timestamp stored server-side as the source of truth?\n4. Can a hold be extended, renewed, or re-created by the same user? If so, how many times?\n5. What releases the inventory on expiry: a scheduled sweeper, lazy checking on read, or both? What is the acceptable lag between expiry and the inventory becoming available?\n\n**Confirmation and capture**\n6. What happens if capture fails or is declined at confirmation? Does the hold stay alive for a retry within the remaining time, or is it released?\n7. What happens if a confirmation request arrives after expiry but the inventory is still free? Do you accept it or reject it strictly?\n8. Do you need idempotency for confirmation, so a double-click or retry cannot capture twice? Where is the idempotency key stored?\n\n**Concurrency and scope**\n9. Can multiple users hold the same inventory at once (overbooking tolerance), or is a hold an exclusive lock?\n10. Are there per-user or per-session limits on concurrent holds?\n\n**Existing data**\n11. Where does \"booking\" already appear (DB tables, API fields, events, analytics, support tooling), and which of those need a migration versus an alias?\n\n## Proposed documentation\nKeep it small, and keep each decision in exactly one place.\n\n1. **`docs/glossary.md`** is the canonical vocabulary. Each term gets one definition, a \"do not use for\" note, and the legacy-term mapping.\n   > **Hold**: temporary claim on inventory, expires 10 minutes after creation, no payment captured.\n   > **Reservation**: confirmed claim, created when a hold is confirmed and payment is captured.\n   > **Booking** (deprecated): historically used for both. Use *hold* or *reservation* in code, APIs, and docs.\n\n2. **`docs/adr/0001-hold-vs-reservation.md`** records the terminology and entity-model decision (questions 1, 2, 11), with the alternatives considered and the migration approach.\n\n3. **`docs/adr/0002-hold-expiry-and-release.md`** records the 10-minute duration, what starts the clock, the extension policy, and the release mechanism (questions 3 to 5).\n\n4. **`docs/adr/0003-capture-at-confirmation.md`** records why capture happens only at confirmation, the failure and retry behavior, the late-confirmation rule, and idempotency (questions 6 to 8). It states the consequence that a hold carries no payment guarantee.\n\n5. **`docs/reservation-lifecycle.md`** is a state diagram or table of `held`, `confirmed`, `expired`, and `released`, with the allowed transitions and which event triggers each. It links to the ADRs instead of repeating their reasoning.\n\n6. **Code-level anchors**: name the constant `HOLD_DURATION = 10 minutes` in one place with a comment pointing to ADR 0002, and add a short note to the README or contributing guide saying new code must follow the glossary.\n\nEach ADR should have a status (proposed, accepted, superseded), a date, and a \"consequences\" section. Superseded decisions should be marked rather than deleted.\n\nSend me answers to questions 1 to 3 first. I can then draft the glossary and ADR 0001 in full, and we can work through the rest.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the overloaded term 'booking', asks many unresolved design questions, proposes a hold/reservation glossary consistent with the facts, and marks ADRs as proposed with undecided items left open."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: flags 'booking' as ambiguous, asks unresolved design questions, and proposes a hold/reservation glossary. Misses criterion 4: the glossary states the clock starts 'after creation,' which Q3 leaves undecided."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies 'booking' as the ambiguous term, asks many unresolved design questions, proposes a hold/reservation glossary consistent with the facts, and leaves open choices as proposed rather than accepted."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (identifies 'booking' as ambiguous overloaded term), 2 (asks unresolved design questions), and 3 (proposes hold vs. reservation glossary consistent with facts); missed 4 partly, since ADR 0002/0003 are drafted with specific decisions (e.g., late-confirmation rule, extension policy) rather than marked undecided."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the ambiguous 'booking' term, asks many unresolved design questions, and proposes a hold/reservation glossary consistent with the facts. It partly misses criterion 4: the glossary states the clock starts at creation, though Q3 leaves that open."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "adr",
+   "number": 2,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. We settled that cancelled reservations stay as tombstones because audit exports reference them. Write the short decision note you would preserve and one remaining question about retention.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/engineering/grill-with-docs/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 7de372c13488f1ee96cc11cd8907b56b6809cc93eef776eeddd37de6b6cbe3fe; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Record the tombstone decision 2. Explain the audit-export rationale 3. Distinguish retention as unresolved 4. Include consequences without claiming files were written",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "**Decision note: cancelled reservations are kept as tombstones**\n\n- **Decision:** When a reservation is cancelled, we keep its record as a tombstone and do not hard-delete it.\n- **Reason:** Audit exports reference cancelled reservations. Deleting them would leave those exports with dangling references.\n- **Consequence:** Anything that reads reservations must handle tombstones explicitly, for example by excluding them from active views and availability. Audit exports continue to include them.\n\n**Open question on retention:** How long must tombstones be kept, and what happens at the end of that period? Specifically, is there a retention window after which they can be purged, and if so, how do we handle audit exports that already reference them?",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, gives the audit-export rationale, marks retention as an open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, flags retention as an open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export dangling-reference rationale, flags retention as an open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response records the tombstone decision, gives the audit-export rationale (dangling references), marks retention as an open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, labels retention as an open question, and lists consequences without claiming any files were written."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Decision note: Cancelled reservations are retained as tombstones**\n\n**Status:** Settled\n\n**Decision:** When a reservation is cancelled, we keep the record as a tombstone instead of hard-deleting it.\n\n**Reason:** Audit exports reference cancelled reservations. Deleting them would leave those exports pointing at records that no longer exist, breaking traceability.\n\n**Consequences:**\n- Cancellation is a state change (the record is marked cancelled), not a removal.\n- Anything that lists or counts reservations for operational use needs to exclude tombstones explicitly.\n- Audit exports can continue to resolve every reference they contain.\n\n**Remaining question (retention):** How long do tombstones need to be kept, and what should they hold over time? In particular, should they be kept indefinitely, or purged or reduced to a minimal stub (ID, status, timestamps) once the audit window closes, so that any personal data on the original reservation isn't retained longer than necessary?",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, labels retention as an open remaining question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, marks retention as an open remaining question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains audit-export rationale, flags retention as an open question, and includes consequences without claiming any files were written. All four rubric points are met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, labels retention as the remaining open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, flags retention as the open remaining question, lists consequences, and claims no files were written."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Decision note: cancelled reservations are retained as tombstones**\n\n- **Decision:** When a reservation is cancelled, we keep its record as a tombstone rather than hard-deleting it.\n- **Reason:** Audit exports reference cancelled reservations. Deleting them would leave dangling references and make past exports impossible to reconcile.\n- **Implication:** Cancelled reservations must be clearly marked as cancelled so that availability, billing, and user-facing views exclude them, while audit exports can still resolve them.\n- **Status:** Settled. Not to be revisited without a change in the audit requirement.\n\n**Open question on retention:** How long must tombstones be kept, and what happens at the end of that period? That is, is there a fixed retention window (set by audit or legal requirements), and once it expires do we purge the tombstones entirely, or strip personal data and keep a minimal anonymized stub so that older audit exports still resolve?",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: records the tombstone decision, explains the audit-export rationale, flags retention as an open question, and states consequences without claiming files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, flags retention as an open question, and lists implications without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, flags retention as an open question, lists consequences, and claims no files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, flags retention as an open question, and lists consequences without claiming any files were written (criteria 1-4 all met)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, flags retention as an open question, and lists consequences without claiming any files were written."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "**Decision note: cancelled reservations are retained as tombstones**\n\n- **Status:** Accepted\n- **Decision:** When a reservation is cancelled, we keep the record as a tombstone. We do not hard-delete it.\n- **Reason:** Audit exports reference cancelled reservations. Deleting them would leave dangling references and make past exports impossible to reconcile.\n- **Consequences:**\n  - Cancelled reservations stay in storage, so queries for active reservations must filter tombstones out.\n  - Audit exports can keep resolving references to cancelled records.\n  - Storage grows with the number of cancellations unless a retention rule is added.\n\n**Open question on retention:** How long must a tombstone be kept? Can it be purged, or reduced to a minimal stub, once the audit exports that reference it fall outside the audit or compliance window? Or must tombstones be kept indefinitely?",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, lists consequences without claiming files were written, and leaves retention explicitly as an open question."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, flags retention as an open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export reference rationale, leaves retention as an explicit open question, includes consequences, and makes no claim that files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export reason, lists retention as an open question, and includes consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, leaves retention as an open question, lists consequences, and claims no files were written."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Decision note: Cancelled reservations are retained as tombstones**\n\n- **Decision:** When a reservation is cancelled, we keep its record as a tombstone rather than hard-deleting it.\n- **Reason:** Audit exports reference cancelled reservations. Deleting them would leave those exports pointing at records that no longer exist.\n- **Consequence:** Cancellation is a state change, not a removal. Code that lists or counts reservations must handle tombstones explicitly, either by excluding them from user-facing views or by including them where audit consistency matters.\n\n**Open question on retention:** How long must tombstones be kept, and what should happen when that period ends? Specifically, should they be purged, archived, or stripped of personal data while keeping the identifiers audit exports need? That depends on how long audit exports must stay verifiable, and on any privacy or deletion obligations that apply to the data in a cancelled reservation.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Rubric 1: records the tombstone decision. 2: explains audit-export rationale (exports reference records). 3: retention framed as an open question. 4: includes consequences without claiming files were written. All four criteria met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, gives the audit-export rationale, marks retention as an open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, gives the audit-export rationale, marks retention as an open question, lists consequences, and makes no claim that files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, labels retention as an open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, marks retention as an open question, and gives consequences without claiming any files were written."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Decision note: Cancelled reservations are retained as tombstones**\n\n- **Decision:** When a reservation is cancelled, we keep its record as a tombstone rather than hard-deleting it.\n- **Reason:** Audit exports reference cancelled reservations. Deleting them would leave those exports with dangling references and break audit traceability.\n- **Implication:** Cancelled reservations must be clearly marked (e.g. a cancelled status and cancellation timestamp) so they are excluded from normal availability, listing, and booking logic, while remaining resolvable by audit exports.\n- **Status:** Settled. Not to be revisited without a new constraint, such as a legal or storage requirement.\n\n**Remaining question about retention:** How long must tombstones be kept, and what happens at the end of that period? That is, does the audit requirement mandate a fixed retention window (after which tombstones can be purged or anonymized, including any personal data on them), or must they be kept indefinitely?",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export dangling-reference rationale, flags retention as the open question, lists consequences, and claims no files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, gives the audit-export rationale, frames retention as the open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, flags retention as an open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, frames retention as an open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, marks the retention window as the open question, and lists consequences without claiming any files were written."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "**Decision note: cancelled reservations are retained as tombstones**\n\n- **Status:** Accepted\n- **Decision:** When a reservation is cancelled, we keep its record as a tombstone and do not hard-delete it.\n- **Reason:** Audit exports reference cancelled reservations. Deleting them would leave dangling references and make past exports impossible to reconcile.\n- **Consequences:**\n  - Cancelled reservations stay in storage, marked as cancelled, and remain resolvable by ID.\n  - Queries for active reservations must exclude tombstones.\n  - Storage grows with every cancellation unless a retention policy is set.\n\n**Open question on retention:** How long must tombstones be kept, and what should happen when that period ends? That could mean hard deletion, archival, or stripping personal data while keeping the ID and cancellation metadata so audit references still resolve.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export reference rationale, flags retention as an open question, and includes consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains audit-export references as the rationale, flags retention as an open question, and includes consequences without claiming files were written; all four criteria met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response records the tombstone decision, gives the audit-export rationale, lists retention as an open question, includes consequences, and claims no files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, flags retention as an open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: records the tombstone decision, explains the audit-export rationale, flags retention as an open question, and lists consequences without claiming files were written."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Decision note: Cancelled reservations are retained as tombstones**\n\n**Decision:** When a reservation is cancelled, we do not hard-delete the record. It stays in the system as a tombstone (a marked-cancelled record with its identifying fields preserved).\n\n**Reason:** Audit exports reference cancelled reservations. Removing them would leave dangling references and make past exports impossible to reconcile or reproduce.\n\n**Consequences:**\n- Cancellation is a state change, not a deletion.\n- Normal reservation queries and user-facing views need to exclude tombstones by default.\n- Anything that counts or lists reservations must decide explicitly whether tombstones are included.\n\n**Remaining question on retention:** How long must tombstones be kept, and what happens at the end of that period? Specifically, should they be purged outright once audit-export retention requirements lapse, or reduced to a minimal stub (ID and status only) with personal data stripped, so references stay valid without holding customer data indefinitely?",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, poses retention as an open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, flags retention as an open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export reference rationale, flags retention as an open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export rationale, leaves retention as an open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response records the tombstone decision, explains the audit-export rationale, flags retention as an open question, and lists consequences without claiming any files were written."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Decision note: Cancelled reservations are retained as tombstones**\n\n**Decision:** When a reservation is cancelled, we keep its record as a tombstone rather than hard-deleting it.\n\n**Reason:** Audit exports reference cancelled reservations. Removing them would leave those exports with dangling references and make them impossible to reconcile.\n\n**Consequences:**\n- Cancelled reservations remain in storage, marked as cancelled, instead of being removed.\n- Anything that lists or counts active reservations must exclude tombstones.\n- Audit exports can continue to resolve references to cancelled reservations.\n\n**Remaining question on retention:** How long must tombstones be kept, and what happens at the end of that period? Specifically, should they be purged after a fixed window (and if so, how do audit exports that reference them get handled), or retained indefinitely?",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, gives the audit-export rationale, leaves retention as an open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export dangling-reference rationale, marks retention as an open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: records the tombstone decision, explains the audit-export rationale, frames retention as an open question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Records the tombstone decision, explains the audit-export reference rationale, marks retention as an open remaining question, and lists consequences without claiming any files were written."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: records the tombstone decision, gives the audit-export rationale (dangling references), flags retention as an open question, and lists consequences without claiming files were written."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "revision",
+   "number": 3,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A prior note says holds expire after 10 minutes. I now propose 30 minutes to help slow checkouts, but have not accepted the capacity tradeoff. Give a written interview response and the status you would put on the proposed note.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/engineering/grill-with-docs/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 7de372c13488f1ee96cc11cd8907b56b6809cc93eef776eeddd37de6b6cbe3fe; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Ask about capacity or inventory contention 2. Keep the prior accepted rule identifiable 3. Mark the proposed change as undecided 4. Avoid silently replacing the existing decision",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "I'm skipping the grilling and domain-modeling skill calls because you asked for text only. This is the interview in written form.\n\n## Interview\n\n**1. What problem are we solving?**\nYou said 10 minutes is too short for slow checkouts. Do we know how many checkouts actually exceed 10 minutes, and where they stall (payment, address entry, third-party redirects)? If only a small share are affected, 30 minutes may be more than we need. Would 15 or 20 do?\n\n**2. What does the longer hold cost?**\nA 30-minute hold keeps stock unavailable three times as long. That raises the cost of every abandoned cart, not just slow ones. Questions to answer before deciding:\n- What share of holds currently expire unused?\n- At peak, how much inventory would be locked at once under 30 minutes versus 10?\n- Which items are scarce enough that a hold causes lost sales to other buyers?\n\n**3. Does it need to be a flat extension?**\nAlternatives that target slow checkouts without raising the baseline:\n- Keep 10 minutes, but extend once when the user reaches the payment step.\n- Extend only on activity, such as a heartbeat from the checkout page.\n- Use a longer hold only for low-contention items.\n\nWhy is a flat 30 minutes preferred over these?\n\n**4. What happens at the edges?**\n- What does the user see when a hold expires mid-payment?\n- If a payment is in flight when the hold lapses, who wins?\n- Is the hold duration configurable per item or per event, or one global constant?\n\n**5. Who owns the tradeoff?**\nCapacity versus checkout completion is a business call. Who has to accept the capacity cost, and what metric would show it was the wrong call (for example, out-of-stock rate or oversell complaints)? Is there a rollback or review date?\n\n## Status for the proposed note\n\n**Proposed**, not Accepted.\n\nReasons:\n- You haven't accepted the capacity tradeoff, so the decision is still open.\n- The prior 10-minute note stays in force until this one is accepted.\n- On acceptance, the new note would be marked as superseding the old one, and the old note's status would change to \"Superseded by <new note>\".\n\nThe note should record the open questions above under a \"Consequences / Unresolved\" heading, so the capacity cost is named rather than implied.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about inventory contention and locked capacity; keeps the 10-minute note in force; marks the 30-minute change as Proposed, not Accepted; and avoids silently replacing the decision."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (asks about capacity/inventory contention, e.g., locked inventory at peak), 2 (prior 10-minute note stays in force), and 3 (marked Proposed, not Accepted); misses 4 only partially, as it names supersession but the prior decision is not explicitly protected from silent replacement beyond that."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about inventory contention (locked stock, scarce items); keeps the 10-minute note in force; marks the 30-minute change Proposed, not Accepted; no silent replacement."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about inventory lock and scarce-item contention, keeps the prior 10-minute note in force, marks the 30-minute proposal as Proposed/undecided, and does not silently replace the existing rule."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: asks about inventory lock and scarce-item contention, keeps the 10-minute note identified as in force, marks the 30-minute proposal as Proposed, not Accepted, and does not silently replace the existing decision."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "## Interview response\n\n\"Today, inventory holds expire after 10 minutes. That's the documented, current behavior. I've proposed extending them to 30 minutes because customers with slow checkouts, such as those entering payment details carefully or dealing with 3-D Secure steps, can lose their hold mid-purchase, which is a frustrating failure.\n\nThe tradeoff is capacity. A 30-minute hold keeps stock reserved up to three times longer, so abandoned carts tie up inventory that other customers could buy. For popular or low-stock items, that could make products look sold out when they aren't. I haven't accepted that tradeoff yet, so this is a proposal, not a decision.\n\nBefore committing, I'd want to:\n\n1. Measure how many checkouts complete between minutes 10 and 30, to see how many customers the change would actually help.\n2. Estimate how much extra stock would be locked up at peak, using the abandonment rate.\n3. Consider alternatives, like a 10-minute hold with an extension when the customer reaches payment, or a longer hold only for items with ample stock.\n\nIf the data shows the benefit outweighs the capacity cost, I'd move forward, probably with a staged rollout. Until then, 10 minutes stays the standing policy.\"\n\n## Status for the proposed note\n\n**Proposed (not accepted).** The 30-minute hold is a candidate change pending a decision on the capacity tradeoff. The earlier note stays in effect: holds expire after 10 minutes. The new note shouldn't be marked as superseding it until the tradeoff is accepted.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four criteria: it raises the capacity tradeoff and proposes measuring stock lock-up, keeps the 10-minute rule as standing policy, marks the 30-minute change as not accepted, and declines to supersede the prior note."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks about capacity contention (criterion 1), marks the 30-minute change as proposed and not accepted (3), and keeps the 10-minute rule as standing policy (2, 4). Note-status section says the earlier note stays in effect, so all but partially satisfy criterion 4."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it weighs capacity and stock lock-up, identifies the 10-minute rule as current, marks the 30-minute change as undecided, and avoids superseding the existing decision."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it raises capacity contention and plans to measure it, keeps the 10-minute rule identifiable as standing policy, marks the 30-minute change as undecided, and avoids superseding the existing decision."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (asks about capacity/inventory contention via tradeoff measurement), 2 (keeps 10-minute rule identifiable as standing policy), 3 (marks proposal as undecided); misses 4 partially? No—it explicitly avoids replacing the decision, so criterion 4 is met too, but the status line's bold framing is fine; score should be 1.0."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Status on the proposed note: PROPOSED (not accepted).** The prior note stands as the current decision: holds expire after 10 minutes. The 30-minute change is a proposal only, because the capacity tradeoff hasn't been accepted. I'd mark it \"Proposed – pending capacity review\" and leave the 10-minute note as the active one, not superseded.\n\n**Written interview response:**\n\n\"Our current policy, documented in an earlier note, is that inventory holds expire after 10 minutes. I've proposed extending that to 30 minutes because customers who are slow to check out are losing their holds mid-purchase. That's a real conversion and experience problem.\n\nThe tradeoff is capacity. A longer hold keeps stock reserved for up to three times as long, including for carts that never convert. That reduces the stock available to other shoppers, especially for scarce or high-demand items, and could make availability look worse than it is. I haven't accepted that tradeoff yet, so the 30-minute figure is a proposal, not a decision, and the 10-minute hold is still what's in effect.\n\nBefore adopting it, I'd want to measure how long successful checkouts actually take, what share of holds are abandoned, and how much stock is tied up at peak. I'd also consider alternatives that address slow checkouts with a smaller capacity cost, such as extending the hold only once the customer reaches payment, allowing a single renewal, or applying the longer window only to low-contention items. If the data shows the capacity cost is acceptable, I'd move the note to accepted and replace the 10-minute one. Until then it stays proposed.\"",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four rubric points: it raises capacity/stock contention, keeps the 10-minute rule identifiable as active, marks the 30-minute change as undecided, and avoids replacing the decision."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (capacity contention) met and criteria 2 (prior 10-minute rule identifiable), 3 (marked undecided/proposed) met; criterion 4 is arguably met too, but the response does not explicitly ask about capacity; it states tradeoffs rather than asking a question, so one criterion is missed, giving 0.75 by strict reading."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it raises capacity contention, names the 10-minute rule as the prior decision, marks the 30-minute change as proposed/undecided, and leaves the existing note active rather than superseded."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (asks about capacity/contention) is met by discussing tradeoffs and measuring stock tied up at peak; criteria 2 (prior rule identifiable), 3 (marked undecided), and 4 (no silent replacement) are met. The response does not ask a question of the interviewee, so pass threshold is borderline."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (asks about capacity contention and tradeoffs); criterion 2 met (prior 10-minute rule identified as active); criterion 3 met (marked PROPOSED, not accepted); criterion 4 not clearly met because it proposes marking the 10-minute note as 'not superseded' rather than explicitly avoiding replacement—arguably met. Score 0.5 reflects partial/ambiguous fulfillment."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "I'm not loading the grilling or domain-modeling skills, since you asked for text only. This is the interview done inline, and I haven't written any ADR or glossary file.\n\n## Where things stand\n\n- **Existing decision (prior note):** holds expire after 10 minutes.\n- **Your proposal:** extend holds to 30 minutes to help slow checkouts.\n- **Not yet decided:** whether the capacity cost is acceptable. You haven't accepted that tradeoff.\n\n## The interview\n\n1. **What problem are we solving?** How many checkouts actually fail because the 10-minute hold expired? If that number is small, a 3x longer hold is a blunt fix.\n2. **Who is slow, and why?** Is it payment redirects, form entry, 3DS/bank verification, or users walking away? Each has a different remedy. My recommendation is to fix the slow step first, if it's identifiable.\n3. **What is the capacity cost?** A hold ties up inventory or slots for 3x as long. At peak, what fraction of capacity is held but never converted? If abandonment is high, 30 minutes could noticeably cut sellable capacity.\n4. **Who bears that cost?** Do other customers see \"sold out\" while stock sits in abandoned carts? Is that acceptable for high-demand items?\n5. **Is a single flat duration the right shape?** Alternatives:\n   - Keep 10 minutes, with a one-time extension when the user is actively in payment.\n   - Use a short initial hold (e.g. 10 minutes) that extends on activity or progress, up to a hard cap.\n   - Use a longer hold only for slow-checkout segments such as 3DS or bank transfers.\n6. **What happens at expiry?** Is the user warned? Can they re-acquire the same item if it's still free? Better expiry handling might remove most of the need for a longer hold.\n7. **How will we know it worked?** Which metrics decide success (checkout completion rate, expired-hold rate, sell-through, oversell or \"sold out\" complaints), and what threshold would make us roll back?\n8. **Does anything else depend on 10 minutes?** Check payment-provider timeouts, reservation-release jobs, caches, and any user-facing copy.\n\n## My recommendation\n\nDon't adopt 30 minutes yet. First get the data from questions 1–3. If expiry is truly the cause, an **activity-based extension with a cap** (about 10 minutes, extended while the user is in payment, hard cap around 20–30) gives most of the benefit with much less capacity loss than a flat 30.\n\n## Status for the proposed note\n\n**Proposed**, not Accepted.\n\n- The 10-minute decision stays in force.\n- The note should say that the capacity tradeoff is unresolved and name the open questions above.\n- It moves to Accepted only after you explicitly accept the tradeoff. If you choose an alternative such as the activity-based extension, it should be recorded as Superseded or Rejected with the reason.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about capacity and inventory cost (Q3-4), keeps the 10-minute rule identifiable and in force, marks the 30-minute proposal as undecided/Proposed, and does not silently replace the existing decision."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers capacity and inventory contention (Q3-Q4), keeps the 10-minute prior decision identifiable and in force, marks the 30-minute change as Proposed and undecided, and does not silently replace the existing rule."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about capacity contention (Q3-4), keeps the 10-minute rule identifiable and in force, marks the 30-minute change as Proposed/undecided, and does not silently replace the prior decision."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about capacity cost and sold-out inventory contention (Q3–4), keeps the 10-minute rule identified and in force, marks the 30-minute change as Proposed/undecided, and does not silently replace the existing decision."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Questions 3 and 4 ask about capacity cost and who bears it; the 10-minute rule is labeled as the existing decision; the proposal is marked 'Not yet decided' and 'Proposed, not Accepted'; and the 10-minute decision is explicitly kept in force."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Interview response**\n\n\"Today, holds expire after 10 minutes. I'm proposing 30 minutes because users with slow checkouts are losing their holds before they finish. That's a real problem, but I haven't accepted the tradeoff yet, so this is a proposal and not a decision.\n\nThe cost is capacity. A hold takes inventory out of the available pool until it's either completed or expires. Tripling the window means abandoned holds keep that inventory locked up to three times longer, so other buyers may see items as unavailable when they would have been free under the 10-minute rule. I don't have data yet on how much that matters, so I wouldn't commit to 30 minutes until we've measured:\n\n1. How often holds expire before checkout completes today, and how long those checkouts actually take.\n2. How much inventory is held by abandoned checkouts at peak.\n3. Whether any items are scarce enough that the longer hold would cause lost sales.\n\nIf the capacity cost looks too high, there are alternatives that address slow checkouts without a flat 30 minutes. One is a short initial hold that extends once the user is actively in payment. Another is a sliding extension that renews while the user is active. A third is a longer window only for the items or periods where capacity isn't tight.\n\nSo my position is: the 10-minute rule stays in force, 30 minutes is a candidate, and I'd decide after looking at the numbers above.\"\n\n**Status for the proposed note:** `Proposed` (not accepted). It would be marked as pending the capacity-tradeoff review. The prior 10-minute note stays `Accepted/Current` and is not marked superseded until the proposal is accepted.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response asks about inventory contention (held inventory, peak abandonment, scarce items), keeps the 10-minute rule identified as Accepted/Current, marks 30 minutes as Proposed and undecided, and does not supersede the prior decision."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (asks about capacity/inventory contention), 2 (keeps 10-minute rule identifiable as current), and 3 (marks proposal undecided/pending); misses criterion 4 partially because it ambiguously says the prior note is 'not marked superseded' while labeling it Accepted/Current—still avoids silent replacement, so arguably met; scoring conservatively at 0.75."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Criterion 1 met: asks about capacity and inventory contention. Criterion 2 met: the prior 10-minute rule stays in force and is identified as Accepted/Current. Criterion 3 met: the proposal is marked Proposed and undecided. Criterion 4 met: the existing decision is explicitly not superseded."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (asks about capacity/inventory contention via abandoned holds), 2 (keeps the 10-minute rule identifiable as current), and 3 (marks the 30-minute proposal as undecided/Proposed); misses 4 partially because it asserts a status change path rather than explicitly preserving the existing decision, though it does not silently replace it."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks about capacity contention (criterion 1), keeps the 10-minute rule identifiable as Accepted/Current (2), and marks the 30-minute proposal as undecided (3); it does not silently replace the existing decision (4), so three of four criteria are met."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "## Interview response\n\n\"Today, the documented behavior is that inventory holds expire after 10 minutes. That comes from a prior note, and it's still the standing decision.\n\nI'm proposing we extend the hold to 30 minutes. The goal is to help customers with slow checkouts, such as people who are fumbling with payment details, waiting on 3DS verification, or on a slow connection. Today they lose their hold mid-checkout and hit a failure at the last step.\n\nThe cost is capacity. If holds last three times as long, abandoned carts keep stock locked up longer. On popular or low-stock items, that could make products look sold out to other shoppers when they aren't, and it could reduce overall throughput. I haven't measured that tradeoff yet, and nobody with ownership of inventory or revenue has accepted it. So I wouldn't call 30 minutes a decision. It's a proposal.\n\nBefore accepting it, I'd want to know:\n- What share of checkouts take longer than 10 minutes, and how many fail because of expiry?\n- How much stock is held at peak, and how much of it is abandoned?\n- Whether a middle path works better, such as 15 to 20 minutes, a hold that extends only once the customer reaches payment, or a longer hold only for items with plenty of stock.\n\nUntil then, the 10-minute behavior stays in place, and the new note should say so.\"\n\n## Status for the proposed note\n\n**Status: Proposed (not accepted)**\n\nSuggested note text:\n- **Decision pending:** Extend hold expiry from 10 to 30 minutes to reduce failures in slow checkouts.\n- **Supersedes:** Nothing yet. The prior 10-minute note remains in effect.\n- **Open item:** The capacity tradeoff (longer stock lock-up and possible false sell-outs) has not been reviewed or accepted.\n- **Needed to move forward:** Checkout-duration and expiry-failure data, hold and abandonment data, and sign-off from the capacity or inventory owner.\n\nI would not mark it \"Accepted\" or \"Superseded,\" and I would not mark the old note as replaced until the tradeoff is explicitly agreed.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about checkout-duration, stock-hold and capacity tradeoffs; names the prior 10-minute note as standing; marks 30 minutes as 'Proposed (not accepted)'; explicitly avoids superseding the old rule."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: asks about stock held and abandonment at peak (capacity), keeps the 10-minute prior note in effect, marks the 30-minute change as proposed and not accepted, and does not supersede the old note."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four criteria: it asks about capacity and stock contention, keeps the 10-minute prior note identifiable, marks the 30-minute change as proposed and not accepted, and does not supersede the existing rule."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about peak stock and abandonment (contention), keeps the 10-minute prior note in effect, marks the change 'Proposed (not accepted)', and explicitly avoids superseding the existing decision."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Criterion 1 met: asks about checkout durations, expiry failures, peak held stock and abandonment. Criterion 2 met: the 10-minute prior rule is named and stays in effect. Criterion 3 met: the change is labeled 'Proposed (not accepted)'. Criterion 4 met: the old note is explicitly not superseded."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "I haven't loaded the grilling or domain-modeling skills, because you asked for a text-only answer with no tools. This is the interview run from the facts you gave me.\n\n## Where we stand\n\n- **Prior note:** holds expire after 10 minutes.\n- **Proposal:** extend holds to 30 minutes so slow checkouts stop losing their hold.\n- **Not yet accepted:** the capacity tradeoff. Tripling the hold time means each held unit is unavailable to other buyers three times as long.\n\n## Interview questions\n\nI'd put these to you one at a time, each with my recommended answer.\n\n1. **What problem are we solving?** Is it that checkouts take longer than 10 minutes, or that a few take much longer? If most finish in 3 to 4 minutes, a 30-minute hold is overkill. *Recommendation:* look at the checkout-duration distribution (p95/p99) and set the hold just above it, not at a round number.\n\n2. **What is the capacity cost?** At peak, how many units are held at once, and what fraction of them are abandoned carts? Held inventory grows roughly with hold time × checkout start rate, so a 30-minute hold could mean about 3× the locked inventory. *Recommendation:* don't accept the tradeoff until we have an estimate of the peak locked share and how much stock is scarce.\n\n3. **Who are the slow checkouts?** If it is mostly one cause (3-D Secure, bank redirects, address entry), a targeted fix may beat a global change. *Recommendation:* consider a hold extension that triggers only when the user reaches the payment step.\n\n4. **Can the hold be extended instead of lengthened?** For example, 10 minutes initially, then +10 on activity, up to a cap. That serves slow but active checkouts without locking inventory for idle ones. *Recommendation:* prefer this over a flat 30 minutes.\n\n5. **What happens when a hold expires mid-payment?** Is there a race where payment succeeds after release? The answer decides whether a longer hold is a fix or only hides a correctness bug.\n\n6. **Does the hold apply uniformly?** Should low-stock or high-demand items get shorter holds than others?\n\n7. **How will we know it worked?** Which metrics, such as the expired-during-checkout rate, the oversell or stock-out rate, and conversion, and what thresholds trigger a rollback?\n\n## Status for the proposed note\n\n**Status: Proposed.** I would not mark it Accepted, because you haven't accepted the capacity tradeoff. The note should:\n\n- State that it would amend or supersede the 10-minute hold decision only if accepted. Until then, the prior note stays in force.\n- Record the open items: the capacity estimate, the checkout-duration data, and the alternatives (activity-based extension, payment-step-only extension).\n- Move to Accepted, and mark the old note Superseded, only after you explicitly sign off on the capacity cost.\n\n## Glossary terms to pin down\n\n- **Hold:** the temporary reservation of inventory during checkout.\n- **Hold duration:** the time before an unconfirmed hold expires.\n- **Expiry:** the release of held inventory back to available stock.\n\nI'd confirm these definitions with you before writing any glossary entry.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about capacity contention (locked inventory × hold time), keeps the 10-minute prior note identifiable and in force, marks the proposal Proposed/undecided, and avoids silently replacing the existing decision."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about capacity cost and locked inventory (Q2), keeps the 10-minute prior note identifiable, marks the change Proposed and not yet accepted, and states the prior note stays in force."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about capacity contention (locked inventory × hold time), keeps the prior 10-minute decision identifiable and in force, marks the proposal as Proposed/undecided, and explicitly avoids silently replacing the existing decision."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (asks about capacity/inventory contention), 3 (marks proposal Proposed/undecided), and 4 (prior 10-minute rule stays in force, no silent replacement); misses 2 by not explicitly naming the prior accepted rule as a clearly identified decision record."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Q2 asks about peak locked inventory and contention; the prior 10-minute rule is kept in force; the change is marked Proposed/not accepted; supersession only occurs after sign-off."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Interview response**\n\n\"Today, holds expire after 10 minutes, which is what the existing note records. I'm proposing 30 minutes because slow checkouts are losing their hold before they finish. A longer hold fixes that, but it has a cost. Inventory sits reserved for three times as long, so abandoned carts tie up capacity that other customers could buy. That tradeoff hasn't been accepted yet. Until it is, 10 minutes remains the standing rule and 30 is only a proposal.\n\nBefore asking anyone to sign off, I'd want to know how often checkouts actually time out at 10 minutes, how much capacity is held by abandoned sessions, and how tight inventory gets at peak. If capacity is the bigger risk, a middle option could work: a shorter base hold with an extension once the customer reaches payment. I'd bring the data and the options to whoever owns capacity and let them decide.\"\n\n**Status for the proposed note**\n\n**Proposed (not accepted).** The 30-minute hold is pending review of the capacity tradeoff. The prior 10-minute expiry stays in force until the proposal is explicitly approved, and the prior note should not be marked superseded yet.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response asks about capacity held by abandoned sessions and peak inventory tightness, keeps the 10-minute rule identifiable as standing, marks the 30-minute change as proposed and not accepted, and does not supersede the prior note."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: asks how much capacity abandoned holds consume and how tight peak inventory gets, keeps the 10-minute rule identifiable, marks the 30-minute change as not accepted, and avoids superseding the prior note."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: asks about capacity held by abandoned sessions and peak inventory, keeps the 10-minute rule identifiable, marks the 30-minute change as not accepted, and does not supersede the prior note."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it asks about capacity and peak inventory contention, keeps the 10-minute rule identifiable as standing, marks the 30-minute change as not accepted, and does not supersede the prior note."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: asks about peak inventory and capacity held by abandoned sessions, keeps the 10-minute rule as standing, marks the 30-minute proposal as not accepted, and does not supersede the prior note."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "## Interview response\n\n\"Today, inventory holds expire after 10 minutes, as recorded in the existing design note. I'm proposing we extend that to 30 minutes, because some customers take longer to check out and lose their hold before they finish.\n\nThe tradeoff is capacity. A hold that lasts three times as long keeps stock unavailable to other shoppers for longer, which matters most on scarce or high-demand items. Abandoned carts will tie up inventory for up to 30 minutes instead of 10.\n\nThat tradeoff hasn't been accepted yet. I don't have numbers on how much capacity we'd lose or how many checkouts we'd recover, so I'd want to measure the following before recommending the change:\n- the distribution of time-to-checkout, to see how many customers actually exceed 10 minutes\n- the abandonment rate, to see how much stock would be locked up\n- how often items sell out while held\n\nIf the data shows the capacity cost is too high, I'd consider alternatives such as a shorter extension (15 to 20 minutes), extending the hold only once the customer reaches payment, or a one-time renewal. Until the tradeoff is agreed, the 10-minute expiry stays in effect.\"\n\n## Status for the proposed note\n\n**Status: Proposed (not accepted)**\n\nThe 30-minute figure is a suggestion only. The prior note's 10-minute expiry remains the current decision. The proposed note should list the open item: \"Capacity tradeoff of longer holds not yet reviewed or accepted.\" It should not be marked Accepted or Approved until that review happens.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it raises the capacity tradeoff, keeps the 10-minute rule identifiable as the current decision, marks the 30-minute change as not accepted, and does not silently replace the prior decision."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Discusses capacity contention and proposes measurements (time-to-checkout, abandonment, sell-outs); keeps the 10-minute rule identifiable; marks the 30-minute change as not accepted; states the 10-minute expiry stays in effect."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Raises capacity contention and asks for data on it, keeps the 10-minute expiry identifiable as the current decision, marks the 30-minute change as proposed and not accepted, and does not replace the existing rule."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response raises capacity contention and lists measurements, keeps the 10-minute rule identifiable as the standing decision, marks the 30-minute change as not accepted, and does not silently replace the existing rule."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Asks about capacity contention and marks the change undecided, but never explicitly preserves the 10-minute rule as an identifiable prior note with its own status, so criteria 2 and 4 are only partly met; the response does state the 10-minute expiry remains in effect and labels the proposal not accepted, so 0.5 is generous only on criteria 1 and 3."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": null,
+     "placebo": {
+      "answer": "**Interview response**\n\n\"Today, holds expire after 10 minutes, per the existing note. I've proposed raising that to 30 minutes because slow checkouts can lose their hold before the customer finishes paying. That's a real customer problem.\n\nIt isn't a free change, though. Tripling the hold time means abandoned carts keep inventory or capacity locked up three times longer, which reduces what other customers can book or buy. I haven't accepted that tradeoff yet, so the 30 minutes is a proposal, not a decision.\n\nBefore committing, I'd want to know three things: how often holds expire during legitimate checkouts, how much capacity abandoned holds tie up at peak, and whether a narrower fix would do the job. One option is to keep the 10-minute default and extend the hold only once a customer reaches the payment step. Another is a shorter increase, such as 15 or 20 minutes. If the data shows slow checkouts are costing more than the held capacity, I'd move forward with the change. Until then, the 10-minute rule stays in effect.\"\n\n**Status for the proposed note**\n\n**Proposed, not accepted.** The 30-minute hold is pending review of the capacity tradeoff. The existing 10-minute expiry remains the current rule.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "All four rubric points are met: it asks how much capacity abandoned holds tie up, keeps the 10-minute rule identifiable, marks the 30-minute change as proposed and undecided, and does not replace the existing rule."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it asks how much capacity abandoned holds tie up, keeps the 10-minute rule identifiable as current, marks the 30-minute change as proposed and not accepted, and does not replace the existing decision."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (asks about capacity tradeoff via abandoned holds) and criterion 3 (marks 30-minute change as proposed, not accepted); missed criterion 2 and 4 only partly—criterion 2 is met by naming the 10-minute rule as current, but the response should be judged on whether the prior rule stays identifiable and undecided status is clear; score reflects two of four criteria clearly satisfied."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four criteria: it raises capacity contention for other customers, keeps the 10-minute rule explicitly identifiable, marks the 30-minute change as proposed and not accepted, and does not replace the existing decision."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met (asks about how much capacity abandoned holds tie up). Criterion 2 is met (the existing 10-minute rule is named as current). Criterion 3 is met (the proposal is marked undecided). Criterion 4 is missed: the response does not explicitly confirm that the prior decision is being retained as-is for now, though it implies so with 'the 10-minute rule stays in effect'."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Status for the proposed note: Proposed / Not accepted (pending capacity review).** The prior note's 10-minute hold expiry remains the standing, accepted value. The 30-minute change is a proposal only and should not be recorded as a decision until the capacity tradeoff is accepted.\n\n**Interview response (written):**\n\n\"Our current policy, per the earlier note, is that inventory holds expire after 10 minutes. I've proposed extending that to 30 minutes because slow checkouts are likely timing out before customers can finish paying, and a longer window should reduce those failures.\n\nI want to be clear about where this stands: I haven't accepted the tradeoff. A longer hold keeps stock reserved for three times as long, which reduces the inventory available to other shoppers. That matters most for popular or low-stock items, where abandoned carts could lock up units and cause false 'sold out' signals. So the proposal helps one problem, slow checkouts, at the cost of capacity.\n\nBefore adopting it, I'd want to:\n1. Measure how often holds currently expire during checkout, and how long slow checkouts actually take. 10 to 30 minutes may be more than needed, and 15 or 20 might solve it with less capacity cost.\n2. Quantify the capacity impact, such as the share of inventory held at peak and the abandonment rate.\n3. Consider alternatives or mitigations, such as extending the hold only once payment starts, allowing a one-time renewal, or releasing holds early on abandonment.\n4. Decide on a success metric and a rollback trigger, and then run it as a limited test.\n\nUntil that analysis is done and the tradeoff is explicitly accepted, the 10-minute expiry stays in force and the 30-minute figure is a proposal under evaluation.\"",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: raises capacity contention and quantifies capacity impact, keeps the 10-minute rule identifiable as standing, marks the 30-minute change as undecided, and does not silently replace the decision."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it addresses inventory capacity contention, keeps the 10-minute prior rule identifiable as standing, marks the 30-minute change as an undecided proposal, and does not silently replace the existing decision."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (asks about capacity contention via tradeoff and inventory reservation analysis), 2 (identifies 10-minute prior rule as standing), and 3 (marks 30-minute change as proposal, not accepted); missed 4 is partly met, so only 0.75 earned at most—score adjusted to 0.75 below."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four: it raises inventory capacity contention, keeps the prior 10-minute rule identified as accepted, marks the 30-minute change as undecided, and does not silently replace the existing decision."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it raises capacity contention and inventory impact, keeps the prior 10-minute rule identifiable as standing, marks the 30-minute change as undecided, and does not silently replace the existing decision."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "## Interview response\n\n\"Today, holds expire after 10 minutes, per our existing note. I'm proposing 30 minutes because slow checkouts are losing their hold before they finish. A longer hold fixes that, but it isn't free. Each held item is unavailable to other buyers for three times as long, so effective capacity drops, especially for scarce inventory or at peak demand. Abandoned carts also tie up stock for longer.\n\nI haven't accepted that tradeoff yet, so I'm not presenting 30 minutes as a decision. Before accepting it, I'd want to know:\n\n1. How often holds expire before checkout completes, and how long slow checkouts actually take. 30 minutes may be more than needed, and 15 or 20 might fix most of the problem.\n2. How much capacity we lose at peak, and whether that costs more in missed sales than the expired holds do now.\n3. Whether there are cheaper options, such as extending the hold only once checkout has started, adding a one-time renewal, or fixing the cause of the slowness.\n\nUntil the capacity tradeoff is reviewed and accepted, the 10-minute rule stands.\"\n\n## Status for the proposed note\n\n**Proposed (not accepted)**, pending review of the capacity tradeoff.\n\n- The prior 10-minute note stays in effect and is not superseded.\n- The proposed note should state the 30-minute value, the reason (slow checkouts), and the open tradeoff (reduced capacity).\n- Move it to Accepted only after someone with authority signs off on the capacity impact.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response asks about capacity loss at peak (criterion 1), names the 10-minute rule as the standing decision (2), marks the 30-minute change as not accepted (3), and states the prior note is not superseded (4)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (asks about capacity/inventory contention); criterion 2 met (10-minute rule identified as standing); criterion 3 met (marked proposed, not accepted); criterion 4 is also met as the prior decision is not silently replaced, so the score should be 1.0."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it asks about capacity loss at peak and scarce inventory. Criterion 3 met: marks the 30-minute change as proposed/not accepted. Criterion 2 is only partly met, as the prior 10-minute rule is named but not clearly identified as the accepted decision. Criterion 4 is met, since the 10-minute rule is kept in force and not silently replaced."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about peak capacity and scarce-inventory loss, keeps the 10-minute note identifiable and in force, marks the 30-minute change as undecided, and states the prior note is not superseded."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks about capacity loss and scarce inventory at peak, keeps the 10-minute rule identifiable and in force, marks the 30-minute change as not accepted, and states the prior note is not superseded."
+       }
+      ]
+     }
+    },
+    {
+     "try": 6,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "## Interview response\n\n\"Today, holds expire after 10 minutes, and that is the current, agreed behavior. I've proposed raising it to 30 minutes because slow checkouts are losing their holds before they can finish. That's a real user-facing problem.\n\nThe change isn't free, though. A hold reserves capacity, so tripling the window means abandoned or idle holds lock up inventory three times as long. That could make items look sold out to other buyers when they aren't. We haven't accepted that tradeoff yet, so I wouldn't call 30 minutes a decision. It's a proposal.\n\nBefore accepting it, I'd want to:\n1. Measure how many holds actually expire during an active checkout, versus how many are abandoned.\n2. Estimate how much capacity is tied up at 30 minutes, especially at peak demand.\n3. Consider alternatives that help slow checkouts without a blanket increase. One is extending the hold only when the user is active, for example once they reach payment. Another is a modest increase, such as 15 minutes.\n\nUntil the tradeoff is reviewed and accepted, the 10-minute rule stays in force.\"\n\n## Status for the proposed note\n\n**Proposed, not accepted.** The 30-minute hold is pending a decision on the capacity tradeoff. The prior note (10-minute expiry) remains the current, effective decision and is not superseded.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Criterion 1 met: it asks about capacity tied up by holds at 30 minutes. Criterion 2 met: it states the 10-minute rule stays in force and is not superseded. Criterion 3 met: it labels the 30-minute change 'Proposed, not accepted' and undecided. Criterion 4 met: it does not replace the existing decision."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met (asks about capacity tradeoff/inventory lockup); criterion 2 met (10-minute rule identified as current, not superseded); criterion 3 met (30-minute change labeled proposed, undecided); criterion 4 met (no silent replacement). Scores 0.75 for four criteria at 0.25 each, with the rubric's text-only requirement satisfied."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four: raises capacity/inventory contention, keeps the 10-minute rule identifiable as current, marks the 30-minute change as proposed and undecided, and states the prior note is not superseded."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Criterion 1 met (capacity tied up, inventory looking sold out). Criterion 2 met (10-minute rule kept as current decision). Criterion 3 met (marked 'Proposed, not accepted'/undecided). Criterion 4 met (prior decision explicitly not superseded)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (asks about capacity tradeoff via measuring tied-up inventory), criterion 3 met (marked proposed, not accepted), criterion 2 met (10-minute rule identified as current); criterion 4 met too, so score is 1.0 rather than 0.5 — correcting below."
+       }
+      ]
+     }
+    },
+    {
+     "try": 7,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "**Status on the proposed note: Proposed / Draft, not accepted.**\n\nThe existing note (holds expire after 10 minutes) stays in force until the capacity tradeoff is explicitly accepted. The 30-minute figure is a proposal only, so I would not mark it Accepted, Approved, or Decided, and I would not mark the old note Superseded yet.\n\n**Interview response (written, as I'd say it):**\n\n\"Our current design releases inventory holds after 10 minutes. I've proposed extending that to 30 minutes because slow checkouts, such as users who are fumbling with payment details or going through extra verification, are timing out and losing their items.\n\nThe tradeoff is capacity. A 30-minute hold means each abandoned or slow cart locks inventory three times as long, so fewer items are available to other shoppers, especially for scarce or high-demand stock. That could reduce sell-through and make products look sold out when they aren't really.\n\nI haven't accepted that tradeoff, so the proposal is still open. Before adopting it, I'd want to:\n\n1. Measure how many checkouts currently expire between 10 and 30 minutes, to see how much the longer hold would actually help.\n2. Estimate the capacity impact using abandonment rates and peak concurrent holds.\n3. Consider alternatives, like a 10-minute hold with an extension when the user is actively in payment, or a longer hold only for the payment step, or tiered holds by inventory scarcity.\n\nIf the data shows that the recovered checkouts outweigh the lost availability, I'd move the note to Accepted and mark the 10-minute note as superseded. Until then, it's a proposal.\"\n\nI'm working only from the facts you gave me. I don't have numbers on abandonment rates, inventory levels, or how many checkouts are timing out, so those would need to come from your data.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers capacity contention and asks for abandonment and peak-hold data, keeps the 10-minute note identifiable, marks the 30-minute change as Proposed/not accepted, and does not supersede the prior note."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (asks about capacity/inventory contention), 2 (keeps 10-minute rule identifiable as in force), and 3 (marks 30-minute proposal as undecided/not accepted); misses 4 only partially since it does explicitly name the old note as remaining in force, so it arguably avoids silent replacement, scoring 0.75 with 4 credited would be 1.0."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it raises capacity contention, keeps the 10-minute rule identifiable as in force, marks the 30-minute proposal as not accepted, and does not supersede the existing note."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (asks about capacity contention), 2 (keeps the 10-minute rule identifiable as the standing decision), and 3 (marks proposal as undecided/not accepted). Misses 4 partially? No—it explicitly avoids silently replacing the decision, so criterion 4 is also met, yielding 1.0 by the rubric's 0.25-per-criterion scheme."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks about capacity contention and inventory tradeoffs, keeps the 10-minute rule identifiable as in force, and marks the 30-minute proposal undecided; it does not silently replace the existing decision but also doesn't explicitly frame the 'prior accepted rule' as the baseline in a formal way, so the fourth criterion is arguably met, scoring 0.75 overall pending nuance."
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

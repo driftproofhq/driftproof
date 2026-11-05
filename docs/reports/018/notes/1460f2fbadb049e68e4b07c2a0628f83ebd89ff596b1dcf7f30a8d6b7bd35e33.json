@@ -1,0 +1,1533 @@
+{
+ "format": "driftproof-judge-notes/1",
+ "report": "018",
+ "report_url": "/reports/018/",
+ "attempt_id": "1460f2fbadb049e68e4b07c2a0628f83ebd89ff596b1dcf7f30a8d6b7bd35e33",
+ "skill": "hyperframes-cli",
+ "repository": "heygen-com/hyperframes",
+ "receipt_hash": "0f244fae953a7bc2b45d8c43c8a89a2792fec792ab12d8d67072c58308c70d61",
+ "receipt_page": "/r/0f244fae953a7bc2b45d8c43c8a89a2792fec792ab12d8d67072c58308c70d61/",
+ "receipt_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-018/campaign-3/1460f2fbadb049e68e4b07c2a0628f83ebd89ff596b1dcf7f30a8d6b7bd35e33.json",
+ "answers_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-018/campaign-3/1460f2fbadb049e68e4b07c2a0628f83ebd89ff596b1dcf7f30a8d6b7bd35e33-answers.json",
+ "suite_file": "https://github.com/driftproofhq/driftproof/blob/main/specs/408-skill-measurements/suites/heygen-com--hyperframes--hyperframes-cli.json",
+ "model": "Claude Haiku 5.5",
+ "judge": "Claude Haiku 5.5",
+ "judge_samples": 5,
+ "date": "2 November 2026",
+ "arms": [
+  {
+   "key": "with_skill",
+   "label": "With the skill"
+  },
+  {
+   "key": "placebo",
+   "label": "With the fake text"
+  },
+  {
+   "key": "baseline",
+   "label": "With nothing"
+  }
+ ],
+ "caveats": [
+  "The judge uses the same model as the target. Self-grading may favor its own model's answers.",
+  "Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings.",
+  "The scores and reasons are the judge model's own words, kept exactly as it wrote them. They are a model's reading of the rubric, not Driftproof's.",
+  "This is one task of three. Each skill was given three text tasks, and one task is not the whole measurement."
+ ],
+ "tasks": [
+  {
+   "id": "loop",
+   "number": 1,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A HyperFrames project needs a headline reveal. No registry search has been done. Draft the command sequence from discovery to final validation and preview; rendering has not been approved.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source heygen-com/hyperframes/skills/hyperframes-cli/SKILL.md at c4440dfb200def5e0c0afee938778f05b5985039; SKILL.md SHA-256 be481984f8d3c871c353a4ba82bb295a416634e11938de2081b950e9e488a3ff; README SHA-256 3e8f26d5e35c6a8c32c661bf1439443d8eee332eedc9bf1a32bfe3dc417c218e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Search the catalog by the desired reveal 2. Use the applicable add/author workflow before validation 3. Use check as the final gate without redundant final lint 4. Preview and wait for render approval",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "I haven't run anything. This is the planned sequence, with the project name and paths left as placeholders.\n\n**Assumptions:** Node.js 22+ and FFmpeg are installed, and the project directory doesn't exist yet. If it does, skip step 2.\n\n### 1. Discovery\n\nSearch the catalog before writing the headline motion by hand. No registry search has been done yet, so this is the first real lookup.\n\n```bash\nnpx hyperframes catalog --query \"reveal a headline one line at a time\" --json\n```\n\nCheck the `tier` and `warnings` fields in the output. If nothing fits, send a gap report after the final step, not during discovery.\n\n### 2. Scaffold\n\n```bash\nnpx hyperframes init <project>\n```\n\n### 3. Install a match (only if step 1 found one)\n\n```bash\nnpx hyperframes add <name>\n```\n\nIf nothing fits, author the reveal by hand in the next step.\n\n### 4. Author\n\nWrite the headline reveal in `<project>/index.html` using `/hyperframes-core`.\n\n### 5. Inspect the timeline\n\n```bash\nnpx hyperframes timeline --json\n```\n\n### 6. Fast lint\n\nRun this after the first HTML pass and after any structural change.\n\n```bash\nnpx hyperframes lint\n```\n\n### 7. Final gate\n\n```bash\nnpx hyperframes check --snapshots\n```\n\n`check` reruns lint, so there's no separate lint step before it. The `--snapshots` flag produces annotated frames for review.\n\n### 8. Frame inspection\n\nCapture midpoint frames across the reveal to confirm the headline is visible and fully laid out at each stage.\n\n```bash\nnpx hyperframes snapshot --at <t1>,<t2>,<t3>\n```\n\nInspect the frames at full resolution, not just the contact sheet.\n\n### 9. Final preview and validation\n\nStart the Studio preview in the background, then confirm it responds.\n\n```bash\nnpx hyperframes preview --background\ncurl -s -o /dev/null -w \"%{http_code}\\n\" <preview-url>\n```\n\nThe URL should return `200`. Give the user the timeline project URL and ask whether they want revisions.\n\n### Held: render\n\nRendering is not approved. Don't run any `render` command until the user approves the final preview. After approval, the first encode uses `--quality looks`, followed by the output checks.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (catalog search by reveal), 2 (add/author before validation), and 4 (preview then holds render for approval); misses 3 because it runs a standalone lint step before check despite the rubric asking to avoid redundant final lint."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets catalog search before authoring, add/author before validation, and preview with render held for approval. Partially misses criterion 3: a standalone lint step (6) precedes the check gate, which reads as redundant lint."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Searches the catalog by the reveal description, uses add/author before validation, makes check the final gate without a redundant final lint, and previews while holding render until approval."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (catalog search by reveal), 2 (add/author before validation), and 4 (preview then waits for render approval); misses criterion 3 because check reruns lint, but the response still runs an extra standalone 'lint' step before check, which is redundant."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Searches the catalog by the reveal goal, runs add and author before validation, uses check as the final gate with no lint immediately before it, and holds render until approval."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I can't draft a verified command sequence from here. The supplied facts cover only the environment (a git repo at /tmp/driftproof-eval.BiYBNJZ6 on Linux with bash, clean status, branch HEAD, main as the main branch) and the project need (a headline reveal). They include no HyperFrames documentation, CLI commands, project layout, or registry details. Since no registry search has been done, I also can't confirm which HyperFrames tooling is available or what its commands are.\n\nHere is the outline I can give without guessing at specific commands:\n\n1. **Discovery:** Confirm the HyperFrames project's structure and the tooling it requires. This requires the project files or docs, which weren't provided.\n2. **Scaffold the headline reveal:** Add the headline reveal component or composition, once the framework's conventions are known.\n3. **Validation:** Run the project's own validation or lint step, if one exists, to check the composition without rendering.\n4. **Preview:** Start a preview of the composition. This step doesn't render output files.\n\nRendering is excluded, as you specified. To turn this into exact commands, I need one of the following:\n\n- The HyperFrames docs or the `package.json`/config from the project, or\n- Permission to search the registry or docs myself, which you have so far withheld.",
+      "average": 0.15,
+      "notes": [
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Response misses all four rubric points: it does not search the catalog by reveal type, names no add/author workflow, never uses check as the final gate, and does not clearly end with a preview awaiting render approval."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only the preview-and-hold-rendering criterion is met. The response does not search the catalog by reveal, names no add/author workflow, and proposes a generic lint step instead of check as the final gate."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response refuses to draft a sequence and gives a generic outline; it meets only the preview-and-wait-for-approval point (criterion 4) and misses catalog search by reveal, the add/author workflow, and using check as the final gate."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 4 (preview with no rendering). It never searches the catalog by reveal type, names no add/author workflow, and uses a generic lint step rather than the check gate."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Response misses all four rubric points: it does not search the catalog by reveal type, no add/author workflow is named, no check gate is used, and it gives no preview-then-wait-for-approval sequence with commands."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "## Draft: HyperFrames headline reveal (text only, not run)\n\nI haven't searched the registry, so I can't confirm exact HyperFrames command names or flags. The commands below are placeholders to fill in after that search. Nothing here has been executed, and rendering is excluded.\n\n**1. Discovery (read-only)**\n- Confirm the working directory and git state.\n- List the project root and any existing HyperFrames config, package manifest, and composition files.\n- Identify where the headline element and its timing or animation code would live.\n- Check the installed HyperFrames version, if one is present.\n\n**2. Registry search (not yet done)**\n- `<hyperframes-registry-search> \"headline reveal\"`\n- Use the results to pick a headline-reveal component or template and confirm its version and compatibility with the project.\n- Stop here if no suitable match exists and decide how to proceed.\n\n**3. Add the headline reveal**\n- `<hyperframes-add> <headline-reveal-component>`\n- Review the generated or copied files before editing them.\n\n**4. Wire it into the composition**\n- Edit the composition file to place the headline, set its reveal timing, and pass in the text.\n- Keep the existing project conventions for naming and structure.\n\n**5. Validate**\n- `<hyperframes-validate>` or the project's lint/type-check script.\n- Fix any reported errors and rerun until clean.\n\n**6. Preview**\n- `<hyperframes-preview>` or the dev server command, so the reveal can be checked in a browser.\n- Do not run any render or export command. Rendering needs separate approval.\n\n**Open items before running anything**\n- The registry search in step 2 must be run and its results reviewed.\n- Exact command names and flags for steps 3, 5, and 6 depend on that search.\n- Rendering is out of scope until it is approved.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (registry search for headline reveal), 2 (add workflow before validation), and 4 (preview, with rendering held for approval). Misses 3: it offers 'validate or lint/type-check' rather than naming check as the single final gate."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets catalog search for headline reveal, add-before-validation ordering, and preview with render held for approval; misses the check-as-final-gate criterion by proposing a validate-or-lint/type-check step instead."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets search by reveal (step 2), add before validate (step 3), and preview with render held for approval (step 6). Misses criterion 3: it never names a check gate and suggests a redundant lint or type-check."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (registry search for headline reveal), 2 (add and author steps before validation), and 4 (preview, with rendering held for approval). Misses 3: it names generic validate or lint/type-check rather than check as the final gate."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it searches the registry for a headline reveal, adds the component before validation, and previews while holding rendering for approval. It misses 3 because it names a generic validate or lint/type-check step rather than the check gate."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "Draft sequence, not executed. No tools were run, no registry search has been done, and nothing has been rendered.\n\n```bash\n# 1. Scaffold (project name is a placeholder)\nnpx hyperframes init headline-reveal\n\n# 2. Find the move before hand-writing motion. Not yet run.\nnpx hyperframes catalog --query \"reveal a headline one line at a time\"\n\n# 3. Install the best match, if one fits (name comes from step 2)\nnpx hyperframes add <name>\n\n# 4. Author the headline composition (use /hyperframes-core).\n#    To inspect the timeline later, prefer:\nnpx hyperframes timeline <project-dir> --json\n\n# 5. Fast feedback after the first HTML pass and after structural changes\nnpx hyperframes lint\n\n# 6. Final gate (includes lint; add --snapshots for annotated frames)\nnpx hyperframes check --snapshots\n\n# 7. Preview, then verify the URL returns HTTP 200\nnpx hyperframes preview --background\ncurl -s -o /dev/null -w \"%{http_code}\\n\" <preview-url>\n\n# 8. Stop here. Share the timeline project URL and ask the user whether to\n#    revise or render. Keep the preview running until review ends.\n```\n\nNotes:\n\n- **Catalog first:** Step 2 is required before hand-writing the reveal, unless the search finds nothing that fits. If it finds nothing, report that with `npx hyperframes feedback --search-miss ...` rather than treating it as a catalog gap.\n- **Preview ordering:** Open the preview only after `check` passes.\n- **Render gate:** Rendering is not approved, so no `render` command appears in the sequence. When approval comes, use `--quality looks` for the first encode, then verify with `test -s` and `ffprobe`, and compare the duration to the root `data-duration`.\n- **Assumptions:** The project directory is `headline-reveal`, and the preview URL is a placeholder until `preview --background` reports it.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Searches the catalog by the reveal (step 2), adds and authors before check (steps 3-4), uses check as the final gate with no lint after it, and stops at preview to await render approval (steps 7-8)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Searches the catalog by the desired reveal (step 2), runs add and author before validation, uses check as the final gate with no lint after it, and previews then stops for render approval."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Step 2 drafts a catalog search for the reveal, step 3 adds the match, and step 4 authors before validation. Check is the final gate with no trailing lint, and preview is followed by a stop pending render approval."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Catalog search by the reveal (step 2), add/author before validation, check as the final gate with no trailing lint, and preview followed by a stop for render approval are all present."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it searches the catalog by the reveal, runs add and author before validation, uses check as the final gate with no trailing lint, and previews then stops for render approval."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I can't verify the HyperFrames command sequence from here. The only facts available are your instructions, so anything I list would be a guess. Here is the plan I'd follow once the tools are available:\n\n1. **Discovery:** Confirm the HyperFrames CLI and project layout in the working directory. This is a read-only step.\n2. **Registry search:** Not yet done. Search the HyperFrames registry for a headline-reveal component or template, then review the candidates before choosing one.\n3. **Scaffold:** Add the chosen headline-reveal component to the project. This writes files, so it needs your go-ahead first.\n4. **Configure:** Set the headline text, timing, and reveal style in the component.\n5. **Validate:** Run the project's validation or lint step to check the composition.\n6. **Preview:** Start a local preview to review the reveal. Rendering is excluded because it hasn't been approved.\n\nTell me which of these you want me to run, and whether the registry search and scaffold steps are approved. I'll start with discovery and report what I find before changing anything.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (searches the registry for a headline-reveal component) and 4 (previews and holds rendering for approval), but misses 3 by using a generic lint/validate step rather than a final check gate; criterion 2 is only loosely met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets the catalog search, add/scaffold before validation, and preview-with-render-held criteria. Misses the final gate: it names a generic validate/lint step rather than the check command, and uses lint as the final gate."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response meets only criterion 4 (preview and wait for render approval) and refuses to write the sequence; it searches the registry after discovery rather than by reveal, and never states a check gate or add workflow before validation, and includes a separate validate/lint step rather than check as the final gate."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response searches the registry for a headline-reveal template and defers rendering approval, but it lacks a validation gate (no 'check' command) and includes a redundant lint/validate step, missing criteria 2 and 3."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets catalog search by reveal, add-before-validation, and preview with render approval; misses the required check as final gate, substituting a generic lint step before preview."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Draft command sequence (not run, not verified)**\n\nNo registry search has been done, so the exact CLI names, flags, and package names below are placeholders. Each one needs to be confirmed against the HyperFrames docs or registry before use. Rendering is excluded and needs your approval.\n\n1. **Discovery**\n   - Confirm the working directory is the project root: `pwd`\n   - Check the git state: `git status`\n   - Identify the HyperFrames tooling and its version, using whatever the registry search turns up: `<hyperframes-cli> --version`\n   - List the available project templates or commands: `<hyperframes-cli> --help`\n\n2. **Scaffold**\n   - Create a project for the headline reveal from the chosen template: `<hyperframes-cli> init <project-name> --template <headline-reveal-template>`\n   - Move into the new project: `cd <project-name>`\n\n3. **Configure the headline reveal**\n   - Edit the headline text, timing, and reveal effect in the project's source files. Only the file paths the scaffold actually creates should be touched.\n   - Review the diff: `git diff`\n\n4. **Install dependencies**\n   - Install what the project declares: `<package-manager> install`\n   - Check for lockfile changes and review them before continuing.\n\n5. **Validate**\n   - Run the project's lint or schema check: `<hyperframes-cli> validate` (or the project's `lint` script)\n   - Run any tests the project defines: `<test-command>`\n   - Fix any failures before moving on.\n\n6. **Preview (no render)**\n   - Start the local dev or preview server: `<hyperframes-cli> dev`\n   - Open the local preview URL and check the headline reveal timing and appearance.\n   - Stop the server when done.\n\n7. **Final checks**\n   - Re-run validation: `<hyperframes-cli> validate`\n   - Confirm the git diff contains only the intended changes: `git status && git diff --stat`\n\n**Pending before execution**\n- Registry search to confirm the real CLI name, template names, and validate and preview commands.\n- Your approval before any render step, which is not part of this sequence.",
+      "average": 0.25,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only the preview-and-hold-for-render-approval criterion is met. It never searches the catalog by the desired reveal, uses init rather than an add/author workflow, and ends with a redundant validate instead of check as the final gate."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response defers CLI names pending registry search (criterion 1 missed as a catalog search by reveal); it includes a final validate after lint but no clear add/author workflow, uses validate as gate with redundant lint, and does state render approval is needed (criterion 4 partly met)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only the preview-and-wait-for-render-approval criterion is met. It never searches the catalog by the desired reveal, uses init rather than an add/author workflow, and runs validate twice with a redundant final re-validation instead of check as the final gate."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 4 met: previews and stops before render approval. Criterion 1 missed: it defers registry search rather than searching the catalog by reveal. Criterion 2 missed: no add/author workflow before validation. Criterion 3 missed: it runs validate twice, once as a lint gate and again in final checks, rather than using check as the single final gate."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only the preview-and-await-render-approval criterion is clearly met; the response never searches the catalog by the reveal, does not name an add/author workflow, and uses validate rather than check with a redundant final validate."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "Here is the draft sequence. Nothing has been run, and rendering is excluded until you approve the final preview.\n\n**1. Discovery**\n\nCheck the environment, then search the catalog for the reveal. No search has been done yet, so the results are unknown.\n\n```bash\nnpx hyperframes doctor --json | jq -e '.ok'\nnpx hyperframes catalog --query \"reveal a headline one line at a time\" --json\n```\n\nRead the `tier` field in the output. If nothing in the results is worth installing, report the miss:\n\n```bash\nnpx hyperframes feedback --search-miss \"reveal a headline one line at a time\" --wanted \"<the reveal you needed>\" --tier <tier>\n```\n\n**2. Scaffold**\n\n```bash\nnpx hyperframes init <project>\n```\n\n**3. Add or author the reveal**\n\nIf the search found a fit, install it. Otherwise, write the headline reveal by hand using `/hyperframes-core`.\n\n```bash\nnpx hyperframes add <name>   # only if a catalog item fits\n```\n\n**4. Fast feedback**\n\nRun this after the first HTML pass and after any structural change.\n\n```bash\nnpx hyperframes lint\n```\n\n**5. Timeline check (only if the project uses sub-compositions)**\n\n```bash\nnpx hyperframes timeline --json\n```\n\n**6. Final gate**\n\n`check` reruns lint, so don't run lint separately before it.\n\n```bash\nnpx hyperframes check --snapshots\n```\n\n**7. Snapshots (only if sub-compositions are mounted)**\n\nCapture midpoints for each mounted scene. Replace the times with ones from your timeline.\n\n```bash\nnpx hyperframes snapshot --at <t1>,<t2>,<t3>\n```\n\n**8. Preview and validation**\n\nStart the Studio preview, confirm the URL returns HTTP 200, then hand the URL to you.\n\n```bash\nnpx hyperframes preview --background\ncurl -s -o /dev/null -w \"%{http_code}\\n\" <preview-url>\n```\n\nExpect `200`. Then I'll ask whether you want revisions or a render.\n\n**Not included: render**\n\nRendering waits for your approval of the final preview. When you approve, the planned commands are `npx hyperframes render --quality looks --output out.mp4` for the first encode, then a check that `out.mp4` exists and is non-empty, plus an `ffprobe` duration comparison against the root `data-duration`.\n\n**Open items**\n\n- The project directory name and the reveal primitive are not yet chosen.\n- The catalog results will decide whether step 3 uses `add` or hand-authoring.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Searches the catalog by the reveal, applies add or hand-authoring before validation, uses check as the final gate without a redundant final lint, and previews while holding render for approval."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Searches the catalog by the desired reveal, applies add or hand-authoring before validation, uses check as the final gate without a redundant final lint, and stops at preview awaiting render approval."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: catalog search by reveal, add/author before validation, and preview with render held for approval. Missed: a lint step precedes check, contradicting the no-redundant-lint criterion."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Searches the catalog by the desired reveal, uses add or hand-authoring before validation, uses check as the final gate without a redundant lint, and stops at preview pending render approval."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (catalog search by desired reveal), 2 (add/author workflow before validation), and 4 (preview then waits for render approval); misses 3 because it runs a separate `lint` step before the final `check` gate, which the rubric treats as redundant."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Draft: HyperFrames Headline Reveal (not run)\n\nNothing below has been executed. I haven't searched the registry, so I can't confirm HyperFrames command names, flags, or template names. Each step uses a placeholder where a verified command will go.\n\n**1. Discovery (read-only, local)**\n- Confirm the working directory: `/tmp/driftproof-eval.jgjUXy8w`, a git repo on `HEAD`, with a clean status at session start.\n- Look for an existing HyperFrames config, package manifest, or composition files.\n- Record the current state so later changes can be reviewed against it.\n\n**2. Registry search (pending)**\n- Search the registry for the HyperFrames package and any existing headline-reveal template or component.\n- Record the exact package name, version, and the commands it documents. Replace every placeholder below with those.\n\n**3. Setup (after step 2)**\n- Install the HyperFrames package, pinned to the version found in step 2: `<install-command>`.\n- Scaffold the project or composition: `<init-command>`.\n\n**4. Build the headline reveal**\n- Create a single headline composition with an entrance animation (for example, a reveal timing of about 1 second).\n- Keep the text and timing values in one file so they are easy to change.\n\n**5. Validate (before any preview)**\n- Run the project's lint or schema check: `<validate-command>`.\n- Confirm the composition file parses and every referenced asset exists.\n- Fix any reported issues and re-run until the check passes.\n\n**6. Preview (local only, no render)**\n- Start the local preview server: `<preview-command>`.\n- Open the preview URL and confirm the headline reveal plays and loops as expected.\n- Stop the server when done.\n\n**7. Final validation**\n- Re-run the validation from step 5 on the final state.\n- Check `git status` to confirm only the intended files changed.\n- Report the results plainly, including any failures.\n\n**Not included:** rendering or export. It needs your approval before anything runs.\n\n**To proceed:** Approve steps 1 and 2 and I'll run the discovery and registry search. From there I can replace the placeholders with verified commands and give you a final sequence for steps 3–7.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (registry search for headline-reveal template) and criterion 4 (preview with render held for approval). Misses 2 (no named add/author workflow, only placeholders) and 3 (final re-run of lint/schema check instead of check as the gate)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met: searches the registry for a headline-reveal template and defers rendering pending approval. Missed: no named add/author workflow, and the final step re-runs the lint-style validation instead of using check as the gate."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (plans a headline-reveal registry search) and criterion 4 (preview with render left for approval). Misses criterion 2, which names no add/author workflow, and criterion 3, which re-runs lint/validation as a redundant final gate instead of using check."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (registry search by headline-reveal template) and criterion 4 (preview with render held for approval). Misses criterion 2, since no named add/author workflow is used, and criterion 3, since it uses a generic lint/schema check and reruns it as the final validation."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (registry search for the headline reveal) and 4 (preview, with rendering held for approval). Misses 3: step 7 re-runs the lint/schema validation instead of using check as the final gate. Criterion 2 is vague, using placeholder install/init commands rather than a named add/author workflow."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Here's a draft sequence. I haven't run anything, and the commands are placeholders because I haven't confirmed HyperFrames' actual CLI or registry, and no registry search has been done yet. Check each command against the tool's own help output before running it.\n\n**1. Discovery (read-only)**\n- Confirm the HyperFrames tooling and version available here, e.g. `<hyperframes> --version` and `<hyperframes> --help`.\n- Run the registry search for a headline-reveal component or template, e.g. `<hyperframes> search \"headline reveal\"`. Record the candidates, their sources, and their licenses.\n- Inspect the current project tree and git status to see what already exists.\n\n**2. Selection (decision point)**\n- Choose one candidate and record its name, version, and source.\n- Confirm the choice with you before installing anything.\n\n**3. Installation (after your approval)**\n- Add the chosen component, e.g. `<hyperframes> add <component>@<version>`.\n- Check the diff or git status to confirm only the expected files changed.\n\n**4. Implementation**\n- Wire the headline-reveal component into the project's headline, with its timing and easing set.\n- Keep the change limited to the headline reveal.\n\n**5. Static validation**\n- Run the project's lint or schema check, e.g. `<hyperframes> lint` or `<hyperframes> validate`.\n- Run any existing project tests with the project's own test command.\n\n**6. Preview (no rendering)**\n- Start a local preview server, e.g. `<hyperframes> preview`, and check the headline reveal in a browser.\n- Confirm the preview does not write output files. If it does, stop and ask before continuing.\n\n**7. Final validation**\n- Re-run the lint and test commands from step 5.\n- Review `git diff` to confirm the final set of changes.\n\n**Not included:** rendering or exporting final output. That step needs your approval first.\n\nOpen questions for you:\n- Which registry or source should the search use, if not the default?\n- Should I stop after step 2 for your choice of candidate?",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets search by reveal, the add workflow before validation, and preview with render approval; misses criterion 3 because it uses lint/validate rather than `check` as the final gate and re-runs lint in step 7."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets search, add-before-validation, and preview-then-await-render-approval, but misses the rubric's check-as-final-gate point by using lint/validate and re-running lint in final validation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (searches the catalog for a headline reveal), 2 (add before validation), and 4 (preview, rendering held for approval); misses 3 because it uses lint/validate rather than check and repeats lint as a final step."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: response searches the catalog for a headline-reveal component. Criterion 2 met: add workflow precedes validation. Criterion 3 missed: it runs lint in step 5 and again in step 7 as redundant final lint, with no 'check' gate. Criterion 4 met: preview then stops before rendering pending approval."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (search by headline reveal), 2 (add workflow before validation), and 4 (preview, no render, asks approval); misses criterion 3 because it runs a redundant final lint alongside validation rather than using check as the single final gate."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "Nothing has been run. This is the drafted sequence, with `<project>` and `<headline query>` as placeholders.\n\n```bash\n# 0. Open the turn's history entry (trial feature)\nnpx hyperframes history begin --who claude --label \"headline reveal\"\n\n# 1. Discovery: no registry search has been done yet, so search before writing motion by hand\nnpx hyperframes catalog --query \"reveal a headline one line at a time\" --json\n#    Query in English. If a result fits, install it:\nnpx hyperframes add <name>\n#    If nothing fits, report the gap, then author by hand:\nnpx hyperframes feedback --search-miss \"reveal a headline one line at a time\" --wanted \"<the headline reveal you needed>\" --tier words\n\n# 2. Scaffold (skip if the project already exists)\nnpx hyperframes init <project>\n\n# 3. Map the existing timeline before editing\nnpx hyperframes timeline <project> --json\n\n# 4. Author the headline reveal in index.html (see /hyperframes-core)\n\n# 5. Fast feedback during authoring\nnpx hyperframes lint\n\n# 6. Final gate: check runs lint first, then audits runtime, layout, and contrast\nnpx hyperframes check\n#    Add --snapshots for annotated overview frames and finding crops\n\n# 7. Sub-composition smoke test: only if index.html mounts data-composition-src\nnpx hyperframes snapshot --at <t1>,<t2>,<t3>\n\n# 8. Final Studio preview\nnpx hyperframes preview --background\ncurl -s -o /dev/null -w \"%{http_code}\\n\" <preview-url>   # expect 200\n\n# 9. Close the history entry\nnpx hyperframes history end\n```\n\n**Stopping point:** Give the user the preview URL and ask whether to revise or render. Do not run `render`. Rendering needs explicit approval, and the plan or the preview alone does not count as approval. When approved, the usual order is `render --quality looks --output out.mp4`, then `test -s out.mp4` and `ffprobe`, then a visual check of decoded frames. Keep the preview server running until review ends.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Searches the catalog by the desired reveal (step 1), applies add or hand-authoring before validation, makes check the final gate with no lint after it, and stops at preview awaiting render approval."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Searches the catalog by the desired reveal, uses add or author before validation, makes check the final gate after mid-authoring lint, and stops at preview awaiting render approval."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Searches the catalog by the reveal query, applies add or hand-authoring before validation, makes check the final gate with no lint after it, and stops at preview awaiting render approval."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Searches the catalog by the reveal query, uses add or hand-authoring before validation, runs check as the final gate after an authoring-time lint, and stops at preview pending render approval."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Searches the catalog by the desired reveal, uses add or hand-authoring before validation, makes check the final gate with lint only mid-authoring, and stops at preview pending render approval."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I can't draft this sequence from the material you supplied. The text is a set of village descriptions (cottages, a harbour wall, a ferry, herons, a market), and none of it mentions HyperFrames, its commands, its project layout, its registry, or how headline reveals or previews work. Any commands I wrote would be guesses.\n\nHere is the outline you asked for, with no commands and nothing verified:\n\n1. **Discovery:** Identify the HyperFrames CLI, its project format, and what a headline-reveal component or template requires. This needs the official docs or a registry search, which hasn't been done.\n2. **Scaffold:** Create the project from the discovered template. The exact step depends on step 1.\n3. **Headline reveal:** Add the reveal to the project, using the component or template conventions found in discovery.\n4. **Validation:** Run whatever lint or check step HyperFrames defines. Its name and behavior are unknown until discovery.\n5. **Preview:** Start a local preview, if HyperFrames provides one, without rendering. Rendering stays unapproved.\n\nTo fill in the real commands, I need one of these:\n- The HyperFrames documentation or README, pasted here.\n- Your approval to search the registry or read the project's own docs. Those steps need tools, which you've currently ruled out.",
+      "average": 0.05,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 4 (preview without rendering, render unapproved). Misses 1: no catalog search by reveal, only a request to run one. Misses 2: add/author workflow is generic, not named. Misses 3: check is never named as the final gate."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response gives no reveal-based catalog search, no add/author workflow, no check as final gate, and it refuses to outline commands; it only mentions a registry search as a future step, missing all four rubric criteria."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Response refuses to draft any command sequence and provides no catalog search by reveal, no add/author workflow, no check-as-final-gate, and no preview with render-approval wait beyond a generic outline; rubric criteria are largely missed."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response does not search the catalog for a reveal, does not use an add/author workflow, does not use check as the final gate, and only gestures at preview without rendering approval; it refuses to draft the sequence instead."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Response fails all four rubric criteria: it does not search the catalog for the reveal, applies no add/author workflow, specifies no check gate, and only vaguely mentions preview without rendering approval logic beyond a generic outline."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "This is a draft only. Nothing has been run, and the commands below are placeholders because no registry search has been done yet, so I can't confirm the actual HyperFrames CLI names or flags.\n\n**Draft sequence**\n\n1. **Discovery.** Search the registry for the HyperFrames package and its headline-reveal template or component. Record the package name, version, and documented commands. Nothing is installed at this step.\n2. **Inspect the project.** Confirm the working directory and its git state, and check for an existing HyperFrames config. Make no changes.\n3. **Install (pending confirmation).** Install the discovered package at the pinned version. This modifies the project's dependencies, so confirm before running it.\n4. **Scaffold the headline reveal.** Generate or add the headline-reveal component using the command found in step 1, e.g. `<hyperframes-cli> add <headline-reveal-template>`. Review the generated files before continuing.\n5. **Configure the headline.** Set the headline text, timing, and reveal animation in the component's config or props.\n6. **Static validation.** Run the project's lint, type-check, or validate command, e.g. `<hyperframes-cli> validate`. Fix any errors it reports.\n7. **Preview.** Start the local preview server, e.g. `<hyperframes-cli> preview`, and check the headline reveal in the browser. Preview is local and does not produce a render.\n8. **Final validation.** Re-run the validate step on the final state and confirm the git diff contains only the intended files.\n9. **Render (not approved).** Do not run any render command. Rendering is held until you approve it.\n\n**Open items**\n- Replace every `<...>` placeholder once the registry search in step 1 returns the real names.\n- Confirm step 3 before installing anything.\n- Confirm whether the preview step (step 7) is in scope for this run, since it's the last step you asked for before render.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (search registry for headline-reveal template), 2 (add/scaffold before validation), and 4 (preview, render held for approval); misses 3, since it uses generic validate/lint rather than check as the final gate and repeats validation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (registry search by headline reveal), 2 (add step before validation), and 4 (preview, render held for approval). Misses 3: it uses 'validate' rather than 'check' and re-runs validation as a redundant final step."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it searches the registry for the headline-reveal template, runs add before validation, and previews while holding render. It misses criterion 3 by using validate instead of check and repeating validation at the end."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 4 met: previews and holds render for approval. Criterion 1 missed: discovery is a generic registry search, not a catalog search by the desired headline reveal. Criterion 2 missed: no add/author workflow with real names, only placeholders. Criterion 3 missed: it runs a separate validate plus a redundant final validate rather than check as the final gate."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (registry search for the headline-reveal template), 2 (add before validation), and 4 (preview, render held for approval). Misses 3: it uses generic validate, not check, and re-runs validation at the end."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": {
+      "answer": "I can't verify a HyperFrames command set from here: the facts you supplied don't include the CLI name, its subcommands, or its flags, and no registry search has been run. So the sequence below is a structure with placeholders, not real commands. Each placeholder needs to be filled in from the HyperFrames docs or `--help` output before anything is run.\n\n**Draft sequence (no tools used, nothing executed)**\n\n1. **Discovery**\n   - Confirm the HyperFrames CLI is installed and identify its version. Placeholder: `<hyperframes> --version`\n   - List the available project and composition commands. Placeholder: `<hyperframes> --help`\n   - Check whether the current repo (clean git status, branch `HEAD`, main branch `main`) already has a HyperFrames config. No files are written at this step.\n\n2. **Scaffold**\n   - Create a new, empty project directory for the headline reveal. Placeholder: `<hyperframes> init <project-dir>`\n   - Add a single headline composition with a reveal animation. Placeholder: `<hyperframes> add composition headline-reveal`\n\n3. **Configure**\n   - Set the headline text, timing, and reveal style in the composition's config. Edit only the files the scaffold created.\n\n4. **Validate**\n   - Run the project's validation or lint step. Placeholder: `<hyperframes> validate`\n   - Fix any reported errors before continuing.\n\n5. **Preview**\n   - Start a local preview server, if the CLI provides one. Placeholder: `<hyperframes> preview`\n   - Open the preview and check the headline reveal visually.\n\n6. **Final validation**\n   - Re-run validation after any changes from the preview.\n   - Confirm the git diff contains only the intended project files.\n\n**Not included:** rendering. It has not been approved, so no render command appears in this sequence.\n\n**Open items:**\n- Real command names and flags for each placeholder.\n- Whether the project needs a registry or package install (not searched yet).",
+      "average": 0.35,
+      "notes": [
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Misses criterion 1 (no catalog search by reveal type, only deferred), criterion 2 (scaffold uses unverified init/add placeholders, not a clear add/author workflow), criterion 3 (uses validate/lint, no check gate), and criterion 4 (preview is proposed but render approval wait is not explicitly stated as the gate)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets add/author-before-validation ordering and preview with render excluded pending approval, but misses catalog search by the desired reveal and uses validate rather than check as the final gate with a redundant final validation."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 2 (add/author workflow before validation) and criterion 4 (preview, with rendering left unapproved) are met. Criterion 1 is missed because no catalog search by reveal is proposed, and criterion 3 is missed because it uses validate and a re-run instead of check as the final gate."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (add/scaffold before validation) and criterion 4 (preview, rendering excluded pending approval). Misses criterion 1 (no catalog search by reveal) and criterion 3 (uses validate, not check, as the final gate)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response does not search the catalog by reveal type (criterion 1 missed, since no search was proposed) and does not mention check as a final gate; it includes a redundant final validate step and an unapproved-render note. It does satisfy the preview-and-wait-for-render-approval criterion (criterion 4) and includes an add/author step before validation (criterion 2) only partially, so only ~0.25 is awarded."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "This is a draft only. I haven't run anything, and I don't know HyperFrames' actual CLI names or flags. Every command below is a placeholder (`<...>`) until the registry search confirms the real ones.\n\n**Assumptions**\n- No registry search has been done, so package names and commands are unknown.\n- Rendering is not approved, so the sequence stops at preview.\n- The project needs a headline reveal, which is the only content goal I have.\n\n**Draft sequence**\n\n1. **Discovery**\n   - Confirm the project is a git repo and note its current state (already true for `/tmp/driftproof-eval.N4Eccb5D`, and the status was clean at session start).\n   - Check for an existing HyperFrames config or manifest in the repo.\n   - Run the registry search (not yet done). Output needed: the package name, the install command, and the supported subcommands.\n\n   ```bash\n   <registry-search> hyperframes\n   ```\n\n2. **Setup** (only after step 1 confirms the package)\n   - Install the confirmed package and pin its version.\n\n   ```bash\n   <package-manager> install <hyperframes-package>@<version>\n   <hyperframes> --version\n   ```\n\n3. **Scaffold or locate the headline reveal**\n   - Use the confirmed scaffold command, or create the headline reveal by hand in the project's existing layout.\n\n   ```bash\n   <hyperframes> init <project-or-template-name>\n   ```\n\n4. **Author the headline reveal**\n   - Edit the headline component or scene file with the reveal animation and its timing. No command is needed, but the file path depends on the scaffold from step 3.\n\n5. **Validation**\n   - Run the confirmed lint, schema, or check command against the project.\n   - Fix any reported issues and re-run until clean.\n\n   ```bash\n   <hyperframes> validate <project-path>\n   ```\n\n6. **Preview** (no rendering)\n   - Start the preview server or dev mode, which shows the reveal without producing output files.\n\n   ```bash\n   <hyperframes> preview <project-path>\n   ```\n\n7. **Stop before rendering**\n   - Do not run any render or export command. Rendering needs your explicit approval.\n\n**Next steps for you**\n- Approve the registry search (step 1) so I can replace the placeholders with confirmed commands.\n- Tell me whether an existing template should be used for the headline reveal or whether to build it from scratch.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 2 (authoring before validation) and 4 (preview, then stop for render approval). Misses 1, since the search is for 'hyperframes' rather than the reveal, and 3, since it uses 'validate' instead of 'check' as the final gate."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 2 (author step before validation) and 4 (preview, then stop for render approval). Misses 1, since the registry search queries 'hyperframes' rather than the headline reveal, and 3, since it uses 'validate' rather than 'check' as the final gate."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the preview-and-wait-for-render-approval and add/author-before-validation points. Misses catalog search by the desired reveal (it searches only 'hyperframes') and uses 'validate' rather than 'check' as the final gate."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the preview-and-stop-for-render-approval criterion and roughly the author-before-validation one, but searches the registry for 'hyperframes' rather than the reveal, and uses 'validate' instead of 'check' as the final gate."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is missed: the response never searches the catalog by the reveal, only a generic registry search. Criterion 2 is partly met via an add/init step before validation. Criterion 3 fails: validate is used, not check, and a final lint is not clearly avoided. Criterion 4 is met: preview is run and render is held for approval."
+       }
+      ]
+     }
+    },
+    {
+     "try": 6,
+     "with_skill": null,
+     "placebo": {
+      "answer": "I can't draft a HyperFrames command sequence from the facts supplied, because they describe a village: cottages, a mill, a seven-arch bridge, the tides, bees and herons. Nothing in them covers HyperFrames, headline reveals, discovery, validation, or preview commands. Any commands I wrote would be guesses, not steps taken from the project or its documentation.\n\nHere is what I'd need to write the sequence:\n\n1. **The HyperFrames docs or CLI help output.** You've told me no registry search has been done, so I don't know the real command names or flags. If you paste the `--help` output or the relevant docs section, I can lay out the steps from that.\n2. **The project's current state.** A listing of the project directory, its config file, and any existing composition or headline component would show what discovery should cover.\n3. **What a \"headline reveal\" means here.** Is it a text animation, a scene transition, or a template? The answer determines what validation has to check.\n\nOnce you share one of these, I'll draft the sequence in order: discovery, setup, the reveal build, validation, and a preview step. I'll stop before any render, as you asked. I haven't run anything or touched any files.",
+      "average": 0.2,
+      "notes": [
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response refuses to draft the sequence and mentions no catalog search by reveal type, no add/author workflow, no check gate, and no preview-then-wait step; it only asks for more information."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Misses criteria 1-3: it never proposes searching the catalog by reveal, an add/author workflow, or check as the final gate. Meets criterion 4 by promising a preview step and stopping before render."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Met only the preview-and-stop-before-render criterion. It never searches the catalog by reveal, never names an add/author workflow, and never mentions check as the final gate."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Declines to draft any sequence; misses catalog search by reveal, add/author before validation, and check as final gate. Only mentions a preview step and stopping before render, meeting the fourth criterion loosely."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Met criterion 4 by naming a preview step and stopping before any render. Missed criteria 1 (no catalog search by reveal), 2 (no add/author workflow), and 3 (no check gate), and declined to draft the sequence."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "This is a draft only. I haven't run anything, and the supplied facts don't include HyperFrames command names, so each step uses a placeholder (`<...>`) to fill in after the registry search.\n\n**Draft sequence**\n\n1. **Discovery (read-only)**\n   - Confirm the working directory and git state (currently clean, on `HEAD`).\n   - List the project files and locate the HyperFrames config and any existing composition.\n   - Command: `<list-project-files>` (read-only)\n\n2. **Registry search (not yet done)**\n   - Search the HyperFrames registry for the headline-reveal building blocks before choosing any package or template.\n   - Command: `<hf-registry-search \"headline reveal\">`\n   - Hold: don't pin a version until results are reviewed.\n\n3. **Dependency check (no install yet)**\n   - Compare the project's declared dependencies with what's installed.\n   - Command: `<hf-check-deps>`\n   - Install only if the search results call for it, and confirm first.\n\n4. **Author the headline reveal**\n   - Create or edit the composition for the headline animation: text, timing, and entrance/exit.\n   - Command: `<edit composition file>`\n\n5. **Static validation**\n   - Validate the project config and composition structure, and check timing and the headline's text.\n   - Command: `<hf-validate>`\n   - Pass criteria: no schema errors, and the reveal's start and end times are set.\n\n6. **Preview (needs your go-ahead)**\n   - Start a local preview so the reveal can be reviewed. This doesn't render output files.\n   - Command: `<hf-preview>`\n\n7. **Render (held, not approved)**\n   - Not part of this plan. Do not run until you approve rendering.\n   - Command: `<hf-render>` (held)\n\n**Open items**\n- Steps 2 and 3 need the registry search and the real command names before the draft is final.\n- Step 6 needs your approval to start the preview server.\n- Step 7 stays blocked until rendering is approved.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (registry search for headline reveal), 2 (author step before validation), and 4 (preview gated, render held for approval); misses 3 because it uses a placeholder 'hf-validate' rather than 'check' as the final gate."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (registry search for headline reveal), 2 (author step precedes validation), and 4 (preview gated, render held). Misses 3: it uses an unnamed `hf-validate` rather than `check` as the final gate."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 2 (add/author before validation) and criterion 4 (preview gated, render held). Missed criterion 1 (catalog search is framed by headline reveal, but the registry search step is present; ambiguous) and criterion 3 (uses a separate check-like step, `hf-validate`, not clearly `check` as the final gate, and no lint-avoidance)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response searches the registry for headline-reveal blocks (criterion 1) and holds render until approval with preview gated (criterion 4), but lacks a specific add/author workflow before validation and runs a separate lint-like validation step rather than check as the final gate (criteria 2 and 3 missed or unclear)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the catalog search (step 2) and preview-then-wait-for-render-approval (steps 6-7). Misses the named add/author workflow and a 'check' final gate, using generic placeholders like '<hf-validate>' instead."
+       }
+      ]
+     }
+    },
+    {
+     "try": 7,
+     "with_skill": null,
+     "placebo": {
+      "answer": "This is a draft only. Nothing has been run, installed, or written, and no registry search has been done, so every package name and subcommand below is a placeholder to confirm during discovery.\n\n**1. Discovery (read-only)**\n- Search the registry for the HyperFrames package and confirm its name, version, and CLI entry point. This search has not been done yet.\n- Check the CLI's help output to confirm the exact init, validate, and preview subcommands.\n- Confirm the working directory, `/tmp/driftproof-eval.4wM1VHpH`, is the intended target. The git repo was clean at session start, on branch `HEAD` with `main` as the main branch.\n\n**2. Install (needs your go-ahead)**\n- Install the confirmed HyperFrames package, if it is not already available. Installing is outside what you have authorized for this turn.\n\n**3. Scaffold**\n- Initialize a HyperFrames project in the working directory, e.g. `<hyperframes> init` (placeholder).\n\n**4. Headline reveal**\n- Add a composition containing a headline element.\n- Add a reveal animation to that headline (for example, fade or slide-in). The exact property names depend on what the discovery step finds.\n\n**5. Validation**\n- Run the project's validate or lint command, e.g. `<hyperframes> validate` (placeholder).\n- Fix any reported errors and re-run until validation passes.\n\n**6. Preview**\n- Start the local preview server, e.g. `<hyperframes> preview` (placeholder), and check the headline reveal in it.\n- Stop the preview server when done.\n\n**7. Not approved: rendering**\n- Do not run any render or export command. Rendering needs your explicit approval.\n\nOnce you confirm the registry package and approve the install, I can run steps 1 through 6 in order and report the actual output of each.",
+      "average": 0.35,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 4 (preview then wait for render approval) and partly 2 (init/scaffold before validation), but missed criterion 1 (no catalog search by reveal type) and criterion 3 (uses validate as final gate, not check)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response searches for the registry package and drafts discovery, scaffold, validate, preview, and holds rendering for approval, but never searches the catalog by the reveal type, and its separate validate step is redundant with no check-as-final-gate, so only the render-approval criterion is clearly met."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response covers preview and withholds render approval (criterion 4), but never searches the catalog by reveal type, and it has a separate lint/validate step rather than using check as the final gate (criteria 1 and 3 missed); the add/author workflow is only loosely present (criterion 2 partially)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 2 (scaffold/init workflow before validation) and criterion 4 (preview, with render held for approval); missed criterion 1 (no catalog search by reveal type), criterion 3 (uses validate as a separate lint-style gate rather than check as final gate), and it runs an extra final validate/preview sequence instead."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response meets only criterion 4 (preview and wait for render approval). It searches registry for package but not by reveal type, lacks an add/author workflow step before validation, and uses a separate final validate instead of check as the gate."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I haven't searched the registry, so I can't confirm any HyperFrames-specific command names or flags. The sequence below uses placeholders (`<hf-…>`) for those steps. The generic shell steps are standard. Nothing here has been run, and rendering is excluded pending your approval.\n\n**1. Discovery (read-only)**\n```bash\npwd\ngit status\ngit log --oneline -n 5\nls -la\n```\nConfirm the working directory is `/tmp/driftproof-eval.eBxdq290`, the repo is clean, and there's no existing HyperFrames project. Check for a package manifest or project config. If one exists, read it before choosing an approach.\n\n**2. Registry search (not yet done)**\nSearch the package registry for HyperFrames tooling and confirm the exact package name, version, and CLI entry point. Do not install anything until this is done and you've reviewed the result.\n\n**3. Scaffold (after step 2 and your go-ahead)**\n```bash\n<hf-init-command> headline-reveal\ncd headline-reveal\ngit add -A && git commit -m \"Scaffold HyperFrames project\"\n```\nCommit the scaffold separately so the headline work has a clean diff.\n\n**4. Add the headline reveal**\nCreate the composition and reveal file using the structure the scaffold generates. Make the headline the only animated element at first, so validation failures are easy to trace.\n\n**5. Static validation**\n```bash\n<hf-validate-command>\n```\nRun the project's validator or linter. If the tool has no validator, fall back to the project's test or lint script from its manifest.\n\n**6. Preview (no render)**\n```bash\n<hf-preview-command>\n```\nStart the preview server and check the headline reveal in the browser. Confirm first whether this preview path produces output files. If it does, treat it as a render and stop for approval.\n\n**7. Final validation**\n```bash\n<hf-validate-command>\ngit status\ngit diff --stat\n```\nRerun validation on the final state, then review the diff. Report the validator output as-is, including any failures.\n\n**Open items for you to decide**\n- Approve the registry search (step 2) before any install.\n- Confirm whether \"preview\" may write files.\n- Confirm you want the scaffold committed on the current `HEAD` branch, which has no commit history.",
+      "average": 0.2,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 (catalog search by reveal) is missed since it only proposes a generic registry search; criterion 2 is partly addressed via scaffold/add steps; criterion 3 is missed by a redundant final lint; criterion 4 is met."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 4 (preview with render-approval gating). It searches the registry generically, not by the headline-reveal need, uses placeholder authoring steps, and runs validation redundantly without naming a `check` final gate."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Misses criterion 1 (no catalog search by reveal type, only a generic registry search), criterion 2 (no add/author workflow before validation), and criterion 3 (runs validate then a final validate again, not check as the gate); only criterion 4 (preview with render approval) is met."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only criterion 4 is met: preview is covered and render is gated on approval. It misses the reveal-based catalog search, the add/author workflow, and the named check gate, and repeats validation in steps 5 and 7."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only criterion 4 (preview with render-approval gate) is met. It never searches the catalog by the headline reveal, skips the add/author workflow in favor of hand-written files, and uses validate twice instead of a single check gate."
+       }
+      ]
+     }
+    },
+    {
+     "try": 8,
+     "with_skill": null,
+     "placebo": {
+      "answer": "I can't verify the HyperFrames tooling from here, so the sequence below is a draft built only on the facts you gave me. No tools, network access, file writes, or commands were used, and nothing has been rendered.\n\n**Draft command sequence: HyperFrames headline reveal**\n\n1. **Discovery (not yet done)**\n   - Run a registry search for HyperFrames packages and confirm the package name, version, and source before installing anything. This step is pending because no registry search has been performed.\n\n2. **Project scaffold (after discovery)**\n   - Create the project in a new, empty directory under `/tmp/driftproof-eval.6UFOlqFW`, or in a directory you choose.\n   - Add the headline reveal as the main composition, with a single headline element and a reveal animation.\n\n3. **Install (after discovery and approval of the package)**\n   - Install only the package confirmed in step 1.\n\n4. **Build the composition**\n   - Write the headline reveal source files.\n   - Check the output by reading the files. Do not run a build or render yet.\n\n5. **Static validation**\n   - Run the project's validation or lint command, if the package provides one, and report the exact output.\n\n6. **Preview (no render)**\n   - Start a local preview server for the composition so the headline reveal can be checked visually.\n   - Stop before any render or export step.\n\n7. **Render (blocked)**\n   - Rendering has not been approved. Do not run it until you confirm.\n\n**Open items**\n- The registry search and package details are unknown.\n- The exact command names depend on the HyperFrames package, which I have not verified.\n- The repository is clean, and no commits exist yet, so the first commit will be the scaffold if you want one.",
+      "average": 0.25,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 4 (preview, then stops for render approval). It searches for packages rather than by the desired reveal, omits the add/author workflow, and uses generic lint instead of check as the final gate."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 4: it previews and holds render until approval. It misses search by the desired reveal, since it searches generically for packages, and it lacks a named add/author workflow and a final check gate, using a lint step instead."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response does a registry search as a pending discovery step (partial criterion 1 at best), but never searches the catalog by the reveal type, never uses an add/author workflow, does not use check as the final gate (uses lint/validate instead), and does not wait for render approval explicitly before preview."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response covers preview and holds render for approval (criterion 4), but it never searches the catalog by the desired reveal, and it has no check gate; it relies on a generic registry search and a redundant lint step (criterion 3 missed). Criterion 2 is only loosely addressed via scaffold/install."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response runs a registry search and preview gate but never searches the catalog by the desired reveal, misses the add/author workflow and check gate, and includes a redundant lint step, so only the approval-gated preview criterion is met."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "This is a draft only. I have not run anything, and I have not searched the registry, so the HyperFrames command names below are placeholders (`<hf-...>`) to replace once discovery confirms them. Rendering is excluded.\n\n**1. Discovery**\n- Confirm the working directory and repo state with `git status` and `git branch`. The repo is clean on `HEAD`, so note the branch before making changes.\n- List the project root to find any existing HyperFrames config or scene files.\n- Identify the HyperFrames CLI or package available locally, e.g. `<hf-cli> --version` or `<hf-cli> --help`. If nothing is installed, stop and report that, since no registry search has been done yet.\n\n**2. Registry search (not yet done)**\n- Search the registry for the headline-reveal or text-animation component and record the exact name and version. Do not install anything until this is reviewed and approved.\n\n**3. Scaffold the reveal**\n- Create the project or scene with `<hf-init>` or the equivalent, using an empty target directory.\n- Add a headline element and a reveal animation (for example, a fade or mask reveal) using the component from step 2.\n- Commit the scaffold on a feature branch so it can be reverted.\n\n**4. Configure**\n- Set the headline text, duration, and easing in the project config.\n- Confirm the config parses with `<hf-validate-config>` or the closest equivalent.\n\n**5. Static validation**\n- Run the project's lint or schema check, e.g. `<hf-lint>`. Fix any reported errors before continuing.\n- Check that all referenced assets and fonts resolve.\n\n**6. Preview (no render)**\n- Start the local preview server with `<hf-preview>`, then open the printed local URL to check the reveal timing.\n- Stop the preview server when done.\n\n**7. Final validation**\n- Re-run the lint and config checks from steps 4 and 5.\n- Run any project tests with `<project-test-command>`, and report the exact output, including failures.\n- Confirm `git status` shows only the intended files changed.\n\n**Not included:** rendering or exporting video. That needs your approval first.\n\n**Choices I made:** I put the scaffold on a feature branch rather than `main`, and I kept the preview local-only. Tell me if you want either changed, or if you want me to start with discovery once you approve it.",
+      "average": 0.45,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response correctly withholds rendering and previews without rendering, but never searches the catalog by reveal type (explicitly says no search), and does not use the add/author workflow or a 'check' final gate; it runs redundant lint in final validation."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (plans a reveal-based registry search) and 4 (preview, rendering held for approval). Misses 2, since no explicit add workflow precedes validation, and 3, since it re-runs lint in the final step instead of using check as the gate."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 4 (preview with rendering excluded and approval deferred) and partly criterion 3 by ending with final lint redundancy avoided? No: it runs lint twice (steps 5 and 7) and never names a catalog search by reveal type, so only criteria 2 and 4 are clearly satisfied."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (plans a reveal-based registry search) and criterion 4 (local preview, rendering held for approval). Misses criterion 2 (no add/author workflow before validation) and criterion 3 (re-runs lint in final validation instead of using check as the gate)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the catalog-search-by-reveal and preview-then-wait-for-render-approval criteria; misses the explicit add/author-before-validation workflow and uses redundant final lint instead of a check gate."
+       }
+      ]
+     }
+    },
+    {
+     "try": 9,
+     "with_skill": null,
+     "placebo": {
+      "answer": "The material you supplied doesn't contain any HyperFrames facts. It's descriptive prose about a village (cottages, a mill, a canal, a lighthouse, weather). I can't name real HyperFrames commands, flags, or file layouts from it, and no registry search has been done, so I won't invent them.\n\nHere is a placeholder outline. Every command is a stand-in to replace once the real CLI is confirmed.\n\n1. **Discovery (blocked on a registry search)**\n   - Confirm the HyperFrames package name, install method, and CLI entry point.\n   - Check its documented project scaffold, composition format, and validation/preview commands.\n   - Output: the verified command list that replaces the placeholders below.\n\n2. **Scaffold**\n   - `<hyperframes-init> headline-reveal` (placeholder)\n   - Confirm the directory is created and the project is a git repo.\n\n3. **Author the headline reveal**\n   - Add a composition with a headline element and a reveal animation (for example, fade or slide-in).\n   - Keep the change to the project's own composition files.\n\n4. **Validate**\n   - `<hyperframes-validate>` (placeholder): check the composition schema and timing without rendering.\n\n5. **Preview**\n   - `<hyperframes-preview>` (placeholder): start a local preview server and check the reveal visually.\n   - Confirm with you before running anything that starts a server or opens a browser.\n\n6. **Rendering: not approved.** I have not included a render step, and I'll wait for your explicit go-ahead before adding one.\n\nTo make this concrete, I need either the HyperFrames docs or the package name from the registry search. If you can run that search or paste its results, I'll replace the placeholders with verified commands.",
+      "average": 0.2,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only the preview-and-wait-for-render-approval criterion is met; it never searches the catalog by the reveal type, uses a generic init/validate placeholder rather than an add/author workflow, and does not name a check gate."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Response does not search the catalog by reveal type (explicitly declined the search), gives no applicable add/author workflow concretely, places check/validate without naming it, and misses the render-approval wait only partly; criteria 1 and 3 unmet, 2 and 4 weak."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response partially meets rubric: it defers catalog search and includes a validate step and preview with render held for approval (criteria 3-4 partially), but it does not search the catalog by reveal type and lacks a concrete add/author workflow sequence before validation, with placeholders throughout."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response declines to name real commands and only partly meets the rubric: it notes the need for registry search and a preview step that waits for approval, but never searches the catalog by reveal type, gives no add/author workflow, and no check gate."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 4 met: it previews, waits for render approval, and excludes rendering. Criterion 1 missed: it defers catalog search instead of searching by reveal. Criterion 2 missed: no add/author workflow. Criterion 3 missed: no check gate."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Draft command sequence: HyperFrames headline reveal**\n\nNothing has been run. No registry search has been done, and rendering is not approved, so the sequence stops before any render step. The commands below are placeholders because I haven't confirmed HyperFrames' actual CLI syntax.\n\n**Known facts**\n- Working directory: `/tmp/driftproof-eval.YMUdUILF` (git repository, clean status, no commits yet)\n- Platform: Linux, bash shell\n\n**1. Discovery (read-only)**\n- Confirm the project layout and any existing HyperFrames config.\n- Check the HyperFrames version and tooling available in the environment.\n- Placeholder: `<hyperframes> --version`\n- Placeholder: `<hyperframes> --help`\n\n**2. Registry search (not yet done)**\n- Search for an existing headline-reveal component or template before writing one from scratch.\n- Placeholder: `<hyperframes> search \"headline reveal\"`\n- Record the candidate names, versions, and sources. Don't install anything yet.\n\n**3. Select and confirm**\n- Choose one candidate and confirm it fits the project before adding it.\n- If you need approval for the install, ask at this point.\n\n**4. Add the component (after approval)**\n- Placeholder: `<hyperframes> add <component-name>`\n- Check the git diff afterward so every added file is visible.\n\n**5. Validate**\n- Run the project's validation or lint step on the composition.\n- Placeholder: `<hyperframes> validate`\n- Report any failures with their full output.\n\n**6. Preview (no render)**\n- Start a local preview of the headline reveal so it can be checked visually.\n- Placeholder: `<hyperframes> preview`\n- Stop the preview server when you're finished.\n\n**7. Stop point**\n- Do not run any render or export command until rendering is explicitly approved.\n\n**Open items**\n- Confirm the real HyperFrames command names and flags from `--help` in step 1.\n- Confirm whether the registry search requires network access, and get approval if so.\n- Decide whether the preview step needs a specific port or browser.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response searches for a headline-reveal component (criterion 1) and adds before validating (criterion 2), but uses a final 'validate' lint step rather than 'check' as the final gate, and preview-then-stop-before-render is met, so only criteria 1, 2, and 4 are satisfied—actually criterion 4 is met too, yielding 0.75."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it searches the registry by headline reveal. Criterion 2 is met: add comes before validation. Criterion 3 is missed: it uses validate/lint rather than check as the final gate. Criterion 4 is met: it previews and stops before render pending approval."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (searches the catalog for headline reveal), 2 (add before validation), and 4 (preview, then stops before render pending approval). Misses 3: uses a validate/lint step rather than check as the final gate."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it searches for a headline-reveal component, adds before validating, and previews with a render stop point. Misses criterion 3: it uses 'validate' rather than 'check' as the final gate."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (searches for a headline-reveal component), 2 (add before validate), and 4 (preview, then stops before render pending approval). Missed 3: it uses `validate` and a lint step rather than `check` as the final gate."
+       }
+      ]
+     }
+    },
+    {
+     "try": 10,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "Here is a draft sequence. I haven't run anything, and I haven't searched the registry, so the HyperFrames command names below are placeholders (`<hf-...>`) to confirm during discovery. Nothing here has been verified against the tool.\n\n**Draft sequence (not executed)**\n\n1. **Discovery**\n   - Confirm the project root and git state: `pwd`, `git status`, `git branch --show-current`.\n   - Identify the HyperFrames project files: the entry composition, any existing headline or text components, and the config file.\n   - Record the installed HyperFrames version and the CLI's help output: `<hf-cli> --version`, `<hf-cli> --help`.\n   - Registry search (not yet done): look up the HyperFrames package and any headline-reveal template or effect, then record the source and version of each.\n\n2. **Plan the headline reveal**\n   - Choose the composition, the headline text, the reveal style (for example, fade, slide, or mask), and the duration.\n   - Write the change down before editing so it can be reviewed.\n\n3. **Implement**\n   - Add or edit the headline composition and its reveal animation.\n   - Keep the change limited to the headline files. Don't touch unrelated compositions.\n\n4. **Static validation**\n   - Run the project's lint or type check, if one exists: `<hf-cli> lint` or the equivalent in the project's package scripts.\n   - Check the composition schema or config: `<hf-cli> validate`.\n   - Review the diff: `git diff --stat` and `git diff`.\n\n5. **Preview (no render)**\n   - Start a preview or dev server for the headline composition: `<hf-cli> preview <composition>`.\n   - Check the reveal timing, the text, and the layout in the preview.\n   - Stop the preview when finished.\n\n6. **Final validation**\n   - Re-run the validation from step 4 on the final state.\n   - Confirm the git diff contains only the intended files.\n\n**Not included:** rendering or any final output export. That step needs your approval before I run it.\n\n**Open items to confirm before I run anything:**\n- The exact HyperFrames CLI command names and flags (from the registry or `--help`).\n- Which composition should hold the headline.\n- The headline text, style, and duration.\n- Whether a preview server is acceptable, since it may start a local process.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 4 met: previews and withholds rendering pending approval. Criterion 1 missed: registry/catalog search is deferred as 'not yet done' rather than searching by reveal. Criterion 2 missed: no add/author workflow before validation. Criterion 3 missed: lint and validate run as separate steps, with a redundant final re-validation rather than check as the sole gate."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (registry search by headline-reveal template/effect) and criterion 4 (preview, with rendering held for approval). Misses 2: no named add/author workflow before validation. Misses 3: uses `validate` rather than `check` as the final gate and repeats lint in the final step."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (registry search for a headline-reveal template) and criterion 4 (preview with rendering held for approval). Misses criterion 2 (no add/author workflow named before validation) and criterion 3 (uses validate, not check, and re-runs lint in final validation)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response misses criterion 1 (no catalog search by reveal style; it defers registry search) but meets criterion 4 (preview with render approval held) and partly 2 and 3; it runs a separate lint plus validate, which is redundant with check as the final gate."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (catalog search for a headline-reveal template) and 4 (preview, with rendering held for approval). Misses 2, since no explicit add/author workflow precedes validation, and 3, since it uses `validate` rather than `check` and re-runs lint in the final step."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "timeline",
+   "number": 2,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A nested scene has local start 2 seconds and is mounted at main time 12 seconds. I want to find which file owns the visible clip at main time 14. Explain how to inspect this with the CLI.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source heygen-com/hyperframes/skills/hyperframes-cli/SKILL.md at c4440dfb200def5e0c0afee938778f05b5985039; SKILL.md SHA-256 be481984f8d3c871c353a4ba82bb295a416634e11938de2081b950e9e488a3ff; README SHA-256 3e8f26d5e35c6a8c32c661bf1439443d8eee332eedc9bf1a32bfe3dc417c218e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Use timeline --json 2. Distinguish absolute from local timing 3. Use the owning file information 4. Avoid claiming the entire timeline was inspected",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "The visible clip at main time 14 is at local time 4 s inside the nested scene. The scene starts at local 2 s and is mounted at main 12 s, so 14 − 12 + 2 = 4.\n\nTo find the owning file, run this yourself, since I can't execute it here:\n\n```bash\nnpx hyperframes timeline <project-dir> --json\n```\n\nUse the JSON form, not the text form. Nested rows carry `absStart` and `absEnd` on the main timeline, plus the `file` that owns them. Those are the values to compare against 14, not the local times. Look for the row where `absStart <= 14 < absEnd`. Its `file` is the owner. If several rows match, the one on the top track is the one that is visible.\n\nIf the nested row's `absStart` is 12 and its local start is 2, the row should show the clip's main-timeline position shifted by 10 s from its local timing. If the numbers don't match that, the mount or the local start in the sub-composition is probably not what you expect.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends `timeline --json`, separates local time (4 s) from absolute main-timeline values (absStart/absEnd), names the `file` field as owner, and does not claim the whole timeline was inspected."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses `timeline --json`, separates local 4 s from absolute absStart/absEnd main-timeline values, points to the `file` field for ownership, and does not claim the whole timeline was inspected."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends `timeline --json`, separates local time (4 s) from absStart/absEnd comparisons against 14, uses the row's `file` as the owner, and does not claim the whole timeline was inspected."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses timeline --json, separates local 4s from absStart/absEnd main-timeline values, uses the row's file field as owner, and never claims the whole timeline was inspected."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses `timeline --json`, distinguishes absolute `absStart`/`absEnd` from local time, identifies the owning `file` field, and does not claim to have inspected the timeline."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Answer:** The visible clip at main time 14 s is at **4 s local time** inside the nested scene. The file that owns it isn't in the facts you gave me, so I can't name it yet.\n\n**The calculation:** The nested scene is mounted at main time 12 s, so main time 14 s is 2 s after mount. Its local start is 2 s, which puts the playhead at local 2 + 2 = 4 s. This assumes \"local start\" is an offset added to the scene's own timeline. If your project defines it differently, the local time changes.\n\n**How to find the owning file yourself:** I haven't run anything, so these are commands for you to try. I don't know your project's tooling, so adjust the search patterns to match its naming.\n\n1. Find where the nested scene is mounted. Search for its name or ID, and for the mount time of 12 s:\n   ```bash\n   grep -rn \"<nested-scene-name>\" .\n   ```\n2. Open the file that defines the nested scene and find the clip active at local 4 s. Check any clip whose start is at or before 4 s and whose end is after it.\n3. If the project is a git repository, check which file last touched that clip's definition:\n   ```bash\n   git log -p -S \"<clip-identifier>\" -- <path>\n   ```\n\nIf you send me the scene definition or the file listing, I can match the clip at 4 s to a specific file.",
+      "average": 0.45,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met the local-vs-absolute timing distinction (main 14s = local 4s) and avoided claiming full timeline inspection. Missed the required `timeline --json` command and did not use owning-file information from the CLI."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (distinguishes main 14 s from local 4 s) and criterion 4 (admits nothing was run). Misses criterion 1 by never mentioning `timeline --json`, and criterion 3 is weak because it gives generic grep/git commands instead of using owning-file output."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Uses a CLI-style inspection approach but never mentions timeline --json, so criterion 1 is missed; it correctly distinguishes local (4 s) from main time, admits the owning file is unknown, and does not claim full timeline inspection, meeting criteria 2–4."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response distinguishes local (4 s) from main timing and admits the owning file is unknown, meeting criterion 2 and partly 3, but never mentions timeline --json and wrongly suggests grep/git log instead, so criteria 1 and 3 are missed; criterion 4 is satisfied since it doesn't claim full inspection."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the absolute-vs-local timing distinction (main 14s vs local 4s) and avoids claiming full timeline inspection, but never mentions `timeline --json` and does not use CLI owning-file information."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Mapping the time:** The nested scene starts at local time 2s and is mounted at main time 12s. Main time 14s is 2 seconds after the mount, so it corresponds to local time **4s** inside the nested scene (14 − 12 + 2 = 4). I'm assuming \"local start 2\" means the nested scene's timeline begins at its 2s mark. If your tool defines it differently, the local time may be different.\n\n**Inspecting with the CLI** (I haven't run these, and I don't know your tool's exact command names, so adjust them to match yours):\n\n1. **Find the mount.** Search the main scene's source for the nested scene's reference and its start time, which should be 12s:\n   ```bash\n   git grep -n -E \"12(\\.0+)?s?|mount|nested\" -- '*.json' '*.yaml' '*.yml' '*.ts' '*.js'\n   ```\n   This tells you which file places the nested scene at 12s.\n\n2. **Find the nested scene's clips.** Open the file that the mount points to and list its clips with their start times and durations. Look for the clip whose range covers local 4s, meaning `start <= 4 < start + duration`. That clip is the visible one at main time 14s.\n\n3. **Confirm the owner.** Use `git blame -L <start>,<end> <file>` on that clip's lines to see which commit and author last changed it. If the clip itself references another asset, repeat the lookup on that asset file.\n\n4. **Check the rendered output (optional).** If you have a rendered or exported media file, you can confirm what is actually visible at that point:\n   ```bash\n   ffprobe -v error -show_entries format=duration -of csv=p=0 <file>\n   ffmpeg -ss 14 -i <file> -frames:v 1 check_14s.png\n   ```\n   This only confirms the rendered frame. It doesn't show which source file produced it, so use it alongside steps 1–3.\n\nThe answer depends on the nested scene's clip list at local 4s and on the mount definition at 12s, so those two files are the ones to check first.",
+      "average": 0.15,
+      "notes": [
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never mentions the timeline --json command, so criterion 1 is missed. It separates main and local time, distinguishes absolute from local timing, and points to the owning file via git blame. It does not claim the whole timeline was inspected, but the score is still limited to 0.5 for the criteria it meets. Its guessed grep and ffmpeg commands are not the CLI's timeline inspection."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Response never uses timeline --json, does distinguish local (4s) from main time, but offers only generic git grep/blame and ffmpeg steps, not owning-file CLI inspection, and claims nothing about full-timeline inspection."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never uses a timeline --json command, relying instead on git grep and ffmpeg; it does distinguish main and local time and points to owning-file lookup via git blame, but it does not claim to have inspected the whole timeline. Missing criterion 1 means only partial credit is due, and the grader's 0.25-per-criterion scheme must be applied strictly."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Response never mentions 'timeline --json', so criterion 1 is missed; it does distinguish mapped local time from main time and refers to owning file, but without the CLI command the rubric requires, it fails the core criterion. It also avoids claiming full inspection, though this doesn't offset the missed command."
+       },
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Maps main 14s to local 4s, avoids claiming full timeline inspection, and identifies owning files via mount and clip lookup, but never uses `timeline --json`, the required CLI command."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "The visible clip at main time 14 should be the nested scene, since it is mounted at main time 12 and 14 falls inside its span. I haven't run anything, so this is based only on your numbers.\n\n**Time mapping:** The scene's local start is 2s and it is mounted at main 12s, so local time 2s plays at main 12s. That makes main 14s correspond to local time 4s in the nested scene (14 − 12 + 2). I'm assuming that mapping from your description.\n\n**Inspecting with the CLI:**\n\n1. Run `npx hyperframes timeline --json` in the project directory. Use `--json`, not the text form.\n2. Find the row whose absolute range contains 14: `absStart <= 14 < absEnd`. Nested rows carry absolute main-timeline `absStart`/`absEnd` values, so you can compare against 14 directly without converting local times.\n3. Read that row's `file` field. That is the file that owns the clip. Its local start should be 2s, and its `absStart` should be 12s, which confirms the mount.\n4. If several rows overlap 14, the one on the track you care about is the visible one. Check the track and any z-order information in the output to tell them apart.\n\nA quick filter, if you want to narrow the JSON yourself: `npx hyperframes timeline --json | jq '.. | objects | select(.absStart? != null and .absStart <= 14 and .absEnd > 14)'`. The exact key layout of the envelope isn't in what I have, so adjust the path to match the real output.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends `timeline --json`, separates absolute `absStart`/`absEnd` from local time (14→local 4s), reads the row's `file` field, and does not claim the whole timeline was inspected."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends `timeline --json`, separates absolute absStart/absEnd from local timing with the 14→local 4s mapping, reads the `file` field, and does not claim the whole timeline was inspected."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends `timeline --json`, separates local time (4s) from absolute main-timeline ranges (absStart/absEnd), reads the row's `file` field, and states nothing was run or inspected."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (uses timeline --json), 2 (distinguishes absolute absStart/absEnd from local start and converts 14→local 4s), and 3 (reads the owning file field); misses 4 only partially—it does not claim full timeline inspection, so criterion 4 is satisfied, yielding 1.0 by strict count but no full-scene verification was claimed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (uses timeline --json), 2 (distinguishes absolute absStart/absEnd from local start and converts 14-12+2=4), and 3 (uses the row's file field to identify the owner). Misses 4 only partially: it never claims whole-timeline inspection, so it arguably satisfies 4 too, but the rubric's 0.25 increments would give 1.0; I score 0.75 conservatively since the response's jq filter path is explicitly unverified."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The supplied facts give the time mapping but not the file, so I can't name the owner yet.\n\n**Time mapping:** the nested scene starts at local time 2 s and is mounted at main time 12 s. Main time 14 s is 2 s into the mount, so it corresponds to local time **4 s** in the nested scene (`14 − 12 + 2 = 4`).\n\n**To find the owning file with the CLI** (I haven't run these, and the key names are placeholders to adjust to your project):\n\n1. **Find the mount point.** Search the parent timeline for where the nested scene is placed at 12 s:\n   ```bash\n   git grep -n -E \"12(\\.0)?s?\\b\" -- '*.json' '*.yaml' '*.ts'\n   ```\n   Narrow this to the mount entry once you see the structure, such as a `mount`, `start`, or `offset` field tied to the nested scene.\n\n2. **Confirm the nested scene's local start.** Check that the scene's entry has a local start of 2 s, so the mapping above holds.\n\n3. **Find the clip active at local 4 s.** Open the nested scene's own timeline and list the clips with their start and end times. The clip whose range includes 4 s is the visible one at main time 14 s. If a clip has a `src` or `file` field, that is the owning file.\n\n4. **If the media is a rendered file,** you can probe the nested source directly with `ffprobe` to check its clip boundaries.\n\nIf you paste the parent timeline entry for the nested scene and its clip list, I can work out which clip covers local 4 s.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Met: distinguishes main 14 s from local 4 s, uses owning-file src/file field, and does not claim full timeline inspection. Missed: never uses `timeline --json` and relies on git grep instead of the CLI."
+       },
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Meets criteria 2 (absolute 14 s vs local 4 s), 3 (owning file via src/file field), and 4 (states nothing was run), but never mentions `timeline --json`, the CLI command the rubric requires."
+       },
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Distinguishes main time 14 s from local 4 s, avoids claiming full inspection, and points to the owning src/file field. It misses the required `timeline --json` command, using generic git grep instead."
+       },
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Distinguishes main 14s from local 4s and avoids claiming full inspection, but never uses `timeline --json`, relying on git grep and ffprobe instead; owning-file guidance is present."
+       },
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Meets criteria 2 (absolute-to-local mapping 14→4), 3 (owning file via src/file field), and 4 (no claim of full inspection), but never mentions `timeline --json`, the central CLI command, and uses generic git grep instead."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Timing math (from the facts you gave):**\n\n- The nested scene is mounted at main time 12s.\n- Main time 14s is 2s after mount: 14 − 12 = 2s.\n- The nested scene's local timeline starts at 2s, so main time 14s maps to local time 2 + 2 = **4s** inside the nested scene.\n\nThis assumes \"local start 2 seconds\" is an offset added to the scene's local clock. If your system instead treats it as a trim point or a different convention, the local time changes, so check that before relying on 4s.\n\n**How to inspect it with the CLI (not run here):**\n\n1. **Find the mount point.** Search for where the nested scene is referenced and confirm its mount time of 12s. For a text-based timeline, something like:\n   ```bash\n   git grep -n \"<nested-scene-name>\"\n   ```\n   Look for the line that sets the start/mount time and the local start offset.\n\n2. **Find the clip that covers local 4s.** Within the nested scene's definition, list the clips with their start and end times, then pick the one whose range includes 4s. Search for the clip-timing fields in the same files, for example:\n   ```bash\n   git grep -n -E \"start|end|duration\" -- <nested-scene-file>\n   ```\n\n3. **Trace the owning file.** Once you have the clip entry, note which file defines it. If that clip references another asset or sub-scene, repeat steps 1–2 for that file until you reach the leaf that is actually rendered.\n\n4. **If the timeline is a media file rather than a project format,** use `ffprobe` to confirm what is visible at a given time:\n   ```bash\n   ffprobe -v error -show_entries frame=pts_time -of csv <file>\n   ```\n\nI haven't checked any of these against your repository, so the exact search terms depend on your project's format. If you share the nested scene's definition and the mount entry, I can work out which clip owns local 4s from the text.",
+      "average": 0.4,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Distinguishes absolute (main 14s) from local (4s) timing and mentions owning-file tracing, but never mentions `timeline --json`, so only criterion 2 and 3 are arguably met; criterion 1 missed. Criterion 4 is satisfied since it disclaims not checking the repo."
+       },
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Distinguishes main time 14s from local 4s and traces the owning file, and avoids claiming full inspection. It never mentions `timeline --json` and substitutes generic git grep and ffprobe commands for the CLI."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Distinguishes absolute (12s mount, 14s main) from local timing (4s) and notes the file-owner trace, but never mentions `timeline --json`, and the CLI commands are generic greps/ffprobe rather than the hyperframes CLI; the 'entire timeline' caveat is only partially addressed."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Response never uses timeline --json, which the rubric requires; it does distinguish local vs absolute timing and mentions tracing the owning file, but misses criterion 1, and criterion 4 is ambiguous since it doesn't claim full timeline inspection but also doesn't clearly avoid it."
+       },
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Met criteria 2 (absolute 14s vs. local 4s distinguished), 3 (traces the owning file), and 4 (disclaims not inspecting the repo). Missed criterion 1: never mentions `timeline --json`, relying on generic git grep instead."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "The nested scene's local time at main time 14 is **4 seconds**, since it starts at local 2s and is mounted at main 12s: 14 − 12 = 2, and 2 + 2 = 4.\n\nTo find the file that owns the visible clip, run:\n\n```bash\nnpx hyperframes timeline --json\n```\n\nThen look for the row where:\n\n- `absStart <= 14` and `absEnd > 14` (absolute main-timeline times), and\n- the row's local range covers 4s. Its local start should fall within the nested scene's time range, and the row should be visible at that point.\n\nThe row's `file` field names the sub-composition that owns the clip. Nested rows carry absolute main-timeline `absStart`/`absEnd`, so you can match against 14 directly without converting. Use the local times only to confirm that the clip is the one active at 4s inside the nested scene.\n\nI haven't run this command, so I can't tell you the actual filename. If more than one row covers main time 14, compare their tracks and z-order to see which one is visible. The mount point is the host `index.html` slot with `data-composition-src` that starts at main 12s. The `file` field in the matching row should point to the scene mounted there.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends `timeline --json`, separates absolute `absStart`/`absEnd` from local 4s timing, names the row's `file` field as the owner, and states it has not run the command."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses `timeline --json`, clearly separates absStart/absEnd from local times, identifies the `file` field as the owner, and states it has not run the command, so it does not claim full inspection."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses `timeline --json`, separates absolute `absStart`/`absEnd` from local times, relies on the row's `file` field, and states it has not run the command, so it does not claim full inspection."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses `timeline --json`, separates absolute `absStart`/`absEnd` from local times, names the `file` field as the owner, and states it has not run the command, so it claims no full inspection."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criterion 1 (uses timeline --json), criterion 2 (distinguishes absolute absStart/absEnd from local times), and criterion 3 (uses the row's file field to identify the owner); misses criterion 4-compliance is fine, but it does not claim full timeline inspection, so it's satisfied; however the answer's clarity on local-range confirmation is slightly muddled, so 0.75 instead of 1.0 is a conservative call."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Local time at main 14s: 4s.** This assumes \"local start 2 seconds\" means the nested scene's timeline begins 2 seconds into its own content. The mapping is then:\n\nlocal time = main time − mount time + local start = 14 − 12 + 2 = **4s**\n\nIf your tool defines local start differently, the result changes. For example, if it means the scene's local zero sits at main 12s, the answer is 2s.\n\n**How to find the owning file with the CLI.** I haven't run anything, and your facts don't name the CLI, so these are general steps. Substitute your tool's actual subcommands and flags.\n\n1. **Find the mount point.** Locate the nested scene's entry at main time 12s and confirm its local start is 2s. Check that the mount is active at main 14s and not cut off by an earlier end time.\n2. **Resolve the nested scene.** Follow the mount to the file or source it references. Nested mounts can chain, so repeat this until you reach a leaf clip.\n3. **Check the clip at local 4s.** Query or inspect the timeline at local time 4s in the resolved scene. That clip is the visible one, provided no overlapping track sits above it.\n4. **Read its source path.** The clip's source field gives the owning file. If the tool only reports IDs, look up the ID in the project manifest or index.\n\nIf you tell me which CLI this is, or paste its help output or the scene definition, I can give you the exact commands.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met distinguishing absolute main time from local time (14−12+2=4s), referencing the owning file via the clip's source field, and not claiming full timeline inspection; missed the required `timeline --json` command."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (absolute vs. local time mapping), 3 (reads the clip's source field for the owning file), and 4 (states nothing was run); misses 1, since it never names `timeline --json`."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Response never mentions 'timeline --json' and gives only generic steps; it does distinguish main vs local time and mentions the source path, but does not claim full timeline inspection, so only criterion 2 and 3 are arguably met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (absolute main 14s vs. local 4s distinguished), 3 (reads the clip's source path for the owning file), and 4 (states nothing was run). Misses 1: it never names `timeline --json`, saying only to substitute the tool's subcommands."
+       },
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Met criteria 2 (distinguishes main vs local timing), 3 (references the source field for the owning file), and 4 (states nothing was run). Missed criterion 1: never mentions `timeline --json`."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "At main time 14 seconds, the nested scene is at local time **4 seconds**:\n\n```\nlocal = main - mount + local_start\nlocal = 14 - 12 + 2 = 4\n```\n\nTo find the owning file, run these commands yourself. I haven't run anything.\n\n1. **Find the file that mounts the nested scene.** Search for the mount point at 12 seconds. The exact keyword depends on your format, so start broadly:\n   ```bash\n   git grep -n -E \"12(\\.0+)?s?\\b\" -- '*.json' '*.yaml' '*.yml' '*.xml' '*.edl'\n   ```\n   Look for an entry that places a scene or sequence at 12s with a local start of 2s.\n\n2. **Identify the nested scene's file.** Once you have the mount entry, note the reference it points to (a path, ID, or name) and locate that file:\n   ```bash\n   git grep -n \"<referenced-id-or-path>\"\n   ```\n\n3. **Check the nested file for the clip at local 4s.** Open the nested file and find the clip whose range covers 4 seconds. That clip is the visible one at main 14s, and its source file is the owner you're looking for.\n\n4. **Verify with a media probe, if the clips are media files.** `ffprobe` can confirm which source is active at a given time:\n   ```bash\n   ffprobe -v error -show_entries format=duration:stream=codec_type,duration -of default=nw=1 <file>\n   ```\n   Use this to confirm durations and offsets match your mapping.\n\nIf the nested clip's start isn't exactly 2s, or the mount is at a different offset, redo the calculation with the actual values. If you can share the project file or tell me its format, I can give more specific search commands.",
+      "average": 0.3,
+      "notes": [
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never uses timeline --json, so criterion 1 fails; it does distinguish main and local time (criterion 2) and points to the owning file via the clip (criterion 3), but it does not claim full-timeline inspection, so criterion 4 is met. Score 0.5 would be wrong since criterion 1 is missed; scoring 0.5 total from criteria 2-4 would be 0.75 max, but at least one criterion is missed. Recomputing: criteria 2, 3, 4 met = 0.75."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response computes local time correctly and gives a file-owner search approach, but never mentions 'timeline --json' so criterion 1 is missed; it does not explicitly claim whole-timeline inspection, so criterion 4 is met, and it distinguishes absolute and local timing (criterion 2) and addresses owning file (criterion 3)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (distinguishes main 14s from local 4s), 3 (traces the owning file via mount and nested file), and 4 (claims no inspection). Misses criterion 1: never mentions the required `timeline --json` CLI command."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response covers owning-file lookup via search and verification, but never mentions `timeline --json` and does not explicitly avoid claiming the whole timeline was inspected; it only partially satisfies the rubric (absolute vs. local timing is distinguished, owning-file info is used)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response uses a clear local-vs-main time calculation (satisfying criterion 2) but never mentions timeline --json, does not reference the CLI's owning-file info, and the grep/ffprobe approach misses the rubric's specific CLI inspection; it also avoids claiming full-timeline inspection (criterion 4), so only 0.25 is earned."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": null,
+     "placebo": {
+      "answer": "**Answer from the supplied facts:** the nested scene's local time at main time 14 s is **4 s**. It starts at local 2 s when mounted at main 12 s, so main 14 s is 2 s after mount: 2 s + (14 − 12) = 4 s. The facts don't name any files, so they can't tell us which file owns the clip.\n\nI haven't run anything, since you asked me not to use tools. Here is how to find the owner with the CLI from `/tmp/driftproof-eval.EGmkoDKf`:\n\n1. **Find the nested scene's definition.** Search for the scene name, or for the mount time `12` and local start `2` if they appear literally in the source:\n   ```bash\n   git grep -n \"<scene-name>\"\n   git grep -nE \"(start|mount).*\\b(12|2)\\b\"\n   ```\n\n2. **List the candidate files** if the names are unknown:\n   ```bash\n   git ls-files | grep -iE \"scene|timeline|clip|sequence|comp\"\n   ```\n\n3. **Check which file holds the timeline that mounts the nested scene.** Open the match and confirm that its mount point is at 12 s and its local start is at 2 s. The file that places the nested scene on the main timeline is the one that schedules the clip. The file that defines the scene's content is the one that owns the visible frame.\n\n4. **Confirm the time at 14 s.** Look for the nested scene's own timing, such as its duration or keyframes, and check that local 4 s falls inside the clip's active range.\n\n5. **Check for overrides.** If the clip is reached through another scene, repeat steps 1 to 3 at each level, since the mapping composes.\n\nGit status is clean with no commits, so the search covers only the current working tree. If the grep finds nothing, send me the scene or file names and I can work out the ownership from them.",
+      "average": 0.55,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response distinguishes local time (4 s) from absolute timing and points to owning file via grep, but never mentions 'timeline --json' as the CLI command, so only criteria 2 and 3 are clearly met; criterion 4 (not claiming full timeline inspected) is satisfied, giving partial credit."
+       },
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Met criteria 2 (distinguishes local 4 s from absolute 14 s), 3 (explains owning-file logic), and 4 (no claim of full inspection). Missed criterion 1: never mentions the timeline --json CLI command."
+       },
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Meets criteria 2 (local vs. absolute timing computed), 3 (file ownership explained), and 4 (no claim of full inspection). Misses criterion 1: never mentions `timeline --json`, using generic git grep instead."
+       },
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Correctly separates main time 14 s from local time 4 s and avoids claiming the whole timeline was inspected, but never mentions `timeline --json`, the core CLI inspection command."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 2 is met: it distinguishes main time 14 s from local 4 s. Criterion 3 is partly addressed via the owning-file discussion. Criterion 1 is missed: it never mentions `timeline --json`. Criterion 4 is met: it does not claim the whole timeline was inspected."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Answer (no tools run):** Main time 14 falls at local time **4 seconds** inside the nested scene. The nested scene's local timeline starts at 2 seconds and is mounted at main time 12, so 14 − 12 = 2 seconds after mount, and 2 + 2 = 4. This assumes local time advances 1:1 with main time after the mount point.\n\nThe facts don't name the file, so you'll need to find it. Run these yourself, since I haven't run anything:\n\n1. **Find where the nested scene is mounted.** Search for its name or the mount point:\n   ```bash\n   git grep -n \"<nested-scene-name>\"\n   ```\n   Look for the mount entry that sets the start at 12 s and the local start at 2 s.\n\n2. **Find the clip active at local 4 s.** Search the scene's definition for clips or entries that cover that time:\n   ```bash\n   git grep -n -E \"start|end|duration\" -- <scene-file>\n   ```\n   The clip whose range includes 4 s is the visible one. Check whether it has a source file, and follow that reference if it does.\n\n3. **Confirm the file's history if needed.** If the owner is unclear, check which commit last changed that range:\n   ```bash\n   git log -L <start>,<end>:<scene-file>\n   ```\n\nIf the CLI you use has its own inspect or query command for timelines, that will be faster than grep. Tell me the tool name and the scene file, and I can narrow the steps.",
+      "average": 0.15,
+      "notes": [
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never mentions a timeline --json command, so criterion 1 is missed; it does distinguish absolute and local time (criterion 2 met) and points to owning file references, but it relies on git grep rather than the CLI's owning-file info, and does not clearly claim the whole timeline was not inspected (criterion 4 is at best partially addressed)."
+       },
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Met distinguishing absolute (14s) from local (4s) timing, owning-file lookup, and not claiming full timeline inspection; missed the required `timeline --json` command, using git grep instead."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Response never mentions 'timeline --json' or any CLI timeline inspection command, instead using git grep; it does distinguish local vs main time and avoids claiming full inspection, but misses criteria 1 and 3 partially."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Response never mentions 'timeline --json' and does not distinguish absolute from local timing in a CLI-inspection sense; it uses grep and git commands instead, and does not claim to have inspected the full timeline but also doesn't use the owning-file info criterion properly. Criteria 1 and 2 partially; 3 and 4 not met."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never mentions the 'timeline --json' command (criterion 1 missed), and it fails criterion 4 by not claiming to inspect the whole timeline, but it does not wrongly claim inspection either; it does distinguish main vs local time (criterion 2 met), and references finding the owning file via grep/source references (criterion 3 partially met). Score reflects only fully satisfied criteria."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": {
+      "answer": "**Local time at main 14 s: 4 s into the nested scene.** The scene starts at main 12 s with local time 2 s, so main 14 s is 2 s after mount, and 2 s + 2 s = 4 s locally.\n\nI haven't run anything, and the facts you gave don't name the file or the CLI tool, so these commands are a starting point to adapt:\n\n1. **Find the nested scene's definition.** Search for the mount values, using `2` and `12` or their names if you know them:\n   ```\n   grep -rn \"12\" <project-dir> --include=\"*.<ext>\"\n   ```\n   The mount entry should name the file that owns the nested scene.\n\n2. **Check the nested scene's timeline.** Open that file and look for the clip that covers local time 4 s. The clip whose range includes 4 s owns the visible frame, unless another layer or clip sits on top of it.\n\n3. **Confirm the ownership chain.** Follow any further nesting: if the file at local 4 s mounts another scene, repeat the mapping with that scene's start offset.\n\n4. **Check history if needed.** The git status shows a clean tree with no recent commits, so `git log` won't show when the mount was added. Use `git blame <file>` on the mount line only if the repository has history beyond what the snapshot shows.\n\nOnce you share the file names or the timeline format, I can give exact commands for them.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets distinguishing absolute from local timing (main 14 s = local 4 s), uses owning-file/ownership-chain guidance, and avoids claiming full inspection. Misses the required `timeline --json` command, substituting grep."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (absolute 14s vs. local 4s), 3 (ownership chain via the mount file), and 4 (no claim of full inspection). Misses 1: it never mentions `timeline --json` and uses grep/git instead of the CLI."
+       },
+       {
+        "score": 0.75,
+        "pass": false,
+        "reason": "Meets criteria 2 (absolute 14s vs local 4s), 3 (owning-file ownership chain), and 4 (no claim of full timeline inspection), but misses criterion 1: it never mentions `timeline --json` and substitutes grep for the requested CLI inspection."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never mentions the timeline --json command, so criterion 1 fails. It does distinguish local 4 s from main 14 s and points toward the owning file, but it also has no explicit no-whole-timeline caveat beyond a loose 'unless another layer' note. Criteria 2 and 3 are partly met; criterion 4 is arguably met because it avoids claiming full inspection, so the score is 0.5 at most, but it misses the required CLI command entirely."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 2 (distinguishes absolute vs local timing: main 14s = local 4s) is met; criterion 1 misses since it never mentions timeline --json, criterion 3 is only loosely addressed via generic file search, and criterion 4 is not explicitly violated but the response doesn't hit the rubric's required items."
+       }
+      ]
+     },
+     "baseline": null
+    }
+   ]
+  },
+  {
+   "id": "render",
+   "number": 3,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A completed render reports screenshot mode and software GPU on Linux. The output exists but no frames have been inspected. Give the next verification steps.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source heygen-com/hyperframes/skills/hyperframes-cli/SKILL.md at c4440dfb200def5e0c0afee938778f05b5985039; SKILL.md SHA-256 be481984f8d3c871c353a4ba82bb295a416634e11938de2081b950e9e488a3ff; README SHA-256 3e8f26d5e35c6a8c32c661bf1439443d8eee332eedc9bf1a32bfe3dc417c218e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Recognize the slow path without claiming a failed render 2. Verify duration and relevant frame rate against the composition 3. Inspect decoded frames including detailed regions 4. Do not equate successful encoding with correct pixels",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "The render finished in `screenshot` mode with a software GPU on Linux. The output file exists, but no frames have been inspected, so the render is not yet verified. Next steps:\n\n1. **Confirm the file is usable.** Check that `out.mp4` exists and is non-empty (`test -s out.mp4`).\n\n2. **Compare container metadata to the composition.** Run `ffprobe -v error -show_format -show_streams out.mp4` and compare the duration, and the fps if the brief set one, against the root `data-duration` in `index.html`.\n\n3. **Inspect decoded frames.** Extract frames at the same timestamps you checked in the preview, plus the opening 30 seconds and any problem times from `check`. Write them to a temp directory you can delete afterward, for example `ffmpeg -ss <t> -i out.mp4 -frames:v 1 <tmpdir>/f_<t>.png`. Look at close-ups of text, edges, and any WebGL or canvas content, not just a contact sheet. A passing `check` or a successful encode does not confirm what is inside the canvas.\n\n4. **Check sub-composition scenes.** If `index.html` mounts `data-composition-src`, confirm each mounted scene is visible and correctly sized at its midpoint. Tiny or missing content there is a mount defect.\n\n5. **Decide whether to re-render.** `screenshot` plus `software gpu` is the slow path. If the frames look right, this output can stand for draft or looks work. For final delivery, expect a `--quality delivery` render to be slow in this mode. If you need a faster path, try a render that uses `beginframe` on a suitable host, but only after confirming the mode the CLI actually reports.\n\n6. **Report the result.** Once the frames are checked, send feedback with the rating and a specific comment about the result. If you find a visual defect, such as a black frame, flicker, wrong frame, or blank output, include the reproduction packet and the `COMPOSITION_STRUCTURE:` block.\n\n7. **Clean up.** Delete the temp frame directory you created. Don't delete `.hyperframes`, since it holds project history.\n\nUntil steps 2 and 3 pass, describe the render as \"file written, not verified.\"",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recognizes screenshot plus software GPU as the slow path without calling the render failed, verifies duration and fps against data-duration, inspects decoded frames including close-ups of text and canvas, and states that a passing check or encode does not confirm pixels."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recognizes screenshot plus software GPU as the slow path without calling the render failed (criterion 1); verifies duration and fps against data-duration (2); inspects decoded frames with close-ups of text/canvas (3); states a passing check or encode does not confirm pixels (4). Criterion 1 is partly weakened by suggesting a faster beginframe path, but it is not a failure claim."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recognizes screenshot plus software GPU as the slow path without calling the render failed; compares duration and fps to data-duration; inspects frames including text, edges, and canvas close-ups; states encode success does not confirm pixels."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recognizes screenshot/software GPU as slow path without claiming failure; checks duration and fps against data-duration; inspects frames including close-ups of text/canvas; explicitly states encoding success does not confirm pixels. Minor gap: slow-path framing is partly hedged with a 'beginframe' suggestion."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recognizes the screenshot/software-GPU path as slow without claiming failure; checks duration and fps against data-duration; inspects decoded frames including close-ups of text and canvas; explicitly says a successful encode doesn't confirm pixels. Criterion 1 is arguably partially met since it calls the path slow but also suggests re-rendering options loosely."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I can't give verified next steps from what's been supplied, because the message doesn't include the render result itself, only that the render completed in screenshot mode on software GPU and that no frames have been inspected. The pasted filler text in the earlier turn doesn't bear on the render, so I've set it aside.\n\nBased on the facts you gave, these are the next verification steps, in order:\n\n1. **Confirm the output exists and is non-trivial.** Check that the expected frame files are present and that their count matches the number of frames requested. Check that none are zero bytes.\n\n2. **Inspect the frames directly.** Open a sample: the first, a middle, and the last frame. Look for a blank or solid-color image, missing geometry, wrong camera framing, and obvious artifacts. Software rendering can produce output that is valid but incorrect, so a successful exit is not evidence the scene looks right.\n\n3. **Compare against a reference.** If you have a known-good frame or a previous render of the same scene, diff against it, either visually or with a pixel-difference metric. A large difference points to a rendering or configuration problem rather than a scene change.\n\n4. **Check that the screenshot mode captured what you intended.** Confirm the capture happened after the scene finished loading and that the frame timing is correct. A screenshot taken too early can show an empty or partly loaded scene.\n\n5. **Account for the software GPU.** Since the render ran on software GPU on Linux, check that the output doesn't differ from a hardware render in ways that matter for your use, such as shader precision, lighting, or missing extensions. If the result has to match a hardware render, verify that separately on a machine with a real GPU.\n\n6. **Record the result.** Note the render settings, the GPU mode, and the frame check outcome so the run can be reproduced.\n\nIf the frames look correct after step 2, the render is verified for your purposes. If they don't, the step-3 comparison will tell you whether the problem is in the output or in the environment.",
+      "average": 0.25,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 4 (says a successful exit doesn't show the scene is right). Misses the slow-path recognition, duration and frame-rate checks, and any detailed-region inspection; it does mention checking frame count, which is not the same as duration."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response gives a solid frame-inspection and reference-comparison workflow (criteria 3 and 4 partly), but never recognizes the slow path or verifies duration/frame rate against the composition, and misses detailed-region inspection."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response gives a generic frame-inspection checklist and notes software-GPU caveats, but never identifies the slow path, never verifies duration/frame rate against the composition, and only partially covers detailed-region inspection; it does satisfy point 4 (valid output ≠ correct pixels)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only criterion 4 is clearly met: it says a successful exit is not evidence of correct output. It never names the slow path, never checks duration or frame rate against the composition, and does not inspect detailed regions."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response gives a generic verification checklist and does not recognize the slow path, verify duration/frame rate against the composition, or inspect detailed regions; it does explicitly warn that successful exit is not evidence of correct pixels (criterion 4), so only that criterion is met."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Next verification steps** (I haven't inspected any frames, and I can't run anything in this session):\n\n1. **Confirm the output is what you expect.** Check that the render output exists, then record its frame count, resolution, and format. Compare these against the requested settings so a silent resolution or frame-count mismatch doesn't slip through.\n\n2. **Inspect the frames directly.** Open a sample, starting with the first, a middle frame, and the last, and look for:\n   - Black, blank, or uniformly colored frames\n   - Missing or corrupted geometry, textures, or lighting\n   - Frozen output, where consecutive frames are identical\n\n3. **Check for frame-to-frame consistency.** Compare adjacent frames for unexpected jumps, flicker, or stalls. A file-size or pixel-difference check across the sequence can flag these faster than viewing every frame.\n\n4. **Account for the software GPU.** Software rendering on Linux can differ from hardware output in shading precision, anti-aliasing, and color handling. Before treating the result as correct, decide whether you need a hardware-rendered reference. If you don't, note the software path as a known difference.\n\n5. **Confirm the screenshot mode settings.** Verify that the capture captured the intended camera, viewport, and scene state, not a default or initial state.\n\n6. **Test reproducibility.** Re-run the same render and compare outputs. Identical results suggest a deterministic pipeline. Differences may point to uninitialized memory, timing dependencies, or nondeterministic sampling.\n\n7. **Record the result.** Note which checks passed, which were skipped, and the exact render configuration, so the result can be reproduced or audited later.\n\nUntil steps 2 and 5 are done, the render should be treated as \"completed, not verified.\"",
+      "average": 0.3,
+      "notes": [
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Criterion 1 missed: never identifies the slow path. Criterion 2 missed: no duration or frame-rate check against the composition. Criterion 3 partly met (first/middle/last frames, but no detailed-region inspection). Criterion 4 partly met: notes software-GPU differences but does not explicitly say successful encoding is not evidence of correct pixels."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 4 by stating frames are uninspected and 'completed, not verified'; it never frames the software GPU as a slow path, checks frame rate or duration, or inspects detailed regions."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets criterion 4 by separating completion from verification and calling for frame inspection. Misses criterion 1 (never names a slow path), criterion 2 (no duration or frame-rate check), and criterion 3 (no detailed-region inspection)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets inspect-decoded-frames (sample frames, geometry/texture checks) and not-equating-output-with-pixels; misses explicit slow-path recognition and duration/frame-rate verification, though it avoids claiming failure."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 4 by separating completed from verified and criterion 3 via frame inspection for missing geometry and textures. Misses criterion 1 (no slow-path recognition), criterion 2 (no duration or frame-rate check), and detailed-region inspection."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "The render completed, but the output has not been checked yet. Screenshot mode with a software GPU on Linux is the slow path, and a successful encode doesn't show that the pixels are correct. These are the next steps, in order:\n\n1. **Confirm the output file.** Check that `out.mp4` exists and is non-empty (`test -s out.mp4`).\n\n2. **Compare the container metadata with the composition.** Run `ffprobe -v error -show_format -show_streams out.mp4`. Compare the duration with the root `data-duration` in `index.html`. If the brief set an fps, compare that too.\n\n3. **Decode frames at the same times as the preview.** Extract frames from the output at the timestamps you reviewed in the Studio preview. Include the opening 30 seconds at full resolution and every problem time reported by `check`. Write these to a temporary directory you own, not the project.\n\n4. **Inspect the frames at full resolution.** Look for these defects:\n   - Missing or tiny unstyled content, and canvas-sized icons.\n   - Wrong frames, blank frames, or black frames.\n   - Text clipping or contrast problems.\n   - Edges of WebGL or canvas content.\n\n   Zoom into close-ups. Don't judge from a contact sheet alone.\n\n5. **Check sub-composition mounts.** If the project uses `data-composition-src`, confirm that each scene shows its content at the midpoint frames. Use `npx hyperframes snapshot --at <t1>,<t2>,<t3>` if you need fresh captures.\n\n6. **Clean up the temporary frames.** Remove only the temporary directory you created.\n\n7. **Send feedback only after the checks pass.** Once the output is verified, send one report: `npx hyperframes feedback --rating <0-10> --comment \"<specific result or friction>\"`. If you find a visual defect, rate it 7 or below and include a reproduction packet with the `COMPOSITION_STRUCTURE:` block.\n\nIf any step fails, don't re-render right away. Fix the cause first, then run the final gate again.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response recognizes the slow path without claiming failure and verifies duration/fps against the composition, and inspects decoded frames including close-ups, but it does not clearly state that successful encoding is not proof of correct pixels in a way that fully satisfies criterion 4, though it does say a successful encode doesn't show pixels are correct. Scoring: criteria 1, 2, 3 and 4 are arguably met, but the response's reliance on a Studio preview and feedback-sending step leaves ambiguity; conservative score 0.5."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response recognizes the slow path without claiming failure and checks duration/fps against the composition and inspects frames including close-ups, meeting criteria 1-3 partially; it explicitly says encoding success doesn't show correct pixels (criterion 4), so 3 criteria are met but the response is judged borderline; criterion 3 detailed-region inspection is present, yielding 0.75 strictly, but the task requires a 0.25 per fully-satisfied criterion sum, so the score is 0.75 rounded down to 0.5 due to vague duration/fps verification."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recognizes screenshot/software-GPU as the slow path while stating the render completed, checks duration and fps against the composition, inspects decoded frames with zoomed close-ups, and states that a successful encode does not prove correct pixels."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recognizes screenshot mode with a software GPU as the slow path without calling the render failed; checks duration and fps against data-duration; inspects decoded frames including zoomed close-ups; states a successful encode does not prove correct pixels."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Recognizes slow screenshot/software-GPU path without claiming failure and checks duration/fps against composition, but misses detailed-region frame inspection covered in step 4 only partially; satisfies criteria 2 and 4 clearly, criterion 1 and 3 are arguably met, so the grade is borderline."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Where things stand:** The render completed in screenshot mode on Linux using a software GPU. Output files exist, but no frames have been inspected, so nothing is confirmed about their content.\n\n**Next verification steps:**\n\n1. **Inspect the frames.** Open several output images, including the first, middle, and last. A file existing doesn't mean it contains the intended scene.\n2. **Check for blank or broken output.** Look for solid black, solid white, or fully transparent frames. Check that the frame count matches what the run should produce.\n3. **Confirm the render mode.** Make sure the output came from screenshot mode, as the run reported, and that the frames aren't from an earlier run.\n4. **Account for the software GPU.** Software rendering can differ from hardware output in shading, precision, or missing features. If the results will be compared to hardware renders or shipped, plan a check on real GPU hardware.\n5. **Compare against a reference.** If you have expected frames, diff them against the new output and note any mismatches. If you don't, pick a few frames and check them by eye against what the scene should show.\n6. **Check the output metadata.** Confirm resolution, color format, and frame ordering.\n7. **Record the results.** Note which frames were inspected, what was checked, and any differences from expectations. Only call the render verified after these checks pass.",
+      "average": 0.25,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only criterion 4 is met: the response says file existence doesn't prove the intended scene. It never names the slow path, omits a duration/fps check, and doesn't direct inspection of detailed regions."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only criterion 4 is met: it says file existence doesn't confirm the intended scene. It never frames the software-GPU path as slow, doesn't verify duration or frame rate, and doesn't inspect detailed regions."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only criterion 4 is met: it says file existence doesn't prove the intended scene. It never flags the slow path, never checks duration or fps, and does not inspect detailed regions of frames."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response covers frame inspection (criterion 3 partially) and does not equate encoding with correct pixels, but never identifies the slow path, never checks duration or frame rate against the composition, and inspection lacks detailed-region focus."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 3 is met (inspect first/middle/last frames, check blank output), but the response never flags the slow path, never checks duration or frame rate against the composition, and treats encoding success loosely; only partial credit."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "The render completed in screenshot mode on a software GPU on Linux, and output exists, but no frames have been inspected yet. A successful exit only shows that the job finished, so the next steps should check the frames themselves.\n\n1. **Confirm the output is real.** List the output directory and check the file count, sizes, and timestamps. Confirm the count matches the expected number of frames. Do not treat zero-byte or missing files as success.\n\n2. **Inspect a sample of frames by eye.** Open the first, middle, and last frames, plus any that are at scene transitions. Look for blank, black, or uniformly colored images, missing geometry, or missing textures.\n\n3. **Check that the frames change over time.** If every frame is identical, the animation or camera may not be advancing. Compare frame hashes or do a quick pixel diff between consecutive frames.\n\n4. **Account for the software GPU.** Software rasterizers such as llvmpipe or SwiftShader can differ from hardware in shading precision, supported features, and some post-processing effects. If the goal is to match hardware output, note that differences may come from the renderer, not the scene. Record the renderer string from the logs so the result is reproducible.\n\n5. **Check the screenshot-mode setup.** Confirm the capture happened after the scene finished loading and drawing, not on the first empty frame. Confirm the resolution, color format, and any alpha channel match what you expect.\n\n6. **Compare against a known-good reference.** If you have a previous render or a hardware-rendered baseline, compare them with a perceptual or pixel-difference metric and review the largest differences.\n\n7. **Record the result.** Note which frames were inspected, what was checked, and any problems found. Report it as verified only for the frames you actually looked at.",
+      "average": 0.25,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets criterion 4 by stating that a successful exit does not prove correct frames. Misses criterion 1 (never names a slow path), criterion 2 (checks frame count, not duration or frame rate), and criterion 3 (no detailed-region inspection)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets criterion 4 by stating a successful exit only shows the job finished and pixels must be checked. Misses criteria 1 (slow path not named), 2 (duration and frame rate not verified), and 3 (detailed regions not inspected)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 4, which explicitly says a successful exit is not proof of correct frames. It never recognizes the slow software-render path, does not verify duration or frame rate, and does not call for inspecting detailed regions."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 4: it says a successful exit doesn't prove the frames are correct. It misses the slow-path recognition, never checks duration or frame rate, and does not inspect detailed regions."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response states the render completed and frames are uninspected, and separates successful exit from correct pixels (criterion 4), but never flags the slow path, never checks duration or frame rate against the composition, and only vaguely covers detailed-region inspection (criteria 1-3 mostly missed)."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "The render finished in screenshot mode on software GPU, which is the slow path on Linux but not a failure. The file exists, but no frames have been checked, so the output isn't verified yet. Run these steps, in order, without using the render's success as proof of the pixels.\n\n1. **Confirm the file is real.** Run `test -s out.mp4`. A non-zero exit means the file is missing or empty, so stop and check the render log.\n\n2. **Check the container and streams.** Run `ffprobe -v error -show_format -show_streams out.mp4`. Confirm that a video stream is present, the codec and pixel format are what you expect, and the audio stream (if any) is present.\n\n3. **Compare duration and fps.** Compare `format.duration` and the video stream's frame rate against the root `data-duration` in `index.html`. If the brief set an fps, check that too. A mismatch means the render or the composition timing is wrong.\n\n4. **Decode frames at known times.** Extract frames at the same timestamps you reviewed in the Studio preview, for example `ffmpeg -ss <t> -i out.mp4 -frames:v 1 frame-<t>.png`. Write them to a temporary directory you create for this check, and remove only that directory afterward.\n\n5. **Inspect the frames.** Open each frame at full resolution, not as a contact sheet. Focus on:\n   - the opening 30 seconds and any problem times reported by `check`;\n   - text edges, fine geometry, and any WebGL or canvas edges, using close-ups;\n   - sub-composition scenes, which should show their real content and not tiny unstyled elements or blank areas;\n   - black, blank, or flickering frames, and frames that show the wrong content.\n\n6. **Compare against the preview.** For each sampled time, confirm the decoded frame matches what the preview showed. Any difference means the problem is in the encode or in the preview's assumptions, so investigate before you approve.\n\n7. **Record the result.** If the frames look right, send feedback with a rating and a short, specific comment, for example `npx hyperframes feedback --rating <0-10> --comment \"<result>\"`. If anything is wrong, capture a reproduction packet first: the command, expected and actual behavior, the exact error, and whether the output completed, fell back, or failed. Do not paste absolute paths into the feedback.\n\nOnly after steps 1–6 pass should you report the render as verified. Until then, say that the file exists and is non-empty but the pixels have not been inspected.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (recognizes slow software-GPU path as not a failure), 2 (checks duration and fps against data-duration), 3 (inspects decoded frames including close-ups of text/WebGL edges), and 4 (states file existence is not verification); misses nothing clearly but detailed-region inspection is somewhat diluted by the broader checklist."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recognizes the software-GPU path as slow but not failed, checks duration and fps against data-duration, inspects close-up and detailed regions, and states that a successful encode does not verify pixels."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it calls the render slow but not failed. Criterion 2 met: it checks duration and fps against data-duration. Criterion 3 met: it extracts and inspects frames including close-ups. Criterion 4 missed: it states the file exists and is non-empty but never says outright that successful encoding does not prove correct pixels."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recognizes the slow Linux software-GPU path as not a failure, checks duration and fps against data-duration, inspects decoded frames including close-ups, and states that a successful encode does not prove correct pixels."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recognizes the slow software-GPU path as not a failure, checks duration and fps against data-duration, inspects decoded frames with close-ups of text and geometry, and states the file's existence does not verify the pixels."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The render completed and the output exists, but nothing has been checked yet. \"Completed\" only means the process finished. It does not show the frames are correct. The run used screenshot mode on Linux with a software GPU, so these are the next checks:\n\n1. **Inspect the frames.** Open a sample from the start, middle, and end of the output. Look for blank, black, or solid-color frames, missing geometry, and placeholder content.\n\n2. **Confirm the frame count and dimensions.** Check that the number of frames, their resolution, and their timestamps or indices match what the scene should produce.\n\n3. **Check for duplicate frames.** Hash the frames or compare them pixel by pixel. If many are identical, the animation or camera may not be advancing, or screenshot capture may be returning the same image.\n\n4. **Compare against a known reference.** Render a simple scene whose expected output you already know, using the same screenshot mode and software GPU. If that output is wrong, the problem is in the pipeline, not the scene.\n\n5. **Account for software rendering differences.** Software GPU output can differ from hardware output in shading, precision, anti-aliasing, and color handling. Record the renderer and driver string, and don't treat a hardware reference as ground truth without checking.\n\n6. **Verify color and gamma.** Confirm the frames are not washed out, over-bright, or channel-swapped, since screenshot pipelines sometimes change these.\n\n7. **Log the run.** Record the platform (Linux 6.1, x86_64), the screenshot mode, the software GPU renderer, the frame count, and the results of the checks above, so a later run can be compared against this one.\n\nI haven't run any of these steps, since I was asked not to use tools. The supplied facts also don't say what the scene should look like, so checks 1 and 4 will need that expected output from you. If you want me to carry them out, I can do that in a follow-up with tools enabled.",
+      "average": 0.3,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only criterion 4 is clearly met: it states that completion does not show the frames are correct. It never identifies the slow screenshot/software-GPU path, does not verify duration or frame rate, and does not name detailed-region inspection."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 3 is partly met by inspecting frames and checking for blank or duplicate frames, but it never covers detailed regions. Criterion 2 is partly met by checking frame count and dimensions, but no duration or frame-rate check against the composition. Criterion 4 is met by stating that completion does not show frames are correct. Criterion 1 is not met, because the response never names a slow path."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only criterion 4 is clearly met: it states that completion does not show the frames are correct. It never names a slow path, does not check frame rate or duration against the composition, and does not inspect detailed regions."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 4 (completion is not correctness) and arguably criterion 3 (frame inspection for geometry), but never names the slow path and does not check frame rate or duration against the composition."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 4 (completed does not mean correct pixels). It never names the slow path, omits duration and frame-rate checks, and does not inspect detailed regions."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "The render finished, but nothing about its visual content is verified yet. Next steps, none of which I've run:\n\n1. **Confirm the renderer and mode from the logs.** The run reports screenshot mode on a software GPU. Check the log for the exact GL/Vulkan renderer string (for example llvmpipe or SwiftShader) and confirm it is the backend you intended. Software rendering can differ from hardware in shading, precision, and supported features, so note this in any results.\n\n2. **Inspect the frames.** Open a sample of them, including the first, middle, and last, and check that they show the expected scene rather than black, blank, or partially drawn content.\n\n3. **Check frame coverage.** Confirm the frame count matches what the run should produce and that frames are not duplicated or missing.\n\n4. **Check for blank output programmatically.** Compute simple pixel statistics (mean, variance, unique-color count) per frame to flag all-black or constant images before reviewing them by eye.\n\n5. **Check the output format.** Confirm resolution, color format, and file naming match the spec, and that no frame is truncated or zero-byte.\n\n6. **Test determinism.** If the render should be repeatable, run it again with the same inputs and compare file hashes or pixel diffs. Software rendering is often deterministic, so differences point to a real issue such as uninitialized memory or a timing dependency.\n\n7. **Compare against a reference.** If you have a known-good render, diff against it and set a tolerance that accounts for software-versus-hardware differences.\n\n8. **Only then make claims.** Report the result as verified only after steps 2 and 4 pass on the frames themselves. Until then, the accurate status is \"render completed, output not yet inspected.\"",
+      "average": 0.2,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only criterion 4 is clearly met: the response says visual content is unverified and does not equate completion with correct pixels. It never names a slow path, omits duration and frame-rate checks, and does not inspect detailed regions of frames."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 4, clearly separating a completed render from verified pixels. It notes software rendering but never frames it as the slow path, omits duration and frame-rate checks, and does not call for inspecting detailed regions."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never recognizes a slow path, never checks duration or frame rate against the composition, and mentions frame inspection only generically without detailed regions; it does not reference encoding success versus pixel correctness explicitly, though step 8 partially approaches it. Only criterion 4 is loosely met at most, so it scores low."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 4 (verifies pixels, not encoding). Misses 1 (no slow-path recognition), 2 (no duration or frame-rate check), and 3 (no detailed-region inspection)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 4: it separates render completion from verified pixels and blocks claims until frames are inspected. It misses the slow-path recognition, duration and frame-rate checks, and detailed-region inspection."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "The render completed in screenshot mode on software GPU, which is the slow path on Linux. That tells you about speed, not whether the pixels are right. No frames have been inspected, so the output is unverified.\n\n**Next verification steps (run these yourself; I haven't run anything):**\n\n1. **Confirm the file exists and has content:**\n   ```bash\n   test -s out.mp4 && echo ok\n   ```\n\n2. **Check container and stream metadata:**\n   ```bash\n   ffprobe -v error -show_format -show_streams out.mp4\n   ```\n   Compare `format.duration` against the root `data-duration` in `index.html`. If the brief set an fps, check `r_frame_rate` as well.\n\n3. **Extract frames at known times and look at them.** Pick the times you reviewed in the Studio preview, plus the opening 30 seconds and any timestamps `check` flagged:\n   ```bash\n   mkdir -p /tmp/qc-frames\n   ffmpeg -v error -ss 0.5 -i out.mp4 -frames:v 1 /tmp/qc-frames/t0.5.png\n   ```\n   Repeat for each time. Write these to a temp directory you own, and don't put them in the project.\n\n4. **Inspect at full resolution.** Open the frames and zoom in on text edges, fine geometry, and any WebGL or canvas content. A contact sheet won't catch these reliably. Compare each frame to the same moment in the preview. Look for black frames, flicker, wrong frames, stale content, and missing elements.\n\n5. **Check sub-composition scenes if the project uses them.** Confirm each mounted scene actually shows up in the extracted frames.\n\n6. **If the frames show a problem,** capture a reproduction packet before you send feedback. The packet includes the rerunnable command (relative to the project), expected vs. actual behavior, and the exact error with paths stripped. Feedback goes to a public channel, so don't include absolute paths or identifiers.\n\n7. **Only after the frames check out,** send one feedback report with a rating and a specific comment. Don't send a rating based only on the file existing and the encode finishing.\n\nIf the frames look wrong, fix the composition, re-run `check`, and render again. A `--quality draft` render is faster for iterating, but use `looks` or `delivery` for the frames you're judging.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recognizes the slow Linux software-GPU path without calling the render failed; checks duration and frame rate against the composition; inspects decoded frames at full resolution; and states encoding success does not verify pixels."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recognizes slow software-GPU path without claiming failure (criterion 1), verifies duration and frame rate against composition (2), inspects frames at full resolution including text edges and WebGL regions (3), and explicitly states that successful encoding does not confirm correct pixels (4); the response is missing nothing rubric-relevant but its fully satisfied criteria are only those four, so it scores 1.0 by the stated rubric, but the verification of 'detailed regions' is a judgment call, so 0.75 is conservative."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recognizes the slow software-GPU path without calling the render failed, checks duration and fps against the composition, inspects full-resolution frames including text and WebGL regions, and states that a finished encode is not proof of correct pixels."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recognizes slow software-GPU path without claiming failure (met), checks duration and fps against composition (met), inspects decoded frames at full resolution including detailed regions (met), and explicitly states encoding success does not confirm correct pixels (met); the criterion-1 wording and any missed nuance keep it from full marks in a strict reading."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: flags the software-GPU screenshot path without calling it a failure, checks duration and fps against the composition, inspects full-resolution frames including detailed regions, and says encoding success does not confirm correct pixels."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": null
+    }
+   ]
+  }
+ ]
+}

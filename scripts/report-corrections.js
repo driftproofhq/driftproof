@@ -500,10 +500,19 @@ function stripRetitle(html) {
 // entry; Report 011 with its title corrected. `opts.cells` is the page's cells, from the builder that
 // knows them: Report 007's { receipt, model } list, with `opts.judgeModel` its judge, or Report 008's
 // { slug, from, baseline, receipt } list.
+// THE CHROME'S PLAIN-WORD MARKERS (spec 689). The shared chrome step writes a fenced marker over the first
+// use of each glossary word on a page, and a note this script adds may carry one. On a page that carries
+// markers, apply and strip end with the same pass the chrome runs, so the page they return is the chrome's
+// own fixed point: the note put back takes its marker, and a note taken out lets the next use take it. A
+// page without markers (one a report generator hands in before its chrome) is left as it was.
+const terms = require('./glossary-terms.js');
+const marked = (html) => String(html).includes(terms.TERM_OPEN);
+
 function applyToPage(html, n, opts = {}) {
-  if (n === RETITLE_ON) return applyRetitle(html);
-  if (!NOTE_ON.includes(n)) return html;
-  return n === LOST_DRAW_ON ? apply008(html, opts) : applyInterim(html, n, opts);
+  const out = n === RETITLE_ON ? applyRetitle(html)
+    : !NOTE_ON.includes(n) ? html
+      : n === LOST_DRAW_ON ? apply008(html, opts) : applyInterim(html, n, opts);
+  return marked(html) ? terms.applyTerms(out) : out;
 }
 
 function applyInterim(html, n, opts) {
@@ -551,7 +560,8 @@ function stripInterimLines(html, n, opts) {
   if (candidate === html) return html;
   try {
     const o = opts || (n === '007' ? cellsFor007() : n === LOST_DRAW_ON ? cellsFor008() : {});
-    return applyToPage(candidate, n, o) === html ? candidate : html;
+    if (applyToPage(candidate, n, o) !== html) return html;
+    return marked(html) ? terms.applyTerms(candidate) : candidate;
   } catch {
     return html;
   }

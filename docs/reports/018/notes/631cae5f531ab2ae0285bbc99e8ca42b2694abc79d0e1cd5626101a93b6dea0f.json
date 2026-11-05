@@ -1,0 +1,1461 @@
+{
+ "format": "driftproof-judge-notes/1",
+ "report": "018",
+ "report_url": "/reports/018/",
+ "attempt_id": "631cae5f531ab2ae0285bbc99e8ca42b2694abc79d0e1cd5626101a93b6dea0f",
+ "skill": "setup-matt-pocock-skills",
+ "repository": "mattpocock/skills",
+ "receipt_hash": "38085c42377c6d290dae20572014efe3e9700024fd3bb83ecbda9be3bda316e7",
+ "receipt_page": "/r/38085c42377c6d290dae20572014efe3e9700024fd3bb83ecbda9be3bda316e7/",
+ "receipt_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-018/campaign-3/631cae5f531ab2ae0285bbc99e8ca42b2694abc79d0e1cd5626101a93b6dea0f.json",
+ "answers_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-018/campaign-3/631cae5f531ab2ae0285bbc99e8ca42b2694abc79d0e1cd5626101a93b6dea0f-answers.json",
+ "suite_file": "https://github.com/driftproofhq/driftproof/blob/main/specs/408-skill-measurements/suites/mattpocock--skills--setup-matt-pocock-skills.json",
+ "model": "Claude Haiku 5.5",
+ "judge": "Claude Haiku 5.5",
+ "judge_samples": 5,
+ "date": "2 November 2026",
+ "arms": [
+  {
+   "key": "with_skill",
+   "label": "With the skill"
+  },
+  {
+   "key": "placebo",
+   "label": "With the fake text"
+  },
+  {
+   "key": "baseline",
+   "label": "With nothing"
+  }
+ ],
+ "caveats": [
+  "The judge uses the same model as the target. Self-grading may favor its own model's answers.",
+  "Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings.",
+  "The scores and reasons are the judge model's own words, kept exactly as it wrote them. They are a model's reading of the rubric, not Driftproof's.",
+  "This is one task of three. Each skill was given three text tasks, and one task is not the whole measurement."
+ ],
+ "tasks": [
+  {
+   "id": "local",
+   "number": 1,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A single-package project has no remote, already tracks requests as local markdown, and has no triage skill installed. Propose the engineering-skills setup choices.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/engineering/setup-matt-pocock-skills/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 f148858ffb7f63c03c06fca06e6fdb1d91a35c6b293244b8fdfacd5f4cc028c4; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Preserve or propose the existing local tracker 2. Use the single-context domain layout 3. Skip triage-label setup when triage is absent 4. Present a draft before claiming files were changed",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "Here are the proposed setup choices. I haven't written anything.\n\n**A. Issue tracker: local markdown (recommended)**\nYour project already tracks requests as local markdown and has no remote, so the local-markdown option fits. Issues would live as files under `.scratch/<feature>/`. I'd record this in `docs/agents/issue-tracker.md`. Skills like `to-tickets` and `to-spec` would read and write there.\n\n**B. Triage labels: skipped**\nThe `triage` skill isn't installed, so there are no label mappings to set up. The `docs/agents/triage-labels.md` file and the triage sub-block are omitted.\n\n**C. Domain docs: single-context (recommended)**\nThis is a single-package project, so I'd use one `GLOSSARY.md` and `docs/adr/` at the repo root. I'd write `docs/agents/domain.md` with the consumer rules, and skip the multi-context `GLOSSARY-MAP.md` layout.\n\n**Agent skills block**\nThe block would have three entries: Issue tracker (local markdown under `.scratch/`), Domain docs (single-context), and no triage entry. It goes in `CLAUDE.md` if that file exists, otherwise `AGENTS.md`. Your facts don't say which of these exists. If neither does, I'd ask you which to create rather than pick one.\n\nIf you approve these choices, I'll draft the files for your review before writing anything.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Proposes the existing local markdown tracker under .scratch/ (1), uses single-context GLOSSARY.md and docs/adr at root (2), skips triage-label setup (3), and states nothing was written with a draft-first plan (4)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (preserves local markdown tracker), 2 (single-context domain layout), and 4 (presents proposal, states nothing written and offers draft first); misses 3 because it explicitly skips triage labels but still references a triage-labels file and triage sub-block rather than cleanly omitting setup. Actually, it does skip triage setup, so all four are met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (preserves local markdown tracker), 2 (single-context domain layout), and 4 (presents draft, nothing written); misses 3 because it still describes the triage sub-block and triage-labels file as omitted rather than fully skipping triage setup."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response proposes the existing local-markdown tracker, uses the single-context GLOSSARY.md/docs/adr layout, skips triage-label setup, and states nothing was written and offers a draft for review first."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (preserves local markdown tracker), 2 (single-context domain layout), and 4 (drafts for review before writing); misses 3 because it says triage setup is skipped, which does meet that point, so actually all 4 plausibly met—but the response's explicit deferral of file creation and clear proposal aligns; scoring reflects one ambiguity on criterion 3 phrasing."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Here are the setup choices for engineering-skills, based on what you've described:\n\n1. **Tracker: local markdown.** The project already tracks requests in local markdown and has no remote, so I'd configure the skills to read and write that existing format. Don't add GitHub or other remote-tracker integration, since there's nothing to connect to.\n\n2. **Triage skill: install it, configured for local markdown.** No triage skill is installed yet. Installing one would give you a repeatable way to sort and prioritize the markdown requests. The alternative is to keep triaging by hand, which is fine for a small backlog but gets harder as it grows.\n\n3. **Scope: single package.** Configure the skills for this one package and skip any monorepo or multi-package layout.\n\n4. **Remote: defer.** If you add a remote later, you can revisit the tracker choice then. Until then, leaving it out keeps the setup simple.\n\nMy recommendation is options 1 through 3: local markdown tracker, triage skill installed and pointed at that tracker, single-package scope. I haven't checked the current files or the installed skill set, so the exact install steps depend on the skill's documentation.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (keeps local markdown tracker, no remote), 2 (single-package scope, no monorepo), and 4 (proposes without claiming file changes); misses 3 by recommending installing a triage skill when none is present."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the local-tracker criterion and proposes without claiming changes, but misses single-context domain layout (only says single package) and recommends installing a triage skill instead of skipping triage-label setup."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (keeps the local markdown tracker), 2 (single-package scope, no monorepo), and 4 (presents proposals without claiming changes); misses 3 by recommending installing a triage skill instead of skipping triage-label setup."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (keeps the existing local markdown tracker) and criterion 4 (proposes setup without claiming file changes). Misses criterion 2, since it never names the single-context domain layout, and criterion 3, since it recommends installing and configuring a triage skill instead of skipping triage setup."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (keeps the existing local markdown tracker), 2 (single-package scope), and 4 (proposes choices without claiming files changed). Misses 3: it recommends installing and configuring a triage skill rather than skipping triage setup."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Here are the setup choices I'd propose, based on the facts you gave:\n\n1. **Issue tracking: keep it local.** Requests are already tracked as local markdown, so configure any triage skill to read and write that format. Don't add an external tracker. **Recommended.**\n\n2. **Triage skill: install one, pointed at the local markdown.** None is installed yet. Install it and set its source and status fields to match your existing markdown conventions. The alternative is to skip triage and keep the current workflow as-is.\n\n3. **Remote-dependent skills: skip them.** With no git remote, PR creation, PR review, and remote-sync skills won't work. Leave them out for now and add them later if you add a remote.\n\n4. **Package scope: single-package defaults.** Since this is one package, use project-level skill settings and skip workspace or monorepo options.\n\nMy recommendation is options 1 and 3 now, plus option 2 if you want triage automated. Tell me which of these you want, and I'll set them up.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (keeps the local tracker) and criterion 4 (proposes without claiming changes). Misses criterion 2, since it never names a single-context domain layout, and criterion 3, since it proposes installing triage and configuring its fields despite no triage being installed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 by keeping the local markdown tracker and criterion 4 by claiming no file changes. Misses criterion 2, since it never proposes a single-context domain layout, and criterion 3, since it recommends installing triage and configuring its fields."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (keeps the local markdown tracker) and 4 (proposes without claiming changes). Misses 2, since it never mentions the single-context domain layout, and 3, since it proposes installing and configuring triage rather than skipping triage-label setup."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (keeps the local markdown tracker) and criterion 4 (proposes without claiming file changes). Misses criterion 2 (no single-context domain layout) and criterion 3 (recommends installing and configuring triage rather than skipping it)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it keeps the local markdown tracker. Criterion 2 missed: it never proposes a single-context domain layout, only 'project-level skill settings'. Criterion 3 missed: it proposes installing a triage skill and configuring its fields rather than skipping triage-label setup. Criterion 4 not addressed: it does not present a draft before claiming changes."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "Here are the proposed choices for the engineering-skills setup. Nothing has been written.\n\n**A. Issue tracker: local markdown (recommended)**\nThis repo has no remote and already tracks requests as local markdown, so the setup should match that. Issues would live as files under `.scratch/<feature>/`. The GitHub and GitLab options don't apply because there's no remote.\n\n**B. Triage labels: skipped**\nThe `triage` skill isn't installed, so there's no label vocabulary to configure. `docs/agents/triage-labels.md` and the Triage labels block would be omitted.\n\n**C. Domain docs: single-context (recommended)**\nA single-package project fits the default layout: one `GLOSSARY.md` and `docs/adr/` at the repo root. Multi-context would only make sense with monorepo signals, and there are none.\n\n**Files the setup would create or edit if approved:**\n- `CLAUDE.md` or `AGENTS.md`: add an `## Agent skills` block. Whichever file already exists gets edited. If neither exists, you'd choose which to create.\n- `docs/agents/issue-tracker.md`: local-markdown tracker, based on the seed template.\n- `docs/agents/domain.md`: single-context consumer rules, based on the seed template.\n\nDo you want these choices as proposed, or would you change any of them? Once you confirm, I'll draft the files for your review before writing them.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: keeps the existing local-markdown tracker, uses the single-context domain layout, skips triage-label setup, and states nothing was written and drafts will be shown before writing."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (preserves local markdown tracker), 2 (single-context layout), and 4 (presents as proposal, drafts pending approval, states nothing written); missed 3 because it says triage labels are skipped but also lists omitting a Triage labels block and docs file, which is acceptable—actually satisfied, so score 1.0 would apply; however it proposes files to create which is fine. Conservatively 0.75 given minor ambiguity."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Proposes the existing local-markdown tracker, uses the single-context domain layout, skips triage-label setup since triage is absent, and states nothing was written with a draft-first confirmation step."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Criterion 1 met: preserves the local markdown tracker. Criterion 2 met: selects single-context domain layout. Criterion 3 met: skips triage-label setup since triage is absent. Criterion 4 met: states nothing has been written and offers to draft files for review before writing."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: proposes the existing local-markdown tracker, selects single-context domain layout, skips triage-label setup, and states nothing was written and a draft will be shown first."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Here are the engineering-skills setup choices, based on what we know about this project:\n\n1. **Skip remote-dependent skills.** The project has no git remote, so skills that open PRs, sync issues, or fetch from a hosted tracker won't work. I'd leave them out, and add them later if a remote is configured.\n\n2. **Point triage at the local markdown tracker.** Requests are already tracked as local markdown, so I'd have any triage skill read and write that format instead of introducing a new tracker. This keeps one source of truth.\n\n3. **Install a triage skill, or not.** None is installed. I'd install one only if you want automated categorization or prioritization of the markdown requests. If you triage by hand, skipping it is fine.\n\n4. **Scope to a single package.** The project is one package, so I'd configure skills at the project level with no per-package or workspace scoping.\n\nMy recommendation: install no remote-dependent skills, wire any triage skill to the local markdown files, and skip the triage skill if manual triage works for you. Tell me which of these you want, and I'll set it up.",
+      "average": 0.55,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 by proposing the existing local markdown tracker and criterion 4 by not claiming changes. Misses criterion 2, since it never mentions a single-context domain layout, and criterion 3, since it never addresses triage-label setup."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (keeps the local markdown tracker) and criterion 4 (proposes without claiming changes). Misses criterion 2 (no single-context domain layout) and criterion 3 (no explicit skip of triage-label setup)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (keeps the existing local markdown tracker) and criterion 4 (proposes without claiming changes). Misses criterion 2, since it never names a single-context domain layout, and is unclear on criterion 3, since it still offers to install a triage skill rather than skipping triage setup."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (keeps the local markdown tracker) and 4 (proposes without claiming changes); misses 2 (no single-context domain layout mentioned) and only loosely meets 3 by implication, not explicitly."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (preserves the local markdown tracker), 3 (skips triage setup when triage is absent), and 4 (proposes choices without claiming changes). Misses 2: it never mentions the single-context domain layout."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I'd set up engineering-skills like this, based only on the facts you gave me. I haven't checked the repo or installed anything.\n\n**Recommended choices**\n\n1. **Issue tracker: local markdown.** The project already tracks requests as markdown, so point the skills at that existing location and format rather than introducing a new tracker. Keep the current file layout and naming.\n\n2. **Triage skill: install it, configured for local markdown.** There's no triage skill yet. Set it to read and write the existing markdown requests and skip any remote or hosted tracker integration.\n\n3. **Remote-dependent features: skip.** With no git remote, leave out anything that depends on one: PR creation, remote branch sync, and hosted issue lookups. Use local branches and commits against `main`.\n\n4. **Scope: single package.** Configure the skills for one package root with no workspace or monorepo handling. This keeps paths and test commands simple.\n\n5. **Git: local-only workflow.** Work on feature branches off `main` and merge locally. If you add a remote later, revisit the skills that depend on one.\n\n**Decisions for you**\n\n- Do you want the triage skill to edit the existing markdown request files in place, or write a separate triage log? I'd edit in place, since that matches how requests are tracked now.\n- Should the setup be project-scoped (committed to the repo) or user-scoped? I'd go project-scoped so the configuration travels with the code.\n\nIf you confirm these, the next step is to install the triage skill and point it at the markdown request location.",
+      "average": 0.45,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (keeps the existing local markdown tracker) and criterion 4 (proposes choices as a draft without claiming changes). Misses criterion 2 (no single-context domain layout) and criterion 3 (recommends installing triage rather than skipping triage-label setup)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: proposes keeping existing local markdown tracker. Criterion 3 met: skips triage setup wording aside, but it recommends installing a triage skill, so 3 is missed. Criterion 2 (single-context domain layout) is only loosely addressed as single package, not domain layout. Criterion 4 not met: it does not present a draft before claiming changes."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the local-tracker criterion and the no-claimed-changes/draft criterion, but never addresses a single-context domain layout and proposes installing and configuring a triage skill, not skipping it."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (keeps the existing local markdown tracker) and criterion 4 (presents a draft and says nothing was installed). Misses criterion 2, since it never names a single-context domain layout, and criterion 3, since it proposes installing a triage skill rather than skipping triage setup."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 is met: it preserves the existing local markdown tracker. Criterion 2 is missed: it never proposes a single-context domain layout. Criterion 3 is missed: it installs and configures a triage skill rather than skipping triage-label setup. Criterion 4 is missed: it does not present a draft before claiming changes."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "Here are the proposed setup choices. I haven't checked the repo, so I'm working only from the facts you gave me.\n\n**A. Issue tracker: local markdown (recommended)**\n- Issues will live as files under `.scratch/<feature>/` in this repo.\n- The repo has no remote, so GitHub and GitLab don't apply.\n- This matches how you already track requests.\n- The choice goes in `docs/agents/issue-tracker.md`.\n\n**B. Triage labels: skip**\n- The `triage` skill isn't installed, so no label vocabulary is needed.\n- I won't write `docs/agents/triage-labels.md` or add a triage sub-block to the agent-skills section.\n\n**C. Domain docs: single-context (recommended)**\n- Use one `GLOSSARY.md` and `docs/adr/` at the repo root.\n- A single-package project has no monorepo signals, so multi-context doesn't apply.\n- The layout goes in `docs/agents/domain.md`.\n\n**Where the agent-skills block goes**\n- I'd edit `CLAUDE.md` if it exists, otherwise `AGENTS.md`. I haven't confirmed which file is present.\n- If neither exists, I'd ask you which one to create rather than choosing for you.\n\nIf you accept these three choices, I'll draft the files for your review before writing anything.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Proposes the existing local markdown tracker, uses the single-context GLOSSARY/ADR layout, skips triage-label setup, and offers to draft files for review before writing anything."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Proposes keeping the local markdown tracker (A), uses the single-context GLOSSARY/ADR layout (C), skips triage-label setup (B), and offers a draft for review before any writes without claiming changes."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Proposes the existing local markdown tracker, single-context GLOSSARY/ADR layout, skips triage labels, and drafts files for review before writing anything. All four criteria are met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Proposes keeping the local markdown tracker, uses the single-context GLOSSARY/ADR layout, skips triage-label setup, and offers a draft for review before writing files, meeting all four rubric points."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four criteria: proposes the existing local markdown tracker, uses the single-context GLOSSARY/ADR layout, skips triage-label setup, and offers a draft for review before writing any files."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Based on the facts you gave, here are the setup choices I'd make for engineering skills. I haven't checked the repo, so these rest only on your description.\n\n1. **Install a triage skill.** None is installed yet, and requests are already tracked as local markdown files. I'd add a triage skill that reads and updates those files directly, rather than one built for a hosted issue tracker.\n\n2. **Skip remote-dependent skills.** With no remote, skills that open pull requests, fetch issues, or post comments won't work. I'd leave those out for now and add them if you later add a remote.\n\n3. **Scope skills to the single package.** Since this is one package, I'd install skills at the project level (for example, `.claude/skills/` in the repo) instead of configuring per-package or per-workspace.\n\n4. **Pick a triage vocabulary that matches the markdown.** Decide on the statuses and priorities the triage skill should write (for example, `new`, `ready`, `in-progress`, `done`) and match the existing file format so the skill doesn't need to reformat files.\n\n5. **Keep skill files in the repo.** I'd commit the skill definitions so the setup travels with the code, unless you want personal skills kept user-global.\n\nIf you confirm these, the next step is installing the triage skill and pointing it at your existing markdown request folder.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (keeps the local markdown tracker) and 4 (presents a proposal without claiming changes). Misses 2, since it never names a single-context domain layout, and 3, since it proposes a triage skill and status vocabulary even though triage is absent."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (keeps the local markdown tracker) and criterion 4 (presents a proposal and asks for confirmation before changing anything). Misses criterion 2, which needs a single-context domain layout, and criterion 3, since it proposes installing a triage skill and vocabulary rather than skipping triage setup."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (keeps the local markdown tracker) and criterion 4 (proposes without claiming changes). Misses criterion 2 (no single-context domain layout) and criterion 3 (proposes installing triage and a triage vocabulary despite triage being absent)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (keeps the local markdown tracker) and 4 (proposes without claiming changes). Missed criterion 2 (no single-context domain layout) and criterion 3, since it proposes a triage skill and status vocabulary despite no triage being installed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 by proposing to keep the local markdown tracker and criterion 4 by presenting choices for confirmation without claiming changes. Misses criterion 2, since no single-context domain layout is proposed, and criterion 3, since it recommends installing and configuring a triage skill instead of skipping it."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Here are the setup choices I'd propose, based on the facts you gave:\n\n1. **Remote-dependent skills: skip or stub.** With no remote, skills that open PRs, read issues, or post comments won't work. Options:\n   - Skip them for now (my recommendation). Add them later if you add a remote.\n   - Keep them installed but configure them for local-only use.\n\n2. **Request tracking: keep the local markdown tracker.** Requests are already tracked as local markdown, so I'd point the engineering skills at that location rather than adding an external tracker integration. Choose a file or directory and a status convention (for example, a status field in each file's frontmatter).\n\n3. **Triage: install, write, or skip.** No triage skill is installed. Options:\n   - Install an existing triage skill and point it at the markdown tracker.\n   - Write a small local one that sorts new markdown requests by status and priority.\n   - Skip triage until the request volume justifies it (my recommendation if volume is low).\n\n4. **Project scope: single package, so no workspace scoping.** Install skills at the project level and skip per-package or monorepo configuration.\n\nMy recommended setup is: skip remote-dependent skills, use the existing markdown tracker, and defer triage. That gets the engineering skills working with the least configuration. Tell me which options you want, and I'll make the changes.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: keeps the existing local markdown tracker, skips triage by default, and presents proposals without claiming changes. Missed: never proposes the single-context domain layout (e.g., CONTEXT.md/ADR docs), offering only project-level install."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the local-tracker point and does not claim changes were made; misses the single-context domain layout (it only discusses single-package scope) and only partly meets skipping triage setup, since it also offers writing a triage skill."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (keeps the local markdown tracker), 3 (recommends deferring triage rather than setting up labels) and 4 (proposes choices and claims no files changed); misses 2 because it never mentions the single-context domain layout."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (keeps the local markdown tracker), 3 (recommends deferring triage rather than configuring labels), and 4 (proposes choices and claims no files changed); misses 2, since it never proposes a single-context domain layout such as a root CONTEXT.md."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 met: it keeps the existing local markdown tracker. Criterion 3 met: it defers triage setup when triage is absent. Criterion 2 is not addressed, since no single-context domain layout is proposed. Criterion 4 missed: it asks which options to apply and makes no draft-before-change framing about files."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "Here's the proposed setup, based only on the facts you gave me. I haven't read the repo, so I don't know whether `CLAUDE.md` or `AGENTS.md` exists yet.\n\n**Section A: Issue tracker (recommended: local markdown)**\n- The project has no git remote, so GitHub and GitLab don't apply.\n- It already tracks requests as local markdown, so this matches current practice.\n- Proposed setup: issues live as files under `.scratch/<feature>/`, recorded in `docs/agents/issue-tracker.md` from the local-markdown template.\n\n**Section B: Triage labels (skipped)**\n- The `triage` skill isn't installed, so no label vocabulary is needed and `docs/agents/triage-labels.md` won't be written.\n\n**Section C: Domain docs (recommended: single-context)**\n- A single-package project with no monorepo signals fits the single-context layout.\n- Proposed setup: one `GLOSSARY.md` and `docs/adr/` at the repo root, with the consumer rules in `docs/agents/domain.md`.\n\n**File to edit**\n- Once I know whether `CLAUDE.md` or `AGENTS.md` exists, I'll add the `## Agent skills` block to whichever one is there. If neither exists, I'll ask which to create.\n\nShould I write these files with these choices, or do you want to change any of them first?",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (preserves local markdown tracker), 2 (single-context layout), and 3 (skips triage-label setup); criterion 4 is partly met since it presents choices and asks before writing, but it does not explicitly present a draft of file contents before claiming changes, so 0.75 is awarded."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Proposes the existing local markdown tracker, uses the single-context GLOSSARY/ADR layout, skips triage-label setup, and presents the plan for confirmation without claiming any files were changed."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four: proposes the existing local-markdown tracker, uses the single-context GLOSSARY.md/docs/adr layout, skips triage-label setup, and asks for approval before writing files."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Keeps the existing local-markdown tracker, uses the single-context domain layout, skips triage-label setup, and presents the plan for approval without claiming any files were changed."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Keeps the existing local-markdown tracker, uses the single-context domain layout, skips triage-label setup, and asks for confirmation before writing any files, meeting all four criteria."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Since this is a single-package project with no remote, the setup choices are mostly local:\n\n1. **Issue tracker:** Keep the existing local markdown tracking. A remote-based tracker would need a remote, and there isn't one, so I'd skip it.\n2. **Triage skill:** None is installed yet. Installing one would give you a consistent way to categorize and prioritize the local markdown requests. Without it, triage stays manual.\n3. **Triage conventions:** If you install the skill, choose the labels or states it uses (for example, something like needs-info, ready, and done) and match them to how the existing markdown files are organized, so nothing has to be re-labeled.\n4. **Where triage notes live:** Either in each request's markdown file or in one index file. A single index is easier to scan, and per-file notes keep each request self-contained.\n\nMy recommendation is to keep the markdown tracker, install the triage skill, and use one index file with a short fixed set of states. Let me know which of these you want, and I can set them up.",
+      "average": 0.4,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 by keeping the local markdown tracker and criterion 4 by claiming no file changes and offering setup. Misses criterion 2, since no single-context domain layout is proposed, and criterion 3, since it recommends installing triage and proposing labels when triage is absent."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it keeps the existing local markdown tracker. Criterion 3 is missed: it proposes triage labels (needs-info, ready, done) even though triage is absent. Criterion 2 is not addressed, since the single-context domain layout is never mentioned. Criterion 4 is met: it proposes setup choices and asks for approval before making any changes."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 1 by keeping the existing local markdown tracker. It omits the single-context domain layout, proposes triage labels and states despite no triage skill, and presents no draft before offering setup."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 is met: it keeps the existing local markdown tracker. Criteria 2 and 4 are missed: it never mentions a single-context domain layout and offers no explicit draft before changes. Criterion 3 is missed: it proposes triage labels such as needs-info, ready, and done even though no triage skill is installed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 by keeping the local markdown tracker and criterion 4 by proposing rather than claiming changes; misses criterion 2 (no single-context domain layout) and criterion 3 (proposes triage labels and states despite no triage skill)."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Here are the setup choices for engineering skills, given that this is a single-package project with no git remote, requests already tracked as local markdown, and no triage skill installed.\n\n**1. Install the triage skill (recommended)**\n- Install it now, since nothing triage-related exists yet. Without it, the markdown requests will keep accumulating without a consistent state model.\n- Alternative: skip it and triage by hand. This is fine if request volume is low.\n\n**2. Issue tracker adapter: local markdown (recommended)**\n- Configure the skill to read and write the existing local markdown requests instead of a remote tracker. Since there's no remote, a hosted tracker adapter isn't applicable.\n- Choose where the files live. Keeping the existing location avoids migration. If there's no established location, `docs/requests/` is a reasonable default.\n- Alternative: move requests to a new format with stricter structure. I wouldn't do this unless the current files are hard to parse.\n\n**3. Triage states and labels**\n- Store state in YAML frontmatter, such as `status: new | ready | in-progress | blocked | done` and an optional `category: bug | feature | chore`. This keeps the markdown readable and lets the skill filter without a database.\n- Decide whether existing requests get backfilled with frontmatter or are treated as `status: unknown` until reviewed.\n\n**4. Remote-dependent features: skip**\n- Skip PR linking and remote issue sync, since there's no remote. Revisit if a remote is added later.\n\n**5. Project context**\n- Add a short note to the agent instructions file that points to the request directory and the status vocabulary. This lets future sessions find the tracker without rediscovering it.\n\n**Decisions I'd make if you don't object:** install the triage skill, use the existing local markdown location with frontmatter status, backfill existing files as `status: unknown`, and skip remote features.\n\nTell me which options you want. I haven't changed anything, and I haven't run any tools.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (preserves existing local markdown tracker) and criterion 4 (presents a draft and states nothing was changed). Missed criterion 2 (no single-context domain layout) and criterion 3 (proposes triage states and install despite no triage skill)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (keeps the existing local markdown tracker) and criterion 4 (proposes options and says nothing was changed). Misses criterion 2 (no single-context domain layout) and criterion 3 (it recommends triage setup and state labels despite no triage skill)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (preserves existing local markdown tracker) and criterion 3 (skips triage-label setup is not met since it recommends installing triage; criterion 3 missed). Criterion 2 (single-context domain layout) not addressed; criterion 4 (present draft before changing files) is satisfied by stating nothing was changed and asking for choices."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (preserves the existing local markdown tracker) and criterion 4 (presents proposals and states nothing was changed). Missed criterion 2 (no single-context domain layout) and criterion 3 (recommends installing triage and defining triage states despite no triage skill)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it preserves the existing local markdown tracker. Criterion 3 met: it proposes installing the triage skill and does not set up triage labels, though it adds a status vocabulary. Criterion 2 missed: it never proposes a single-context domain layout. Criterion 4 met: it presents decisions as proposals and states nothing was changed."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": {
+      "answer": "Here are the setup choices for the engineering skills, based on what you've told me.\n\n**1. Issue tracker: local markdown (recommended)**\nThere's no git remote, and you already track requests as local markdown, so GitHub and GitLab don't apply. I'd record local markdown in `docs/agents/issue-tracker.md` and point it at your existing request location. If you already keep requests under `.scratch/<feature>/`, that's the default. If you use a different folder, I'll use that instead.\n\n**2. Triage labels: skip**\nThe `triage` skill isn't installed, so there's no label vocabulary to configure and no `docs/agents/triage-labels.md` to write.\n\n**3. Domain docs: single-context (recommended)**\nThis is a single-package project, so I'd use one `GLOSSARY.md` and `docs/adr/` at the repo root, with `docs/agents/domain.md` describing that layout. Multi-context only applies to monorepos, so I wouldn't offer it.\n\n**Where the config block goes**\nThe `## Agent skills` block goes in `CLAUDE.md` if it exists, otherwise in `AGENTS.md`. Which file exists isn't in the facts you gave me, so tell me which one the repo uses. If neither exists, tell me which one to create.\n\nOnce you confirm these three choices and the file, the setup writes `docs/agents/issue-tracker.md` and `docs/agents/domain.md` and adds the block to that file.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: proposes the existing local markdown tracker, uses single-context layout, and skips triage labels. Criterion 4 is only partly met: it claims no files were changed but shows no actual draft content."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (proposes local markdown tracker), 2 (single-context layout), and 3 (skips triage labels). Misses 4: it never claims files were changed, but it proposes choices without drafting the actual file contents."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1–3: proposes the existing local markdown tracker, uses the single-context layout, and skips triage labels. Misses criterion 4 because it never shows draft file contents before setup, though it doesn't claim files were changed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1–3: proposes the existing local markdown tracker, single-context layout, and skips triage labels. Criterion 4 is only partly met: it claims no changes were made and asks for confirmation, but it shows no draft file content."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (preserves local markdown tracker), 2 (single-context layout), and 3 (skips triage labels). Misses 4: it asks for confirmation rather than presenting a draft, though it does not falsely claim files changed."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Since the project has no remote and tracks work in local markdown, I'd set up `engineering-skills` with these choices:\n\n1. **Issue tracker: local markdown.** Point the skills at the existing markdown request files. Don't configure GitHub or any other remote tracker, since there's no remote to sync with.\n\n2. **Triage skill: install it.** It isn't installed yet, and it would work against the local markdown tracker. If you'd rather triage by hand, skip it and keep the other skills.\n\n3. **Scope: single package.** Configure skills at the project root only. No per-package or workspace settings are needed.\n\n4. **Version control: local git only.** Skills that open PRs or read remote branches should be disabled or left unconfigured. Commits and branch work stay local.\n\nMy recommendation is local markdown tracking, the triage skill installed, and remote-dependent skills turned off. Tell me if you want a different tracker or a different skill set and I'll adjust the plan.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (preserves local markdown tracker); criterion 2 missed (no single-context domain layout mentioned, only root-scope); criterion 3 missed (proposes installing triage skill despite it being absent); criterion 4 missed (no draft-before-changes statement)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (keeps the existing local markdown tracker) and criterion 4 (proposes a plan without claiming changes). Misses criterion 2, since it never names the single-context domain layout, and criterion 3, since it recommends installing the triage skill and its labels rather than skipping that setup."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the local-tracker and no-claimed-changes criteria, but misses the single-context domain layout by not naming it and recommends installing triage instead of skipping triage-label setup."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it preserves the existing local markdown tracker. Criterion 3 met: it installs triage, not skipping it, so the triage-label skip is not applied. Criterion 2 is not explicitly stated as single-context domain layout (only root-level scope), and criterion 4 is missed because it does not present a draft before claiming changes."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 by proposing the existing local markdown tracker and criterion 4 by presenting a plan without claiming changes. Misses criterion 2, since it never names a single-context domain layout, and criterion 3, since it recommends installing triage despite triage being absent."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Here are the engineering-skills setup choices, based on what's known about this project:\n\n1. **Skip remote-dependent skills for now.** There's no git remote, so PR-oriented skills won't have anything to act on. Revisit once a remote exists.\n\n2. **Use the local markdown request files as the tracker.** Since requests are already tracked locally, configure skills to read and write those files rather than adding an external issue-tracker integration.\n\n3. **Install a triage skill, or write a small local one.** None is installed. Options:\n   - Install a general triage skill and point it at the local markdown files.\n   - Write a minimal project-specific triage skill that reads the request files and sorts them by status and priority. This is simpler, and it matches the existing workflow.\n\n4. **Keep skills at the root scope.** This is a single package, so there's no need for per-package or workspace-scoped skills.\n\n5. **Enable local review.** The no-argument `/code-review ultra` form bundles the local branch and doesn't need a GitHub remote. It's user-triggered and billed, so run it only when you want it. The repo is already initialized, so no `git init` is needed.\n\nMy recommendation is options 1, 2, and 4 now, and option 3 as a small local skill. That avoids installing tooling the project can't use yet. Tell me which of these you want and I'll set them up.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (preserves local markdown tracker) and criterion 3 (skips triage setup via local skill option, though it proposes installing one); misses criterion 2 (no single-context domain layout mentioned explicitly, only root scope) and criterion 4 (no draft presented before changes; it offers to set up instead)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (keeps the local markdown tracker), 2 (root single-package scope), and 4 (proposes without claiming changes); misses 3 by recommending triage skill setup rather than skipping triage-label setup."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (keeps the local markdown tracker) and criterion 4 (proposes setup without claiming changes). Misses criterion 2, since it never names a single-context domain layout, and criterion 3, since it proposes installing or writing a triage skill rather than skipping triage setup."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets local-tracker preservation, root/single-package layout, and presenting proposals without claiming changes; misses skipping triage setup, instead proposing to install or write a triage skill."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (local markdown tracker preserved), 2 (root-scope single-package layout), and 4 (proposal only, no changed-files claim); missed 3, since it recommends writing a triage skill rather than skipping triage setup."
+       }
+      ]
+     }
+    },
+    {
+     "try": 6,
+     "with_skill": {
+      "answer": "Here are the setup choices for the engineering skills, based on the facts you gave.\n\n**A. Issue tracker: local markdown (recommended)**\n- The repo has no remote, so GitHub and GitLab don't apply.\n- You already track requests as local markdown, so this matches your current practice.\n- Issues would live as files under `.scratch/<feature>/`, and the skills would read and write there.\n- `docs/agents/issue-tracker.md` would record this choice.\n\n**B. Triage labels: skipped**\n- The `triage` skill isn't installed, so no label vocabulary is needed. No `docs/agents/triage-labels.md` is written, and no triage block goes in the agent config file.\n\n**C. Domain docs: single-context (recommended)**\n- You have a single-package project, so the layout is one `GLOSSARY.md` and `docs/adr/` at the repo root.\n- Multi-context isn't offered because there are no monorepo signals.\n- `docs/agents/domain.md` would record this layout.\n\n**Agent config file**\n- I don't know whether `CLAUDE.md` or `AGENTS.md` exists in the repo. If one exists, I'd edit it. If neither does, I'd ask which to create rather than pick one.\n- The `## Agent skills` block would contain the issue tracker and domain docs sections, with no triage section.\n\n**Pending items**\n- No labels need creating, since local markdown has no label system and triage is skipped.\n- The \"PRs as a request surface\" flag applies only to GitHub and GitLab, so it doesn't come up here.\n\nDo you want to go with local markdown and single-context? If so, tell me which config file exists, or whether to create one, and I'll draft the files for your review before writing anything.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: keeps the existing local markdown tracker, uses single-context layout, skips triage labels, and offers a draft for review before writing any files."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Proposes the existing local markdown tracker, uses single-context domain layout, skips triage-label setup, and offers a draft for review before writing anything, claiming no files were changed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (preserves local markdown tracker), 2 (single-context domain layout), and 3 (skips triage labels); criterion 4 is met too, since it presents a proposal and asks for confirmation before writing files. Scoring 1.0 would require all four, so 0.75 reflects a miscount: all four are satisfied, making the score 1.0."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Proposes the existing local markdown tracker, uses the single-context domain layout, skips triage-label setup, and offers to draft files for review before writing anything. All four rubric points are met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: proposes the existing local markdown tracker, uses the single-context domain layout, skips triage-label setup, and offers a draft for review before writing any files."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Here's a proposed setup for engineering-skills, based only on the facts you gave me. I haven't changed anything.\n\n**Facts this rests on**\n- Single-package project\n- No git remote\n- Requests are already tracked as local markdown files\n- No triage skill installed\n\n**Proposed choices**\n\n1. **Install the triage skill, scoped to this project.** Project scope keeps it with the repo. A user-level install would apply it to every project, which you don't need yet.\n\n2. **Point triage at the local markdown requests, not a remote tracker.** With no remote, anything that syncs to GitHub or another service would have nothing to sync to. The skill should read and update the existing markdown files directly.\n\n3. **Adopt your current request format rather than inventing a new one.** The skill should match whatever fields and status conventions the markdown files already use. If they have none, I'd suggest a minimal set such as status (new, triaged, in-progress, done) and a one-line priority.\n\n4. **Skip remote-dependent steps.** No PR creation, issue linking, or remote label sync. Those would fail or do nothing without a remote.\n\n5. **Consider an initial commit first.** The repo shows no commits. Committing the current state gives the skill and its config a clean baseline and makes later changes easy to review.\n\n**Decisions I need from you**\n- Should the skill be installed project-wide or user-wide?\n- Where do the request markdown files live, and what format do they use?\n- Do you want an initial commit before setup?\n\nOnce you answer these, I can carry out the setup.",
+      "average": 0.45,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 is met: it preserves the local markdown tracker. Criterion 2 is missed: it never proposes a single-context domain layout. Criterion 3 is missed: it installs the triage skill rather than skipping triage-label setup. Criterion 4 is met: it says it changed nothing and presents a proposal."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it preserves the existing local markdown tracker rather than a remote. Criterion 4 met: it presents proposals and states nothing was changed. Criterion 2 missed: no single-context domain layout is mentioned. Criterion 3 missed: it proposes installing the triage skill and defining triage fields rather than skipping triage-label setup."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (keeps the local markdown tracker) and criterion 4 (states nothing changed and presents a proposal). Misses criterion 2, which needs a single-context domain layout, and criterion 3, since it proposes installing the triage skill rather than skipping triage setup."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the local-tracker and draft-before-change criteria, but omits the single-context domain layout and does not explicitly skip triage-label setup while still proposing a triage skill install."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (builds on the existing local markdown tracker) and 4 (states nothing was changed and presents a draft). Misses criterion 2 (no single-context domain layout proposed) and criterion 3 (recommends installing triage rather than skipping triage-label setup)."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Here are the engineering-skills setup choices, based on what's known: a single-package project, no git remote, requests already tracked as local markdown, and no triage skill installed.\n\n**1. Install a triage skill, or not?**\n- **Recommended: install one configured for local markdown.** The project already tracks requests in markdown, so the skill can read and update those files without a remote. This adds a consistent triage workflow (labeling, prioritizing, status) on top of the existing practice.\n- **Alternative: skip it.** The current markdown tracking may be enough for a single-package project. You'd avoid another tool to maintain.\n\n**2. Which tracker backend should the skill use?**\n- **Local markdown only** (matches current setup, no remote needed).\n- **Remote-backed tracker** (for example GitHub Issues). This requires adding a remote first, so it's only relevant if you plan to push the repo.\n\n**3. Where should the markdown requests live?**\n- Keep the existing location and format, and have the skill adapt to it. This avoids migrating files.\n- Or standardize on one directory and template, so the skill's parsing is predictable. This is a small one-time cleanup.\n\n**4. Scope of the skill setup**\n- **Project-level** (checked into the repo, shared with anyone working on it).\n- **User-level** (only on your machine, nothing added to the project).\n\nMy recommendation is option 1 with local markdown, keeping the existing file location and format, and installed at project level so the workflow stays with the repo. Revisit the remote-backed option only if you later add a git remote.",
+      "average": 0.3,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 is met: it preserves the local markdown tracker. Criterion 2 is missed because it never mentions a single-context domain layout. Criterion 3 is missed because it recommends installing a triage skill rather than skipping triage-label setup. Criterion 4 is missed because it presents no draft before changes."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 met: it preserves the local markdown tracker. Criterion 2 missed: it never mentions a single-context domain layout. Criterion 3 missed: it proposes installing a triage skill and labeling setup rather than skipping it. Criterion 4 missed: it presents no file draft."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 is met by preserving the local markdown tracker; criterion 2 (single-context domain layout) is not addressed; criterion 3 is not clearly met since it recommends installing a triage skill despite triage being absent; criterion 4 (draft before claiming file changes) is not addressed."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 is met (preserves existing local markdown tracker). Criterion 2 is missed: no single-context domain layout is mentioned. Criterion 3 is missed: it recommends installing a triage skill rather than skipping triage-label setup. Criterion 4 is missed: it gives no draft and claims no file changes."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (keeps local markdown tracker) and criterion 4 (no false file-change claims). Misses criterion 2, which never mentions the single-context layout, and criterion 3, since it recommends installing a triage skill with labeling."
+       }
+      ]
+     }
+    },
+    {
+     "try": 7,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "I can't verify the repository's state from here, since I'm not running tools in this turn. Going only on the facts you gave:\n\n**Facts**\n- Single-package project\n- No git remote\n- Tracks requests as local markdown files\n- No triage skill installed\n\n**Proposed engineering-skills setup choices**\n\n1. **Triage skill: install or skip.** Since requests are already tracked as local markdown, I'd skip a triage skill for now. Adding one would create a second tracker, unless you want it to read and label those markdown files.\n\n2. **Triage source: keep local markdown.** I'd keep the existing markdown files as the single source of truth and point any skill at that directory, rather than moving items to an issue tracker. Without a remote, an external tracker adds setup with no sync target.\n\n3. **Remote: defer.** Without a remote, PR-based skills (review, merge flows) won't work. I'd leave that until you add a remote, then configure them.\n\n4. **Scope: single-package defaults.** Skills should target the one package root and skip monorepo-style workspace handling.\n\nIf you want, I can set these up once you confirm. Tell me which of these you'd like changed, or whether you want a triage skill anyway.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (keeps local markdown as the source of truth), 3 (skips the triage skill), and 4 (proposes choices without claiming changes). Misses 2, since it never names a single-context domain layout and only mentions a single package root."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (keeps the local markdown tracker), 3 (skips triage setup since triage is absent), and 4 (proposes and asks for confirmation without claiming changes); misses 2, since it never names the single-context domain layout."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (keeps the local markdown tracker as source of truth), 3 (skips the triage skill), and 4 (proposes setup and claims no file changes); misses 2, since it never proposes a single-context domain layout and only mentions single-package defaults."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (preserves local markdown tracker as source of truth) and criterion 3 (skips triage setup since triage is absent); missed criterion 2 (no single-context domain layout proposed, only 'single-package defaults') and criterion 4 (no draft presented before file changes; it offers to set up after confirmation, but no draft shown)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (keeps local markdown as source of truth), 3 (skips triage setup), and 4 (proposes without claiming changes); misses 2, since it never mentions the single-context domain layout."
+       }
+      ]
+     }
+    },
+    {
+     "try": 8,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "Here are the setup choices I'd propose, given that this is a single-package project with no remote, requests already tracked as local markdown, and no triage skill installed.\n\n1. **Triage skill: install it, pointed at the local markdown requests.** Since requests already live as markdown files, triage can work on them directly without any external tracker. Recommended: install it and have it read and update those files in place.\n\n2. **Skip remote-dependent skills.** With no remote, PR creation, PR review, and issue-sync skills would have nothing to act on. Recommended: leave them out now and add them only if you add a remote later.\n\n3. **Scope the skills to one package.** No workspace or monorepo layout is needed. Recommended: install skills at the project level rather than configuring per-package or multi-package routing.\n\n4. **Keep the git workflow local.** Recommended: use local branches and merge into `main` locally, with no push step.\n\nTwo things to confirm before setup:\n- The git status reports the current branch as `HEAD` (possibly detached) with no recent commits. You may want to check out `main` or make an initial commit before the skills start relying on branch state.\n- I don't know the exact directory where the markdown requests are kept. The triage skill's configuration needs that path.\n\nIf you confirm these four choices and the request directory, I can set up the rest.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (keeps the local markdown tracker) and criterion 4 (proposes without claiming changes). Misses criterion 2, which never names a single-context domain layout, and criterion 3, which recommends installing triage instead of skipping triage-label setup."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (keeps requests as local markdown) and 4 (proposes choices without claiming changes). Misses criterion 2 (no single-context domain layout) and criterion 3 (recommends installing triage instead of skipping it)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (preserves local markdown tracker) and 4 (proposes without claiming changes). Misses 2 (never names the single-context layout) and 3 (recommends installing triage instead of skipping triage-label setup)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: it preserves the local markdown tracker. Criterion 2 missed: it never proposes a single-context domain layout. Criterion 3 met: it says to skip remote-dependent skills and does not set up triage labels. Criterion 4 missed: it claims no files were changed but never presents a draft first."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (keeps the local markdown tracker) and criterion 4 (proposes choices without claiming changes). Misses criterion 3 by recommending installing the triage skill, and does not name the single-context domain layout for criterion 2."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "labels",
+   "number": 2,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. The installed triage workflow uses bug:triage and bug:ready. A maintainer wants to retain those labels. Explain how to configure the canonical roles without creating duplicate labels.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/engineering/setup-matt-pocock-skills/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 f148858ffb7f63c03c06fca06e6fdb1d91a35c6b293244b8fdfacd5f4cc028c4; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Map existing labels to canonical roles 2. Ask about unmapped roles rather than inventing a full mapping 3. Preserve existing label strings 4. Do not create duplicate default labels",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "To keep `bug:triage` and `bug:ready` without creating duplicates, map those two existing labels onto the canonical roles in the triage label config instead of accepting the defaults.\n\n**Mapping**\n\n| Canonical role | Label to use |\n|---|---|\n| `needs-triage` | `bug:triage` |\n| `ready-for-agent` | `bug:ready` |\n| `needs-info` | *not supplied* |\n| `ready-for-human` | *not supplied* |\n| `wontfix` | *not supplied* |\n\nThe triage skill applies the mapped names to issues, so it never introduces `needs-triage` or `ready-for-agent` alongside them.\n\n**Steps**\n\n1. **Answer \"no\" to the default-labels question.** The default is the five role names, so keeping them would add a second set of labels next to the existing ones.\n2. **Supply the three unmapped roles.** Give the existing label for each role the tracker already uses, such as `bug:needs-info` or `wontfix`. If the tracker has no equivalent, the setup would create a new label under the default name. That is not a duplicate, but the maintainer should confirm it is wanted before it is created.\n3. **Check the tracker's current labels first.** Confirm that every name you map to already exists. Only labels the tracker lacks should be created.\n4. **Write `docs/agents/triage-labels.md`** with the mapping, for example:\n   ```markdown\n   # Triage labels\n\n   | Role | Label |\n   |---|---|\n   | needs-triage | bug:triage |\n   | needs-info | <existing label> |\n   | ready-for-agent | bug:ready |\n   | ready-for-human | <existing label> |\n   | wontfix | <existing label> |\n   ```\n5. **Add a summary to the `### Triage labels` block** in `CLAUDE.md` (or `AGENTS.md`, whichever exists), pointing to that file.\n\nI have not checked the tracker, so I can't confirm which of these labels already exist or what the three unmapped roles should be. The maintainer needs to supply those names.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Maps bug:triage and bug:ready to canonical roles, preserves those exact strings, and avoids creating default duplicates. It leaves the three unmapped roles for the maintainer to supply rather than inventing them, with only illustrative examples."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Maps bug:triage and bug:ready to needs-triage and ready-for-agent, keeps those strings exact, avoids default duplicates, and leaves unmapped roles for the maintainer to supply instead of inventing a full mapping."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Maps bug:triage and bug:ready to canonical roles, preserves exact label strings, avoids default-label duplicates, and leaves the three unmapped roles for the maintainer to supply rather than inventing them."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Maps bug:triage and bug:ready to canonical roles, preserves those exact strings, avoids duplicate default labels, and asks the maintainer to supply the three unmapped roles rather than inventing them."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Maps bug:triage and bug:ready to canonical roles, preserves exact label strings, leaves the three unmapped roles for the maintainer to supply, and avoids creating duplicate default labels."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Keep one label per role, under the exact names the workflow uses, and point everything else at those names instead of creating new ones.\n\n1. **Inventory existing labels.** Check whether `bug:triage` and `bug:ready` already exist, and look for near-duplicates such as `Bug:Triage`, `bug: triage`, or `triage`. GitHub label names are unique case-insensitively, so `Bug:Triage` would collide with `bug:triage`.\n\n2. **Make the canonical labels the source of truth.** If `bug:triage` and `bug:ready` exist, keep them and don't recreate them. If they don't, create each once with the exact spelling and a clear description, such as \"Needs maintainer triage\" for `bug:triage` and \"Triaged and ready to be worked\" for `bug:ready`.\n\n3. **Migrate duplicates into the canonical labels.** For each variant, relabel the open issues and PRs that carry it to the canonical name, then delete the variant. Doing this before deleting prevents losing the label context on open work. Closed items can keep the old label if you don't need them to match the workflow.\n\n4. **Check the workflow config.** Confirm the installed workflow references exactly `bug:triage` and `bug:ready`, including the colon and case. If it matches on a different string, update the config to the canonical name rather than adding a label to satisfy it.\n\n5. **Verify once.** Apply each label to a test issue, confirm the workflow picks it up in both states, then close the test issue.\n\nI haven't inspected your repository or the workflow file, so these steps are based only on the label names you gave me. Check the workflow's exact label strings before you delete anything.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Maps variants to canonical roles (step 1-3), preserves exact bug:triage/bug:ready strings, and avoids duplicate creation; it misses asking about unmapped roles and instead proceeds to invent descriptions and deletions."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (maps variants to canonical names) and 4 (no duplicate labels). Misses 2 because it invents mappings instead of asking about unmapped roles, and misses 3 because it deletes variants and changes config rather than preserving existing strings."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it maps existing labels to canonical roles via inventory and migration. Criterion 3 is met: it preserves the exact canonical strings. Criterion 2 is missed: it never asks about unmapped roles, and it assumes the canonical roles are the only ones. Criterion 4 is partly met but not clearly: it says to keep one label per role and not recreate, but also creates labels if missing."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met mapping variants to canonical roles, preserving canonical label strings, and avoiding duplicate labels. Missed asking about unmapped roles; it proposed creating labels and descriptions without asking."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it maps variants to canonical labels, keeps existing canonical strings, and avoids recreating duplicates. It misses criterion 2 because it never asks about unmapped roles and instead proposes creating and deleting labels directly."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Keep `bug:triage` and `bug:ready` as the canonical labels, and point each workflow role at one of them. Don't create new labels for the roles.\n\n1. **Map each role to an existing label.** In the workflow's configuration, set the triage role to `bug:triage` and the ready role to `bug:ready`. Use the exact strings, including the colon and lowercase spelling, so the workflow resolves them to the labels that already exist.\n\n2. **Reuse labels instead of creating them.** Wherever the workflow would create a label for a role, have it look up the existing name first. If it can only create labels, remove the create step for these two roles, since the labels are already installed.\n\n3. **Check for near-duplicates.** Before changing anything, look for variants such as `Bug:Triage`, `bug-triage`, `triage`, or `bug: ready` in the repository's label list. If a variant is in use, either rename it to the canonical name or update the workflow to point at the one that is in use. Don't keep both.\n\n4. **Avoid aliasing one role to two labels.** Each role should have exactly one label in the mapping. If the config lists a role twice, or lists a fallback label, delete the extra entry.\n\n5. **Verify.** Trigger the workflow on a test issue and confirm it applies the existing `bug:triage` and `bug:ready` labels and that the label list has no new entries.\n\nI can't see the workflow's config or the repository's labels from here, so I haven't confirmed the exact key names in the file. If you paste the role-to-label section, I can point to the lines to change.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Maps triage and ready roles to existing bug:triage and bug:ready, preserves exact strings, and avoids creating duplicate labels; misses criterion 2 because it never asks about unmapped roles."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: maps the roles to bug:triage and bug:ready, keeps exact strings, and avoids creating duplicate labels. Misses criterion 2 because it never asks about unmapped roles and instead invents the mapping for just these two."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Maps triage and ready roles to existing bug:triage and bug:ready, preserves exact label strings, and avoids creating duplicate labels. It does not ask about unmapped roles; it only requests the config to find line numbers."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 3, and 4: it maps the roles to existing bug:triage and bug:ready, keeps exact label strings, and avoids creating duplicate labels. Missed criterion 2: it never asks about roles that lack a mapping."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (maps the triage and ready roles to bug:triage and bug:ready), 3 (uses exact existing label strings), and 4 (reuses labels and forbids creating duplicates); missed criterion 2 because it never asks about unmapped roles."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "Here's how to configure the canonical roles so the installed `triage` workflow uses your existing `bug:triage` and `bug:ready` labels.\n\n**1. Answer \"no\" to the default-labels question.** The setup skill defaults to the five canonical role names (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). Keeping those would create new labels next to yours. Declining the defaults lets you supply overrides.\n\n**2. Map each canonical role to a label your tracker already has.**\n\n- `needs-triage` → `bug:triage`. This is the clear match, and the skill's own example uses this mapping.\n- `ready-for-agent` or `ready-for-human` → `bug:ready`. The skill doesn't say which one `bug:ready` corresponds to. That depends on whether a ready issue is meant to be picked up by an agent or by a person, so the maintainer needs to decide.\n- `needs-info` and `wontfix`: map these to existing labels if your tracker has equivalents. If it doesn't, the setup creates them.\n\n**3. Create only the labels that are missing.** For each canonical role, check whether the mapped label already exists in the tracker. Create a label only when no existing label is mapped to that role. `bug:triage` and `bug:ready` already exist, so they should not be created. Any other role that maps to a label not in the tracker gets created with `gh label create` (GitHub) or `glab label create` (GitLab).\n\n**4. Record the mapping.** Write it to `docs/agents/triage-labels.md`, which lists each canonical role and the label string it maps to. Then add a `### Triage labels` summary to the `## Agent skills` block in `CLAUDE.md` or `AGENTS.md`, whichever already exists. After that, `triage` applies the mapped labels and creates no duplicates.\n\nI haven't checked your tracker, so I don't know which other labels exist. The mapping for `bug:ready` in particular needs a decision from the maintainer.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Maps bug:triage and bug:ready to canonical roles, preserves label strings, and avoids recreating them. It flags the bug:ready decision for the maintainer but presumes creating needs-info/wontfix rather than asking."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: maps bug:triage and bug:ready to canonical roles, preserves those strings, and avoids default duplicates. Misses criterion 2 because it proposes needs-info/wontfix mappings conditionally instead of asking about them."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Maps existing labels to roles (bug:triage to needs-triage, bug:ready to ready), preserves exact label strings, and avoids duplicating defaults. It partly misses criterion 2: it asks only about bug:ready and states that unmapped needs-info and wontfix will be created rather than asking."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Maps bug:triage and bug:ready to roles and avoids duplicating them, preserving strings (criteria 1, 3, 4 met). It does not ask about the unmapped roles; instead it invents a full mapping and decides creation for needs-info and wontfix, so criterion 2 is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Maps needs-triage and ready to the existing labels, preserves label strings, and avoids recreating bug:triage/bug:ready. It asks the maintainer only about bug:ready, leaving needs-info/wontfix conditional instead of asking."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The supplied facts name only the two labels, `bug:triage` and `bug:ready`, and that the maintainer wants to keep them. They don't include the workflow's config format, so I can't give exact file paths or keys. Here is how to approach it:\n\n1. **Treat the existing labels as canonical.** Map each role to its current name: the triage role to `bug:triage`, and the ready role to `bug:ready`. Don't rename them or introduce replacements.\n\n2. **Point the workflow at those exact strings.** Wherever the workflow defines or references the roles, use `bug:triage` and `bug:ready` as the values. If the workflow creates labels when it runs, make it check for an existing label first and reuse it.\n\n3. **Avoid near-duplicates.** Label names are compared case-insensitively on GitHub, so `Bug:Triage` would clash with `bug:triage`. Also avoid variants such as `bug/triage` or `triage:bug`, which look like the same role but are separate labels.\n\n4. **Verify before relying on it.** Confirm the repository has exactly one label for each role, and that the workflow's triage and ready steps apply those names. If you can check the labels in the repository settings, do that before changing the workflow.\n\nIf you share the workflow file or its label configuration, I can point to the specific lines that need the change.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Maps triage and ready roles to the existing labels, preserves their exact strings, and avoids duplicates by reusing existing labels. It misses criterion 2: it never asks about unmapped roles."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it maps each role to its existing label, preserves the exact strings, and avoids duplicates. It misses criterion 2 because it never asks about unmapped roles, only offering to review the workflow file later."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (maps triage and ready to bug:triage and bug:ready), 3 (preserves label strings, no renaming), and 4 (avoids near-duplicates and reuses existing labels). Missed criterion 2: it never asks about unmapped roles, only offers to review the workflow file."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it maps triage and ready to the existing bug:triage and bug:ready strings, says not to rename them, and says to reuse existing labels. Misses criterion 2 because it never asks about unmapped roles."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 is met: it maps each role to its existing label. Criterion 3 is met: it preserves the existing strings. Criterion 2 is missed: it does not ask about unmapped roles and does not raise the open question. Criterion 4 is missed: it never says to avoid creating default labels."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Keep `bug:triage` and `bug:ready` as the canonical labels, and point the workflow's role mapping at those exact names instead of adding new labels.\n\n1. **Map each role to an existing label.** In the workflow's role configuration, set the triage role to `bug:triage` and the ready role to `bug:ready`. Don't add a second name for either role.\n\n2. **Match names exactly.** GitHub label names are case-insensitive, so `Bug:Triage`, `bug: triage`, or `bug:triage ` (with a trailing space) can look like separate labels but collide with the canonical one or create a near-duplicate. Use the exact strings.\n\n3. **Avoid creating labels from the workflow.** If the workflow creates any label that doesn't exist yet, it could produce a duplicate. Create or confirm `bug:triage` and `bug:ready` once in the repository, then reference them by name only.\n\n4. **Clean up existing duplicates carefully.** If the repository already has near-duplicates, decide which one is canonical, then either rename the extra label to the canonical name or migrate its issues to the canonical label before deleting it. Check that no open issues or workflow rules still depend on the label you remove.\n\nI haven't inspected the installed workflow or the repository's current labels, so I can't confirm the exact configuration key names or whether any duplicates already exist. Checking the workflow's role configuration and the repository's label list would settle both.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Maps triage and ready roles to the existing bug:triage and bug:ready labels, preserves exact label strings, and avoids creating duplicate labels; it does not ask about unmapped roles, so criterion 2 is missed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (maps existing labels to canonical roles) is met; criterion 3 (preserve existing label strings) is met. Criterion 2 is missed since it defines a mapping without asking about unmapped roles; criterion 4 is not clearly satisfied as it doesn't address default labels."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Maps the triage and ready roles to existing bug:triage and bug:ready, preserves exact label strings, and avoids creating duplicate labels. It does not ask about unmapped roles, so criterion 2 is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Maps triage and ready roles to the existing labels, preserves exact label strings, and avoids creating duplicates. It misses criterion 2: it never asks about unmapped roles, only suggesting a later check of the workflow config."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Maps triage and ready roles to the existing bug:triage and bug:ready labels, preserves exact label strings, and avoids creating duplicate labels; it does not explicitly ask about unmapped roles."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "Since the maintainer wants to keep `bug:triage` and `bug:ready`, decline the default labels in Section B and map each canonical role to an existing label. Each role then has exactly one label, so nothing is duplicated.\n\n**Mapping**\n\n| Canonical role | Configured label |\n|---|---|\n| `needs-triage` | `bug:triage` |\n| `ready-for-agent` or `ready-for-human` | `bug:ready` (see below) |\n| `needs-info`, `ready-for-human` or `ready-for-agent` (whichever `bug:ready` doesn't cover), `wontfix` | Map to an existing label if one fits; otherwise keep the canonical name |\n\nYour facts don't say whether `bug:ready` means agent-ready or human-ready, so ask the maintainer. Map it to one of those two roles. The other role then needs its own label, or the maintainer can say it isn't used.\n\n**Steps**\n\n1. In Section B, answer \"no\" and give the mapping above as the overrides.\n2. Write the mapping to `docs/agents/triage-labels.md`, so `triage` applies the existing labels instead of the canonical names.\n3. In the `### Triage labels` block of `CLAUDE.md` or `AGENTS.md`, summarise the mapping, for example: \"Triage roles map to `bug:triage` (needs-triage) and `bug:ready` (ready-for-…).\"\n4. When creating labels, skip the mapped ones, since they already exist. Only create a canonical label for a role that has no existing label, and only if the tracker lacks it.\n\n**Why this avoids duplicates**\n\nA duplicate happens when one role has two labels, such as `needs-triage` alongside `bug:triage`. Mapping each role to one label and creating labels only for unmapped roles prevents that.\n\nI haven't checked the repo or the tracker, so I can't confirm which labels already exist. Verify with `gh label list` (or `glab label list`) before creating anything.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Maps needs-triage and ready to existing bug:triage and bug:ready, preserves those strings, and avoids duplicate default labels. It asks about bug:ready's role but invents a mapping for needs-info and wontfix instead of asking."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Maps bug:triage and bug:ready to canonical roles, preserves the label strings, and avoids duplicate default labels. It asks only about bug:ready, not the other unmapped roles, and proposes fallback mappings for those instead."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response maps bug:triage and bug:ready to canonical roles (criterion 1) and asks the maintainer about the ambiguous bug:ready role (criterion 2), and avoids duplicates (criterion 4), but it invents mappings for remaining roles and does not explicitly preserve existing label strings as its own rule (criterion 3 partially met)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it maps bug:triage and bug:ready to canonical roles. Criterion 2 is met: it asks which reading applies to bug:ready. Criterion 3 is not clearly met, since it says to keep canonical names for unmapped roles. Criterion 4 is met: it avoids duplicates, though it does not address default-label creation specifically."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Maps needs-triage and ready to existing bug:triage and bug:ready, preserves those strings, and avoids duplicate default labels. It asks the maintainer about the bug:ready meaning but defaults needs-info and wontfix instead of asking about them."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Map each canonical role to the existing label name, so the workflow reuses `bug:triage` and `bug:ready` instead of creating new ones:\n\n1. **Set the role mapping to the exact existing strings.** For example:\n   - `triage` → `bug:triage`\n   - `ready` → `bug:ready`\n\n   Use the same spelling, casing, and colon placement as the labels already on the repository. A variant such as `bug: triage`, `Bug:Triage`, or `needs-triage` is treated as a different label and creates a duplicate.\n\n2. **Keep one source of truth.** Define the mapping once, in the workflow config or a single constants file, and have every step read the role name, not a hardcoded label string. This prevents one step from creating `bug:ready` while another uses `ready`.\n\n3. **Check for existing duplicates before changing anything.** List the repository's labels and look for near-matches of `bug:triage` and `bug:ready`. If you find any, don't delete them yet. Check which issues and PRs use each one, then move those items to the canonical label before removing the extra.\n\n4. **Make the workflow get-or-create, not create-only.** Have it look up a label by its exact name and create it only if it's missing. A create-only step will keep adding copies when a name has drifted.\n\nI haven't checked the repository's workflow files or label list, since I'm answering without tools. The exact config keys depend on how the installed triage workflow defines roles, so confirm those against its config file before editing.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Maps triage and ready to the existing bug:triage and bug:ready, preserves exact label strings, and prevents duplicates via get-or-create. It misses rubric point 2 by never asking about unmapped roles."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Maps triage and ready to the existing bug:triage and bug:ready strings and preserves exact spelling, and avoids duplicate labels via get-or-create. It misses criterion 2: it never asks about unmapped roles."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 is met: it maps triage and ready to the existing bug:triage and bug:ready labels. Criterion 3 is met: it says to keep exact spelling and casing. Criterion 4 is partly met: it avoids creating duplicates. Criterion 2 is missed: it never asks about unmapped roles and instead assumes a full mapping."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 3 (preserve existing label strings) is met: it says to use exact existing spellings. Criterion 1 is only partly met; it maps two roles without asking. Criterion 2 is missed: it never asks about unmapped roles and only says to confirm against the config. Criterion 4 is missed: it recommends get-or-create but never states that no default labels should be created."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (maps existing labels to canonical roles) and criterion 3 (preserves existing label strings) are met. Criterion 2 fails: it assumes a full mapping rather than asking about unmapped roles. Criterion 4 is not clearly met, since it advises checking for duplicates and get-or-create logic rather than explicitly avoiding default label creation."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "You can keep `bug:triage` and `bug:ready` as the canonical labels by pointing the workflow's role mapping at those exact names and not creating any other labels for the same roles.\n\n1. **Map each role to the existing label.** In the workflow's configuration, set the triage role to `bug:triage` and the ready role to `bug:ready`. I haven't seen the workflow's config file, so you'll need to find where it references label names.\n2. **Check for existing variants first.** List the repo's labels and look for near-matches such as `Bug:Triage`, `triage`, or `bug: ready`. GitHub label names are matched case-insensitively, so a variant that differs only by case can collide with the canonical label.\n3. **Rename rather than add.** If a variant exists and is used for the same purpose, rename it to the canonical name. GitHub applies the rename to every issue and PR already carrying it. Creating a new label instead would leave two labels doing the same job.\n4. **Use exact strings.** Keep the colon and lowercase spelling exactly as written in every place the workflow references them.\n5. **Verify.** After the change, confirm that the label list has one entry for each role and that the workflow resolves both roles to those two names.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (maps existing labels to canonical roles) and criterion 3 (preserves label strings exactly) are met; criterion 2 is missed since it never asks about unmapped roles, and criterion 4 is only partly addressed by advising against duplicates without explicitly ensuring no default labels are created."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Maps triage and ready roles to the existing bug:triage and bug:ready labels, preserves those exact strings, and avoids creating duplicates. It misses the rubric's request to ask about unmapped roles."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: maps triage and ready roles to bug:triage and bug:ready, preserves exact strings, and avoids creating duplicate labels. Misses criterion 2 because it never asks about unmapped roles."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 3, and 4: it maps the roles to bug:triage and bug:ready, keeps exact strings, and avoids duplicate labels. Missed criterion 2: it never asks for the unmapped config or roles and instead proposes its own variant-handling plan."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Maps triage and ready roles to the exact existing labels (criterion 1), preserves exact label strings (3), and avoids creating duplicate labels (4). It does not ask about unmapped roles (2), instead telling the user to find the config themselves."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "Because the maintainer wants to keep `bug:triage` and `bug:ready`, answer **no** to the default-labels question in the setup skill's Section B and supply those names as overrides. The triage skill then applies the existing labels instead of creating the defaults.\n\n**Steps:**\n\n1. **Map the canonical roles to the existing labels.** The triage skill uses five roles. Each role maps to one label string:\n   - `needs-triage` → `bug:triage`\n   - `ready-for-agent` or `ready-for-human` → `bug:ready`\n\n   The `bug:ready` label is the only one the maintainer named for the ready state. The setup notes don't say whether it should mean agent-ready, human-ready, or both, so confirm that with the maintainer.\n\n2. **Decide the other roles.** `needs-info` and `wontfix` have no label in the supplied facts. Ask the maintainer whether they already have labels for these. If they do, map them the same way. If not, keep the default strings for those roles, and the setup will create them.\n\n3. **Write the mapping.** Record the chosen strings in `docs/agents/triage-labels.md`, and add a one-line summary to the `### Triage labels` block in `CLAUDE.md` or `AGENTS.md`.\n\n4. **Create only missing labels.** The setup creates labels only for configured roles the tracker lacks. Because `bug:triage` and `bug:ready` already exist, they won't be recreated, and no duplicates appear.\n\nOnce the maintainer confirms the `bug:ready` mapping and the other roles, I can run the setup and write the files.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Maps needs-triage to bug:triage and ready roles to bug:ready, asks the maintainer about unmapped needs-info and wontfix, preserves existing strings, and states no duplicate defaults are created."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Maps bug:triage and bug:ready to canonical roles and asks about the ambiguous ready role and unmapped roles without inventing them, but its claim that needs-info/wontfix would be created as defaults is fine; it does preserve label strings and avoid duplicates. However it never explicitly ties the rubric's 'ask about unmapped roles' to a clear question about needs-info and wontfix beyond a brief mention, and it presumes setup-file mechanics not in the supplied facts, so only partial credit."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (maps bug:triage to needs-triage and bug:ready to ready roles), criterion 2 (asks maintainer about needs-info/wontfix), and criterion 4 (no duplicates), but it invents a mapping for unstated roles and implies a full mapping, and does not clearly preserve label strings as a separate point; criterion 3 is arguably met, giving 0.75 at most, but the 'bug:ready' ambiguity handling and invented file paths weaken it."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Maps bug:triage to needs-triage and bug:ready to the ready roles, asks about needs-info and wontfix instead of inventing them, keeps the existing strings, and avoids duplicate defaults."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Maps needs-triage to bug:triage and the ready roles to bug:ready (criterion 1), asks the maintainer about needs-info, wontfix, and the ready-role split (criterion 2), keeps the existing strings (criterion 3), and states that no duplicate defaults will be created (criterion 4)."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I haven't inspected the repo or the workflow file, so this is the general approach. Check the specifics against your labels and config.\n\n**Goal:** keep exactly one label each for `bug:triage` and `bug:ready`, and make the workflow refer to those exact names.\n\n1. **Inventory the existing labels.** Open the repo's Labels page, or run `gh label list` if you have the GitHub CLI. Look for variants of the two names, such as `bug/triage`, `triage`, `Bug:Triage`, or `bug: ready`.\n\n2. **Remember that GitHub label names are case-insensitive.** Creating `Bug:Triage` when `bug:triage` exists will conflict or create a near-duplicate. Match the canonical spelling exactly, including the colon and lowercase.\n\n3. **Rename instead of creating.** If a variant exists, edit it and rename it to `bug:triage` or `bug:ready`. GitHub updates every issue that carries it, so you don't have to re-tag anything.\n\n4. **Merge true duplicates.** If two labels already exist for the same role, GitHub's UI doesn't merge them. Re-apply the canonical label to the affected issues, then delete the extra label. Check first that nothing else depends on the one you're deleting.\n\n5. **Point the workflow at the canonical names.** Confirm the workflow's label strings match `bug:triage` and `bug:ready` exactly. If it creates labels when they're missing, have it look up the name first, or handle the \"already exists\" response, so it doesn't make a second copy on each run.\n\n6. **Verify.** List the labels again and confirm there is one of each. Then test the workflow on a sample issue and check that it applies the existing labels rather than new ones.\n\nIf you paste the workflow file or the output of the label list, I can point to the exact lines that need changing.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Maps existing variants to canonical roles and avoids duplicate labels (criteria 1 and 4), but never asks about unmapped roles and renames existing label strings instead of preserving them (criteria 2 and 3 missed)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (maps label variants to canonical roles) and criterion 4 (avoids duplicate labels). Misses criterion 2, since it never asks about unmapped roles, and criterion 3, since it renames existing labels rather than preserving their strings."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Maps variants to canonical roles and avoids duplicate labels (criteria 1 and 4), but never asks about unmapped roles and renames existing labels instead of preserving their strings (criteria 2 and 3 missed)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (maps variants to canonical bug:triage/bug:ready) and criterion 4 (avoids duplicate labels). Misses criterion 2 by never asking about unmapped roles, and criterion 3 by recommending renaming and deleting existing labels rather than preserving them."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets mapping existing variants to canonical roles and avoiding duplicate labels, but misses asking about unmapped roles and conflicts with preserving existing label strings by renaming them."
+       }
+      ]
+     },
+     "baseline": null
+    },
+    {
+     "try": 5,
+     "with_skill": {
+      "answer": "You can keep `bug:triage` and `bug:ready` by answering **no** to the default-labels question in the setup skill's Section B and supplying overrides that point each canonical role at an existing label string. Setup then applies those labels instead of creating new ones.\n\n**Mapping**\n\n| Canonical role | Label to configure |\n|---|---|\n| `needs-triage` | `bug:triage` |\n| `ready-for-agent` or `ready-for-human` | `bug:ready` |\n| `needs-info` | not specified; choose an existing label or none |\n| `wontfix` | not specified; choose an existing label or none |\n\nThe facts you gave cover only two labels, so the other roles need a decision from the maintainer. Also, `bug:ready` is given without saying whether it belongs to `ready-for-agent`, `ready-for-human`, or both. The maintainer should confirm which one it means, since that decides how the triage workflow routes issues.\n\n**Steps**\n\n1. Answer **no** to the default-labels question, then enter the overrides from the table above.\n2. Write the mapping into `docs/agents/triage-labels.md` and the `### Triage labels` block in `CLAUDE.md` or `AGENTS.md`, using the existing label strings.\n3. Before creating any labels, check which of the configured names the tracker already has. Create only the missing ones, so `bug:triage` and `bug:ready` are not duplicated. The setup skill's label-creation step applies to GitHub and GitLab only.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Maps bug:triage to needs-triage and bug:ready to a ready role, preserves exact label strings, defers needs-info and wontfix to the maintainer, and avoids creating duplicate defaults by checking existing labels first."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Maps bug:triage and bug:ready to canonical roles, flags unmapped roles (needs-info, wontfix) for the maintainer rather than inventing them, keeps the exact label strings, and checks for existing labels before creating any to avoid duplicates."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Maps bug:triage and bug:ready to canonical roles, flags unmapped needs-info and wontfix for maintainer decision, keeps exact label strings, and avoids duplicate default labels."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Maps bug:triage to needs-triage and bug:ready to ready-for-agent/human, preserves label strings, flags needs-info and wontfix for maintainer decision, and avoids duplicate default labels by creating only missing ones."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Maps bug:triage to needs-triage and bug:ready to a ready role, keeps the exact label strings, asks the maintainer to decide unmapped roles and the bug:ready ambiguity, and avoids duplicate default labels by checking existing names first."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": null
+    }
+   ]
+  },
+  {
+   "id": "monorepo",
+   "number": 3,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A workspace has packages/orders and packages/catalog, each with its own glossary and ADR folder. Propose the domain-document layout decision and the confirmation needed.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/engineering/setup-matt-pocock-skills/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 f148858ffb7f63c03c06fca06e6fdb1d91a35c6b293244b8fdfacd5f4cc028c4; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Recognize genuine multi-context evidence 2. Propose a root glossary map to existing contexts 3. Preserve existing glossary and ADR locations 4. Confirm the multi-context choice before writing",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "**Recommendation: multi-context layout.**\n\nThe workspace has two packages, `packages/orders` and `packages/catalog`, and each has its own glossary and ADR folder. That is the case the setup skill reserves for multi-context, so I'd use:\n\n- A root `GLOSSARY-MAP.md` that points to each context's glossary.\n- `packages/orders/GLOSSARY.md` and `packages/catalog/GLOSSARY.md`, with ADRs staying in each package's existing ADR folder.\n- `docs/agents/domain.md` recording this layout and the consumer rules for reading it.\n\nI haven't read the files, so I can't confirm the exact ADR folder paths or whether the glossaries already follow this format. I also haven't checked whether a `triage` skill is installed, which decides whether the triage label section applies.\n\n**Confirmation needed before I write anything:**\n\n1. Do you want multi-context with the glossaries and ADRs as described above?\n2. Are the ADR folders at `packages/orders/` and `packages/catalog/` (or somewhere else)? Give me the exact paths.\n3. Should the `## Agent skills` block go in `CLAUDE.md` or `AGENTS.md`? Tell me which one exists, or whether I should create one.\n\nOnce you confirm, I'll make the edits. I won't run commands or write files until then.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recognizes two packages each with their own glossary and ADR folder as multi-context evidence, proposes a root GLOSSARY-MAP.md to those glossaries, keeps ADRs in their existing folders, and asks for confirmation before writing."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recognizes multi-context evidence from two packages with separate glossaries/ADRs (criterion 1), proposes root GLOSSARY-MAP.md pointing to contexts (2), keeps ADRs in existing package folders (3), and asks for confirmation before writing (4); all four criteria appear met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recognizes the two-package multi-context evidence, proposes a root GLOSSARY-MAP.md pointing to each context's glossary, keeps ADRs in existing package folders, and asks for confirmation before writing anything."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (recognizes two packages each with glossary and ADR folder as multi-context), 2 (root GLOSSARY-MAP.md pointing to each glossary), and 4 (asks for confirmation, writes nothing). Criterion 3 is only partly met: ADRs stay put, but glossary paths are presented as new locations rather than preserved."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (recognizes multi-context from two packages each with own glossary/ADR), 2 (root GLOSSARY-MAP.md pointing to contexts), and 4 (asks confirmation before writing); misses 3 since it proposes creating new GLOSSARY.md files in each package rather than clearly preserving existing locations."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Proposed decision:** Keep each package's glossary and ADR folder where it is, under `packages/orders` and `packages/catalog`. Each package then owns its own domain language and decisions, and the layout matches what already exists.\n\nIf a term or decision spans both packages, record it in the package that owns it and link to it from the other. I'd add a shared root-level glossary only if cross-package terms become common.\n\n**Confirmation needed:** Do you want to keep the per-package layout, or create a shared root-level glossary and ADR folder for cross-package material? I haven't checked the files, so this is based only on the workspace structure you described.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it recognizes the two-package context, keeps existing glossary and ADR locations, and asks for confirmation before any writing. It misses criterion 2, since it offers only a conditional root glossary rather than a root map to existing contexts."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recognizes the two packages as separate contexts, preserves the existing glossary and ADR locations, and asks for confirmation before writing. It misses criterion 2 because it proposes no root glossary map to the existing contexts and argues against a root glossary instead."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 3 (preserves per-package glossary/ADR locations) and criterion 4 (asks confirmation before writing), but fails criterion 1 by not recognizing multi-context evidence and criterion 2 by proposing no root glossary map to existing contexts."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 3 (preserves existing per-package glossary/ADR locations) and 4 (asks for confirmation before choosing); missed 1 (no recognition of genuine multi-context evidence, it is dismissed as a tentative 'only if common' case) and 2 (no root glossary map to existing contexts proposed)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 3 (preserves per-package glossary/ADR locations) and criterion 4 (asks for confirmation before choosing); missed 1 (no recognition of genuine multi-context evidence beyond the description) and 2 (no root glossary map to existing contexts proposed)."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Recommended layout: keep each package's glossary and ADR folder where it is.**\n\nEach package already has its own glossary and ADR folder, so the domain documents are scoped to the code they describe. Moving them into one shared location would mix two bounded contexts and make ownership unclear. Terms that the two packages use differently, such as a product in catalog versus an item in orders, stay in each glossary and are not forced into one definition.\n\nOptional addition: a short root-level index that links to `packages/orders` and `packages/catalog`, plus a root ADR folder used only for decisions that span both packages. This adds no new home for package-specific material.\n\n**Confirmation needed before I act:**\n\n1. Do you agree with per-package glossaries and ADRs, with an optional root index?\n2. Do any decisions span both `orders` and `catalog`? If so, should they go in a root ADR folder or in one of the packages?\n3. Do any terms need one shared definition across both packages? If so, should that be a root glossary or a cross-referenced entry in each package?\n\nI have not inspected the file contents, so this proposal rests only on the existence of the two glossary and ADR folders. I have made no changes.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recognizes two bounded contexts (1), preserves existing glossary and ADR locations (3), and asks for confirmation before acting (4). Misses (2): it proposes a root index, not a root glossary map, and defers the shared-definition question."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it recognizes two bounded contexts, keeps existing glossary and ADR locations, and asks for confirmation before acting. It misses criterion 2 because it proposes a root index rather than a root glossary map."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (identifies orders and catalog as distinct bounded contexts), 3 (keeps per-package glossary and ADR locations), and 4 (asks for confirmation and makes no changes). Misses 2: it proposes a root index rather than a root glossary map."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it recognizes distinct bounded contexts, keeps existing glossary and ADR locations, and asks for confirmation with no changes made. It misses 2, since the root index is not a glossary map."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: recognizes the two bounded contexts, keeps existing glossary and ADR locations, and asks for confirmation before acting. Misses 2: the root index is not explicitly a root glossary map."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "**Recommended layout: multi-context.**\n\nYour workspace has `packages/orders` and `packages/catalog`, each with its own glossary and ADR folder. That matches the monorepo signal the setup skill looks for (populated `packages/*` directories with their own domain docs), so a single root `GLOSSARY.md` would mix two contexts' terms.\n\nProposed structure:\n\n- **Root `GLOSSARY-MAP.md`**: lists each context, its glossary path, and its ADR folder. Consumers read this first to find the right glossary.\n- **`packages/orders/GLOSSARY.md`** and **`packages/catalog/GLOSSARY.md`**: the existing per-context glossaries, kept where they are.\n- **ADRs**: left in each package's existing ADR folder. I'd point to them from `docs/agents/domain.md` rather than move them.\n- **`docs/agents/domain.md`**: records the layout and the consumer rules (read the map first, then the relevant context's glossary and ADRs).\n\n**Confirmation needed before I write anything:**\n\n1. Do you want multi-context, or a single root `GLOSSARY.md` for the whole repo?\n2. Are `orders` and `catalog` the right context names, and are the glossary and ADR paths in each package correct? I haven't verified the exact file paths, so please give me the ADR folder locations.\n3. Is this repo a monorepo with a workspace file (such as `pnpm-workspace.yaml`) or a `workspaces` field? I'm inferring that from the `packages/` layout, and it affects whether the `GLOSSARY-MAP.md` setup is the right fit.\n\nIf you confirm option 1 and the paths, I'll draft the `## Agent skills` block and the `docs/agents/` files for your review before writing them.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recognizes multi-context evidence from packages/orders and packages/catalog, proposes a root GLOSSARY-MAP.md, keeps glossary and ADR locations in place, and asks for confirmation before writing."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (recognizes monorepo multi-context signal), 2 (root GLOSSARY-MAP.md mapping contexts), and 4 (asks confirmation before writing); misses 3 partially? It explicitly keeps existing glossary and ADR locations in place, so 3 is met too, but the response also asks to verify paths, leaving the score at 0.75 only if one criterion is judged unmet."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recognizes multi-context evidence from packages/* with their own glossaries and ADRs, proposes a root GLOSSARY-MAP.md to existing contexts, preserves existing locations, and asks for confirmation before writing; it loosely cites the setup skill rather than verifying it, so the first criterion is only partially grounded."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (recognizes monorepo/multi-context signal from packages/*), 2 (root GLOSSARY-MAP.md mapping contexts), and 4 (asks confirmation before writing); misses 3 partially? No—it preserves per-package glossaries and ADR folders in place, so 3 is met too, but it proposes a new file path and extra docs; overall strong, score 0.75 reflects one strictness deduction for the unverified-paths ambiguity."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recognizes multi-context evidence from packages/orders and packages/catalog (criterion 1), proposes a root GLOSSARY-MAP.md linking contexts (2), preserves existing glossary and ADR locations (3), and asks for confirmation before writing (4). Misses partially: criterion 3 is arguably met but it also proposes docs/agents file creation, which is fine; scoring 0.75 reflects a strict reading of the rubric's wording."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Recommended layout:** keep each package's glossary and ADR folder where it is:\n\n- `packages/orders/` owns its glossary and ADR folder.\n- `packages/catalog/` owns its glossary and ADR folder.\n\nEach package then stays self-contained, and a decision in one domain doesn't churn the other. I haven't checked the folder contents, so this assumes they're already set up as described.\n\n**Confirmation needed before I'd change anything:**\n\n1. **Shared terms:** Do `orders` and `catalog` use any terms with the same name but different meanings, or the same meaning? If so, do you want a small root-level glossary for shared terms, or should each package define its own copy?\n2. **Cross-cutting decisions:** Are there ADRs that affect both packages? If yes, should they go in a root-level ADR folder, or be duplicated in each package?\n\nIf you confirm the per-package layout with no root-level folders, that's the plan I'd follow. I haven't made any changes.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it treats orders and catalog as separate contexts, keeps existing glossary and ADR locations, and asks for confirmation before changes. Misses 2: it asks about a root glossary but never proposes a root glossary map to the contexts."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 3 (keeps per-package glossary and ADR locations) and 4 (asks for confirmation and makes no changes). Criterion 1 is arguable, since it restates the two contexts without much evidence analysis. Misses criterion 2: no root glossary map to existing contexts is proposed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 3 (preserves existing per-package glossary and ADR locations) and criterion 4 (asks for confirmation before changes), but missed criterion 1 (no recognition of genuine multi-context evidence, it only asks hypothetically) and criterion 2 (proposes no root glossary mapping to existing contexts, only offers a root glossary as an optional question)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 3, and 4: it recognizes the two-package multi-context setup, preserves existing glossary and ADR locations, and asks for confirmation before changes. Missed 2: it offers a root glossary only as an open question, not as a map to existing contexts."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (recognizes the two per-package glossary/ADR contexts), 3 (keeps existing locations), and 4 (asks for confirmation before changing anything); misses 2, since it never proposes a root glossary map to the existing contexts."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Recommended layout:** Keep each package's glossary and ADR folder inside that package. `packages/orders` owns its glossary and ADRs, and `packages/catalog` owns its own. Each package's domain language and decisions stay next to the code they describe, and neither package's docs depend on the other's.\n\n**Confirmation needed before finalizing:**\n\n1. **Cross-package terms:** If a term is used by both packages, should it be defined in one package's glossary and referenced from the other, or should there be a workspace-level glossary for shared terms?\n2. **Cross-package decisions:** If an ADR affects both `orders` and `catalog`, should it live in one package's ADR folder, or at the workspace root?\n\nI haven't inspected the workspace, so this is based only on the layout you described. I haven't created or changed any files.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: recognizes the two-package multi-context layout, keeps glossaries and ADRs in their existing package folders, and asks for confirmation before finalizing. Misses criterion 2, since no root glossary map to the existing contexts is proposed as the recommendation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recognizes the two-package multi-context layout and preserves each package's glossary and ADR locations (criteria 1 and 3), and asks for confirmation before finalizing with no writes (criterion 4). It misses criterion 2: it proposes no root glossary map pointing to the existing contexts."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (recognizes the two per-package glossary and ADR contexts), 3 (keeps existing locations inside each package), and 4 (asks for confirmation and writes nothing). Missed criterion 2: it offers a workspace-level glossary only as an option and never proposes a root glossary map to existing contexts."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recognizes the two packages as separate contexts with their own glossaries and ADRs (1), preserves those locations (3), and asks for confirmation before finalizing with no files written (4). It misses (2): it offers a workspace glossary only as an open question, not a root glossary map to the existing contexts."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (recognizes separate package contexts), 3 (keeps existing glossary and ADR locations), and 4 (asks for confirmation before finalizing, no writes). Misses 2: it offers a workspace glossary for shared terms but no root glossary map to existing contexts."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "**Recommendation: use multi-context layout.** Your workspace has two packages, `packages/orders` and `packages/catalog`, each with its own glossary and ADR folder. That matches the multi-context signal, so the root should hold a `GLOSSARY-MAP.md` that points to each context's `GLOSSARY.md`. Single-context (one root `GLOSSARY.md` and `docs/adr/`) would mix the two domains' terms and decisions.\n\n**Confirmation needed before I write anything:**\n\n1. **Layout:** Approve multi-context, or tell me you want single-context.\n2. **Exact paths:** Confirm where each glossary and ADR folder lives, for example `packages/orders/GLOSSARY.md` and `packages/orders/docs/adr/`. I'll need these to fill in the map, and I haven't verified them.\n3. **Shared terms:** Confirm whether any glossary or ADR sits outside these two packages, such as a root-level shared domain. If one exists, it needs a row in the map too.\n\nOnce you confirm, I'll draft the root `GLOSSARY-MAP.md`, the `## Agent skills` block for `CLAUDE.md` or `AGENTS.md`, and the `docs/agents/domain.md` consumer rules for your review before writing.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (recognizes multi-context from two packages with own glossary/ADR), 2 (root GLOSSARY-MAP.md pointing to contexts), and 4 (asks confirmation before writing); criterion 3 is only partly addressed since it proposes example paths and asks to confirm, without explicitly committing to preserving existing locations."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recognizes the two-package multi-context evidence, proposes a root GLOSSARY-MAP pointing to existing glossaries, and asks for confirmation before writing. It never explicitly states that existing glossary and ADR locations will be preserved."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies two packages each with their own glossary and ADR folder as multi-context evidence, proposes a root GLOSSARY-MAP.md pointing to existing glossaries, keeps those locations, and asks for approval before writing."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recognizes multi-context evidence (two packages with own glossary/ADR), proposes root GLOSSARY-MAP.md pointing to existing contexts, preserves existing locations by asking to confirm paths, and asks for confirmation before writing; it proposes a specific example path rather than explicitly committing to preserve them, so criterion 3 is only partly clear."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recognizes the two packages each with their own glossary and ADR folder as multi-context evidence, proposes a root GLOSSARY-MAP.md pointing to existing contexts, keeps those locations in place, and asks for confirmation before writing."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Proposed layout:** Keep each domain document with its package. `packages/orders` keeps its own glossary and ADR folder, and `packages/catalog` keeps its own. Each package's terms and decisions stay next to the code they describe, and neither package has to read the other's files to be understood.\n\n**Confirmation needed before I act on this:**\n\n1. **Per-package layout:** Do you want to keep separate glossary and ADR folders in each package, as the workspace has now? Or do you want a single shared glossary and ADR folder at the workspace root?\n2. **Cross-package terms:** If a term is used by both `orders` and `catalog`, should it be defined once in a shared place, or in each package with its own meaning? I can't tell from the facts I have whether any such terms exist.\n\nI haven't read or changed any files. If you confirm the per-package layout, I'll make no changes to the existing folders and will only proceed with the cross-package question once you answer it.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recognizes the two packages' separate glossary/ADR setup (1), preserves existing locations and makes no changes (3), and confirms the layout before writing (4). It misses (2): it never proposes a root glossary map pointing to the existing contexts."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (identifies the two packages' separate glossary and ADR folders as the multi-context setup), 3 (keeps existing locations and makes no changes), and 4 (asks for confirmation before acting). Misses criterion 2: it never proposes a root glossary map pointing to the package contexts."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 3 (preserves existing glossary and ADR locations) and criterion 4 (confirms before writing), but missed criterion 1, which requires recognizing genuine multi-context evidence, and criterion 2, which asks for a root glossary map to existing contexts; it only proposes a shared root glossary as an option."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 3, and 4: it recognizes the two packages' separate glossary/ADR folders, preserves them, and asks for confirmation before acting. Missed criterion 2 because it never proposes a root glossary map to the existing contexts."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recognizes the two package contexts with their own glossary and ADR folders, preserves those locations, and asks for confirmation before writing; it misses proposing a root glossary map to the existing contexts."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Proposed layout:** Keep one glossary and one ADR folder per package, and don't add a shared root-level domain doc for now:\n\n```\npackages/orders/glossary/\npackages/orders/adr/\npackages/catalog/glossary/\npackages/catalog/adr/\n```\n\nThis matches the workspace as it stands, since each package already has its own glossary and ADR folder. Terms and decisions stay next to the code they describe, and nothing needs to move.\n\n**Decision needed:** Do you want to keep the per-package layout, or consolidate into a single shared glossary and ADR set at the root? A shared set would help if orders and catalog use the same terms with different meanings, or if decisions cross both packages. If you choose that, I'd still keep package-specific entries in their own packages and link them from the root.\n\n**Confirmation needed:** Please confirm the layout before I create, move, or edit any glossary or ADR files. I haven't checked the existing contents of those folders, so I can't yet say whether any terms or ADRs overlap between orders and catalog.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (recognizes the two-package, per-package glossary/ADR setup), 3 (keeps existing locations, nothing moves), and 4 (asks for confirmation before writing). Misses 2: it proposes no root glossary map to the existing contexts, only a vague link in an alternative."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (recognizes separate per-package glossary and ADR contexts), 3 (keeps existing locations, nothing moves), and 4 (asks for confirmation before any writes). Misses 2: it rejects a root domain doc and only conditionally mentions linking from the root, with no root glossary map proposed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it recognizes the per-package glossary/ADR evidence, preserves existing locations, and asks for confirmation before writing. It misses criterion 2 because it rejects a root doc and offers only a conditional root alternative, not a root glossary map."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3 and 4: it recognizes the per-package contexts, preserves existing locations, and confirms before writing. It misses criterion 2 by rejecting a root-level map instead of proposing one."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 3 met (preserves per-package glossary/ADR locations, nothing moved) and criterion 4 met (asks confirmation before writing). Criterion 1 missed: it never recognizes multi-context evidence, only says it hasn't checked overlap. Criterion 2 missed: no root glossary map to existing contexts is proposed; it recommends against a root doc."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": null,
+     "placebo": {
+      "answer": "**Proposed layout:** keep each package's glossary and ADR folder where it is, under `packages/orders` and `packages/catalog`. Each package owns its domain language and its decisions, so the docs stay next to the code they describe.\n\n**Confirmation needed before I change anything:** do any decisions or terms apply to both packages? If so, they would need a shared home, such as a root-level `docs/` folder for cross-cutting ADRs and a shared glossary. Without that, the same term could be defined twice with different meanings.\n\nI haven't run any tools, written any files, or checked the repository. This is based only on the layout you described.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recognizes the two packages as separate contexts, preserves existing glossary and ADR locations, and asks for confirmation before writing; misses the root glossary map to existing contexts, offering only a vague shared docs folder."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 3 (preserves existing glossary/ADR locations) and criterion 4 (confirms multi-context choice before writing). Missed criterion 1 (does not recognize multi-context evidence as genuine, only asks whether terms are shared) and criterion 2 (no root glossary map to existing contexts proposed)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3 and 4: it recognizes the per-package glossary and ADR evidence, keeps those locations, and asks for confirmation before writing. It misses criterion 2 because it proposes a root docs/ folder but no root glossary map to the existing contexts."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (recognizes two package-level contexts), 3 (keeps glossary and ADR locations), and 4 (asks confirmation before changing anything); misses 2, since it proposes a shared root glossary but no map to existing contexts."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it identifies the two package contexts, keeps existing glossary and ADR locations, and asks for confirmation before changes. It misses criterion 2 because it proposes a shared root docs folder, not a root glossary map to existing contexts."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Recommendation:** Keep the existing per-package layout. Each of `packages/orders` and `packages/catalog` keeps its own glossary and ADR folder, and I would not add a workspace-level domain document.\n\n**Why:** Each package already has its own glossary and ADR folder, so the structure is in place. Keeping domain docs next to the code they describe means decisions and terms stay with the package that owns them.\n\n**Open point:** A term or decision that spans both packages, such as an order line that references a catalog item, has no obvious home. Two options:\n- **Duplicate** the term in each package's glossary, with each definition scoped to that package.\n- **Put it in one owning package** and link to it from the other.\n\nI'd choose the second option, with the owner being whichever package defines the concept.\n\n**Confirmation needed:** Please confirm two things before I act:\n1. Keep the per-package glossary and ADR folders as they are, with no workspace-level domain doc.\n2. For cross-package terms, do you prefer duplication or a single owning package with links?\n\nI haven't read, changed, or checked any files, so the contents of the existing glossaries and ADRs are unknown to me.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 3, and 4: it recognizes the two-package setup, keeps existing glossary and ADR locations, and asks for confirmation before acting. Missed criterion 2 by explicitly rejecting a root glossary map."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: recognizes the per-package contexts, preserves existing glossary and ADR locations, and asks for confirmation before acting. Misses 2 by rejecting a workspace-level root glossary map."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 3 (preserves existing glossary/ADR locations) and criterion 4 (asks confirmation before acting). Missed criterion 1 (does not recognize genuine multi-context evidence; it argues against multi-context) and criterion 2 (no root glossary map to existing contexts proposed)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it recognizes the per-package glossaries and ADRs with a cross-package term, preserves those locations, and asks for confirmation before acting. It misses criterion 2 because it rejects a workspace-level domain doc rather than proposing a root glossary map."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 3 (keeps per-package glossary/ADR locations) and 4 (asks for confirmation before writing). Misses 2 (explicitly rejects a root glossary map). Criterion 1 is weak: it notes two packages and a cross-package term but never frames the workspace as multi-context."
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

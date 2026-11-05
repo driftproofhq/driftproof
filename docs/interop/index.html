@@ -70,13 +70,14 @@
 <details class="nav-menu"><summary>Menu</summary></details>
 <nav class="site-nav" aria-label="Site">
 <a href="/reports/">Reports</a>
+<a href="/skills/">Skills</a>
+<a href="/how-it-works/">How it works</a>
+<details class="docs-menu"><summary>For builders</summary><div class="docs-menu-list">
+<a href="/#quickstart">Install</a>
+<a href="/#how-it-works">How a skill is tested</a>
 <a href="/benchmark-gap/">Gap calculator</a>
 <a href="/leaderboard-noise/">Leaderboard noise</a>
-<a href="/skills/">Skills</a>
-<a href="/findings/">Findings</a>
 <a href="/paper/">Paper</a>
-<details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
-<a href="/#how-it-works">How it works</a>
 <a href="/methodology/">Methodology</a>
 <a href="/neutrality/">Neutrality</a>
 <a href="/interop/">Interop</a>
@@ -102,7 +103,7 @@
 </ol></div></nav><!--/driftproof:layout-->
 <main class="docs">
   <h1>Receipts are an open format</h1>
-  <p class="lede">A receipt is the dated file behind every published number. Nothing about it is private: any test tool can write one, and any tool can read one.</p>
+  <p class="lede">A <!--driftproof:term--><a class="term" href="/glossary/#term-receipt" data-entry="term-receipt" data-name="Receipt" data-plain="The dated file that records one test: the skill, the model, every score and the result. Anyone can check that it has not changed since it was sealed.">receipt</a><!--/driftproof:term--> is the dated file behind every published number. Nothing about it is private: any test tool can write one, and any tool can read one.</p>
 <p><a href="/drop-results/">Read a results file in your browser</a>.</p>
 
   <section>
@@ -131,8 +132,8 @@
   <div class="card">
     <p>Every receipt names its <code>verification_level</code>, and the two levels that matter for interop are not interchangeable:</p>
     <ul class="method">
-      <li><strong><code>TESTED</code></strong> - an eval suite was <em>executed and judged under the emitting harness's control</em>, with the full evidence chain: skill + suite content hashes, a sha256 of every generation that was graded, and a sha256 of every judge sample a verdict rests on. The schema enforces this - a receipt claiming <code>TESTED</code> without the evidence chain does not validate.</li>
-      <li><strong><code>DECLARED</code></strong> - someone asserts results they cannot bind to hashed evidence. This is exactly what an <em>import</em> is: Driftproof did not run, hash, or judge another tool's generations, so a converted receipt is that tool's declaration, recorded faithfully - surface <code>external</code>, source <code>imported/&lt;tool&gt;</code>, hashes <em>omitted rather than fabricated</em>.</li>
+      <li><strong><code>TESTED</code></strong> - an eval suite was <em>executed and judged under the emitting harness's control</em>, with the full evidence chain: <!--driftproof:term--><a class="term" href="/glossary/#term-skill" data-entry="term-skill" data-name="Skill" data-plain="A file of instructions that people add to an AI assistant, such as Claude, to make it better at a job. Driftproof tests whether a skill really helps.">skill</a><!--/driftproof:term--> + suite content hashes, a sha256 of every generation that was graded, and a sha256 of every <!--driftproof:term--><a class="term" href="/glossary/#term-judge" data-entry="term-judge" data-name="Judge" data-plain="The judge, also called the grader, is an AI model, sometimes the same one that answered, that scores each answer against a guide written for the task. It is an AI, not a person, and it can be wrong.">judge</a><!--/driftproof:term--> sample a verdict rests on. The schema enforces this - a receipt claiming <code>TESTED</code> without the evidence chain does not validate.</li>
+      <li><strong><code>DECLARED</code></strong> - someone asserts results they cannot bind to hashed evidence. This is exactly what an <em>import</em> is: Driftproof did not run, hash, or judge another tool's generations, so a converted receipt is that tool's declaration, recorded faithfully - <!--driftproof:term--><a class="term" href="/glossary/#term-surface" data-entry="term-surface" data-name="Surface" data-plain="How the model was reached: through a paid programming interface or through a subscription command-line tool. The same model can behave a little differently over the two.">surface</a><!--/driftproof:term--> <code>external</code>, source <code>imported/&lt;tool&gt;</code>, hashes <em>omitted rather than fabricated</em>.</li>
     </ul>
     <p><strong>The consequence is structural, not cosmetic:</strong> drift verdicts are computed only between <code>TESTED</code> receipts. <code>driftproof diff</code> reports <strong>NOT MEASURED</strong> when either side is below <code>TESTED</code>, and a DECLARED receipt's badge reads <em>not measured</em> - declared numbers are context, never band-verified evidence. There is no path from a declaration to a verdict except running the suite.</p>
   </div>
@@ -152,7 +153,7 @@
       <li><strong>skill-creator <code>benchmark.json</code></strong> - the document skill-creator's benchmark mode writes, and skill-up writes one per iteration. Runs are grouped by eval id, and each iteration imports as its own receipt.</li>
       <li><strong><a href="https://github.com/harbor-framework/harbor">Harbor</a> job directories</strong> - one job run with the skill and one without, as the user declares them. Each trial's own <code>result.json</code> is read, never a file inside a trial folder. Cases are keyed by task id and checksum, the delta is recomputed from the rewards of finished trials that carry one, over the tasks both jobs ran under the same verifier and timeout settings, and every trial or task left out is listed with its reason.</li>
       <li><strong><a href="https://github.com/NVIDIA/skills">NVIDIA/skills</a> benchmark cards</strong> - a git checkout at the commit given, its <code>benchmarks.json</code> and each <code>BENCHMARK.md</code>. The cards give one score and one uplift per dimension and agent, so each receipt carries those figures as the card prints them, with the commit and each file's git blob sha1, and the mark <code>aggregates_only</code>: no verdict is read from it. Driftproof records the files it read and does not attest the author.</li>
-      <li><strong><a href="https://github.com/mgechev/skillgrade">skillgrade</a></strong> - "unit tests for your agent skills": N trials per task, weighted graders, a 0–1 reward. Trials are genuine repeated runs, so per-trial rewards map onto <code>samples[]</code> honestly. skillgrade has <em>no baseline mode</em>, so the imported receipt carries an empty baseline and a <code>null</code> comparison - never a fabricated zero-baseline delta.</li>
+      <li><strong><a href="https://github.com/mgechev/skillgrade">skillgrade</a></strong> - "unit tests for your agent skills": N trials per task, weighted graders, a 0–1 reward. Trials are genuine repeated runs, so per-trial rewards map onto <code>samples[]</code> honestly. skillgrade has <em>no <!--driftproof:term--><a class="term" href="/glossary/#term-baseline" data-entry="term-baseline" data-name="Baseline" data-plain="The run without the skill: the same tasks and the same model, with nothing added. Every score with the skill is compared against it.">baseline</a><!--/driftproof:term--> mode</em>, so the imported receipt carries an empty baseline and a <code>null</code> comparison - never a fabricated zero-baseline delta.</li>
     </ul>
     <p>The full field mappings - including what is assumed where the upstream tool documents semantics but not a frozen schema - are in <a href="/interop.md">the interop guide</a>.</p>
   </div>
@@ -177,9 +178,11 @@
   </details>
 </main>
 <!--driftproof:layout-end--></div><!--/driftproof:layout-end-->
+<!--driftproof:cards--><div class="jargon-cards" data-island="jargon-cards"><p class="jargon-note">Words with a dotted line link to the glossary, where each is explained in plain words.</p></div><!--/driftproof:cards-->
 <!--driftproof:foot--><footer class="site">
 <p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
 <p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/maintainer/">Maintainer</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+<p class="foot-links"><a href="/can-you-tell/">Can you tell? Every skill</a> · <a href="/noticed/">The AI noticed the sugar pill</a> · <a href="/spot-the-fake/">Which bar is the fake?</a> · <a href="/tasks/">Every task we gave a skill</a> · <a href="/sugar-pill/">Skill or sugar pill?</a></p>
 </footer><!--/driftproof:foot-->
 <!--driftproof:scripts--><script src="/copy-button.js" defer></script>
 <script type="module" src="/islands/loader.js"></script><!--/driftproof:scripts-->

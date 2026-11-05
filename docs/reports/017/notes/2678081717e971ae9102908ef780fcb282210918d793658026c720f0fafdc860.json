@@ -1,0 +1,1370 @@
+{
+ "format": "driftproof-judge-notes/1",
+ "report": "017",
+ "report_url": "/reports/017/",
+ "attempt_id": "2678081717e971ae9102908ef780fcb282210918d793658026c720f0fafdc860",
+ "skill": "hyperframes-animation",
+ "repository": "heygen-com/hyperframes",
+ "receipt_hash": "932a427a39bc105f634287f8af286d9ff5c6f58665aa3d719321ca00efaa8a4b",
+ "receipt_page": "/r/932a427a39bc105f634287f8af286d9ff5c6f58665aa3d719321ca00efaa8a4b/",
+ "receipt_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/2678081717e971ae9102908ef780fcb282210918d793658026c720f0fafdc860.json",
+ "answers_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/2678081717e971ae9102908ef780fcb282210918d793658026c720f0fafdc860-answers.json",
+ "suite_file": "https://github.com/driftproofhq/driftproof/blob/main/specs/408-skill-measurements/suites/heygen-com--hyperframes--hyperframes-animation.json",
+ "model": "Claude Sonnet 5.5",
+ "judge": "Claude Haiku 5.5",
+ "judge_samples": 5,
+ "date": "1 November 2026",
+ "arms": [
+  {
+   "key": "with_skill",
+   "label": "With the skill"
+  },
+  {
+   "key": "placebo",
+   "label": "With the fake text"
+  },
+  {
+   "key": "baseline",
+   "label": "With nothing"
+  }
+ ],
+ "caveats": [
+  "Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings.",
+  "The scores and reasons are the judge model's own words, kept exactly as it wrote them. They are a model's reading of the rubric, not Driftproof's.",
+  "This is one task of three. Each skill was given three text tasks, and one task is not the whole measurement."
+ ],
+ "tasks": [
+  {
+   "id": "timeline",
+   "number": 1,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. Propose a short heading reveal and card entrance for a seekable HyperFrames scene. The preview must support jumping to any time.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source heygen-com/hyperframes/skills/hyperframes-animation/SKILL.md at c4440dfb200def5e0c0afee938778f05b5985039; SKILL.md SHA-256 b35f1f8eff68e9ff480a5d5d343a1bf5a40ebb7d0d9be20b0b980cfdb36047f3; README SHA-256 3e8f26d5e35c6a8c32c661bf1439443d8eee332eedc9bf1a32bfe3dc417c218e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Use a single paused timeline 2. Choose a small set of appropriate motion rules 3. Keep motion deterministic under seeking 4. Avoid wall-clock timers or independent autoplay",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "## Proposal: heading reveal and card entrance\n\n**Approach:** one paused GSAP timeline. Every tween is `fromTo` at an explicit timeline position, so the state at any time `t` depends only on `t`. That is what makes jumping to an arbitrary time safe.\n\n**Choreography (about 1.5s of motion, then hold):**\n\n| Time | Element | Motion |\n|---|---|---|\n| 0.00-0.70s | Heading lines | Each line slides up from `y: 110%` inside an `overflow: hidden` wrapper, with a 0.10s stagger and `power4.out` |\n| 0.15-0.65s | Heading underline | `scaleX` 0 to 1 from the left, `power3.out` |\n| 0.55-1.35s | Cards (3) | `y: 40 to 0`, `opacity: 0 to 1`, `scale: 0.96 to 1`, 0.12s stagger, `power3.out` |\n| 1.35s onward | All | Hold until the root `data-duration` ends |\n\n**Sketch:**\n\n```html\n<div id=\"scene\" data-composition-id=\"intro\" data-start=\"0\" data-duration=\"4\">\n  <h1 class=\"title\">\n    <span class=\"mask\"><span class=\"line\">Ship motion</span></span>\n    <span class=\"mask\"><span class=\"line\">that seeks.</span></span>\n  </h1>\n  <div class=\"rule\"></div>\n  <div class=\"cards\">\n    <div class=\"card\">One</div>\n    <div class=\"card\">Two</div>\n    <div class=\"card\">Three</div>\n  </div>\n</div>\n\n<style>\n  .mask { display: block; overflow: hidden; }\n  .line { display: block; }\n  .rule { transform-origin: left center; }\n</style>\n\n<script>\n  const tl = gsap.timeline({ paused: true });\n\n  tl.fromTo(\".line\", { yPercent: 110 },\n    { yPercent: 0, duration: 0.7, ease: \"power4.out\", stagger: 0.1 }, 0);\n\n  tl.fromTo(\".rule\", { scaleX: 0 },\n    { scaleX: 1, duration: 0.5, ease: \"power3.out\" }, 0.15);\n\n  tl.fromTo(\".card\", { y: 40, opacity: 0, scale: 0.96 },\n    { y: 0, opacity: 1, scale: 1, duration: 0.8, ease: \"power3.out\", stagger: 0.12 }, 0.55);\n\n  // Register only after the timeline is fully built\n  window.__timelines = window.__timelines || {};\n  window.__timelines[\"intro\"] = tl;\n</script>\n```\n\n**Why it seeks cleanly:**\n- `fromTo` sets both endpoints, so scrubbing backward or jumping forward never depends on a previous state. Plain `from` or `set` calls can drift.\n- The timeline is paused and registered on `window.__timelines`, so the preview or renderer drives time and nothing autoplays.\n- Only `yPercent`, `y`, `scale`, `scaleX` and `opacity` are animated. There is no layout-affecting property like `width` or `top`.\n- Positions are hard-coded, with no `getBoundingClientRect()` at tween time, so parallel frame sampling stays consistent.\n- It has no `Math.random`, `Date.now`, `repeat: -1` or `onComplete` side effects. The stagger is deterministic.\n- If fonts load asynchronously and you build the timeline inside `document.fonts.ready`, register it only at the end of that callback.\n\n**Caveats:** I haven't opened the project or the `hyperframes-core` reference in this session. Verify the exact attribute names (`data-composition-id`, `data-start`, `data-duration`) against that contract. Run `npx hyperframes lint` and `snapshot` at a few timestamps (for example 0s, 0.4s, 1.0s and 3.0s) to confirm the jump-to-any-time behavior. I haven't run any of this.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses one paused GSAP timeline with explicit positions, a small set of appropriate motion rules, deterministic fromTo tweens with no random or Date calls, and no wall-clock timers or autoplay."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses one paused GSAP timeline, a small set of deterministic fromTo/stagger motions, explains seek-safety, and avoids autoplay, random, Date, and repeat-based timers."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses one paused GSAP timeline, a small set of appropriate motion rules, deterministic fromTo tweens with no randomness or Date use, and no wall-clock timers or autoplay."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses one paused GSAP timeline, a small set of motion rules (slide, rule scale, card fade/rise), deterministic fromTo tweens with no Date.now, random, or repeat, and no independent autoplay. All four criteria are met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses one paused GSAP timeline, a small set of deterministic fromTo motions on transform and opacity, and explicitly avoids Date.now, Math.random, repeat -1, and autoplay, so all four criteria are met."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "## Proposal: heading reveal and card entrance (about 1.6 s)\n\n**Content (from the supplied facts)**\n- Heading: \"The Market Town\"\n- Cards:\n  1. **Harbour**: grey stone wall carried down from the quarry by cart.\n  2. **Ferry**: crosses the sound twice a day when the weather is calm.\n  3. **Market**: cheese, honey, wool and willow baskets.\n\n**Timeline (scene-local seconds)**\n\n| Time | Element | Motion | Ease |\n|---|---|---|---|\n| 0.00-0.60 | Heading | Wipe reveal with `clip-path: inset(0 100% 0 0)` to `inset(0 0 0 0)`, with y 24 to 0 and opacity 0 to 1 | `power3.out` |\n| 0.35-0.80 | Accent rule under heading | `scaleX` 0 to 1, origin left | `power2.out` |\n| 0.50-1.10 | Card 1 | y 40 to 0, opacity 0 to 1, scale 0.96 to 1 | `power2.out` |\n| 0.62-1.22 | Card 2 | same, offset by 0.12 | `power2.out` |\n| 0.74-1.34 | Card 3 | same, offset by 0.24 | `power2.out` |\n| 1.34-1.60 | Hold | Nothing moves, so the end state is a clean still | n/a |\n\n**Making it seekable**\n\nThe scene should be a pure function of time, so a jump to any timestamp (forward or backward) renders the same frame:\n\n- Build one **paused** timeline and let the preview drive it with `seek(t)` or by setting `time`. Don't let it play on its own clock.\n- Use `fromTo` with explicit start and end values for every tween. The state at t=0 is then defined by the timeline and doesn't depend on whatever was rendered before.\n- Position every tween with an **absolute time** (`tl.fromTo(el, from, to, 0.5)`), not relative offsets that depend on previous tweens' state.\n- Don't use CSS animations or transitions, `setTimeout`, `onComplete` side effects, or `Math.random()`. Any of these breaks scrubbing or makes frames non-reproducible.\n- Set the initial hidden state through the timeline's t=0 values, not static CSS alone, so a seek back to 0 restores it.\n- Stagger the cards with explicit per-card start times (0.50, 0.62, 0.74) rather than a runtime-computed stagger from DOM order.\n\n**Sketch (pseudo-code, adjust to HyperFrames' actual registration API)**\n\n```js\nconst tl = gsap.timeline({ paused: true });\n\ntl.fromTo(\".heading\",\n  { clipPath: \"inset(0 100% 0 0)\", y: 24, opacity: 0 },\n  { clipPath: \"inset(0 0% 0 0)\", y: 0, opacity: 1, duration: 0.6, ease: \"power3.out\" }, 0);\n\ntl.fromTo(\".rule\",\n  { scaleX: 0, transformOrigin: \"left center\" },\n  { scaleX: 1, duration: 0.45, ease: \"power2.out\" }, 0.35);\n\n[0.50, 0.62, 0.74].forEach((t, i) => {\n  tl.fromTo(`.card-${i + 1}`,\n    { y: 40, opacity: 0, scale: 0.96 },\n    { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: \"power2.out\" }, t);\n});\n```\n\nI haven't checked this against HyperFrames' docs or your project, so the registration step (how the timeline is exposed to the player) is the part to confirm. Say if you want me to look at the repo and wire it in.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses one paused timeline driven by seek, a small set of appropriate ease-based motions, explicitly keeps seeking deterministic, and avoids setTimeout, CSS animations, and autoplay clocks."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Single paused timeline (gsap.timeline paused:true) with absolute-time tweens; restrained rule set (fade/slide, wipe, scale stagger); explicitly avoids CSS animations, setTimeout, random, and autoplay, so seeking is deterministic."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses one paused timeline with seek-driven playback, a small set of fade/translate/scale/clip rules, deterministic fromTo tweens at absolute times with no Math.random, and bans setTimeout and autoplay."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses a single paused timeline (gsap.timeline paused:true) with absolute-time tweens, sticks to a small set of rules (fromTo, power eases, opacity/transform/clip reveal), explicitly makes it seekable, and forbids setTimeout, CSS animations, Math.random, and onComplete side effects, avoiding autoplay."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response uses one paused timeline driven by seek(t), a small set of fromTo eased motions, absolute start times, and explicitly forbids setTimeout, CSS animations, Math.random, and self-playing clocks."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I don't have the HyperFrames API in the facts you gave me, so this is a design plus pseudocode. Map it onto whatever seek/timeline primitive HyperFrames exposes.\n\n## Seekability rule\n\nEvery visual property is a pure function of the scene time `t`. Use no wall-clock timers, no `setTimeout`, no accumulated state, and no unseeded randomness. Jumping to any `t` then renders the same frame as playing through to it.\n\n## Timeline (1.4 s total)\n\n| Time (s) | Element | Motion |\n|---|---|---|\n| 0.00 – 0.60 | Heading | Clip-path reveal, left to right, with a 24 px upward slide and opacity 0→1 |\n| 0.30 – 0.90 | Heading letters (optional) | 30 ms stagger per word, not per character, to keep it cheap |\n| 0.50 – 1.10 | Card 1 | Translate Y 40→0, opacity 0→1, scale 0.96→1 |\n| 0.65 – 1.25 | Card 2 | Same, offset by 0.15 s |\n| 0.80 – 1.40 | Card 3 | Same, offset by 0.30 s |\n\nEasing is `easeOutCubic` for everything. It has no overshoot, so there is nothing to simulate and no spring state to rebuild when seeking.\n\n## Pseudocode\n\n```js\nconst clamp01 = x => Math.min(1, Math.max(0, x));\nconst easeOut = x => 1 - Math.pow(1 - x, 3);\nconst prog = (t, start, dur) => easeOut(clamp01((t - start) / dur));\n\nfunction render(t) {\n  // Heading\n  const h = prog(t, 0, 0.6);\n  heading.style.clipPath = `inset(0 ${(1 - h) * 100}% 0 0)`;\n  heading.style.opacity = h;\n  heading.style.transform = `translateY(${(1 - h) * 24}px)`;\n\n  // Cards\n  cards.forEach((el, i) => {\n    const p = prog(t, 0.5 + i * 0.15, 0.6);\n    el.style.opacity = p;\n    el.style.transform = `translateY(${(1 - p) * 40}px) scale(${0.96 + 0.04 * p})`;\n  });\n}\n```\n\nRegister `render` as the scene's per-time callback, so play, scrub, and jump all call `render(t)` and nothing else.\n\n## Seek checks\n\n- **Before 0:** `clamp01` pins everything to the hidden start state.\n- **After 1.4 s:** everything holds at its final state.\n- **Mid-jump:** `render(0.7)` called cold should match the frame reached by playing to 0.7.\n- **Backwards seek:** works, because no state carries between frames.\n\nIf HyperFrames provides its own timeline object (GSAP-style, paused and driven by `seek(t)`), build the same tracks on it with `ease: \"power3.out\"` and the same start offsets. Avoid tweens that depend on the previous frame's values.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small, appropriate motion set), 3 (pure-function render(t) that is deterministic under seeking), and 4 (explicitly bans setTimeout and wall-clock timers). Misses criterion 1: it uses a per-time render callback, mentioning a paused timeline only as a fallback."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small set of motion rules), 3 (deterministic under seeking via pure render(t)), and 4 (no wall-clock timers or autoplay). Misses criterion 1: it uses a render callback, with a paused timeline only as an alternative."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (single paused timeline via render(t) or GSAP-style paused seek), 3 (deterministic, no state carried between frames), and 4 (no wall-clock timers); criterion 2 is arguably met with a small set of rules (clip/fade, stagger, translate/scale) but is borderline."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets motion-rule selection (small fade/translate/clip set), deterministic seeking via pure render(t), and avoids wall-clock timers. It misses the single paused timeline, offering only a pure-function callback with a paused-timeline option as a fallback."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small, appropriate motion rules), 3 (pure render(t) for deterministic seeking), and 4 (no setTimeout or autoplay). Misses 1: it drives a per-time callback rather than a single paused timeline, mentioning one only as an alternative."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "Here's a short proposal. I haven't opened `rules-index.md`, so this is built from the skill's contract and not from named atomic rules. Once you're ready for me to use tools, I can map it onto the matching rules.\n\n## Motion plan (about 1.6s total)\n\n| Time | Element | Motion |\n|---|---|---|\n| 0.0-0.6s | Heading | Mask-style reveal: `y: 40 → 0` and `opacity: 0 → 1`, `power3.out` |\n| 0.5-1.2s | Cards (3) | Staggered entrance: `y: 60 → 0`, `scale: 0.94 → 1`, `opacity: 0 → 1`, `power3.out`, 0.12s stagger |\n| 1.2-1.6s | All | Hold, so the final frame is stable |\n\nThe cards start 0.1s before the heading finishes, so the two motions overlap and read as one continuous move.\n\n## Sketch\n\n```html\n<div id=\"scene\" data-duration=\"1.6\">\n  <h1 class=\"heading\">Headline</h1>\n  <div class=\"card\">A</div>\n  <div class=\"card\">B</div>\n  <div class=\"card\">C</div>\n</div>\n\n<script>\n  const tl = gsap.timeline({ paused: true });\n\n  tl.fromTo(\".heading\",\n    { y: 40, opacity: 0 },\n    { y: 0, opacity: 1, duration: 0.6, ease: \"power3.out\" }, 0);\n\n  tl.fromTo(\".card\",\n    { y: 60, scale: 0.94, opacity: 0 },\n    { y: 0, scale: 1, opacity: 1, duration: 0.7, ease: \"power3.out\", stagger: 0.12 }, 0.5);\n\n  // Register only after the timeline is fully built\n  window.__timelines = window.__timelines || {};\n  window.__timelines[\"scene\"] = tl;\n</script>\n```\n\nCheck the exact registration key and shape against `hyperframes-core`, since I haven't verified it here.\n\n## Why it seeks to any time\n\n- **One paused timeline.** The preview can jump to any time with `tl.seek(t)` and get the same result.\n- **`fromTo` everywhere.** Each tween states both its start and end values, so a jump never depends on earlier playback state. I'd avoid page-load `gsap.set` on these elements.\n- **Only `x`/`y`/`scale`/`opacity`.** There are no `width`, `height`, `top` or `left` tweens, and no `display` or `visibility` tweens.\n- **No runtime randomness or measurement.** There's no `Math.random`, `Date.now`, `performance.now` or `getBoundingClientRect()` at tween time. Positions are fixed constants, and the stagger is a fixed number.\n- **No infinite repeats.** `data-duration=\"1.6\"` governs the length.\n- **Registration last.** The timeline is registered only after both tweens are added.\n\n## Next step\n\nIf you'd like, I can pull the matching heading-reveal and card-entrance rules from `rules-index.md` and refine easing and timing. I can also run `animation-map.mjs` afterward to check for dead zones and stagger consistency.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses one paused GSAP timeline, a small set of appropriate heading and card motions, deterministic fromTo tweens with no randomness or measurement, and no wall-clock timers or autoplay, satisfying all four criteria."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses one paused GSAP timeline, a small set of appropriate motion rules (y/opacity/scale with power3.out), fromTo tweens for deterministic seeking, and no wall-clock timers or autoplay."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: one paused timeline, a small set of appropriate heading and card motions, fromTo tweens with no randomness or measurement for deterministic seeking, and no timers or autoplay."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses a single paused GSAP timeline, a small set of appropriate heading and card motions, deterministic fromTo tweens with seek support, and no wall-clock timers or autoplay, meeting all four criteria."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses a single paused timeline (criterion 1), selects two appropriate motions (heading reveal, card stagger) (criterion 2), relies on fromTo and fixed constants for seek-determinism (criterion 3), and avoids wall-clock APIs and autoplay (criterion 4)."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Heading reveal and card entrance (about 1.4 s)\n\nI don't have HyperFrames' API in front of me, so this is written as a pure function of time `t`. Map it onto whatever timeline or seek hook the framework provides.\n\n## Content (from the supplied text)\n- **Heading:** \"The Old Market Town\"\n- **Cards:**\n  1. \"Harbour: grey stone wall, ferry twice a day\"\n  2. \"Market: cheese, honey, wool, willow baskets\"\n  3. \"Library: hand-drawn maps, two centuries old\"\n\n## Timing\n| Element | Start | Duration | Motion |\n|---|---|---|---|\n| Heading words (4) | 0.00 s, +0.08 s stagger | 0.60 s | Slide up 24px to 0 inside a clipped line mask, opacity 0 to 1 |\n| Underline rule | 0.35 s | 0.45 s | `scaleX` 0 to 1, origin left |\n| Cards (3) | 0.60 s, +0.12 s stagger | 0.50 s | `translateY` 32px to 0, scale 0.96 to 1, opacity 0 to 1 |\n\nEasing is `easeOutCubic` for everything. The last card finishes at 0.6 + 0.24 + 0.5 = 1.34 s.\n\n## Seekable implementation\n```js\nconst clamp = (x) => Math.min(1, Math.max(0, x));\nconst easeOut = (p) => 1 - Math.pow(1 - p, 3);\nconst prog = (t, start, dur) => easeOut(clamp((t - start) / dur));\n\nfunction render(t) {\n  words.forEach((el, i) => {\n    const p = prog(t, i * 0.08, 0.6);\n    el.style.transform = `translateY(${(1 - p) * 24}px)`;\n    el.style.opacity = p;\n  });\n  rule.style.transform = `scaleX(${prog(t, 0.35, 0.45)})`;\n  cards.forEach((el, i) => {\n    const p = prog(t, 0.6 + i * 0.12, 0.5);\n    el.style.transform = `translateY(${(1 - p) * 32}px) scale(${0.96 + 0.04 * p})`;\n    el.style.opacity = p;\n  });\n}\n```\n\n## Rules that keep jumping to any time correct\n- **Stateless:** `render(t)` sets every property from `t` alone. It never reads the previous frame, so seeking to 0.9 s, then 0.1 s, then 1.3 s gives identical output to playing through.\n- **Clamped:** before its start an element holds its initial state, and after its end it holds its final state.\n- **No wall-clock or randomness:** no `Date.now`, `setTimeout`, `Math.random`, or free-running CSS animations or transitions. Anything time-based is driven only by `t`.\n- **No completion callbacks:** nothing toggles classes or mutates the DOM on \"animation end\".\n- **Stable layout:** animate only `transform` and `opacity`, and size the cards and the heading mask up front so nothing reflows mid-scrub.\n- **Preview:** a scrubber calls `render(t)` directly on input, and play just advances `t` per frame.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small, appropriate motion rules), 3 (stateless render(t) for seeking), and 4 (explicitly bans Date.now, setTimeout, and free-running animations). Criterion 1 is not explicitly met: it never names a single paused timeline, only a time-driven render function."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small, appropriate fade/slide/scale rules), 3 (stateless render(t) is deterministic under seeking), and 4 (explicitly bans Date.now, setTimeout, and free-running CSS animations). Criterion 1 is not clearly met: it never names a single paused timeline and defers to an unknown framework API."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small, appropriate motion rules), 3 (stateless render(t) gives deterministic seeking), and 4 (explicitly bans Date.now, setTimeout, and free-running animations). Criterion 1 is only implied through the single time-driven render(t) and never names a paused timeline, so it is not clearly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small, appropriate motion rules), 3 (stateless render(t) is deterministic under seeking), and 4 (explicitly bans Date.now, setTimeout, and free-running animations). Criterion 1 is not explicitly addressed: it never names a single paused timeline."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small set of fade, slide, scale and stagger rules), 3 (stateless clamped render(t) for seeking) and 4 (bans Date.now, setTimeout and free-running CSS animations); misses criterion 1 because it never names a single paused timeline, offering only a generic render function."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I don't have the HyperFrames API in the facts you gave me, so this is a timing and structure proposal. The code is a framework-agnostic sketch that you'd map onto however HyperFrames registers a scene.\n\n## Design: 1.6 s total\n\n| Time (s) | Element | Motion |\n|---|---|---|\n| 0.00 - 0.60 | Heading | Masked line reveal: text slides up from `translateY(100%)` to `0` inside an `overflow: hidden` wrapper, with opacity 0 to 1 |\n| 0.15 - 0.55 | Heading underline | Scales on X from 0 to 1, origin left |\n| 0.50 - 1.10 | Card 1 | Rises 40px to 0, fades in, scales 0.96 to 1 |\n| 0.65 - 1.25 | Card 2 | Same motion, staggered by 0.15 s |\n| 0.80 - 1.40 | Card 3 | Same motion, staggered by 0.15 s |\n| 1.40 - 1.60 | All | Hold, with no motion |\n\n**Easing:** `easeOutCubic` for the heading and `easeOutBack` (small overshoot, about 1.2) for the cards.\n\n## Seekability\n\nJumping to any time works only if the scene is a pure function of time `t`. Nothing should depend on what was rendered before.\n\n- **No incremental state.** Don't use `setTimeout`, CSS transitions, `requestAnimationFrame` deltas, or \"play once\" flags. Every property is computed from `t` on every render.\n- **Clamp progress.** Each element's progress is `p = clamp((t - start) / duration, 0, 1)`. Before its start it sits at the initial pose, and after its end it sits at the final pose. Seeking backward or forward then lands on the correct frame.\n- **Set styles explicitly.** Write `transform` and `opacity` each render, so no stale values carry over.\n- **Deterministic only.** If you add any variation, use a seeded value rather than `Math.random()`.\n\n```js\nconst clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));\nconst easeOutCubic = p => 1 - Math.pow(1 - p, 3);\nconst easeOutBack = p => { const c = 1.2; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };\nconst prog = (t, start, dur) => clamp((t - start) / dur);\n\nfunction render(t) {\n  // Heading\n  const h = easeOutCubic(prog(t, 0.0, 0.6));\n  heading.style.transform = `translateY(${(1 - h) * 100}%)`;\n  heading.style.opacity = h;\n\n  // Underline\n  const u = easeOutCubic(prog(t, 0.15, 0.4));\n  underline.style.transform = `scaleX(${u})`;\n\n  // Cards\n  cards.forEach((card, i) => {\n    const p = easeOutBack(prog(t, 0.5 + i * 0.15, 0.6));\n    const o = clamp(prog(t, 0.5 + i * 0.15, 0.6) * 1.5); // fade finishes slightly early\n    card.style.opacity = o;\n    card.style.transform = `translateY(${(1 - p) * 40}px) scale(${0.96 + 0.04 * p})`;\n  });\n}\n```\n\nThe host calls `render(t)` for playback and for every seek.\n\n## Checking it\n\nSeek to these times and confirm the state matches, regardless of the order you jump in:\n\n- `t = 0`: everything hidden or at its start pose.\n- `t = 0.3`: heading mid-reveal, cards still hidden.\n- `t = 0.9`: cards mid-entrance.\n- `t = 1.6` and beyond: final layout.\n\nAlso jump backward (for example 1.6 to 0.3) and confirm the frame is identical to a fresh seek to 0.3.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small set of fitting motion rules), 3 (deterministic seeking via pure render(t)), and 4 (explicitly bans setTimeout, CSS transitions, and rAF). Misses 1: it never describes a single paused timeline, only a host-driven render function."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small set of fade, slide, scale and easing rules), 3 (pure function of t with clamping and seeded values) and 4 (bans setTimeout and rAF deltas); misses criterion 1 because it never describes a single paused timeline."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small, appropriate motion rules), 3 (explicit pure-function-of-t seeking design), and 4 (bans setTimeout, rAF deltas, and CSS transitions); criterion 1 is only implied by the single host-driven render(t) and never names a paused timeline."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small set of fade, slide, scale, stagger, and easing rules), 3 (explicit deterministic seeking via pure render(t)), and 4 (bans setTimeout, rAF, and CSS transitions); misses 1 because it never describes a single paused timeline, only a host-driven render function."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small motion set), 3 (pure function of t, deterministic under seeking), and 4 (explicitly bans setTimeout, rAF, CSS transitions); criterion 1 is only implied by the host-driven render(t), never named as a single paused timeline."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "# Heading reveal + card entrance\n\n**Approach:** one paused GSAP timeline, built from `fromTo` tweens at absolute positions. Every tween states both its start and end values, so the state at any time `t` depends only on `t`. Jumping to any time in the preview gives the right frame, with no reliance on playback history.\n\n## Markup\n\n```html\n<div id=\"scene\" data-composition-id=\"scene\" data-duration=\"3\">\n  <h1 class=\"heading-mask\"><span class=\"heading-line\">Ship motion that seeks</span></h1>\n  <div class=\"cards\">\n    <div class=\"card\">One</div>\n    <div class=\"card\">Two</div>\n    <div class=\"card\">Three</div>\n  </div>\n</div>\n```\n\n```css\n.heading-mask { overflow: hidden; }   /* clips the line as it rises */\n.heading-line { display: inline-block; }\n```\n\n## Timeline\n\n```js\nconst tl = gsap.timeline({ paused: true });\n\n// Heading: line rises out of its mask\ntl.fromTo(\".heading-line\",\n  { yPercent: 110, opacity: 0 },\n  { yPercent: 0, opacity: 1, duration: 0.7, ease: \"power3.out\" },\n  0.2);\n\n// Cards: rise, fade, and settle, staggered\ntl.fromTo(\".card\",\n  { y: 40, scale: 0.96, opacity: 0 },\n  { y: 0, scale: 1, opacity: 1, duration: 0.6, ease: \"power3.out\", stagger: 0.12 },\n  0.7);\n\n// Register only after the timeline is fully built\nwindow.__timelines = window.__timelines || {};\nwindow.__timelines[\"scene\"] = tl;\n```\n\n## Timing\n\n| Time (s) | Event |\n| --- | --- |\n| 0.2 – 0.9 | Heading reveal |\n| 0.7 – 1.66 | Cards enter (3 cards, 0.12 s apart, 0.6 s each) |\n| 1.66 – 3.0 | Hold on the finished frame |\n\nThe cards start slightly before the heading finishes, so the two motions overlap and read as one gesture.\n\n## Why it is seekable\n\n- **One paused timeline.** The renderer and preview drive it by seeking.\n- **`fromTo` with explicit start values.** Seeking backward or jumping ahead lands on the same frame every time.\n- **Only `yPercent`, `y`, `scale` and `opacity`.** These are transforms and opacity, so there are no layout-driven properties and no `getBoundingClientRect()` at tween time.\n- **No `Math.random`, `Date.now`, `repeat: -1`, or `display` tweens.** The output is deterministic.\n- **Registration last.** `window.__timelines` is set after all tweens are added.\n- **`data-duration=\"3\"`.** This sets the scene length, not the tween total.\n\nI haven't opened `rules-index.md` or run anything, so this is a direct GSAP recipe rather than a pick from the atomic rules. If you'd like, I can swap in a matching rule once you point me at the index, or run `animation-map.mjs` afterward to check spacing and dead zones.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses a single paused GSAP timeline (criterion 1), a small set of appropriate motion rules (fade/rise/stagger via fromTo), deterministic seeking with explicit start values and no random/Date (criterion 3), and no wall-clock timers or autoplay (criterion 4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses one paused GSAP timeline, a small set of fromTo reveal and stagger rules, explicit start values for deterministic seeking, and no wall-clock timers or autoplay. The card timing arithmetic (1.66 s end) is off, but the rubric does not cover it."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses one paused GSAP timeline (criterion 1), a small appropriate set of reveal and staggered entrance motions (2), deterministic fromTo tweens with no random or Date values (3), and no wall-clock timers or autoplay (4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses one paused GSAP timeline (1), a small set of appropriate reveal and stagger motions (2), explicit fromTo start values with no randomness or Date (3), and no wall-clock timers or autoplay (4)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets single paused timeline, deterministic seeking, and no wall-clock or autoplay criteria; misses the motion-rules criterion since it explicitly did not consult the skill's rules."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Heading reveal and card entrance\n\nI don't have HyperFrames API details in what you supplied, so this is a timing and behavior spec, plus framework-agnostic pseudocode. The only supplied facts are the town descriptions, so I used them as the content.\n\n## Content\n- **Heading:** \"The Old Market Town\"\n- **Cards (3):**\n  1. \"The ferry crosses the sound twice a day.\"\n  2. \"The bridge has seven arches.\"\n  3. \"The market sells cheese, honey, wool and baskets.\"\n\n## Timeline (2.4 s total)\n\n| Time (s) | Element | Motion |\n|---|---|---|\n| 0.00-0.70 | Heading | Masked line reveal: text slides up from 100% to 0% inside an overflow-hidden wrapper, with opacity 0 to 1 over the first 40%. Easing: ease-out cubic. |\n| 0.50-0.90 | Underline rule | scaleX 0 to 1, origin left. |\n| 0.80-1.40 | Card 1 | translateY 24px to 0, opacity 0 to 1, scale 0.98 to 1. |\n| 1.00-1.60 | Card 2 | Same motion, 0.2 s stagger. |\n| 1.20-1.80 | Card 3 | Same motion, 0.4 s stagger. |\n| 1.80-2.40 | All | Hold at the final state. |\n\n## Seekability rules\nThe preview can jump to any time only if every visual is a pure function of the current time `t`.\n\n1. **No wall-clock animation.** Don't use CSS transitions, `setTimeout`, or free-running `requestAnimationFrame` deltas. The scene exposes one `render(t)` and the host calls it for play, scrub, or jump.\n2. **Compute state from `t` each call.** Don't accumulate or mutate incrementally.\n   ```js\n   const clamp = (x) => Math.min(1, Math.max(0, x));\n   const easeOut = (p) => 1 - Math.pow(1 - p, 3);\n   const prog = (t, start, end) => easeOut(clamp((t - start) / (end - start)));\n\n   function render(t) {\n     const h = prog(t, 0.0, 0.7);\n     heading.style.transform = `translateY(${(1 - h) * 100}%)`;\n     heading.style.opacity = clamp(h / 0.4);\n\n     rule.style.transform = `scaleX(${prog(t, 0.5, 0.9)})`;\n\n     cards.forEach((el, i) => {\n       const p = prog(t, 0.8 + i * 0.2, 1.4 + i * 0.2);\n       el.style.opacity = p;\n       el.style.transform = `translateY(${(1 - p) * 24}px) scale(${0.98 + 0.02 * p})`;\n     });\n   }\n   ```\n3. **Clamp both ends.** Seeking before an element's start gives its hidden initial state, and seeking past its end gives its final state, with no flash or leftover values.\n4. **Deterministic.** There's no randomness and no dependence on previous frames, so `render(1.1)` looks identical whether you arrived by playing or by jumping.\n5. **Stagger from index.** Delays come from `i * 0.2`, so adding or removing cards doesn't break the timing.\n\n## Wiring\nIf HyperFrames provides a timeline or seek hook, register `render` there. If it exposes a paused, scrubbable timeline, express the same start and end times and easings as tweens on it. I'd check its docs for the exact registration call rather than guess.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small, appropriate motion rules), 3 (deterministic render(t) under seeking), and 4 (explicitly avoids setTimeout, CSS transitions, and free-running rAF). Misses criterion 1: it offers a single render function and only conditionally suggests a paused timeline, without committing to one."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets single paused timeline via render(t) and deterministic seeking, and avoids wall-clock timers; but the motion rules are a fairly broad set (mask reveal, underline, stagger, scale) and it doesn't explicitly say the scene uses one paused timeline object, so criteria 1 and 2 are only partly clear."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Single time-driven render(t) is registered on a paused, scrubbable timeline (criterion 1); small appropriate motion set of heading, rule, and staggered cards (2); explicit seek determinism rules (3); and bans setTimeout, CSS transitions, and rAF autoplay (4)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets stagger/motion-rule economy, determinism under seeking, and no wall-clock timers; single paused timeline is only implied via a single render(t) function, not explicitly stated."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets single paused timeline via one render(t) function, small motion rules (fade/slide/scale/scaleX), deterministic seeking, and avoids timers/autoplay; misses an explicit single paused timeline object since it relies on host-provided render, so criterion 1 is only partly satisfied."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Heading reveal and card entrance (1.6s, seekable)\n\nI don't have HyperFrames' API docs in the supplied facts, so this describes the motion and the structure. The code is a GSAP-style paused timeline, so adapt the calls to whatever the framework exposes.\n\n## Motion spec\n\n| Time (s) | Element | Motion | Easing |\n|---|---|---|---|\n| 0.00-0.60 | Heading | Masked line reveal: text slides up from `y: 100%` to `0` inside an `overflow: hidden` wrapper, with opacity 0 to 1 over the first 40% | `power3.out` |\n| 0.30-0.90 | Heading underline | `scaleX` 0 to 1, origin left | `power2.out` |\n| 0.50-1.10 | Card 1 | `y: 40 -> 0`, `opacity: 0 -> 1`, `scale: 0.96 -> 1` | `power3.out` |\n| 0.65-1.25 | Card 2 | Same as card 1, 0.15s stagger | `power3.out` |\n| 0.80-1.40 | Card 3 | Same, 0.30s stagger | `power3.out` |\n| 1.40-1.60 | All | Hold the final state | n/a |\n\n## Making it seekable\n\nJumping to any time only works if every frame is a pure function of `t`:\n\n1. **One paused timeline, no autoplay.** All tweens are registered on a single timeline. The preview scrubber calls `timeline.seek(t)` (or `progress(p)`), and playback is just advancing `t`.\n2. **Define the start state with `fromTo`.** Each tween states both its start and end values, so seeking backward or straight to the middle doesn't depend on what ran earlier. Avoid relative values like `+=`.\n3. **No wall-clock sources.** No `setTimeout`, CSS animations or transitions, `Date.now()`, or `Math.random()` inside the scene. Any variation should come from a seeded value derived from the element index.\n4. **No callbacks that mutate state.** Use tweens or `set` calls at fixed timeline positions, not `onComplete` handlers that change the DOM, because those are skipped when you jump past them.\n5. **Fixed layout.** Measure and set sizes before building the timeline. Animate only `transform` and `opacity` so seeking can't trigger reflow differences.\n\n## Sketch\n\n```js\nconst tl = gsap.timeline({ paused: true });\n\ntl.fromTo(\".heading-inner\", { yPercent: 100, opacity: 0 },\n          { yPercent: 0, opacity: 1, duration: 0.6, ease: \"power3.out\" }, 0)\n  .fromTo(\".heading-rule\", { scaleX: 0, transformOrigin: \"left center\" },\n          { scaleX: 1, duration: 0.6, ease: \"power2.out\" }, 0.3)\n  .fromTo(\".card\", { y: 40, opacity: 0, scale: 0.96 },\n          { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: \"power3.out\",\n            stagger: 0.15 }, 0.5);\n\n// The preview drives time:\n// onScrub(t) => tl.seek(t, false)  // false: suppress events\n```\n\n## Verification\n\nCheck that `seek(0.9)` called cold renders the same frame as playing through to 0.9, and that seeking 1.6 → 0.2 → 1.6 reproduces the final frame exactly. If HyperFrames has its own timeline or frame-sampling API, swap it in and keep the same constraints.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses a single paused GSAP timeline (criterion 1), a small set of appropriate reveal and card-entrance rules (criterion 2), deterministic seeking via fromTo and seek(t) (criterion 3), and explicitly bans setTimeout, CSS animations, Date.now, Math.random, and autoplay (criterion 4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses a single paused GSAP timeline, a small set of appropriate motion rules, fromTo and fixed-position tweens for deterministic seeking, and explicitly bans setTimeout, CSS animations, and autoplay."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses a single paused GSAP timeline (criterion 1), a small set of appropriate motion rules (criterion 2), explicit seek-determinism via fromTo and no random or time-based inputs (criterion 3), and bans setTimeout, CSS animations, and autoplay (criterion 4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses a single paused timeline (criterion 1), a small set of appropriate reveal, underline, and card-entrance rules (criterion 2), deterministic seeking via fromTo and no wall-clock sources (criterion 3), and explicitly avoids setTimeout, CSS animations, and autoplay (criterion 4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses a single paused timeline (gsap.timeline({paused:true})), a small set of motion rules (heading reveal, rule scale, staggered cards), deterministic fromTo seeking, and explicitly bans setTimeout, CSS animations, Date.now, Math.random, and autoplay."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": null,
+     "placebo": {
+      "answer": "# Heading reveal and card entrance (seekable)\n\nI can't check HyperFrames' API from here, so this is a timing spec plus a small pure-function sketch. Map it onto whatever the scene exposes for the current time.\n\n## Seekability rule\n\nEvery visual property is a pure function of the scene time `t`. Don't use timers, `setTimeout`, CSS animations that run on their own, accumulated state, or `Math.random()`. If a given `t` always produces the same frame, jumping to any time works, forwards or backwards.\n\n## Content (from the supplied text)\n\n- Heading: \"The Old Market Town\"\n- Cards, each with a one-line fact:\n  1. **Harbour**: grey stone wall, carried down from the quarry by cart\n  2. **Market**: cheese, honey, wool and willow baskets\n  3. **Library**: hand-drawn maps, two centuries old\n  4. **Lighthouse**: a spiral stair climbed every dusk\n\n## Timeline (seconds)\n\n| Element | Start | Duration | Motion |\n|---|---|---|---|\n| Heading | 0.0 | 0.8 | Clip-path wipe left→right, plus 24px rise and fade-in |\n| Heading underline | 0.5 | 0.4 | Scale X 0→1 from the left |\n| Card 1 | 0.9 | 0.6 | Rise 32px, fade in, scale 0.96→1 |\n| Card 2 | 1.05 | 0.6 | Same, staggered 0.15s |\n| Card 3 | 1.2 | 0.6 | Same |\n| Card 4 | 1.35 | 0.6 | Same, finished by 1.95s |\n\nEverything holds its final state after 1.95s, so seeking past the end shows the finished layout.\n\n## Sketch\n\n```js\nconst clamp = (x) => Math.min(1, Math.max(0, x));\nconst easeOutCubic = (x) => 1 - Math.pow(1 - x, 3);\nconst prog = (t, start, dur) => easeOutCubic(clamp((t - start) / dur));\n\nfunction render(t) {\n  const h = prog(t, 0.0, 0.8);\n  heading.style.clipPath = `inset(0 ${(1 - h) * 100}% 0 0)`;\n  heading.style.opacity = h;\n  heading.style.transform = `translateY(${(1 - h) * 24}px)`;\n\n  underline.style.transform = `scaleX(${prog(t, 0.5, 0.4)})`;\n\n  cards.forEach((el, i) => {\n    const p = prog(t, 0.9 + i * 0.15, 0.6);\n    el.style.opacity = p;\n    el.style.transform = `translateY(${(1 - p) * 32}px) scale(${0.96 + 0.04 * p})`;\n  });\n}\n```\n\nCall `render(t)` for the time the preview is asked to show, whether that comes from playback or from a scrub.\n\n## Preview checks\n\n- Seek to 0: nothing visible except the empty background.\n- Seek to 0.4: the heading is mid-wipe and no cards are visible.\n- Seek to 1.2: cards 1 and 2 are mostly in, card 4 hasn't started.\n- Seek to 5: final layout. Then seek back to 0.4 and confirm the frame matches the earlier one.\n\nIf you'd like this tuned to the real HyperFrames timeline API, tell me how the scene receives its time and I can adjust it.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2-4: small appropriate motion rules, explicit determinism under seeking, and no timers or autoplay. Criterion 1 is not clearly met since it never describes a single paused timeline, only a time-driven render function."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets small appropriate motion rules, deterministic seeking, and bans timers/autoplay; misses an explicit single paused timeline, relying instead on a render(t) function."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets single paused timeline (render(t) driven by scene time), appropriate small motion rules (wipe/fade/rise/scale/stagger), deterministic seeking with no timers or randomness; misses explicit autoplay-independence framing only partially, so 0.75."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2, 3, and 4: a small set of motion rules, a pure render(t) for deterministic seeking, and no timers or autoplay. Misses 1 because it never names a single paused timeline."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small fitting motion set: wipe, fade, rise, scale, stagger), 3 (explicitly pure-function, deterministic seeking), and 4 (forbids timers and autoplay). It misses criterion 1 because it never uses or mentions a single paused timeline, relying on a render(t) function instead."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I don't have HyperFrames' API in the facts you gave me, so this is a timing and structure proposal, with framework-agnostic pseudocode. Map it onto whatever seek or timeline hook the framework exposes.\n\n## Design (1.2 s total)\n\n| Element | Start | Duration | Motion | Easing |\n|---|---|---|---|---|\n| Heading | 0.00 s | 0.60 s | Fade 0→1, translateY 24→0 px, clip reveal (inset 0 0 100% 0 → 0) | easeOutCubic |\n| Card | 0.30 s | 0.70 s | Fade 0→1, translateY 40→0 px, scale 0.96→1 | easeOutBack (small overshoot, about 1.2) |\n| Card contents (optional) | 0.60 s | 0.60 s | Stagger children by 0.08 s, fade only | easeOutQuad |\n\nThe card starts while the heading is still moving, so the two overlap and the scene reads as one gesture. Everything is at rest by 1.2 s.\n\n## Making it seekable\n\nThe key rule is that every visual property is a pure function of the scene time `t`. Nothing depends on previous frames, wall-clock time, or event callbacks.\n\n```js\nconst clamp01 = x => Math.min(1, Math.max(0, x));\nconst prog = (t, start, dur) => clamp01((t - start) / dur);\n\nconst easeOutCubic = p => 1 - Math.pow(1 - p, 3);\nconst easeOutBack  = p => { const c = 1.2; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };\n\nfunction render(t) {\n  const h = easeOutCubic(prog(t, 0.0, 0.6));\n  heading.style.opacity   = h;\n  heading.style.transform = `translateY(${(1 - h) * 24}px)`;\n  heading.style.clipPath  = `inset(0 0 ${(1 - h) * 100}% 0)`;\n\n  const c = easeOutBack(prog(t, 0.3, 0.7));\n  card.style.opacity   = clamp01(c);\n  card.style.transform = `translateY(${(1 - c) * 40}px) scale(${0.96 + 0.04 * c})`;\n}\n```\n\nSeeking to any time `t` just means calling `render(t)`. Scrubbing backward, jumping to 0, or jumping past the end all work, because clamping gives the pre-start state (hidden) and the end state (fully visible).\n\n## Rules to keep it seekable\n\n- **No wall-clock animation:** avoid CSS `animation`/`transition`, `setTimeout`, and `requestAnimationFrame` deltas for these elements. If you use CSS, drive it with a paused animation whose `currentTime` you set (or a negative `animation-delay`).\n- **No accumulated state:** don't do `x += velocity`. Compute from `t` each time.\n- **No unseeded randomness:** if you add jitter or particles, derive them from a seeded function of the element index.\n- **Clamp opacity** when using easeOutBack, since it overshoots 1.\n- **Set initial hidden state through `render(0)`,** not in CSS only, so the first frame is consistent with a seek to 0.\n\n## Verification\n\nCheck a few times by seeking directly (without playing through): 0 s (both hidden), 0.45 s (heading near done, card mid-motion), 0.8 s (card overshooting slightly), 1.2 s and later (both at rest). Then seek back to 0.45 s and confirm it matches the first visit exactly.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: one time-driven render(t) with paused CSS option, a small appropriate motion set, seek-deterministic rules with a seek verification plan, and no wall-clock timers or autoplay. Criterion 1 never names a timeline."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "A single render(t) function drives both elements as a paused, seekable timeline; motion is small and appropriate; determinism is covered by pure-function, seeded-randomness and render(0) rules; setTimeout, rAF deltas and free-running CSS are explicitly avoided."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Single render(t) driven by scene time with paused-animation guidance; small appropriate motion set; explicit determinism and seek-verification; forbids setTimeout, rAF deltas, and autoplay CSS."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Single seekable render(t) function acts as a paused timeline; small motion set (fade, translate, clip, easeOutBack, stagger); determinism rules and seek verification; explicitly bans setTimeout, rAF deltas, and wall-clock CSS."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets rules 2 (small, appropriate motion set), 3 (pure render(t) for deterministic seeking), and 4 (explicitly avoids setTimeout, rAF deltas, and autoplay CSS); misses rule 1 because it never names a single paused timeline."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": {
+      "answer": "# Heading reveal and card entrance (seekable)\n\nI'm going from the content you supplied and general seekable-animation practice. I haven't checked the HyperFrames API, so treat the property names below as a spec to map onto it.\n\n**Content**\n- Heading: \"The Market Town by the Sound\"\n- Card text: \"The market sells cheese, honey, wool and baskets woven from willow grown nearby.\"\n\n**Timing (1.4 s total, then hold)**\n\n| Element | Start | Duration | Motion |\n|---|---|---|---|\n| Heading, per word (stagger 0.08 s) | 0.00 s | 0.60 s each | Mask reveal: `clip-path: inset(0 0 100% 0)` to `inset(0)`, with `translateY(24px)` to `0` and opacity 0 to 1 |\n| Card | 0.45 s | 0.75 s | `translateY(40px)` to `0`, scale 0.96 to 1, opacity 0 to 1 |\n| Card text | 0.80 s | 0.60 s | Opacity 0 to 1 |\n\nUse ease-out cubic everywhere: `1 - (1 - p)^3`.\n\n**Making it seekable**\n- Every animated value is a pure function of the scene time `t`: `p = clamp((t - start) / duration, 0, 1)`, then `value = from + (to - from) * ease(p)`.\n- No `setTimeout`, `Date.now()`, CSS transitions or keyframe animations running on wall-clock time, and no state carried over from the previous frame.\n- On every seek or frame, recompute all elements from `t` and write the styles. Jumping to `t = 0` gives the fully hidden state, and any `t >= 1.4` gives the final state, with no dependence on earlier playback.\n- Per-word stagger uses `start = i * 0.08`, so the word index is the only input and scrubbing backward reverses cleanly.\n- If HyperFrames offers a paused, scrubbable timeline, register these as tweens on it and drive it with `seek(t)`. Otherwise use a single `render(t)` function called by the preview scrubber.\n\n**Check**\nSeek to 0, 0.3, 0.9, 1.4 and back to 0.3. The frame at 0.3 must look identical both times.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small, appropriate motion rules), 3 (pure function of t, deterministic seeking) and 4 (explicitly avoids setTimeout, Date.now, CSS transitions). Criterion 1 is only conditionally met: it suggests a paused timeline with seek(t) but falls back to render(t) without committing."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it uses a single paused timeline driven by seek(t), gives a small set of fitting motion rules, makes motion a pure function of time, and forbids wall-clock timers and autoplay."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets appropriate small motion rules, deterministic seeking, and avoiding wall-clock timers/autoplay; single paused timeline is only conditionally offered via 'if HyperFrames offers' with a render(t) fallback."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (single paused timeline driven by seek(t)), 2 (small set of motion rules: mask reveal, translate/scale/opacity, ease-out), 3 (deterministic pure-function-of-t with seek-back check), and 4 (explicitly bans setTimeout, Date.now, CSS transitions/keyframes). Only partially satisfied on 1 since it offers a fallback render(t) instead of committing to one timeline."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (single paused timeline via seek(t)), 2 (small set of motion rules: mask reveal, translate/scale, opacity, ease-out), and 3 (pure function of t, reversible seeking); misses 4 explicitly, though it does forbid setTimeout, Date.now and CSS transitions, so this is partial credit."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I don't have HyperFrames' API details, so this is a timing and structure proposal in generic terms, with a pseudo-code sketch rather than API calls.\n\n## Core rule for seekability\n\nEvery visual property is a pure function of the scene time `t`. Nothing depends on previous frames, `setTimeout`, CSS animations that run on their own clock, accumulated state, or `Math.random()`. If you jump to `t = 1.3s`, the frame is computed from scratch and looks identical to playing through to that point.\n\n## Timeline (1.4s total)\n\n| Time (s) | Element | Motion |\n|---|---|---|\n| 0.00-0.60 | Heading | Masked line reveal: text slides up from `y = +100%` to `0` inside an `overflow: hidden` wrapper, with opacity 0 to 1 over the first 40% of the span. Ease-out cubic. |\n| 0.15-0.55 | Heading underline | Scale-X from 0 to 1, origin left. Ease-in-out. |\n| 0.45-1.05 | Card 1 | Translate-Y +32px to 0, opacity 0 to 1, scale 0.96 to 1. Ease-out cubic. |\n| 0.60-1.20 | Card 2 | Same as card 1, offset by 0.15s. |\n| 0.75-1.35 | Card 3 | Same, offset by 0.30s. |\n| 1.35+ | All | Hold at final state. |\n\nThe cards overlap the end of the heading reveal, so the entrance reads as one continuous motion. A 0.15s stagger is fast enough to feel connected and slow enough to read as a sequence.\n\n## Sketch\n\n```js\nconst clamp01 = x => Math.min(1, Math.max(0, x));\nconst easeOutCubic = p => 1 - Math.pow(1 - p, 3);\nconst seg = (t, start, dur) => clamp01((t - start) / dur);\n\nfunction render(t) {\n  const h = easeOutCubic(seg(t, 0.00, 0.60));\n  heading.y = (1 - h) * 100;           // percent, inside masked wrapper\n  heading.opacity = clamp01(h / 0.4);\n\n  const u = seg(t, 0.15, 0.40);\n  underline.scaleX = u * u * (3 - 2 * u); // smoothstep\n\n  cards.forEach((card, i) => {\n    const p = easeOutCubic(seg(t, 0.45 + i * 0.15, 0.60));\n    card.y = (1 - p) * 32;\n    card.scale = 0.96 + 0.04 * p;\n    card.opacity = p;\n  });\n}\n```\n\n`clamp01` guarantees that before a segment starts, the element sits at its start state, and after it ends, at its end state. That is what makes scrubbing backward or jumping past a segment correct.\n\n## Seeking checklist\n\n- **Jump to 0:** the heading is hidden below the mask and the cards are invisible, so there is no flash of final content.\n- **Jump to the end or past it:** everything is at its resting state because of the clamping.\n- **Scrub backward:** the animation reverses cleanly since there is no one-way state.\n- **Initial render:** the first frame calls `render(t)` with the current time instead of relying on default CSS, so a seek before playback starts still shows the right frame.\n- **Fonts:** wait for fonts to load before the first render, since a late font swap changes the heading's measured height and can break the mask offset.\n- **Stagger:** compute it from the card index, not from DOM insertion timing.\n\nIf you tell me how HyperFrames exposes its timeline (a `seek(t)` hook, a GSAP-style paused timeline, or something else), I can translate this into the exact API.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small set of fitting motion rules), 3 (explicitly deterministic under seeking via pure render(t)), and 4 (explicitly bans setTimeout and self-clocked CSS animations); misses 1, since it never specifies a single paused timeline."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets single paused timeline via render(t) function of scene time, uses a small set of motion rules (slide/fade, scale, stagger), and is deterministic under seeking with no timers or autoplay; misses an explicit 'single paused timeline' framing, citing a pure function rather than a timeline object."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small, appropriate motion rules), 3 (explicit determinism under seeking via pure render(t)), and 4 (rejects setTimeout and self-running CSS animations). Criterion 1 is only implied by the single time-driven render function; it never names a paused timeline."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small, appropriate motion rules), 3 (pure function of time, deterministic seeking), and 4 (rules out setTimeout and self-clocked CSS animation); misses 1 because it never describes a single paused timeline."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small set of fitting motion rules), 3 (pure function of time, seek-safe), and 4 (explicitly avoids setTimeout, self-clocked CSS animations, and Math.random). Misses 1: it never mentions a paused timeline, only a shared render(t) and a question about GSAP-style timelines."
+       }
+      ]
+     }
+    },
+    {
+     "try": 6,
+     "with_skill": null,
+     "placebo": {
+      "answer": "I don't have HyperFrames API details in the facts you gave me, so this is a timing and structure proposal. Adapt the syntax to however your scene registers its timeline.\n\n## Core rule for seekability\n\nEvery visual state must be a pure function of the current time `t`. Build one paused timeline with absolute positions, and have the preview call `seek(t)` for any `t`.\n\n- Don't use `setTimeout`, `requestAnimationFrame` deltas, `Date.now()`, or CSS animations that run on their own clock.\n- Don't use `Math.random()`. If you need variation, derive it from the index or a fixed seed.\n- Use `fromTo` tweens, not `from` or `to`. Each tween then declares both endpoints, so jumping backward or forward never depends on earlier state.\n- Don't use `onComplete` side effects to change the DOM.\n\n## Content (from your facts)\n\n- Heading: \"The Old Market Town\"\n- Cards (3), each with a title and one line:\n  1. **Market**: \"Cheese, honey, wool and willow baskets.\"\n  2. **Harbour**: \"Grey stone wall, ferry twice a day.\"\n  3. **Library**: \"Hand-drawn maps, two centuries old.\"\n\n## Timing (total about 2.2 s)\n\n| Time | Element | Motion |\n|---|---|---|\n| 0.00–0.70 s | Heading | Clip-reveal: the mask goes from `inset(0 100% 0 0)` to `inset(0 0% 0 0)`, with `y` 24→0 and opacity 0→1. Ease `power3.out`. |\n| 0.35–0.85 s | Underline rule | `scaleX` 0→1 from the left. Ease `power2.out`. |\n| 0.70–1.30 s | Card 1 | `y` 40→0, opacity 0→1, scale 0.96→1. Ease `power3.out`. |\n| 0.85–1.45 s | Card 2 | Same motion, offset +0.15 s. |\n| 1.00–1.60 s | Card 3 | Same motion, offset +0.30 s. |\n| 1.60–2.20 s | Hold | Nothing moves, so a seek to any late time shows the final layout. |\n\nThe cards overlap the heading's tail so the entrance reads as one gesture. The 0.15 s stagger is computed as `0.70 + i * 0.15`, not accumulated at runtime.\n\n## Sketch (GSAP-style, API names assumed)\n\n```js\nconst tl = gsap.timeline({ paused: true });\n\ntl.fromTo(\".heading\",\n  { clipPath: \"inset(0 100% 0 0)\", y: 24, opacity: 0 },\n  { clipPath: \"inset(0 0% 0 0)\", y: 0, opacity: 1, duration: 0.7, ease: \"power3.out\" }, 0);\n\ntl.fromTo(\".rule\",\n  { scaleX: 0, transformOrigin: \"left center\" },\n  { scaleX: 1, duration: 0.5, ease: \"power2.out\" }, 0.35);\n\ndocument.querySelectorAll(\".card\").forEach((el, i) => {\n  tl.fromTo(el,\n    { y: 40, opacity: 0, scale: 0.96 },\n    { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: \"power3.out\" },\n    0.7 + i * 0.15);\n});\n\n// register tl with the scene so the preview can call tl.seek(t)\n```\n\n## Preview checks\n\n1. Seek to 0: heading is hidden and the cards are invisible.\n2. Seek to 1.0, then 0.4, then 1.0 again: the frames at 1.0 must be identical.\n3. Seek straight to 2.0: the final layout must match a normal playthrough.\n4. Scrub backward through the whole range: nothing should flash or stay stuck.\n\nIf you share the HyperFrames scene registration API, I can adapt the sketch to it.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses one paused timeline (`gsap.timeline({ paused: true })`), a small set of appropriate motions (clip-reveal, rule scaleX, staggered card entrance), explicit determinism rules with fromTo and seek checks, and bans setTimeout, rAF, Date.now, and self-running animations."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: a single paused timeline (gsap.timeline paused), a small set of motion rules (fromTo clip-reveal, scale/fade, stagger), deterministic seeking with no random or wall-clock timing, and no setTimeout, rAF, or autoplay."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses a single paused GSAP timeline with a small, appropriate set of rules (clip reveal, rule scale, staggered card entrance), keeps all motion deterministic under seek, and explicitly avoids wall-clock timers and independent autoplay."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses one paused timeline, a small set of appropriate motion rules, and explicitly keeps motion a pure function of time with fromTo tweens and no Math.random, Date.now, or timers."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: one paused timeline (tl with paused:true), a small set of motion rules (clip reveal, rule scale, card entrance with stagger), deterministic seeking via absolute positions and fromTo, and no wall-clock timers or autoplay."
+       }
+      ]
+     },
+     "baseline": null
+    },
+    {
+     "try": 7,
+     "with_skill": null,
+     "placebo": {
+      "answer": "I don't have HyperFrames' API in front of me, so this is a design in terms of timings and a pure function of time. You can map it onto whatever timeline primitive the scene uses.\n\n## Seekability principle\n\nEvery visual property is computed from the scene time `t` alone: `value = ease(clamp((t - start) / duration, 0, 1))`. There are no `setTimeout` calls, CSS animations that run on their own clock, accumulated state, or `Math.random()`. Jumping to any `t` then renders the same frame as playing up to it.\n\n## Content (from the supplied text)\n\n- Heading: \"The Market Town\"\n- Cards (3):\n  1. \"The ferry crosses the sound twice a day.\"\n  2. \"The market sells cheese, honey, wool and willow baskets.\"\n  3. \"The bridge has seven arches.\"\n\n## Timeline (2.0s total)\n\n| Time | Element | Motion |\n|---|---|---|\n| 0.00-0.60s | Heading | Mask reveal: a clip-path inset from `0 100% 0 0` to `0 0 0 0`, with a translateY of 12px to 0 and opacity 0 to 1. Ease: `easeOutCubic`. |\n| 0.40-0.70s | Accent rule under heading | scaleX 0 to 1, origin left, `easeOutCubic`. |\n| 0.60-1.10s | Card 1 | translateY 24px to 0, opacity 0 to 1, scale 0.97 to 1, `easeOutBack` with a mild overshoot. |\n| 0.75-1.25s | Card 2 | Same motion, offset by 0.15s. |\n| 0.90-1.40s | Card 3 | Same motion, offset by another 0.15s. |\n| 1.40-2.00s | Hold | All values stay at their end state. |\n\nThe stagger is `start = 0.60 + i * 0.15`, so adding cards extends the sequence without hand-tuning.\n\n## Implementation notes\n\n- Write one `progress(t, start, dur, ease)` helper and derive every style from it. Apply the results as inline styles or transforms each time the scene is rendered at `t`.\n- Clamping gives the correct pre-start state (hidden) and post-end state (final), so seeking before or past a segment needs no special cases.\n- Animate only `transform`, `opacity`, and `clip-path`, which keeps scrubbing smooth and avoids layout work.\n- Don't use `easeOutBack` for opacity. Overshoot beyond 1 would be clamped or look wrong, so apply it to transform only and use `easeOutCubic` for opacity.\n- To verify seeking, render frames at `t = 0, 0.3, 0.8, 1.2, 2.0`, then again in reverse order. The outputs should be identical.\n\nIf you tell me how HyperFrames exposes its timeline (a seek callback, a GSAP-style paused timeline, or a per-frame render function), I can turn this into concrete code.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets rules selection, deterministic seeking, and no wall-clock or autoplay; misses an explicit single paused timeline, offering only a time function and deferring the timeline primitive to the user."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small, appropriate motion rules), 3 (pure time-function seeking determinism), and 4 (no setTimeout, CSS clocks, or autoplay); criterion 1 is only implied by the time-function approach, never stated as a single paused timeline."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small, appropriate motion rules), 3 (explicitly deterministic under seeking via a pure function of t), and 4 (bans setTimeout and self-clocked CSS animations). Criterion 1 is only implied by the single time-driven model; it never explicitly calls for one paused timeline."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small, appropriate motion rules), 3 (deterministic seeking via pure time function), and 4 (explicitly bans setTimeout and self-clocked CSS animations). Misses 1: it never specifies a single paused timeline."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (small, appropriate motion rules: mask reveal, accent rule, staggered card entrance), 3 (deterministic pure function of t with seek-order verification), and 4 (explicitly bans setTimeout and self-clocked CSS animations); criterion 1 is only implied by the single 2.0s timeline, with no explicit paused-timeline statement."
+       }
+      ]
+     },
+     "baseline": null
+    }
+   ]
+  },
+  {
+   "id": "runtime",
+   "number": 2,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. An existing scene uses Lottie; the task is to fix its seek behavior. Which guidance should be consulted, and what property must be checked?",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source heygen-com/hyperframes/skills/hyperframes-animation/SKILL.md at c4440dfb200def5e0c0afee938778f05b5985039; SKILL.md SHA-256 b35f1f8eff68e9ff480a5d5d343a1bf5a40ebb7d0d9be20b0b980cfdb36047f3; README SHA-256 3e8f26d5e35c6a8c32c661bf1439443d8eee332eedc9bf1a32bfe3dc417c218e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Route to the Lottie adapter 2. Connect playback to the composition timeline 3. Check repeatable seeking 4. Do not replace the renderer merely because another is familiar",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "Consult `adapters/lottie.md` (the Lottie / dotLottie adapter guidance), reached through the `hyperframes-animation` skill's routing table.\n\nThe property to check is `window.__hfLottie`. Each runtime registers its instances on its own global so HyperFrames can seek all of them in one pass. If the scene's Lottie animation isn't registered on `window.__hfLottie`, the seek won't drive it.\n\nI haven't opened `adapters/lottie.md`, so I can't say what else it requires, such as the exact registration shape. The skill's general constraints also still apply to seek fixes. The animation should stay seek-safe and deterministic under the single paused timeline, without `Math.random`, `Date.now` or `performance.now`.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (routes to the Lottie adapter) and partially criterion 2 via window.__hfLottie registration, but missed criterion 3 (repeatable seeking is only mentioned as deterministic constraints, not checked directly) and criterion 4 is not addressed, so score is 0.5 with both weakly covered."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Lottie adapter and ties seeking to the single paused timeline and deterministic behavior, but never addresses avoiding renderer replacement (criterion 4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Routes to adapters/lottie.md, ties playback to the single paused timeline via window.__hfLottie, requires seek-safe deterministic code, and keeps Lottie without suggesting a renderer swap."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Lottie adapter via the skill's routing table (criterion 1), ties registration to the single paused timeline (2), and states seek-safe determinism (3). It never addresses avoiding a renderer swap (4), so that criterion is unmet."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Routes to the Lottie adapter via the skill's routing table, ties seeking to the single paused timeline and window.__hfLottie, checks deterministic seek-safe behavior, and does not propose replacing the renderer."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The supplied facts don't answer this. They are only descriptive passages about a coastal town, harbour, market and countryside, and say nothing about Lottie, seeking, or any project guidance. So I can't name a specific guidance document from them, and I won't invent one.\n\nFrom general knowledge, not from the supplied text, the most likely culprit in Lottie seek bugs is the unit of the seek value, frames versus time. In lottie-web, `goToAndStop(value, isFrame)` treats `value` as milliseconds unless `isFrame` is `true`. Related properties worth checking are the animation's frame rate (`fr`), its in-point (`ip`) and total frames, since seeks that ignore the in-point or assume the wrong frame rate land in the wrong place.\n\nFor the authoritative answer, check the Lottie library's own docs for the version the scene uses, plus any in-repo guidance on animation or scene seeking. If you point me to those files, I can read them and give a specific answer.",
+      "average": 0.25,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only point 4 by keeping Lottie without swapping renderers. Misses routing to the Lottie adapter and connecting playback to the composition timeline. Seek-unit advice only loosely addresses repeatable seeking."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "The response never routes to a Lottie adapter, never connects playback to the composition timeline, and does not address repeatable seeking; it only implicitly stays with Lottie, which earns the fourth point."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Does not route to a Lottie adapter or name the guidance, and never ties playback to the composition timeline or repeatable seeking. It does avoid suggesting a renderer swap, which earns the fourth point."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Misses the Lottie adapter routing and composition-timeline connection; repeatable seeking is only loosely touched via frame units. Does not suggest replacing the renderer."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "It keeps the Lottie renderer and does not suggest replacing it (point 4), but never names the Lottie adapter guidance (1), ties playback to the composition timeline (2), or checks repeatable seeking (3)."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "The facts you supplied don't name a specific guidance document, so I can't point to a project-specific one without guessing. I haven't looked at the repo.\n\nGoing on general Lottie knowledge, I'd consult the documentation for the Lottie player the scene uses (for example lottie-web's `goToAndStop` / `goToAndPlay` and `isFrame` flag, or the equivalent seek API in lottie-ios, lottie-android, or the dotLottie player), plus any internal scene or animation guidelines your team has.\n\nThe property to check first is the **frame rate and time base** of the seek: whether the value you pass is in frames or in milliseconds/seconds. In lottie-web that is the `isFrame` argument. A mismatch there is the most common cause of wrong seek positions. Closely related are the animation's `fr` (frame rate), its `ip`/`op` (in and out points), and `totalFrames`, since seek targets are relative to those. Also confirm the animation has finished loading before seeking.\n\nIf you point me to the guidance document or the scene's code, I can be more specific.",
+      "average": 0.1,
+      "notes": [
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response names no specific guidance (Lottie adapter route) and never routes to a Lottie adapter or connects playback to the composition timeline; it does mention checking seeks, but misses criteria 1, 2, and 4, and only partially touches 3 via general seek checks without repeatability framing."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only point 4: it keeps the existing Lottie player rather than replacing it. It never routes to a Lottie adapter, doesn't tie playback to the composition timeline, and doesn't address repeatable seeking."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response doesn't route to a Lottie adapter, doesn't connect playback to the composition timeline, and doesn't address repeatable seeking or keeping the existing renderer; it only covers frame/time units and load timing."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Routes to general Lottie player docs rather than a named Lottie adapter, and links frame rate and ip/op to seek targets, but never states repeatable seeking or warns against replacing the renderer."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Response names no specific guidance document, never routes to a Lottie adapter for the project's framework, does not connect playback to the composition timeline, and does not address repeatable seeking or renderer choice; it only offers generic lottie-web frame/time advice."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "Consult `adapters/lottie.md` in the hyperframes-animation skill. The routing table lists it for Lottie / dotLottie work and mentions `window.__hfLottie`. Since the issue is seek behavior, also keep the `hyperframes-core` contract in mind: one paused timeline, deterministic, seek-safe.\n\nThe property to check is `window.__hfLottie`. Each runtime registers its instances on its own global so HyperFrames can seek all of them in one pass. If the Lottie animation isn't registered there, the renderer can't seek it, and playback will drift from the timeline.\n\nI haven't opened the adapter file, so I can't say what else it requires, such as how the instance should be configured. Read it before making changes.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Lottie adapter and ties seeking to the paused composition timeline with seek-safety. Repeatable seeking is only touched on in passing. Criterion 4 (not replacing the renderer) is never addressed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to adapters/lottie.md and ties playback to the paused, seek-safe timeline. Repeatable seeking is only implied, and it never states that the renderer should be kept."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Lottie adapter and ties playback to the single paused timeline, and does not suggest replacing the renderer. Repeatable seeking is only implied by 'deterministic, seek-safe' rather than checked directly."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Routes to the Lottie adapter and ties playback to the timeline, but never says to check repeatable seeking and does not warn against replacing the renderer."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Routes to the Lottie adapter and ties playback to the timeline (criteria 1-2 met). Repeatable seeking is only implied via registration, and it never addresses avoiding a renderer swap (criterion 4 missed)."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The supplied facts don't answer this. The text is a set of unrelated passages about a coastal town (ferries, orchards, bees, a lighthouse) and says nothing about Lottie, seeking, or any guidance document. I can't name a specific guidance file or property from it without making one up.\n\nFrom general knowledge of Lottie, and not from your supplied text, this is where I'd look:\n\n- **Guidance:** The official docs for the Lottie player you're using. For lottie-web, that's the `goToAndStop` / `goToAndPlay` / `setCurrentRawFrame` API reference. If your project has its own animation or scene guidance, such as a README or a skill file, check that too.\n- **Property to check:** The units of the seek value. In lottie-web, `goToAndStop(value, isFrame)` treats the value as milliseconds unless `isFrame` is `true`. Also check the animation's `frameRate` and `totalFrames` (or `op`/`ip` in the JSON), since those determine how time maps to frames.\n- **Also check:** Whether the animation has finished loading (`DOMLoaded` or `data_ready`) before you seek. Seeking too early is another common cause of broken seek behavior.\n\nIf you point me at the scene's code or the guidance you have in mind, I can be more specific. I'd need to read the files for that, and you've asked me not to use tools in this turn.",
+      "average": 0.15,
+      "notes": [
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Points to lottie-web docs and generic seek units, not the Lottie adapter or composition timeline; never mentions repeatable seeking or avoiding a renderer swap."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Misses all four criteria: no Lottie adapter routing, no link to the composition timeline, no repeatable-seek check, and no warning against swapping renderers. It offers general lottie-web advice instead."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Misses adapter routing and composition-timeline connection; repeatable seeking is only indirectly touched via seek units. Only the no-renderer-swap point is arguably met, since it never suggests replacing Lottie."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only criterion 4 is met, since it never suggests replacing the renderer. It does not name a Lottie adapter, connect playback to the composition timeline, or address repeatable seeking; it cites generic lottie-web docs instead."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Gives only generic lottie-web guidance and never routes to a Lottie adapter, nor connects playback to the composition timeline or checks repeatable seeking. It does not recommend replacing the renderer, which earns the last criterion."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "The facts you supplied don't name any specific guidance document or property, so I can't say which one your project expects. I don't want to invent a document name.\n\nFrom general Lottie knowledge, the property most likely to matter for seek behavior is the **frame rate (`fr`)** in the animation JSON, along with the in-point and out-point (`ip` / `op`). Seeking goes wrong most often because of a unit mismatch. For example, lottie-web's `goToAndStop(value, isFrame)` treats the value as milliseconds when `isFrame` is false and as a frame index when it is true. A time in seconds converted with the wrong frame rate, or a frame number that ignores a non-zero `ip`, will land on the wrong frame.\n\nFor the guidance, I'd check these in order:\n1. Any internal or project docs on animation or scene playback, if you have them.\n2. The documentation for the specific Lottie runtime the scene uses (lottie-web, lottie-react, dotLottie, or a native player), since the seek API differs between them.\n\nIf you tell me which runtime and which guidance file you have in mind, I can narrow this down. I haven't looked at the repo, so this is not based on its contents.",
+      "average": 0.2,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Recommends checking the scene's own Lottie runtime docs, which implicitly keeps the renderer (criterion 4). It never routes to a Lottie adapter, never ties playback to the composition timeline, and does not address repeatable seeking."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 4 by not suggesting a renderer swap. It never routes to a Lottie adapter, never connects playback to the composition timeline, and does not check repeatable seeking, only one-off frame-unit errors."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Misses the Lottie adapter routing, composition-timeline connection, and repeatable-seeking check. It mentions no renderer-replacement guidance either, so it satisfies none of the four criteria."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Points to the Lottie runtime's docs (roughly routing to an adapter) but never ties playback to the composition timeline, never checks repeatable seeking, and does not address keeping the renderer."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Misses routing to the Lottie adapter guidance and connecting playback to the composition timeline, and does not explicitly check repeatable seeking; it only avoids recommending a renderer replacement."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "Consult `adapters/lottie.md` in the hyperframes-animation skill. It covers Lottie and dotLottie and is the runtime-specific guidance for this case. The `hyperframes-core` contract also applies as a prerequisite: one paused timeline, deterministic, seek-safe.\n\nThe property to check is whether the Lottie instance is registered on `window.__hfLottie`. HyperFrames seeks every runtime in one pass through its runtime-specific global. If the animation isn't registered there, the renderer can't seek it, which is the most likely cause of broken seek behavior.\n\nI can't tell from the supplied facts what else `adapters/lottie.md` requires for seeking, such as autoplay or loop settings. Check that file for those details once tool use is allowed.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 by routing to adapters/lottie.md and partly meets 2 via the renderer seeking through window.__hfLottie. Criterion 3 is only implied by 'seek-safe' and criterion 4 is not addressed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets point 1 by routing to adapters/lottie.md and partly meets 2 via the single paused timeline and window.__hfLottie seek path. Point 3 is only implied by 'seek-safe', and point 4 (don't replace the renderer) is never addressed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Routes to the Lottie adapter (criterion 1) and checks seekability via registration, which partly covers repeatable seeking (3). It never clearly ties playback to the composition timeline (2) and omits any warning against replacing the renderer (4)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to the Lottie adapter (1) and ties seeking to deterministic, paused-timeline behavior (2, 3). Misses point 4: it never says not to replace the renderer."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to adapters/lottie.md, checks window.__hfLottie registration for seekable behavior, and keeps the HyperFrames renderer. It only partly connects playback to the composition timeline, mentioning a paused timeline as a prerequisite."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The supplied text doesn't answer this. It's only descriptive prose about a coastal town and says nothing about Lottie, seeking, or any guidance document, so I can't name a specific guide or property from it.\n\nFrom general knowledge only, not from your facts: in lottie-web, seeking is done with `goToAndStop(value, isFrame)` or `goToAndPlay(value, isFrame)`. The property to check is whether `value` is being interpreted as a **frame number or as milliseconds**, which is controlled by the `isFrame` flag. Related things worth checking are the animation's frame rate (`fr`) and its in/out points (`ip`/`op`), since they determine the mapping between time and frame.\n\nIf your project has its own guidance, such as a skill, README, or internal doc for Lottie scenes, share it or point me to it and I'll work from that instead.",
+      "average": 0.1,
+      "notes": [
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response claims the supplied text is unhelpful and gives no guidance document; it does not route to a Lottie adapter, does not connect playback to the composition timeline, and does not check repeatable seeking as the rubric requires. It only offers general lottie-web knowledge and asks for the guidance, meeting none of the four criteria."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response declines to name any guidance document and never routes to a Lottie adapter or skill, so criterion 1 is missed; it does mention checking playback/seek mapping but not tying it to the composition timeline, and it does not address repeatable seeking, so the rubric is largely unmet."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response names no Lottie adapter guidance, doesn't tie playback to the composition timeline, doesn't address repeatable seeking, and never says to keep the existing renderer, so no criterion is fully met."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Misses routing to a Lottie adapter and connecting playback to the composition timeline; repeatable seeking is only loosely touched via frame/ms checks. It does not replace the renderer, which earns the one criterion."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 4: it keeps lottie-web and does not swap renderers. It misses routing to a Lottie adapter, does not tie playback to the composition timeline, and does not address repeatable seeking."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "You haven't supplied any facts naming a specific guidance document, so this is my best inference rather than something I can point to.\n\n**Guidance to consult:** the documentation for the Lottie player the scene actually uses (for example lottie-web, lottie-android, lottie-ios, or lottie-react), specifically its section on seeking and playback control. In lottie-web, that is `goToAndStop` / `goToAndPlay` and `setSubframe`. If your project has its own animation or scene-integration guidelines, check those too, since they define how the scene's clock should drive the animation.\n\n**Property to check:** the animation's **frame rate (`fr`)**, together with its in-point and out-point (`ip` / `op`) in the Lottie JSON. Most seek bugs come from mixing units. Seeking by time (ms or seconds) versus by frame (the `isFrame` flag in lottie-web) gives different results unless you convert using `fr`, and frames must be offset by `ip` and clamped to `op`. Also check whether subframe rendering is enabled, since that affects whether seeks land on fractional frames.\n\nOnce I can look at the code, I'd confirm which player and version is in use and what units the seek call is passing.",
+      "average": 0.35,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Routes to Lottie player docs and mentions the scene clock, but never names a Lottie adapter or composition timeline and omits any repeatable-seek check; it does not propose replacing the renderer."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Routes to the Lottie player docs (met) and implicitly keeps the existing renderer (met). It only vaguely mentions the scene clock, not the composition timeline (weak), and never checks repeatable seeking (missed)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Misses the adapter routing and repeatable-seeking criteria; partly meets timeline connection via the scene clock mention and keeps the existing Lottie player without replacing it."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "It routes to the Lottie player docs and avoids suggesting a renderer swap, but never names an adapter, ties playback to the composition timeline only vaguely, and does not address repeatable seeking."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Mentions the scene's clock driving the animation (timeline connection), but never names a Lottie adapter, does not address repeatable seeking, and does not state that the renderer should be kept."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "Consult `adapters/lottie.md` in the hyperframes-animation skill. It covers Lottie and dotLottie and the `window.__hfLottie` registration. Since the problem is seeking, also keep the `hyperframes-core` contract in mind (one paused timeline, deterministic, seek-safe).\n\nThe property to check is whether the Lottie instance is registered on `window.__hfLottie`. Each runtime registers its instances on its own global so HyperFrames can seek all of them in one pass. A Lottie animation that isn't registered there won't be driven by HyperFrames' seek, so it plays on its own clock instead of following the timeline.\n\nI haven't opened `adapters/lottie.md`, so I can't say what else it requires for seeking, such as autoplay settings or how the instance should be created. Read it to confirm those details.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets routing to the Lottie adapter and connecting playback to the timeline via window.__hfLottie registration. Misses repeatable seeking, which is only mentioned as 'seek-safe', and never explicitly says not to replace the renderer."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Routes to adapters/lottie.md (criterion 1) and ties playback to the single paused timeline via window.__hfLottie (criterion 2). Repeatable seeking is only mentioned in passing as 'seek-safe' (criterion 3 weak), and renderer replacement is never addressed (criterion 4 unstated)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to adapters/lottie.md and ties playback to the single paused timeline and seek. Misses repeatable seeking: it only mentions 'seek-safe' in passing and checks registration instead. Does not suggest replacing the renderer."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to adapters/lottie.md and ties seeking to the single paused timeline and window.__hfLottie registration (criteria 1-2, and roughly 3). It never states that the renderer should not be replaced (criterion 4)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to adapters/lottie.md, ties seeking to the paused composition timeline, and never proposes replacing the renderer. It only loosely touches repeatable seeking via 'deterministic, seek-safe' without a concrete check."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The supplied facts don't answer this. The text you pasted is only descriptive prose about a coastal town, and it has nothing on Lottie, scenes, or seeking. No project guidance or skill file was supplied either, so I can't say which guidance document applies without guessing.\n\nFrom general Lottie knowledge, not from your materials, here is where I'd look:\n\n- **Guidance:** the docs for your specific Lottie runtime, such as lottie-web, lottie-react, or dotLottie, on their seek APIs (e.g. `goToAndStop` / `goToAndPlay`). If the repo has its own animation or scene conventions, those would take precedence.\n- **Property to check:** whether the seek value is in frames or milliseconds (the `isFrame` argument in lottie-web). Right after that, check the animation's frame rate (`fr`) and in/out points (`ip`/`op`) in the JSON, since a frames-vs-time mismatch is the usual cause of wrong seek positions.\n\nIf you tell me which Lottie library the scene uses, or let me look at the repo, I can give a more precise answer.",
+      "average": 0.05,
+      "notes": [
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Misses all four points: no routing to a Lottie adapter guide, no link to the composition timeline, no repeatable-seek check, and no statement against replacing the renderer."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Misses all four points: it never routes to a Lottie adapter or skill guidance, ties playback to no composition timeline, does not address repeatable seeking, and says nothing about not swapping renderers."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 4 by not swapping renderers. It misses routing to the Lottie adapter guidance, never ties seeking to the composition timeline, and does not check repeatable seeking."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Misses all four rubric points: it never routes to a Lottie adapter or skill, never ties playback to the composition timeline, never addresses repeatable seeking, and never warns against replacing the renderer."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response does not route to a Lottie adapter or skill guidance from the rubric's source, does not connect playback to the composition timeline, and does not address repeatable seeking; it only gives generic lottie-web advice and asks for more info."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "The facts you supplied don't name a specific guidance document or property, so I can't say which one your project intends. I also can't check the repo, since I'm not using tools here.\n\nFrom general Lottie knowledge, I'd consult:\n\n- **The Lottie player's own documentation** for the runtime the scene uses (lottie-web, dotLottie, lottie-react or similar), specifically its seek API (`goToAndStop` / `goToAndPlay`, or `seek` / `setCurrentRawFrameValue`).\n- **Any project-level guidance for the scene or animation system**, if one exists. That would take precedence over the generic docs.\n\nThe property to check first is **the units of the seek value**: whether it is interpreted as a frame or as time. In lottie-web this is the `isFrame` argument. Passing milliseconds when the player expects frames, or the reverse, is the most common cause of wrong seek positions.\n\nNext I'd check the animation's timing data in the JSON:\n\n- `fr`, the frame rate, which converts between time and frames.\n- `ip` and `op`, the in-point and out-point, which set the valid frame range. Seeks should be offset from `ip` and clamped to `op`.\n\nI can look at the actual code and Lottie JSON if you want me to confirm this against your scene.",
+      "average": 0.15,
+      "notes": [
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Misses criterion 1 (no Lottie adapter routing), criterion 2 (no composition timeline link), and criterion 3 (no repeatable-seek check); criterion 4 is never addressed."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Routes to Lottie player docs (criterion 1, arguably met), but never ties playback to the composition timeline, never checks repeatable seeking, and does not rule out replacing the renderer."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response misses all four rubric points: it does not name a Lottie adapter, does not connect playback to the composition timeline, does not address repeatable seeking, and does not warn against replacing the renderer."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Names generic Lottie player docs but not a Lottie adapter, never connects playback to the composition timeline, and only partly addresses repeatable seeking; it does not push to replace the renderer."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Routes to lottie-web/player docs but not a named Lottie adapter (missed 1); never ties playback to the composition timeline (missed 2); seek-unit and ip/op checks don't address repeatable seeking (missed 3); it suggests no renderer swap (met 4)."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": {
+      "answer": "Consult `adapters/lottie.md`, the Lottie/dotLottie adapter guidance in the hyperframes-animation skill. If the scene is a character (walk cycle, mascot, puppet), use its Characters section. The composition contract in `hyperframes-core` also applies as a prerequisite: one paused timeline, deterministic, seek-safe.\n\nThe property to check is `window.__hfLottie`. Each runtime registers its instances on its own global so HyperFrames can seek them all in one pass. If the Lottie instance isn't registered there, HyperFrames can't seek it, which is the most likely cause of broken seek behavior.\n\nI haven't read `adapters/lottie.md`, so I can't say what else it requires, such as how the instance should be created or whether it must be paused. Check that file for those details.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to adapters/lottie.md and ties seeking to the paused composition timeline and window.__hfLottie registration; it never proposes replacing the renderer. Timeline connection and repeatable seeking are only implied."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to adapters/lottie.md (criterion 1) and ties Lottie playback to the single paused composition timeline and seek-safety (criteria 2 and 3). It never explicitly rejects replacing the renderer (criterion 4), so that point is unmet."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Routes to adapters/lottie.md (criterion 1), ties instances to the paused, seek-safe composition timeline via window.__hfLottie (criterion 2), stresses deterministic seekability (criterion 3), and does not suggest replacing the renderer (criterion 4)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to adapters/lottie.md and ties seeking to the paused composition timeline and window.__hfLottie registration, meeting criteria 1-3. It never explicitly addresses renderer replacement (criterion 4)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Routes to adapters/lottie.md and ties Lottie playback to the paused composition timeline and seeking. Repeatable seeking is only implied through 'deterministic, seek-safe', and it never explicitly rules out replacing the renderer."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": {
+      "answer": "The facts you gave don't name a specific guidance document or skill, so I can't say which one your project intends. Here is what I'd consult and check, based on general knowledge of Lottie.\n\n**Guidance to consult:** the seek/playback documentation for the Lottie runtime your scene uses (for example lottie-web's `goToAndStop` / `goToAndPlay` and `isFrame` argument, or the equivalent in lottie-react, dotLottie, or the native players). If your project has its own animation or scene guidance, check that too, since it should say how seek time maps to the animation.\n\n**Property to check:** the animation's **frame rate (`fr` in the Lottie JSON)**, along with its in/out points (`ip`/`op`). Most seek bugs come from mixing units. The scene clock supplies seconds or milliseconds, but the Lottie API expects frames unless told otherwise. Converting correctly needs `frame = time × fr`, clamped to the `ip` to `op` range. If the player's `isFrame` flag, the scene's time base, or the file's `fr` disagree, seeks land at the wrong position, drift, or snap.\n\nOnce I'm allowed to read files, I'd start by confirming `fr`, `ip`, and `op` in the Lottie JSON and then check how the scene converts its seek time into the call to the player.",
+      "average": 0.4,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Connects scene time to Lottie frames (criterion 2) and never suggests replacing the renderer (criterion 4). It does not route to a specific Lottie adapter (criterion 1) and only implicitly touches repeatable seeking (criterion 3)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets criterion 2 by linking the scene clock to frame conversion. Misses 1 (no Lottie adapter routing, only generic runtime docs), 3 (no repeatable-seek check), and 4 (renderer replacement not addressed)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 2 (ties seek time to the scene clock and frame conversion) and 4 (no renderer swap), but only loosely meets 1 (Lottie runtime docs, not an adapter) and misses 3 (no explicit repeatable-seek check)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 2 (maps scene time to Lottie frames via fr/ip/op) and 4 (keeps Lottie, no renderer swap). Misses 1, since it names no Lottie adapter guidance, and 3, since it never states a repeatable-seek check."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Connects seek time to the timeline via frame = time × fr and the scene's conversion, earning criterion 2. It does not route to a Lottie adapter, check repeatable seeking, or state that the renderer should not be replaced."
+       }
+      ]
+     }
+    },
+    {
+     "try": 6,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "The facts you supplied don't name a specific guidance document, so I can't point to one with confidence. Going on general Lottie knowledge:\n\n**Guidance to consult:** the documentation for the Lottie runtime the scene actually uses, specifically its seek/playback API. For lottie-web that is `goToAndStop` / `goToAndPlay`. For dotLottie or lottie-player it is the `seek` API. If the scene is hosted in a framework such as Remotion, also consult that framework's Lottie integration guidance, since it usually requires seeking to be driven by the framework's own frame or time rather than the Lottie player's internal clock.\n\n**Property to check:** the unit of the seek value, and the frame rate it depends on.\n\n- In lottie-web, the second argument `isFrame` determines whether the value is read as a frame number or as milliseconds. Passing time where frames are expected (or the reverse) is the most common cause of wrong seeks.\n- Check the animation's `fr` (frame rate), `ip`/`op` (in and out points), and `totalFrames`, because converting time to frame depends on them. The scene's frame rate may differ from the Lottie file's.\n\nI'd start by confirming which of those units the current seek call passes, then compare that against the Lottie file's `fr` and `op`.",
+      "average": 0.4,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Misses routing to a Lottie adapter and checking repeatable seeking; partially meets connecting playback to the framework timeline via Remotion, and does not push to replace the renderer."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Connects playback to the framework's frame/time timeline (Remotion) for 2, but misses routing to the Lottie adapter (1), never addresses repeatable seeking (3), and only implicitly avoids replacing the renderer (4)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Routes to the Lottie runtime's seek API and suggests Remotion timeline-driven seeking (points 1-2 roughly met), and never proposes replacing the renderer (point 4). It does not address repeatable seeking (point 3)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Connects seeking to the framework's frame/time timeline (criterion 2), but never routes to a Lottie adapter, never checks repeatable seeking, and does not warn against replacing the renderer."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Misses criterion 1 (no Lottie adapter routing; it names generic lottie-web/dotLottie docs) and criterion 3 (no repeatable-seek check). Meets criterion 2 (driving seeks from the framework timeline, not the player clock) and criterion 4 (keeps the existing runtime)."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "template",
+   "number": 3,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A requested scene already matches a complex brand-reveal template. Explain when a blueprint is appropriate and how it differs from atomic rules.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source heygen-com/hyperframes/skills/hyperframes-animation/SKILL.md at c4440dfb200def5e0c0afee938778f05b5985039; SKILL.md SHA-256 b35f1f8eff68e9ff480a5d5d343a1bf5a40ebb7d0d9be20b0b980cfdb36047f3; README SHA-256 3e8f26d5e35c6a8c32c661bf1439443d8eee332eedc9bf1a32bfe3dc417c218e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Use the matching blueprint for multi-phase choreography 2. Describe atomic rules as smaller building blocks 3. Keep the same seek-safe timeline contract 4. Avoid loading unrelated templates without need",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "# Blueprints vs. atomic rules\n\n## The default is atomic rules\n\nThe skill's default is to pick 2-4 rules from `rules-index.md` and glue them together with a single paused GSAP timeline. That is usually faster and produces less code. Each rule is a small, self-contained recipe (HTML, CSS and GSAP) for one motion pattern.\n\n## When a blueprint is appropriate\n\nSince your scene already matches a complex brand-reveal template, this is one of the cases where a blueprint fits. Load one when:\n\n- **The scene matches a pre-designed multi-phase template** (brand-reveal, social-proof, etc.), and reusing its phase pipeline saves real authoring time.\n- **You want runnable ground-truth code** for a complex 4-5 phase choreography, rather than inventing the sequencing yourself.\n\nBlueprints are listed in `blueprints-index.md`. Each entry points to `blueprints/<id>.md`, which holds the full recipe. Don't read one speculatively. Load it once you've decided you need scene-level orchestration, which you have.\n\n## How they differ\n\n| | Atomic rules | Blueprints |\n|---|---|---|\n| **Scope** | One motion pattern | A whole scene with several phases (typically 4-5) |\n| **Your job** | Choose 2-4 and compose them yourself | Follow and adapt an existing phase pipeline |\n| **Sequencing** | You design the timing and ordering | Already worked out in the recipe |\n| **Cost** | Less code, quick to write | More to read, but saves effort on complex scenes |\n| **Source** | `rules-index.md` → `rules/<name>.md` | `blueprints-index.md` → `blueprints/<id>.md` |\n\n## What stays the same\n\nUsing a blueprint doesn't change the underlying contract from `hyperframes-core`:\n\n- One paused timeline, registered only after it is fully built.\n- `data-duration` governs length.\n- No `Math.random`, `Date.now` or `performance.now`.\n- Spatial motion through GSAP transform aliases only.\n- Pre-calculated layout constants rather than tween-time `getBoundingClientRect()`.\n\nSo for your brand-reveal scene, start from the matching blueprint's recipe. Reach for individual atomic rules only to tweak or extend a phase. After authoring, `scripts/animation-map.mjs` can audit the choreography for dead zones, stagger consistency and lifecycle warnings.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (recommends matching brand-reveal blueprint), 2 (atomic rules described as smaller building blocks), and 3 (seek-safe timeline contract preserved); misses 4 partially? It explicitly warns against reading blueprints speculatively, so criterion 4 is met too, but it also loads the blueprint index guidance; scoring 0.75 reflects a strict reading of the 'without need' wording."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four: recommends the matching brand-reveal blueprint for multi-phase choreography, describes atomic rules as small composable blocks, restates the seek-safe timeline contract, and warns against speculative template loading."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends the matching brand-reveal blueprint for the multi-phase scene, describes atomic rules as single-pattern building blocks, keeps the paused-timeline seek-safe contract, and advises loading blueprints only when needed."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it recommends the matching brand-reveal blueprint, describes atomic rules as small single-pattern blocks, restates the seek-safe timeline contract, and warns against loading blueprints speculatively."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: recommends the matching brand-reveal blueprint for multi-phase choreography, describes atomic rules as one-pattern building blocks, restates the seek-safe timeline contract, and warns against loading blueprints speculatively."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Short version:** if a requested scene already matches a complex brand-reveal template, use the blueprint. Atomic rules are for scenes that don't match one.\n\nI only have your premise to go on, with no spec or docs for your system, so this is the general distinction rather than your tool's exact semantics.\n\n**When a blueprint is appropriate**\n- The scene is a recognizable, recurring pattern, such as a brand reveal, where the overall shape is already known.\n- The parts depend on each other. A brand reveal typically has a build-up, a hold, a logo or name resolve, and a tagline, and their timing, ordering and pacing only make sense together.\n- You want consistency and speed. Reusing a vetted template avoids re-deciding the same structural choices each time.\n- The request needs only parameterization (brand name, colors, duration, copy), not new structure.\n\n**How it differs from atomic rules**\n\n| | Blueprint | Atomic rules |\n|---|---|---|\n| Scope | Whole scene or sequence | One narrow constraint or behavior |\n| Encodes | Structure, order, relationships between elements | A single independent condition or action |\n| Coupling | Parts are designed to work together | Each rule stands alone |\n| Customization | Fill in slots and tweak parameters | Compose, add, or remove rules freely |\n| Best for | Known, complex patterns | Novel, simple, or highly custom needs |\n\n**Practical rule of thumb**\n1. Start with the blueprint when the match is real.\n2. Layer a small number of atomic rules on top only for specific deviations, such as a different aspect ratio or a required color constraint.\n3. Fall back to atomic rules alone if you find yourself overriding most of the blueprint. At that point the template is a poor fit.\n\nThe risk with atomic rules alone for a complex scene is that each rule is locally correct but the combination drifts, with timing or hierarchy that no one rule owns. The risk with a blueprint is rigidity when the scene only superficially resembles the template.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2 and 4: it recommends the matching blueprint for multi-phase brand reveals and frames atomic rules as narrow standalone units. It misses 3, never mentioning a seek-safe timeline contract."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (blueprint for multi-phase brand reveal), 2 (atomic rules as narrow composable pieces) and 4 (no unnecessary template loading); misses criterion 3, which never mentions a seek-safe timeline contract."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: response says to use the blueprint when the scene matches a template; criterion 2 met: atomic rules described as narrow, standalone constraints; criterion 3 (seek-safe timeline contract) not addressed; criterion 4 (avoid unrelated templates) only loosely touched via fall-back advice, not clearly satisfied."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (blueprint for matching multi-phase brand reveal), 2 (atomic rules as narrow building blocks), and 4 (falls back to atomic rules rather than forcing a poor-fit template). Misses 3: never mentions the seek-safe timeline contract."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met: blueprint for multi-phase brand-reveal choreography, and atomic rules as narrow composable pieces. Missed: no seek-safe timeline contract, and no guidance on avoiding unrelated templates."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I don't have the template's definition in front of me, so this rests on how blueprints and atomic rules generally differ, applied to your brand-reveal case.\n\n**What each one is**\n- **Atomic rules** are small, independent constraints or instructions, such as \"logo appears at 3s,\" \"use brand primary color,\" or \"no text under 24px.\" Each is a single decision that can be applied, checked, and changed on its own.\n- **A blueprint** is a pre-composed structure for a whole scene. It bundles ordering, timing, transitions, layout, and the dependencies between elements, so the parts are designed to work together.\n\n**When a blueprint is appropriate**\n- The requested scene matches a known pattern, as your brand reveal does. The value is in the arrangement, not the individual pieces.\n- The scene is complex and its parts depend on each other. A reveal has build-up, a hold, a payoff, and a settle. Each beat's timing, motion, and audio cue depends on its neighbors.\n- You want consistency and speed. Starting from a proven structure avoids reinventing the sequencing and reduces the chance of an incoherent result.\n- Reliability matters more than novelty. The blueprint encodes choices that have already been made to work together.\n\n**When atomic rules are better**\n- The scene is novel or doesn't match an existing template, so a blueprint would force a poor fit.\n- You need fine, local control, such as overriding one color, duration, or placement.\n- You're enforcing global constraints that apply across many scenes (brand compliance, accessibility, safe areas).\n\n**Key differences**\n| | Blueprint | Atomic rules |\n|---|---|---|\n| Scope | Whole scene or sequence | Single property or decision |\n| Relationships | Built in (order, timing, dependencies) | None, left to you to reconcile |\n| Flexibility | Lower, shaped by the template | High, freely composable |\n| Risk | Poor fit if the scene deviates | Inconsistency or conflicts when many are combined |\n\n**Recommendation:** Since the scene already matches the complex brand-reveal template, use the blueprint as the base. Then layer atomic rules on top for brand-specific details like colors, logo asset, copy, and any timing tweaks. The blueprint supplies the structure, and the atomic rules customize and guard it. Only drop the blueprint if the customizations start fighting its structure, which signals the scene isn't really that pattern.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (recommends the matching brand-reveal blueprint) and criterion 2 (atomic rules as small, independent building blocks). Misses criterion 3 (no seek-safe timeline contract) and does not address criterion 4 (unrelated templates)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2 and 4: recommends the matching brand-reveal blueprint and describes atomic rules as small building blocks, and only uses a blueprint where it fits. Misses criterion 3: no mention of a seek-safe timeline contract."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (recommends the matching brand-reveal blueprint), 2 (atomic rules as small building blocks), and 4 (no unrelated templates loaded). Misses 3: never mentions the seek-safe timeline contract."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (recommends blueprint for multi-phase brand reveal) and criterion 2 (atomic rules as small independent building blocks). Missed criterion 3 (no mention of seek-safe timeline contract) and criterion 4 (does not address avoiding unrelated templates)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (recommends the matching brand-reveal blueprint for multi-phase choreography), 2 (atomic rules as small single-decision blocks), and 4 (suggests no unrelated templates). Misses 3: no seek-safe timeline contract is mentioned."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "# Blueprints vs. atomic rules\n\n**Atomic rules are the default.** You pick 2-4 rules from `rules-index.md`, each a small, self-contained motion recipe (HTML, CSS, GSAP), and glue them together on a single paused GSAP timeline. This is faster and produces less code than starting from a blueprint.\n\n**A blueprint is a multi-phase scene template.** It is a pre-designed choreography, typically 4-5 phases, with runnable ground-truth code. Blueprints are listed in `blueprints-index.md`, and each entry points to a recipe at `blueprints/<id>.md`.\n\n## When a blueprint is appropriate\n\nLoad one when either of these holds:\n\n1. **The scene matches an existing template.** Your requested scene already matches a complex brand-reveal template (the skill also names social-proof as an example), and reusing its phase pipeline saves real authoring time.\n2. **You need a complex multi-phase choreography.** You want a proven 4-5 phase sequence as a reference rather than building it from scratch.\n\nSince your scene matches a brand-reveal template, a blueprint is a reasonable choice here. The condition for loading one is that you've already decided you need scene-level orchestration. Don't read blueprints speculatively to browse them.\n\n## How they differ\n\n| | Atomic rules | Blueprints |\n|---|---|---|\n| **Scope** | One motion pattern (e.g., a single entrance or effect) | A whole scene across several phases |\n| **Use** | Pick 2-4 and compose them yourself | Adopt the template's phase pipeline |\n| **Authoring** | You design the sequencing and glue | Sequencing is already designed |\n| **Code volume** | Less | More, but runnable ground truth |\n| **Default?** | Yes | Only when the scene matches a template |\n\n## What stays the same\n\nEither path must follow the `hyperframes-core` contract. That means a single paused timeline, `data-duration` governing length, no `Math.random`, `Date.now` or `performance.now`, and the timeline registered only once fully built. Pre-calculate layout constants rather than measuring with `getBoundingClientRect()` at tween time, and use transform aliases (`x`, `y`, `scale`, `rotation`) for spatial motion.\n\nIf the blueprint doesn't fit part of your scene, you can still swap in or add atomic rules for those parts.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends the matching brand-reveal blueprint for multi-phase choreography, describes atomic rules as small building blocks, keeps the paused-timeline seek-safe contract, and warns against speculative blueprint loading."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (matches brand-reveal blueprint for multi-phase choreography), 2 (atomic rules described as smaller building blocks), and 3 (seek-safe paused timeline contract preserved); misses 4 since it suggests reading blueprints-index and considers loading templates without strong restraint, though it does say not to browse speculatively."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends the matching brand-reveal blueprint, describes atomic rules as small single-pattern building blocks, keeps the paused single-timeline seek-safe contract, and warns against speculative blueprint loading."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends the matching brand-reveal blueprint, describes atomic rules as small single-pattern building blocks, keeps the seek-safe paused-timeline contract, and warns against speculative blueprint loading."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends the matching brand-reveal blueprint, describes atomic rules as small single-pattern building blocks, restates the seek-safe paused-timeline contract, and warns against speculative blueprint loading."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The material you supplied doesn't define \"blueprint\" or \"atomic rules\" (it's descriptive text about a coastal town), so this is based on the usual meaning of the terms, not on anything in the context.\n\n**What each is**\n- **Blueprint:** a pre-composed template for a whole scene. It fixes the structure, such as the stages of a brand reveal (build-up, reveal, hold, tagline, outro), plus their order, timing and how the parts depend on each other. You fill in parameters like logo, colors and copy.\n- **Atomic rules:** small, independent instructions, each covering one narrow thing (a font, an easing curve, a duration, a color constraint). They say nothing about how the pieces fit into a larger sequence.\n\n**When a blueprint is appropriate**\n- The requested scene matches an existing complex pattern as a whole, as in your brand-reveal case.\n- The parts are interdependent, so changing one (reveal timing) affects others (music hit, tagline entrance).\n- You want consistent, repeatable results without re-deriving the structure each time.\n- Many rules would otherwise have to be combined and kept in the right order, which invites conflicts and drift.\n\n**How they differ**\n- **Granularity:** a blueprint is holistic, while atomic rules are local.\n- **Coordination:** a blueprint encodes the relationships between elements. With atomic rules, you or the system must assemble and reconcile them.\n- **Flexibility:** atomic rules suit novel or unusual requests. A blueprint is less flexible and only helps if the request really fits it.\n- **Failure mode:** a blueprint forced onto a poor match produces a generic or wrong scene. Atomic rules applied without structure can produce incoherent or inconsistent output.\n\n**Recommendation for your case**\nUse the brand-reveal blueprint, since the scene already matches it. Supply the brand-specific parameters, and add atomic rules only as targeted overrides (for example, a specific color or a shorter hold) where the template's defaults don't fit.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (recommends the matching brand-reveal blueprint), 2 (atomic rules as small independent units), and 4 (no unneeded templates). Misses 3: never mentions a seek-safe timeline contract."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2 and 4: it recommends the matching brand-reveal blueprint for multi-phase choreography, calls atomic rules small building blocks, and avoids unneeded templates. Misses criterion 3: no seek-safe timeline contract."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2 and 4: recommends the matching brand-reveal blueprint, frames atomic rules as small building blocks, and adds only targeted overrides. Misses 3: never mentions the seek-safe timeline contract."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response explains blueprints as holistic templates matching multi-phase choreography (criterion 1) and describes atomic rules as small local building blocks (criterion 2), but never addresses the seek-safe timeline contract (criterion 3) or avoiding unneeded template loading (criterion 4), so only 0.5 is met; the score should be 0.5 by the rubric's 0.25-per-criterion scheme."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (recommends the matching brand-reveal blueprint) and 2 (atomic rules as small independent building blocks). Misses 3, since it never mentions a seek-safe timeline contract, and does not clearly address avoiding unrelated templates for 4."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Use a blueprint when the requested scene already matches a known, multi-part pattern.** A complex brand reveal is a good example. It has a recognizable structure (build-up, logo or product reveal, tagline, end card), its parts depend on each other, and the order and timing matter. When the request lines up with a template like that, start from the blueprint instead of reassembling it piece by piece.\n\n**How a blueprint differs from atomic rules**\n\n| | Blueprint | Atomic rules |\n|---|---|---|\n| **Scope** | A whole scene or composition | One narrow behavior or constraint |\n| **Contains** | Sequence, pacing, relationships between elements, default choices | A single instruction, such as \"logo must have safe margin\" or \"fade duration ≤ 0.5s\" |\n| **Coherence** | Built in, because the parts were designed together | Left to you, since each rule says nothing about the others |\n| **Flexibility** | You adapt the slots (brand name, colors, assets, timing) | You combine rules freely, but must resolve conflicts yourself |\n| **Best for** | Common, structured outcomes | Novel scenes, edge cases, fine-tuning |\n\n**When a blueprint is appropriate**\n- The scene clearly matches an existing template, as it does here.\n- The scene has interdependent parts where order and timing matter.\n- Consistency and speed matter more than novelty.\n\n**When atomic rules fit better**\n- No template matches, or only loosely.\n- You need to tweak or enforce one specific property.\n- The scene is unusual enough that a template's defaults would fight the request.\n\n**Recommendation:** Since the brand-reveal scene already matches a complex template, start from the blueprint. Then layer atomic rules on top only for specific overrides, such as a brand color constraint or a different duration. Don't rebuild the structure from atomic rules, because you would be re-deriving what the blueprint already encodes, and the pieces could drift out of sync.\n\nI only have the one fact you gave me, that the scene matches a brand-reveal template. I don't know the details of your particular blueprint system, so treat this as the general principle rather than a description of its exact mechanics.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (blueprint for matching multi-part choreography), 2 (atomic rules as narrow single-instruction blocks), and 4 (uses atomic rules when no template matches). Misses 3: never mentions the seek-safe timeline contract."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (start from the matching brand-reveal blueprint) and criterion 2 (atomic rules as narrow single-constraint building blocks). Misses criterion 3, since it never mentions the seek-safe timeline contract. Criterion 4 is only implied by the no-template-match guidance, not stated."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (starts from the matching blueprint for the multi-part reveal) and 2 (atomic rules as narrow single-instruction blocks). Misses 3, since it never mentions a seek-safe timeline contract, and 4, since it doesn't address avoiding unrelated templates."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (blueprint for the matching brand reveal), 2 (atomic rules as narrow single-constraint units), and 4 (templates used only when they match). Misses 3: no mention of a seek-safe timeline contract."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (uses the matching blueprint for the multi-phase brand reveal) and criterion 2 (atomic rules as single narrow constraints). Misses criterion 3 (no seek-safe timeline contract) and criterion 4 (no guidance against loading unrelated templates)."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "**Default is atomic rules.** For most motion work, you pick 2-4 rules from `rules-index.md`, glue them together on a single paused GSAP timeline, and you're done. It's faster and produces less code.\n\n**When a blueprint is appropriate.** Load one when:\n\n- The scene matches an existing pre-designed multi-phase template. Your brand-reveal case qualifies, and reusing its phase pipeline saves real authoring time.\n- You want runnable ground-truth code for a complex 4-5 phase choreography.\n\nSince you've already established that the scene matches a complex brand-reveal template, a blueprint is the right call here. Look it up in `blueprints-index.md`, then read the matching `blueprints/<id>.md` recipe. Don't read blueprints speculatively; load one only after you've decided you need scene-level orchestration.\n\n**How they differ:**\n\n| | Atomic rules | Blueprints |\n|---|---|---|\n| Scope | One motion pattern (a single recipe) | A whole scene with multiple phases |\n| Source | `rules/<name>.md`, found via `rules-index.md` | `blueprints/<id>.md`, found via `blueprints-index.md` |\n| Usage | Pick 2-4 and compose them yourself | Follow a pre-designed phase pipeline |\n| Authoring effort | You design the sequencing | Choreography is already worked out |\n| Best for | Most tasks, custom or simple motion | Scenes that fit an existing template |\n\n**Constraints still apply either way.** A blueprint doesn't relax the composition contract from `hyperframes-core`: a single paused timeline, `data-duration` governing length, no `Math.random` / `Date.now`, no `repeat: -1` without a finite root duration, and the timeline registered only once fully built. Spatial motion should use GSAP transform aliases (`x`, `y`, `scale`, `rotation`), and positions should be pre-calculated constants rather than `getBoundingClientRect()` at tween time.\n\nAfter authoring, you can audit the result with `scripts/animation-map.mjs` to catch dead zones, stagger inconsistencies, and lifecycle warnings.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Names the matching brand-reveal blueprint, describes atomic rules as smaller composable building blocks, restates the single paused timeline contract, and warns against loading blueprints speculatively, meeting all four criteria."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criteria 1 (uses matching blueprint for multi-phase choreography) and 2 (atomic rules as smaller building blocks) are met; criterion 3 (seek-safe timeline contract) is met too, but criterion 4 is ambiguous and the response does not clearly avoid loading unrelated templates, so it is a partial pass at best."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response recommends the matching brand-reveal blueprint, describes atomic rules as smaller single-pattern building blocks, restates the seek-safe paused-timeline contract, and warns against loading blueprints speculatively. All four criteria met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends the matching brand-reveal blueprint for multi-phase choreography, describes atomic rules as single-pattern building blocks, restates the seek-safe paused-timeline contract, and warns against loading blueprints speculatively."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends the matching brand-reveal blueprint for multi-phase choreography, describes atomic rules as single-pattern building blocks, restates the seek-safe paused-timeline contract, and warns against loading blueprints speculatively."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I don't have the definitions from your system, only the premise that the requested scene already matches a complex brand-reveal template. So this is a general explanation, and the town-scene text above doesn't bear on it.\n\n**When a blueprint is appropriate**\n\nUse a blueprint when the request already matches a known, multi-part composition and the parts depend on each other. A brand reveal fits because it usually has:\n\n- A fixed sequence of beats, such as tease, build, reveal, and settle.\n- Coordinated elements: logo, color palette, typography, motion timing, and sound or music cues.\n- Constraints that cross elements, for example the logo lands on the beat, the palette stays consistent, and the end frame holds long enough to read.\n- Quality that comes from the whole, not from any single piece.\n\nIf the match is already clear, starting from the blueprint is faster and more consistent than reassembling it piece by piece. You then fill in the brand-specific slots (name, colors, tagline, duration) and adjust only what the user asks to change.\n\n**How it differs from atomic rules**\n\n| | Blueprint | Atomic rules |\n|---|---|---|\n| Scope | A whole scene or outcome | One narrow constraint or behavior |\n| Structure | Ordered, interdependent parts | Independent, order-free |\n| Use | Applied as a starting plan, with slots to fill | Applied as checks or defaults on any output |\n| Strength | Coherence and speed for known patterns | Flexibility and reuse across many cases |\n| Weakness | Rigid if the request doesn't truly match | Can yield a disjointed result if used alone for a complex scene |\n\n**Recommendation**\n\nBecause the scene already matches the brand-reveal template, use the blueprint as the backbone. Keep atomic rules as guardrails on top of it, such as legibility, brand color accuracy, and duration limits. If the user's request later drifts away from the template's structure, drop the blueprint and fall back to atomic rules rather than forcing the fit.",
+      "average": 0.55,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 is met: the response recommends the brand-reveal blueprint for the matching multi-phase scene. Criterion 2 is missed: atomic rules are contrasted as 'narrow constraint' and 'guardrails', not explicitly described as smaller building blocks. Criterion 3 is missed: no seek-safe timeline contract is mentioned. Criterion 4 is missed: the response doesn't address avoiding unrelated template loading, though it does say to drop the blueprint if the request drifts."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (uses blueprint for multi-phase brand-reveal choreography) and criterion 2 (atomic rules described as narrow, independent building blocks); missed criterion 3 (no seek-safe timeline contract mentioned) and criterion 4 (no explicit avoidance of unrelated templates, though it advises dropping blueprint if drift occurs)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (blueprint as backbone for multi-beat brand reveal), 2 (atomic rules as narrow, independent units), and 4 (no unneeded template loading). Misses 3: no mention of a seek-safe timeline contract."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (blueprint for multi-phase brand-reveal sequence) and criterion 2 (atomic rules as independent constraints), but never mentions a seek-safe timeline contract (3) and doesn't address avoiding unrelated templates (4) beyond a vague fallback note."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (blueprint as backbone for multi-phase brand reveal), 2 (atomic rules as narrow, independent units), and 4 (no unrelated templates loaded); misses 3, since it never mentions a seek-safe timeline contract."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I don't have the documentation for your system, so I'm reading \"blueprint\" and \"atomic rules\" in their usual sense. If your tool defines them differently, trust its definitions over mine.\n\n**When a blueprint is appropriate**\n\nUse a blueprint when the requested scene already matches a known, multi-part pattern, as a complex brand reveal does. These scenes usually share:\n\n- A fixed sequence of beats, such as tease, build, logo reveal, tagline, and end card.\n- Components that depend on each other, like timing, camera moves, lighting, typography, and sound cues that must stay in sync.\n- A track record: the pattern is proven, so reusing it is safer than reinventing it.\n- Variation limited to a few parameters, such as brand name, colors, logo asset, duration, and tagline.\n\nIn that case, pick the blueprint and fill in its parameters. Don't rebuild the scene from scratch.\n\n**How it differs from atomic rules**\n\n| | Blueprint | Atomic rules |\n|---|---|---|\n| Scope | A whole scene or workflow | One narrow constraint or behavior |\n| Structure | Pre-composed, with ordered and coupled parts | Independent, with no built-in ordering |\n| Coherence | Built in, since the parts were designed together | Left to you, since rules must be combined and checked for conflicts |\n| Flexibility | Lower, limited to the exposed parameters | Higher, so you can build novel scenes |\n| Best for | Recurring, well-understood patterns | Custom, unusual, or fine-grained needs |\n\n**Recommendation**\n\nIf the scene matches the brand-reveal template, start from the blueprint. Then layer a few atomic rules on top for small adjustments, such as \"keep the logo on screen at least 2 seconds\" or \"use only the brand palette.\" Build entirely from atomic rules only if the scene departs substantially from the template, because that costs more effort and risks inconsistencies between rules.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets blueprint-for-multi-phase-choreography and atomic-rules-as-narrow-units, and avoids unnecessary templates; misses any mention of keeping the seek-safe timeline contract."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (use the matching blueprint for the brand-reveal sequence) and arguably criterion 2 (atomic rules as narrow units). Misses criterion 3, which never mentions a seek-safe timeline contract. Criterion 4 is only implicit."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Met criterion 1 (blueprint for matching multi-phase brand reveal) and criterion 2 partly; atomic rules described as independent, not explicitly as smaller building blocks, and no seek-safe timeline contract addressed, criterion 4 unaddressed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (matching blueprint for brand reveal) and 2 (atomic rules as small building blocks). Misses 3, never mentions a seek-safe timeline contract, and does not address avoiding unrelated template loading (4)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (matching blueprint for brand reveal) and 2 (atomic rules as narrow, independent parts). Missed 3: no seek-safe timeline contract. Criterion 4 is only implied, not stated."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "I don't have documentation for the specific tool you're using, so this rests on the general distinction between the two approaches and on your one fact: the requested scene already matches a complex brand-reveal template.\n\n**When a blueprint is appropriate**\n\nUse a blueprint when the scene matches a known, multi-part pattern and the pieces depend on each other. A brand reveal is a good example. It typically has:\n\n- An ordered sequence of beats (build-up, logo reveal, tagline, call to action).\n- Timing relationships between elements (the logo lands on the music hit, the tagline follows after a beat).\n- Coordinated choices across camera, motion, color, and typography that only work together.\n- A predictable end state that the template has already been designed and tested to reach.\n\nSince your scene already matches the template, a blueprint is the right choice. You get the proven structure and only fill in the variable parts, such as brand name, colors, logo asset, and tagline. Rebuilding that structure rule by rule would be slower and would risk drifting from the intended result.\n\n**How it differs from atomic rules**\n\n| | Blueprint | Atomic rules |\n|---|---|---|\n| Scope | Whole scene or workflow | One property or behavior |\n| Structure | Pre-composed, ordered, interdependent | Independent, standalone |\n| Flexibility | Fill in parameters, adjust within the pattern | Combine freely, but you are responsible for coherence |\n| Consistency | High, because the relationships are built in | Depends on how well you compose them |\n| Best for | Recognized, complex patterns | Novel cases, small tweaks, constraints that apply everywhere |\n\n**Practical guidance**\n\n- Start with the blueprint for the overall scene.\n- Layer atomic rules on top only for specific overrides, such as a brand color constraint or a duration cap.\n- Avoid using atomic rules to recreate the template's internal structure. It duplicates the blueprint and can conflict with its built-in timing and sequencing.\n- If the scene diverges substantially from the template, fall back to atomic rules, because forcing a poor match to a blueprint usually produces worse results than composing from scratch.\n\nIf you can share how your system defines blueprints and atomic rules, I can tailor this to its actual behavior.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (uses the matching blueprint for the brand-reveal choreography) and 2 (atomic rules as smaller independent units). Misses 3 (never mentions a seek-safe timeline contract) and 4 (no explicit avoidance of unrelated templates)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (uses the brand-reveal blueprint for multi-phase choreography) and criterion 2 (atomic rules as smaller standalone blocks). Misses criterion 3, which never mentions a seek-safe timeline contract, and criterion 4, which never addresses avoiding unrelated templates."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the blueprint-for-brand-reveal criterion and describes atomic rules as narrow, standalone pieces, but never mentions a seek-safe or deterministic timeline contract and does not address avoiding unrelated templates."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (recommends the matching blueprint) and criterion 2 (atomic rules scoped to one property, standalone). Misses criterion 3, since it never mentions a seek-safe timeline contract, and criterion 4, since it never says to avoid loading unrelated templates."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (recommends the matching brand-reveal blueprint) and criterion 2 (atomic rules as narrow, standalone pieces). Missed criterion 3 (no seek-safe timeline contract) and criterion 4 (no guidance on avoiding unrelated templates)."
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

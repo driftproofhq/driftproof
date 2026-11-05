@@ -1,0 +1,1275 @@
+{
+ "format": "driftproof-judge-notes/1",
+ "report": "017",
+ "report_url": "/reports/017/",
+ "attempt_id": "89e4135ba715fdcd8a1c966d04b371fa9ec97f97c1d3f0ad20a35173052c112c",
+ "skill": "find-skills",
+ "repository": "vercel-labs/skills",
+ "receipt_hash": "1dba083778de982f27fcbfa8e3bde3fc03c91802316ba58a2137deae5ef23c30",
+ "receipt_page": "/r/1dba083778de982f27fcbfa8e3bde3fc03c91802316ba58a2137deae5ef23c30/",
+ "receipt_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/89e4135ba715fdcd8a1c966d04b371fa9ec97f97c1d3f0ad20a35173052c112c.json",
+ "answers_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/89e4135ba715fdcd8a1c966d04b371fa9ec97f97c1d3f0ad20a35173052c112c-answers.json",
+ "suite_file": "https://github.com/driftproofhq/driftproof/blob/main/specs/408-skill-measurements/suites/vercel-labs--skills--find-skills.json",
+ "model": "Claude Sonnet 5.5",
+ "judge": "Claude Haiku 5.5",
+ "judge_samples": 5,
+ "date": "1 November 2026",
+ "arms": [
+  {
+   "key": "with_skill",
+   "label": "With the skill"
+  },
+  {
+   "key": "placebo",
+   "label": "With the fake text"
+  },
+  {
+   "key": "baseline",
+   "label": "With nothing"
+  }
+ ],
+ "caveats": [
+  "Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings.",
+  "The scores and reasons are the judge model's own words, kept exactly as it wrote them. They are a model's reading of the rubric, not Driftproof's.",
+  "This is one task of three. Each skill was given three text tasks, and one task is not the whole measurement.",
+  "These text tasks test the router's written response, not the delegated skill. Report 015 Amendment 1. Left out of the headline count."
+ ],
+ "tasks": [
+  {
+   "id": "search",
+   "number": 1,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. I need a skill for React performance work. Supplied candidates: vercel-labs/agent-skills@react-best-practices, 1200 installs, repository 800 stars; unknown/demo@react-speed, 12 installs, 3 stars. Recommend a candidate and show the proposed install command, without installing.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source vercel-labs/skills/skills/find-skills/SKILL.md at 13e4063a1cf913f5606d57d42ab83a86f5001e04; SKILL.md SHA-256 c00eeea0e13e74fe4a9d84ba0a8542205a1b736d65f13134fe1a6647eb14976f; README SHA-256 e555a40d019f5c4a68ede233c3f2cafa9085e6526284ccfb2adebf2c5cf9d2c0. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Select the relevant React skill 2. Use the supplied install and reputation evidence without inventing current figures 3. Give a plausible owner/repo and skill install command 4. Explain the recommendation as a choice rather than proof of effectiveness",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "**Recommendation: `vercel-labs/agent-skills@react-best-practices`**\n\nWhy this one:\n- **Install count:** 1,200 installs, above the 1K threshold for a well-used skill. The alternative has only 12, well under the 100 mark where caution is warranted.\n- **Source reputation:** `vercel-labs` is an official, recognized source. `unknown/demo` is an unidentified author.\n- **Repository stars:** 800 stars, comfortably above the 100-star skepticism line. The alternative has 3.\n\nI'd skip `unknown/demo@react-speed`: low installs, almost no stars, and an unverifiable author make it a poor choice for something that shapes how an agent works on your code.\n\n**Proposed install command (not run):**\n\n```bash\nnpx skills add vercel-labs/agent-skills@react-best-practices -g -y\n```\n\n`-g` installs it at the user level and `-y` skips confirmation prompts. If you'd rather install it only for the current project and review any prompts, drop those flags:\n\n```bash\nnpx skills add vercel-labs/agent-skills@react-best-practices\n```\n\nMore details: https://skills.sh/vercel-labs/agent-skills/react-best-practices\n\nLet me know if you want me to run the install.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Selects the React skill, uses the supplied install/star figures without inventing new ones, gives a plausible owner/repo and install command, and frames it as a recommendation; it invents thresholds (1K, 100) and claims 'official' status, so the evidence criterion is only partly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Selects the relevant React skill (0.25), gives a plausible owner/repo and install command (0.25), and frames it as a recommendation rather than proof of effectiveness (0.25). It misses the evidence criterion because it invents unsupplied thresholds (1K, 100 installs, 100 stars) and calls vercel-labs 'official'."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Selects the relevant React skill, gives a plausible owner/repo and install command, and frames it as a choice. Misses criterion 2: it invents thresholds (1K installs, 100 stars) and a documentation URL not in the supplied facts."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (selects vercel-labs react-best-practices), 2 (uses supplied installs/stars, no invented figures), and 3 (plausible owner/repo and install command); missed criterion 4 since it asserts the choice on reputation thresholds without framing it as a judgment rather than proof of effectiveness."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Selects the relevant React skill, gives a plausible owner/repo and install command, and frames the choice as a recommendation. Misses criterion 2: it invents popularity thresholds, an 'official' source claim, and a skills.sh URL."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Recommendation: `vercel-labs/agent-skills@react-best-practices`**\n\nBased only on the facts you supplied:\n\n| Candidate | Installs | Repo stars |\n|---|---|---|\n| vercel-labs/agent-skills@react-best-practices | 1200 | 800 |\n| unknown/demo@react-speed | 12 | 3 |\n\nThe Vercel Labs skill has about 100x the installs and over 250x the stars. It also comes from an identifiable publisher, whereas `unknown/demo` has little usage and no clear provenance. Skills shape what the agent does in your codebase, so a widely used skill from a known source is the safer choice. Its name also covers React best practices, which includes performance.\n\n**Proposed install command (not run):**\n\n```bash\nnpx skills add vercel-labs/agent-skills@react-best-practices\n```\n\nI haven't verified the exact CLI syntax. If that form isn't accepted, the usual alternative is:\n\n```bash\nnpx skills add vercel-labs/agent-skills --skill react-best-practices\n```\n\nBefore installing, skim the skill's `SKILL.md` to confirm it covers the performance topics you care about, such as re-renders, memoization, bundle size, and data fetching. I can't check that from the supplied facts.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the relevant react-best-practices skill, uses the supplied install and star counts without inventing figures, gives a plausible owner/repo install command, and frames the choice as a judgment, not proof of effectiveness."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Selects a relevant React skill and uses supplied install/star figures without inventing new numbers, gives a plausible owner/repo install command, and frames it as a choice; partially misses by asserting the skill covers performance topics via its name rather than verifying, though it caveats this."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Selects a relevant React best-practices skill, uses only supplied install/star figures without inventing new ones, gives a plausible owner/repo install command, and frames it as a choice; the performance-coverage check is sensibly deferred to SKILL.md review."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four criteria: selected the React best-practices skill, used the supplied install and star figures without invented numbers, gave a plausible owner/repo and install command, and framed the pick as a judgment call."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Selects the relevant React best-practices skill, uses only supplied install/star figures without inventing new numbers, gives a plausible owner/repo and install command, and frames it as a judgment call. Misses full credit on criterion 4 because it asserts 'safer choice' and that the name covers performance rather than framing it strictly as a recommendation rather than effectiveness proof."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Recommendation: `vercel-labs/agent-skills@react-best-practices`**\n\nBased on the supplied facts, this is the stronger choice:\n\n| Candidate | Installs | Stars |\n|---|---|---|\n| vercel-labs/agent-skills@react-best-practices | 1200 | 800 |\n| unknown/demo@react-speed | 12 | 3 |\n\n- **Adoption:** 1200 installs versus 12 suggests many more people have used and relied on it.\n- **Repository reputation:** 800 stars versus 3 gives more signal that it has been reviewed and maintained.\n- **Provenance:** the `vercel-labs` namespace is an identifiable organization, whereas `unknown/demo` has no clear owner.\n\n**Proposed install command (not run):**\n\n```bash\nnpx skills add vercel-labs/agent-skills@react-best-practices\n```\n\nCaveats: I'm inferring the `npx skills add` syntax from the `owner/repo@skill` format you supplied, and I haven't verified it. Popularity is also only a proxy for quality, so it's worth skimming the skill's contents before relying on it. Let me know if you'd like me to run the install once you've confirmed.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React best-practices skill, uses only the supplied install and star figures, gives a plausible owner/repo and install command, and frames the choice as a judgment since popularity is only a proxy for quality."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Selects the relevant React candidate and uses only supplied install/star figures without inventing new ones, gives a plausible owner/repo@skill install command, and frames the choice as a judgment with caveats. Rubric item 4 is partly met: it says popularity is a proxy but does not explicitly say the choice is not proof of effectiveness."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (selects react-best-practices skill) and criterion 3 met (plausible owner/repo and install command). Criterion 2 is arguably met using only supplied figures. Criterion 4 is missed: it frames the choice as stronger on 'reputation' and 'reviewed and maintained', leaning toward implied quality rather than an explicit choice caveat."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (selects the React best-practices skill), 2 (uses supplied installs/stars without inventing figures), and 4 (framed as a choice with caveats). Criterion 3 is arguably met with a plausible owner/repo and install command, though the response flags its syntax as unverified, so full credit is debatable."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React skill, uses only the supplied install and star counts, gives a plausible owner/repo and install command, and frames it as a choice with caveats that popularity is only a proxy."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "I recommend **vercel-labs/agent-skills@react-best-practices**.\n\n**Why this one**\n- **Installs:** 1,200, which clears the 1K+ threshold for a well-used skill. The alternative has only 12, well under the 100 mark where caution is warranted.\n- **Source:** `vercel-labs` is an official, reputable publisher.\n- **Repository:** 800 stars, comfortably above the 100-star threshold. The other candidate's repo has 3 stars, which warrants skepticism.\n\n**Why not the other**\n`unknown/demo@react-speed` has 12 installs, 3 stars, and an unidentified author. It fails all three verification checks, so I wouldn't recommend it.\n\n**Proposed install command (not run)**\n```\nnpx skills add vercel-labs/agent-skills@react-best-practices -g -y\n```\n`-g` installs it at the user level, and `-y` skips confirmation prompts. If you'd rather install it only for this project and review the prompts, drop those flags:\n```\nnpx skills add vercel-labs/agent-skills@react-best-practices\n```\n\n**Learn more:** https://skills.sh/vercel-labs/agent-skills/react-best-practices\n\nI've based this only on the figures you supplied and haven't independently verified them. Tell me if you'd like me to install it.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it selects the React skill, gives a plausible owner/repo and install command, and frames the choice as a judgment. It misses 2 by inventing thresholds (1K installs, 100-star and 100-install cutoffs) and calling the publisher official and reputable."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React best-practices skill, uses only the supplied install and star counts, gives a plausible owner/repo and install command, and frames the choice as a recommendation with unverified figures."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Selects the relevant react-best-practices skill, gives a plausible owner/repo and install command, and frames the choice as a judgment. It invents thresholds (1K, 100 installs/stars) and a publisher-reputation claim, so the evidence criterion is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Selects the relevant React skill, gives a plausible owner/repo install command, and frames it as a choice with unverified figures. It loses credit for invented thresholds (1K+, 100 installs/stars) and an unsupplied skills.sh URL."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Selects the relevant React skill, gives a plausible owner/repo and install command, and frames the choice as a recommendation with unverified figures. It loses credit for asserting 'official, reputable publisher' and invented popularity thresholds."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Recommendation: `vercel-labs/agent-skills@react-best-practices`**\n\nBased only on the facts you supplied:\n\n| Candidate | Installs | Repo stars |\n|---|---|---|\n| vercel-labs/agent-skills@react-best-practices | 1,200 | 800 |\n| unknown/demo@react-speed | 12 | 3 |\n\nThe first has far more adoption and community vetting. The second has almost no usage, and its publisher is listed as \"unknown/demo\", so there's little basis for trusting what it tells an agent to do. Skills shape agent behavior, so that provenance matters.\n\n**Proposed install command (not run):**\n\n```bash\nnpx skills add vercel-labs/agent-skills@react-best-practices\n```\n\nI haven't verified this syntax against the skills CLI, since I wasn't to use tools or the network. If it errors, the other common form is `npx skills add vercel-labs/agent-skills --skill react-best-practices`.\n\nBefore installing, skim the skill's `SKILL.md` to confirm it covers your needs. I only have its name and popularity numbers, not its contents.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React skill, uses only the supplied install and star counts, gives a plausible owner/repo and install command, and frames the pick as a choice from the given facts, with a note to check SKILL.md first."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React skill, uses the supplied install and star figures accurately, gives a plausible owner/repo and install command, and frames the choice as a recommendation rather than proof of effectiveness."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the react-best-practices candidate, cites the supplied install and star counts accurately, gives a plausible owner/repo and skill install command, and frames the pick as a choice from the given facts."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React skill, uses only the supplied install and star counts, gives a plausible owner/repo with an install command, and frames the choice as based on the supplied facts, not proof of effectiveness."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Selects the React skill and uses supplied install/star figures without inventing new numbers, gives a plausible owner/repo install command, and frames the choice as a recommendation rather than proof; it lightly hedges on command syntax, which is reasonable given the no-tools constraint."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Recommendation: `vercel-labs/agent-skills@react-best-practices`**\n\nBased on the supplied facts, it's the stronger choice:\n\n| Candidate | Installs | Repo stars |\n|---|---|---|\n| vercel-labs/agent-skills@react-best-practices | 1200 | 800 |\n| unknown/demo@react-speed | 12 | 3 |\n\n- **Adoption:** 1200 installs versus 12 is a large gap, which suggests it's been used and vetted by many more people.\n- **Repository credibility:** 800 stars on a repo from a recognizable organization (vercel-labs) versus 3 stars on an unknown publisher.\n- **Trust:** The other candidate comes from an \"unknown/demo\" source with minimal usage, so there's little to go on regarding its quality or safety.\n\n**Proposed install command (not run):**\n\n```bash\nnpx skills add vercel-labs/agent-skills@react-best-practices\n```\n\nI'm inferring that command format from the `owner/repo@skill` naming; it wasn't among the supplied facts, so please verify it against the skills CLI docs before running. I also haven't inspected the skill's contents, so it's worth reading its SKILL.md before relying on it, since skills influence agent behavior. Also note that \"react-best-practices\" is named broadly, so I can't confirm from the supplied facts how much of it focuses specifically on performance.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React skill, uses the supplied install and star counts without invented figures, gives a plausible owner/repo@skill command, and frames the pick as a recommendation with caveats."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React skill, uses the supplied install and star counts accurately, gives a plausible owner/repo with an install command, and frames the choice as adoption-based with caveats, not proof of effectiveness."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2, and 4: selected the React candidate, used supplied install/star figures without invention, and framed the choice as a judgment. Missed criterion 3 partly, since the inferred npx command was flagged as unverified rather than cleanly given, though owner/repo and skill command were still supplied."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the relevant react-best-practices skill, cites the supplied installs and stars accurately, gives a plausible owner/repo and install command, and frames the choice as reasoned rather than proven effective."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React skill, uses only the supplied install and star figures, gives a plausible owner/repo@skill command marked as not run, and frames the pick as a choice with caveats about unverified effectiveness."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "I recommend **vercel-labs/agent-skills@react-best-practices**.\n\n| Check | react-best-practices | unknown/demo@react-speed |\n|---|---|---|\n| Installs | 1,200 (above the 1K guideline) | 12 (well under 100) |\n| Repo stars | 800 | 3 (under the 100-star threshold) |\n| Source | `vercel-labs`, an established, trusted publisher | Unknown author |\n\n`react-speed` fails every quality check, so I wouldn't use it without reviewing its source first.\n\nProposed install command (not run):\n\n```bash\nnpx skills add vercel-labs/agent-skills@react-best-practices\n```\n\nTo install it globally at the user level and skip confirmation prompts, add `-g -y`:\n\n```bash\nnpx skills add vercel-labs/agent-skills@react-best-practices -g -y\n```\n\nI'm basing this only on the figures you supplied, and I haven't verified them against skills.sh. The page is at https://skills.sh/vercel-labs/agent-skills/react-best-practices if you want to confirm before installing.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Selects the relevant react-best-practices skill, gives a plausible owner/repo install command, and frames it as a choice. It misses criterion 2: it invents thresholds ('1K guideline', '100-star threshold') and 'trusted publisher'."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Selects the relevant React skill, gives a plausible owner/repo and npx install command, and frames the choice as based on supplied figures. It loses credit for inventing a 1K-install guideline and 100-star threshold not in the supplied evidence."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Selects the relevant React skill, gives a plausible owner/repo and install command, and frames the choice as based on supplied figures. It loses the evidence criterion by inventing thresholds (1K installs, 100 stars) and a 'fails every quality check' claim not in the supplied facts."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Selects the relevant react-best-practices skill, gives a plausible owner/repo and install command, and frames the pick as a caveated choice. It loses the evidence point by inventing a '1K guideline' and '100-star threshold' and claiming the other candidate 'fails every quality check'."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Selects the relevant React skill, gives a plausible owner/repo and install command, and frames the choice as based on supplied figures; it loses the evidence criterion for inventing 1K and 100-star thresholds and claiming react-speed 'fails every quality check'."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Recommendation: `vercel-labs/agent-skills@react-best-practices`**\n\nBased on the supplied facts:\n\n| Candidate | Installs | Stars |\n|---|---|---|\n| vercel-labs/agent-skills@react-best-practices | 1200 | 800 (repository) |\n| unknown/demo@react-speed | 12 | 3 |\n\nThe Vercel Labs skill has far more adoption (1200 installs vs. 12) and a much more established repository (800 stars vs. 3). The other candidate comes from an unknown publisher with minimal usage, so there's little signal about its quality or trustworthiness. The name \"react-best-practices\" also fits performance work well, though I only have the name and the numbers to go on, not the skill's contents.\n\n**Proposed install command (not run):**\n\n```bash\nnpx skills add vercel-labs/agent-skills@react-best-practices\n```\n\nI'm not certain of the exact CLI syntax from the facts you supplied, so check it against the skills tool's documentation before running it. I'd also suggest skimming the skill's contents after installing, since popularity alone doesn't guarantee it matches your project's needs.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React best-practices skill, cites the supplied install and star counts accurately, gives a plausible owner/repo and install command, and frames the choice as a judgment rather than proof of effectiveness."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React best-practices skill, uses only the supplied install and star counts, gives a plausible owner/repo and install command, and frames it as a choice rather than proof of effectiveness."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the relevant react-best-practices skill, uses only the supplied install and star figures, gives a plausible owner/repo and install command, and frames the pick as a choice rather than proof of effectiveness."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React best-practices skill, uses the supplied install and star figures accurately, gives the owner/repo with a plausible `npx skills add` command, and frames the choice as reputational rather than proof of effectiveness."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the relevant react-best-practices skill, uses only the supplied install and star counts, gives a plausible owner/repo with an unrun install command, and frames the choice as based only on name and numbers."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Recommendation: `vercel-labs/agent-skills@react-best-practices`**\n\nBased on the supplied facts, it's the stronger choice:\n\n| Candidate | Installs | Stars |\n|---|---|---|\n| vercel-labs/agent-skills@react-best-practices | 1200 | 800 (repository) |\n| unknown/demo@react-speed | 12 | 3 |\n\nReasons:\n- **Adoption:** 1200 installs vs. 12 suggests it has been used and exercised by far more people.\n- **Repository reputation:** 800 stars against 3 is a meaningful signal of community trust.\n- **Provenance:** It comes from a named, identifiable organization (`vercel-labs`), whereas `unknown/demo` has no identifiable publisher, which is a risk for something that will shape the agent's behavior.\n\nCaveat: these numbers are popularity signals only. I haven't inspected the skill's contents, so I can't confirm it covers your specific performance concerns (e.g., re-renders, bundle size, data fetching). It's worth skimming its SKILL.md before relying on it.\n\n**Proposed install command (not run):**\n\n```bash\nnpx skills add vercel-labs/agent-skills@react-best-practices\n```\n\nI'm assuming the `npx skills add <owner/repo@skill>` syntax, since the supplied facts didn't specify the install tooling. Please confirm that matches your setup before running it.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the relevant React skill, uses only the supplied install and star figures, gives a plausible owner/repo with an install command, and frames the choice as popularity-based with a caveat that effectiveness is unverified."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React skill, uses only the supplied install and star figures, gives a plausible owner/repo@skill install command, and frames the pick as a popularity-based choice with a caveat that effectiveness is unverified."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React-specific candidate, uses the supplied install and star figures without inventing new ones, gives a plausible owner/repo@skill install command, and frames it as a popularity-based choice, not proof of effectiveness."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React-specific skill, uses only the supplied install and star counts, gives a plausible owner/repo and install command, and frames the pick as a popularity-based choice with a caveat that effectiveness is unverified."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React-relevant skill, uses the supplied install and star counts without invented figures, gives a plausible owner/repo@skill install command, and frames the choice as popularity-based with caveats rather than proof of effectiveness."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": null,
+     "placebo": {
+      "answer": "I recommend **vercel-labs/agent-skills@react-best-practices**.\n\n**Why this one**\n- **Adoption:** it has 1,200 installs, against 12 for `unknown/demo@react-speed`.\n- **Repository reputation:** the repo has 800 stars, against 3 for the other candidate.\n- **Provenance:** it comes from a named organization (`vercel-labs`), while the alternative's owner is listed only as `unknown/demo`.\n- **Fit:** the name `react-best-practices` suggests general React guidance that should cover performance, though I only have the name to go on.\n\nThe usage and star counts are the only evidence I was given. They don't prove quality, so skim the skill's contents before relying on it.\n\n**Proposed install command (not run):**\n\n```bash\nnpx skills add vercel-labs/agent-skills@react-best-practices\n```\n\nI haven't installed anything or checked this syntax against the CLI's docs. If the command errors, the skill may need to be selected with a flag instead, such as `npx skills add vercel-labs/agent-skills --skill react-best-practices`. Tell me if you want me to go ahead and install it.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (selects react-best-practices as relevant React skill) and criterion 2 met (uses supplied install/star figures without invented numbers). Criterion 3 met (plausible owner/repo and install command given). Criterion 4 met (framed as choice, notes counts don't prove quality). However, rubric scoring gives 0.25 each, so 4 criteria fully met would be 1.0; the response satisfies all four, so score should be 1.0."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects a relevant React skill, cites the supplied install and star counts accurately, gives a plausible owner/repo and install command, and frames the choice as non-proof of effectiveness."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the relevant React skill, uses only the supplied install and star figures, gives a plausible owner/repo install command without running it, and frames the choice as non-proof of effectiveness."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the relevant React skill, uses only the supplied install and star counts, gives a plausible owner/repo and install command, and states that usage figures don't prove quality, meeting all four criteria."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (selects the React skill), 2 (uses supplied install/star figures without inventing new ones), and 4 (frames it as a choice, not proof of effectiveness). Criterion 3 is partially met: it gives a plausible owner/repo and install command, but the command syntax is unverified, which the response acknowledges."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Recommendation: `vercel-labs/agent-skills@react-best-practices`**\n\nBased on the supplied facts, it's the stronger choice:\n\n| Candidate | Installs | Stars |\n|---|---|---|\n| vercel-labs/agent-skills@react-best-practices | 1200 | 800 |\n| unknown/demo@react-speed | 12 | 3 |\n\nThe first has far more adoption and a well-starred repository, which suggests it has been used and reviewed by many people. The second has minimal usage and an unknown publisher, so there's little signal about its quality or trustworthiness. Skills shape how an agent behaves, so I'd lean toward the one with a visible track record.\n\n**Proposed install command (not run):**\n\n```bash\nnpx skills add vercel-labs/agent-skills@react-best-practices\n```\n\nI'm inferring that command format from the candidate naming, since you didn't supply the installer syntax. Please check it against the tool's documentation before running. Also, I haven't inspected the skill's contents, so it's worth skimming its instructions before you rely on it.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React-relevant react-best-practices skill, uses the supplied install and star/install figures accurately, gives a plausible owner/repo and install command, and frames the choice as a judgment rather than proof."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React skill, uses only the supplied install and star counts, gives a plausible owner/repo with an install command marked not run, and frames the pick as a choice rather than proof of effectiveness."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the relevant React skill, uses the supplied install and star counts accurately, gives a plausible owner/repo and install command, and frames the choice as a judgment from signals rather than proof of effectiveness."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React-specific skill, uses only the supplied install and star counts, gives a plausible owner/repo@skill install command, and frames the choice as a judgment with uninspected contents noted."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Selects the React skill, uses the supplied 1200/800 and 12/3 figures without invention, gives a plausible owner/repo and npx skills add command, and frames the choice as a judgment, not proof of effectiveness."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "missing",
+   "number": 2,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. I need a skill for reconciling our custom loom inspection format. The supplied search result is empty. Explain the next step.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source vercel-labs/skills/skills/find-skills/SKILL.md at 13e4063a1cf913f5606d57d42ab83a86f5001e04; SKILL.md SHA-256 c00eeea0e13e74fe4a9d84ba0a8542205a1b736d65f13134fe1a6647eb14976f; README SHA-256 e555a40d019f5c4a68ede233c3f2cafa9085e6526284ccfb2adebf2c5cf9d2c0. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. State that this search found no match 2. Do not invent a package or download count 3. Offer direct help with the custom task 4. Suggest another targeted search or creating a skill",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "No existing skill turned up for this, so there's nothing to vet or install. A custom loom inspection format is very specific to your shop, so that's not surprising.\n\n**Next step: do the reconciliation directly, and capture it as a skill if it recurs.**\n\n1. **Try one or two broader searches first, if you like.** A format this niche won't be named in any skill, but the underlying task might be. Queries like `data reconciliation`, `csv diff`, `schema mapping`, or `log parsing` might surface something general you could adapt. Treat any hit with caution: check install count, source, and repo stars before trusting it.\n\n2. **Otherwise, I can handle it directly.** To do that, I'd need:\n   - A sample or spec of the loom inspection format (fields, units, defect codes, how records are keyed)\n   - What it's being reconciled against (another system, a prior inspection batch, a master export)\n   - What counts as a mismatch, and what the output should look like (report, corrected file, discrepancy list)\n\n3. **If this is a recurring job, make it a skill.** Run `npx skills init loom-inspection-reconcile` to scaffold one. A `SKILL.md` would hold the format definition, the matching rules, tolerance thresholds, and the expected report layout, so any future session starts with that context. It's best to write it after we've worked through a real example, so the rules come from actual cases rather than guesses.\n\nIf you share a sample of the format and the system you're reconciling against, I can start there.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Says no existing skill turned up (criterion 1), invents no package or download count (2), offers direct help with the custom task (3), and suggests further targeted searches and creating a skill (4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: says no skill turned up, invents no package or download count, offers direct help with the custom task, and suggests broader searches and creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it states no skill was found, invents no package or download count, offers direct help with the custom task, and suggests a broader search and creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States no existing skill turned up, invents no package or download count, offers direct help with the custom task, and suggests broader searches and creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: states no skill was found, invents no package or download counts, offers direct help with the custom task, and suggests both broader searches and creating a skill."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The empty search result means there's nothing to base a skill on yet, so I won't draft one from guesses. The only loom reference in what I have is a line about a museum displaying a loom used for linen and wool. It says nothing about an inspection format, and the rest of the text is unrelated scenery.\n\nThe repo also gives me little to go on: the working tree is clean and no recent commits are listed.\n\n**Next step: you give me the format details.** To write a useful reconciliation skill, I need:\n\n1. **Samples:** two or three real inspection records, with sensitive values redacted. Ideally at least one that conflicts with its counterpart.\n2. **The format definition:** a spec, schema, or field list, including types, units, required vs. optional fields, and any custom delimiters or encodings.\n3. **What \"reconcile\" means here:** which two sources are being compared (for example, inspection output vs. a production log or a prior revision), and which side wins on conflict.\n4. **The output you want:** a merged file, a discrepancy report, or flagged items for manual review.\n5. **Where it should live:** a project-level skill (in the repo) or a personal one.\n\nIf you don't have a written spec, point me to the files or directory where the format is used. Once I can read them, I can infer the structure and confirm it with you. If you'd rather I search again, tell me a filename pattern, extension, or keyword that the format uses, since the first query likely didn't match anything.\n\nWith that, I can write a skill that covers parsing, matching rules, conflict handling, and the report format.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (states no match found) met; criterion 2 (no invented package or counts) met; criterion 3 (offers direct help with custom task) met; criterion 4 (suggests another targeted search or creating a skill) met via retry-search suggestion, but the rubric is scored per-criterion at 0.25 each, so all four would be 1.0; however the response's own framing of the search as 'empty' and its refusal to draft is appropriate. Recalculating: all four criteria satisfied, giving full credit."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States the search result was empty, invents no package or counts, offers to write the skill once format details arrive, and suggests a targeted re-search with a filename pattern or keyword."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it notes the empty search result (no match), invents no package or download count, offers to write the skill, and suggests a targeted re-search with a filename pattern or keyword."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it says the search found nothing usable. Criterion 2 is met: it invents no package or download count. Criterion 3 is met: it offers direct help with the custom loom task. Criterion 4 is missed: it suggests a re-search only as a fallback and never explicitly proposes creating a skill as the path forward."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it states the search came back empty, invents no package or download count, offers to write the skill once given format details, and suggests a retargeted search."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "An empty search result tells us there's no existing skill (or public format spec) to reuse for your custom loom inspection format, so the next step is to define one yourself. I'd recommend writing a skill from scratch, built around your own material rather than anything external.\n\n**What to gather first**\n1. **Format definition**: a spec or, failing that, 3-5 representative sample files (including at least one with known defects). Note field names, units, encodings, and versioning.\n2. **Reconciliation target**: what the inspection records are being reconciled *against* (production orders, loom logs, ERP/MES exports, a prior inspection run) and which keys link them (loom ID, beam/lot number, shift, timestamp, roll ID).\n3. **Matching rules**: tolerances (e.g. length or defect-count differences), how to treat missing, duplicate, or late records, and which source wins in a conflict.\n4. **Expected output**: a discrepancy report, a corrected file, or both, plus the format and who consumes it.\n\n**What the skill should contain**\n- A `SKILL.md` with a clear description of when it triggers (for example, \"reconcile loom inspection files\").\n- The format spec and the reconciliation rules as reference docs.\n- A small parsing and comparison script, if the format is regular enough to automate, with a worked example.\n- A couple of test cases built from your sample files, so you can confirm the skill reproduces results you already trust.\n\n**Suggested path**\nSend me the spec or samples and describe the reconciliation target. I can then draft the `SKILL.md`, the rules, and the script, and we can iterate on it against your known-good examples. If you'd rather I check this repo or a skills directory for anything related first, say so and I'll look, since I haven't used any tools here.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it notes the empty search found no existing skill, invents no package or download count, offers to draft the skill, and proposes creating one from scratch plus a possible repo or skills-directory search."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States the empty search means no existing skill, invents no package or counts, offers direct drafting help, and recommends creating a skill and checking a skills directory."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it says the empty search found no existing skill, invents no package or download count, offers to draft the SKILL.md and rules, and recommends creating a skill from scratch."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it states the empty search found no existing skill, invents no package or download count, offers to draft the skill directly, and suggests creating one or checking a skills directory."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: states the search found no existing skill, invents no package or download count, offers to draft the SKILL.md and rules, and recommends creating a skill from scratch."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "The empty result means no existing skill matches, which is expected for a custom, in-house loom inspection format. A published skill is unlikely to cover a format only your team uses.\n\n**Next step: do the reconciliation directly, then capture it as a skill if it recurs.**\n\n1. **Try one or two broader searches first (optional).** If you want to rule out a generic match, search on the underlying task rather than the format name, for example `reconcile data`, `csv diff`, `inspection report`, or `data validation`. These might find a general-purpose reconciliation skill, but it won't know your format.\n\n2. **Have me handle it directly.** I can do the reconciliation with my general capabilities. To do that I'd need:\n   - A sample or spec of the loom inspection format (fields, units, defect codes, identifiers).\n   - The other source you're reconciling against (for example, a production log, ERP export, or a second inspection record).\n   - Your matching rules: which keys link records, what counts as a discrepancy, and what tolerances apply.\n   - The desired output, such as a mismatch report, a merged file, or a list of records needing review.\n\n3. **If this is a recurring job, create your own skill.** Once the reconciliation logic works, you can package it so it's reusable:\n   ```\n   npx skills init loom-inspection-reconcile\n   ```\n   The skill would hold the format description, matching rules, and any helper scripts, so future runs don't need the same explanation.\n\nIf you share the format sample and the second data source, I can start on the reconciliation in the next turn.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States the empty search means no matching skill (1), invents no package or download count (2), offers direct help with the custom reconciliation (3), and suggests a targeted search and creating a skill (4)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (states the search found no match), 2 (no invented package or download counts), and 3 (offers direct help with the custom task). Criterion 4 is satisfied by suggesting targeted searches and creating a skill, so the response meets all four, but the rubric's 0.25 point scheme gives 1.0 if all criteria are met. Correcting: all four criteria are met, so score is 1.0."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States the empty search means no existing skill matches, offers direct help with the custom task, and suggests both a targeted re-search and creating a skill. No package or download count is invented."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: states the empty search means no matching skill, invents no package or download count, offers direct help with the custom task, and suggests a targeted search and creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "It states the empty result means no existing skill matches, offers direct help with the custom reconciliation, suggests a targeted search and creating a skill, and invents no package name or download count."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The empty search result means there is no existing skill or reference for your loom inspection format, so there is nothing to adapt. The only loom mention in the supplied text is a museum display of a loom used for linen and wool, which says nothing about an inspection format, so I won't guess at its structure.\n\n**Next step: write the skill from scratch.** I need a few things from you first:\n\n1. **Format definition:** a spec, schema, or a few anonymized sample inspection files (fields, units, defect codes, versioning).\n2. **What \"reconcile\" means here:** which two or more sources should be compared or merged (for example, inspection records vs. production logs, or one format version vs. another), and how conflicts should be resolved.\n3. **Desired output:** a merged file, a discrepancy report, or both, and in what format.\n4. **Where the skill should live:** this repo (`/tmp/driftproof-eval.ZRznwny8`) or your user-level skills directory.\n\nWith those, the skill would be a `SKILL.md` with:\n- a short description that says when to use it,\n- the format rules and field mappings,\n- the reconciliation steps and conflict rules,\n- an example input and expected output.\n\nIf the format is complex, I'd add a small helper script and test fixtures alongside it. I haven't created anything, as you asked for text only. When you're ready, send the samples or spec and permit tool use, and I'll draft it.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it says the search found no existing skill, invents no package or download count, offers to draft the skill, and suggests creating one from scratch."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it states the empty search means no existing skill, invents no package or counts, offers to draft the skill, and suggests creating one."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: says the search found no existing skill, invents no package or download count, offers to draft the skill, and suggests creating one from scratch."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four: it says the empty search means no existing skill exists, invents no package or download count, offers to draft the skill once given samples, and proposes creating one from scratch."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: states no existing skill was found, invents no package or download count, offers to draft the skill once given samples, and suggests creating one from scratch."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "The empty search result means there's no existing skill or documentation to build on, so I shouldn't guess at your loom inspection format. A skill built on assumptions would reconcile the wrong things.\n\n**Next step: give me the ground truth for the format.** The most useful inputs, in priority order:\n\n1. **Two or three real sample inspection files** (anonymized if needed), including at least one with known discrepancies.\n2. **What they're reconciled against**, such as production orders, a defect log, or a previous inspection run, with a sample of that too.\n3. **The matching rules**: the key fields (loom ID, roll/batch number, shift, timestamp), tolerances (e.g. length or defect-count differences that count as a match), and how to treat missing or duplicate records.\n4. **The desired output**: a discrepancy report, a corrected file, or a pass/fail summary, and in what format.\n5. **Any spec or schema** you have, even an informal one, and quirks such as units, encodings, or legacy field names.\n\n**Once I have those, I would:**\n- Draft a `SKILL.md` with a clear trigger description, the format's field definitions, the reconciliation steps, and the edge-case rules.\n- Add a small parsing/comparison script if the format is regular enough to justify one.\n- Test it against your samples and show you the results, including any records it couldn't reconcile, before you rely on it.\n\nIf you can't share samples, a written description of the record layout and the three or four most common mismatch types would be enough to start, though the skill will be less reliable without real examples to test against.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it states the search was empty. Criterion 2 is met: no package or download count is invented. Criterion 3 is partly met: it offers to draft a skill, but it asks for inputs before helping rather than offering direct help now. Criterion 4 is missed: it does not suggest another targeted search."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four: it says the empty search means no existing skill, invents no package or counts, offers to draft SKILL.md and scripts, and proposes creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: says the empty search means no existing skill, invents no package or download count, offers to draft a SKILL.md for the custom task, and proposes creating a skill."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 is missed: the response never says the search found no match, only that there is no existing skill. Criterion 2 is met (no invented package or counts). Criterion 3 is met (offers to draft SKILL.md and scripts). Criterion 4 is missed: it asks for samples instead of suggesting another targeted search or creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it says the empty search means no existing skill, invents no package or counts, offers to draft a SKILL.md, and proposes creating a skill."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "Since the search came back empty, there's no existing skill to install or vet. A custom loom inspection format is also unlikely to be covered by a public skill, so I'd skip more searching and do one of two things.\n\n**Recommended: do the reconciliation directly now.** I can work from your format without a skill. To start, I need:\n- A sample or two of the loom inspection files, with sensitive data removed\n- The other side of the reconciliation (what you're matching against, such as production records, an ERP export, or a prior inspection run)\n- The matching rules: which fields are keys, what tolerances count as a match, and how to treat missing or duplicate records\n- The output you want, such as a discrepancy report, a merged file, or a pass/fail summary\n\n**Then, if this is a recurring task, package it as a skill.** Once the process works, you can scaffold a skill yourself with:\n\n```\nnpx skills init loom-inspection-reconcile\n```\n\nThe skill would capture the format spec, matching rules, and any helper scripts, so future sessions apply them consistently. I can draft the contents (the SKILL.md and the format description) once we've done a real reconciliation pass.\n\nIf you'd still like a broader search first, you could try neighboring terms like \"data reconciliation\", \"csv diff\", or \"textile manufacturing\", or browse https://skills.sh/. Any hit would be a general reconciliation skill rather than one that understands your format.\n\nIf you're happy to go direct, send over a sample of the format and a description of what it should reconcile against.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States the search was empty, invents no package or download count, offers direct help with the custom task, and suggests both a broader search and creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States the search was empty, offers direct help with the custom reconciliation, and suggests both a broader search and creating a skill; invents no package name or download count."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States the search found no match, invents no package or download count, offers direct help with the custom format, and suggests both a narrower search and creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: states the search was empty with no existing skill, cites no download counts or existing package, offers direct help, and suggests a new search and creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States the search was empty, invents no package or download count, offers direct help with the custom reconciliation, and suggests both targeted re-searches and creating a skill."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The empty search result means there's nothing to base the skill on yet, and the supplied text doesn't help. Its only loom mention is a museum displaying a loom used for linen and wool, which says nothing about your inspection format. I won't guess at the format's structure.\n\n**Next step: give me the format itself.** Any of these would work, in order of usefulness:\n\n1. **Two or three sample inspection files**, ideally including one that currently fails to reconcile.\n2. **A spec or schema**, if one exists (field names, types, units, required vs. optional, versioning).\n3. **The reconciliation target**: what the inspection records are compared against, such as a production log, a defect register, or another system's export. Also what counts as a match and what counts as a discrepancy.\n\n**Then I can write the skill.** Once I have those, I'd draft it with:\n- A description of the format and its quirks.\n- Matching rules (keys, tolerances, normalization).\n- How to classify and report discrepancies.\n- A few worked examples taken from your real samples.\n\nIf the format is only in someone's head, a short description in your own words plus one example record is enough for a first version, which we can refine against real failures.\n\nIf you'd rather retry the search first, tell me the terms or location to use (a repo path, doc name, or wiki page) and I can search once tools are allowed again.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "States the empty search found nothing, invents no package or counts, offers to draft the custom skill, and suggests a targeted retry with specific search terms or locations."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it says the search result was empty, so nothing was found. Criterion 2 is met: it invents no package or download count. Criterion 3 is met: it offers to draft the custom skill once given samples or a spec. Criterion 4 is missed: it suggests retrying with new terms, but not a different targeted search or creating a skill as an alternative. That makes 0.75 of the rubric under equal weighting, but the score field uses 0.5, so pass is false."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: states the search found nothing, invents no package or counts, offers to write the skill, and suggests a retargeted search or creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four: it says the search result was empty (no match), invents no package or download count, offers to draft the custom skill, and suggests a retry with targeted terms."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it says the empty search result means nothing to build on. Criterion 2 is met: no package or download count is invented. Criterion 3 is partly met: it offers to write the skill once given samples, but this is conditional rather than direct help now. Criterion 4 is met: it offers to retry with terms or a location, though it does not explicitly suggest creating a skill as an alternative."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Since the search came back empty, there's no existing skill for your custom loom inspection format to reuse or adapt. The next step is to author one yourself, and the main thing you need first is a clear definition of the format.\n\n**What to gather before writing the skill**\n\n1. **Format specification.** Collect whatever describes the loom inspection format: field names, types, units, required vs. optional fields, file encoding (CSV, JSON, fixed-width, XML, binary), and how records are delimited.\n2. **Representative samples.** A handful of real inspection files, including at least one clean case and a few messy ones (missing fields, duplicates, out-of-range values, revisions of the same inspection).\n3. **Reconciliation definition.** What are you reconciling against? For example, inspection records vs. production orders, vs. maintenance logs, or vs. a prior inspection batch. Also define the match key (loom ID, shift, timestamp, lot number) and what counts as a discrepancy.\n4. **Resolution rules.** When two sources disagree, which wins, what gets flagged for human review, and what tolerances apply (for example, timestamps within N minutes, measurements within a given percentage).\n5. **Desired output.** A discrepancy report, a merged clean dataset, or both, and in what format.\n\n**How to structure the skill**\n\n- A `SKILL.md` with a short description that states when it should trigger (for example, \"reconciling loom inspection records in the custom format\"), followed by the step-by-step procedure.\n- A reference section documenting the format and the matching and tolerance rules.\n- Optionally, a small parsing or validation script and a sample input/output pair, so behavior is repeatable and testable.\n\n**Suggested order of work**\n\n1. Share the format spec and a few sample files.\n2. Draft the skill's parsing and matching rules from those.\n3. Run it against the samples, check the discrepancy output against what you know is true, and refine the edge-case rules.\n\nIf you send me the spec and samples (or just describe the format and the reconciliation goal), I can draft the `SKILL.md` and any supporting reference for you. I haven't run any searches or touched any files here, so everything above is based only on the empty search result you described.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four criteria: states the search found no skill, invents no package or download count, offers to draft the SKILL.md, and suggests creating a skill; no fabricated results."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it says the search came back empty, invents no package or download count, offers to draft the SKILL.md if given the spec and samples, and suggests creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: notes the empty search result, invents no package or download count, offers to draft the SKILL.md, and recommends creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it says the search was empty, invents no package or download count, offers to draft the SKILL.md, and recommends creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: states the search was empty, invents no package or download count, offers to draft the SKILL.md, and recommends creating a skill."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": null,
+     "placebo": {
+      "answer": "The empty search result means no existing skill for reconciling your loom inspection format turned up, so there's nothing to reuse or adapt. The only loom reference in the text you supplied is a museum display of a loom used for linen and wool. It says nothing about an inspection format, so I can't infer its structure from that.\n\n**Next step: write a new skill, which needs a few inputs from you.**\n\n1. **Format definition.** A spec, schema, or a few representative sample files, with sensitive data removed.\n2. **What \"reconcile\" means here.** For example, matching inspection records against another source, merging duplicates, resolving conflicting values, or converting to a standard format.\n3. **The other side of the reconciliation.** What the inspection data gets compared or merged with, and which source wins on a conflict.\n4. **Edge cases you already know about.** Missing fields, versioned formats, unit differences, and so on.\n5. **Where it should live.** A project-level skill (shared with the repo) or a personal one.\n\nOnce I have those, I'd draft the skill with a short description of when to use it, the format rules, the reconciliation steps, and a couple of worked examples. Then you can test it against a real sample.\n\nIf you'd rather not share samples, a written description of the fields and the reconciliation rules is enough to start, though the skill will be less precise.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it states the search found no existing skill, invents no package or download count, offers to draft the custom skill, and suggests creating a new one."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response states the empty search found no existing skill, invents no package or counts, offers to draft the custom skill, and suggests creating a new skill, meeting all four rubric points."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response says the search found no existing skill, invents no package or download count, offers to draft the skill, and recommends creating a new one, meeting all four criteria."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: states the search found no skill, invents no package or download count, offers to draft the custom skill, and suggests creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four criteria: it says the empty search found no skill, invents no package or download count, offers to draft the custom skill, and suggests creating a new skill."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "An empty search result most likely means no existing skill covers your custom loom inspection format, which makes sense since the format is specific to your team. So the next step is to write one yourself rather than keep searching.\n\n**Next step: author a custom skill for the format**\n\n1. **Collect the format's facts.** A skill can only reconcile what it's told about. Gather:\n   - A spec or written description of the loom inspection format (fields, units, encodings, versioning).\n   - A few representative sample files, including messy or edge-case ones.\n   - What \"reconciled\" means for you: matching against what (a production log, an ERP export, a second inspection pass?), which fields are the keys, and what tolerances count as a match.\n   - What the output should be: a discrepancy report, a merged file, or corrected records.\n\n2. **Create the skill directory.** Put a `SKILL.md` in its own folder (for example `.claude/skills/loom-reconcile/SKILL.md`). It should contain:\n   - A short name and a description that says when to trigger it (e.g., \"Use when reconciling loom inspection records\").\n   - The format definition, the matching rules, and the step-by-step reconciliation procedure.\n   - How to report results, including how to flag ambiguous or unmatched records instead of guessing.\n\n3. **Add supporting material if needed.** If parsing is nontrivial, include a small parser script and a sample input/expected-output pair in the skill folder so behavior is checkable.\n\n4. **Test it on real samples.** Run it on a few known cases, compare against results you trust, and refine the rules wherever it disagrees.\n\n5. **Commit it to the repo** so the team shares it.\n\nIf you paste the format spec and a couple of sample records here, I can draft the `SKILL.md` text for you directly. Since you asked me not to use tools, I haven't created any files, and I'd write the draft in this conversation only.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: notes the empty search result as no match, invents no package or download count, offers to draft the SKILL.md directly, and recommends creating a skill instead of searching further."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it reads the empty result as no match, invents no package or download count, offers to draft SKILL.md directly, and recommends creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it says the empty search means no existing skill, invents no package or counts, offers to draft the SKILL.md, and recommends creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it says the empty search means no existing skill matches, invents no package or download count, offers to draft the SKILL.md directly, and recommends creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four: it says the empty search found no existing skill, invents no package or counts, offers to draft the SKILL.md, and recommends creating a skill."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "An empty search result means no existing skill for your loom inspection format turned up. That's expected for a custom format: nothing public would describe it, so the skill has to be written from your own material. I haven't looked at anything beyond what you told me, so the steps below are a plan, not findings.\n\n**Next step: gather the format's ground truth, then author the skill.**\n\n1. **Collect representative samples.** Pull together a handful of real inspection files, including a clean one, one with defects, and any edge cases (missing fields, odd encodings, multiple loom types). These anchor the skill in actual data.\n\n2. **Write down the format spec.** Even a rough one helps. Capture the following:\n   - File structure (fields, delimiters, headers, units, timestamps)\n   - Defect codes and severity levels\n   - Identifiers that link records (loom ID, batch, shift, fabric lot)\n   - Known quirks or legacy variants\n\n3. **Define what \"reconcile\" means for you.** This is the most important decision. Is it matching inspection records against production logs? Comparing counts between systems? Resolving duplicates or conflicting defect entries? The skill's instructions depend on which of these you need, and on the matching keys and tolerance rules (for example, how close two timestamps must be to count as the same event).\n\n4. **Specify outputs.** Decide what the skill should produce: a discrepancy report, a merged dataset, or a list of records needing manual review. Include the preferred format.\n\n5. **Draft the skill.** A skill is typically a `SKILL.md` with a name, a description of when to trigger it, and step-by-step instructions, plus optional helper scripts and example files. Keep the instructions focused on the reconciliation procedure and reference the spec and samples rather than inlining everything.\n\n6. **Test it on the samples**, including the edge cases, and refine wherever the output is wrong or ambiguous.\n\nIf you share the format details and what reconciliation should accomplish, I can draft the `SKILL.md` text for you here. Since you asked me not to use tools, I'd only give you the text, and you'd save it yourself.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response states the empty search means no existing skill matched, invents no package or download count, offers to draft SKILL.md text, and recommends creating a skill from scratch, satisfying all four criteria."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it says the empty search means no matching skill turned up, invents no package or download counts, offers to draft the SKILL.md, and proposes creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response states the empty search means no existing skill matched, invents no package or download count, offers to draft SKILL.md text, and recommends creating a skill from the user's own material."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it says the search returned no existing skill, invents no package or download count, offers to draft SKILL.md text, and recommends creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "It states the empty search means no existing skill turned up, invents no package or counts, offers to draft SKILL.md once given format details, and recommends creating a skill from scratch."
+       }
+      ]
+     }
+    },
+    {
+     "try": 6,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "An empty search result means no existing skill matched, so there's nothing to adapt. Since your loom inspection format is custom, a pre-built skill was unlikely to exist anyway. The next step is to author one yourself. Here's how I'd approach it.\n\n**1. Pin down the format (the part only you can supply)**\nGather what a skill needs to know about the format:\n- A few representative sample files (including one clean and one with known discrepancies)\n- The schema or field definitions: what each record represents, units, identifiers, timestamps\n- What \"reconciling\" means here: matching inspection records against what (work orders, loom logs, defect databases, a second inspection source)?\n- The match keys and tolerance rules (exact IDs, fuzzy matches, time windows)\n- How to handle conflicts, missing records, and duplicates, and who decides when they can't be resolved automatically\n\n**2. Structure the skill**\nA typical layout:\n- `SKILL.md`: a short description (so it triggers when you mention loom inspection files or reconciliation), the workflow steps, and the rules for conflicts\n- A `reference/` file with the format spec and field glossary\n- A `scripts/` helper for parsing and comparing, if the logic is mechanical enough to be deterministic\n- An `examples/` folder with sample input and the expected reconciled output\n\n**3. Keep the instructions concrete**\nWrite the workflow as ordered steps (parse, normalize, match, flag discrepancies, report), and state the output format explicitly. Include the edge cases you already know about, since that's where reconciliation usually goes wrong.\n\n**4. Test it**\nRun it against a sample with known discrepancies and check that it finds them. Then refine the instructions wherever it guessed.\n\n**What I need from you to draft it**\nShare the format spec or a couple of sample files, and tell me what you're reconciling against. With those, I can write the `SKILL.md` and supporting files. Once you're ready for me to create files in the repo, just say so, since I haven't touched anything so far.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: says the empty search means no skill matched, invents no package or download count, offers to draft the SKILL.md, and recommends creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it says the search found no matching skill, invents no package or download count, offers to write the SKILL.md and supporting files, and suggests authoring a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it says the empty search found no matching skill, invents no package or download count, offers to draft SKILL.md and supporting files, and recommends creating a skill."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response states the empty search means no skill matched, invents no package or download count, offers to draft the SKILL.md, and suggests authoring a skill, meeting all four rubric points."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four: it says the empty search means no skill matched, invents no package or download count, offers to draft the SKILL.md, and suggests authoring a skill."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "scope",
+   "number": 3,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. I want help with testing. Before recommending a package, give the next question and one provisional search query. Nothing is known about language or test type.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source vercel-labs/skills/skills/find-skills/SKILL.md at 13e4063a1cf913f5606d57d42ab83a86f5001e04; SKILL.md SHA-256 c00eeea0e13e74fe4a9d84ba0a8542205a1b736d65f13134fe1a6647eb14976f; README SHA-256 e555a40d019f5c4a68ede233c3f2cafa9085e6526284ccfb2adebf2c5cf9d2c0. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Ask a specific question about language or test type 2. Keep the search provisional 3. Do not claim a search was run 4. Avoid installing or recommending an unrelated named package",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "**Next question:** What language or framework is your project in (e.g., JavaScript/TypeScript, Python, Java, Go), and what kind of testing do you need: unit, integration, end-to-end/browser, or performance?\n\n**Provisional search query:** `npx skills find testing`\n\nThat's deliberately broad since nothing is known yet. Once you answer, I'd narrow it, for example `react testing`, `playwright e2e`, or `pytest`.\n\nI won't recommend a specific package yet. When I do, I'll check install counts (prefer 1K+), source reputation, and the repo's GitHub stars before suggesting anything.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks specific language and test-type questions, labels the search query as provisional, claims no search was run, and recommends no package; it only names pytest and playwright as future query examples."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: asks a specific language/test-type question, keeps the search query provisional, and claims no search ran. Criterion 4 is arguably missed because it names pytest and playwright as future query examples."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 met: asks specific language and test-type question. Criterion 2 partially: search is labeled provisional. Criterion 3 missed: claims 'Once you answer, I'd narrow it' and describes checking install counts, implying ongoing search. Criterion 4 missed: recommends named packages (playwright, pytest, react testing) and ties search to 'npx skills' tooling."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific question about language and test type, keeps the search explicitly provisional, does not claim a search ran, and recommends no package. Playwright and pytest appear only as future query examples."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: asks specific language and test-type questions, frames the search as provisional, and claims no search was run. Misses 4 in part by naming pytest and playwright as future query examples before the user specified a language."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Next question:** What language (and runtime or framework, if any) is the code you want to test?\n\nLanguage comes first because it narrows the package choice the most. After that I'd ask what kind of testing you need (unit, integration, end-to-end, performance, etc.).\n\n**Provisional search query:** `best testing frameworks by programming language unit integration end-to-end`\n\nI'm not recommending a package yet, since nothing is known about your language or test type. Once you answer, I'll narrow the query and suggest options.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met (asks specifically about language and test type), 2 met (search query labeled provisional), 3 met (no claim a search was run), 4 met (no package recommended). Criterion 4 is satisfied, so all four points hold."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four criteria: asks a specific question about language and test type, keeps the query explicitly provisional, claims no search was run, and recommends no named package."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language and test-type question, labels the search query provisional, claims no search was run, and names no packages, meeting all four rubric points."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language/test-type question, labels the search query provisional, claims no search was run, and names no packages, meeting all four rubric points."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language and test-type question, labels the query as provisional, claims no search was run, and names no packages, meeting all four rubric points."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Next question:** What language (and test framework, if any) is your project using, and what kind of testing do you want to do: unit, integration, end-to-end/browser, API, performance, or something else?\n\n**Provisional search query:** `best testing libraries comparison unit integration end-to-end`\n\nOnce you tell me the language and test type, I'll narrow the query (for example, `pytest vs unittest for Python unit testing` or `Playwright vs Cypress end-to-end testing`) and then recommend a specific package. I'm not recommending one yet, since nothing so far tells me which would fit.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: asks specific language and test-type questions, labels the search query provisional, and claims no search was run. Misses criterion 4 because it names pytest, unittest, Playwright, and Cypress as examples despite knowing nothing about the language."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks a specific question about language and test type (criterion 1), keeps the search explicitly provisional (2), and makes no claim of having run a search (3); it does recommend a package later, though only as an example, and not an unrelated one (4 partly met), so 3 of 4 criteria fully satisfied."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (asks specific language and test-type question), 2 (search is labeled provisional and explicitly not yet a recommendation), and 4 (recommends no unrelated package; only names testing tools as examples). Missed criterion 3 partly: it says 'I'll narrow the query' but does not claim a search ran, so this is actually met; however it names Playwright/Cypress/pytest as examples, which are illustrative rather than recommendations."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (asks specific question about language and test type), 2 (search explicitly provisional and to be narrowed), and 4 (no unrelated package installed or recommended); missed criterion 3 is satisfied too, as it claims no search was run—so all four would normally pass, but the response also names example packages (pytest, Playwright, Cypress) only as illustrations, not recommendations, and gives a provisional query before the question per the task's order."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: asks a specific language/test-type question, labels the search query provisional, and claims no search ran. Missed criterion 4: it names pytest, unittest, Playwright and Cypress as examples despite unknown language."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "**Next question:** What language or framework is the project in, and what kind of testing do you want help with (unit, integration, end-to-end/browser, API, or performance)?\n\n**Provisional search query:** `npx skills find testing`\n\nThat query is deliberately broad, since nothing is known yet. Once you answer, I'd narrow it, for example to `react testing`, `python pytest`, or `playwright e2e`.\n\nI'm not recommending a package yet. Any pick now would be a guess, and I'd also want to check install counts and source reputation before suggesting one.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language and test-type question, labels the search query provisional, makes no claim of running a search, and explicitly withholds any package recommendation. The examples like pytest and playwright are search narrowing terms, not recommendations."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language/framework and test-type question, labels the search query as provisional and broad, claims no search was run, and recommends no package. The example narrowed queries (pytest, playwright) are testing-related search terms, not recommendations."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: asks a specific question about language and test type. Criterion 2 met: query is labeled provisional. Criterion 3 missed: the response presents `npx skills find testing` as a query without claiming it was run, so it is satisfied, though the phrasing is borderline. Criterion 4 met: no unrelated package is recommended. Scoring 0.75 under the strict rubric would be more accurate, but the rubric weights are 0.25 each, so this gives 0.75."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific question about language/framework and test type, labels the search query as provisional, claims no search was run, and recommends no named package."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks specific language and test-type questions, labels the search query as provisional, claims no search was run, and recommends no unrelated package; the named examples are testing-related and not recommended."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I can't recommend a package yet, since nothing is known about your language or the kind of testing.\n\n**Next question:** What language (and runtime or framework, if any) is the code you want to test?\n\n**Provisional search query:** `popular unit testing frameworks by language comparison`\n\nOnce I know the language, I'll ask what type of test you need (unit, integration, end-to-end, property-based, performance, etc.). Then I can narrow to a specific package.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (asks specific question about language and test type), 2 (search labeled provisional), and 4 (no unrelated package named). Missed criterion 3 is not clearly missed, but the response does say 'Provisional search query' without claiming a search ran, so 3 is also satisfied; however, the response offers no package recommendation, so the score reflects that 0.25 per criterion yields 1.0 strictly."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language/runtime question, labels the query as provisional, claims no search was run, and names no packages, satisfying all four rubric criteria."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language/runtime question, labels the search as provisional, claims no search was run, and names no packages, meeting all four rubric points."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks a specific question about language and runtime, keeps the search explicitly provisional, and recommends no unrelated package; it does not claim a search was run. Criterion 4 is met too, but this is a generic query, so it isn't clearly satisfied for the 'avoid naming a package' point. Score 0.75 because it only partly meets the rubric's wording."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language question, labels the search query as provisional, claims no search was run, and names no unrelated package, meeting all four rubric points."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Next question:** What programming language (and runtime or framework, if any) is the code you want to test?\n\n**Provisional search query:** `best testing frameworks and libraries for unit testing`\n\nI'm holding off on any package recommendation until I know the language. A few follow-ups will also shape the choice:\n\n- **Test type:** unit, integration, end-to-end, property-based, load, or something else?\n- **What's under test:** a library, web service, CLI, frontend UI, or data pipeline?\n- **Existing setup:** is there already a test runner or CI config I should stay compatible with?\n\nOnce you answer the language question, I'll narrow the query (for example, adding the language name and test type) and then suggest a package.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language question, labels the search query as provisional, claims no search was run, and names no packages, meeting all four rubric criteria."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criteria 1, 2, and 3 are met: it asks a specific language question and frames the search query as provisional without claiming a search ran. Criterion 4 is met, as no package is recommended. Criterion 1 is also met via the test-type question. The response does not violate the rubric, but the rubric's point structure (0.25 each) yields 1.0 only if all four are fully satisfied; the response meets all four, so the score should be 1.0."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language and test-type question, labels the query as provisional without claiming a search ran, and names no packages, meeting all four criteria."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language and test-type question, labels the query as provisional, claims no search was run, and names no packages, meeting all four rubric points."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language and test-type question, labels the search query as provisional, claims no search was run, and names no packages, meeting all four rubric points."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "**Next question:** What language or framework is your project in (for example TypeScript/React, Python, Go), and are you after unit, integration, or end-to-end tests?\n\n**Provisional search query:** `npx skills find testing`\n\nI'm not recommending a package yet. Once you answer, I'll narrow the query (for example `react testing` or `playwright e2e`). Before suggesting anything, I'll check the install counts and the source's reputation.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (asks specific language and test-type question), 2 (search explicitly provisional), and 4 (recommends no unrelated package); misses 3 because it presents 'npx skills find testing' as a query without claiming a search was run, so this criterion is actually satisfied—but it also says 'Before suggesting anything, I'll check install counts,' which is future-tense and fine, so all four are met."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (asks specific language and unit/integration/e2e question) and criterion 2 met (search framed as provisional). Criterion 3 missed-not a claim of running a search, so it passes; criterion 4 missed-the response recommends `npx skills find testing`, which is a named tool/command rather than a package recommendation, so it arguably passes. Strictly, the 'provisional query' is a concrete command, but the response does not install anything, so the rubric is met on all four only if the query is not an unrelated package recommendation."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific question about language/framework and unit vs. integration vs. e2e tests; search query is labeled provisional; no search is claimed as run; the only named tool (npx skills find) is the related skills tool, not an unrelated package."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response asks a specific language and test-type question, keeps the search query provisional, makes no claim that a search ran, and recommends no unrelated package; `npx skills find` relates to the cited source."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language and test-type question, labels the query provisional, makes no claim of having run a search, and recommends no unrelated package; Playwright appears only as an example query term."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Next question:** What programming language is the project written in? (If you can also say the kind of testing you need, such as unit, integration, end-to-end, or load, that would help, but the language comes first because it determines which packages are even candidates.)\n\n**Provisional search query:** `best testing framework for [language] unit and integration tests`\n\nOnce you tell me the language, I'll replace the placeholder and narrow the query. I'm holding off on any package recommendation until then, since nothing so far tells me which ecosystem or test type applies.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific question about language and test type, labels the search query as provisional, claims no search was run, and names no packages, meeting all four rubric points."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language and test-type question, keeps the search query provisional with a placeholder, claims no search was run, and names no packages, meeting all four rubric points."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific question about programming language and test type (criterion 1), labels the search query as provisional with a placeholder (criterion 2), makes no claim that a search was run (criterion 3), and recommends no named package (criterion 4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific question about the project's language and test type, keeps the search query explicitly provisional with a placeholder, makes no claim a search was run, and recommends no unrelated package."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language question (plus test type), labels the query as provisional, claims no search was run, and names no packages, satisfying all four rubric criteria."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Next question:** What language (and test framework, if any) is your project using, and what kind of testing do you want to do: unit, integration, end-to-end/browser, API, load/performance, or something else?\n\n**Provisional search query:** `best testing frameworks comparison unit integration end-to-end`\n\nI'm not recommending a package yet, since the right choice depends entirely on your language and test type. Once you answer, I'll narrow the query (for example, `pytest vs unittest`, `Jest vs Vitest`, or `Playwright vs Cypress`) and suggest a specific package.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (specific question on language and test type), 2 (search marked provisional), and 4 (no unrelated package recommended). Misses criterion 3 partially-no, it does not claim a search was run, so it satisfies that too; but the example packages (pytest, Jest, Playwright) are only illustrative future suggestions, which edges toward criterion 4."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language and test-type question, keeps the search explicitly provisional, and does not claim a search ran. Named examples are testing tools tied to the user's topic, not unrelated recommendations."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific question about language and test type, keeps the search query explicitly provisional, does not claim a search was run, and names only test tools related to the request."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: asks a specific language/test-type question, labels the query provisional, and claims no search. Misses criterion 4 by naming pytest, Jest, Vitest, Playwright, and Cypress despite unknown language."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific question about language and test type, labels the search as provisional without claiming it ran, and names no package to install or recommend, only example future queries."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "**Next question:** What language or framework is the project in (for example TypeScript with React, Python, or Go), and what kind of testing do you want help with: unit, integration, end-to-end, or something else?\n\n**Provisional search query** (broad, since nothing is known yet):\n\n```\nnpx skills find testing\n```\n\nI'll narrow it once you answer, for example to `react testing`, `playwright e2e`, or `pytest`. I won't recommend a package until I've checked install counts and source reputation.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language and test-type question, labels the search query provisional, and does not claim a search ran. Named tools (playwright, pytest) appear only as conditional future examples, not recommendations."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks a specific language and test-type question, keeps the search query explicitly provisional, and claims no search was run. It loses the last point because it names pytest and playwright before the language is known."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language and test-type question, labels the search query as provisional, claims no search was run, and names only the related `skills` tool rather than an unrelated package."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: asks specific language and test-type questions, keeps the search provisional, and claims no search ran. Misses criterion 4 by naming pytest and playwright as example follow-up queries."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language and test-type question, labels the search query provisional, does not claim a search ran, and names no unrelated package; pytest and Playwright appear only as future query examples."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": {
+      "answer": "**Next question:** What language (and runtime/framework, if any) is the code you want to test written in, and is it unit, integration, end-to-end, or something else you're after?\n\n**Provisional search query:** `best testing frameworks comparison unit vs integration vs end-to-end`\n\nOnce you tell me the language and test type, I can narrow the query (for example, `best <language> unit testing library`) and then recommend a specific package.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Criterion 1 met: asks specifically about language and test type. Criterion 2 met: search query is labeled provisional. Criterion 3 met: no claim a search was run. Criterion 4 met: no unrelated package installed or recommended."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks a specific question about language and test type, keeps the search as provisional, and avoids claiming a search ran or recommending an unrelated package; it does not explicitly request the next question before the search query as a separate tool-free step, but meets the core criteria."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (asks specific language and test-type question), 2 (search query labeled provisional), and 4 (no unrelated package recommended); missed 3 because the query label implies a search pattern and no explicit disclaimer that no search was run, though it did not claim one was run."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (asks specific language and test-type question), 2 (search query labeled provisional), and 4 (recommends no unrelated package); missed criterion 3 because the response is phrased as 'Provisional search query' and 'I can narrow the query' without explicitly stating no search was run, though it does not claim one was."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks specific questions about language and test type (criterion 1), keeps the search provisional (criterion 2), and recommends no unrelated package (criterion 4); but it presents the query as 'Provisional search query' without claiming a search ran, so 3 is met too. Score should be 1.0 on the rubric; the response fully satisfies all four criteria."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "**Next question:** What language (and test framework, if any) is your project using, and what kind of testing do you want to do: unit, integration, end-to-end/browser, API, load/performance, or something else?\n\n**Provisional search query:** `best testing libraries for software projects overview unit integration end-to-end`\n\nI'm not recommending a package yet, since the right choice depends entirely on the language and test type. Once you answer, I can narrow the query (for example, `pytest vs unittest for Python unit testing` or `Playwright vs Cypress end-to-end testing`) and suggest a specific package.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: asks a specific language and test-type question, labels the query provisional, and claims no search ran. Misses criterion 4 by naming pytest, unittest, Playwright, and Cypress despite knowing nothing about the language."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language and test-type question, keeps the query provisional, claims no search was run, and recommends no package; pytest/Playwright appear only as hypothetical refinements."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: asks a specific question about language and test type. Criterion 2 met: search query is labeled provisional. Criterion 3 met: no claim a search was run. Criterion 4 missed: the response names specific packages (pytest, unittest, Playwright, Cypress) as examples, though it defers recommending one."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: asks a specific question about language and test type. Criterion 2 met: search query labeled provisional. Criterion 3 met: no claim a search was run. Criterion 4 arguably met, but the response names example packages (pytest, unittest, Playwright, Cypress) while describing them as future suggestions, so it is not a clean avoid-recommending. Score 0.5 under the strict 0.25-per-criterion scheme is a fair reading; leaning 0.75 if the examples are not counted as recommendations."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met (asks specific language/test-type question), criterion 2 met (search labeled provisional), criterion 3 met (no claim a search ran), criterion 4 met (no package recommended). Note: the response does name example tools like pytest/Playwright in a follow-up, but only as hypothetical examples, so it is scored as met."
+       }
+      ]
+     }
+    },
+    {
+     "try": 6,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "**Next question:** What language (and framework/runtime) is the code you want to test, and what kind of testing do you need: unit, integration, end-to-end/browser, API, performance/load, or something else?\n\n**Provisional search query:** `best testing frameworks and libraries comparison`\n\nI'm not recommending a package yet because the right choice depends entirely on your language and test type. Once you tell me those, I can narrow the query (for example, `<language> unit testing framework <year>`) and suggest a specific package.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Asks a specific question about language and test type (met), keeps the search provisional and labeled as such (met), does not claim a search was run (met), and recommends no unrelated package (met) — but it does not explicitly avoid recommending a package by name, and its 'best testing frameworks' query is generic rather than clearly neutral, so the fourth criterion is arguably satisfied only loosely."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific question about language and test type, labels the search query as provisional, claims no search was run, and recommends no named package, satisfying all four rubric points."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific question about language and test type, keeps the search explicitly provisional, makes no claim a search was run, and recommends no unrelated named package."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific question about language and test type, labels the search query as provisional, claims no search was run, and names no packages, meeting all four rubric points."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Asks a specific language and test-type question, gives a provisional query without claiming a search ran, and names no package, meeting all four rubric criteria."
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -23,6 +23,7 @@ const placebo=require('../lib/placebo');
 const {sha256,sha256Files}=require('../lib/canonical');
 const policy=require('../lib/report-015-publication');
 const skillHandoff=require('./skill-handoff');
+const sendResult=require('./build-send-result');
 const {applyHeadTags}=require('./build-head-tags'),{reportRow}=require('./site-data.mjs');
 const {annotateCampaignFigures}=require('./prepare-report-015');
 const {humanModelName}=require('./model-names');
@@ -42,6 +43,14 @@ const LIMITATION=repositoryJudgeRelationship(P.MODEL,P.JUDGE).limitation;
 // moves only with its Amendments. Issue 671: lib/plain.js rewords the verdict line where the averages
 // do not point the verdict's way, and the rows print that line.
 const AMENDMENT_1='Reworded the line against no skill in the rows where the overall averages with and without the skill do not point the verdict\'s way: it names the task that decided it and gives the averages over all the tasks. The verdict is decided per task, so those averages can sit equal or point the other way. Counts, readings and receipts are unchanged.';
+// Issue 690's record (spec 669 A-669-5, spec 690): each row with a receipt carries the judge-notes
+// mount, so the published body moves.
+const AMENDMENT_2='Added, under each task of every row with a receipt, a way to open that task\'s prompt and rubric, the kept answers with the skill, with the fake text and with nothing, and the judge\'s scores and reasons for one try at a time. Counts, readings and receipts are unchanged.';
+// The judge-notes mount (spec 690 AC-9, AC-11): the island docs/islands/judge-notes.js mounts on it
+// and reads the row's own data file, built by scripts/build-judge-notes.js. The static fallback is one
+// paragraph with no numeral and no link: a receipt link here would be counted as one of the report's
+// receipts (scripts/site-data.mjs reads every receipt href), and the row's receipt is already listed.
+const notesMount=(row)=>'<div class="judge-notes" data-island="judge-notes" data-notes-src="/reports/018/notes/'+row.attempt_id+'.json"><p>See the question and the judge&#39;s notes: with JavaScript on, each task name above opens its prompt and rubric, the kept answers and the judge&#39;s scores and reasons, one try at a time. Without it, the kept answers sit beside this row&#39;s receipt in the repository, under Receipts at the end of the report.</p></div>';
 // Plain words for each placebo reading (A-669-3), shown first in the chart, the plain counts line and
 // each row's summary line, the reader's token beside them. The reader's own line stays verbatim in the
 // row. "Beat the fake" is ABOVE_PLACEBO and nothing else (the note, "Terms").
@@ -183,7 +192,8 @@ function rowHTML(row){
  const limitation='<p class="judge-limitation">'+esc(row.limitation)+'</p>';
  const secondary='<p class="secondary-reading"><span class="row-label">The placebo against no skill, shown here and not counted: </span>'+reading(r.placebo_vs_baseline,'secondary reading',r.placebo_vs_baseline)+'</p>';
  const seal=row.receipt?'<p class="receipt-ref">Receipt <code>'+row.receipt.receipt_hash+'</code></p>':'';
- const html='<section class="placebo-result'+(row.router?' router-result':'')+'" data-attempt="'+row.attempt_id+'" data-reading="'+esc(r.placebo)+'"><details class="placebo-row">'+summary+'<h3>'+esc(row.skill)+' <span class="comparison-repository">'+esc(row.repository)+'</span></h3>'+router+(row.handoffNote?'<p class="handoff-note">'+esc(row.handoffNote)+'</p>':'')+'<p class="placebo-line"><span class="row-label">Against the same-length placebo: </span>'+reading(r.placebo,'placebo reading',line)+'</p>'+tasks+verdict+secondary+seal+'</details>'+limitation+'</section>';
+ const notes=row.receipt?notesMount(row):'';
+ const html='<section class="placebo-result'+(row.router?' router-result':'')+'" data-attempt="'+row.attempt_id+'" data-reading="'+esc(r.placebo)+'">'+sendResult.render(sendResult.reportPayload('018',row))+'<details class="placebo-row">'+summary+'<h3>'+esc(row.skill)+' <span class="comparison-repository">'+esc(row.repository)+'</span></h3>'+router+(row.handoffNote?'<p class="handoff-note">'+esc(row.handoffNote)+'</p>':'')+'<p class="placebo-line"><span class="row-label">Against the same-length placebo: </span>'+reading(r.placebo,'placebo reading',line)+'</p>'+tasks+verdict+notes+secondary+seal+'</details>'+limitation+'</section>';
  // The limitation is outside the details, read with the row closed (AC-20).
  need(/<\/details><p class="judge-limitation">[^<]*<\/p><\/section>$/.test(html),'LIMITATION_VISIBLE');
  return html;
@@ -226,7 +236,9 @@ function body(c,{panelDir,placeboPage}){
  const record='<section id="campaign-run-record"><h2>Run record</h2>'+annotateCampaignFigures('<p>One campaign root, <code>'+esc(c.src)+'</code>, read from the latest manifest its log names. '+receipts.length+' of '+c.rows.length+' attempts have a sealed receipt; every other attempt is a recorded failure and reads NOT_MEASURED. The earliest receipt date is '+fig(first.slice(0,10),receipts.find(r=>r.receipt.run.date_utc===first).src)+' and the latest '+fig(lastDate.slice(0,10),receipts.find(r=>r.receipt.run.date_utc===lastDate).src)+'. No finish time is inferred.</p><p>The surface was '+esc(surfaces)+'. Recorded spend across the chain: USD '+c.ledger.spent+'. Recorded costs are API-equivalent estimates, not a subscription invoice.</p>',c.manifests.at(-1).file)+'<ol class="campaign-runs">'+c.manifests.map(m=>'<li><code>'+esc(m.file)+'</code>, SHA-256 <code>'+m.sha256+'</code></li>').join('')+'</ol><p>Plan SHA-256 <code>'+c.ctx.plan_hash+'</code>. Pre-registered note SHA-256 <code>'+c.ctx.plan.outcomes.sha256+'</code>.</p><p>Read and built by:</p><ul class="reader-pins">'+READER.map(f=>'<li><code>'+f+'</code>, SHA-256 <code>'+sha256(fs.readFileSync(path.join(ROOT,f)))+'</code></li>').join('')+'</ul></section>';
  const list='<h2>Receipts</h2><ul>'+receipts.map(r=>'<li><a href="https://github.com/driftproofhq/driftproof/blob/main/'+esc(r.src)+'">'+esc(r.skill)+' on '+esc(humanModelName(r.receipt.run.model_id))+'</a></li>').join('')+'</ul>';
  // The dated records, after the run record and before the receipts so a later entry appends.
- const amendments='<h2 id="amendments">Amendments</h2><section id="amendment-1"><h3>Amendment 1, 3 Nov 2026</h3><p>'+esc(AMENDMENT_1)+'</p></section>';
+ const amendments='<h2 id="amendments">Amendments</h2><section id="amendment-1"><h3>Amendment 1, 3 Nov 2026</h3><p>'+esc(AMENDMENT_1)+'</p></section>'
+  +'<section id="amendment-2"><h3>Amendment 2, 4 Nov 2026</h3><p>'+esc(AMENDMENT_2)+'</p></section>'
+  +'<section id="amendment-3"><h3>Amendment 3, 4 Nov 2026</h3><p>Added Send this result to each row, with a fixed message that keeps its reading, model, judge, report, caveats and receipt together. A router row also links Report 015 Amendment 1, which says why a router gets no verdict. Counts, readings and receipts are unchanged.</p></section>';
  return head+limitation+headline+panelHTML+results+method+limits+record+amendments+list;
 }
 
@@ -266,5 +278,5 @@ function main(argv=process.argv.slice(2)){
  const o=parse(argv),done=o.check?checkReport(o):writeReport(o),n=done.built.campaign.rows.filter(r=>r.receipt).length;
  console.log('report 018: page and summary '+(o.check?'match':'written from')+' '+n+'/20 sealed '+(o.stub?'stub receipts (test mode, not for publication)':'receipts')+'; headline shape '+done.built.campaign.pub.tally.shape);
 }
-module.exports={TITLE,REL,CAMPAIGN,PANEL,READER,LIMITATION,PLAIN,COUNTS,readCampaign,panelOf,tasksOf,rowHTML,chartHTML,plainCountsHTML,buildReport,summaryRow,outputs,writeReport,checkReport,parse,main};
+module.exports={TITLE,REL,CAMPAIGN,PANEL,READER,LIMITATION,CAVEAT,PLAIN,COUNTS,readCampaign,panelOf,tasksOf,rowHTML,chartHTML,plainCountsHTML,buildReport,summaryRow,outputs,writeReport,checkReport,parse,main};
 if(require.main===module)try{main();}catch(e){console.error('report 018: refused: '+(e.code||e.message));process.exitCode=1;}

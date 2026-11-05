@@ -71,13 +71,14 @@
 <details class="nav-menu"><summary>Menu</summary></details>
 <nav class="site-nav" aria-label="Site">
 <a href="/reports/">Reports</a>
+<a href="/skills/">Skills</a>
+<a href="/how-it-works/">How it works</a>
+<details class="docs-menu"><summary>For builders</summary><div class="docs-menu-list">
+<a href="/#quickstart">Install</a>
+<a href="/#how-it-works">How a skill is tested</a>
 <a href="/benchmark-gap/">Gap calculator</a>
 <a href="/leaderboard-noise/">Leaderboard noise</a>
-<a href="/skills/">Skills</a>
-<a href="/findings/">Findings</a>
 <a href="/paper/">Paper</a>
-<details class="docs-menu"><summary>Docs</summary><div class="docs-menu-list">
-<a href="/#how-it-works">How it works</a>
 <a href="/methodology/">Methodology</a>
 <a href="/neutrality/">Neutrality</a>
 <a href="/interop/">Interop</a>
@@ -101,7 +102,7 @@
 </ol></div></nav><!--/driftproof:layout-->
 <main class="how-page">
 <h1>How Driftproof tests a skill, step by step</h1>
-<p class="lede">How Driftproof tests a skill in five steps, with one real example from Report 017: the task, three answers, the judge's scores and the reading.</p>
+<p class="lede">How Driftproof tests a <!--driftproof:term--><a class="term" href="/glossary/#term-skill" data-entry="term-skill" data-name="Skill" data-plain="A file of instructions that people add to an AI assistant, such as Claude, to make it better at a job. Driftproof tests whether a skill really helps.">skill</a><!--/driftproof:term--> in five steps, with one real example from Report 017: the task, three answers, the judge's scores and the reading.</p>
 <div class="how-steps" data-island="how-it-works" data-attempt="335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed">
 <section class="how-step" id="step-1" data-step="1" aria-labelledby="step-1-title">
 <h2 id="step-1-title" tabindex="-1">1. One task, three ways</h2>
@@ -111,14 +112,14 @@
 <section class="how-step" id="step-2" data-step="2" aria-labelledby="step-2-title">
 <h2 id="step-2-title" tabindex="-1">2. With the skill, a placebo, or no skill text</h2>
 <p>One way with the skill, one with a placebo, one with no skill text added.</p>
-<p data-term="placebo">A placebo is a text exactly as long as the skill, built from sentences chosen without looking at any task.</p>
+<p data-term="placebo">A <!--driftproof:term--><a class="term" href="/glossary/#term-placebo-arm" data-entry="term-placebo-arm" data-name="Placebo arm" data-plain="A fake skill: a text of the same length as the skill, built from sentences chosen without looking at any task. The skill is scored against the fake as well as against nothing, the way a medicine is tested against a sugar pill.">placebo</a><!--/driftproof:term--> is a text exactly as long as the skill, built from sentences chosen without looking at any task.</p>
 <p>The skill is <data value="940" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="skill-bytes">940</data> bytes long and its placebo <data value="940" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="placebo-bytes">940</data>, about a byte per letter. Each text's first sentence (the skill's header lines are left out):</p>
 <div class="how-pair"><div><p class="how-label">The skill</p><blockquote class="how-quote" data-quote="text">Write a handoff document summarising the current conversation so a fresh agent can continue the work.</blockquote></div><div><p class="how-label">The placebo</p><blockquote class="how-quote" data-quote="text">The morning light settled slowly over the hills beyond the old market town.</blockquote></div></div>
 <p><a href="https://github.com/mattpocock/skills/blob/49dd158d1076134a641b33efb035946536778336/skills/productivity/handoff/SKILL.md">Read the whole skill</a>, at the version tested. The whole placebo text is not shown on this page.</p>
 </section>
 <section class="how-step" id="step-3" data-step="3" aria-labelledby="step-3-title">
 <h2 id="step-3-title" tabindex="-1">3. A separate judge scores each answer</h2>
-<p data-term="judge">The judge is a second AI model, here Claude Haiku 5.5, that scores each answer against a guide written for the task.</p>
+<p data-term="judge">The <!--driftproof:term--><a class="term" href="/glossary/#term-judge" data-entry="term-judge" data-name="Judge" data-plain="The judge, also called the grader, is an AI model, sometimes the same one that answered, that scores each answer against a guide written for the task. It is an AI, not a person, and it can be wrong.">judge</a><!--/driftproof:term--> is a second AI model, here Claude Haiku 5.5, that scores each answer against a guide written for the task.</p>
 <p data-term="score">A score runs from 0, no point of the guide met, to 1, every point met.</p>
 <p>The answers came from Claude Sonnet 5.5. The judge gets the task, one answer and the guide, and is not told which way the answer was made; an answer can still show which way it was made.</p>
 <p>This task's guide gives <data value="0.25" data-src="docs/skills/receipts/issue-408/suites/92cc13dc7718360803650003087d6265928dcf466826b7f6fd2dcf8a52dfc137.json">0.25</data> for each point met:</p>
@@ -170,9 +171,9 @@ I didn't write this to `$TMPDIR` or `/tmp`, because you asked for text only. Sav
 <section class="how-step" id="step-4" data-step="4" aria-labelledby="step-4-title">
 <h2 id="step-4-title" tabindex="-1">4. Repeat, then read the case rule</h2>
 <p data-term="draw">Each way answers the task at least <data value="3" data-src="config.js" data-fig="sampling-min">3</data> times and at most <data value="10" data-src="config.js" data-fig="sampling-max">10</data>, stopping once the scores settle, and each answer is called a draw.</p>
-<p>On this task there were <data value="3" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="draws-with_skill">3</data> draws with the skill, <data value="3" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="draws-placebo">3</data> with the placebo and <data value="3" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="draws-baseline">3</data> with no skill text, and the judge scored each draw <data value="5" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="judge-samples">5</data> times.</p>
+<p>On this task there were <data value="3" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="draws-with_skill">3</data> <!--driftproof:term--><a class="term" href="/glossary/#term-draw" data-entry="term-draw" data-name="Draw" data-plain="One answer the model gave to a task. Each task is asked several times, so a result is a range of scores rather than one number.">draws</a><!--/driftproof:term--> with the skill, <data value="3" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="draws-placebo">3</data> with the placebo and <data value="3" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="draws-baseline">3</data> with no skill text, and the judge scored each draw <data value="5" data-src="receipts/report-017c/campaign-1/335148930bb21ee4a130cc0964044930eb0c9f845dc4c35d918dd876343c4bed.json" data-fig="judge-samples">5</data> times.</p>
 <p data-term="spread">The spread measures how much the scores of repeated draws differ from one another.</p>
-<p data-term="case-rule effect-floor">The case rule reads each case, meaning each task, on its own, and the effect floor, <data value="0.05" data-src="config.js" data-fig="effect-floor">0.05</data>, is the smallest gap it counts.</p>
+<p data-term="case-rule effect-floor">The <!--driftproof:term--><a class="term" href="/glossary/#term-case-rule" data-entry="term-case-rule" data-name="Case rule" data-plain="A reading that takes each test task on its own. A skill clearly helped if it scored clearly higher on at least one task and clearly lower on none, and clearly hurt if it scored clearly lower on any.">case rule</a><!--/driftproof:term--> reads each case, meaning each task, on its own, and the effect floor, <data value="0.05" data-src="config.js" data-fig="effect-floor">0.05</data>, is the smallest gap it counts.</p>
 <p><strong>Clearly helped</strong> means: <span data-quote="library">on at least one test task, the average with the skill was higher, the two ranges of scores (the average plus or minus one spread) did not overlap, and the gap was at least 0.05.</span></p>
 <p><strong>Clearly hurt</strong> means: <span data-quote="library">on at least one test task, the average with the skill was lower, the two ranges of scores (the average plus or minus one spread) did not overlap, and the gap was at least 0.05.</span></p>
 <p>If any task is clearly lower, the reading is Clearly hurt, whatever the others show.</p>
@@ -207,9 +208,11 @@ I didn't write this to `$TMPDIR` or `/tmp`, because you asked for text only. Sav
 <p class="muted">Like every page on this site, this one counts a visit with Cloudflare Web Analytics. Moving between the screens makes no further request.</p>
 </main>
 <!--driftproof:layout-end--></div><!--/driftproof:layout-end-->
+<!--driftproof:cards--><div class="jargon-cards" data-island="jargon-cards"><p class="jargon-note">Words with a dotted line link to the glossary, where each is explained in plain words.</p></div><!--/driftproof:cards-->
 <!--driftproof:foot--><footer class="site">
 <p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
 <p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/maintainer/">Maintainer</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+<p class="foot-links"><a href="/can-you-tell/">Can you tell? Every skill</a> · <a href="/noticed/">The AI noticed the sugar pill</a> · <a href="/spot-the-fake/">Which bar is the fake?</a> · <a href="/tasks/">Every task we gave a skill</a> · <a href="/sugar-pill/">Skill or sugar pill?</a></p>
 </footer><!--/driftproof:foot-->
 <!--driftproof:scripts--><script src="/copy-button.js" defer></script>
 <script type="module" src="/islands/loader.js"></script><!--/driftproof:scripts-->

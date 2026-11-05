@@ -199,7 +199,11 @@ function rowsCollapse(html) {
   const sections = html.split('<section class="placebo-result').slice(1);
   assert.ok(sections.length > 0);
   for (const s of sections) {
-    const sec = s.slice(0, s.indexOf('</section>') + 10);
+    const full = s.slice(0, s.indexOf('</section>') + 10);
+    const send = /<div class="send-result"[\s\S]*?<\/details><\/div>/.exec(full);
+    assert.ok(send, 'A-669-6: the fixed share preview precedes the row details');
+    assert.equal((send[0].match(/data-island="send-result"/g) || []).length, 1);
+    const sec = full.replace(send[0], '');
     assert.match(sec, /^[^>]*><details class="placebo-row"><summary><span class="row-skill">[\s\S]*?<\/summary>[\s\S]*<\/details><p class="judge-limitation">[^<]*<\/p><\/section>$/, 'a details element, then the limitation');
     const summary = /<summary>([\s\S]*?)<\/summary>/.exec(sec)[1]; const t = textOf(summary);
     const tok = /data-reading="([A-Z_]+)"/.exec(sec)[1];
@@ -454,7 +458,14 @@ test('AC-4, AC-9, AC-10, AC-11, AC-14, AC-17: the published page is what the bui
   chartReads(html, { ABOVE_PLACEBO: pub.tally.A, BELOW_PLACEBO: pub.tally.B, NO_DIFFERENCE: pub.tally.D, INCONCLUSIVE: pub.tally.I, UNDERPOWERED: pub.tally.U, NOT_MEASURED: pub.tally.M }, pub.tally.N);
   rowsCollapse(html);
   const body = html.slice(html.indexOf('<h2 id="each-skill">'), html.indexOf('<h2>Method</h2>'));
-  assert.ok(!body.includes('<script') && !body.includes('data-island'), 'no script in the rows: they open without it');
+  // The rows open without script. A-669-6 adds the fixed share preview alongside the
+  // judge-notes island. Both keep static fallbacks; the row details need neither island.
+  assert.ok(!body.includes('<script'), 'no script in the rows: they open without it');
+  const islands = [...body.matchAll(/data-island="([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual([...new Set(islands)], ['send-result', 'judge-notes'], 'the rows carry only the send-result and judge-notes islands (A-669-6)');
+  assert.equal(islands.filter(n => n === 'judge-notes').length, done.built.campaign.rows.filter((r) => r.receipt).length, 'one judge-notes mount per row with a receipt');
+  assert.equal(islands.filter(n => n === 'send-result').length, done.built.campaign.rows.length, 'one send-result mount per row');
+  assert.ok(/<\/ul><div class="judge-notes" data-island="judge-notes" data-notes-src="\/reports\/018\/notes\/[a-f0-9]{64}\.json"><p>[^<]+<\/p><\/div><p class="secondary-reading">/.test(body), 'the mount is a div with one static paragraph, after the verdict lines and before the secondary reading');
   for (const s of html.split('<section class="placebo-result').slice(1)) {
     assert.ok(/Against the same-length placebo: /.test(textOf(s)) && /Against no skill: /.test(textOf(s)), 'both readings on every row');
     if (s.startsWith(' router-result')) assert.doesNotMatch(textOf(s.slice(0, s.indexOf('</section>'))), /The skill clearly (helped|hurt)/);
@@ -491,7 +502,10 @@ test('AC-4, AC-9, AC-10, AC-11, AC-14, AC-17: the published page is what the bui
   // The page's dated record of that rewording, after the run record and before the receipts (spec 020 AC-21).
   const entry = '<h2 id="amendments">Amendments</h2><section id="amendment-1"><h3>Amendment 1, 3 Nov 2026</h3><p>Reworded the line against no skill in the rows where the overall averages with and without the skill do not point the verdict&#39;s way: it names the task that decided it and gives the averages over all the tasks. The verdict is decided per task, so those averages can sit equal or point the other way. Counts, readings and receipts are unchanged.</p></section>';
   assert.ok(html.indexOf('<section id="campaign-run-record">') < html.indexOf(entry) && html.indexOf(entry) < html.indexOf('<h2>Receipts</h2>'), 'after the run record, before the receipts');
-  assert.equal(require(path.join(ROOT, 'scripts/site-chrome.js')).splitReportBody(html).amendments, entry);
+  // Issue 690 (A-669-5) appends the judge-notes entry after it, so the recorded prefix stays.
+  const notes = '<section id="amendment-2"><h3>Amendment 2, 4 Nov 2026</h3><p>Added, under each task of every row with a receipt, a way to open that task&#39;s prompt and rubric, the kept answers with the skill, with the fake text and with nothing, and the judge&#39;s scores and reasons for one try at a time. Counts, readings and receipts are unchanged.</p></section>';
+  const sent = '<section id="amendment-3"><h3>Amendment 3, 4 Nov 2026</h3><p>Added Send this result to each row, with a fixed message that keeps its reading, model, judge, report, caveats and receipt together. Counts, readings and receipts are unchanged.</p></section>';
+  assert.equal(require(path.join(ROOT, 'scripts/site-chrome.js')).splitReportBody(html).amendments, entry + notes + sent);
   // The data layer: what moved is the placebo text; the summary's limit names the snapshot, model, judge and tasks.
   const rows = json(path.join(ROOT, 'docs/data/reports.json')).reports;
   assert.equal(rows.find((r) => r.number.value === '018').what_moved.value, 'a same-length placebo text');

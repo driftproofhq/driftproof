@@ -1,0 +1,1431 @@
+{
+ "format": "driftproof-judge-notes/1",
+ "report": "018",
+ "report_url": "/reports/018/",
+ "attempt_id": "90573a77432fb1791c87bfd06bc8c4836deb8f3c412531f6daf2013b7ff94459",
+ "skill": "triage",
+ "repository": "mattpocock/skills",
+ "receipt_hash": "6e3e4f32ce47371211e9c3b0972b8e969bd1fb43fa9637a46ae336dad04b3f97",
+ "receipt_page": "/r/6e3e4f32ce47371211e9c3b0972b8e969bd1fb43fa9637a46ae336dad04b3f97/",
+ "receipt_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-018/campaign-3/90573a77432fb1791c87bfd06bc8c4836deb8f3c412531f6daf2013b7ff94459.json",
+ "answers_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-018/campaign-3/90573a77432fb1791c87bfd06bc8c4836deb8f3c412531f6daf2013b7ff94459-answers.json",
+ "suite_file": "https://github.com/driftproofhq/driftproof/blob/main/specs/408-skill-measurements/suites/mattpocock--skills--triage.json",
+ "model": "Claude Haiku 5.5",
+ "judge": "Claude Haiku 5.5",
+ "judge_samples": 5,
+ "date": "2 November 2026",
+ "arms": [
+  {
+   "key": "with_skill",
+   "label": "With the skill"
+  },
+  {
+   "key": "placebo",
+   "label": "With the fake text"
+  },
+  {
+   "key": "baseline",
+   "label": "With nothing"
+  }
+ ],
+ "caveats": [
+  "The judge uses the same model as the target. Self-grading may favor its own model's answers.",
+  "Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings.",
+  "The scores and reasons are the judge model's own words, kept exactly as it wrote them. They are a model's reading of the rubric, not Driftproof's.",
+  "This is one task of three. Each skill was given three text tasks, and one task is not the whole measurement."
+ ],
+ "tasks": [
+  {
+   "id": "conflict",
+   "number": 1,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. Triage this synthetic item: category bug; states needs-info and ready-for-agent both present. The label mapping uses those same strings. What happens next?",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/engineering/triage/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 917b0baf74be583e74f110857ed45df2766617f75c00baf61fd136d7af515edf; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Identify conflicting state roles 2. Ask the maintainer to resolve them before action 3. Keep category separate from state 4. Avoid silently selecting one state",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "This item has two conflicting state roles, `needs-info` and `ready-for-agent`. Each issue should carry exactly one state role, so I'd stop before taking any other action.\n\nNext steps:\n\n1. **Flag the conflict** to you, the maintainer. I wouldn't change any labels, post a comment, or close anything yet.\n2. **Ask which state applies.** The two readings point in different directions. `needs-info` means the reporter still owes information. `ready-for-agent` means the issue is fully specified. Both can't be true, so one label is probably stale or applied by mistake.\n3. **Apply your answer** once you choose. If you pick `ready-for-agent`, I'd ask whether you want an agent brief written. If you pick `needs-info`, I'd post triage notes that record what's established so far and list specific questions for the reporter.\n\nThe category is `bug`, which is already a single valid category, so it doesn't need a change. The label mapping uses the canonical strings, so no translation is needed.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the needs-info and ready-for-agent conflict, asks the maintainer which applies before any label change, keeps the bug category separate from state, and does not silently pick a state."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response identifies the conflicting needs-info and ready-for-agent states, asks the maintainer to choose before any action, treats bug as a separate category, and does not silently pick a state."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the needs-info/ready-for-agent conflict, asks the maintainer to choose before any label change, keeps the bug category separate from state, and does not silently pick a state."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response identifies the conflicting needs-info and ready-for-agent state roles, asks the maintainer to resolve before any action, keeps bug category separate from state, and does not silently pick a state."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the conflicting needs-info and ready-for-agent state roles, asks the maintainer to resolve which applies before acting, keeps the bug category separate from state, and does not silently pick a state."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Nothing should happen automatically. The item has two labels that contradict each other, so it should be held for a person to resolve.\n\n- `needs-info` means the item is waiting on more information, usually from the reporter.\n- `ready-for-agent` means the item is cleared for an agent to pick up.\n\nBoth can't be true at once. Since the label mapping uses the same strings, a label-driven workflow would see both and could route the item to an agent while it is still blocked on missing information.\n\nThe next step is to flag the conflict and have someone decide which state is correct. If the information is still missing, remove `ready-for-agent`. If the information has arrived, remove `needs-info`. Once one label is removed, the item can be triaged normally.\n\nI can't see the tracker or the mapping configuration, so I can't confirm how the workflow actually handles this combination.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response identifies the conflicting state labels and keeps category separate, but it resolves the conflict by suggesting removing one label itself rather than asking the maintainer to decide before action, so criteria 2 and 4 are missed (though it does say a person should decide)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it identifies the conflicting state labels, has a person resolve them before action, and avoids silently picking a state. It misses 3 because it never addresses the category 'bug' as separate from state."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Identifies the conflicting labels and asks a person to resolve them (criteria 1 and 2 met), but it suggests specific label removals and never explicitly separates category from state, so criteria 3 and 4 are not clearly satisfied; it also says nothing about not silently choosing a state beyond 'hold for a person', which is only partly met."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Identifies the conflicting labels and avoids silently picking one state (criteria 1 and 4 met), but it does not ask the maintainer to resolve them before action; it instead offers a choice of removing one label. Category-vs-state separation (criterion 3) is not explicitly addressed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the conflicting state labels, holds the item for a person to decide, and avoids picking a state silently; it never explicitly keeps the 'bug' category separate from state, so that criterion is missed."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "The item has contradictory states, so it shouldn't move forward yet. Since the label mapping uses the same strings, `needs-info` and `ready-for-agent` are both live signals on one bug, and they conflict:\n\n- **`needs-info`** means the report is blocked on more information from someone.\n- **`ready-for-agent`** means it's cleared for an agent to pick up and work on.\n\nNext steps:\n\n1. **Hold the item.** Don't assign it to an agent while both labels are present.\n2. **Resolve the conflict.** Either the information has arrived, so `needs-info` should be removed and the item marked `ready-for-agent`, or the item still lacks what it needs, so `ready-for-agent` should be removed and the item kept in `needs-info`.\n3. **Ask for the missing information** if it's still needed, and say specifically what's missing.\n\nI haven't changed anything. I can't verify from the supplied facts which label is correct, so someone with access to the item needs to decide between those two paths.",
+      "average": 0.55,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (identifies conflicting state roles) and criterion 4 (does not silently pick a state), but missed criterion 2 by not asking the maintainer to resolve the conflict and missed criterion 3 by not explicitly keeping category separate from state."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Identifies the conflicting labels and avoids silently picking one (criteria 1 and 4 met), but it does not ask the maintainer to resolve the conflict before action; it instead lays out self-directed paths, and it does not explicitly keep category separate from state (criteria 2 and 3 missed)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (identifies the conflicting needs-info and ready-for-agent states) and 4 (doesn't silently pick one). Misses 2, since it never explicitly asks the maintainer to resolve, and 3, since category 'bug' is never addressed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (identifies the conflicting needs-info and ready-for-agent roles), 2 (asks for resolution before action, though it defers to someone with access rather than explicitly asking the maintainer), 4 (does not silently pick a state). Misses 3 explicitly keeping category separate from state; it never mentions the bug category."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (identifies conflicting needs-info/ready-for-agent roles), 2 (asks for resolution before action via holding the item), and 4 (does not silently pick a state). Missed criterion 3: it never explicitly separates category 'bug' from state labels."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "Per the triage skill, an item carrying two state roles is a conflict, so nothing gets actioned yet:\n\n1. **Flag the conflict.** I'd report that the item has both `needs-info` and `ready-for-agent`, which the skill treats as a conflicting state.\n2. **Ask the maintainer which state is correct before doing anything else.** No comment gets posted, no role gets changed, and the item isn't closed.\n3. **Once the maintainer picks a state**, the item proceeds as that state normally dictates. For `needs-info`, that means posting triage notes and waiting for the reporter. For `ready-for-agent`, it means posting an agent brief.\n\nThe category is clear (`bug`), so only the state needs resolving. I haven't checked the tracker or the codebase, since you asked for no tool use. This is a synthetic item, so the answer above describes the procedure, not a live action.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1 (identifies both needs-info and ready-for-agent as conflicting), 2 (asks maintainer to resolve before action), and 4 (no silent state selection). Criterion 3 is satisfied in spirit since category bug is noted as separate and clear, though the response does not explicitly frame category vs. state as a distinct concept."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response identifies the needs-info/ready-for-agent conflict, asks the maintainer to resolve it before any action, treats bug as a separate category, and does not silently pick a state."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the needs-info and ready-for-agent conflict, asks the maintainer to resolve it before acting, keeps the bug category separate from state, and does not silently pick a state."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (identifies conflicting needs-info and ready-for-agent), 2 (asks maintainer to resolve before action), and 4 (no silent state selection); keeps category separate from state, but it states the category is 'clear', which is arguably fine, so criterion 3 is credited, making full 1.0 possible; scored 0.75 due to hedging about the skill's conflict rule being asserted without the source text supporting it."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response identifies the conflicting needs-info and ready-for-agent states, asks the maintainer to resolve before acting, keeps category bug separate from state, and does not silently pick a state."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The supplied facts don't say what happens next. They give the category (bug) and the two conflicting labels, but no rule for resolving a conflict between `needs-info` and `ready-for-agent`, and no mapping that says which label takes precedence.\n\nThe two labels contradict each other. `needs-info` means work is waiting on more information, and `ready-for-agent` means the item can be picked up now. The item needs a human to remove one of them before it can be triaged. Nothing in the supplied facts says which one is correct.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response identifies the conflicting labels and avoids silently picking one (criteria 1 and 4 met), but it never asks the maintainer to resolve the conflict before action, and it does not explicitly keep category separate from state (criteria 2 and 3 missed)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (identifies the contradictory needs-info/ready-for-agent roles) and 4 (selects neither state); criterion 2 is only implied by 'a human needs to remove one', and criterion 3 is not explicitly addressed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies needs-info and ready-for-agent as conflicting state roles (1), keeps category bug separate from state (3), and avoids silently picking a state (4). Criterion 2 is only implied: it says a human must remove one label, without explicitly asking the maintainer to resolve it."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (identifies the conflicting labels) and 4 (doesn't silently pick one). Misses 2 (says a human must resolve it but doesn't ask the maintainer) and 3 (never explicitly separates category from state)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 by identifying the contradictory states and criterion 4 by not picking one; misses explicit asking of the maintainer (2) and never states category is separate from state (3)."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "The supplied facts don't define a triage outcome. The item is a bug, but it carries both `needs-info` and `ready-for-agent`, which point in opposite directions: one says the item is waiting on more information, the other says it is ready to be worked. The facts don't say which label takes precedence, so I can't tell from them whether the item gets routed to an agent or held for information.\n\nThe next step is to resolve the conflict before routing. A maintainer should decide whether the item still needs information, in which case `ready-for-agent` should be removed, or whether the information is already available, in which case `needs-info` should be removed. If the label mapping defines a rule for this case, that rule would settle it, but it isn't in the facts provided.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Names the conflicting state labels as pointing opposite ways, asks a maintainer to resolve them before routing, keeps the bug category separate, and does not silently pick a state. All four criteria met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies needs-info and ready-for-agent as conflicting, has a maintainer resolve it before routing, keeps the bug category separate, and selects neither state."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies needs-info and ready-for-agent as opposing states, has a maintainer resolve the conflict before routing, keeps the bug category separate, and does not silently pick a state."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response identifies the conflicting needs-info vs ready-for-agent roles and avoids silently choosing one (criteria 1 and 4), and keeps category separate. However, it does not ask the maintainer to resolve the conflict before action in a clear way; it prescribes removing a label instead of requesting resolution first, though it does say a maintainer should decide. Criterion 2 is arguably partially met, so the score is 0.5 with a fail."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the opposing needs-info and ready-for-agent roles, says to resolve them with a maintainer before routing, keeps the bug category separate, and selects neither state."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "Per the triage skill, two state roles on one item is a conflict, so nothing gets applied until you decide. I haven't touched the tracker or any files.\n\n1. **Flag the conflict and ask you.** The skill says that when state roles conflict, I flag it and ask the maintainer before doing anything else. The item is labelled both `needs-info` and `ready-for-agent`, so I'd report that and wait.\n\n2. **Likely readings, for your choice:**\n   - `ready-for-agent` is stale. The reporter answered the open questions, and `needs-info` should be removed. The item would then move to `needs-triage` for re-evaluation, and if the answers hold up, on to `ready-for-agent` with an agent brief.\n   - `needs-info` was added after the brief was posted, because the reporter's details turned out to be insufficient. Then `ready-for-agent` should come off and the triage notes go on.\n   - The item is actually `needs-triage` and both labels were applied by mistake.\n\n3. **What I'd recommend:** check the reporter's latest comments first. If they've answered the outstanding questions, go with the first reading. If nothing has changed, go with the second, since an agent should not work from a brief that still has open questions.\n\nOnce you confirm, I'd also verify the bug from the reporter's steps before any brief goes out, since a confirmed reproduction makes a much stronger agent brief.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the needs-info/ready-for-agent conflict, asks the maintainer to choose before any action, and avoids silently picking a state. It never explicitly keeps the 'bug' category separate from state, so criterion 3 is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the needs-info/ready-for-agent conflict, asks the maintainer to resolve it before acting, and avoids silently picking a state. Category is not clearly kept separate from state, so that criterion is only partly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it identifies the conflicting state labels, asks the maintainer to decide before any action, and does not silently pick a state. It never addresses the category, so criterion 3 is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the needs-info/ready-for-agent conflict, asks the maintainer to resolve it before acting, and avoids silently picking a state. Category bug is not clearly separated from state handling, so criterion 3 is only partly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Response identifies the conflicting needs-info and ready-for-agent states, asks the maintainer to resolve before acting, and avoids silently picking one. It keeps category (bug) separate. Missed: it doesn't clearly state category is separate from state; it implicitly does so but doesn't explicitly say it."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The supplied facts don't say what happens next. They tell me the item is a bug, that it carries both `needs-info` and `ready-for-agent`, and that the label mapping uses those same strings. They don't include a rule for resolving conflicting labels, so any outcome I named would be a guess.\n\nThe two labels also point in opposite directions. `needs-info` suggests the item is waiting on more information, while `ready-for-agent` suggests it can be picked up now. The item probably needs one of the two removed, or a check of whether the information request was answered, before routing. Whoever owns the triage process would need to confirm which label wins.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response identifies the conflicting state labels (criterion 1) and avoids silently choosing one (criterion 4), but it does not explicitly ask the maintainer to resolve them before action (criterion 2 partially; it says the owner 'would need to confirm' which wins, which is close), and it does not explicitly address keeping category separate from state (criterion 3 missed)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the opposing state roles of needs-info and ready-for-agent, defers resolution to the triage owner before routing, keeps the bug category separate from state, and does not silently pick a state."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response identifies the conflicting state labels and avoids silently picking one (criteria 1 and 4 met), and it keeps category separate from state only implicitly. It does not explicitly ask the maintainer to resolve the conflict before action (criterion 2 partly met), so it's not a clear pass."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response identifies the conflicting state labels and avoids silently picking one (criteria 1 and 4 met), but it does not explicitly ask the maintainer to resolve them before action (partially, it says 'whoever owns triage would need to confirm', which is close) and does not clearly keep category separate from state (criterion 3 unaddressed)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the opposing needs-info and ready-for-agent roles and avoids silently picking one (met). Says the triage owner must confirm which label wins, which implies asking before action (largely met). Never explicitly separates the bug category from state (not clearly met)."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "The item is in a conflicting state. It has both `needs-info` and `ready-for-agent`, and those labels mean opposite things: one says the item is waiting on more information, the other says it can be picked up now. The label mapping uses the same strings, so it can't settle which one applies.\n\nBased only on the facts you've given, the next step is to resolve the conflict before anyone works on the item. Someone needs to decide whether the information is still missing (remove `ready-for-agent`) or whether it's complete (remove `needs-info`). I can't tell which is correct from this information. The category, `bug`, doesn't indicate either.\n\nI haven't used any tools, run anything, or changed anything.",
+      "average": 0.55,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (identifies conflicting roles of needs-info and ready-for-agent), 3 (keeps category bug separate), and 4 (does not silently pick a state). Misses criterion 2: it asks for resolution but frames it as someone deciding, not explicitly asking the maintainer to resolve before action; it does say act after resolving, so this is borderline and graded as missed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (identifies conflicting needs-info vs ready-for-agent roles) and 3 (keeps category bug separate); missed 2 since it asks the user to resolve rather than explicitly asking the maintainer, and it doesn't explicitly ask the maintainer, and 4 was met by not silently selecting one state."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the opposing needs-info and ready-for-agent roles, keeps bug separate from state, and avoids picking a state; it says resolution is needed before action but never explicitly asks the maintainer."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (identifies conflicting needs-info and ready-for-agent roles), 3 (keeps category bug separate), and 4 (does not silently pick a state); missed criterion 2 because it asks for resolution generically rather than asking the maintainer explicitly before action."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (identifies conflicting needs-info vs ready-for-agent roles), 3 (keeps category bug separate), and 4 (doesn't silently pick a state). Misses 2: it asks someone to decide but doesn't explicitly ask the maintainer to resolve before action."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "Nothing happens yet. Both state roles are on the item, and the triage rules say that when state roles conflict, you flag it and ask the maintainer before doing anything else.\n\nThe flag would read something like:\n\n> This item has two state roles: `needs-info` and `ready-for-agent`. Which one should it keep? Once you decide, I'll remove the other, then continue with the category (`bug`) and the matching next step.\n\nDepending on the answer:\n\n- **`needs-info`**: I'd remove `ready-for-agent` and post triage notes listing what's established so far and the specific questions for the reporter.\n- **`ready-for-agent`**: I'd remove `needs-info` and write an agent brief for the item. I'd also need to check that the brief doesn't depend on the open questions.\n\nI haven't checked the item, applied or removed any labels, or posted anything. I'd need the maintainer's answer before taking any of those steps.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the needs-info and ready-for-agent conflict, asks the maintainer to resolve it before any action, keeps category bug separate from state, and explicitly avoids silently choosing a state."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (identifies conflicting needs-info and ready-for-agent), 2 (asks maintainer to resolve before acting), and 4 (does not silently pick a state); criterion 3 is partly weak since category 'bug' is mentioned as continuing after resolution rather than being clearly kept separate from state."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the conflicting needs-info and ready-for-agent roles, asks the maintainer to resolve them before any action, keeps category (bug) separate from state, and selects neither state silently."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the conflicting needs-info and ready-for-agent roles, asks the maintainer to resolve before acting, and avoids silently picking one; category bug is handled separately, but the response does not explicitly keep category distinct from state, so criterion 3 is only partially met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies both conflicting state roles, asks the maintainer which to keep before any action, keeps category (bug) separate from state, and does not silently pick a state."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": {
+      "answer": "**Next step: hold the item and resolve the label conflict before anyone works on it.** The item is a bug, but it carries both `needs-info` and `ready-for-agent`, and those labels contradict each other. `needs-info` means the item is waiting on more information. `ready-for-agent` means it can be picked up now.\n\nThe facts I have don't say what the triage system does with a item that has both labels, so I can't tell you whether it would be dispatched automatically. The safe course is to avoid dispatching it while the labels conflict.\n\nTo resolve it, someone needs to check whether the requested information has arrived:\n- **If it has not**, remove `ready-for-agent` and keep `needs-info`.\n- **If it has**, remove `needs-info` and keep `ready-for-agent`.\n\nI can't check which applies from here, since I have no access to the item's content or history.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response identifies the conflicting state labels and asks for resolution before action (criteria 1 and 2), but does not explicitly keep category separate from state, and it does not clearly avoid silently selecting a state since it suggests removing one label depending on information status (criterion 3 and 4 partially missed)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 3, and 4: it identifies the contradictory needs-info/ready-for-agent roles, keeps the bug category separate, and doesn't silently pick a state. Criterion 2 is only partly met: it says someone should resolve the conflict before work, without explicitly asking the maintainer."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it identifies that needs-info and ready-for-agent conflict, keeps the bug category separate from state, and avoids silently picking a state. It misses criterion 2 because it tells someone to resolve the conflict rather than asking the maintainer to resolve it."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response identifies the conflicting state labels and asks for resolution before action (criteria 1 and 2 met), keeps category separate, and avoids silently picking a state (criteria 3 and 4 met). Actually, all four appear addressed, but it hedges and says the maintainer 'someone' must check rather than explicitly asking the maintainer; scoring strictly, criterion 2 is only partly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the contradictory needs-info and ready-for-agent roles, keeps the bug category separate from state, and avoids silently choosing a state. It defers resolution to 'someone' rather than explicitly asking the maintainer, so criterion 2 is only partly met."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": {
+      "answer": "This item has two conflicting state roles (`needs-info` and `ready-for-agent`), so I'd stop here and flag it before doing anything else. Triage rules say that when state roles conflict, the maintainer decides first.\n\nHere's what I'd ask:\n\n- **Which state is correct?** `needs-info` means the reporter still owes information. `ready-for-agent` means the issue is fully specified. They can't both be true.\n- **Is either label stale?** If the reporter answered the open questions, `needs-info` may be out of date. If the brief is incomplete, `ready-for-agent` may have been applied too early.\n\nOnce you pick one, I'd remove the other and make sure the item has exactly one category role (`bug`, which is set) and one state role. If you choose `needs-info`, I'd post triage notes listing what's established and what's still needed from the reporter. If you choose `ready-for-agent`, I'd post an agent brief.\n\nNo labels were changed and no comments were posted. Nothing was checked against a real tracker, since this is a synthetic item and I'm not using tools here.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the conflicting needs-info and ready-for-agent states, asks the maintainer which is correct before any action, keeps the bug category separate, and does not silently pick a state."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the conflicting needs-info and ready-for-agent states, asks the maintainer which is correct before acting, and keeps bug category separate. It does not silently select a state, but its 'stop here' framing somewhat undercuts the rubric's 'before action' point by proposing post-choice steps, so one criterion is arguably only partly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the conflicting needs-info and ready-for-agent states, asks the maintainer to resolve before acting, and keeps bug category separate. It does not silently pick a state, but it doesn't explicitly say to hold off on all changes, and it only partly addresses the category/state separation point by noting the bug category is set."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the conflicting needs-info and ready-for-agent states, stops to ask the maintainer which is correct, keeps bug separate as the category, and does not silently pick a state."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the conflicting needs-info and ready-for-agent states, asks the maintainer which is correct before any action, keeps bug separate as the category, and selects neither state silently."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": {
+      "answer": "The item is in a contradictory state, so triage can't settle it on the labels alone. It is categorized as a `bug`, but it carries both `needs-info` and `ready-for-agent`. Since the mapping uses those same strings, each label maps to a state that the other contradicts: one says the item is waiting on information, the other says it is ready for an agent to work on.\n\nNext, a person should resolve the conflict by checking whether the bug report has enough information. If it does, remove `needs-info` and keep `ready-for-agent`. If it doesn't, remove `ready-for-agent` and keep `needs-info`. Until one label is removed, the item shouldn't be handed to an agent, because `needs-info` signals it is blocked.\n\nI haven't checked the item's contents, the repository, or any label rules beyond what you supplied, so I can't say which label is correct.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response identifies the conflicting labels and avoids silently choosing one (criteria 1 and 4 met), but it tells a person to resolve by removing a label rather than asking the maintainer, and does not explicitly keep category separate from state (criteria 2 and 3 missed or weak)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the conflicting state labels and keeps the bug category separate, and avoids silently choosing a state. It says a person must resolve the conflict before agent handoff but never explicitly asks the maintainer, so criterion 2 is only partly met."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (identifies conflicting state roles) and 3 (keeps category bug separate from state); missed 2 since it asks a person to resolve rather than explicitly asking the maintainer to resolve before action, though it does block agent handoff; 4 is arguably met since it does not silently pick a state but its conditional remove-one-label guidance is close to selecting. Net fraction roughly 0.5."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the conflicting needs-info and ready-for-agent roles, keeps category bug separate, and avoids silently picking a state. It says 'a person should resolve' rather than explicitly asking the maintainer, so criterion 2 is only partly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the conflicting needs-info and ready-for-agent roles, keeps the bug category separate, and avoids silently picking a state. It does not explicitly ask the maintainer to resolve the conflict; it only says a person should, and proposes its own label fix."
+       }
+      ]
+     }
+    },
+    {
+     "try": 6,
+     "with_skill": {
+      "answer": "Per the triage skill, this item has two state roles, which is a conflict. The skill says: \"If state roles conflict, flag it and ask the maintainer before doing anything else.\"\n\nSo the next step is:\n\n1. **Flag the conflict.** Tell the maintainer the item carries both `needs-info` and `ready-for-agent`, and that these can't both be true. `needs-info` means the reporter has to answer questions first. `ready-for-agent` means the brief is complete and an agent can start.\n2. **Ask which state applies.** Don't apply a transition, post a comment, or close anything until the maintainer answers.\n3. **Stop there.** Nothing else in the triage flow runs until the conflict is resolved.\n\nThe category is `bug`, which is clear and needs no action. Once the maintainer picks a state, the normal path resumes. For example, if they pick `ready-for-agent`, the next step is to post an agent brief. If they pick `needs-info`, it's to post triage notes.\n\nI haven't taken any action here. I used only the facts you gave me, without tools or network access.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Response identifies the needs-info/ready-for-agent conflict, asks the maintainer to resolve before acting, and keeps category bug separate; it does not silently pick a state. However, it leans on a quoted triage-skill rule and a conflict-resolution flow not verifiable from the task, so criterion fit is partly inferred."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the conflicting needs-info and ready-for-agent roles, asks the maintainer to resolve before acting, and keeps category bug separate; it does not silently pick a state. Rubric point 3 is met, but the response also gives a post-resolution path, which is not penalized but adds nothing to the criteria."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response identifies the needs-info vs ready-for-agent conflict, asks the maintainer to resolve it before any action, keeps bug category separate from state, and does not silently pick a state; all four criteria met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response identifies the needs-info and ready-for-agent conflict, asks the maintainer to resolve it before any action, treats bug as a separate category, and does not silently pick a state."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Response identifies the conflicting needs-info/ready-for-agent roles, asks the maintainer to resolve before any action, and keeps category bug separate; it doesn't silently pick a state. Criterion 4 is met, but rubric criterion 1 and 2 are met too, giving 1.0 strictly; however it adds an unverified claim about the skill text quote, so I score 0.75 conservatively for not verifying the quoted line against the source."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": {
+      "answer": "The item is in a conflicting state, so it can't move forward cleanly yet.\n\n- **Category:** bug.\n- **Conflict:** `needs-info` means the item is waiting on more information, and `ready-for-agent` means it can be picked up for work. Both are set, so the two signals contradict each other.\n- **Mapping:** The label mapping uses the same strings, so it doesn't resolve the conflict.\n\n**What happens next:** The item should not be routed to an agent while `needs-info` is set, and the supplied facts don't say which label takes precedence. It needs a human to decide whether the information is complete (remove `needs-info` and keep `ready-for-agent`) or still missing (remove `ready-for-agent` and wait for the reporter). Once one label is removed, the item is no longer ambiguous and can be triaged normally.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the needs-info and ready-for-agent roles as contradictory, keeps category bug separate, refuses to pick a state silently, and says a human must resolve it before action."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Identifies the contradictory needs-info and ready-for-agent roles, keeps bug as a separate category, and avoids silently picking a state. It says a human must resolve it before routing, but never explicitly asks the maintainer."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Identifies the conflicting labels and avoids silently picking one (criteria 1 and 4 met), but it does not ask the maintainer to resolve the conflict before action and does keep category separate. It instead prescribes removing one label, which is partly a silent-selection risk. Score: 2 of 4 criteria, so 0.5."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies needs-info and ready-for-agent as contradictory state roles, keeps category bug separate, withholds routing until a human resolves the conflict, and does not silently pick a state."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response identifies the conflicting labels and their roles (criterion 1) and avoids silently picking one state, but it does not ask the maintainer to resolve the conflict before action; it proposes a choice and implies the reporter/human decides. Category is kept separate (criterion 3), giving partial credit."
+       }
+      ]
+     }
+    },
+    {
+     "try": 7,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "**Next step: hold the item and resolve the label conflict before any agent picks it up.**\n\n- **The labels contradict each other.** `needs-info` means the item is waiting on more information. `ready-for-agent` means it is ready for an agent to work on. Both being present means the item's state is unclear.\n- **The mapping doesn't resolve it.** The label mapping uses the same strings, so there's no alternate translation that makes both valid.\n- **The category is clear.** It's a `bug`, so the triage decision is about readiness, not classification.\n\nA reasonable path is to ask the maintainer or reporter which state is correct. If the missing information has arrived, remove `needs-info` and keep `ready-for-agent`. If it hasn't, remove `ready-for-agent` and keep `needs-info`. Once one label remains, the bug can be routed normally.\n\nI haven't changed anything, since you asked for text-only output.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (identifies conflicting needs-info vs ready-for-agent roles), 2 (asks maintainer/reporter to resolve before routing), and 3 (keeps bug category separate from readiness state). Misses 4 partially: it offers a conditional resolution path rather than a clear hold-only stance, though it does not silently pick a state."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the contradictory needs-info and ready-for-agent states, asks the maintainer or reporter to resolve them before action, keeps bug category separate from readiness, and does not silently pick a state."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (identifies conflicting state roles) and 4 (doesn't silently pick a state); missed criterion 2 since it asks the maintainer/reporter but also suggests self-resolving by removing a label, and missed 3 since category is not clearly kept separate from state handling beyond a brief note."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies needs-info and ready-for-agent as contradictory states, asks the maintainer or reporter to resolve them before routing, keeps the bug category separate from state, and does not silently pick either label."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Identifies the contradictory needs-info and ready-for-agent states, asks the maintainer or reporter to resolve them before action, separates the bug category from readiness, and does not silently pick a state."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "evidence",
+   "number": 2,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A reporter says export crashes but supplies no steps. The item has needs-triage and bug. Draft triage notes; no code or reproduction evidence is available.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/engineering/triage/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 917b0baf74be583e74f110857ed45df2766617f75c00baf61fd136d7af515edf; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Separate reported symptom from verified fact 2. Ask specific reproduction questions 3. Recommend needs-info with a reason 4. Do not claim the bug was reproduced",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "> *This was generated by AI during triage.*\n\n## Triage Notes\n\n**What we've established so far:**\n\n- The report is categorised as a bug: export crashes.\n- No steps to reproduce were provided, so we have not reproduced the crash.\n- No code path, error message, or logs have been identified yet.\n\n**What we still need from you (@reporter):**\n\n- What exact steps did you take before the crash? Please list them from opening the app to the crash.\n- What export format were you using (for example, CSV, PDF, or JSON), and what were you exporting?\n- What error message or dialog appeared, if any? If you have logs or a stack trace, please paste them.\n- Roughly how much data was in the export (for example, number of rows or records)? Does a smaller export also crash?\n- Which app version, operating system, and environment were you using?\n- Does it crash every time, or only sometimes? If sometimes, what was different about the failing attempts?\n\nOnce you reply, we'll move this back to `needs-triage` and try to reproduce it.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates the reported crash from unverified facts, asks specific reproduction questions, and does not claim reproduction, but misses criterion 3: it never recommends needs-info and instead says to move the item back to needs-triage."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates reported symptom from established facts and asks specific reproduction questions, recommends needs-info implicitly via 'need from you' and returns to needs-triage, and explicitly says not reproduced; but it never names needs-info as the label or gives a clear label-change recommendation, so criterion 3 is only partly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates reported symptom (crash, no steps) from unverified facts and asks specific reproduction questions and clearly does not claim reproduction, but never recommends needs-info label explicitly, instead saying it will move back to needs-triage."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it separates the reported crash from unverified facts, asks specific reproduction questions, and does not claim reproduction. It misses 3 because it never recommends a needs-info label, instead saying to move the issue back to needs-triage."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2 and 4: it separates the reported crash from what is unverified, asks specific reproduction questions, and does not claim reproduction. It missed criterion 3 because it never recommends needs-info, instead saying the item will return to needs-triage."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Triage notes: \"Export crashes\" (labels: `needs-triage`, `bug`)**\n\n**Summary:** A reporter says the export feature crashes. No steps to reproduce were provided.\n\n**Status:** Not yet reproducible. No code, logs, stack trace, or reproduction evidence is available.\n\n**Classification:** Keep `bug` for now, since a crash is reported. Confidence is low until the crash is confirmed.\n\n**Missing information to request from the reporter:**\n- Steps to reproduce, from opening the app to the crash\n- The export format and any options selected (for example, file type or date range)\n- Approximate data size, such as record or file count\n- Exact error message, screenshot, or crash log\n- App or build version, OS, and browser or client, if applicable\n- Whether the crash happens every time or only sometimes, and whether it started after a specific change\n\n**Suggested next steps:**\n1. Ask the reporter for the information above and keep `needs-triage` until it arrives.\n2. Try to reproduce using the most likely path: a basic export with default settings and a small dataset.\n3. If reproduction succeeds, record the steps and expected versus actual behavior, then add the relevant component label.\n4. If reproduction fails after a reasonable attempt, ask the reporter for their environment and data details, and note that the issue is unconfirmed.\n5. Search existing issues for duplicates of export crashes.\n\n**Priority:** Unset. Revisit once the issue is reproduced and its impact is known.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it separates the reported crash from unverified facts, asks specific reproduction questions, and does not claim reproduction. It misses criterion 3 because it keeps needs-triage rather than recommending needs-info."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates the reporter's claim from unverified status, asks specific reproduction questions, and does not claim reproduction. It misses criterion 3 because it keeps needs-triage and never recommends needs-info with a reason."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates the reported symptom from verified facts (\"no code, logs, stack trace... available\"), asks specific reproduction questions, and avoids claiming reproduction; it recommends keeping needs-triage but gives no explicit needs-info label or reason, so the third criterion is only partly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it separates the reported symptom from unverified status, asks specific reproduction questions, and does not claim reproduction. It misses 3 because it says to keep needs-triage rather than recommending needs-info."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2 and 4: it separates the reported crash from unverified facts, asks specific reproduction questions, and does not claim reproduction. It misses 3 because it recommends keeping needs-triage rather than applying needs-info with a reason."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Triage notes: \"Export crashes\" (labels: `needs-triage`, `bug`)**\n\n**Summary**\nThe reporter says export crashes. No steps to reproduce, environment details, version, error output, or logs were provided.\n\n**Status**\n- Not reproduced. No reproduction evidence is available.\n- Not confirmed as a code defect. The crash may come from the export feature, the data being exported, the environment, or the reporter's setup.\n- Severity and scope are unknown. We don't know whether this affects all exports, a specific format, or specific data.\n\n**Information needed from the reporter**\n1. Exact steps leading to the crash, starting from a clean state.\n2. Which export format or option was used (for example, CSV, PDF, JSON).\n3. The app version or commit, plus OS and browser or client if relevant.\n4. The exact error message, stack trace, console output, or log excerpt.\n5. Whether the crash happens every time or intermittently, and whether it started after a specific change.\n6. The approximate size of the data being exported, and whether a sample file or redacted dataset can be shared.\n7. Whether the crash is a full app termination, a hung process, or a failed export with an error message.\n\n**Suggested next steps**\n- Ask the reporter for the items above. Keep `needs-triage` until at least steps and an error message are provided.\n- Once steps are available, attempt reproduction on a matching environment and record the result in the issue.\n- Search existing issues for duplicates of export crashes, using the error text once it is known.\n- If the crash is reproduced, add a component label, assign an owner, and set priority based on impact.\n- If the reporter does not respond within a reasonable period, consider closing as `needs-info` with a note explaining what was requested.\n\n**Current recommendation**\nKeep the `bug` label as a provisional classification from the report. Keep `needs-triage` open. Do not assign severity or an owner until reproduction is attempted or more information arrives.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: the response separates the reported symptom from unverified status. Criterion 2 is met: it asks specific reproduction questions (steps, format, version, error output). Criterion 3 is missed: it recommends keeping needs-triage and only mentions needs-info as a conditional future closure, not a current recommendation with a reason. Criterion 4 is met: it states the bug is not reproduced."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates the reporter's symptom from verified fact ('Not confirmed as a code defect'), asks specific reproduction questions, and does not claim reproduction. It misses the rubric point to recommend needs-info with a reason, since it keeps needs-triage and only suggests needs-info later as a fallback."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: clearly separates the reported symptom from unverified status. Criterion 2 met: asks specific reproduction questions. Criterion 3 missed: recommends keeping needs-triage and only suggests needs-info as a later fallback, not now with a reason. Criterion 4 met: explicitly says not reproduced."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it separates the reported symptom from unverified status and asks specific reproduction questions without claiming reproduction. It misses criterion 3, since needs-info appears only as a conditional fallback after non-response, not as the recommendation with a reason."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Separates unverified report from confirmed fact and explicitly says not reproduced (criteria 1 and 4 met); asks specific reproduction questions (criterion 2 met), but recommends keeping needs-triage rather than moving to needs-info with a reason (criterion 3 missed)."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "> *This was generated by AI during triage.*\n\n## Triage Notes\n\n**Current labels:** `bug`, `needs-triage`\n\n**What we've established so far:**\n\n- The reporter says export crashes.\n- No reproduction steps have been provided.\n- No code path, logs, or reproduction evidence has been collected, so the crash has not been confirmed.\n\n**What we still need from you (@reporter):**\n\n- What exact export action are you taking (which export format, which menu or button, and from which screen)?\n- What data is being exported? Roughly how many items, and does it fail with a particular file, record, or setting?\n- What happens when it crashes: is there an error message, a blank screen, or the app closes? If there is an error message, please paste its exact text.\n- What app version and operating system are you using?\n- Does the crash happen every time, or only with some data? If only some data, can you describe or share a minimal example that triggers it?\n\nOnce these are answered, we'll attempt to reproduce the crash and move the issue forward.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it separates the reporter's claim from the unconfirmed crash, asks specific reproduction questions, and does not claim reproduction. It misses criterion 3, since it never recommends a needs-info label."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it separates the reported crash from unconfirmed facts, asks specific reproduction questions, and does not claim reproduction. It misses criterion 3 because it never recommends a needs-info label."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates the reported crash from unverified facts, asks specific reproduction questions, and does not claim reproduction. It misses criterion 3 because it never recommends a needs-info label."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it separates the reported crash from unconfirmed facts, asks specific reproduction questions, and does not claim reproduction. It misses criterion 3 because it never recommends a needs-info label."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Separates reported symptom (\"export crashes\") from unconfirmed status, asks specific reproduction questions, and states the crash has not been confirmed, meeting all four rubric points; the needs-info label recommendation is only implicit, though the response clearly requests more info before proceeding, so this is a minor gap at most."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Triage notes: \"Export crashes\" (labels: `bug`, `needs-triage`)**\n\n**Summary**\nA reporter says the export feature crashes. No steps to reproduce, environment details, error output, or logs were provided.\n\n**Status**\n- Not reproduced. No reproduction evidence is available.\n- No code analysis has been done for this report.\n- Severity and scope are unknown.\n\n**Open questions for the reporter**\n1. What export format or action was used (for example, PDF, CSV, or a full data export)?\n2. What were the exact steps before the crash, starting from a clean state?\n3. Does it crash every time, or only with certain data, file sizes, or settings?\n4. What happens at the crash: an error message, a blank screen, a hang, or the app closing? Please attach any console output, stack trace, or logs.\n5. What app version, OS, browser or client, and environment (local, self-hosted, or hosted) were you using?\n6. Did this start after a specific update or change?\n\n**Suggested next steps**\n- Ask the reporter for the information above and label the issue `needs-info` until they reply.\n- If logs or a stack trace arrive, check for matching errors in the export code path and search existing issues for duplicates.\n- Once a reliable repro exists, confirm the bug, set priority, and assign an owner.\n- If no reply comes within a reasonable window, consider closing as `stale` or `cannot-reproduce`.\n\n**Priority**\nUndetermined until reproduction. If export is a core workflow and the crash blocks it, it may warrant a higher priority once confirmed.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates the reported crash from unverified status (\"Not reproduced\", no code analysis) and asks specific reproduction questions, but recommends needs-info only as a fallback implied via \"label needs-info until they reply\" without clearly stating it as the primary triage decision; does not claim reproduction. Criterion 3 is arguably met, so 0.75 is slightly generous but the response is substantially compliant."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response separates the reported crash from unverified facts (criterion 1), asks specific reproduction questions on steps, frequency, and environment (2), recommends needs-info until the reporter replies (3), and states the bug is not reproduced (4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response separates the reporter's claim from verified status, asks specific reproduction questions, recommends needs-info with the reason that the reporter must supply details, and explicitly states the bug is not reproduced."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: the response separates the reported symptom from the status, noting the crash is unverified. Criteria 2 and 3 are met with specific repro questions and a needs-info recommendation. Criterion 4 is met: it states 'Not reproduced' and does not claim reproduction. Scoring 0.5 is wrong under the rubric's 0.25-per-criterion scheme, which implies 1.0 if all four are satisfied, so the rubric result is 1.0 and pass is true."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 2 (specific reproduction questions) and criterion 3 (needs-info with reason) are met, and 4 (no claim of reproduction) is met; criterion 1 is only weakly addressed via 'Status: Not reproduced' and symptom isn't clearly separated from verified facts, so it is not fully satisfied."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Triage notes: \"Export crashes\" (needs-triage, bug)\n\n**Status:** Unverified. Report received, no reproduction steps, no logs, no code evidence.\n\n**Summary (as reported):** Export crashes. No further detail provided.\n\n**Reproduction:** Not possible from the report. Required information is missing:\n- Steps to reproduce, including the entry point (UI, CLI, API, scheduled job)\n- Export format and any options selected\n- Data set or input characteristics (size, record types, special characters)\n- Expected vs. actual behavior, and what \"crashes\" means (process exit, error dialog, hang, partial file)\n- Environment: app version, OS, browser or client, account or tenant type\n\n**Severity:** Undetermined. \"Crash\" may be serious (data loss, blocked workflow) or narrow (one format, one data shape). Hold severity until steps are available.\n\n**Next steps:**\n1. Reply to the reporter requesting the missing items above, with a template they can fill in.\n2. Ask whether the crash is consistent or intermittent, and whether it happens with a small or empty export.\n3. Ask for any error message, stack trace, console output, or log excerpt, if available.\n4. Search for other reports of export crashes to see whether this is a duplicate or part of a pattern. Do not treat a match as confirmed until steps are available.\n5. Keep `needs-triage` until reproduction is confirmed. Once steps are verified, move the item to a reproduced state and reassess severity.\n\n**Open questions:**\n- Does the crash occur on every export, or only with certain formats or data?\n- Is there a regression, and if so, which version first showed it?",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates reported symptom from unverified status, asks specific reproduction questions, and does not claim reproduction. It misses the rubric's explicit needs-info recommendation, instead advising to keep needs-triage."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Criterion 1 met: it labels the report as unverified and separates reported symptom from verified facts. Criterion 2 met: it asks specific reproduction questions (steps, format, data, error output). Criterion 3 met: it recommends keeping needs-triage with a reason, though it doesn't say needs-info explicitly. Criterion 4 met: it explicitly says reproduction is not possible."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: separates reported symptom from unverified status, asks specific reproduction questions, and does not claim reproduction. Misses 3: it says to keep needs-triage rather than recommending needs-info."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates the reported symptom from verified facts (marked Unverified, no code evidence), asks specific reproduction questions, and does not claim reproduction; it does not explicitly recommend a needs-info label, instead keeping needs-triage, so criterion 3 is missed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: symptom is labeled 'as reported' and status is 'Unverified'. Criterion 2 is met with specific reproduction questions. Criterion 3 is missed: it says keep needs-triage and never recommends needs-info. Criterion 4 is met: it states reproduction is not possible."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "Draft triage notes for the export-crash report, using the needs-info template. Nothing has been posted or labeled.\n\n```markdown\n> *This was generated by AI during triage.*\n\n## Triage Notes\n\n**What we've established so far:**\n\n- The report is categorized as a bug: export crashes.\n- No reproduction steps were provided, so the crash has not been reproduced or verified.\n- No code-level evidence has been gathered yet.\n\n**What we still need from you (@reporter):**\n\n- Which export are you running (for example, the export format or the menu action you use), and where in the app do you start it?\n- What exact steps do you take from opening the app to the crash? Please list them in order, including any data or settings involved.\n- Does the crash happen every time, or only with certain data? If only certain data, what is different about the item or project that fails?\n- What happens at the moment of the crash: an error message, a frozen window, the app closing, or something else? If you can, paste the error text or a screenshot.\n- Which version of the app and which operating system are you using?\n- Do you have logs or a crash report from the time of the failure? If so, please attach them, after removing any private data.\n```\n\nSuggested next step once this is posted: move the item from `needs-triage` to `needs-info`, keeping `bug` as the category.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Separates the reported crash from the unverified state, asks specific reproduction questions, recommends needs-info with the missing-repro-steps reason, and does not claim reproduction."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: separates the reported crash from unverified status, asks specific reproduction questions, and does not claim reproduction. Criterion 3 is only implicit, since the needs-info reason is never stated outright."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Separates the reported crash from unverified facts, asks specific reproduction questions, recommends needs-info with the missing-steps reason, and explicitly states the bug has not been reproduced."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates reported symptom (export crash) from verified facts (not reproduced, no code evidence) and asks specific reproduction questions in order; recommends needs-info with reason, but the rubric's point 3 is largely satisfied. Does not claim reproduction, meeting point 4."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Separates the reported crash from unverified facts, asks specific reproduction questions, recommends needs-info because steps are missing, and does not claim reproduction. All four criteria met."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Triage notes: \"Export crashes\" (no reproduction steps)**\n\n**Labels:** `needs-triage`, `bug`\n\n**Summary:** A reporter says the export feature crashes. No steps to reproduce, environment details, error output, or code references were provided.\n\n**Status:** Unverified. We have not reproduced the crash, and no code or logs have been reviewed for this report.\n\n**Known:**\n- Export is reported to crash.\n- The label `bug` is applied, but the report does not confirm the failure's scope or cause.\n\n**Unknown:**\n- Which export format or path triggers the crash (e.g., file type, size, or destination)\n- Steps to reproduce, and whether it happens every time or intermittently\n- Version, platform, browser, or OS of the reporter's environment\n- Error message, stack trace, or console output\n- Whether this is a regression, and if so, when it started\n- Whether the data or content being exported affects the result\n\n**Suggested next steps:**\n1. Ask the reporter for reproduction steps, the exact export action taken, the version and environment, and any error text or screenshots.\n2. Ask whether the crash is consistent, and what data or settings were in use.\n3. Once steps are available, attempt reproduction and record the result, including whether the crash is confirmed, not reproducible, or only partly reproducible.\n4. If reproduction succeeds, attach logs or a stack trace and link the relevant code path.\n5. Set priority after reproduction, based on how many users are affected and whether a workaround exists.\n\n**Proposed status:** Keep `needs-triage` until reproduction steps are received or the reporter cannot provide them. If no steps arrive within a reasonable window, consider closing as \"needs more information,\" and reopen if new evidence appears.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (separates Known/Unknown and states symptom is unverified), 2 (asks specific reproduction questions on format, steps, version), and 4 (explicitly says not reproduced); misses criterion 3 because it proposes keeping needs-triage rather than recommending a needs-info label with a reason."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates Known/Unknown and marks the crash as unverified (criterion 1); asks specific reproduction questions (2); recommends keeping needs-triage/needs-more-info with reason (3); never claims reproduction (4). Criterion 3 is partly met since it says 'needs more information' only as a closing option, not as the primary recommendation."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Separates reported symptom from verified facts (Known/Unknown, 'Unverified' status), asks specific reproduction questions (format, steps, frequency, version, error text), recommends needs-info with reason, and does not claim reproduction."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2 and 4: it separates the reported crash from unverified status, asks specific reproduction questions, and does not claim reproduction. It only partly meets criterion 3, recommending needs-info as a conditional closing option rather than as the primary status."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Separates reported symptom (\"Export is reported to crash\") from unverified facts, asks specific reproduction questions (steps, version, error text, consistency), recommends keeping needs-triage until steps arrive, and explicitly states it has not reproduced the bug."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "## Triage notes: \"Export crashes\" (labels: `bug`, `needs-triage`)\n\n**Summary:** Reporter says export crashes. No reproduction steps, environment details, or error output were provided.\n\n**Status:** Cannot be reproduced or assessed yet. No code or reproduction evidence is available to confirm the crash or narrow its scope.\n\n**Missing information to request from reporter:**\n- Exact steps to trigger the crash, starting from a clean state\n- Which export feature or format was used (e.g., file type, destination, menu path)\n- Error message, stack trace, or console/log output, if any\n- Input data characteristics that may matter (size, special characters, empty or unusual content)\n- App version, OS, and environment (browser or runtime, if applicable)\n- Whether the crash is consistent or intermittent, and whether it's a regression (worked in an earlier version)\n\n**Suggested next steps:**\n1. Post a comment requesting the information above, and set the item to awaiting reporter input if that label exists.\n2. Check whether duplicate or related issues mention export crashes.\n3. Once steps are available, attempt reproduction and attach findings.\n4. Assign a severity and priority after reproduction. Until then, treat severity as unknown.\n\n**Current disposition:** Keep `bug` and `needs-triage`. Do not close or prioritize until reproduction is possible.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: it separates the reported symptom from the lack of verified facts. Criterion 2 is met: it asks specific reproduction questions. Criterion 3 is missed: it says to set 'awaiting reporter input' but never recommends needs-info, and it keeps needs-triage. Criterion 4 is met: it does not claim reproduction."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met all four rubric criteria: separates the reported symptom from verified facts, asks specific reproduction questions, recommends needs-info with reasons, and does not claim reproduction."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates the reported symptom from unverified status, asks specific reproduction questions, and does not claim reproduction. It misses the needs-info criterion: it suggests 'awaiting reporter input' and keeps needs-triage rather than recommending needs-info."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1, 2, and 4: it separates the reported crash from unverified status, asks specific reproduction questions, and never claims reproduction. Missed criterion 3: it asks for reporter input but never recommends a needs-info label."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Separates reported symptom from unverified status and asks specific reproduction questions, and it does not claim reproduction. It misses criterion 3: it never recommends the needs-info label, and it says to keep needs-triage."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "> *This was generated by AI during triage.*\n\n## Triage Notes\n\n**Category:** `bug`\n**State:** `needs-triage` (no change proposed yet)\n\n**What we've established so far:**\n\n- The reporter states that export crashes.\n- No reproduction steps have been provided.\n- No code or reproduction evidence is available, so the claim has not been verified.\n\n**What we still need from you (@reporter):**\n\n- Exact steps to trigger the crash, starting from a clean state.\n- What \"export\" refers to here (which feature, button, command, or format), and what output or file type you were trying to produce.\n- The error message, stack trace, or console output shown when it crashes, if any.\n- Version or build you're running, and your OS and environment.\n- Whether the crash happens every time or only with certain data, such as a particular size, content, or account.\n- A sample input (or a description of one) that reproduces the crash, if you can share it without sensitive data.\n\nOnce these are in, we can attempt reproduction and move the issue to `ready-for-agent` or `ready-for-human`.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (separates reported 'export crashes' from unverified status), 2 (specific reproduction questions), and 3 (recommends needs-info-style request for info, though it labels state as needs-triage rather than needs-info); misses criterion 3's explicit needs-info recommendation and doesn't claim reproduction, so 4 is met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (separates reported 'export crashes' from unverified status), 2 (specific reproduction questions), and 4 (explicitly says not reproduced); misses criterion 3 since it never recommends needs-info, instead keeping 'needs-triage' and proposing no state change."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Separates the reporter's claim from verified facts (\"not verified\"), asks specific reproduction questions, recommends needs-info-style follow-up via reporter requests, and does not claim reproduction. Note: it lists needs-triage as the state and proposes next move to ready labels rather than explicitly recommending needs-info, so criterion 3 is arguably partially met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates reported symptom ('reporter states export crashes') from verified fact, asks specific reproduction questions, and does not claim reproduction; it does not explicitly recommend needs-info, instead keeping state as needs-triage with no change proposed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2 and 4: it separates the reporter's claim from unverified facts, asks specific reproduction questions, and does not claim reproduction. It misses 3, since it keeps needs-triage rather than recommending needs-info with a reason."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Triage notes: \"Export crashes\" (labels: `bug`, `needs-triage`)**\n\n**Summary:** Reporter says export crashes. No steps to reproduce, no logs, no stack trace, and no code or reproduction evidence were provided.\n\n**Status:** Not reproduced. Cannot confirm the bug or its scope yet.\n\n**What we know:**\n- The report describes a crash during export.\n- The reporter has not given the export format, the data or project involved, the app version, the platform, or the sequence of actions.\n\n**What we don't know:**\n- Which export (format, feature, or entry point) is affected.\n- Whether the crash is consistent or intermittent.\n- Whether it is a regression, and if so, from which version.\n- Whether it affects all users or only specific data or configurations.\n\n**Next steps:**\n1. Ask the reporter for:\n   - Exact steps to reproduce, including the export type and entry point.\n   - App version, OS, and platform.\n   - The error message, crash log, or stack trace, if one appears.\n   - A sample of the data or settings involved, or a description of its shape, if they can share it safely.\n   - Whether the crash happens every time.\n2. Keep `needs-triage` until reproduction steps or a confirmed reproduction are available.\n3. Once reproduced, attach the steps and environment to the issue, remove `needs-triage`, and assign an owner.\n4. If the reporter cannot provide steps after a reasonable period, mark the issue as needing more information and note the outstanding requests.\n\n**Priority:** Unassigned until reproduced. Severity cannot be judged from the current report.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Separates the reported symptom (\"What we know\") from unverified facts (\"What we don't know\"), asks specific reproduction questions (export type, version, OS, steps, stack trace), recommends keeping needs-triage pending reproduction steps, and explicitly states the bug is not reproduced."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it separates the reported crash from unknowns, asks specific reproduction questions, and states 'Not reproduced'. It misses 3 because it defers needs-info to a later fallback instead of recommending it now with a reason."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates reported symptom from verified facts via 'What we know'/'What we don't know' and states 'Not reproduced'; asks specific reproduction questions; but recommends keeping needs-triage rather than explicitly a needs-info label with reason, so criterion 3 is only partially met."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met: the response separates the reported symptom from what is known and unknown. Criterion 2 is met: it asks specific reproduction questions. Criterion 3 is missed: it says to keep needs-triage rather than recommending needs-info with a reason. Criterion 4 is met: it does not claim reproduction."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates reported symptom from unverified facts ('What we know'/'What we don't know'), asks specific reproduction questions, keeps needs-triage with reason, and never claims reproduction; it doesn't explicitly recommend the needs-info label, so criterion 3 is only partially met."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Triage notes: \"Export crashes\" (labels: `needs-triage`, `bug`)\n\n**Status:** Needs more information before it can be reproduced or prioritized.\n\n**Summary as reported:** A reporter says the export feature crashes. No steps to reproduce were provided.\n\n**What we know:**\n- The report describes a crash in export.\n- It is labeled `bug` and `needs-triage`.\n- No reproduction steps, logs, stack trace, version, platform, or sample data were supplied.\n- No code or reproduction evidence is available to confirm the issue.\n\n**What we don't know:**\n- Which export format or path is affected (e.g., CSV, PDF, full data export, a specific view).\n- Whether the crash happens every time or only with certain data, sizes, or permissions.\n- Exact error message, exit behavior, or crash output.\n- Which app version, OS, browser, or environment the reporter used.\n- Whether this is a regression. Whether it started after a specific release is unknown.\n\n**Suggested next steps:**\n1. Ask the reporter for:\n   - Step-by-step reproduction instructions.\n   - The exact error message or screenshot, and any console or crash log.\n   - App/build version, OS, and browser or client.\n   - A sample of the data or the export settings used, if it can be shared safely.\n   - Whether the issue happens every time.\n2. Keep `needs-triage` until those details arrive. Once steps are provided, attempt reproduction and update the labels.\n3. If the reporter does not respond within a reasonable window, consider closing as \"needs more info\" and noting that it can be reopened.\n4. After reproduction is confirmed, assign severity and an owner, and remove `needs-triage`.\n\n**Priority:** Not yet assignable. A crash in a core feature may be high impact, but scope is unknown until reproduced.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Criterion 1 met: the response separates the reported symptom ('A reporter says the export feature crashes') from what is known/unknown. Criterion 2 met: it asks specific reproduction questions (steps, error message, version/OS, sample data, frequency). Criterion 3 met: it recommends keeping needs-triage/needs-info status with the reason that no steps or evidence were supplied. Criterion 4 met: it never claims the bug was reproduced."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Separates reported symptom from unknowns (\"What we know\" vs \"What we don't know\"), asks specific reproduction questions (steps, error, version, frequency), recommends keeping needs-triage/needs-info with a reason, and does not claim reproduction."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Separates the reported crash from unverified facts (\"What we know\" vs \"What we don't know\"), asks specific reproduction questions (steps, error message, version, frequency), recommends keeping needs-triage/needs-info with reasons, and never claims reproduction."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates reported symptom from verified facts, asks specific reproduction questions, and does not claim reproduction. It misses the needs-info criterion: it says to keep needs-triage rather than recommending a needs-info label, though it gives a reason for needs more information."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Separates reported symptom ('A reporter says...') from known facts, asks specific reproduction questions (steps, error, version, frequency), recommends keeping needs-triage/needs-info with reasons, and does not claim reproduction."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": {
+      "answer": "> *This was generated by AI during triage.*\n\n## Triage Notes\n\n**Category:** `bug`\n**Current state:** `needs-triage`\n\n**What we've established so far:**\n\n- The reporter says export crashes.\n- No reproduction steps have been provided.\n- No code path, logs, or reproduction evidence is available yet, so the claim is unverified.\n\n**What we still need from you (@reporter):**\n\n- What exactly do you do before the crash? Please list the steps, including where you click or what command you run.\n- What export format and what data or file are you exporting? Include a sample if you can share one without sensitive content.\n- What happens at the moment of the crash? Is there an error message, a stack trace, a log entry, or a frozen window?\n- What version of the product are you on, and what operating system and environment are you using?\n- Does the crash happen every time, or only with certain data or sizes?\n\nOnce we have reproduction steps, we will attempt to reproduce the crash and update the state accordingly.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates reported symptom from unverified fact, asks specific reproduction questions, and does not claim reproduction. It misses the explicit needs-info recommendation, since it keeps the state as needs-triage and only says it will update once steps arrive."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates reported symptom ('reporter says export crashes') from unverified status, asks specific reproduction questions, and does not claim reproduction; however it never explicitly recommends needs-info, leaving the state as needs-triage, so criterion 3 is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it separates the reporter's unverified claim from established facts, asks specific reproduction questions, and does not claim reproduction. It misses criterion 3 because it never recommends moving the item to needs-info."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates the reporter's claim from established facts ('claim is unverified') and asks specific reproduction questions, but never explicitly recommends needs-info; it keeps state as needs-triage and does not claim reproduction, so 0.75 for three of four criteria."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Separates the reported crash claim from verified facts and asks specific reproduction questions, but recommends triage progression rather than explicitly needs-info with a reason, and it does not claim reproduction, so 3 of 4 criteria are met."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": {
+      "answer": "**Triage notes: \"Export crashes\" (labels: `needs-triage`, `bug`)**\n\n**Status:** Unverified. Not reproduced.\n\n**Reported:** Export crashes. The reporter gave no steps to reproduce, no environment details, and no error output.\n\n**Evidence available:** None beyond the report itself. No code was reviewed, and no reproduction was attempted.\n\n**Assessment:**\n- The report is consistent with a bug label, but the crash is not confirmed.\n- Scope is unknown. \"Export\" could refer to several features or formats, so the affected code path is not yet identified.\n- Severity can't be set until we know whether the crash loses user data, blocks a workflow, or affects only one format.\n\n**Information needed from the reporter:**\n1. Which export action they used (format, menu path, or button).\n2. Steps leading up to the crash, and whether it happens every time.\n3. The app version, OS, and browser or client, if relevant.\n4. Any error message, log output, or screenshot shown at crash time.\n5. Whether the export works with a smaller or different dataset.\n\n**Suggested next steps:**\n- Ask the reporter for the items above and keep `needs-triage` until they reply.\n- Once steps are available, attempt reproduction and record the result.\n- If the reporter does not respond within a set period, consider closing as `needs-info` rather than leaving it open indefinitely.\n\n**Priority:** Not yet assigned. Reassess after reproduction.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Separates the reported symptom from unverified status, asks specific numbered reproduction questions, does not claim reproduction, and recommends needs-info with a reason (no reporter response), though conditionally."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criterion 1 met: separates the reported symptom from unverified status and lists available evidence. Criterion 2 met: asks specific reproduction questions (steps, frequency, version, error output). Criterion 3 missed: recommends needs-info only conditionally after a timeout, not as the current status with a stated reason. Criterion 4 met: explicitly states 'Not reproduced.'"
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Separates the reported symptom from unverified status, asks specific reproduction questions, recommends needs-info with a reason (no reporter response), and does not claim reproduction."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Separates the reported symptom from unverified status, asks specific numbered reproduction questions, recommends needs-info with a stated reason (no reporter response), and never claims the bug was reproduced."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Separates the reported symptom from unverified status, asks specific numbered reproduction questions, recommends needs-info with a stated reason (no reporter response), and never claims reproduction."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "ready",
+   "number": 3,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A synthetic issue has a reproduced invalid-date error, agreed input/output behavior, affected file parser.js and a clear regression check. Draft a concise agent-ready brief with status recommendation.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source mattpocock/skills/skills/engineering/triage/SKILL.md at 49dd158d1076134a641b33efb035946536778336; SKILL.md SHA-256 917b0baf74be583e74f110857ed45df2766617f75c00baf61fd136d7af515edf; README SHA-256 345041d56cf1411b6b3ca1cc54014d26c563890f817f4cb9e2cb193dcd771a3e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Recommend ready-for-agent with bug category 2. Carry reproduction and expected behavior 3. Name scope and verification 4. Mark the draft as generated triage text rather than a posted comment",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "> *This was generated by AI during triage.*\n\n## Agent Brief: Invalid-date error in `parser.js`\n\n**Category:** `bug`\n**Recommended state:** `ready-for-agent`\n\n**Problem**\nParsing triggers an invalid-date error. The error has been reproduced.\n\n**Affected code**\n- `parser.js`\n\n**Expected behavior**\nInput and output behavior has been agreed with the maintainer. Implement it as agreed; do not extend scope beyond it.\n\n**Regression check**\nA clear regression check is defined. Run it before and after the change. It should fail before the fix and pass after it. Keep it passing for the rest of the suite.\n\n**Acceptance criteria**\n1. The reproduced invalid-date error no longer occurs.\n2. Output matches the agreed behavior.\n3. The regression check passes.\n4. No changes outside the affected parser logic unless needed for the fix.\n\n**Why this is agent-ready**\nThe bug is reproduced, the expected behavior is agreed, the affected file is known, and there is a verifiable check. No open design questions remain.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends ready-for-agent with bug category, carries reproduction and agreed expected behavior, names parser.js scope and regression verification, and marks the draft as AI-generated triage text."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (ready-for-agent, bug category), 2 (reproduction and agreed expected behavior carried), and 4 (marked as AI triage text); criterion 3 is only partly met since scope and verification are named but the regression check is not specified concretely."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (ready-for-agent, bug category), 2 (reproduction and agreed expected behavior carried), and 3 (scope and regression verification named); misses 4 since it is marked as AI-generated triage but the rubric wording is satisfied by the disclaimer line, so this criterion is actually met, giving full coverage."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends ready-for-agent with bug category, carries the reproduced error and agreed expected behavior, names parser.js scope and a before/after regression check, and marks the draft as AI-generated triage."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends ready-for-agent with bug category, carries the reproduction and agreed expected behavior at summary level, names parser.js scope and a before/after regression check, and marks the draft as AI-generated triage text."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Agent Brief: Invalid-Date Parser Bug\n\n**Status recommendation:** Ready for agent handoff. All four required elements are present: a reproduced error, agreed input/output behavior, a known affected file, and a clear regression check.\n\n**Problem:** The parser produces an invalid-date error. The error has been reproduced.\n\n**Affected file:** `parser.js`\n\n**Expected behavior:** Input and output behavior has been agreed. The agent should implement that agreed behavior exactly. The specific input and output values are not in the supplied material, so they should be attached to the brief before work begins.\n\n**Regression check:** A clear regression check exists. Run it before and after the change. It should fail before the fix and pass after.\n\n**Scope:** Change only what is needed in `parser.js` to resolve the invalid-date error and meet the agreed behavior. Do not alter unrelated parsing logic.\n\n**Done when:**\n1. The reproduced invalid-date error no longer occurs.\n2. Output matches the agreed input/output behavior.\n3. The regression check passes.\n4. Results are reported faithfully, including any failures or skipped steps.\n\n**Note:** The rest of the supplied text is descriptive background about a village and contains no facts relevant to this issue, so it was excluded from the brief.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Scope and verification are named, and reproduction and expected behavior are summarized. It omits a bug category and does not mark the draft as generated triage text rather than a posted comment."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Recommends ready-for-agent and carries the reproduced error and agreed behavior, and names scope and a regression check. It gives no bug category and does not mark the draft as generated triage text."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only the scope-and-verification criterion (scope limited to parser.js, regression check before and after). Misses bug category, does not carry the actual reproduction or expected-behavior details, and does not mark the draft as generated triage text."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (ready-for-agent with a bug label in the title), 2 (reproduction and agreed behavior carried), and 3 (scope and regression check named), but misses 4 because the draft is never marked as generated triage text rather than a posted comment."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (ready-for-agent status with bug title), 2 (reproduction and agreed expected behavior carried), and 3 (scope and before/after regression check). Misses 4: the draft is never marked as generated triage text rather than a posted comment."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Agent Brief: Invalid-Date Error in parser.js\n\n**Status:** Ready for an agent, once the exact input/output examples and regression command are attached (see Open Items).\n\n**Summary:** Parsing produces an invalid-date error. The error is reproduced, and the expected input/output behavior has been agreed.\n\n**Affected file:** `parser.js`\n\n**Reproduction:** Invalid-date error reproduced. Attach the exact input that triggers it.\n\n**Expected behavior:** Agreed input/output behavior. Attach the exact input-to-output pairs.\n\n**Regression check:** Defined as the pass criterion for this fix. Attach the exact command and expected result.\n\n**Agent instructions:**\n1. Reproduce the invalid-date error using the attached input.\n2. Locate the date-handling logic in `parser.js` that produces the error.\n3. Change only what is needed to match the agreed input/output behavior.\n4. Run the regression check and confirm it passes.\n5. Report the diff, the regression check output, and any behavior outside the agreed scope that was affected.\n\n**Scope:** Limit changes to `parser.js` and to the invalid-date path. Do not change other behavior unless the regression check requires it.\n\n**Open items:**\n- Exact input that triggers the error\n- Exact expected output for that input and for any related cases\n- Exact command for the regression check, and its expected result",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Reproduction and expected behavior are carried, and scope and regression check are named (two criteria met). It misses ready-for-agent with a bug category, since it hedges readiness on open items and names no category, and it never marks the draft as generated triage text."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 2 (reproduction and expected behavior carried) and 3 (scope and verification named). Misses 1: it hedges readiness as conditional and names no bug category. Misses 4: it never marks the draft as generated triage text."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: recommends ready-for-agent-style status with bug category omitted, arguably not met; criterion 2 met via reproduction and expected behavior; criterion 3 met via scope and regression check; criterion 4 missed since the draft is not marked as generated triage text."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Recommends ready-for-agent only conditionally and gives no bug category, misses criterion 1; reproduction, expected behavior, scope and verification are carried (criteria 2 and 3); does not mark the draft as generated triage text (criterion 4 missed)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 is met (ready-for-agent status recommended, though the bug category is not named); criterion 2 is met (reproduction and expected behavior carried); criterion 3 is met (scope and regression check named); criterion 4 is missed (draft is not marked as generated triage text)."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "> *This was generated by AI during triage.*\n\n## Agent Brief: Invalid-date error in `parser.js`\n\n**Category:** `bug`\n**Recommended status:** `ready-for-agent`\n\n**Summary**\nParsing a date input in `parser.js` raises an invalid-date error. The error is reproduced, and the expected input/output behavior has been agreed.\n\n**Reproduction (confirmed)**\n- Reproduced by the triager. Steps: `<exact input from issue>`\n- Observed: invalid-date error raised.\n\n**Expected behavior (agreed)**\n- Input: `<agreed input>`\n- Output: `<agreed output>`\n\n**Scope**\n- File: `parser.js`\n- Change only what is needed to produce the agreed output for the reproduced input. Don't refactor unrelated parsing logic.\n\n**Regression check**\n- Add or run a test covering the reproduced input. It should pass with the agreed output.\n- Run the existing test suite. It should pass with no new failures.\n\n**Why this is agent-ready**\nThe reproduction is confirmed, the expected behavior is agreed, the affected file is known, and there is a clear pass/fail check. No design decisions or external access are needed.\n\n**Open items for the maintainer**\n- Fill in the `<...>` placeholders above from the issue. I didn't have the exact input and output values, so I haven't invented them.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response recommends ready-for-agent with bug category, carries reproduction and expected-behavior sections, names parser.js scope with a regression check, and opens with an AI-generated triage notice."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends ready-for-agent with bug category, carries reproduction and agreed expected behavior, names parser.js scope and regression/test verification, and labels the draft as AI-generated triage text."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends ready-for-agent with bug category, carries reproduction and expected behavior sections, names parser.js scope and a regression check, and marks the draft as AI-generated triage text."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends ready-for-agent with bug category, carries reproduction and agreed expected behavior, names parser.js scope with a regression check, and marks the draft as AI-generated triage text."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: ready-for-agent with bug category, reproduction and expected behavior carried, parser.js scope with regression check, and the AI-generated triage marker."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Agent Brief: Invalid-Date Error in `parser.js`\n\n**Type:** Synthetic issue\n\n**Summary:** Parsing produces an invalid-date error. The error is reproduced, and the expected input/output behavior has been agreed.\n\n**Affected file:** `parser.js`\n\n**Reproduction:** Confirmed. The invalid-date error occurs as described.\n\n**Expected behavior:** Agreed. Exact input and output values were not included in the supplied facts, so fill them in from the issue record before handoff: `<input> → <expected output>`.\n\n**Regression check:** Defined. Run the existing check that covers this case and confirm it passes after the fix. Exact command and test name: `<fill in>`.\n\n**Scope:**\n- Change only the date-handling logic in `parser.js` needed to produce the agreed output.\n- Do not change unrelated parsing behavior.\n\n**Done when:**\n1. The reproduction no longer raises the invalid-date error.\n2. Output matches the agreed behavior.\n3. The regression check passes.\n\n**Status recommendation:** **Ready for agent handoff.** The reproduction, agreed behavior, affected file, and regression check are all established. The only gap is the concrete input/output values, which should be copied into the brief before the agent starts.\n\n*Note: The long village passage in the message contained no issue details, so I left it out of the brief.*",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 2 (reproduction and expected behavior carried) and 3 (scope and regression check named). Misses 1 (no explicit bug category, only 'Synthetic issue') and 4 (not marked as generated triage text rather than a posted comment)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (ready-for-agent, bug category implied as synthetic issue) and criterion 2 (reproduction and expected behavior carried), and criterion 3 (scope and verification given). Missed criterion 4: the draft is not marked as generated triage text rather than a posted comment."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 2 (reproduction and expected behavior carried) and 3 (scope and regression verification), but misses criterion 1 since it gives 'Type: Synthetic issue' rather than a bug category, and misses criterion 4 since it never marks the draft as generated triage text."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (reproduction and expected behavior carried) and criterion 3 (scope and verification named), but misses criterion 1 since no bug category is given, and misses criterion 4 since the draft is not marked as generated triage text."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 2 (reproduction and expected behavior carried) and 3 (scope and verification named); missed 1 because it never assigns a bug category, and missed 4 because it never marks the draft as generated triage text rather than a posted comment."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Agent Brief: Invalid-date error in `parser.js`\n\n**Status:** Ready for agent pickup\n\n**Summary:** A reproduced invalid-date error occurs in `parser.js`. Input/output behavior has been agreed, and a regression check has been defined.\n\n**Affected file:** `parser.js`\n\n**Reproduction:** Confirmed. The invalid-date error reproduces.\n\n**Expected behavior:** Agreed, per the issue. The exact input/output cases are not restated in this brief, so the agent should take them from the issue thread.\n\n**Regression check:** Defined. The check should be run after the fix to confirm the invalid-date error no longer occurs and existing behavior is unchanged. The exact check is not restated here.\n\n**Scope:** Limit changes to `parser.js` unless the regression check shows a dependency elsewhere.\n\n**Blockers:** None stated.\n\n**Notes for the agent:**\n- Reproduce the error before changing code.\n- Make the smallest change that satisfies the agreed input/output behavior.\n- Run the regression check and report the output, whether it passes or fails.",
+      "average": 0.3,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Recommends ready-for-agent and names scope and verification (parser.js, regression check), but gives no explicit bug category, omits the agreed input/output details, and does not mark the draft as generated triage text."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only the scope and verification criterion (parser.js and a regression check named). It sets 'Ready for agent pickup' but gives no bug category, omits the actual expected input/output, and does not mark the draft as generated triage text."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (ready-for-agent status, though no explicit bug category) and criterion 3 (scope and verification named); missed criterion 2 since expected input/output cases are not carried over, and missed criterion 4 since the draft is not marked as generated triage text."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Scope (parser.js) and verification (regression check) are named, satisfying point 3. Point 1 lacks an explicit bug category, point 2 defers the expected behavior instead of carrying it, and point 4 has no generated-draft marking."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Names scope (parser.js) and a verification step, but gives 'Ready for agent pickup' with no bug category, omits concrete reproduction and expected-behavior details, and does not mark the draft as generated triage text."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "> *This was generated by AI during triage.*\n\n## Agent brief: fix invalid-date error in `parser.js`\n\n**Category:** `bug`\n**Recommended state:** `ready-for-agent`\n\n**Summary**\nParsing a date input in `parser.js` raises an invalid-date error. The error has been reproduced.\n\n**Affected file**\n- `parser.js`\n\n**Expected behavior**\nInput and output behavior has been agreed. Restate the agreed input/output pairs here before posting, so the brief is self-contained.\n\n**Current behavior**\nThe reproduced input raises an invalid-date error instead of producing the agreed output.\n\n**Acceptance criteria**\n1. The reproduced input returns the agreed output and no longer raises an invalid-date error.\n2. The other agreed input/output pairs still produce their agreed outputs.\n\n**Regression check**\nThe regression check is already defined. Run it before and after the change: it should fail before the fix and pass after. Include the exact command in the brief.\n\n**Scope**\n- Change only what is needed to fix the invalid-date error in `parser.js`.\n- Do not change the agreed output behavior.\n\n**Why `ready-for-agent`**\nThe bug is reproduced, the expected behavior is agreed, the affected file is known, and there is a clear regression check. An agent can act on this without further human input.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends ready-for-agent with bug category, carries reproduction and agreed expected behavior, names affected file, scope and regression check, and marks the draft as AI-generated triage text. All four criteria are met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (bug, ready-for-agent), 3 (scope and fail-before/pass-after check) and 4 (AI-generated triage label). Criterion 2 is weak: reproduction and expected behavior are only referenced generically, with a placeholder asking the author to restate them."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (ready-for-agent, bug category), 2 (reproduction and expected behavior carried), and 4 (marked as AI triage text); criterion 3 is only partly met, since scope is named but the regression check's exact command is left as a placeholder rather than given."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (ready-for-agent, bug category), 3 (scope and before/after regression check), and 4 (AI-generated triage marker). Criterion 2 is weak: reproduction and expected behavior appear only as generic placeholders."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: recommends ready-for-agent with bug category, carries reproduction and expected behavior, names scope and regression verification, and labels the draft as AI-generated triage text."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "# Agent Brief: Invalid-date error in `parser.js`\n\n**Type:** Synthetic issue\n**Status recommendation:** Ready for agent handoff. Every required element is supplied.\n\n## Problem\nAn invalid-date error has been reproduced. The error is raised during parsing.\n\n## Affected file\n- `parser.js`\n\n## Expected behavior\nInput and output behavior has been agreed. The agent should follow that agreement. The supplied facts do not include the concrete input and output examples, so attach them before handoff.\n\n## Regression check\nA clear regression check is defined. Run it before and after the fix. The supplied facts do not include the command, so attach it before handoff.\n\n## Agent instructions\n1. Reproduce the invalid-date error and confirm it matches the report.\n2. Fix the date handling in `parser.js` so the agreed input and output behavior holds.\n3. Run the regression check and report the result, including any failures.\n4. Keep the change limited to the behavior described above.\n\n## Open items before handoff\n- Attach the agreed input and output examples.\n- Attach the exact regression check command.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Recommends ready-for-agent and includes reproduction and expected behavior, but lacks an explicit bug category and does not mark the draft as generated triage text rather than a posted comment; scope and verification are only partially addressed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Recommends ready-for-agent and carries reproduction and expected behavior, but never names a bug category, does not clearly name verification beyond a generic regression check, and omits the generated-triage-text marking."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criterion 1 (ready-for-agent with bug category implied as invalid-date parsing error) and criterion 3 (scope and regression check named); missed criterion 2 since it does not carry the actual reproduction steps or expected input/output, and missed criterion 4 since it never marks the draft as generated triage text."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Reproduction, expected behavior, scope (parser.js) and verification are carried, but the response gives no bug category and does not mark the draft as generated triage text rather than a posted comment."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Recommends ready-for-agent and carries reproduction and expected behavior, but never names a bug category, does not clearly name verification beyond a placeholder, and does not mark the draft as generated triage text."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "# Agent Brief: Invalid-date error in `parser.js`\n\n**Status:** Ready for pickup, with one gap to close first. The reproduction, agreed behavior, affected file, and regression check are all established. The exact input/output pairs and the regression command were not included in the supplied facts, so the agent should get them from the issue thread before editing.\n\n## Summary\nParsing produces an invalid-date error on input that should be accepted. The reproduction is confirmed.\n\n## Scope\n- **Affected file:** `parser.js`\n- **Expected change:** Fix the date-handling path that raises the invalid-date error. Keep changes limited to what the agreed behavior requires.\n\n## Behavior\n- **Reproduced:** The invalid-date error occurs on the reported input.\n- **Agreed behavior:** Input and output expectations were agreed by the team. The agent should use the exact pairs from the issue, not infer them.\n\n## Regression check\nA regression check is defined. Run it before and after the change. It should fail before the fix and pass after.\n\n## Instructions for the agent\n1. Get the exact input/output pairs and the regression command from the issue. Stop and ask if they are missing.\n2. Confirm the reproduction fails on the current code.\n3. Change `parser.js` to match the agreed behavior.\n4. Run the regression check and report the output, pass or fail.\n5. Do not change behavior outside the agreed cases.\n\n## Open items\n- Attach the exact I/O pairs and the regression command.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (reproduction and agreed behavior carried) and criterion 3 (scope on parser.js, before/after regression check). Misses criterion 1: it says 'Ready for pickup, with one gap' rather than ready-for-agent, and gives no bug category. Misses criterion 4: it is not marked as generated triage text."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 missed: recommends 'Ready for pickup, with one gap' rather than clearly ready-for-agent and no bug category. Criterion 2 met: reproduction and expected behavior carried. Criterion 3 met: scope and verification named. Criterion 4 missed: not marked as generated triage text."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Names scope (parser.js) and verification (regression check before and after), and carries reproduction and expected behavior generically. It misses the explicit ready-for-agent label with a bug category and never marks the draft as generated triage text."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 missed: it says 'Ready for pickup, with one gap' and never gives the ready-for-agent category or bug category. Criterion 2 met: it carries reproduction and agreed behavior. Criterion 3 met: it names scope (parser.js) and a regression check. Criterion 4 missed: it is not marked as generated triage text."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 2 (reproduction and expected behavior carried) and 3 (scope in parser.js and regression verification named). Misses 1: it says 'Ready for pickup' with no ready-for-agent label or bug category. Misses 4: it never marks the draft as generated triage text."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "> *This was generated by AI during triage.*\n\n**Agent brief: fix invalid-date error in `parser.js`**\n\n**Summary**\nParsing currently throws an invalid-date error. The reproduced failure is in `parser.js`. The input/output behavior has already been agreed, so the task is to make the parser match it.\n\n**Reproduction**\nReproduced: the invalid-date error occurs on the reporter's input. Use the reproduction steps from the issue.\n\n**Expected behavior**\nMatch the agreed input/output behavior recorded in the issue. Do not change the agreed behavior.\n\n**Affected code**\n- `parser.js`: the date-handling path where the error is raised.\n\n**Regression check**\nRun the regression check named in the issue. It should:\n1. Fail before the fix, showing the invalid-date error.\n2. Pass after the fix, producing the agreed output.\n\nAlso run the existing test suite to confirm nothing else changed.\n\n**Constraints**\n- Keep the change scoped to `parser.js` unless the regression check shows a dependency elsewhere.\n- Do not alter the agreed input/output contract.\n\n**Status recommendation: `ready-for-agent`**\n\nReasoning:\n- The bug is reproduced, so the claim is verified.\n- The expected behavior is agreed, so no grilling is needed.\n- The affected file is known and the change is small.\n- A clear regression check exists, so an agent can confirm completion without a human.\n\nI haven't read AGENT-BRIEF.md in this session, so the section layout above is a general structure. If the project's brief template differs, adjust to match it before posting.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 2 (reproduction and expected behavior sections), 3 (scope limited to parser.js with regression check), and 4 (AI-generated triage marker). Missed criterion 1: it recommends ready-for-agent but never names a bug category."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Recommends ready-for-agent (criterion 1 partly, but no bug category given) and carries reproduction and expected behavior, and names scope and verification, but it does not state a bug category and does not mark the draft as generated triage text rather than a posted comment—it does have the 'generated by AI during triage' banner, so criteria 2-4 are met while criterion 1 misses the category, giving 0.75 by strict count."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recommends ready-for-agent, carries reproduction and expected behavior, names parser.js scope and regression check, and marks the draft as AI triage text; it never names a bug category."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets reproduction and expected behavior, scope and verification, and the AI-generated triage marking, but gives no explicit bug category alongside the ready-for-agent recommendation."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Recommends ready-for-agent, carries reproduction and expected behavior, names parser.js scope with regression and test verification, and marks the text as AI triage output; no explicit bug category is given."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": {
+      "answer": "# Agent Brief: Invalid-Date Error in `parser.js` (Synthetic Issue)\n\n**Status recommendation:** Ready for agent pickup. The defect is reproduced, expected behavior is agreed, the affected file is identified, and a regression check is defined.\n\n## Problem\nAn invalid-date error is reproduced in the parser. The fix belongs in `parser.js`.\n\n## Affected file\n- `parser.js`\n\n## Expected behavior\n- Input and output behavior has been agreed with the user. Treat the agreed contract as the source of truth. It was not supplied in this brief, so confirm the exact input/output pairs with the user before changing code.\n\n## Acceptance criteria\n1. The reproduced invalid-date case no longer raises an error and produces the agreed output.\n2. Existing valid-date behavior is unchanged.\n\n## Regression check\n- Run the defined regression check against `parser.js` after the change. The check was described as clear but its exact command was not supplied, so confirm it before running.\n\n## Constraints\n- Keep the change scoped to `parser.js` unless the regression check shows a dependency elsewhere.\n- Do not alter the agreed input/output contract.\n\n## Open items before work starts\n1. Provide the exact reproduction input and the agreed output.\n2. Provide the regression check command.",
+      "average": 0.3,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Recommends ready-for-agent and carries reproduction/expected behavior, but names no bug category, gives only a vague scope/verification, and never marks the draft as generated triage text rather than a posted comment; 1 of 4 criteria clearly met (roughly 0.25-0.5 at most)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met (ready-for-agent recommended), but no bug category stated; criterion 2 partially met since reproduction/expected behavior are marked missing; criterion 3 scope named but verification command absent; criterion 4 not marked as generated triage text, so only one clear point is fully satisfied."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 3 (names parser.js scope and a regression check). It recommends ready-for-agent but names no bug category, lacks concrete reproduction and expected-behavior details, and never marks the draft as generated triage text."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only criterion 3 (scope and verification) is clearly met: it names parser.js and a regression check. It states ready-for-agent but gives no bug category, does not carry the reproduction or expected behavior, and does not mark the draft as generated triage text."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Names scope (parser.js) and verification (regression check) and recommends ready-for-agent, but omits a bug category, does not carry the reproduction or expected behavior, and never marks the draft as generated triage text."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": {
+      "answer": "> *This was generated by AI during triage.*\n\n## Agent Brief: Invalid-date error in `parser.js`\n\n**Category:** bug\n**Recommended state:** `ready-for-agent`\n\n**Problem**\nParsing triggers an invalid-date error. The error has been reproduced.\n\n**Affected code**\n- `parser.js`\n\n**Expected behavior**\nThe input/output behavior has been agreed with the maintainer. Implement it as recorded in the issue thread.\n\n**Acceptance check**\nA regression check exists and is clear. Run it before and after the change: it should fail before and pass after. Do not change the check to make it pass.\n\n**Scope**\n- Change only what is needed to meet the agreed behavior in `parser.js`.\n- Do not refactor unrelated parsing logic.\n\n**Done when**\n- The regression check passes.\n- The invalid-date error no longer occurs for the reproduced input.\n- No other behavior changes.\n\n**Why this is agent-ready**\nThe bug is reproduced, the target behavior is agreed, the affected file is known, and there is a clear pass/fail check. No design decisions or external access are needed.\n\n---\n\n**Triage recommendation:** Move to `ready-for-agent`. The issue meets every criterion for an agent brief. I haven't verified the reproduction or run the regression check, since I'm working from the supplied facts only. Post the brief after the maintainer confirms the agreed behavior matches the issue thread.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response sets category bug and state ready-for-agent, carries the reproduction and agreed expected behavior, names scope and a before/after regression check, and labels the draft as AI-generated triage text."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends ready-for-agent with bug category, notes the reproduced error and agreed expected behavior, names scope and the regression check, and labels the draft as AI-generated triage text."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Recommends ready-for-agent with category bug; carries the reproduction and agreed expected behavior at the level of the supplied facts; names scope and an acceptance check; marks the draft as AI-generated triage text."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: recommends ready-for-agent with bug category, carries the reproduced error and agreed expected behavior, names scope and a before/after regression check, and labels the draft as AI-generated triage text."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criterion 1 (ready-for-agent, bug category), 2 (reproduction and expected behavior carried), and 3 (scope and regression check named); misses 4 since it's not clearly marked as generated triage text, though it has a leading italic 'generated by AI during triage' line, which I count as satisfying it. Scoring 0.75 with rubric points 1-3 full and point 4 arguably met."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": null
+    }
+   ]
+  }
+ ]
+}

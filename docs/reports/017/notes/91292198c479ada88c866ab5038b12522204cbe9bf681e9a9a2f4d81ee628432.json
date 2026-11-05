@@ -1,0 +1,1268 @@
+{
+ "format": "driftproof-judge-notes/1",
+ "report": "017",
+ "report_url": "/reports/017/",
+ "attempt_id": "91292198c479ada88c866ab5038b12522204cbe9bf681e9a9a2f4d81ee628432",
+ "skill": "design-mobile-apps",
+ "repository": "designed-by-ai/skills",
+ "receipt_hash": "9fa7bc62d8703ea066da8b40f0b3adc7c51a153f524155767b5c9e24f4042c1e",
+ "receipt_page": "/r/9fa7bc62d8703ea066da8b40f0b3adc7c51a153f524155767b5c9e24f4042c1e/",
+ "receipt_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/91292198c479ada88c866ab5038b12522204cbe9bf681e9a9a2f4d81ee628432.json",
+ "answers_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-017c/campaign-1/91292198c479ada88c866ab5038b12522204cbe9bf681e9a9a2f4d81ee628432-answers.json",
+ "suite_file": "https://github.com/driftproofhq/driftproof/blob/main/specs/408-skill-measurements/suites/designed-by-ai--skills--design-mobile-apps.json",
+ "model": "Claude Sonnet 5.5",
+ "judge": "Claude Haiku 5.5",
+ "judge_samples": 5,
+ "date": "1 November 2026",
+ "arms": [
+  {
+   "key": "with_skill",
+   "label": "With the skill"
+  },
+  {
+   "key": "placebo",
+   "label": "With the fake text"
+  },
+  {
+   "key": "baseline",
+   "label": "With nothing"
+  }
+ ],
+ "caveats": [
+  "Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings.",
+  "The scores and reasons are the judge model's own words, kept exactly as it wrote them. They are a model's reading of the rubric, not Driftproof's.",
+  "This is one task of three. Each skill was given three text tasks, and one task is not the whole measurement."
+ ],
+ "tasks": [
+  {
+   "id": "response",
+   "number": 1,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A supplied Sleek request returned HTTP 400 with top-level code INVALID_INPUT, status 400 and message Missing brief. Explain how the caller should read it; do not contact the service.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source designed-by-ai/skills/skills/design-mobile-apps/SKILL.md at 03c20aec6dcedb5fabfb03dc37982eb52ef19ed6; SKILL.md SHA-256 164f26dad717d722201406d7f11d6c99fc14caa02766081d0d6a45a34513a5b5; README SHA-256 9dc0f752f0d1830d1d712180d59248b80084e461dafef464b99e3db377387f36. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Check HTTP status first 2. Read the top-level error fields 3. Do not interpret it as data-wrapped success 4. Ask for or fix the missing brief before retrying",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "**How to read it**\n\n- **HTTP 400 is the signal.** The docs say to check the HTTP status first, and 400 means a validation failure: the service rejected the request body, not your key, scope, plan or the project.\n- **`message: \"Missing brief\"` is the cause.** The request had no brief, meaning the text describing what to design. It was either absent, sent under the wrong field name, or possibly empty. The message doesn't say which, and I don't have the field name, so check the request body schema in `endpoints.md` or the OpenAPI spec at `/api/v1/spec.json`.\n- **`code: INVALID_INPUT` doesn't match the docs.** The error table lists `BAD_REQUEST` for 400 validation failures, and `INVALID_INPUT` isn't in it. Branch on the status (400) and the message, not on the exact code string. Treat the code as informational, and don't hard-code a check for `BAD_REQUEST`.\n- **There is no `data.url`.** The docs only attach one to 401, 403 and 429 responses, and there's nothing for the user to fix on a web page here.\n\n**What the caller should do**\n\n1. Don't retry the same request. A 400 is deterministic and will fail identically.\n2. Inspect the outgoing body. Confirm it includes a non-empty brief, under the field name the endpoint expects, and that it's sent as JSON with `Content-Type: application/json`.\n3. Fix it and send it again as a new request.\n\nThis is a request-shape problem, not a run-level failure like `out_of_credits` or `execution_failed`, which appear inside `data.error` on a run. Since the request was rejected before any run was reported, there's no run to poll or cancel, though I can't confirm from this response alone whether anything was created or billed.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it checks the 400 status first, reads the top-level code and message, treats the response as an error rather than data-wrapped success, and says to fix the missing brief before resending."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks HTTP 400 first, reads the top-level code and message, treats the response as a request-shape failure rather than data-wrapped success, and says to fix the missing brief before retrying."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks HTTP 400 first and reads the top-level message 'Missing brief' (criteria 1-2 met), and advises fixing the body and not retrying verbatim (criterion 4 partly met). It does not clearly say it's not treating the error as data-wrapped success, and it leans on repo docs and a 'run-level' framing rather than the rubric's own reasoning."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks HTTP 400 first, reads the top-level code and message, does not treat the response as data-wrapped success, and tells the caller to fix the missing brief before resending."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks HTTP 400 first, reads the top-level message and code, does not treat the response as data-wrapped success, and tells the caller to fix the missing brief before resending."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**How to read the Sleek 400 response**\n\n- **HTTP 400 / `status: 400`**: The request was malformed or incomplete from the client side. The server understood the request but refused to process it. This is not a server outage, and retrying the identical request will fail the same way.\n- **`code: INVALID_INPUT`**: This is the machine-readable error category. It says the problem is with the input you supplied (validation failure), as opposed to authentication, permissions, rate limiting, or a server fault. Callers should branch on this code rather than parsing the message text.\n- **`message: \"Missing brief\"`**: This is the human-readable detail. It says the required `brief` field was absent from the request. Based on the message alone, I can't tell whether the field was omitted entirely, sent under a different name, or sent empty or null, so check the payload for each of those.\n\n**What the caller should do**\n\n1. Inspect the request that was sent and confirm a `brief` field is present, spelled exactly that way, at the expected level of the body (not nested wrongly).\n2. Confirm it has a non-empty value of the type the API expects (likely a string, but check Sleek's docs).\n3. Confirm the body is serialized correctly and the `Content-Type` header matches (for example `application/json`). A body the server fails to parse can look like a missing field.\n4. Fix the request and resend. Do not add automatic retries for this error, since it is deterministic.\n\n**Caveat**: I haven't contacted the service or seen the original request or Sleek's documentation, so this interpretation relies only on the supplied status, code, and message.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Checks HTTP 400 status first, reads top-level code and message, and says to fix the request before resending. It never explicitly rules out a data-wrapped success reading, so that point is only implied."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Checks HTTP 400 status first and reads top-level code and message fields, satisfying criteria 1 and 2; it does not treat the error as data-wrapped success, but it never explicitly asks for or fixes the missing brief before retrying, instead advising not to retry and to inspect the payload, so criterion 4 is only partly met."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks the HTTP status first and reads the top-level code and message fields, but it does not treat the 400 as error rather than data-wrapped success, and it fixes the brief before retrying, which is partial coverage of the rubric's four points."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Reads HTTP 400 status first, then the top-level code and message, does not treat it as success, and says to fix the missing brief before resending."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response correctly reads HTTP 400 and the top-level code (criteria 1–2) and offers a fix path, but it never addresses the rubric's 'do not interpret as data-wrapped success' point and doesn't frame a retry gate clearly beyond fixing the request before resend."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**How to read it**\n\n- **HTTP 400 / `status: 400`**: This is a client error. The server understood the request but rejected it as malformed or incomplete. The problem is in what was sent, not a server outage, so retrying the identical request will fail the same way.\n- **`code: INVALID_INPUT`**: This is the machine-readable error category. It means request validation failed. Branch on this value in code rather than parsing the message text.\n- **`message: \"Missing brief\"`**: This is the human-readable detail. The request has no `brief` field, a required input. It may also be present but empty or null, or sent under the wrong name or in the wrong place (for example, in the query string instead of the JSON body). The wording alone doesn't say which.\n\n**What the caller should do**\n\n1. Check the request payload and confirm a `brief` field exists, is spelled exactly that way, and sits at the level the API expects.\n2. Make sure it has a non-empty value of the expected type (probably a string describing what to produce, but check the Sleek docs for the exact schema).\n3. Confirm the `Content-Type` header matches the body format (such as `application/json`), since a mismatched header can make a present field look missing.\n4. Resend with the corrected request. Do not retry unchanged.\n\n**Caveat**\n\nI only have the three facts you supplied: the status, the code, and the message. I haven't seen the original request or Sleek's documentation, so the expected type and location of `brief` are inferred, not confirmed.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks HTTP 400 status first and reads top-level code and message fields, satisfying items 1-2; it does not treat the error as data-wrapped success (item 3, arguably met), but it tells the caller to fix and resend rather than explicitly asking for or supplying the missing brief before retrying (item 4 only partly met)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks the status (400 client error) and reads the top-level code and message fields, satisfying criteria 1 and 2; it does not explicitly state the response isn't data-wrapped success (3), and it advises resending corrected requests rather than asking for or fixing the brief before retrying (4), with a partial 'do not retry unchanged' note."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks the 400 status and reads top-level code and message fields, but it does not state the 400 is not success-wrapped data and instead asks the caller to fix the brief, with retry-after-fix only partly covered; rubric points 3 and 4 are only partially met."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks the HTTP 400 status and reads the top-level code and message fields, meeting criteria 1 and 2. It does not treat the error as data-wrapped success, meeting criterion 3, but it does not explicitly ask for or fix the missing brief before retrying; it says to resend with corrections, so criterion 4 is only partly met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Leads with the HTTP 400 status, reads the top-level code and message, treats the reply as a client error rather than success, and says to fix the brief and not retry unchanged."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "**How to read it**\n\n- **Status first.** The HTTP 400 is the signal to act on. In Sleek's envelope, errors carry top-level `code`, `status` and `message`, and a 400 means the request failed validation. The server rejected it before doing any work.\n- **The message is the actionable part.** \"Missing brief\" says the request body had no brief, or it was empty or under the wrong field name. The caller needs to supply one.\n- **The code doesn't match the docs.** The skill's error table documents 400 as `BAD_REQUEST`, not `INVALID_INPUT`. So don't branch on the exact code string. Treat it as the same validation-failure class and rely on the status and message. If the mismatch matters, the OpenAPI spec at `https://sleek.design/api/v1/spec.json` is the authority.\n- **No `data.url` is expected.** Only 401, 403 and 429 bodies may carry a fix-it link. A 400 has none, because the fix is in the request itself.\n- **There's no run to track.** Since validation failed, there's probably no run id to poll or cancel. That is an inference, as the response doesn't say so explicitly.\n\n**What the caller should do**\n\n1. Check the request body for the brief field and confirm it is present, non-empty and spelled as the contract expects. The exact field name isn't in what was supplied, so confirm it in `endpoints.md` or the OpenAPI spec.\n2. Fix the body and send a new request. Don't replay the same one, since it will fail identically.\n3. If a brief is being built from user input, validate it client-side so an empty value never gets sent.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks the HTTP 400 status first and reads the top-level message, and it asks the caller to supply the missing brief before retrying, but it treats the INVALID_INPUT code as a mismatch rather than data-wrapped or not, and does not clearly say the response is not a data-wrapped success."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks HTTP 400 status first and reads top-level code/message fields, and advises fixing the body before retrying (met). It fails to avoid treating the error as data-wrapped success explicitly, and does not ask for the missing brief; it instead tells the caller to check and fix, which only partly matches criterion 4 and leaves criterion 3 unaddressed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks HTTP 400 status first and reads top-level error fields (code/message), and tells the caller to fix the missing brief and not replay the same request, satisfying criteria 1, 2, and 4. It never explicitly rejects treating the 400 as data-wrapped success, so criterion 3 is not clearly met, yielding 0.75 by strict count; but it is ambiguous, so 0.5 reflects the stricter reading that criterion 3 is unaddressed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks the 400 status first and reads the top-level message 'Missing brief', and says to fix the body rather than retry verbatim, satisfying criteria 1, 2 and 4 in part. It fails criterion 3 to the degree it's not explicitly stated, though it does not treat the 400 as success; scoring 0.5 for partial satisfaction across criteria."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks the HTTP 400 status first, reads the top-level code/status/message fields, treats it as a validation error rather than success, and says to supply the brief before resending."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**How to read it**\n\nThe response is a client error, not a service outage, and it's about the request you sent.\n\n- **HTTP 400 / `status: 400`**: The request was malformed or incomplete. The server understood it but refused to process it. Retrying the identical request will fail the same way.\n- **`code: INVALID_INPUT`**: This is the machine-readable category. It tells your code which branch to take: input validation failed, as opposed to auth, rate limiting, or a server fault. Key your error handling on this field rather than on the message text.\n- **`message: \"Missing brief\"`**: This is the human-readable detail. It says the required `brief` field wasn't provided. It may be absent from the payload entirely, or sent under the wrong name, or in a place the service doesn't read (for example, a query string instead of the JSON body).\n\n**What the caller should do**\n\n1. Check that the request includes a `brief` field, spelled exactly that way, in the location the API expects (most likely the JSON body).\n2. Check that it isn't empty, null, or whitespace-only. Some services treat those as missing too, though the supplied facts don't confirm that here.\n3. Confirm the `Content-Type` header matches the body format, since a mismatched type can cause the field to be dropped before validation.\n4. Fix the request and resend. Don't retry automatically with backoff, since this error is deterministic and not transient.\n\n**Caveats**\n\nThe supplied facts give only the three fields above. They don't say what format `brief` should take (string, object, length limits) or whether there are other required fields, so check the Sleek API documentation for the exact schema. I haven't contacted the service, so this is based purely on the error you provided.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks HTTP 400 status first and reads top-level code and message fields (criteria 1-2 met), and says not to retry the identical request, but it does not ask for or fix the brief in a way that treats it as a data-wrapped issue—criterion 3 is not explicitly addressed and criterion 4 is only partially met since it advises fixing and resending without requesting the missing brief from the user."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks HTTP 400 first and reads the top-level code and message fields, but it does not state that the error is not success-wrapped data, and it never explicitly asks for or fixes the brief before retrying; it advises resending after a fix only implicitly."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Checks HTTP 400 first, reads the code and message fields, and says to fix the brief before resending. It never explicitly rules out reading the error as data-wrapped success."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks HTTP 400 first, reads code, status and message, and directs fixing the missing brief before resending rather than retrying; it never treats the error as success, though it doesn't say so explicitly."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Response checks HTTP 400 status first, reads the top-level code and message fields, and asks the caller to fix the missing brief rather than retrying. It does not interpret the error as data-wrapped success. Criterion 3 is met only implicitly, so it earns full credit for the 'do not interpret as success' point, but the rubric's wording on criterion 4 ('ask for or fix') is satisfied; the score reflects this."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**How to read it**\n\nThe response is a client-side validation error, not a server fault or an outage.\n\n- **HTTP 400**: the server understood the request but rejected it as malformed or incomplete. The 4xx class means the caller needs to change something, so retrying the identical request will fail the same way.\n- **`code: INVALID_INPUT`**: the machine-readable category. It says a supplied input failed validation. Branch on this value in code, not on the message text.\n- **`message: \"Missing brief\"`**: the human-readable detail. It says the required `brief` field was absent from the request. I can't tell from the supplied facts whether it was omitted entirely, misspelled, placed in the wrong part of the request (for example in a query string instead of the body), or sent empty or null and treated as missing.\n\n**What the caller should do**\n\n1. Check the request that was sent and confirm it includes a `brief` field with a non-empty value, spelled and cased exactly as the API expects.\n2. Confirm it is in the location the API expects (typically the JSON body) and that the `Content-Type` header matches the format used, since a mismatched content type can make a present field look missing.\n3. Fix the request and resend. Do not retry automatically with the same payload.\n\n**What I can't conclude**\n\nThe supplied facts don't include the request itself, the Sleek API documentation, or the expected schema for `brief`. So I can't say what type or format a valid `brief` takes, or whether other required fields might also be missing. The server may report only the first failure it finds, so fixing this one could surface another validation error.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks the HTTP 400 status first, reads the top-level code and message, does not treat the error as success, and says to fix the missing brief before resending."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks HTTP 400 first, reads the top-level code INVALID_INPUT and message, treats it as a client error rather than success, and instructs fixing the missing brief before resending."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers HTTP 400 status first, reads the top-level code and message fields, does not treat the error as success data, and says to fix the missing brief before resending."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Checks HTTP 400 status first and reads top-level code/message fields, but does not treat it as a non-success or data-wrapped response explicitly, and the fix step is 'fix and resend' rather than asking for the brief, so criterion 4 is only partly met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "It checks the HTTP 400 status first, reads the top-level code INVALID_INPUT and message, treats the result as an error rather than success, and says to fix the missing brief before resending."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "**How to read it**\n\n- **HTTP 400 means the request was rejected for validation.** The caller sent something malformed or incomplete, and the service did not act on it. This is not an auth, plan, or server problem (those would be 401, 403, or 500).\n- **`message: \"Missing brief\"` is the actionable part.** The request had no design brief, or it was empty. A brief is the text describing what to design. The service needs it to start a design run.\n- **`code: INVALID_INPUT` is not in the documented error table.** The documented code for 400 validation failures is `BAD_REQUEST`. Branch on the HTTP status (400) and the message, not on an exact code string. Treat `INVALID_INPUT` as the same class of failure.\n- **No `data.url` was supplied.** There is no page for the user to visit, because the fix is in the request itself.\n\n**What the caller should do**\n\n1. Don't retry the same request. A 400 is deterministic and will fail again.\n2. Check that the request body includes the brief field, that it is non-empty, and that it is sent as JSON with `Content-Type: application/json`. Common causes are a variable that expanded to an empty string, a misspelled field name, or a body that never got sent.\n3. Confirm the exact field name and shape in `endpoints.md` or the OpenAPI spec at `https://sleek.design/api/v1/spec.json`. I haven't checked them here.\n4. Resend with a real brief, as a fresh attempt.\n\n**Why it's safe to resend**\n\nThe failure happened at validation, before any AI work, so there should be no active run to poll or cancel and no credits consumed. This is different from the run-level errors such as `execution_failed` or `out_of_credits`, which appear inside `data.error` of a run.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response checks HTTP 400 first, reads the top-level message and code, treats the result as a validation failure rather than success, and says to fix the missing brief before resending."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks HTTP 400 first, reads the top-level code and message, treats the response as a validation failure rather than success, and says to supply a real brief before resending."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks HTTP 400 first, reads the top-level code and message, does not treat the error as data-wrapped success, and says to fix the brief and resend rather than retry as-is."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks HTTP 400 first, reads the top-level code and message, does not treat it as success, and says to fix the missing brief before resending. It also cites documents it never saw, which the rubric does not cover."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "The response checks the 400 status first and reads the top-level message 'Missing brief', and it does not retry verbatim. It misses the 'do not interpret as data-wrapped success' point, and it asks for or fixes the brief only indirectly, by saying to resend with a real brief rather than requesting it from the caller."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**How to read it**\n\n- **HTTP 400 / `status: 400`**: This is a client error. The server understood the request but rejected it as malformed or incomplete. The fault is in what the caller sent, not in the service being down or misbehaving.\n- **`code: INVALID_INPUT`**: This is the machine-readable category. It tells the caller the failure is about the request's input validation, so code can branch on it (for example, treat it as \"fix the request\" rather than \"retry later\").\n- **`message: Missing brief`**: This is the human-readable specific cause. The request lacked a required field or parameter called `brief`, either omitted entirely or possibly sent empty or under a different name.\n\n**What the caller should do**\n\n1. Don't retry the same request unchanged. A 400 is deterministic, so resending it will fail the same way.\n2. Add the `brief` field to the request, in whatever location the Sleek API expects (most likely the JSON body), with a non-empty value.\n3. Check the spelling and casing of the field name, and confirm it isn't being dropped by serialization (for example, an undefined or null value being omitted from the JSON).\n4. Resend once the request is corrected.\n\n**Caveats**\n\nI haven't seen Sleek's documentation or the original request, so I can't say what format `brief` should take or where it belongs. The interpretation above comes only from the supplied code, status and message, plus standard HTTP semantics. If the field is present and the error persists, the request payload or content type is the next place to check.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks the HTTP 400 status first, reads the top-level code and message, never treats the error as wrapped success, and says not to retry unchanged until the missing brief is added."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks HTTP 400 first and reads the code and message fields, but it says to retry after fixing rather than stating to ask for the brief first; it never addresses the data-wrapped success criterion, so only 2 of 4 criteria are clearly met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks HTTP 400 first, reads the top-level code and message, never treats the error as a success payload, and says not to retry unchanged until the required brief field is added."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response reads the HTTP 400 status first, then the top-level code and message, treats the error as client-side rather than success, and says to add the brief field before resending."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks HTTP 400 first and reads top-level code and message correctly, and says to fix the missing brief before retrying. It does not treat the error as data-wrapped success, but it does not expressly frame the task as asking for or fixing the brief first; it instead directs resending after correction, and it mostly satisfies only two of four criteria."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**How to read it**\n\n- **HTTP 400 / status 400**: The server understood the request but rejected it as malformed or invalid. This is a client-side error, not a server fault or outage. Retrying the identical request will fail the same way.\n- **code: `INVALID_INPUT`**: A machine-readable category. It means a validation failure on the request payload, so branch on this value in code rather than parsing the message text.\n- **message: \"Missing brief\"**: The human-readable detail. The request lacked a required field named `brief` (or it was empty or null). I only have the message text, so I can't tell whether the field was omitted entirely, misspelled, nested in the wrong place, or sent blank.\n\n**What the caller should do**\n\n1. Check the request body (or whichever location the API expects) and confirm a `brief` field is present, spelled exactly that way, and has a non-empty value of the expected type (likely a string).\n2. Check serialization: a wrong `Content-Type` header, or a body that failed to encode as JSON, can make a field appear missing.\n3. Fix the request and resend. Don't retry automatically with the same payload.\n4. Treat it as a non-retryable error in client logic: surface it to the developer or user as an input problem.\n\n**Caveats**\n\nI'm working only from the three supplied facts. I haven't seen the request or the API documentation, so the exact expected shape of `brief` (type, length limits, location) is unconfirmed. Check the Sleek API docs for that.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks HTTP 400 first and reads top-level code and message fields, but it never explicitly warns against treating the error as data-wrapped success, and its fix steps focus on correcting and resending rather than asking for the missing brief first."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks HTTP 400 status first, reads top-level code and message, treats the error as rejection rather than success, and says to fix the missing brief before retrying."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Checks HTTP 400 status first, reads top-level code and message fields, and explicitly warns against retrying the same payload without fixing it. Misses the rubric's 'do not interpret as data-wrapped success' point, which is never addressed explicitly, and asks to fix before retrying rather than asking for the brief."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks HTTP 400 status first, reads top-level code INVALID_INPUT and the 'Missing brief' message, treats it as an error not success, and says to fix the brief before resending rather than retrying the same payload."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks the HTTP 400 status first, reads the top-level code and message, treats it as a client error rather than success, and advises fixing the brief before resending without automatic retry."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "This is a validation failure: the request itself was rejected, not the service or your credentials.\n\n**How to read each part**\n\n- **HTTP 400 / `status: 400`**: The server understood the request but refused it because of its content. This matches the documented `BAD_REQUEST` category (\"Validation failure\"). Check the HTTP status first, as the API intends.\n- **`code: INVALID_INPUT`**: This is not one of the codes in the documented table (`BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, and so on). Treat it as a more specific flavor of a validation error. Don't assume it behaves differently from a 400 in general, and don't build logic that depends on this exact string without confirming it in the OpenAPI spec at `https://sleek.design/api/v1/spec.json`.\n- **`message: \"Missing brief\"`**: This is the actionable part. The request lacked a `brief`, the description of what to design. Most likely it was omitted, empty, or sent under the wrong field name, or the JSON body wasn't parsed because the `Content-Type: application/json` header was missing.\n\n**What the caller should do**\n\n1. Don't retry the same request. A 400 is deterministic, so replaying it unchanged will fail again.\n2. Confirm that the body is valid JSON, that `Content-Type: application/json` is set, and that a non-empty brief is included under the field name the endpoint expects. This is most likely the project-creation or chat-message call, so check the exact field name in `endpoints.md` or the spec.\n3. Resend a corrected request as a new attempt. Since validation failed before any work started, no run was created and nothing needs cancelling.\n\n**What it is not**\n\n- Not an authentication or scope problem (that would be 401 or 403).\n- Not a conflict with an active run (409).\n- Not an `out_of_credits` or `execution_failed` run error, which appear inside `data.error` on a chat run, not as a top-level 400.\n- No `data.url` was supplied, so there is no page for the user to visit. The fix is entirely in the request payload.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks HTTP 400 first, reads top-level code INVALID_INPUT and message 'Missing brief', does not treat it as data-wrapped success, and says to supply the brief before resending."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks HTTP 400 first, explains the top-level code and message, rejects a data-wrapped success reading, and says to fix the missing brief before resending."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks the HTTP 400 status first, reads the top-level code and message, does not treat the response as data-wrapped success, and tells the caller to fix the brief before resending."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks HTTP 400 first, reads the top-level code and message, rejects a data-wrapped success reading, and says to fix the missing brief and resend rather than retry unchanged."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks HTTP 400 first, reads the top-level code and message 'Missing brief', rejects treating it as success, and says to fix the brief before resending."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**How to read it**\n\n- **HTTP 400 / `status: 400`**: The service understood the request enough to parse it, but rejected it as malformed or incomplete. This is a client-side error: the caller sent something wrong, and the server did not fail.\n- **`code: INVALID_INPUT`**: This is the machine-readable category. It says the problem is with the input payload (validation), not with authentication, permissions, rate limits, or server health. Code should branch on this field, not on the message text.\n- **`message: \"Missing brief\"`**: This is the human-readable detail. It says the required `brief` field was absent from the request. (It could also mean it was present but empty or under the wrong name, though the message itself says only \"missing\".)\n\n**What the caller should do**\n\n1. Don't retry the same request unchanged. A 400 with INVALID_INPUT is deterministic, so the same payload will fail the same way.\n2. Check the request body for the `brief` field: that it exists, is spelled exactly that way, sits at the level the API expects, and is non-empty and of the expected type (likely a string).\n3. Fix the request, then resend it once.\n4. Treat it as a bug in the calling code or a user-input validation gap. If the brief comes from a user, validate it before calling the service and show a prompt asking for it.\n\n**What I can't tell from the supplied facts**\n\nI don't know the exact schema Sleek expects for `brief` (type, length limits, location in the body), nor whether the error response includes extra fields such as a field name or request ID. Check Sleek's API documentation for those details. I haven't contacted the service, so this is based only on the three values you supplied.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Leads with the HTTP 400 status, reads code, status and message, treats it as a client error rather than success, and says not to retry unchanged until the brief is fixed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks HTTP 400 as a client error and reads the top-level code INVALID_INPUT and message, satisfying criteria 1 and 2. It does not explicitly say the response is not a data-wrapped success (criterion 3 missed in substance), and it advises fixing the brief before retrying, which partly meets criterion 4 but never asks for the missing brief from the caller."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks HTTP 400 status first, reads top-level code and message, avoids treating the error as success, and tells the caller to fix the missing brief before resending."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Checks HTTP 400 first, reads the top-level code, status, and message fields, and says to fix the missing brief before resending. It never explicitly rules out reading the response as a data-wrapped success, so that criterion is missed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "The response checks the HTTP 400 status first and reads the top-level code and message, meeting criteria 1 and 2. It then says not to retry unchanged and to fix the brief before resending, which covers criterion 4. It does not state that the 400 response is not a data-wrapped success, so criterion 3 is not explicitly met."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "This is a client-side validation error: the request was rejected before any work was done, and the fault is in what the caller sent, not in the service.\n\n**How to read each field**\n\n- **HTTP 400**: Bad Request. The server understood the request but refused it because the input was invalid. It is not an auth problem (that would be 401/403), not a missing endpoint (404), and not a server fault (5xx).\n- **code: `INVALID_INPUT`**: The machine-readable error category. Branch your error handling on this value, not on the message text. It tells you the problem is with the request payload or parameters.\n- **status: 400**: The same HTTP status repeated in the body, so you can still see it if the transport layer hides the response status.\n- **message: \"Missing brief\"**: The human-readable detail. A required input named `brief` was absent from the request. This is the specific thing to fix.\n\n**What the caller should do**\n\n1. Include the `brief` field in the request, in whatever location the Sleek API expects (most likely the JSON body).\n2. Check that it is spelled exactly `brief`, is not null, and is not an empty string. Some APIs report an empty or wrongly named field as \"missing.\"\n3. Confirm the Content-Type header matches the body format (for example `application/json` for a JSON body). A mismatch can cause the server to parse nothing and report every field as missing.\n4. Do not retry the identical request. A 400 is deterministic, so the same payload will fail again. Retry only after correcting the input.\n\n**Caveat**\n\nI only have the three values you supplied. I haven't seen the request that was sent or Sleek's documentation, so the expected type, format, and location of `brief` are things to confirm in their API reference rather than something I can state.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks HTTP 400 first and reads top-level code/message fields, and advises fixing the brief before retrying (criteria 1, 2, 4 met), but never explicitly addresses that the error body is not a data-wrapped success (criterion 3 not explicitly stated)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Response checks HTTP 400 first, reads top-level code and status fields, and says not to retry the identical request until the missing brief is fixed. It does not treat the error as data-wrapped success. Criteria 1, 2, 4 met; criterion 3 is only implicitly covered, so 0.75 rather than 1.0."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks HTTP 400 first and reads top-level code and message, and it advises not retrying the identical request until input is corrected, satisfying criteria 1, 2 and 4 in part. It never explicitly says the 400 body is not a data-wrapped success (criterion 3), and criterion 4 is only partly met since it says to include the brief rather than ask for it."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Reads HTTP 400 first, then code, status, and message; does not treat the response as success; says to include the missing brief and not retry the identical request."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "The response checks the HTTP 400 status and reads the top-level code and message fields, meeting criteria 1 and 2. It does not explicitly say the error isn't data-wrapped success (criterion 3), and it gives fix steps and says not to retry identically, but it never says to ask for or supply the brief before retrying (criterion 4), so 0.5 of the rubric is met."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": {
+      "answer": "**How to read it**\n\nThe response is a client error, not a service outage. Each piece tells you something:\n\n- **HTTP 400 (status 400):** The service understood the request at the transport level but rejected it as malformed or incomplete. This is a 4xx, so the fault is on the caller's side. The request was not processed.\n- **Code `INVALID_INPUT`:** This is the machine-readable error category. It says the problem is with the input you supplied (as opposed to auth, rate limiting, or a server fault). Branch on this value in code rather than parsing the message text.\n- **Message `Missing brief`:** This is the human-readable detail. It says the request had no `brief` value, which the service requires. The field was either omitted entirely, misspelled, nested in the wrong place, or sent empty or null (the message alone doesn't tell you which).\n\n**What the caller should do**\n\n1. Add a non-empty `brief` to the request, at the location the Sleek API expects it (top-level body field vs. query parameter, per its docs).\n2. Check the exact field name and casing, and confirm the content type and serialization are right so the field actually reaches the server.\n3. Resend with the corrected request.\n\n**What not to do**\n\n- Don't retry the identical request. A 400 like this is deterministic and will fail the same way every time, so backoff-and-retry logic doesn't apply.\n- Don't treat it as a sign of a service problem or escalate it to the provider before verifying the request.\n\n**Caveat:** I only have the three facts you supplied (status, code, message). I haven't seen the request payload or Sleek's documentation, so I can't say which of the possible causes applies, or where exactly `brief` belongs.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks HTTP 400 status and reads top-level code and message fields, satisfying criteria 1 and 2. It does not explicitly say the 400 isn't a data-wrapped success (criterion 3 missed in spirit; it implies a rejected request but never addresses that). It advises adding the brief before resending, satisfying criterion 4 only partially since it doesn't frame it as asking for the brief."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Reads HTTP 400 first, then the top-level code INVALID_INPUT and message, treats it as a non-success client error, and says to add the missing brief before resending."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks the HTTP 400 status first and reads the top-level code and message, satisfying criteria 1 and 2. It does not explicitly say the 400 isn't data-wrapped success (criterion 3 is only implicit), and it addresses fixing the missing brief before retrying, but it advises not to retry the identical request without explicitly asking for the brief. Criterion 4 is met in substance, but the answer is partially ambiguous, so I score 0.5 and fail."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks HTTP 400 first and reads the top-level code and message fields, satisfying criteria 1 and 2. It does not treat it as success, but it never explicitly asks the user for the brief or frames a fix-before-retry step as a gate, so criteria 3 and 4 are only partially met at best; it does say not to retry identically, which partly covers criterion 4 but not as a request for the missing brief."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks the 400 status and reads the top-level code and message fields, meeting criteria 1-2 and implicitly 3; it addresses fixing the missing brief, but it never states that the 400 response is not data-wrapped success and does not explicitly ask for the brief before retrying, so criteria 3 and 4 are only partly met."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**How to read the response**\n\n- **HTTP 400 (status 400):** The request was malformed or incomplete from the client's side. The server understood the request but rejected it before doing any work. This is not a server fault or an outage, so retrying the identical request will fail the same way.\n\n- **Top-level code `INVALID_INPUT`:** This is the machine-readable error category. It means validation of the request payload failed. Callers should branch on this code (not on the message text) to decide how to handle it, for example by treating it as a non-retryable input error.\n\n- **Message `Missing brief`:** This is the human-readable detail. It says the required `brief` field was absent from the request. It may also mean it was present but empty or under the wrong name or location, though the message itself only tells you it was missing.\n\n**What the caller should do**\n\n1. Inspect the request that was sent and confirm it includes a `brief` field, spelled exactly that way, at the level the API expects (typically a top-level key in the JSON body).\n2. Make sure the value is populated, a non-empty string (or whatever type the Sleek docs specify).\n3. Check that the `Content-Type` header matches the body format (e.g. `application/json`), since a body the server can't parse can also surface as a missing field.\n4. Fix the request and resend. Don't add retry or backoff logic for this error, since it's deterministic.\n\n**Caveat:** I only have the three facts you supplied (status, code, message). I haven't seen the request or the Sleek API documentation, so the exact expected type and location of `brief` should be confirmed against their docs.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four rubric points: it reads HTTP 400 first, explains top-level INVALID_INPUT, treats the response as failure rather than success, and says to fix the missing brief before resending."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Rubric 1 met: it checks HTTP 400 first and reads the top-level code and message. Rubric 3 met: it says the 400 is a failed request, not success. Rubric 4 missed: it says to fix and resend but never asks for the missing brief. Rubric 2 is only partly met: it names INVALID_INPUT but does not explicitly read the top-level error fields as a set."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Covers rubric points 1 (checks HTTP 400 status first), 2 (reads top-level code INVALID_INPUT), and 4 (fix missing brief then resend, no retry). Point 3 is only implicit: it never explicitly says the 400 is not a data-wrapped success."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Leads with the HTTP 400 status, reads the top-level INVALID_INPUT code, treats it as a failed request rather than data-wrapped success, and says to fix the missing brief before resending."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks HTTP 400 first and reads the top-level code and message correctly, meeting criteria 1 and 2. It does not explicitly warn against treating the error as data-wrapped success (criterion 3 missed) and offers fixing the request before retry rather than asking for the brief, though it does say to fix and resend (criterion 4 arguably met). Score is 0.5, below substantial-match threshold."
+       }
+      ]
+     }
+    },
+    {
+     "try": 6,
+     "with_skill": null,
+     "placebo": {
+      "answer": "**What the response means**\n\n- **HTTP 400 / `status: 400`**: The service rejected the request as malformed or invalid. This is a client-side error. The server understood the request but refused to process it, so the fault is in what the caller sent, not in the service.\n- **`code: INVALID_INPUT`**: This is the machine-readable error category. Branch on this value in code, not on the message text. It says a supplied input failed validation, as opposed to an auth, rate-limit, or server failure.\n- **`message: \"Missing brief\"`**: This is the human-readable detail. The request has no `brief`, which the service requires. The field may be absent, null, or empty, though the message alone doesn't say which. It is the specific cause behind `INVALID_INPUT`.\n\n**How the caller should act**\n\n1. **Don't retry the same request.** A 400 is deterministic. Resending identical input will fail the same way, so automatic retries or backoff won't help.\n2. **Fix the request.** Check that the payload includes a `brief`, that it is spelled exactly as the API expects, that it sits at the right level of the JSON body, and that it is non-empty. Also check that the `Content-Type` header matches the body format. A body the server couldn't parse can look like a missing field.\n3. **Validate before sending.** Add a client-side check that `brief` is present and non-empty so this error is caught before the call.\n4. **Log the code and message.** Record both, along with which request produced them, so the failure is easy to trace.\n\n**What the response doesn't tell you**\n\nI haven't contacted the service. From these three fields alone I can't tell the expected type or length of `brief`, or whether other required fields are also missing. Validation may report only the first failure, so a corrected request could surface a different `INVALID_INPUT` error. For the full contract, check Sleek's API documentation.",
+      "average": 0.6,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks the 400 status first and reads the top-level code and message, but it never states the response is not data-wrapped success, and it instead of asking for or fixing the brief, advises validating before sending and cites no step to ask for it."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 2, and 4: it checks HTTP 400 first, reads the top-level code and message, and says to fix the brief before retrying. It never explicitly rules out a data-wrapped success reading, so criterion 3 is not clearly satisfied."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response checks the HTTP 400 status first, reads the top-level code and message, never treats the error as success, and says to fix the missing brief before retrying."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response checks the HTTP 400 status first and reads the top-level code and message, but it does not address the 'do not interpret as data-wrapped success' point and the fix-then-retry step is only partly covered (it says not to retry identical input and to fix the request, but does not explicitly ask for or supply the missing brief)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks HTTP 400 first and reads top-level code and message fields, but it never addresses the rubric's 'do not treat as data-wrapped success' point explicitly, and it recommends fixing the brief rather than asking for it; ask-or-fix is partially met."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**How to read the response**\n\n- **HTTP 400 / status 400**: The request was malformed or incomplete from the client side. This is not a server outage or an auth failure (that would be 401/403), and it is not a missing endpoint (404). The service understood the request enough to reject it.\n- **code: `INVALID_INPUT`**: A machine-readable category meaning one or more input fields failed validation. Callers should branch on this value in code rather than parsing the message text.\n- **message: `Missing brief`**: The human-readable detail. It says the request had no `brief` field, or it was empty or not recognized. Since `brief` is the required input here, that is the specific field to fix.\n\n**What the caller should do**\n\n1. Do not retry the identical request. A 400 is deterministic, so the same payload will fail the same way.\n2. Add a `brief` to the request body, with a non-empty value in the format the Sleek API documents (most likely a string describing what to generate). Also check the field name's exact spelling and casing, and that it sits at the right level of the JSON payload and the Content-Type is correct (for example `application/json`), since a body that fails to parse can look like a missing field.\n3. Resend once the payload is corrected.\n\n**Caveats**\n\nI only have the three facts you supplied: status, code, and message. I haven't seen the request or Sleek's documentation, so the exact expected type and format of `brief` is something to confirm in their API reference. Because the error is top-level and names a single field, there is no sign of other validation problems, but fixing this one could surface others on the next response.",
+      "average": 0.85,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks the HTTP 400 status first, reads the top-level code and message, never treats the error as success, and says to fix the missing brief before resending rather than retrying unchanged."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks HTTP 400 status first, reads the top-level code and message, treats it as a rejection rather than success, and says to add the missing brief before resending."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response checks HTTP 400 first and reads top-level code and message correctly, and says not to retry verbatim, but it does not clearly ask for or fix the missing brief before retrying (it suggests adding it, which partially meets criterion 4) and never explicitly addresses the data-wrapped success interpretation, so only about half is met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Checks HTTP 400 first, reads the top-level code and message, treats it as an error rather than data-wrapped success, and says to fix the missing brief before resending."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets checking HTTP 400 first, reading top-level code and message, and fixing the missing brief before retrying. It never explicitly rules out a data-wrapped success interpretation, so that criterion is missed."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "shots",
+   "number": 2,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A designer needs a user-facing phone screenshot and a separate full-height review of a long component. Describe the two screenshot requests conceptually.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source designed-by-ai/skills/skills/design-mobile-apps/SKILL.md at 03c20aec6dcedb5fabfb03dc37982eb52ef19ed6; SKILL.md SHA-256 164f26dad717d722201406d7f11d6c99fc14caa02766081d0d6a45a34513a5b5; README SHA-256 9dc0f752f0d1830d1d712180d59248b80084e461dafef464b99e3db377387f36. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Use the normal viewport shot for the user 2. Use fullHeight for the review shot 3. Review one component per request 4. Do not claim screenshots were captured",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "There are two separate requests to the screenshots endpoint (`POST /api/v1/screenshots`, which needs the `screenshots` scope). They differ in framing and in who the image is for.\n\n**1. User shot (for the designer to look at)**\n- This is the default render, so you add no special option.\n- The image is viewport height and phone-shaped, which is how the screen would look on a device.\n- It shows the designer the overall look of the screen. If the component is long, the image is cropped at the phone's viewport height.\n\n**2. Review shot (for judging the work)**\n- This is the same kind of request with `fullHeight: true` added.\n- It targets one component per request. To review several long components, send one request for each.\n- The image runs the full height of the component, so nothing below the fold is cut off. You use it to check the whole component against the brief, not to show it to the user.\n\nKeep the two apart: send the phone-shaped render when presenting to the user, and the full-height one when evaluating your own output.\n\nI haven't read `endpoints.md` or the OpenAPI spec, so I can't give the exact field names for identifying the project and component in the request body. Check those before sending anything.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: it uses the default viewport render for the user shot, sets fullHeight for the review shot, targets one component per request, and does not claim any screenshot was captured."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: the user shot uses the default viewport render, the review shot uses fullHeight: true, each request targets one component, and no screenshots are claimed as captured."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: default viewport shot for the user, fullHeight for the review shot, one component per request, and no claim that screenshots were captured."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: uses the default viewport shot for the user, fullHeight for the review, one component per request, and claims no screenshots were captured."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 1 (normal viewport shot for user) and 2 (fullHeight for review shot) and 3 (one component per request), and does not claim screenshots were captured (criterion 4), so all four would be satisfied; however the response's own framing of criterion 3 and 4 is fine, yet the rubric's score is 0.25 per criterion, making 1.0 the correct total."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**Request 1: user-facing phone screenshot**\n\n- **Purpose:** show what a person sees on their device, for sharing, documentation, or marketing.\n- **Viewport:** a typical phone size in portrait (for example, roughly 390×844 CSS pixels) at a high device pixel ratio (2x or 3x) so text and icons stay sharp.\n- **Scope:** only what fits on the first screen, with no scrolling. The capture shows the visible viewport, as it would appear on the device.\n- **Content state:** a polished, representative state, with realistic data, no debug overlays, and no loading or error placeholders unless those are the subject.\n- **Chrome:** optionally include the status bar, or place the capture inside a device frame, depending on where it will be used.\n- **Output:** a single portrait image at the device's aspect ratio.\n\n**Request 2: full-height review of a long component**\n\n- **Purpose:** let the designer inspect the whole component, top to bottom, in one image for spacing, alignment, typography, and consistency.\n- **Viewport:** the same phone width (so the layout matches what users get), but the capture extends to the component's full scroll height rather than stopping at the screen edge.\n- **Scope:** the entire component, from first to last element. Sticky headers, fixed footers, and lazy-loaded sections need attention so they don't repeat, overlap, or appear blank.\n- **Content state:** the same realistic data, with all sections expanded and any lazy content loaded, so nothing is cut off or missing.\n- **Annotations:** optional, such as measurements, grid overlays, or section labels, since this image is for internal review and not for users.\n- **Output:** one tall, narrow image, possibly split into segments if the height exceeds image-size limits.\n\n**Key differences**\n\n| | Phone screenshot | Full-height review |\n|---|---|---|\n| Audience | End users, external | Designer, internal |\n| Height | Viewport only | Full component |\n| Framing | Device-like, polished | Utilitarian, optionally annotated |\n| Goal | Show the experience | Verify the details |\n\nKeeping them as two separate requests avoids compromises: the first stays clean and realistic, and the second stays complete and inspectable.",
+      "average": 0.65,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: viewport-only phone shot, one component per request, and no claimed captures. Criterion 2 is met conceptually (full scroll height) but the term 'fullHeight' is never named."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (viewport-only user shot) and 4 (no claim of capture). Criterion 2 is described conceptually as full scroll height but never names fullHeight, and criterion 3 (one component per request) is only implied."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it describes a first-screen viewport shot for users, one component per request, and claims no captures. It misses criterion 2 because it describes full-height capture conceptually without naming fullHeight."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the viewport-shot criterion and makes no capture claims, but never names fullHeight for the review shot and only implies one component per request."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Viewport-only phone shot and full-scroll-height review are described conceptually as separate requests, with no claim of captured screenshots; the term 'fullHeight' is never named, so criterion 2 is only conceptually met."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "These are two different captures, so I'd make them two separate requests.\n\n**1. User-facing phone screenshot**\n- **Purpose:** Show what a real person sees on their phone, for presentation or marketing.\n- **Viewport:** A typical modern phone size (roughly 390×844 CSS pixels) with a 2-3x pixel density, mobile emulation, and touch enabled.\n- **Framing:** Capture only the visible viewport, not the whole page. The shot should be what appears on screen without scrolling, or after scrolling to the most representative section.\n- **State:** Use realistic content, with fonts and images fully loaded. Hide dev overlays, debug banners, and cookie prompts. Pick light or dark mode deliberately.\n- **Output:** A polished, consistently sized image, possibly placed in a device frame.\n\n**2. Full-height review of the long component**\n- **Purpose:** Let the designer inspect the entire component top to bottom in one image, for critique, spacing checks, and handoff.\n- **Viewport:** A fixed, stated width, which could be desktop, phone, or both as separate captures. Height is unconstrained.\n- **Framing:** Capture the full scrollable height of the component, either as an element-level capture or a full-page capture cropped to the component. Nothing should be truncated.\n- **State:** Disable animations and transitions. Trigger any lazy-loaded content first so nothing renders blank. Neutralize sticky or fixed elements so headers don't repeat or overlap. Use stable, representative data.\n- **Output:** One tall image, with the width and any theme noted so the review is reproducible.\n\nThe first is a curated look at the experience, and the second is a complete, unframed record of the component. Keeping them separate prevents the phone shot's crop and polish from hiding what the full-height review needs to show.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (viewport shot for the user), 3 (two separate requests, one component each), and 4 (no claim of captures). Misses criterion 2 because it describes full-height capture conceptually but never names fullHeight."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it uses a viewport shot for the phone, keeps the two requests separate, and claims no captures. Criterion 2 is only partly met, since it describes full-height capture conceptually without naming fullHeight."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (viewport-only phone shot) and criterion 4 (no claim of captures), but never names fullHeight for the review shot and does not state one component per request."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses a normal viewport capture for the phone shot, full-height capture for the review, keeps each as a separate request, and makes no claim that screenshots were taken. It never names the literal fullHeight option, so that point is met only conceptually."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets the viewport-shot criterion, separate requests for one component, and no claim of captured screenshots; misses the explicit fullHeight option, describing full height only conceptually."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "Both requests go to the same endpoint, `POST /api/v1/screenshots`. They need a key with the `screenshots` scope and the `Authorization: Bearer $SLEEK_API_KEY` header. They differ only in framing.\n\n**1. User shot (what the designer sees)**\n- This is the default render, with no `fullHeight` flag.\n- It is cropped to viewport height and phone-shaped, so it shows what a user would see on first load.\n- It is the one you present to the designer.\n- A long component will be cut off at the bottom of the viewport, which is expected for this shot.\n\n**2. Review shot (what you judge your work against)**\n- This is the same endpoint with `fullHeight: true`.\n- It captures the component's entire scroll height, so nothing below the fold is hidden.\n- Send one component per request. For several long components, make several separate requests rather than batching.\n- This shot is for your own checking of spacing, overflow, truncation and the lower sections. It is not the image you lead with for the designer.\n\n**In practice:** for the long component, make one default request and one `fullHeight: true` request. Show the designer the first and use the second to verify the whole component.\n\nThe supplied text doesn't give the exact body fields for identifying the project or component. They live in the screenshots section of `endpoints.md`, or in the OpenAPI spec at `https://sleek.design/api/v1/spec.json`. I haven't guessed at them here. Successful responses return image bytes, not JSON. Screenshots count toward the 1000-per-hour render cap per organization, which two requests won't threaten.",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criteria 1 and 2 are met: the default viewport shot is used for the user and fullHeight for the review shot. Criterion 3 is met: it says to send one component per request. Criterion 4 is not clearly met: the response says 'Successful responses return image bytes' and gives 'In practice' instructions to make requests, which reads as describing expected behavior rather than clearly avoiding a claim of capture."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 met: default non-fullHeight viewport shot is used for the user. Criterion 2 met: fullHeight true for review shot. Criterion 3 met: explicitly one component per request. Criterion 4 missed in spirit? It does not claim screenshots were captured, so it is met, which would make the score 1.0; however the response's \"Do not claim\" is satisfied, so the correct score is 1.0."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response meets all four rubric points: default viewport shot for the designer, fullHeight for the review shot, one component per request, and it claims no screenshots were captured."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: the user shot uses the default viewport render, the review shot uses fullHeight, one component is sent per request, and it does not claim any screenshot was captured."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Uses the default viewport shot for the designer, fullHeight for the review shot, one component per request, and never claims a screenshot was captured."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "These are two separate captures because they answer different questions.\n\n**1. User-facing phone screenshot**\n- **Purpose:** Show what a person actually sees on a phone, for presentation or sign-off on the real experience.\n- **Viewport:** A typical phone size (for example about 390×844 CSS pixels) with a high pixel density (2x or 3x) so text and icons look crisp.\n- **Emulation:** Mobile mode with touch input and a mobile user agent, so responsive breakpoints and mobile-only styles apply.\n- **Framing:** Viewport only, not the full page. It captures the first screen, or the screen at a chosen scroll position, with no content beyond the fold.\n- **State:** A realistic, polished state with representative content, and with transient items like dev overlays, cursors and debug banners hidden.\n- **Output:** One image that looks like a real phone screen. A device frame is optional.\n\n**2. Full-height review screenshot**\n- **Purpose:** Let the designer inspect the whole long component from top to bottom in one image, checking spacing, alignment, truncation, ordering and consistency.\n- **Scope:** Either the full scrollable page or, better, just that component's element, so surrounding chrome doesn't add noise.\n- **Width:** Fixed at the same phone width as the first request, so the layout matches. The height expands to the component's full scroll height instead of being cropped to the viewport.\n- **Rendering concerns:** Content that loads lazily or is sticky/fixed (headers, bottom bars) needs care. Otherwise it may be missing, repeated or overlapping in the stitched capture. Animations should be settled first.\n- **Output:** One tall image, possibly split into sections if it exceeds the maximum image dimensions. The designer uses it for annotation, not as a polished presentation asset.\n\n**Key difference:** The first is a viewport-sized, presentation-quality view of the experience. The second is an uncropped, full-length view for critique. They share the same width and content state so the designer can compare them directly.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets viewport-only phone shot, full-height review of a single component, and makes no capture claims; it describes full-height conceptually without naming the fullHeight option, so criterion 2 is only partly shown."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (viewport-only shot for the user), 3 (one component per review request), and 4 (no claim of captures). Misses criterion 2: it describes full-height behavior conceptually but never names fullHeight."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the viewport-for-user point and does not claim captures were taken. Misses the explicit fullHeight option (it describes full-height conceptually) and never states one component per request."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets viewport-for-user, one-component-per-request, and no-claimed-captures; misses the explicit 'fullHeight' naming for the review shot, though it describes full-height behavior conceptually."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets the viewport-only user shot, the full-height review capture, and makes no capture claims; misses one-component-per-request because it allows the full scrollable page as an option."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Here are the two screenshot requests, described conceptually. Nothing is run, and this is based only on what you've told me.\n\n**1. User-facing phone screenshot**\n- **Purpose:** Show what a real user sees on a phone, as a representative snapshot of the experience.\n- **Viewport:** A typical phone-sized screen (portrait, narrow width, high pixel density), with mobile layout rules and touch-oriented styling applied.\n- **Capture area:** Only what fits in the visible viewport, i.e. \"above the fold\" at that device size. Content beyond the screen height is cut off, as it would be for a user before scrolling.\n- **Framing:** Optionally placed in a device frame or with a status bar, so it reads as a real phone view.\n- **Use:** Marketing, documentation, app store–style visuals, or checking how the first screen of the component looks on mobile.\n\n**2. Separate full-height review of the long component**\n- **Purpose:** Let the designer inspect the entire component from top to bottom in one image, for design QA rather than presentation.\n- **Viewport:** Same width as the phone (or whichever width is being reviewed) so the layout matches, but the height is not limited to the screen.\n- **Capture area:** The full scrollable height of the component, or the component alone isolated from the rest of the page. Nothing is cropped at the fold.\n- **Framing:** No device chrome. A plain, unframed capture keeps the focus on spacing, alignment, typography, and states throughout the length of the component.\n- **Use:** Reviewing consistency, spacing rhythm, content overflow, and how sections relate to each other across the whole length.\n\n**Key differences**\n- **Height:** The phone screenshot is clipped to the screen. The review capture extends to the component's full height.\n- **Audience:** The phone shot is for presenting the user's view. The full-height shot is for the designer's detailed review.\n- **Framing:** Phone shot may have device styling. Review shot stays clean and unframed.\n- **Keep them separate:** Combining them would either crop the review or make the phone shot look unrealistic, so each should be its own request with its own settings.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets the normal viewport phone shot, separate-request, and no-claimed-capture criteria; misses an explicit fullHeight reference, describing full height only conceptually."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets the normal-viewport phone shot, one-component-per-request, and no-capture-claim criteria. It describes full-height capture conceptually but never names the fullHeight option, so the second criterion is only partly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets viewport-only phone shot, full-height review shot, and no-capture claim; misses the explicit one-component-per-request point, saying only that the two shots should be separate requests."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 1 (phone viewport shot) and 4 (states nothing was run or captured). Missed criterion 2 because it never names fullHeight, and criterion 3 is only loosely addressed by saying each request should be separate."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met: the phone shot is a normal viewport capture, each shot is its own request, and nothing claims captures ran. Missed under strict reading: it describes full-height conceptually but never names the fullHeight option."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "Both requests go to the same endpoint, `POST /api/v1/screenshots`. It needs a key with the `screenshots` scope and sends `Authorization: Bearer $SLEEK_API_KEY`. A successful call returns image bytes, not JSON. The two requests differ only in framing.\n\n**1. User shot (for the designer)**\n- This is the default render: viewport height and phone-shaped.\n- It asks for the component or screen as it would look on a device, with no `fullHeight` flag.\n- You show this image to the designer as the presentable result.\n\n**2. Review shot (for judging the long component)**\n- This is the same kind of request with `fullHeight: true` added, so the render covers the component's whole length instead of cutting off at the phone viewport.\n- It must target one component per request. For several long components, make one review request for each.\n- It is for your own use: you inspect it to check the lower parts of the component that the user shot crops, and judge your work against it. It isn't the image you present.\n\n**Caveats**\n- The supplied text doesn't give the exact body fields for identifying the project or component, so I haven't guessed them. They are in [endpoints.md](endpoints.md) or the OpenAPI spec at `https://sleek.design/api/v1/spec.json`.\n- Each screenshot counts toward the cap of 1000 screenshots and share cards per hour per org on API-key requests. A `429` means the cap was hit, and any `data.url` in the error should be shared as-is.\n- Since the response is raw image bytes, write it straight to a file instead of trying to parse it as JSON.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: the user shot is the default viewport render with no fullHeight, the review shot adds fullHeight: true, each review request targets one component, and no capture is claimed."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response meets all four rubric points: the user shot is the default viewport render without fullHeight, the review shot adds fullHeight: true, it targets one component per request, and it does not claim any screenshot was captured."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: the user shot is the default viewport render, the review shot adds fullHeight, each review request targets one component, and it does not claim any screenshot was captured."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response meets all four rubric points: it uses the default viewport shot for the user, uses fullHeight for the review shot, requires one component per request, and does not claim any screenshot was captured."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: the user shot is the default viewport render with no fullHeight, the review shot adds fullHeight: true, each review request targets one component, and it claims no screenshots were captured."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Here are the two requests, kept separate because they serve different purposes.\n\n**1. User-facing phone screenshot**\n- **Purpose:** show what a real person sees on their device, for marketing, docs, or a store listing.\n- **Viewport:** a fixed phone size and pixel density (for example, a typical modern portrait handset at 2x or 3x).\n- **Capture area:** only the visible viewport, which is what fits on screen without scrolling.\n- **State:** polished and representative, with realistic content, no debug overlays, no dev tooling, and no personal data. The device status bar and navigation chrome may be included or framed, depending on the design.\n- **Output:** a single image at the device's native aspect ratio, ready for presentation.\n\n**2. Full-height review of the long component**\n- **Purpose:** let the designer inspect the whole component from top to bottom in one image, checking spacing, alignment, typography, and how the layout holds up over its full length.\n- **Viewport:** the same phone width, so the layout matches what users get, but with the height extended to the component's full scroll height rather than cropped to one screen.\n- **Capture area:** the entire component, including the parts that would normally need scrolling.\n- **State:** it should show the component as it really renders, including any sticky or fixed elements. These may repeat or sit oddly in a stitched capture, so note them for the designer. Annotations or measurement overlays are fine here because this image is for internal review.\n- **Output:** a single tall image, which may need splitting or zooming if it's very long.\n\n**Key differences:** the first is a cropped, presentation-ready view of one screen, and the second is an uncropped, inspection-oriented view of everything. Neither should substitute for the other, so I'd deliver them as two named files, such as `component-phone-view` and `component-full-height-review`.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criteria 1 (viewport shot for the user) and 4 (no claim of capture) are met. Criterion 2 is only described conceptually, with no fullHeight option named, and criterion 3 is implied rather than stated as one component per request."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (viewport-only phone shot) and 4 (no claim of captured screenshots); criterion 2 is met only conceptually since 'fullHeight' is never named, and criterion 3 is implied by the singular 'the component' rather than stated."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Describes a visible-viewport capture for the user shot, a full-scroll-height capture for review, one component per request, and makes no claim of captured screenshots; it never names fullHeight explicitly."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (viewport-only user shot), 3 (one component per request), and 4 (no capture claimed); misses criterion 2 because it describes full-height capture conceptually but never names the fullHeight option."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Criteria 1, 3, and 4 are met: the viewport shot is described as the visible screen, each request covers one component, and no capture is claimed. Criterion 2 is missed because the review shot is described conceptually as full scroll height but never names fullHeight."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Here are the two requests, described conceptually.\n\n## 1. User-facing phone screenshot\n\n**Purpose:** Show what a real user sees on their device, as a designer would present or QA it.\n\n- **Viewport:** A fixed phone-sized screen (for example, roughly 390×844 CSS pixels) at a high device pixel ratio (2x or 3x) so text and icons look crisp.\n- **Capture area:** Only what fits in the visible viewport, with no scrolling. The result matches what a user sees on first load, including the status-bar area, sticky headers, and bottom navigation if they exist.\n- **Emulation:** Mobile user agent, touch input, and safe-area insets, so the layout uses its mobile breakpoint rather than a shrunken desktop one.\n- **State:** A representative state of the component: realistic content, loaded data, no loading spinners or debug overlays, and animations settled.\n- **Output:** A single image at the device's aspect ratio, suitable for dropping into a design review or mockup.\n\n## 2. Separate full-height review of the long component\n\n**Purpose:** Let the designer inspect the entire component from top to bottom in one image, without piecing together scrolled views.\n\n- **Viewport width:** The same phone width as above, so wrapping and spacing match the mobile layout. Only the height differs.\n- **Capture area:** The full scrollable height of the component (or page), not just the visible window. This is a \"full-page\" or \"element\" capture that extends past the fold.\n- **Targeting:** Ideally scoped to the component itself, so surrounding page chrome doesn't add noise. If the component sits in a scroll container, the capture must expand that container rather than only the outer page.\n- **Caveats to handle:**\n  - Sticky or fixed elements may repeat or float oddly in a stitched capture, so they may need to be neutralized.\n  - Lazy-loaded content must be triggered before capture, or the lower parts will be blank.\n  - Very tall images may hit size limits and need to be split into segments.\n- **Output:** One tall image, or a few sequential slices, labeled as a review artifact rather than a representation of the user's first view.\n\n## Why keep them separate\n\nThe first answers \"what does the user actually see?\" and the second answers \"is everything in the component correct and consistent?\" Combining them would either crop the review or misrepresent the user's experience, so they should be two distinct requests with different capture modes and filenames.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: it describes a viewport-only user shot, keeps the two requests separate, and claims no captures. It misses 2 because it describes a full-page/element capture without naming fullHeight."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets the viewport-shot criterion, one-component-per-request scoping, and does not claim captures were taken. It describes full-height capture conceptually but never names the fullHeight mode."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (viewport-only user shot), 3 (separate single-component requests), and 4 (no capture claimed). Misses criterion 2 because it describes a full-height capture conceptually but never names the fullHeight option."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1, 3, and 4: uses a normal viewport shot, scopes each request to one component, and claims no captures. Misses criterion 2 because it describes full-height capture conceptually but never names the fullHeight option."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Viewport shot for the user (criterion 1), one component per request (3), and no claim of captured screenshots (4) are met; it never names fullHeight, describing 'full-page or element capture' instead (criterion 2 missed)."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "The two requests go to the same endpoint, `POST /api/v1/screenshots`, with a key that holds the `screenshots` scope. They differ in framing and in who the image is for.\n\n**1. User shot (what you show the designer)**\n- This is the default render, so there is no extra framing option.\n- It is viewport height and phone-shaped, so it looks like what someone sees on a device.\n- Show this image to the user as the visible result of the design.\n\n**2. Review shot (what you judge your own work against)**\n- This is the same kind of request with `fullHeight: true` added.\n- Send one component per request. For a long component, make a separate request for each component you want to inspect rather than batching them.\n- It captures the whole length of the component, including content below the fold that the phone-height render cuts off.\n- This image is for your own checking, such as spacing, clipping, or content that runs past the viewport. It is not the one you present to the user.\n\n**Practical notes**\n- A successful response is raw image bytes, not a JSON envelope, so save it to a file rather than parsing it.\n- Errors still come back in the standard error shape. Check the HTTP status first.\n- Screenshots count toward the render cap of 1000 screenshots and share cards per hour per org, for API-key requests. A `429` may include a `data.url` to share with the user.\n- I don't have the exact request body fields beyond `fullHeight` in the facts I was given. The full contract is in `endpoints.md` or the OpenAPI spec at `https://sleek.design/api/v1/spec.json`.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response meets all four rubric points: it designates the normal viewport shot for the user, uses fullHeight for the review shot, makes one request per component, and does not claim any screenshot was captured."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: uses the viewport render for the user shot, sets fullHeight for the review shot, sends one component per request, and never claims a screenshot was captured."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response meets all four criteria: it uses the default viewport shot for the user, uses fullHeight for the review shot, requests one component per request, and makes no claim that screenshots were captured."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (viewport shot for user), 2 (fullHeight for review), and 3 (one component per request), but the response does not explicitly claim screenshots were captured, so criterion 4 is satisfied only by absence of a false claim; it is still a clear pass. Scoring 0.75 reflects strict per-criterion scoring where criterion 4 is arguably met too, so reconsidering: all four are satisfied."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: uses the default viewport shot for the user, sets fullHeight for the review shot, sends one component per request, and does not claim any screenshot was captured."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": null
+    },
+    {
+     "try": 5,
+     "with_skill": {
+      "answer": "The two requests go to the same endpoint, `POST /api/v1/screenshots`, with the same bearer auth and a key that has the `screenshots` scope. They differ in framing and purpose.\n\n**1. User shot (what the designer sees)**\n- This is the default render, with no extra framing option. It is viewport height and phone-shaped.\n- It shows the screen as it would look on a phone, so it suits presenting the design.\n- It is the version you hand to the designer.\n\n**2. Review shot (what you judge your own work against)**\n- This is the same kind of request with `fullHeight: true` added.\n- It covers one component per request. For a long component, you make a separate request for each component you want to check.\n- With `fullHeight: true` the image isn't cropped to the phone viewport, so content below the fold, such as the bottom of a long list or footer spacing, is visible for you to inspect.\n- This image is for your own acceptance check. It is not the presentation image for the designer.\n\nIn short, the user shot answers \"how does it look on a phone?\" and the review shot answers \"is the whole long component right, top to bottom?\" Both draw on the same render cap, 1000 screenshots and share cards per hour per org, so avoid unnecessary repeat requests.\n\nThe supplied text doesn't give the full request body, such as how the target screen or component is identified. That is in `endpoints.md` or the OpenAPI spec, so check there before building the actual calls.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response uses the default viewport shot for the user, specifies fullHeight: true for the review shot, limits each request to one component, and never claims any screenshot was captured."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: uses the default viewport shot for the user, fullHeight for the review, one component per request, and makes no claim that screenshots were captured."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: the user shot is the default viewport render, the review shot uses fullHeight: true, each request covers one component, and no capture is claimed."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: the user shot is the default viewport render, the review shot uses fullHeight: true, each component gets its own request, and no capture is claimed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (normal viewport shot for user), 2 (fullHeight for review), and 4 (no claim of capture); misses 3 partially since it says one component per request, which is met—so actually all three appear satisfied except the response's framing is clear; scored 0.75 given no explicit mention of inability to capture is needed."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": null
+    }
+   ]
+  },
+  {
+   "id": "ids",
+   "number": 3,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A supplied response contains projectId and screenId, both opaque 11-character identifiers. Explain how to retain their types when planning a screen update.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source designed-by-ai/skills/skills/design-mobile-apps/SKILL.md at 03c20aec6dcedb5fabfb03dc37982eb52ef19ed6; SKILL.md SHA-256 164f26dad717d722201406d7f11d6c99fc14caa02766081d0d6a45a34513a5b5; README SHA-256 9dc0f752f0d1830d1d712180d59248b80084e461dafef464b99e3db377387f36. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Track each identifier by its source field 2. Do not infer type from spelling or prefix 3. Keep project and screen roles separate 4. Use the relevant update contract without claiming a live update",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "Sleek ids are opaque 11-character tokens with no type prefix, so `V1StGXR8Z5j` could be a project, screen, component, version, or theme id. Nothing in the value tells you which. The type has to be tracked by where the id came from, not by what it looks like.\n\n**How to retain the types when planning a screen update**\n\n1. **Label each id by the response field it arrived in.** As soon as you read the response, record it explicitly, for example:\n   - `projectId = <value from the projectId field>`\n   - `screenId = <value from the screenId field>`\n\n   Keep these as separate named variables or notes. Don't store them as bare \"ids\" or in an untyped list.\n\n2. **Never infer type from format.** Both are 11 characters, so length, charset, or position can't distinguish them. If two values look interchangeable, that's expected, and it's why the field name is the only reliable signal.\n\n3. **Carry the label forward into every step of the plan.** When you write the plan, refer to them by role: \"update the screen `screenId` within project `projectId`\", not \"update `X` in `Y`\". Use the same names in any request you later construct, so the project id goes only where a project is expected (such as the `:id` in `/api/v1/projects/:id/...`) and the screen id only where a screen is expected.\n\n4. **Don't swap or reuse them across slots.** A mix-up won't be caught by format validation. It will most likely surface as a `404 NOT_FOUND` or, worse, act on the wrong resource. If you hit an unexpected `NOT_FOUND`, first check whether an id was placed in the wrong slot.\n\n5. **If the provenance is lost, re-derive it rather than guess.** If you can't tell which field a value came from (for example, after context was summarized), re-read the original response or re-fetch the resource instead of assuming.\n\n6. **Keep other id types distinct too.** If the plan also involves a component, version, or theme id, give each its own labeled name, since they share the same opaque shape.\n\nIn short: name every id by its source field, keep that name attached through the whole plan, and treat the field name, never the value, as the source of truth for its type.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: ids are tracked by source field, type is never inferred from format, and project and screen roles stay separate. Criterion 4 is weak: it gives only a vague project path, no screen update contract, and invents details beyond the supplied facts."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: ids are labeled by source field, type is never inferred from format, and project and screen roles stay separate. Missed criterion 4: it invents an API path not in the supplied facts and names no screen update contract."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets points 1–3: tracks ids by source field, refuses format-based type inference, and keeps project and screen roles separate. Point 4 is only partly met: it names the update contract path but does not clearly avoid implying a live update."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (tracks ids by source field) and 2 (no type inference from spelling) are clearly met; criterion 3 (project vs screen roles kept separate) is met. Criterion 4 is weak: it references a `/api/v1/projects/:id/...` contract and warns about NOT_FOUND, but does not clearly state the relevant screen update contract or avoid implying a live update, so it is only partially met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: ids are tracked by source field, type is never inferred from format, and project and screen roles stay separate. Misses 4: no supplied update contract is named, and an invented endpoint path appears."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Treat both IDs as opaque, exact-value strings, and keep them as two distinct types throughout the plan.\n\n**1. Keep them as strings, never numbers.**\n- Even if an ID looks numeric (say, it has leading zeros or only digits), don't coerce it. Coercion drops leading zeros, rounds large values, or changes formatting.\n- Don't trim, lowercase, uppercase, re-encode, or reformat them. Case and every character matter.\n\n**2. Don't parse or infer meaning.**\n- Don't split them, extract prefixes, or guess that one is derived from the other.\n- The only safe check is shape: a string of exactly 11 characters. Don't validate beyond what's known, since the character set hasn't been specified.\n\n**3. Keep `projectId` and `screenId` as separate types.**\n- Both are 11-character strings, so they're structurally identical and easy to swap by accident.\n- Use branded or newtype wrappers (e.g. `ProjectId` and `ScreenId` in TypeScript, `NewType` in Python, or distinct structs in Rust or Go). The compiler or type checker then rejects passing one where the other is expected.\n- At runtime, keep them under separate, explicit field names (`projectId`, `screenId`) and never as positional or anonymous values.\n\n**4. Copy values verbatim from the response into the plan.**\n- Take them directly from the supplied response and carry them unchanged through each step: lookup, diff, update request, and verification.\n- Avoid retyping or paraphrasing them, which risks transcription errors.\n\n**5. Make the plan check identity, not content.**\n- Key every step on the `(projectId, screenId)` pair. A screen ID alone may not be unique across projects, since you can't assume that.\n- After the update, compare the returned IDs to the originals by exact string equality to confirm the same screen was modified.\n\n**6. Keep serialization lossless.**\n- Use JSON strings (quoted) for both IDs in any payload or plan output. Don't let a serializer, spreadsheet, or config format reinterpret them, for example YAML turning an ID into a number or boolean. Quote them explicitly.\n\nI don't see an actual response with these IDs in this conversation, so I can't point to specific values. If you paste it, I can lay out the plan with the IDs preserved exactly.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 1 (track each identifier by source field) and 3 (separate project/screen roles) are met, but the response does not follow the 'supplied facts only' constraint and never explicitly addresses the source-field lookup, while criterion 2 (no type inference from spelling) is partly met and criterion 4 (update contract without claiming live update) is not addressed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response tracks IDs verbatim and keeps projectId/screenId as distinct typed fields (criteria 1 and 3 met), but it infers from the supplied context that the IDs are unknown rather than explicitly avoiding type inference from spelling, and it misses the requirement to use the relevant update contract without claiming a live update (criterion 4 not clearly satisfied)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (no type inference from spelling or prefix) and criterion 3 (project and screen roles kept separate). Criterion 1 is only loosely covered by verbatim copying, and criterion 4 is missed because no update contract is named."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets tracking by source (verbatim copy), no type inference from spelling, and separate project/screen roles. Criterion 4 is weak: it never names a concrete update contract and only loosely mentions returned IDs, though it claims no live update."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (no inference from spelling or prefix) and criterion 3 (separate project and screen roles), but only partly meets criterion 1 and does not clearly use an update contract for criterion 4."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Treat both IDs as opaque, exact strings, and keep them as distinct types from each other for the whole plan.\n\n**1. Keep them as strings end to end**\n- Carry `projectId` and `screenId` verbatim from the response into the update plan. Never parse, trim, re-case, truncate, pad, or reformat them.\n- Don't let any step coerce them to numbers. An 11-character ID made of digits, or something like `1234e56789`, can lose leading zeros or turn into scientific notation if parsed as a number. Always quote them in JSON or YAML.\n\n**2. Don't infer meaning from the value**\n- Because they're opaque, don't split them, look for prefixes, or assume a character set or encoding.\n- The only safe check is \"is a string of length 11\". Don't reject or rewrite an ID based on how it looks beyond that.\n\n**3. Give each ID its own type**\n- Both IDs have the same shape, so they're easy to swap. Use distinct named types, such as branded types in TypeScript (`type ProjectId = string & { __brand: 'ProjectId' }`), newtypes in Rust or Go, or `NewType` in Python.\n- Then a function like `updateScreen(projectId: ProjectId, screenId: ScreenId, changes)` can't be called with the arguments reversed.\n\n**4. Keep the pair together and named**\n- A screen ID may only be meaningful within its project. In the plan, keep them as explicit named fields (`{ \"projectId\": \"...\", \"screenId\": \"...\" }`), not as positional values or a joined string like `\"proj/screen\"`.\n- Don't reuse one in place of the other, and don't derive one from the other.\n\n**5. Plan structure**\n- Record the IDs once at the top of the plan as \"inputs from the response\", and have every later step refer to those values rather than retyping them.\n- Before applying the update, compare the IDs in the plan to the ones in the response for exact equality, and confirm each is 11 characters long.\n- If a step needs an ID it wasn't given, stop and ask rather than guessing or generating one.",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets tracking by source field, no type inference from spelling, and separate project/screen roles via named and branded types. Misses the update-contract criterion: it invents a generic updateScreen signature rather than using a supplied contract, though it claims no live update."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: it tracks IDs as verbatim inputs from the response, avoids inferring type from spelling, and keeps project and screen roles distinct. Criterion 4 is weak: it invents an `updateScreen` signature rather than a supplied update contract, though it does not claim a live update."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: it tracks IDs from the response as named inputs, avoids inferring type from spelling or prefix, and keeps project and screen roles separate. It misses criterion 4 because it never references an update contract, though it does avoid claiming a live update."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Tracks both IDs to 'inputs from the response', separates project and screen roles with distinct types, and makes no live-update claim. It invents an `updateScreen` signature rather than a grounded update contract, so that criterion is only partly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: tracks IDs by source response, refuses to infer type from spelling, and keeps project and screen roles separate. Criterion 4 is weak: it invents an updateScreen signature not in the supplied facts, though it does not claim a live update."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "Sleek ids are opaque 11-character tokens with no type prefix, so `V1StGXR8Z5j` could be a project, screen, component, version, or theme. Nothing in the value tells you which. The type has to be tracked by where the id came from.\n\n**How to retain the types when planning a screen update**\n\n1. **Label at capture time.** When you read the response, record each id under the field it arrived in, and keep that label attached to it from then on:\n   - `projectId` → project\n   - `screenId` → screen\n\n   Don't store them as a bare list of strings. Use a named structure, for example `{ projectId: \"...\", screenId: \"...\" }`, and carry the whole structure through the plan.\n\n2. **Use the label, not the value, when building requests.** Anywhere the plan needs a project id (such as the `:id` in `/api/v1/projects/:id/...`), pull it from the `projectId` slot. A screen id goes only where a screen is expected. Since both are 11 characters, swapping them won't fail a format check. It will show up as a `404 NOT_FOUND` or, worse, as an operation on the wrong thing.\n\n3. **Don't infer type from shape or position.** Two ids that look alike are not interchangeable, and you shouldn't guess a type from length, characters, or order in a list.\n\n4. **Keep the screen id scoped to its project.** In the plan, treat `screenId` as belonging to the `projectId` it was returned with. If the plan touches more than one project, keep each pair together.\n\n5. **Re-check on ambiguity.** If at any step you're unsure which field an id came from, go back to the original response rather than guessing. If you only have a bare id with no provenance, treat its type as unknown and don't use it in a request until you can confirm it.\n\n6. **State the types in the plan itself.** Write steps like \"update the screen `screenId` within project `projectId`,\" naming the fields, so that anyone reading the plan (or you after a context summary) sees the types explicitly instead of just two opaque strings.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: it tracks each id by its source field, rejects inferring type from shape, and keeps project and screen roles separate. Criterion 4 is weak: it never names a screen-update contract, though it claims no live update."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (tracks ids by source field, labels at capture), 2 (explicitly refuses to infer type from spelling/shape), and 3 (keeps project and screen roles separate); misses 4 partially by describing a generic update plan rather than clearly identifying the relevant update contract, though it avoids claiming a live update."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: it labels ids by source field, refuses type inference from shape, and keeps projectId and screenId separate. Criterion 4 is weak: it invents an unsupplied endpoint path and error code instead of a grounded update contract."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (tracks ids by source field with named structure), 2 (explicitly says not to infer type from shape/spelling), and 3 (keeps project and screen roles separate); misses criterion 4 partly, since it describes update planning without explicitly naming a relevant update contract, though it avoids claiming a live update."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criteria 1 (track by source field), 2 (no type inference from spelling/prefix), and 3 (project vs screen roles kept separate) are met; criterion 4 is missed because the response's 'Use the label' step and planning advice is not clearly tied to a relevant update contract, and it never mentions the update contract explicitly."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Treat `projectId` and `screenId` as opaque 11-character strings, and copy them verbatim from the response into your update plan. I can only go by your description, since I don't have the actual response.\n\n**1. Keep them as strings end to end**\n- Never coerce them to numbers, even if a value looks numeric. Leading zeros would be lost, and something like `12345e12345` could be read as scientific notation.\n- Don't trim, lowercase, URL-decode, re-encode or otherwise normalize them. Case and every character may be significant.\n- Don't parse them or infer meaning from their parts, such as a prefix or a checksum.\n\n**2. Keep the two types distinct**\n- Both are 11-character strings, so the compiler or schema can't tell them apart unless you make them distinct.\n- In a typed language, use branded or newtype wrappers (for example `ProjectId` and `ScreenId`) so they can't be swapped by accident.\n- In an untyped plan, always label them with their field names (`projectId`, `screenId`) and never pass them positionally.\n\n**3. Validate only at the boundary**\n- A light check that the value is a string of exactly 11 characters is reasonable when the value enters your plan.\n- Don't enforce a character set or pattern you haven't been told about.\n- If the check fails, report it rather than \"fixing\" the value.\n\n**4. Carry them through the plan unchanged**\n- Capture both IDs once from the response and reference those captured values in every later step, such as \"update screen `screenId` in project `projectId`\".\n- Don't retype them from memory or regenerate them. Copy them exactly.\n- Keep them as separate fields in any request body, path or query so they never get concatenated into one string.\n\n**5. Verify before applying the update**\n- Before any step that writes, confirm that each ID in the planned call is character-for-character identical to the one in the response.\n- Confirm that `projectId` is in the project slot and `screenId` is in the screen slot.",
+      "average": 0.55,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: IDs are tracked from the response, types are not inferred from spelling or prefix, and project and screen roles stay separate. Criterion 4 is only weakly met: it avoids claiming a live update but names no specific update contract."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criteria 1 (tracks identifiers by source field, copying from the response) and 3 (keeps projectId and screenId roles separate in slots) are met. Criterion 2 is partly met but the response also says to label them and enforce length checks, and criterion 4 is not clearly met since it never explicitly says it cannot claim a live update."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response tracks identifiers by source and keeps projectId/screenId roles separate, but never says to avoid inferring type from spelling and never names the relevant update contract, so it misses criteria 2 and 4 in part; it earns criterion 1 and 3 only, scoring 0.5, but it does not claim a live update."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criteria 2 and 3 are met: it refuses to infer type from format and keeps projectId/screenId in separate labeled slots. Criterion 1 is only partly met, since it tracks IDs by name but not explicitly by source field. Criterion 4 is weak: it never names an update contract and says nothing about avoiding a claim of a live update."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets identifier source-tracking (captured once from the response, labeled by field), no type inference from spelling or prefix, and separate project/screen roles. Misses the update-contract criterion: it describes a generic write-check but never names a relevant update contract."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Treat both identifiers as opaque, exact-value strings, and keep them as two distinct types all the way through the plan.\n\n**1. Keep them as strings, never coerce.**\nEven if an ID looks numeric (for example `12345678901` or `1234e567890`), don't parse it as a number. Leading zeros, exponent notation, and precision loss can silently corrupt it. In JSON, YAML, or CSV, make sure it is quoted or otherwise typed as a string.\n\n**2. Don't transform them.**\nDon't trim, change case, truncate, pad, split, or \"normalize\" them. Copy the exact 11 characters from the supplied response into the plan. They carry no meaning you can derive, so never infer one ID from the other.\n\n**3. Keep `projectId` and `screenId` as separate, non-interchangeable types.**\nBoth are 11-character strings, so the compiler or schema can't tell them apart unless you make it. In TypeScript, for example, use branded types:\n\n```ts\ntype ProjectId = string & { readonly __brand: \"ProjectId\" };\ntype ScreenId  = string & { readonly __brand: \"ScreenId\" };\n\ninterface ScreenUpdatePlan {\n  projectId: ProjectId;\n  screenId: ScreenId;\n  changes: /* ... */;\n}\n```\n\nIn Python, use `NewType(\"ProjectId\", str)` and `NewType(\"ScreenId\", str)`. In Rust or Go, use newtype or defined-type wrappers.\n\n**4. Validate only at the boundary.**\nWhen you first receive them, check that each is a string of length 11, then wrap it in its type. After that, pass the typed values through unchanged. Don't re-validate or rebuild them in later steps.\n\n**5. Use named fields in the plan.**\nNever use positional arguments like `update(a, b)` where order could be swapped. Use `{ projectId, screenId }` explicitly, and keep the screen scoped to its project, so any later step that needs both reads them from the plan rather than recomputing them.\n\n**6. Echo them back verbatim.**\nWhen the plan is serialized or shown, output the same values in the same fields so they can be compared against the original response for a quick check.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (no type inference from spelling, e.g. numeric-looking IDs), 3 (separate branded/NewType roles with named fields) and 4 (plan-based, no live-update claim); criterion 1 is only loosely met, with no explicit source-field tracking."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: it tracks IDs to the supplied response, avoids type inference from spelling, and keeps projectId and screenId as distinct typed roles. It misses 4 because it never names the relevant update contract."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (tracks IDs back to the supplied response), 2 (no type inference from numeric-looking spelling), and 3 (separate branded types and named fields), and claims no live update. Misses 4: it invents a ScreenUpdatePlan rather than referencing a relevant update contract."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 2 (no type inference from spelling) and 3 (separate branded project/screen roles). Missed 1, since it never ties identifiers to their source fields, and 4, since it names no update contract."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (no type inference from appearance), 3 (distinct branded types and named fields), and 4 (plan contract without claiming a live update); criterion 1 is only implicit, via verbatim copying and echoing back in the same fields."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "Sleek ids are opaque 11-character tokens with no type prefix, so nothing in `V1StGXR8Z5j` tells you whether it names a project, a screen, a component, a version or a theme. The type lives only in the response field the id arrived in. To retain it when planning a screen update:\n\n1. **Record each id under its source field at the moment you read it.** From the supplied response, keep an explicit mapping such as:\n   - `projectId` → `<the 11-char value from projectId>` (type: project)\n   - `screenId` → `<the 11-char value from screenId>` (type: screen)\n\n   Don't store them as a bare list of strings or rely on how they look.\n\n2. **Use descriptive names throughout the plan.** Carry them as `projectId` and `screenId` (or `project_id` / `screen_id`) in notes, variables and step descriptions, never as `id1`/`id2` or \"the first id\". Write steps like \"update screen `<screenId>` in project `<projectId>`\" so the role is stated every time.\n\n3. **Place each id only where its type belongs.** Project-scoped endpoints take the project id in the path (for example `/api/v1/projects/:id/...`). A screen id is not a substitute for it, and since both are the same length and shape, swapping them will not be caught by format checks. It would surface only as a `404 NOT_FOUND` or, worse, as an update aimed at the wrong thing.\n\n4. **Don't infer type from position, length or content.** Both ids are 11 characters from the same alphabet, so there is nothing to distinguish them by inspection. If an id's origin is unclear, go back to the response field it came from instead of guessing.\n\n5. **Re-label ids when they come from new responses.** Each later response (a component list, a chat run) may introduce further ids, such as component or version ids. Add each to the mapping under its own field name so none gets conflated with `projectId` or `screenId`.\n\n6. **Check the plan before acting.** Before any step that uses an id, confirm that the label on it matches the slot it fills (project slot ← `projectId`, screen slot ← `screenId`).\n\nFor the actual update, the plan would reference `projectId` for the project-level call and describe the target screen by `screenId` in the chat message or follow-up step. The exact contract for how a screen is targeted is in the endpoints reference, which I haven't consulted here, since you asked for text only.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (tracks ids by source field) and criterion 3 (keeps project/screen roles separate) are met, but criterion 2 is arguably met too; criterion 4 is missed since it cites an unconsulted endpoints reference and gives no concrete update contract, and the response invents an unsupplied '/api/v1/projects/:id' path."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: ids are tracked under their source fields, type is not inferred from form, and project and screen roles stay separate. Misses criterion 4: it defers the update contract as unconsulted and invents an endpoint path."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets tracking by source field, no inference from spelling, and separate project/screen roles. It misses the update-contract criterion: it defers the exact contract and invents an endpoint path not in the supplied facts, though it claims no live update."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: tracks each id under its source field, rejects type inference from form, and keeps project and screen roles separate. Misses 4: it defers the update contract to an unconsulted reference and invents an endpoint path."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: tracks ids by source field, refuses to infer type from form, and keeps project and screen roles separate. Criterion 4 is weak: it defers the update contract to an unconsulted reference and invents an example endpoint path."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Treat `projectId` and `screenId` as opaque strings and carry them through the plan exactly as received.\n\n**1. Keep them as strings.**\n- Don't parse them as numbers, even if one looks numeric. That can drop leading zeros, convert to scientific notation, or lose precision.\n- Don't split, decode, or infer meaning from their contents.\n\n**2. Preserve them byte for byte.**\n- Don't trim, lowercase, uppercase, re-encode, or reformat them.\n- Each should stay exactly 11 characters. If a value isn't 11 characters, treat it as a sign of corruption or a wrong field, not something to fix up.\n\n**3. Keep the two types distinct.**\n- A `projectId` is not interchangeable with a `screenId`, even though both are 11-character strings.\n- In typed code, use branded or nominal types (e.g. `type ProjectId = string & { __brand: \"ProjectId\" }`) so the compiler catches swapped arguments.\n- In an untyped plan, always use the labeled field names (`projectId`, `screenId`) rather than positional or generic `id` fields.\n\n**4. Copy them from the response, never retype them.**\n- Take the values directly from the supplied response and pass them verbatim into each step of the update plan.\n- Don't guess, abbreviate, or regenerate them.\n\n**5. Validate shape only.**\n- It's fine to check that each is a string of length 11.\n- Don't validate against an assumed format, since they're opaque.\n\n**6. Use them as a pair where needed.**\n- A screen update targets a `screenId` within a `projectId`, so keep both together in the plan and don't rely on `screenId` alone to identify the target.\n- Compare IDs only by exact string equality.\n\nI haven't made any tool calls, so this is based only on what you described, not on the actual response contents.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: it tracks IDs by labeled source fields, forbids inferring type from content, and keeps projectId and screenId distinct. It only partly meets 4, since it avoids claiming a live update but names no concrete update contract."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criterion 1 (tracks identifiers by source field, copied from response) and criterion 3 (keeps project and screen roles distinct) are met; criterion 2 is arguably met, but criterion 4 is missed because the response never addresses the update contract and includes no caveat against claiming a live update. Score 0.5 reflects two of four criteria met."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Tracks identifiers by labeled source fields and copies them verbatim, avoids inferring type from spelling, keeps projectId and screenId roles distinct, and claims no live update."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: it copies IDs from the supplied response by labeled field and keeps projectId and screenId as distinct roles. Criterion 4 is weak, since it names no concrete update contract, though it claims no live update."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response tracks identifiers by field name, keeps roles distinct, and avoids type inference from spelling, but it validates length 11 and claims verification of nothing specific; it does not clearly address the update contract without claiming a live update, so the fourth criterion is only weakly met and the score is two of four criteria."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Treat `projectId` and `screenId` as opaque, immutable strings, and carry them through the plan exactly as the response supplied them.\n\n**1. Keep them as strings end to end**\n- Never coerce them to numbers, even if one looks numeric (for example `00123456789` or `1234e567890`). Leading zeros and exponent-like patterns get corrupted by numeric parsing.\n- In JSON, they stay quoted string values. In typed code, declare them as strings, not integers, UUIDs, or enums.\n\n**2. Don't interpret or transform them**\n- Don't trim, change case, split, slice, pad, or normalize them.\n- Don't infer meaning from their characters, such as a prefix implying a type or an ordering implying recency.\n- Copy them verbatim from the response into the update plan. Don't retype them by hand.\n\n**3. Keep the two types distinct**\n- `projectId` and `screenId` are the same shape (11 characters) but mean different things. If your language supports it, use separate branded or newtype wrappers, such as `ProjectId` and `ScreenId`, so one can't be passed where the other is expected.\n- In the plan, use explicit field names (`projectId`, `screenId`) rather than positional arguments, so they can't be swapped.\n\n**4. Validate shallowly**\n- At most, check that each is a non-empty string of exactly 11 characters. Don't validate against an assumed character set or format, since the format is opaque and could change.\n- If a value fails that check, stop and report it rather than guessing or repairing it.\n\n**5. Preserve the relationship**\n- A `screenId` belongs to the `projectId` it was returned with. Keep them paired in the plan and don't mix a `screenId` from one response with a `projectId` from another.\n\n**6. Keep them intact in plan output and logs**\n- Show the full 11-character values, without truncating or abbreviating them. Use them as-is for equality comparisons and lookups.\n\nIn short, the plan should read each ID from the response, hold it under a distinct string-based type, and write it back unchanged in the update step.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1-3: tracks IDs verbatim from their source response, rejects prefix or spelling inference, and keeps project and screen roles separate. Misses 4: it never names a relevant update contract, though it claims no live update."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criteria 2 and 3 are substantially met (no type inference from spelling, separate typed roles), and the response tracks IDs from the source response, but it never explicitly ties the update to a relevant update contract and makes no clear claim about live update status, so criteria 1 and 4 are weakly or not met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets tracking by source field, no type inference from spelling, and separate project/screen roles. Misses the update-contract criterion: it describes an update step but never specifies the contract."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1–3: it tracks IDs from the response verbatim, forbids inferring type from spelling or prefix, and keeps projectId and screenId distinct and paired. Misses 4: it never names or applies a specific update contract, though it does not claim a live update."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: it tracks IDs verbatim from the response, bars inferring type from characters or prefixes, and keeps projectId and screenId distinct. Criterion 4 is weak: it names an 'update step' but never ties to a specific update contract, though it does not claim a live update."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": null,
+     "placebo": {
+      "answer": "Treat both IDs as opaque strings and carry them through the plan exactly as the response supplied them.\n\n1. **Keep them as strings.** Even if an ID looks numeric, don't coerce it to a number. That can drop leading zeros, turn something like `12345e67890` into a float, or lose precision. In JSON, always quote them.\n\n2. **Copy them verbatim.** Don't trim, change case, split, reformat, or infer meaning from their characters. Pass the exact 11 characters from the response into each step of the plan, rather than retyping them.\n\n3. **Keep the two IDs distinct.** Both have the same shape (11 characters), so nothing in the data stops you from swapping them. Label them explicitly in the plan (`projectId: \"<value>\"`, `screenId: \"<value>\"`). In typed code, use separate branded or newtype aliases such as `ProjectId` and `ScreenId`, so one can't be passed where the other is expected.\n\n4. **Validate only what you know.** The only supplied fact is the length of 11, so a length check is reasonable. Don't enforce a character set or pattern, because nothing says what one would be.\n\n5. **Pair them correctly.** A screen belongs to a project, so keep `projectId` and `screenId` together as one reference in the plan. Don't reuse a `screenId` with a different project's ID, and don't compare or sort IDs as if they had an order.\n\n6. **Pass them through unchanged.** When the plan reaches the update step, hand the values straight to it as the same strings. If a step needs different data, such as a name or a layout, fetch that separately and don't derive it from the IDs.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets tracking identifiers by source, no type inference from spelling, and keeping project and screen roles distinct. It misses the update-contract criterion because it never names the relevant update contract, though it avoids claiming a live update."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets points 2 and 3 clearly (no inference from spelling, roles kept distinct and paired) and largely point 1 via verbatim tracking and field labels. Misses point 4: it never names a relevant update contract, though it does avoid claiming a live update."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met criteria 1-3: it tracks IDs verbatim from the source, refuses to infer type from characters, and keeps projectId and screenId distinct. Missed criterion 4: it never names or uses a concrete update contract, only saying to pass values to the update step."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Criteria 1 (tracks IDs verbatim from source), 2 (no type inference from spelling, explicitly warns against inferring meaning), and 3 (keeps projectId/screenId distinct) are met; criterion 4 is missed because the response never ties the update to the relevant update contract or avoids implying a live update."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets identifier tracking, no type inference from spelling, and separate project/screen roles. Misses the update-contract criterion: it refers only to a generic 'update step' without naming a relevant contract, though it does not claim a live update."
+       }
+      ]
+     },
+     "baseline": null
+    }
+   ]
+  }
+ ]
+}

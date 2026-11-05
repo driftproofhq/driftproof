@@ -1,0 +1,1282 @@
+{
+ "format": "driftproof-judge-notes/1",
+ "report": "018",
+ "report_url": "/reports/018/",
+ "attempt_id": "be23053e8d31b8d8e3341ededefdab4521da7e2f717b5e993dd17dd1afceb7a5",
+ "skill": "hyperframes-registry",
+ "repository": "heygen-com/hyperframes",
+ "receipt_hash": "d6a1349519982f7b868d0833c1d7d553796557f5d8e873ae40e11a31d2b2d95d",
+ "receipt_page": "/r/d6a1349519982f7b868d0833c1d7d553796557f5d8e873ae40e11a31d2b2d95d/",
+ "receipt_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-018/campaign-3/be23053e8d31b8d8e3341ededefdab4521da7e2f717b5e993dd17dd1afceb7a5.json",
+ "answers_file": "https://github.com/driftproofhq/driftproof/blob/main/receipts/report-018/campaign-3/be23053e8d31b8d8e3341ededefdab4521da7e2f717b5e993dd17dd1afceb7a5-answers.json",
+ "suite_file": "https://github.com/driftproofhq/driftproof/blob/main/specs/408-skill-measurements/suites/heygen-com--hyperframes--hyperframes-registry.json",
+ "model": "Claude Haiku 5.5",
+ "judge": "Claude Haiku 5.5",
+ "judge_samples": 5,
+ "date": "2 November 2026",
+ "arms": [
+  {
+   "key": "with_skill",
+   "label": "With the skill"
+  },
+  {
+   "key": "placebo",
+   "label": "With the fake text"
+  },
+  {
+   "key": "baseline",
+   "label": "With nothing"
+  }
+ ],
+ "caveats": [
+  "The judge uses the same model as the target. Self-grading may favor its own model's answers.",
+  "Where the fake scored below no skill, beating it does not mean beating no skill; each row shows both readings.",
+  "The scores and reasons are the judge model's own words, kept exactly as it wrote them. They are a model's reading of the rubric, not Driftproof's.",
+  "This is one task of three. Each skill was given three text tasks, and one task is not the whole measurement.",
+  "These text tasks test the router's written response, not the delegated skill. Report 015 Amendment 1. Left out of the headline count."
+ ],
+ "tasks": [
+  {
+   "id": "block",
+   "number": 1,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A data-chart block declares internal composition id data-chart, size 1920 by 1080, duration 15 seconds. It should begin at host time 2. Write the host element as text.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source heygen-com/hyperframes/skills/hyperframes-registry/SKILL.md at c4440dfb200def5e0c0afee938778f05b5985039; SKILL.md SHA-256 f1925b202cabd125b509658b11db593b55340b1926ecb056fc31aa4233a2b4f6; README SHA-256 3e8f26d5e35c6a8c32c661bf1439443d8eee332eedc9bf1a32bfe3dc417c218e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Use data-composition-src to the installed block 2. Match data-composition-id 3. Set start 2 and duration 15 4. Carry dimensions and a track index without treating track as visual z-order",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "```html\n<div\n  data-composition-id=\"data-chart\"\n  data-composition-src=\"compositions/data-chart.html\"\n  data-start=\"2\"\n  data-duration=\"15\"\n  data-track-index=\"1\"\n  data-width=\"1920\"\n  data-height=\"1080\"\n></div>\n```",
+      "average": 0.8,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Matches data-composition-id, sets data-start=2 and data-duration=15, and carries width, height, and track index without claiming z-order. Its data-composition-src path is invented rather than drawn from the supplied facts, so criterion 1 is not clearly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (data-composition-src points to compositions/data-chart.html), 2 (id data-chart), 3 (start 2, duration 15), and 4 (width/height 1920/1080 with track index 1); the response is a clean host element that satisfies the rubric, though the track-index-not-z-order caveat is not stated explicitly."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response sets data-composition-src to the block path, matches data-composition-id 'data-chart', sets data-start 2 and data-duration 15, and carries width, height and track index without claiming track is z-order."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Matches data-composition-id, sets data-start 2 and data-duration 15, and carries 1920x1080 dimensions with a track index not treated as z-order. The data-composition-src path is invented rather than tied to a supplied installed block, so criterion 1 is weakly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Matches data-composition-id 'data-chart', sets data-start 2 and data-duration 15, and carries width, height and track index without treating track as z-order. The data-composition-src path is invented rather than tied to a supplied installed block, so that criterion is only weakly met."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "```html\n<div id=\"data-chart\" data-width=\"1920\" data-height=\"1080\" data-start=\"2\" data-duration=\"15\"></div>\n```",
+      "average": 0.35,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response gives id, dimensions, start 2 and duration 15 but omits data-composition-src to the installed block and any track index, missing criteria 1 and 4 of the rubric."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only the start=2 and duration=15 criterion is met; the response omits data-composition-src, uses id instead of data-composition-id, and includes no track index despite the dimensions being carried."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response uses matching data-composition-id and start/duration/dimensions, but omits data-composition-src to an installed block (criterion 1 missed), and the track index criterion is also absent, so only criteria 2 and 3 are met."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response uses id data-chart, 1920x1080 dimensions and start 2 and duration 15, but does not use data-composition-src to reference an installed block, and track index is absent; only criterion 2 and 3 clearly met, so 0.5 would be expected, but the dimensions criterion arguably met; scoring conservatively at 0.25 is wrong."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Matches data-composition-id (data-chart) and sets data-start=2 and data-duration=15, but omits data-composition-src to the installed block and any track index, though dimensions are carried."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "```html\n<host id=\"data-chart\" width=\"1920\" height=\"1080\" duration=\"15\" start=\"2\"></host>\n```\n\nI read \"write the host element as text\" as a request for the markup itself, so this is a plain-text declaration with no tool calls. The attributes use only the supplied values: id `data-chart`, size 1920 by 1080, duration 15 seconds, and start at host time 2.",
+      "average": 0.3,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response matches id data-chart, dimensions, duration 15, and start 2 (criteria 2, 3 and dimensions part of 4), but omits data-composition-src to an installed block and gives no track index, so criteria 1 and most of 4 are missed."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response matches id data-chart, dimensions, duration 15 and start 2, satisfying criterion 2 and 3 partially; it omits any data-composition-src to an installed block (criterion 1) and uses no track index (criterion 4 missed)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only criterion 3 is met: start=\"2\" and duration=\"15\" are set. It omits data-composition-src, uses id instead of data-composition-id, and includes no track index, though dimensions are carried."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only the start 2 and duration 15 criterion is clearly met. It omits data-composition-src, uses plain id rather than data-composition-id, and includes no track index."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only criterion 3 is met: start=\"2\" and duration=\"15\" are set. It omits data-composition-src, uses id instead of data-composition-id, and carries dimensions but no track index."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "```html\n<div\n  data-composition-id=\"data-chart\"\n  data-composition-src=\"compositions/data-chart.html\"\n  data-start=\"2\"\n  data-duration=\"15\"\n  data-width=\"1920\"\n  data-height=\"1080\"\n></div>\n```\n\nThe `data-composition-src` path assumes the default install location for blocks. Adjust it if the block lives elsewhere.",
+      "average": 0.7,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Met composition id, start 2, duration 15, dimensions, and data-composition-src to the block; omitted any track index, so the fourth criterion is missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (data-composition-src points to installed block), 2 (id matches), and 3 (start 2, duration 15); dimensions are carried, but no track index is included, so criterion 4 is only partially met and it is scored as missed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (data-composition-src to installed block), 2 (matching id), 3 (start 2, duration 15), and 4 (dimensions carried); track index is absent, so criterion 4 is only partly satisfied and the score is 0.75."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Matches data-composition-id, start 2, duration 15, and dimensions, but omits the track index and uses an invented src path, so criteria 1 and 4 are not cleanly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Matches data-composition-id 'data-chart', sets data-start=2 and data-duration=15, and carries width/height; it omits any track index, and the src path is assumed rather than supplied."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "```html\n<div id=\"data-chart\" data-chart width=\"1920\" height=\"1080\" data-duration=\"15\" data-start=\"2\"></div>\n```\n\nThe host element declares the `data-chart` composition at 1920×1080, lasting 15 seconds, starting at host time 2. The surrounding paragraphs in your message are not chart data, so I left them out.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response matches data-composition-id (data-chart) and sets start 2 and duration 15, but omits data-composition-src to the installed block and carries no track index, though it does give dimensions."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "The response matches data-composition-id 'data-chart' and sets start 2 and duration 15 with 1920x1080 dimensions, but omits data-composition-src to the installed block and includes no track index."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Matches data-composition-id and sets start 2 and duration 15 with 1920x1080 dimensions, but omits data-composition-src to the installed block and carries no track index."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response matches data-composition-id (data-chart) and sets data-start=2 and data-duration=15, but omits data-composition-src and any track index while carrying the 1920x1080 dimensions."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Matches the composition id (data-chart) and sets start 2 and duration 15 with 1920x1080 dimensions, but omits data-composition-src and any track index."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "```html\n<div data-composition-id=\"data-chart\" data-width=\"1920\" data-height=\"1080\" data-duration=\"15\" data-start=\"2\"></div>\n```",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Matches data-composition-id, start 2 and duration 15, and carries dimensions, but omits data-composition-src to the installed block and any track index."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response matches the id, dimensions, duration 15 and start 2, earning 0.75 for criteria 2–4 partially; it omits any data-composition-src pointing to an installed block, so criterion 1 is missed. Track index also absent, so criterion 4 is only partly met."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "The response matches data-composition-id, sets start 2 and duration 15, and carries dimensions (criteria 2 and 3), but omits data-composition-src (criterion 1) and any track index (criterion 4)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Matches data-composition-id, start 2, and duration 15, and carries dimensions; it omits data-composition-src to the installed block and any track index."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Matches data-composition-id, start 2 and duration 15, and carries dimensions; it omits the data-composition-src reference to the installed block and any track index."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "```html\n<div\n  data-composition-id=\"data-chart\"\n  data-composition-src=\"compositions/data-chart.html\"\n  data-start=\"2\"\n  data-duration=\"15\"\n  data-track-index=\"1\"\n  data-width=\"1920\"\n  data-height=\"1080\"\n></div>\n```",
+      "average": 0.75,
+      "notes": [
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (data-composition-src to installed block), 2 (id matches), 3 (start 2, duration 15), and 4 (width/height and track index present); the response satisfies all four points, though track-index z-order semantics are not explicitly addressed."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 2 (id data-chart), 3 (start 2, duration 15), and 4 (1920x1080 dimensions and a track index with no z-order claim). Criterion 1 is weakened because the composition src path is invented rather than tied to the installed block."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Matches data-composition-id, sets start 2 and duration 15, and carries width, height, and track index without treating track as z-order. The data-composition-src path is invented rather than drawn from the supplied facts, so the installed-block criterion is only weakly met."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Matches data-composition-id, start 2, duration 15, and dimensions, and carries a track index without claiming z-order. The data-composition-src path is invented rather than tied to a supplied installed-block reference."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Uses data-composition-src, matches the id, sets start 2 and duration 15, and carries width, height, and track index without claiming z-order. The src path is invented rather than drawn from the supplied facts."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "Composition `data-chart`: 1920 × 1080 pixels, 15 seconds long, beginning at host time 2.",
+      "average": 0.3,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 2 (data-chart id) and criterion 3 (start 2, duration 15), but omits data-composition-src, the track index, and the host element the task asked for, so criteria 1 and 4 are missed."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response states id, dimensions, duration, and start 2 (criteria 2 and 3 met), but omits data-composition-src to an installed block and any track index, so only about half the rubric is satisfied."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response states dimensions, duration, and start time correctly, but never references data-composition-src to an installed block, never writes the host element as text, and omits any track index, so only the id/timing parts are met."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response gives id, size, duration, and start 2 correctly, but never uses data-composition-src to reference an installed block, so criterion 1 is missed; track index also absent, so criterion 4 is missed. Score 0.5 out of 1 criteria-weighted, but only 2 of 4 criteria met."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response gives correct id, size, duration, and start 2, but omits data-composition-src to the installed block, the host element text, and track index, so only one of four criteria is met."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Here is the host element as text:\n\n```\nhost element: data-chart\n  composition id: data-chart\n  size: 1920 x 1080\n  duration: 15 seconds\n  start: host time 2\n```",
+      "average": 0.25,
+      "notes": [
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response gives host element facts (id, size, duration, start) but omits data-composition-src to an installed block and any track index, so criteria 1 and 4 are missed; criteria 2 and 3 are met."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "The response matches data-composition-id, sets start 2 and duration 15, and carries dimensions, but omits data-composition-src for the installed block and gives no track index."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "The response sets id, size, duration, and start correctly, but omits data-composition-src to an installed block, and does not address dimensions-as-track-index or z-order, so only criteria 2 and 3 are met."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response matches data-composition-id, size, duration, and start time, but lacks a data-composition-src reference to an installed block and does not address track index or dimensions as non-z-order, so only criteria 2 and 3 are met."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response sets id, size, duration, and start correctly, but misses criteria 1 (no data-composition-src to an installed block) and 4 (no track index carried); only the dimensions and timing criteria are met."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": null,
+     "placebo": {
+      "answer": "**data-chart composition**\n- Composition id: `data-chart`\n- Size: 1920 × 1080\n- Duration: 15 seconds\n- Starts at host time: 2\n\n**Host element (as text):**\n\n```\nhost element: data-chart | 1920x1080 | duration 15s | host time 2\n```",
+      "average": 0.25,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "The response matches the composition id and sets start 2 and duration 15 with dimensions, but omits data-composition-src and any track index."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "The response matches data-composition-id, dimensions, start 2 and duration 15, but never uses data-composition-src to reference an installed block and does not address track index or z-order, so only 2 of 4 criteria are met."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response gives id data-chart, start 2, duration 15, and dimensions 1920x1080, but does not reference data-composition-src to an installed block and never mentions a track index; only criteria 2 and 3 met (plus dimensions in criterion 4, which requires track index too)."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response gives id, size, duration and start time, but never uses data-composition-src to reference an installed block, and it does not mention a track index or dimensions as non-z-order metadata beyond size; criteria 1 and 4 are missed, so only criteria 2 and 3 are met (0.5 would be fair, but track index is absent, so not 0.5 either)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response gives id, size, duration, and start time 2, but no data-composition-src to an installed block, no data-composition-id attribute, and no track index; only criterion 3 is met (start 2, duration 15)."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "```html\n<div id=\"data-chart\" data-composition-id=\"data-chart\" data-width=\"1920\" data-height=\"1080\" data-duration=\"15\" data-start=\"2\"></div>\n```\n\nThe host element declares the `data-chart` composition at 1920×1080, with a 15-second duration starting at host time 2. I used `div` with data attributes because you didn't specify a tag or attribute names.",
+      "average": 0.3,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response matches the id, start 2, and duration 15 (criteria 2 and 3), but omits any data-composition-src reference to an installed block (criterion 1) and gives no track index (criterion 4 missed)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Met criteria 2 (data-composition-id matches) and 3 (start 2, duration 15); missed criterion 1 (no data-composition-src to an installed block) and criterion 4 (no track index, though dimensions are carried)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response sets id, composition-id, dimensions, duration and start correctly (criteria 2, 3, 4 partly) but omits data-composition-src to an installed block (criterion 1) and includes no track index (criterion 4 incomplete)."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response uses a plain div with invented data-* attributes and never references a data-composition-src to an installed block, so criterion 1 is missed; it also does not mention track index. It does match id, start 2, duration 15, and dimensions, so about 0.5 is earned, but criterion 4 is partly unmet, bringing the total to 0.5 with pass false."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response sets id, composition id, dimensions, duration 15 and start 2 correctly, but omits any data-composition-src to an installed block (criterion 1 missed) and has no track index (criterion 4 missed); criteria 2 and 3 met, so 0.5 partial, scored 0.25 by strict per-criterion rule."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "```html\n<div id=\"data-chart\" data-width=\"1920\" data-height=\"1080\" data-duration=\"15\" data-start=\"2\"></div>\n```",
+      "average": 0.45,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Response sets data-composition-id, dimensions, start 2 and duration 15 correctly, but omits data-composition-src pointing to the installed block and gives no track index, so only two of four criteria are met."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Matches the composition id, start 2, and duration 15, and carries the dimensions. It omits data-composition-src to the installed block and any track index."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Matches data-composition-id 'data-chart' and sets start 2 and duration 15, but omits data-composition-src to the installed block and carries no track index, so two of four criteria are missed."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only criterion 3 is met (data-start=\"2\", data-duration=\"15\"). It omits data-composition-src, uses id instead of data-composition-id, and has no track index, though dimensions are carried."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Matches the composition id (data-chart), sets start 2 and duration 15, and carries dimensions 1920x1080. It misses data-composition-src to the installed block and omits any track index."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "component",
+   "number": 2,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A grain overlay is installed as a component snippet. Explain how to integrate it into an existing composition, compared with a standalone block.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source heygen-com/hyperframes/skills/hyperframes-registry/SKILL.md at c4440dfb200def5e0c0afee938778f05b5985039; SKILL.md SHA-256 f1925b202cabd125b509658b11db593b55340b1926ecb056fc31aa4233a2b4f6; README SHA-256 3e8f26d5e35c6a8c32c661bf1439443d8eee332eedc9bf1a32bfe3dc417c218e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Copy relevant markup into the host composition 2. Merge styles and script integration 3. Do not invent standalone dimensions for the snippet 4. Distinguish it from a data-composition-src block",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "A grain overlay is a **component**, so it is merged into your composition. It is not included as a separate file the way a block is.\n\n**Installed component (default path):** `compositions/components/grain-overlay.html`\n\n**Integrating into an existing composition:**\n\n1. Open the installed file and read it.\n2. Copy its HTML elements into your composition's `<div data-composition-id=\"...\">`.\n3. Copy its `<style>` block into your composition's styles.\n4. If it has a `<script>`, copy the contents into your composition's script, before your timeline code.\n5. If the snippet's comment block describes GSAP timeline integration, add those calls to your timeline.\n\nThe component has no dimensions or duration of its own. It takes on the host composition's canvas and timing.\n\n**Standalone block, for comparison:**\n\nA block is a self-contained sub-composition with its own dimensions, duration, and timeline. You don't paste its markup into your host. You reference the file from the host's `index.html` with a `data-composition-src` element that carries these attributes:\n\n- `data-composition-src`: path to the block HTML file\n- `data-composition-id`: must match the block's internal ID\n- `data-start`: when it appears in the host timeline, in seconds\n- `data-duration`: how long it plays\n- `data-width` / `data-height`: its canvas size\n- `data-track-index`: a Studio timeline row only; use CSS `z-index` for layering\n\n**Key differences:**\n\n| | Component (grain overlay) | Block |\n|---|---|---|\n| Default location | `compositions/components/` | `compositions/` |\n| How it's used | Markup, CSS, and JS are pasted into the host | Referenced with `data-composition-src` |\n| Own size/duration | No | Yes |\n| Timing | Inherits the host's | Set with `data-start` and `data-duration` |\n| Layering | Standard CSS in the host | `z-index`, not `data-track-index` |\n\nThe grain overlay is the right fit for a texture over the whole composition. A block would be the right fit for a self-contained segment with its own timing.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: copies markup into the host, merges style and script, states the component has no standalone dimensions, and distinguishes it from a data-composition-src block."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: copies markup into the host, merges style and script, states the snippet has no standalone dimensions, and distinguishes it from a data-composition-src block."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four rubric points: copies markup into the host, merges style and script, states the component has no standalone dimensions, and distinguishes it from a data-composition-src block."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response meets all four criteria: it copies markup into the host, merges style and script, states the component has no standalone dimensions, and distinguishes it from a data-composition-src block."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: copies markup into the host div, merges style and script, states the component has no standalone dimensions, and distinguishes it from a data-composition-src block."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The material you supplied doesn't cover a grain overlay, component snippets, or compositions. It's a set of descriptions of a coastal and moorland village: the bridge, the orchard, the harbour wall, the bakers' starter, and similar. None of it describes how a visual effect is installed or how it fits into an existing layout, so I can't compare integrating the overlay with using it as a standalone block without going beyond your instructions.\n\nIf you paste the snippet, its documentation, or the existing composition, I can explain the two approaches from that material. I'd need to see:\n\n- The overlay snippet itself, including any props, classes, or required parent elements.\n- The composition it would go into, including its structure and any styles or layering it already uses.\n- Whatever the documentation says about standalone use.",
+      "average": 0.05,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Misses criteria 1, 2 and 4: it never explains copying markup, merging styles and scripts, or distinguishing from data-composition-src. It meets criterion 3 only by not inventing dimensions."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response refuses to engage, saying the material lacks grain overlay information, so it misses all four rubric points: no markup copying, no style/script merging, no standalone dimensions discussion, and no distinction from data-composition-src."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response refuses to explain integration, provides no markup copying, style/script merging, or standalone-dimension discussion, and does not distinguish from data-composition-src; all four criteria missed."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response declines to answer, stating the supplied material lacks any grain overlay or snippet; it misses all four rubric criteria: no markup copying, no style/script merging, no standalone dimensions, no data-composition-src distinction."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response refuses on the grounds that the supplied material lacks overlay information and never addresses integration into a composition, merging styles/scripts, standalone dimensions, or distinguishing from data-composition-src; no rubric criteria are met."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "I can't see the grain overlay's code or your composition, so this is a general comparison, not advice tied to your files.\n\n**Integrating into an existing composition**\n\n- The overlay sits inside a parent container, so it inherits that container's size, position, and clipping. The parent usually needs `position: relative` (or the equivalent) so an absolutely positioned overlay covers the right area.\n- You control stacking through the parent's layers. The grain can sit above the content for a film-like texture, or below a semi-transparent background.\n- It can share the parent's data and state, so it can react to things like theme or hover without extra wiring.\n- It adds no extra wrapper or page-level element, which keeps the layout simpler.\n- It's tied to that section. Moving or reusing the section means moving the overlay too, and it may pick up unintended styles from the parent.\n\n**Standalone block**\n\n- It's self-contained with its own sizing and positioning, so it behaves the same wherever it's placed.\n- It's easier to reuse across pages or sections and to test in isolation.\n- It usually needs a wrapper or explicit positioning to cover a target area, and it can compete with other layers for stacking order.\n- It may add an extra DOM node or layout element.\n\n**Practical checks either way**\n\n- Make sure the overlay doesn't block clicks (`pointer-events: none`).\n- Confirm the z-index and any `mix-blend-mode` produce the intended result over the content.\n- Check that `overflow: hidden` on the parent isn't clipping the grain at the edges.\n- If the grain animates, consider reduced-motion settings.\n\n**Recommendation:** If the grain is meant for one section and should respond to that section's content or theme, integrate it into the composition. If you want the same texture across several unrelated areas, use the standalone block. If you tell me the framework and paste the snippet and the surrounding composition, I can give more specific guidance.",
+      "average": 0.25,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets criterion 3 by inventing no standalone dimensions, but misses copying markup into the host, merging styles and script, and distinguishing it from a data-composition-src block."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 3 is met: it invents no standalone dimensions. Criteria 1, 2 and 4 are missed: it never says to copy the markup into the host, never explicitly merges styles and script, and never mentions a data-composition-src block."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 3 by not inventing standalone dimensions; it never says to copy the markup into the host, never explicitly merges styles and script, and never distinguishes from a data-composition-src block."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 3 (no invented standalone dimensions). It never says to copy the markup into the host, does not explain merging styles and script, and does not distinguish the snippet from a data-composition-src block."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Avoids inventing standalone dimensions (criterion 3), but never says to copy the markup into the host composition, merge styles and scripts, or distinguish the snippet from a data-composition-src block."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "A grain overlay installed as a component is pasted into your existing composition. A block is a separate composition that your host includes. I haven't read the installed file, so I can't confirm its exact markup, style, or any GSAP hooks. The steps below follow the registry's component wiring procedure.\n\n## Integrating the grain overlay as a component\n\nThe file lands at `compositions/components/grain-overlay.html` by default, or wherever `paths.components` in `hyperframes.json` points.\n\n1. **Read the installed file** to see its HTML, `<style>`, and any `<script>`.\n2. **Paste the HTML elements** inside your composition's `<div data-composition-id=\"...\">`.\n3. **Copy the `<style>` block** into your composition's styles.\n4. **Copy any `<script>` content** into your composition's script, placed before your timeline code.\n5. **Add GSAP timeline calls** if the snippet's comment block describes timeline integration, such as animating the grain's opacity or timing.\n\nBecause the component has no dimensions or duration of its own, it inherits the host's canvas and timing. Its visibility is controlled by your host timeline. Any z-ordering comes from the CSS you paste, so make sure the overlay sits above the layers it should cover.\n\n## Comparison with a standalone block\n\n| | Component (grain overlay) | Block |\n|---|---|---|\n| What it is | Effect snippet | Standalone sub-composition |\n| Install path | `compositions/components/<name>.html` | `compositions/<name>.html` |\n| Own dimensions/duration | No | Yes (`data-width`, `data-height`, `data-duration`) |\n| How it's used | HTML, CSS, and JS pasted into the host | Included with `data-composition-src` |\n| Timing | Inherits the host timeline | Placed with `data-start` on the host |\n| Layering | CSS `z-index` in the host | CSS `z-index`; `data-track-index` is only a Studio display row |\n\n## Wiring a block, for contrast\n\nA block needs one host element that points at the file and matches the block's internal ID:\n\n```html\n<div\n  data-composition-id=\"data-chart\"\n  data-composition-src=\"compositions/data-chart.html\"\n  data-start=\"2\"\n  data-duration=\"15\"\n  data-track-index=\"1\"\n  data-width=\"1920\"\n  data-height=\"1080\"\n></div>\n```\n\nUse a block when the visual has its own canvas, length, and timeline. Use a component like the grain overlay when the effect should apply across your existing composition with no timing or canvas of its own.",
+      "average": 0.95,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: pastes markup into the host, merges style and script, gives the snippet no standalone dimensions, and contrasts it clearly with a data-composition-src block."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: pastes markup into the host composition, merges style and script integration, states the component has no standalone dimensions, and clearly distinguishes it from a data-composition-src block."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: pastes markup into the host, merges style and script, states the snippet has no own dimensions, and contrasts it with the data-composition-src block."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: pastes markup into the host, merges style and script, states the snippet has no standalone dimensions, and distinguishes it from a data-composition-src block."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (paste HTML into host composition), 2 (merge style and script), and 4 (distinguishes from data-composition-src block); misses 3 because it invents concrete standalone-style structure details rather than avoiding unsupported dimensions, though it does not assign dimensions to the snippet itself."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The text you supplied doesn't cover grain overlays, component snippets, compositions, or standalone blocks. It's a series of unrelated paragraphs about a village, its canal, its harbour, and its wildlife. I can't explain the integration without inventing details, so I haven't.\n\nIf you paste the overlay's snippet and any notes about how it's meant to be used, I can answer from that material: how to place it inside an existing composition, and how that differs from using it as a standalone block.",
+      "average": 0,
+      "notes": [
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response refuses to explain integration and mentions none of the rubric points: no copying markup, no merging styles/scripts, no standalone dimensions discussion, no data-composition-src distinction."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response refuses to explain and gives no integration guidance; it misses criteria 1 (copy markup), 2 (merge styles/script), 3 (no invented dimensions, though it avoids inventing), and 4 (distinguish from data-composition-src block), meeting none fully."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response refuses to explain integration because the supplied text lacks the relevant facts, so it misses all four rubric criteria: copying markup, merging styles/scripts, avoiding invented dimensions, and distinguishing data-composition-src blocks."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response declines to explain integration and misses all four rubric points: no copying markup, no style/script merge, no dimension discussion, and no distinction from data-composition-src. It only requests the snippet."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response declines to answer and fails all four rubric criteria: it does not copy markup, merge styles/scripts, address standalone dimensions, or distinguish from data-composition-src blocks."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "The only fact I have is that the grain overlay is installed as a component snippet. I can't see its code or the surrounding composition, so this comparison is general. Check the snippet's actual markup and styles before relying on any of it.\n\n**Integrating a snippet into an existing composition**\n\n- **Placement:** The overlay goes inside a container you already have. Its position depends on the parent's layout, so you may need to place it carefully in the tree.\n- **Positioning context:** An absolutely positioned grain layer usually needs a positioned ancestor (`position: relative`) to cover the right area. Without one, it can cover the whole page or land in the wrong place.\n- **Stacking:** Grain is typically layered above content with `pointer-events: none` and a z-index. Existing z-index values, transforms, or `overflow: hidden` in the parent can clip it or put it beneath other elements.\n- **Inherited styles:** Fonts, colors, blend modes, and CSS variables from the parent can affect the overlay. Scoped class names can also collide with existing ones.\n- **Benefit:** It matches the surrounding design and reuses the parent's sizing, theme, and responsive behavior.\n- **Cost:** It is harder to move or reuse, and changes to the parent can break it.\n\n**Using it as a standalone block**\n\n- **Self-contained:** It carries its own wrapper, dimensions, and positioning, so it works wherever it's dropped in.\n- **Predictable:** It doesn't depend on the parent's layout, stacking, or styles, which makes it easier to test in isolation.\n- **Reusable:** You can place it on different pages or in different compositions without rework.\n- **Cost:** It may duplicate styles or wrappers, may cover more of the page than intended, and may need explicit sizing to fit the design.\n\n**Choosing between them**\n\n- Use the snippet inside a composition when the grain should be scoped to one section, sit within a specific layout, or share that section's theme.\n- Use a standalone block when the grain is a page-wide texture or you need it in several unrelated places.\n\nIf you share the snippet's markup and the parent component, I can work out the specific positioning and stacking issues.",
+      "average": 0.2,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 3 (no invented standalone dimensions). It never says to copy the snippet's markup, never covers merging styles or script integration, and never distinguishes it from a data-composition-src block."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets criterion 1 loosely via placement inside an existing container, but never merges scripts, invents standalone dimensions by asserting its own dimensions, and never distinguishes it from a data-composition-src block."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only the no-invented-dimensions point (no specific sizes given). It never says to copy the markup, never covers merging script integration, and never distinguishes the snippet from a data-composition-src block."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 3 (no invented standalone dimensions). Misses copying markup into the host explicitly, merging styles and script, and distinguishing it from a data-composition-src block."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Misses all four rubric points: it never says to copy the markup into the host, never explicitly merges styles and scripts, asserts the standalone block 'carries its own... dimensions', and never distinguishes it from a data-composition-src block."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "A grain overlay is a **component**, so you merge its markup, styles, and script directly into your existing composition. A **block** stays in its own file and is included by reference. Both come from the same registry, but they wire in differently.\n\n## Integrating a component into an existing composition\n\nThe grain overlay installs to `compositions/components/grain-overlay.html` by default. You can change that location with `paths.components` in `hyperframes.json`. Then merge it into your host composition in this order:\n\n1. Open the installed file and read it.\n2. Copy its HTML elements into your composition's `<div data-composition-id=\"...\">`.\n3. Copy its `<style>` block into your composition's styles.\n4. If it has a `<script>`, copy the contents into your composition's script, before your timeline code.\n5. If the snippet has a comment block describing GSAP timeline integration, add those calls to your timeline.\n\nThe component has no `data-composition-src`, dimensions, or duration of its own. It uses your host composition's canvas and timing.\n\n## Including a standalone block instead\n\nA block is a complete sub-composition with its own dimensions, duration, and timeline. It installs to `compositions/<name>.html` by default. You include it with a host element like this:\n\n```html\n<div\n  data-composition-id=\"data-chart\"\n  data-composition-src=\"compositions/data-chart.html\"\n  data-start=\"2\"\n  data-duration=\"15\"\n  data-track-index=\"1\"\n  data-width=\"1920\"\n  data-height=\"1080\"\n></div>\n```\n\n- `data-composition-id` must match the block's internal ID.\n- `data-start` sets when the block appears on the host timeline.\n- `data-duration` sets how long it plays.\n- `data-track-index` only affects the Studio timeline display. Use CSS `z-index` for layering.\n\n## Comparison\n\n| | Component (grain overlay) | Block |\n|---|---|---|\n| Installed to | `compositions/components/` | `compositions/` |\n| How it joins the host | Markup, styles, and script are pasted into the host | Included via `data-composition-src` |\n| Own dimensions or duration | No | Yes |\n| Host attributes needed | None | `data-composition-id`, `data-start`, `data-duration`, `data-track-index`, `data-width`, `data-height` |\n| Layering | Your host's CSS | `z-index` on the host element |\n\nI haven't read the installed grain-overlay file here, so I can't confirm its exact contents or whether it includes GSAP hooks. Check the file for the `<style>`, `<script>`, and any GSAP comment block before you start the merge.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: copies markup into the host, merges style and script, gives the component no standalone dimensions, and distinguishes it from a data-composition-src block."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four criteria: markup copied into the host composition, styles and script merged, no standalone dimensions invented for the component, and clear distinction from a data-composition-src block."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Met all four rubric points: copies markup into the host, merges style and script, states the component has no standalone dimensions, and clearly distinguishes it from a data-composition-src block."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: copies markup into the host div, merges style and script before timeline code, states the component has no standalone dimensions, and contrasts it clearly with a data-composition-src block."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Covers all four rubric points: copies markup into the host, merges style and script, states the component has no standalone dimensions, and distinguishes it from a data-composition-src block."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The only fact I have is that the grain overlay is installed as a component snippet. I don't have its code, props, or import path, so I can't give exact integration steps. Here is the general difference between the two approaches:\n\n**Integrating the snippet into an existing composition**\n- The overlay becomes a layer inside the parent. It usually covers the parent's bounds, so you place it where it should sit in the element tree.\n- It inherits the parent's sizing, positioning, and stacking context. Check that the parent doesn't clip it and that it sits above the content it should texture.\n- Make sure it doesn't block interaction with the content underneath, such as by disabling pointer events on it.\n- It is tied to that parent's layout, so changes to the parent can affect it.\n\n**Using it as a standalone block**\n- It is self-contained, with its own bounds and layout, so it's easier to reuse across compositions.\n- You may need to set its size explicitly and manage its stacking against other content yourself.\n- It is simpler to drop in, but less tailored to any one layout.\n\nIf you share the snippet and the composition it should go into, I can give you specific integration steps.",
+      "average": 0.1,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only criterion 3 is met, since it invents no standalone dimensions. It misses copying markup into the host, merging styles and script, and distinguishing the snippet from a data-composition-src block."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never copies markup into a host composition, never addresses merging styles/script, and does not invent dimensions (partly, but it says to set size explicitly, which is loosely fine). It also never distinguishes it from a data-composition-src block, so at most one criterion is arguably met, scoring 0.0 to 0.25 at most; I score 0.0 since criterion 3 is arguably violated by suggesting explicit standalone sizing."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response gives no markup copying, no style/script merging, and no data-composition-src distinction; it only offers generic layout advice and requests the snippet, missing all four rubric points."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response does not say to copy the markup into the host, does not cover merging styles or script, and suggests setting explicit standalone dimensions. It also never distinguishes the snippet from a data-composition-src block."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 3, since it invents no standalone dimensions. It misses copying markup into the host, merging styles and script, and distinguishing from a data-composition-src block."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "The only fact I have is that a grain overlay is installed as a component snippet. I don't have its code, props, or markup, so this is general guidance. Check it against the snippet's actual API.\n\n**Integrating into an existing composition**\n- Place the snippet as a child of the element it should cover, or as a sibling later in the stacking order, so it layers above the content it textures.\n- It typically needs to be absolutely positioned to fill its parent, with `pointer-events: none` so it doesn't block clicks.\n- It inherits the parent's size, theme variables, and stacking context. The grain follows the composition's bounds and responds to its styling.\n- It adds no extra layout box. The rest of the composition's layout stays as it was.\n- The parent must be `position: relative` (or equivalent), or the overlay may cover the wrong area.\n\n**Standalone block**\n- It is self-contained, with its own dimensions, placement, and any styling it needs.\n- It can be dropped anywhere and reused across compositions without changing their structure.\n- You must size and position it explicitly, and it won't pick up the surrounding theme unless you pass values in.\n- It adds a separate element to the layout, which can affect spacing or flow if it isn't taken out of flow.\n\n**Choosing between them**\n- Use the snippet when the grain should apply to one specific composition and follow its bounds.\n- Use the standalone block when the grain is a reusable visual element or must sit outside an existing layout.\n\nIf you paste the snippet, I can tell you which of these applies and what changes it needs.",
+      "average": 0.25,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 3 by not inventing standalone dimensions. It never says to copy markup into the host, never covers merging styles and script, and never distinguishes the snippet from a data-composition-src block."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets criterion 3 by inventing no standalone dimensions. Misses copying markup into the host, merging styles and script, and distinguishing from a data-composition-src block, which is never mentioned."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Response gives no markup copying into a host composition, no style/script merge guidance, and does not distinguish from data-composition-src; it invents CSS-like details instead, and it does mention not inventing dimensions only implicitly, so criterion 3 is arguably unmet too."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 3: it invents no standalone dimensions. It misses copying markup into the host, merging styles and script, and distinguishing from a data-composition-src block, and never mentions data-composition-src."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 3 (no invented standalone dimensions) and arguably criterion 1 (placing the snippet in the host composition). Misses criterion 2 (no explicit style or script merging) and criterion 4 (no distinction from a data-composition-src block)."
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "search",
+   "number": 3,
+   "of": 3,
+   "prompt": "Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts. A brief asks for a shimmer sweep. You have no project or account yet. Explain discovery and installation ordering.",
+   "rubric": "Driftproof-authored text-only evaluation, not an author-supplied benchmark or an installed-tool test. Source heygen-com/hyperframes/skills/hyperframes-registry/SKILL.md at c4440dfb200def5e0c0afee938778f05b5985039; SKILL.md SHA-256 f1925b202cabd125b509658b11db593b55340b1926ecb056fc31aa4233a2b4f6; README SHA-256 3e8f26d5e35c6a8c32c661bf1439443d8eee332eedc9bf1a32bfe3dc417c218e. Score only the written answer. Award 0.25 for each fully satisfied criterion, 0 otherwise; sum to a score from 0 to 1. 1. Search the catalog by desired effect first 2. Do not assume installation or account is needed for search 3. Install the selected item after checking fit 4. Avoid hand-building the named effect before looking",
+   "pass_threshold": 0.75,
+   "tries": [
+    {
+     "try": 1,
+     "with_skill": {
+      "answer": "**Discovery comes first, and it needs no project or account.** `catalog --query` runs locally and sends nothing:\n\n```bash\nnpx hyperframes catalog --query \"shimmer sweep across a headline\"\n```\n\nWrite the query in English, even if the video's copy is in another language. The catalog is indexed in English, and a non-English query returns nothing. Describe the motion, not the item name you expect. A shimmer sweep is often a component (an effect snippet), but the search will show whether this one is a block or a component.\n\nCheck the output before installing:\n- If a result fits, note its name and type.\n- The `--json` output names the tier that answered. The default `words` tier matches shared vocabulary only, so a weak match may mean a wording problem rather than a missing item.\n- A non-zero `dropped` count means some matches can't be installed from this registry.\n- If nothing fits, report the gap with `npx hyperframes feedback --search-miss \"<query>\" --wanted \"<the move>\" --tier <tier>`. Do this even on the `words` tier.\n\n**Installation comes second, and it needs a project and the network.** `add` writes files into a project, so you need one before installing. Use `--dir <project>` or run from inside it:\n\n```bash\nnpx hyperframes add shimmer-sweep --dir <project>\n```\n\nThings to know about the install step:\n- Registry dependencies install before the requested item.\n- Components are written to `compositions/components/` by default. Blocks go to `compositions/`. Both paths are set in `hyperframes.json`.\n- The CLI prints the files it wrote and a snippet. The snippet is a starting point, not the finished wiring.\n- Network is required even for an item you have searched before. Only manifests are cached, so the file fetch fails offline. Don't promise an offline install.\n\n**Wiring follows install.** For a component, paste its HTML into your composition's `data-composition-id` element, copy its `<style>` into your styles, and copy any `<script>` before your timeline code. Then add any GSAP timeline calls the snippet describes. For a block, add a `data-composition-src` element to your host `index.html` with matching `data-composition-id`, `data-start`, `data-duration`, and `data-track-index`.\n\nSo the order is: search in English, check the tier and results, create or choose a project, install with `add`, then wire the snippet into your composition. Only hand-build the shimmer if search returns nothing usable, and report the gap when you do.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: searches the catalog by desired effect first, states search needs no project or account, installs only after checking fit, and hand-builds only if search fails."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response searches the catalog by desired effect first, states that search needs no project or account, installs only after checking fit, and hand-builds only if search fails."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four rubric points: searches the catalog by effect first, states search needs no project or account, installs only after checking fit, and hand-builds only if search fails."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: searches the catalog by desired effect first, states search needs no project or account, checks fit before installing, and only hand-builds if search finds nothing."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response searches the catalog by desired effect first, states discovery needs no project or account, installs only after checking fit, and hand-builds the shimmer only if search fails."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "I can't do the shimmer sweep yet. The brief assumes a project, and the supplied facts show none: the working directory `/tmp/driftproof-eval.Qx08sF5M` is a git repository with a clean status, no commits, and no branch history. The long passage about the village, coast, and moor doesn't describe software and doesn't bear on the brief.\n\nThe facts also don't say what discovery or installation involves, so I can't give a verified ordering. The only ordering the facts support is:\n\n1. **Establish a project first.** The repository is empty, so there is nothing to discover yet. Discovery needs files to read, such as a manifest or source tree.\n2. **Discover before installing.** Once a project exists, read its declared dependencies and setup instructions, then install. Installing before discovery risks installing the wrong packages or running untrusted setup scripts.\n3. **Install after discovery, and verify afterward.** Check that the installed tools work before the shimmer sweep depends on them.\n\nI haven't run any commands or read any files, so this ordering is a general sequence, not something I've confirmed in this repository. To proceed, I need the project files (or a repository URL to clone), and I'll need tool access, since I'm restricted to text answers in this turn.",
+      "average": 0.35,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 4 (no hand-building). Misses search-by-effect-first and no-install-needed-for-search, and never selects an item to install after a fit check. Also misstates the working directory path."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Misses catalog-by-effect search first, never says search needs no install or account, and does not address hand-building; only the install-after-checking-fit ordering loosely matches."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Misses criterion 1 (no catalog search by desired effect) and only partly meets criterion 3 (install ordering without a selected item). Meets criteria 2 and 4: it assumes no install or account for search and does not hand-build the effect."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Misses criterion 1 (search catalog by effect first) and criterion 2 (no assumed install or account for search). Meets criterion 4 by not hand-building the effect. Criterion 3 is only loosely addressed, as installing project dependencies after discovery."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Misses criterion 1 (no search of the catalog by desired effect) and criterion 2 (it treats discovery as needing a project, not as search). Meets criterion 4 (no hand-built effect) and partly criterion 3 (install after discovery). It also cites a nonexistent working directory and a village/coast/moor passage that were never supplied."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Discovery first, then installation.**\n\n1. **Pin down the brief.** \"Shimmer sweep\" needs a concrete reading before any setup. Settle what it targets (a UI element, text, a background) and what form it takes (CSS, a JS animation, a library effect).\n\n2. **Survey the working directory.** `/tmp/driftproof-eval.n3u5VffU` is a git repository on Linux with a clean status and no commits, and you have no project or account yet. So there's no existing code, manifest, or convention to follow. Confirm that the directory really is empty of project files before assuming a blank slate.\n\n3. **Choose the stack.** Once the target and form are known, pick the tooling the effect needs. That choice determines what, if anything, gets installed.\n\n4. **Install last.** Dependencies come after the stack is chosen, because installing before then means guessing which packages to add. Install only what the chosen approach requires. If the work needs an external service, set up the account only at that point, since none exists yet.\n\nDiscovery comes before installation because the stack depends on the brief, and the install list depends on the stack.",
+      "average": 0.4,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Separates discovery from installation and installs only after choosing a fit (criteria 2 and 3), but never says to search a catalog by desired effect first and never warns against hand-building the effect before looking (criteria 1 and 4)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the install-after-fit-check and no-assumed-install-for-discovery points, but never searches a catalog by desired effect and proposes choosing a stack to build the effect rather than looking for an existing one first."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Misses criterion 1 (no catalog search by desired effect) and criterion 4 (no check for an existing item before hand-building). Partly meets criterion 3 (installs after choosing the stack) and criterion 2 (never assumes install or account for search)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 3 is loosely met: it selects tooling to fit the brief before installing. Criteria 1, 2, and 4 are missed: it never proposes searching a catalog by effect, never states that search needs no install or account, and never says to look before hand-building."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only the install-after-choosing criterion (point 3). It never says to search the catalog by desired effect first, never states that search needs no install or account, and never warns against hand-building before looking. It also cites a directory path that doesn't match the environment."
+       }
+      ]
+     }
+    },
+    {
+     "try": 2,
+     "with_skill": {
+      "answer": "**Discovery** comes first, and it needs no project or account. Search runs locally and sends nothing:\n\n```bash\nnpx hyperframes catalog --query \"sweep a light shimmer across the headline\"\n```\n\n- Write the query in English even if the video's copy is in another language. The catalog is indexed in English, and a non-English query returns nothing.\n- Describe the move, not an item name you imagine. The default `words` tier ranks on shared vocabulary, so use the catalog's wording where you can. `--on-device` ranks by meaning, but it needs a one-time 33 MB download that you must consent to.\n- Use `--json` if you need to confirm which tier answered.\n- Check the `dropped` count. Non-zero means some matches can't be installed, so they were removed from the results.\n- If nothing in the results fits, file a gap report with `hyperframes feedback --search-miss ...` before you hand-build the effect.\n\n**Installation** comes second, and it needs a target project and network access:\n\n```bash\nhyperframes add shimmer-sweep --dir .\n```\n\n- The name `shimmer-sweep` appears in the CLI examples, but confirm it with the search before installing.\n- Registry dependencies install before the requested item.\n- A component goes to `compositions/components/<name>.html` by default, unless `hyperframes.json` changes the path.\n- Cached manifests keep search working offline, but `add` fetches the item's files on every run, so it fails offline.\n\n**Wiring** comes last. A component has no dimensions of its own, so you paste it into a host composition:\n\n1. Read the installed file.\n2. Copy its HTML into your composition's `data-composition-id` element.\n3. Copy its `<style>` into your styles.\n4. Copy any `<script>` before your timeline code.\n5. Add any GSAP timeline calls its comment block describes.\n\nYour supplied facts don't say how to create a new project or whether installing needs an account, so check those before you run `add`.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it searches the catalog by desired effect first, states search needs no project or account, confirms the item's fit before installing, and says to search before hand-building the effect."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Search by desired effect comes first (criterion 1), the response says search needs no project or account (2), it confirms fit before installing (3), and it looks in the catalog before hand-building the effect (4)."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (searches catalog by desired effect first), 2 (states search needs no project or account and sends nothing), and 3 (checks fit before installing via confirm-with-search). Misses 4: it never explicitly warns against hand-building the effect beforehand, though it does say to file a gap report before hand-building."
+       },
+       {
+        "score": 0.75,
+        "pass": true,
+        "reason": "Meets criteria 1 (searches catalog by desired effect first), 2 (states search needs no project or account), and 3 (installs after checking fit). Misses 4: it never explicitly rules out hand-building before looking, though it does point to discovery first."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Search by desired effect comes first, and the response says search needs no project or account. It confirms the item before installing and files a gap report before hand-building the effect."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "The facts I have don't cover a shimmer sweep. The long block of text in your message is descriptive prose about a coastal village, with nothing about shimmer, sweeps, or any software project. The environment shows only that this is a clean git repository with no commits, on Linux with bash, at `/tmp/driftproof-eval.oTqkM1Fp`. So there is no project to inspect yet.\n\nFor ordering in general, with no project present:\n\n1. **Discovery first.** Identify what the project is before installing anything. Look for manifest files such as `package.json`, `pyproject.toml`, or `Cargo.toml`, and for a README that states the build or run steps. Nothing can be discovered in this repo until files exist in it.\n2. **Installation second.** Install only the dependencies the manifests declare, using the tool they name. Installing before discovery risks pulling in the wrong toolchain or unreviewed code.\n3. **Build or run last.** Run the project's documented build or test command once dependencies resolve.\n\nI haven't run any of this, and I haven't checked anything against your files. To go further, tell me what \"shimmer sweep\" refers to, such as a visual effect, a test sweep, or a script, and whether a project already exists elsewhere. Once there is a project directory, I can read its manifests and report what it needs.",
+      "average": 0.3,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only criterion 4 is met: the response does not hand-build the shimmer effect. It never searches a catalog by effect, never states search needs no install or account, and its install ordering concerns manifest dependencies, not a selected catalog item."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Misses catalog-first search and never addresses search needing no install or account; only avoids hand-building the effect, meeting criterion 4 alone."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Misses catalog-by-effect search (criterion 1) and never states search needs no install or account; installs after discovery loosely fits criterion 3. Also invents a coastal-village text and a mismatched directory path."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Met only criterion 4: it hand-built nothing. Missed 1, since it never searches a catalog by effect. Missed 2, since it never addresses whether search needs installation or an account. Missed 3, since it selects no catalog item to check for fit or install."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Misses catalog-search-first (criterion 1) and never states that search needs no installation or account (criterion 2). It meets criterion 3 only loosely, via discovery-before-install ordering, and criterion 4 trivially by building nothing."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "Since the repo has no commits and no files yet, discovery is short and comes first. Installation depends on what discovery finds, so it comes second.\n\n**1. Discovery (read-only)**\n- Confirm what exists. The repo is clean with no commits, so there's no manifest, lockfile, or existing code to read.\n- Work out the stack from the brief. A shimmer sweep is a UI effect, so the likely targets are CSS, a frontend framework, or a component library. Your choice of framework determines the tooling.\n- Check whether the shimmer should match an existing design system or animation library. Nothing exists yet, so this is a choice to make, not a finding.\n\n**2. Scaffolding (creates the project)**\n- Pick the framework and package manager, then create the project files, including the manifest.\n- Nothing can be installed until a manifest exists, because the install step reads from it.\n\n**3. Installation (after the manifest exists)**\n- Install the runtime or toolchain first (for example, Node.js), since the package manager depends on it.\n- Install project dependencies next, from the manifest, so the lockfile is created.\n- Add the animation or styling dependencies last, only if the shimmer needs them. A pure CSS keyframe sweep may need none.\n\n**4. Account-dependent steps (last, and only when needed)**\n- You have no account yet. Hosting, API keys, or a registry login should be set up only when a step needs them, not at the start.\n- Local build and preview don't need an account, so don't hold them up waiting for one.\n\nOnce tools are available, I'd start with step 1 by confirming the stack with you, since it determines everything after it. I haven't run or verified anything in this reply.",
+      "average": 0.05,
+      "notes": [
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never searches a catalog by desired effect first, never says search needs no install or account, and suggests hand-building a CSS keyframe sweep without looking for an existing item."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never searches a catalog by desired effect; it assumes a stack, plans to hand-build a CSS keyframe sweep, and says nothing about checking a registry before installing. It misses all four criteria."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never mentions searching a catalog by desired effect, so it misses criteria 1 and 4. It also never selects an item to install, and it proposes a hand-built CSS keyframe sweep without looking first, so criteria 2 and 3 are missed too."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Misses criterion 1 (no catalog search by effect) and criterion 4 (plans a CSS keyframe build without looking for an existing effect); only criterion 2 is loosely met, since discovery is read-only and needs no account."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never searches a catalog by desired effect, and it suggests a pure CSS keyframe build without looking first, so it misses criterion 4. It also lacks an explicit no-account-for-search statement and a select-then-check-fit-then-install sequence, missing criteria 1–3."
+       }
+      ]
+     }
+    },
+    {
+     "try": 3,
+     "with_skill": {
+      "answer": "Search first, then install, then wire. Nothing in this order needs a project or an account, except the install step, which writes into a project.\n\n1. **Search by intent, before hand-building.** Shimmer sweep is a named visual, so check the registry before writing anything. Run something like:\n   ```bash\n   npx hyperframes catalog --query \"sweep a light highlight across a headline\"\n   ```\n   Describe the motion in English, even if the video's copy is in another language. A query in another script returns nothing. Search is local and sends nothing, so it works with no project and no account. By default it matches shared vocabulary. Add `--on-device` for meaning-based ranking, which needs a one-time 33 MB download and consent. Check the `--json` envelope to see which tier answered.\n\n2. **Read the results.** Confirm the item's type (block or component) and its name. The skill's own quick reference uses `shimmer-sweep` as an install example, but I haven't confirmed that item exists or what type it is. The search result is what settles that.\n\n3. **If nothing fits, report the gap** with `npx hyperframes feedback --search-miss ... --wanted ... --tier ...`. Do this on either tier, not only on-device. Then you can hand-author the effect.\n\n4. **Install into a project.** `hyperframes add <name>` resolves an exact name first, then a tag. It installs registry dependencies before the requested item. Target a project with `--dir .` or from its directory. Blocks go to `compositions/`, and components go to `compositions/components/`, unless `hyperframes.json` changes those paths. Because `add` writes into the project, you need a project directory first. The facts I have don't say how to create one for this case. Install also needs network access, even if the manifest was cached during search.\n\n5. **Wire it in.** For a component, copy its HTML into the composition's `<div data-composition-id>`, its `<style>` into the styles, and any `<script>` before the timeline code. Then add any GSAP timeline calls the snippet's comment block describes. For a block, reference it from the host `index.html` with `data-composition-src`, plus `data-composition-id`, `data-start`, `data-duration`, dimensions, and `data-track-index`.\n\nI haven't run any of these commands, so I don't know yet whether a suitable shimmer-sweep item exists.",
+      "average": 1,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Searches the catalog by intent before hand-building, states search needs no project or account, checks the result's fit before installing, and hand-authors only if nothing fits."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "The response searches the catalog by desired effect first, states search needs no project or account, checks fit before installing, and hand-authors only if nothing fits, meeting all four criteria."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: it searches the catalog by effect first, states search needs no project or account, installs only after confirming fit, and checks the registry before hand-building."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Search by desired effect comes first (step 1), search is explicitly said to need no project or account, install follows result review (steps 2 and 4), and hand-authoring is deferred until the registry is checked (step 3)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four: searches the catalog by desired effect first, states search needs no project or account, checks results before installing, and defers hand-building until search finds nothing."
+       }
+      ]
+     },
+     "placebo": {
+      "answer": "**What the supplied facts establish**\n\n- The working directory is `/tmp/driftproof-eval.rFoZu2uB`, on Linux with bash.\n- It is a git repository on branch `HEAD`. The main branch is named `main`.\n- The git status is clean, and there are no recent commits, so the repository is empty.\n- Per your brief, there is no project or account yet.\n\n**Shimmer sweep**\n\nNothing in the supplied facts describes a shimmer sweep, so I can't say what it requires or how it should be built.\n\n**Discovery ordering (general guidance, not from the supplied facts)**\n\n1. Confirm the brief: what the shimmer sweep should do and what it depends on.\n2. Inspect the directory for existing manifests, config, or source. Here the repository is empty, so this step mainly confirms that.\n3. Identify the tooling the brief implies, such as the language, build tool, and any required services.\n\n**Installation ordering (general guidance)**\n\n1. Establish any account or credentials the project needs first, since later steps may depend on them.\n2. Declare dependencies in the project's manifest before installing anything.\n3. Install the declared dependencies, then verify the install.\n4. Build or run only after the install succeeds.\n\nInstalling packages changes the environment, so I would confirm with you before installing anything, and I have not installed anything in this turn.\n\n**Next step**\n\nSend the full brief for the shimmer sweep, including its language, target, and any accounts or services it needs. Once I have that, I can plan the discovery and installation steps in detail.",
+      "average": 0.35,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Misses search-by-effect-first and never mentions a catalog or checking fit before installing. It does avoid hand-building the effect, and it prescribes account setup before the install steps, which does not separate search from installation or account needs."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never searches the catalog by desired effect, and it treats installation/account setup as needed before any search, violating criteria 1 and 2; it also does not select or install an item, so criteria 3 and 4 are unmet or unaddressed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Misses criterion 1 (no catalog search by desired effect) and criterion 3 (no selected item installed after a fit check). Criteria 2 and 4 are met: it assumes no account for search and does not hand-build the effect."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Misses criterion 1 (never searches the catalog by desired effect) and criterion 3 (no selected item checked for fit before install). Criteria 2 and 4 are met: it doesn't gate search on an account and doesn't hand-build the effect."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Misses the core criterion of searching the catalog by desired effect first, and never addresses search. It partially meets install-after-fit via manifest-then-install ordering and avoids hand-building the shimmer effect."
+       }
+      ]
+     },
+     "baseline": {
+      "answer": "**Shimmer sweep: discovery and installation order**\n\nThe workspace is a git repository on `HEAD` with a clean status and no commits. There's no project or account yet, so there's nothing to discover in existing code and nothing to install. The order is:\n\n1. **Discovery (read-only, first).** Check what's actually in `/tmp/driftproof-eval.aUmK9nEH`. With no commits, there are no existing conventions to follow, so the first decision is the target: plain CSS/HTML, or a framework and styling system. Without that, the stack is unknown and the choice of animation approach is open.\n\n2. **Scope the effect.** Decide where the shimmer applies (a skeleton loader, a button, a card) and whether it loops. A shimmer sweep is usually a moving highlight gradient, often animated through `background-position` or a pseudo-element's `transform`, so the target element determines the implementation.\n\n3. **Create the project skeleton.** Add the files that declare the stack, such as a package manifest if one is needed. Installation depends on this file existing.\n\n4. **Installation (last).** Install only the dependencies the manifest declares, and only after step 3. Installing before the stack is chosen risks adding packages you don't need. If the shimmer can be done in plain CSS, this step may be empty.\n\n**Blockers:** Step 1 needs the stack from you, since the directory has nothing to detect. If any step needs an external service account, that step is blocked until you provide one.",
+      "average": 0.1,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 2: it treats discovery as read-only and never requires install or account for it. It misses catalog search by desired effect, and it proposes hand-building the shimmer in CSS without checking a catalog first, so criteria 1 and 4 fail. Criterion 3 is unmet because no catalog item is selected or installed after a fit check."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never searches a catalog by desired effect, and it plans to hand-build the shimmer in CSS rather than look for an existing item first. It also cites a directory path that doesn't match the working directory."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never searches a catalog by desired effect; it proposes hand-building the shimmer in CSS and treats installation as optional, missing criteria 1, 3, and 4 and failing to show search-before-build ordering. It does satisfy criterion 2 by not assuming an account or installation is needed for discovery, so 0.25 total."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 2, since it never gates discovery on installation or an account. It never searches a catalog by desired effect, and it plans to hand-build the shimmer in CSS, missing criteria 1, 3 and 4."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never searches a catalog by desired effect first, wrongly assumes no discovery is possible without a stack, and plans to hand-build the shimmer via CSS, missing all four rubric points."
+       }
+      ]
+     }
+    },
+    {
+     "try": 4,
+     "with_skill": {
+      "answer": "Search before you install, and install into a project. You don't need an account for either step.\n\n1. **Search by intent, offline.** Run `npx hyperframes catalog --query \"<the move in English>\"`, for example \"sweep a highlight across text\". Search is local and sends nothing, so it needs no project and no account. Describe the move in English even if the video's copy is in another language. Non-English queries return nothing.\n\n2. **Check the results.** Matches are ranked, so look for a shimmer sweep or a close equivalent. The supplied facts don't say whether a shimmer sweep is a block or a component. Its type will be in the results. If it's a component, it gets pasted into a host composition. If it's a block, it gets included with `data-composition-src`.\n\n3. **If nothing fits, report the gap before hand-building.** Run `npx hyperframes feedback --search-miss \"<query>\" --wanted \"<the move you needed>\" --tier words`. The command is also pre-filled in the `report_gap` field of `--json` output. Then build the effect by hand.\n\n4. **Get a project.** `hyperframes add` writes into the paths set in `hyperframes.json`: `compositions/` for blocks and `compositions/components/` for components by default. You need a project to receive the install. You can target one with `--dir`. The supplied facts don't cover creating a project from scratch through `add`, so for a new project, use `hyperframes init <dir>` first. I'm inferring that order from the install paths, not from documented steps.\n\n5. **Install.** Run `hyperframes add <name> --dir <project>`. Registry dependencies install first, automatically. Add `--no-clipboard` in CI or headless runs.\n\n6. **Wire it in.** For a component, paste its HTML, style, and script into your composition and add any GSAP calls from the comment block. For a block, add a host element with `data-composition-id`, `data-composition-src`, `data-start`, `data-duration`, `data-track-index`, and the dimensions.\n\nInstalling needs the network, even for an item you've already searched or installed, since only manifests are cached. Searching still works offline.",
+      "average": 0.9,
+      "notes": [
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Response searches the catalog by intent first (criterion 1), states search needs no account or project (criterion 2), checks fit before installing (criterion 3), and directs catalog search before hand-building, with the gap report only after no match (criterion 4)."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Searches the catalog by desired effect first, states search needs no account or project, checks fit before installing, and only hand-builds after a search miss."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Meets all four criteria: searches the catalog by intent first, states search needs no account or project, checks fit before installing, and only hand-builds if nothing matches."
+       },
+       {
+        "score": 1,
+        "pass": true,
+        "reason": "Searches the catalog by intent first, states search needs no account or project, checks fit before installing, and only hand-builds after a search miss, meeting all four rubric points."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 1 (searches catalog by effect first) and criterion 2 (states search needs no account or project), but installs before any fit check is not explicit and it hand-builds only after a gap report, so criterion 4 is arguably met; criterion 3 (install after checking fit) is satisfied via step 2, making this closer to full than partial, though the response's 'hand-build' fallback and uncertain fit-check wording weaken it."
+       }
+      ]
+     },
+     "placebo": null,
+     "baseline": {
+      "answer": "I haven't checked anything in this turn, so this is the order I'd follow based on what's known: a git repository at `/tmp/driftproof-eval.wjv9sPij` with a clean status, no commits, and no project or account yet.\n\n**1. Discovery first**\n- Confirm what the \"shimmer sweep\" targets: a CSS animation on a web element, a component in a UI framework, or something else. The answer decides the stack.\n- Confirm the repo state. It has no commits and no `main` branch yet, so the first commit will set the baseline.\n- Establish the platform constraints. The environment is Linux with bash, which is enough for a web-based effect, but the toolchain still needs to be chosen.\n\n**2. Account and access second**\n- Only after the stack is known should you set up any account or credentials the chosen tooling needs. Doing this first risks signing up for the wrong service.\n- Anything that publishes or uses external services should wait for explicit confirmation.\n\n**3. Installation third**\n- Install dependencies only after the stack and accounts are settled, so you don't install packages you'll discard.\n- Install the minimum: the framework, a test runner if you want to verify the animation, and nothing speculative.\n- If you're working purely in CSS, you may need no installation at all.\n\n**4. Implementation last**\n- Write the shimmer as a keyframe animation (a gradient offset moving across the element) and verify it in the target environment.\n- Commit the baseline before making changes, so the effect is easy to review and revert.\n\nThe main dependency is that discovery decides the stack, the stack decides what needs an account, and only then should installation happen. If the stack is already fixed, step 1 shrinks to confirming that and the order still holds.",
+      "average": 0.3,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criteria 2 and 3: discovery is ordered before account and installation, and install follows fit-checking. Misses criteria 1 and 4: no catalog search by desired effect, and it plans to hand-write the keyframe shimmer."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "It orders discovery before installation but never searches a catalog by effect, and it plans to hand-write the shimmer keyframes instead of checking for an existing item first. It does defer accounts until the stack is known, but it never states that search needs neither."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Discovery is sequenced before installation and no search-first assumption is made (criteria 2 and 3 roughly met), but it never searches a catalog by effect and plans to hand-write the keyframe shimmer (criteria 1 and 4 missed)."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Never proposes searching a catalog by desired effect (1 missed) and plans to hand-write the shimmer as a keyframe animation without looking first (4 missed). It only loosely implies no account is needed to search (2 partial), and installation follows fit-checking (3 met)."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never mentions searching a catalog by desired effect; it jumps to a stack/account/install order and proposes hand-building the shimmer as a CSS keyframe, missing all four rubric points."
+       }
+      ]
+     }
+    },
+    {
+     "try": 5,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "I haven't run any tools, so nothing below is verified against the directory.\n\n**Discovery comes first.** The working directory `/tmp/driftproof-eval.mDDBdLHw` is a git repository, but the status is clean and there are no recent commits. That suggests an empty or freshly initialized repo with no existing shimmer code, framework, or manifest to match. Before writing anything, I would:\n\n1. Confirm this is the intended target directory.\n2. Look for a package manifest or framework config to identify the stack. Nothing in the supplied facts shows one.\n3. Decide where the shimmer sweep belongs, such as a styles file or component, based on what discovery finds.\n\n**Installation comes after discovery.** Dependencies should be installed only for the stack discovery identifies. Installing first could pull in the wrong toolchain or add packages the project doesn't need. A shimmer sweep is usually plain CSS or a small animation, so it may need no new dependencies at all.\n\n**Accounts come last, if at all.** You have no account or project yet. A local visual effect doesn't need one. Only add a service if the brief requires it.\n\nWhen you're ready, tell me the stack you want, or let me look at the directory, and I'll take the next steps in that order.",
+      "average": 0.3,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the no-assumed-install/account point and sequences installation after discovery, but never searches a catalog by desired effect and suggests hand-building plain CSS for the shimmer."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never searches a catalog by desired effect, so it misses criteria 1 and 4. It does say no installation or account is needed for a plain CSS sweep, which partly touches criterion 2, but it still defers all search and installation to discovery of the stack. Criterion 3 is missed because no selected item is checked for fit and installed."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response covers discovery before installation and notes no account is needed, but never searches a catalog by desired effect and does not consider a registry item; it plans to hand-build plain CSS, missing criteria 1 and 4 and failing to install a selected item (3)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Misses catalog search by desired effect and hand-building the shimmer before looking; it partly meets install-after-fit and no-account-for-search ordering but never mentions a catalog."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response orders discovery before installation and notes no account is needed, satisfying criteria 2 and partly 3, but never searches the catalog by desired effect first and proposes hand-building the shimmer in plain CSS, missing criteria 1 and 4."
+       }
+      ]
+     }
+    },
+    {
+     "try": 6,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "**Shimmer sweep: discovery and installation order**\n\nThe working directory is an empty git repository: no commits, no branch history, and no manifest file, so there is no existing stack, styling system, or account to match. That changes the order of work.\n\n1. **Discovery comes first, and here it's short.** Before adding anything, check for a package manifest (`package.json`, `pyproject.toml`, or similar), an existing stylesheet, and any animation utilities. None exist, so the stack is still undecided.\n\n2. **Choose the approach before installing anything.** A shimmer sweep is a moving highlight gradient across an element. Plain CSS keyframes can do this with no dependencies, so the most likely reading is a standalone CSS snippet. If the target is a framework such as React, the same CSS applies, and it would still need no packages.\n\n3. **Installation comes last, and only if needed.** Under the no-dependency reading, nothing gets installed. If a framework or tooling is added later, install its declared dependencies only after reading the manifest that declares them. Since the directory is untrusted-by-default and has no lockfile yet, review the package list before running any install command.\n\n4. **Verify after the change.** Check the result by reading the CSS and confirming the keyframes and class names are consistent. If you later want a rendered check, that needs a browser or a dev server, which means installation comes before verification.\n\nTell me the target framework, or confirm the plain-CSS approach, and I'll proceed in that order.",
+      "average": 0.2,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 2 (does not assume installation is needed). It never searches a catalog by desired effect, and it recommends hand-building the shimmer in CSS first, violating criterion 4. Criterion 3 is not addressed."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "The response never searches a catalog by desired effect and hand-builds the shimmer in CSS without looking, missing criteria 1 and 4. It avoids assuming install or account is needed and sequences installs after a fit check, earning criteria 2 and 3."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "The response never searches a catalog by desired effect; it instead proposes hand-building the shimmer with plain CSS keyframes, missing criteria 1 and 4, and does not assume installation is needed (criterion 2) and says install only after fit review, partially touching criterion 3 at best."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never searches a catalog by desired effect and instead recommends hand-building the shimmer with CSS keyframes first, missing criteria 1, 3, and 4; criterion 2 is not explicitly addressed."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never searches a catalog by desired effect first, and it assumes installation is unnecessary, so it misses rubric points 1, 2 and 4 and point 3 does not apply. It only proposes hand-building the shimmer in CSS, which is the behavior criterion 4 forbids."
+       }
+      ]
+     }
+    },
+    {
+     "try": 7,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "**Order: discover first, then install.**\n\n1. **Discovery.** The working directory is a git repository with a clean status, no commits, and no project files yet. Before anything else, confirm what exists: whether there's a manifest, an existing UI stack, or any styling code the shimmer should match. With no commits and no project, there's probably nothing to match, so the first decision is which stack the sweep will live in. Only after that is settled can you pick the right tooling.\n\n2. **Installation.** Install only what the chosen stack declares, and only after discovery tells you what that is. Installing first would guess at the toolchain and could add dependencies the project never needed. Because there's no account yet, anything that requires signing in to a service has to wait until the user provides one or confirms it's not needed.\n\n3. **Then build the shimmer sweep.** A CSS-only sweep (a gradient moving across an element) needs no dependencies, so if discovery shows a plain or static setup, installation may be unnecessary.",
+      "average": 0.25,
+      "notes": [
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Only criterion 3 is met: it says to install after checking fit. It never mentions searching a catalog by effect, doesn't say search needs no install or account, and suggests hand-building a CSS sweep without looking first."
+       },
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "Response never searches a catalog by desired effect, so criterion 1 is missed; it treats installation as the step after discovery and never mentions a registry search, so criteria 2-4 are not clearly satisfied either. Only partial credit on the no-assumption point is arguable, but it instead proposes CSS-only hand-building, which violates criterion 4."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response never searches a catalog by desired effect and suggests hand-building a CSS sweep without looking, missing criteria 1 and 4; it only partly meets criterion 2 or 3 by deferring installation until after discovery."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets criterion 3 (install after checking fit) and loosely criterion 2 (no install or account assumed). Misses criterion 1 (no catalog search by effect) and criterion 4, since it proposes hand-building a CSS sweep without looking first."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Response orders discovery before installation, which loosely fits criterion 3, but never searches a catalog by effect (criterion 1), and suggests hand-building a CSS sweep (criterion 4 missed)."
+       }
+      ]
+     }
+    },
+    {
+     "try": 8,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "A shimmer sweep is a highlight gradient that moves across an element, usually as a CSS `background-position` or `transform` animation. Since there's no project or account yet, the order is:\n\n1. **Discovery first.** The working directory is an empty git repo with no commits and a clean status, so there's nothing to inspect yet. Before writing anything, the stack needs to be settled: plain HTML/CSS, a framework, or an existing design system. Once there's a project, check its manifest (e.g. `package.json`), existing styles, and whether a shimmer or animation utility already exists.\n\n2. **Account and access second, only if needed.** A pure CSS shimmer needs no account, API key, or service. If the brief later requires a hosted asset, design tool, or library behind a login, that setup has to happen before the code that depends on it.\n\n3. **Installation last, and minimal.** Install dependencies only after the stack is chosen and the manifest has been read. A shimmer may need no new packages at all, so the default is to add nothing. If a library is needed, install it, then confirm the build or dev server still runs before adding the effect.\n\nNothing here has been run. This is the plan for the order of work, and the first real step is choosing the stack.",
+      "average": 0.5,
+      "notes": [
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Misses criterion 1 by never searching a catalog by desired effect; it defaults to hand-building the shimmer, missing criterion 4. It meets criterion 2 by not assuming an account is needed and criterion 3 loosely by installing only after checking the manifest."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Misses criterion 1 (no catalog search by effect) and criterion 4 (it defaults to hand-building a pure CSS shimmer without looking for an existing item). Meets criterion 2 (no assumed account or install for search) and roughly criterion 3 (install after checking fit)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Misses criterion 1 (no catalog search by desired effect) and criterion 4 (defaults to hand-building CSS, though it mentions checking for an existing utility); meets criterion 3 (install after checking fit) and arguably criterion 2 (no account assumed)."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Misses criterion 1 (no catalog search by desired effect) and criterion 4 (defaults to hand-building CSS, never looking for an existing shimmer item). It partly meets criterion 2 by not requiring an account, and criterion 3 by installing only after checking the manifest and fit."
+       },
+       {
+        "score": 0.5,
+        "pass": false,
+        "reason": "Meets the no-assumed-account criterion and the check-fit-then-install ordering, but never searches a catalog by effect first and defaults to hand-building the shimmer (\"add nothing\")."
+       }
+      ]
+     }
+    },
+    {
+     "try": 9,
+     "with_skill": null,
+     "placebo": null,
+     "baseline": {
+      "answer": "**Discovery first, then installation.** Nothing should be installed until you know what the project is.\n\n1. **Discovery.** The working directory `/tmp/driftproof-eval.w2oO5TQo` is a git repository, but it has no commits and a clean status, and the brief doesn't name a project yet. So the first step is to confirm what exists there and what stack it uses. Installing packages before that risks adding the wrong tooling. A shimmer sweep is usually a CSS keyframe animation (a moving gradient across an element), so it may need no new dependencies at all.\n\n2. **Installation.** Install only what the discovered stack requires, and only if the sweep can't be done with what's already there. Check for an existing dependency manifest before adding anything.\n\n3. **Account setup.** You have no account yet. Any service that needs one should wait until the work requires it.\n\nOnce you tell me the project, or confirm the directory should be scaffolded from scratch, I can proceed with the sweep.",
+      "average": 0.2,
+      "notes": [
+       {
+        "score": 0,
+        "pass": false,
+        "reason": "The response never searches a catalog by desired effect, and it presumes a CSS keyframe hand-build rather than looking up a registry item first. It only says to check for dependencies, failing criteria 1, 3 and 4. Criterion 2 is met, since it says no installation or account is needed before discovery, so the score is 0.25."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "It never searches a catalog by desired effect and suggests hand-building a CSS keyframe sweep without looking first, missing criteria 1 and 4. It partly meets criterion 2 by not assuming install or account for discovery."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Meets only criterion 2 (no install or account assumed for discovery). Misses catalog search by desired effect, selecting and installing a catalog item after fit check, and avoids hand-building the shimmer sweep only partly; it suggests a CSS keyframe approach."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Criterion 3 is met: it says to check the stack and manifest before installing. Criteria 1, 2 and 4 are missed: it never searches a catalog by effect, and it suggests hand-building the sweep as a CSS keyframe without looking for a registry item first."
+       },
+       {
+        "score": 0.25,
+        "pass": false,
+        "reason": "Never searches the catalog by desired effect (criterion 1 missed), and suggests a hand-built CSS keyframe before looking (criterion 4 missed). It avoids assuming installation is needed for search, which earns the one quarter."
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}
