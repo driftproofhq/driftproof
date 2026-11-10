@@ -7,13 +7,9 @@ const FORMATS = ['agent-skills-eval', 'skillgrade', 'claude-plugin-eval', 'skill
 const basic = createBasicCore();
 const anthropic = createAnthropicCore();
 const LIMIT = 'Each file must be at most sixteen MiB.';
-// Same visible code-point notation as the CLI's names.invisibleShown.
-const invisible = [[0x00, 0x1f], [0x7f, 0x9f], [0x200e, 0x200f], [0x2028, 0x202e], [0x2066, 0x2069]];
-const safe = value => {
-  let out = '';
-  for (const c of String(value)) { const cp = c.codePointAt(0); out += invisible.some(([a, b]) => cp >= a && cp <= b) ? '\\u{' + cp.toString(16) + '}' : c; }
-  return out;
-};
+// Same visible code-point notation as the CLI's names.invisibleShown: this is that line, and tests/door.test.js holds the two equal.
+const HIDDEN = /(\u{1F3F4}\u{E0067}\u{E0062}(?:\u{E0065}\u{E006E}\u{E0067}|\u{E0073}\u{E0063}\u{E0074}|\u{E0077}\u{E006C}\u{E0073})\u{E007F}|[0-9#*]\u{FE0F}\u{20E3}|\p{Extended_Pictographic}[\u{FE0E}\u{FE0F}\p{Emoji_Modifier}]?(?:\u{200D}\p{Extended_Pictographic}[\u{FE0E}\u{FE0F}\p{Emoji_Modifier}]?)*)|\p{Cc}|\p{Zl}|\p{Zp}|\p{Default_Ignorable_Code_Point}/gu;
+const safe = value => String(value).replace(HIDDEN, (m, emoji) => emoji === undefined ? '\\u{' + m.codePointAt(0).toString(16) + '}' : m);
 
 // Analysis contains source declarations and calculated figures, never a seal or fabricated hashes.
 export function analyzeFiles(files, from) {

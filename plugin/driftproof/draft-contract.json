@@ -1,0 +1,45 @@
+{
+  "_comment": [
+    "SHIPPED WITH THE PLUGIN. What a draft given to start or init with --from-failure must meet,",
+    "read by lib/door.mjs before anything is spawned (spec 727 AC-4, AC-5). Such a draft holds a",
+    "task as the person gave it, so it may carry a path, an email or a key by accident; the door",
+    "refuses one before the pinned CLI could write it into a committed suite, and names the place",
+    "and the class, never the value.",
+    "",
+    "Every field is a copy, and the copy is asserted rather than trusted (spec 727 AC-6,",
+    "tests/plugin-compat.test.js): leak_classes is lib/hygiene.js PATTERNS, name for name and",
+    "source for source; email is the rule scanContent applies, with EMAIL_ALLOW and its .example",
+    "suffix; bounds are config.js's CASE_MAX_CHARS and SUITE_MAX_CASES and lib/skill.js's",
+    "SUITE_MAX_BYTES and CRITERIA_MAX; criterion_id is lib/skill.js's CRITERION_ID; origin_label is",
+    "lib/init.js's FAILURE_LABEL. A copy that moves without its source takes that test red.",
+    "",
+    "It ships because an installed plugin has no lib/ to read these from, and the door runs the",
+    "check before the CLI, so the CLI's own bounds (which it still applies) come too late to keep",
+    "the draft out of the process that writes."
+  ],
+  "bounds": {
+    "CASE_MAX_CHARS": 65536,
+    "SUITE_MAX_CASES": 500,
+    "SUITE_MAX_BYTES": 33554432,
+    "CRITERIA_MAX": 50
+  },
+  "criterion_id": "^[A-Za-z0-9_.-]{1,64}$",
+  "leak_classes": [
+    { "name": "home-path", "re": "\\/home\\/[a-z0-9_-]+\\/|\\/Users\\/[A-Za-z0-9_-]+\\/", "flags": "" },
+    { "name": "ec2-internal-host", "re": "ip-\\d+-\\d+-\\d+-\\d+\\.[a-z0-9.-]*compute\\.(internal|amazonaws\\.com)", "flags": "i" },
+    { "name": "private-ip", "re": "(?<!\\d)(10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|172\\.(1[6-9]|2\\d|3[01])\\.\\d{1,3}\\.\\d{1,3}|192\\.168\\.\\d{1,3}\\.\\d{1,3})(?!\\d)", "flags": "" },
+    { "name": "anthropic-key", "re": "sk-ant-[A-Za-z0-9_-]{8,}", "flags": "" },
+    { "name": "github-token", "re": "gh[pousr]_[A-Za-z0-9]{20,}", "flags": "" },
+    { "name": "aws-key", "re": "\\bAKIA[0-9A-Z]{16}\\b", "flags": "" },
+    { "name": "private-key-block", "re": "-----BEGIN [A-Z ]*PRIVATE KEY-----", "flags": "" },
+    { "name": "env-secret-assignment", "re": "\\b(ANTHROPIC_API_KEY|AWS_SECRET_ACCESS_KEY|OPENAI_API_KEY)\\s*=\\s*\\S+", "flags": "" },
+    { "name": "jwt-token", "re": "\\beyJ[A-Za-z0-9_=-]{10,}\\.eyJ[A-Za-z0-9_=-]{10,}\\.[A-Za-z0-9_=-]{6,}", "flags": "" },
+    { "name": "openai-secret-key", "re": "\\bsk-(proj|svcacct|admin)-[A-Za-z0-9_-]{20,}", "flags": "" }
+  ],
+  "email": {
+    "re": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b",
+    "allow": ["driftproofhq.com", "example.com", "example.org"],
+    "allow_suffix": ".example"
+  },
+  "origin_label": "drafted from a failure the person described and approved"
+}

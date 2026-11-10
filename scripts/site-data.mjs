@@ -29,6 +29,8 @@ import { receiptFiles, keyOf, cellOf } from './band-plot.mjs';
 
 const require = createRequire(import.meta.url);
 const { DEFAULT_JUDGE_SAMPLES, EFFECT_FLOOR } = require('../config.js');
+const { projectCalls } = require('../lib/run.js');
+const { SAMPLING } = require('../lib/sampling.js');
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DOCS = path.join(ROOT, 'docs');
@@ -251,11 +253,16 @@ function latestTallyFields(html, from) {
 // every following sentence stays. The point whose text opens with the headline block's
 // first forty characters is that one. Read through the chrome's resolver, so a {name} value is the
 // file's, and cited to the report page, where the chrome prints the same points.
+// A LEAD SAID AGAIN (issue 757, spec 687 A-687-4): a text whose first sentence only repeats its lead
+// gives up that sentence; every sentence after it stays.
+const REPEATED_LEAD = { "The judge is the target's model.": 'The judge uses the same model as the target.' };
 export function latestCaveats(number, html) {
   const points = require(path.join(ROOT, 'scripts', 'site-chrome.js')).summaryPoints(number) || [];
   const big = textOf((String(html).match(/<div class="headline">[\s\S]*?<p class="big"[^>]*>([\s\S]*?)<\/p>/) || [])[1] || '');
   const head = big.slice(0, 40);
   return points.flatMap((p) => {
+    const said = REPEATED_LEAD[p.lead];
+    if (said && p.text.startsWith(`${said} `)) return [{ ...p, text: p.text.slice(said.length).trim() }];
     if (!(head && p.text.startsWith(head))) return [p];
     const rest = p.text.slice(firstSentence(p.text).length).trim();
     return rest ? [{ ...p, text: rest }] : [];
@@ -270,6 +277,22 @@ export function latestFindingFields(bigHtml, from) {
   if (!sentence || /…|\.\.\./.test(sentence) || !/[.?!]$/.test(sentence)) throw new Error(`the latest report's finding sentence is cut or elided: ${sentence}`);
   const claim = sentence.split(/:\s/)[0].replace(/[.?!]$/, '').trim();
   return { latest_report_claim: F(claim, from), latest_report_sentence: F(sentence, from) };
+}
+// THE FINDING IN COUNTS (issue 757, spec 687 A-687-4): how many of the latest report's counted skills
+// scored above the fake, computed from its sealed receipts by the reader its builder uses, named here
+// because that builder requires this module and cannot be required back. The reader's counts must
+// equal the tally the report prints, or the build refuses. A report with no reader listed, or no
+// tally counted against the fake, writes no field and its card keeps the report's own words.
+const CAMPAIGN_READERS = { '018': ['../specs/655-report-018-plan/run-campaign.cjs', 'receipts/report-018'] };
+export function latestFoundFields(number, html, { publication } = {}) {
+  const tally = latestTally(html);
+  const beat = tally && tally.items.find((it) => it.label === 'beat the fake');
+  const entry = CAMPAIGN_READERS[number];
+  if (!beat || !entry) return {};
+  const [reader, dir] = entry;
+  const t = (publication || require(reader).publication({ root: ROOT, campaignRoot: path.join(ROOT, dir), stub: false })).tally;
+  if (t.A !== beat.count || t.N !== tally.total) throw new Error(`Report ${number}'s receipts give ${t.A} of ${t.N} above the fake; its page prints ${beat.count} of ${tally.total}`);
+  return { latest_found_above: F(t.A, dir), latest_found_counted: F(t.N, dir) };
 }
 function latestPointFields(number, html, from) {
   const out = {};
@@ -353,6 +376,10 @@ function buildStats() {
     // picture and the caveats it sets beside them, read off the report's own page and summary row.
     ...latestTallyFields(fs.readFileSync(latestPage, 'utf8'), rel(latestPage)),
     ...latestPointFields(latest, fs.readFileSync(latestPage, 'utf8'), rel(latestPage)),
+    ...latestFoundFields(latest, fs.readFileSync(latestPage, 'utf8')),
+    // The most model calls one test task can take, by the guard the CLI runs before any call (lib/run.js
+    // projectCalls, at the sampling maximum and two arms); action.yml states the same figure.
+    max_calls_per_task: F(projectCalls(1, DEFAULT_JUDGE_SAMPLES, SAMPLING.max, 2), 'action.yml'),
     // The bundled example receipt - the one behind
     // docs/badges/commit-message-conventions.json, and the one the hero card and
     // the playground both read. Its recorded comparison figures are used rather

@@ -92,7 +92,8 @@ async function receiptFile(mode, { unrecorded = false } = {}) {
   const key = `${mode}:${unrecorded}`;
   if (!made[key]) {
     const { receipt } = await runSkillOnModel({ skill: loadSkill(SKILL), model: 'haiku', opts: { samples: 2, trusted: true, capture: mode } });
-    assert.deepEqual(receipt.run.capture, { mode });
+    // A-146-13 (issue 778): issue 760's receipts also record which CLI setting sources the calls loaded.
+    assert.deepEqual(receipt.run.capture, { mode, setting_sources: [] });
     // A-146-10 (issue 549): the shared helper recounts what the writer derives from the capture mode.
     if (unrecorded) { delete receipt.run.capture; sealReceipt(recount(receipt)); }
     made[key] = receipt;

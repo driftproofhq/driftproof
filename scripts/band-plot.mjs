@@ -38,6 +38,8 @@ const require = createRequire(import.meta.url);
 const { bandOf } = require('../lib/reuse.js');
 const { receiptAggregatesOnly } = require('../lib/verdict.js');
 const { EFFECT_FLOOR } = require('../config.js');
+// Spec 035 A-035-27 (issue 761): the verdict's floor test, held equal with lib/band-plot.js.
+const { reachesFloor } = require('../lib/stats.js');
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -101,6 +103,8 @@ export function receiptFiles(root = ROOT) {
       if (!e.name.endsWith('.json') || e.name.startsWith('_')) continue;
       // Issue 501: the campaign manifest is metadata, validated by its analysis reader.
       if (path.relative(root, f) === 'receipts/report-016/manifest.json') continue;
+      // Issue 765: the canary manifest lists receipts and is not one; a plot of it would read "refused".
+      if (path.relative(root, f) === 'receipts/canary/manifest.json') continue;
       out.push(f);
     }
   })(path.join(root, 'receipts'));
@@ -137,7 +141,7 @@ export function cellOf(receipt) {
   if (!baseline || !skill) return { state: 'refused', baseline, skill, delta: null };
   const overlap = baseline.lo <= skill.hi && skill.lo <= baseline.hi;
   const delta = skill.mean - baseline.mean;
-  const state = (!overlap && Math.abs(delta) >= EFFECT_FLOOR) ? 'separated' : 'overlapping';
+  const state = (!overlap && reachesFloor(delta, EFFECT_FLOOR)) ? 'separated' : 'overlapping';
   return { state, baseline, skill, delta };
 }
 

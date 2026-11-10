@@ -697,6 +697,38 @@ if [ "$NO_PARENT" -eq 0 ] && { [ "$PUB_EXPLICIT" -eq 0 ] || [ -n "$REMOTE_ARG" ]
   fi
 fi
 
+# ── no tracked symbolic link may ship (spec 011 A-011-11, issue 762) ──
+#
+# The copy below follows a link, so `docs/notes.md -> ../BACKLOG.md` would ship the excluded file's
+# text at an allowed path, as a regular file that the published-tree symlink check then passes. The
+# listing is NUL-separated so a name git would quote is read as it is, and each entry's working copy
+# is read as well, so a tracked file replaced by a link is caught too. Refused before `rm -rf`. A
+# source that is not a git repository tracks nothing, and stops at the copy below as it always has.
+LINKS=()
+if git -C "$SRC" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  LINK_SCAN="$(mktemp "${TMPDIR:-/tmp}/driftproof-link-scan.XXXXXX")"
+  if ! git -C "$SRC" ls-files -s -z > "$LINK_SCAN"; then
+    rm -f "$LINK_SCAN"
+    echo "build-public.sh: REFUSING: cannot list the tracked files of the source tree." >&2
+    exit 13
+  fi
+  while IFS= read -r -d '' _entry; do
+    _path="${_entry#*$'\t'}"
+    if [[ "$_path" =~ $EXCLUDE_RE ]]; then continue; fi
+    if [ "${_entry%% *}" = 120000 ] || [ -L "$SRC/$_path" ]; then LINKS+=("$_path"); fi
+  done < "$LINK_SCAN"
+  rm -f "$LINK_SCAN"
+fi
+if [ "${#LINKS[@]}" -gt 0 ]; then
+  echo "build-public.sh: REFUSING: the source holds a symbolic link it would publish." >&2
+  printf '    %q\n' "${LINKS[@]}" >&2
+  echo >&2
+  echo "  The copy follows a link, so the public tree would carry the text of the" >&2
+  echo "  file it points at, whatever the exclude list says about that file." >&2
+  echo "  Replace each link with the file it should be, or remove it." >&2
+  exit 13
+fi
+
 rm -rf "$PUB"
 mkdir -p "$PUB"
 # The manifest of what this build copied. Written outside the target so it is

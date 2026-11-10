@@ -17,6 +17,7 @@ const { pairsOf, readSuite, readingLine, dropLine, HONESTY, mountBlind } = requi
 const { renderView } = require('../lib/view');
 const { htmlToText, tokenize, attrOf } = require('../scripts/html-text.js');
 const { splitReportBody } = require('../scripts/site-chrome.js');
+const { MOUNT } = require('../scripts/glossary-terms.js');
 const { humanModelName } = require('../scripts/model-names.js');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -259,7 +260,14 @@ test('AC-7, AC-8, AC-10: the honesty line, the scripts, the island and the stati
   assert.ok(html.includes('</body>'));
   assert.deepEqual(scriptProblems(html.replace('</body>', '<SCRIPT SRC="/x.js"></SCRIPT></body>')), ['<SCRIPT SRC="/x.js">'], 'plant: an upper-case script tag is read');
   assert.deepEqual(scriptProblems(html.replace('</body>', '<script data-x="a>b" src="/y.js"></script></body>')), ['<script data-x="a>b" src="/y.js">'], 'plant: a ">" inside a quoted attribute stays inside the tag');
-  assert.equal((html.match(/data-island="/g) || []).length, 1);
+  // A-638-6 (issue 766): every island mount, read by the tokenizer. The page holds its own and the one the
+  // site step writes on every reader page (spec 689), whose name is read from that step's mount.
+  const islandsOf = (h) => tokenize(h).filter((t) => t.type === 'start' && attrOf(t, 'data-island') !== null).map((t) => attrOf(t, 'data-island')).sort();
+  const islands = ['blind-read', ...islandsOf(MOUNT)].sort();
+  assert.notDeepEqual(islandsOf(html.replace('</body>', '<div data-island="planted"></div></body>')), islands, 'plant: a third island');
+  assert.notDeepEqual(islandsOf(html.replace('</body>', '<div data-island="blind-read"></div></body>')), islands, 'plant: a second blind-read mount');
+  assert.notDeepEqual(islandsOf(html.replace(MOUNT, '')), islands, 'plant: the site step\'s mount removed');
+  assert.deepEqual(islandsOf(html), islands, 'its own island and the site step\'s, and no other');
   assert.doesNotMatch(html, /<form\b/i);
   const equiv = (h) => [...h.matchAll(/<meta\s+http-equiv="([^"]+)"/gi)].map((m) => m[1].toLowerCase()).sort();
   assert.deepEqual(equiv(html), equiv(read('placebo/index.html')), 'the policy is the other site pages\'');

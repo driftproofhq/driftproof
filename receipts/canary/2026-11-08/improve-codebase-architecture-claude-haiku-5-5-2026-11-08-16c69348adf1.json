@@ -1,0 +1,2770 @@
+{
+  "schema_version": "0.16",
+  "generation_sampled": true,
+  "skill": {
+    "name": "improve-codebase-architecture",
+    "version": "0.0.0",
+    "content_hash": "392c6e6a10d199b2c6d895cd6ee91f0934292e3cf0c71279e79bce94cae04418",
+    "unit": "skill",
+    "tokens": 1500
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "808374fd9d1978c553ce7aef6bf5722469a74851217bd22dc31eea30d6f4d5e1",
+    "case_count": 3,
+    "canary": "4b16b436-88eb-1ca4-6df5-c26fe31a4d2b"
+  },
+  "run": {
+    "model_id": "claude-haiku-5-5",
+    "model_release_date": null,
+    "provider": "anthropic",
+    "surface": "claude-cli",
+    "delivery": "injected",
+    "runner_version": "0.27.0",
+    "date_utc": "2026-11-08T15:40:10.555Z",
+    "generated_at": "2026-11-08T15:36:28.107Z",
+    "registry": "registered",
+    "transcripts": "hashes-only",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli",
+      "model_id": "claude-haiku-5-5",
+      "prompt_template_hash": "82586d1e44f84df2b8ce5f18ac777866465cb5ad9686503c93d9776c93c344ed",
+      "harness": {
+        "name": "claude-code",
+        "version": "2.1.311"
+      },
+      "isolation": "eval-user",
+      "endpoint": {
+        "custom": false,
+        "sha256": null,
+        "resolved_by": "cli",
+        "routing": {
+          "ANTHROPIC_BEDROCK_BASE_URL": {
+            "set": false,
+            "sha256": null
+          },
+          "ANTHROPIC_VERTEX_BASE_URL": {
+            "set": false,
+            "sha256": null
+          },
+          "CLAUDE_CODE_USE_BEDROCK": {
+            "set": false,
+            "sha256": null
+          },
+          "CLAUDE_CODE_USE_VERTEX": {
+            "set": false,
+            "sha256": null
+          },
+          "HTTPS_PROXY": {
+            "set": false,
+            "sha256": null
+          }
+        }
+      },
+      "code_revision": "judge-code-f991576d73d966ab",
+      "reported_models": [
+        "claude-haiku-5-5"
+      ],
+      "parse_retries": 0,
+      "parse_recoveries": 0
+    },
+    "answered_by": {
+      "kind": "model",
+      "attested": true,
+      "reported_model": "claude-haiku-5-5",
+      "reported_models": [
+        "claude-haiku-5-5"
+      ],
+      "isolation": "eval-user"
+    },
+    "capture": {
+      "mode": "text"
+    },
+    "harness": {
+      "name": "claude-code",
+      "version": "2.1.311"
+    },
+    "pricing_snapshot": {
+      "frozen_at": "2026-11-08T15:40:10.555Z",
+      "source": "config/models.json",
+      "currency": "USD",
+      "models": {
+        "claude-haiku-5-5": {
+          "input_per_mtok": 0.1,
+          "output_per_mtok": 0.5,
+          "registered": true
+        }
+      },
+      "note": "Prices frozen at run time. Every derived cost in this receipt is computed from THIS snapshot, never from the live registry, so the receipt keeps its meaning when registry prices later change."
+    },
+    "counts": {
+      "judge_samples_per_generation": 5
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "candidate",
+        "mode": "with_skill",
+        "outcome": "borderline",
+        "score": 0.76875,
+        "mean": 0.76875,
+        "stddev": 0.109992,
+        "samples": [
+          0.75,
+          0.75,
+          0.75,
+          0.75,
+          0.75
+        ],
+        "generation_hash": "30517afa25c7d5b783826e9c5b649f5c561a624524abd75eb761820ae3cacfed",
+        "judge_sample_hashes": [
+          "eb6bc00c9e5885e44552aa4848ed0993e33dde67f9d9ada67e796dd32fef6cd1",
+          "58b8833cbbcf874916cf6e1aa1bc39ea59534b2112321c769e16804f91287d28",
+          "32ee289af6066ac9ea3b36ffc02c6b62d3303f7975ad74f318767b46b1bacf11",
+          "b94567e1eaea61faa6436e5a7779fecf1a346a2345e77be9e486041308e54891",
+          "aee8c0ce65d9259a45804a79a406371f4b0d341141709d2cdf3ad475f1fd8569"
+        ],
+        "threshold": 0.75,
+        "reason": "Meets prioritizing validation, identifying the forwarding layer, and explaining that removal only removes a hop. Test seam is named as OrderRules, but it never explicitly argues why the seam survives the change.",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "1c4b139b8806acaa1fea36149f4b9ce95a037c206e8629cc011e0e5ea03fd335"
+        },
+        "judge_usage": {
+          "input_tokens": 20655,
+          "output_tokens": 3057,
+          "cached_tokens": 17590,
+          "wall_ms": 29763
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 8,
+          "n_measured": 8,
+          "n_unmeasured": 0,
+          "stopping_reason": "stabilised",
+          "mean": 0.76875,
+          "sd": 0.109992,
+          "judge_sd_mean": 0.031092,
+          "variance_ratio": 3.53763,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "3283d6cc212ceb542b9ded22639ace0d965c6bf031fb4c00da9344744704f02d",
+              "status": "measured",
+              "samples": [
+                1,
+                1,
+                1,
+                1,
+                1
+              ],
+              "judge_sample_hashes": [
+                "3f1bac4b44e5fded2bcb7661181abc7ccb832fa959ab9040d9799d6240d4108e",
+                "42b57545a845c2456c5118749962e79cd85d82e0a2b5bf1f6c32cb24403b3e46",
+                "3a591cc6641ecf640f2c9df2ab5bebe1600d98a229cf20ecfed6bb2fa888a77b",
+                "57a807d1f3e94b1fcbd14a22a9894a1c7949a32662d44eb6e1f88a29bbb9794a",
+                "8b15e3b9bb2a663dfd4f1acc08c7a7015d5fdaa8e0823d162671d1629005942d"
+              ],
+              "mean": 1,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5218,
+                "output_tokens": 1034,
+                "cached_tokens": 4871,
+                "wall_ms": 9626
+              },
+              "judge_usage": {
+                "input_tokens": 21160,
+                "output_tokens": 1720,
+                "cached_tokens": 16560,
+                "wall_ms": 69140
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "ac3bc53326fc3fb81c94da38e475ba5f07f87f62db2c681b04a677b1fee89bf2",
+              "status": "measured",
+              "samples": [
+                1,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "268d6f32749edac6e2b42e5b44cbf0a8ca9789fc3796cc6be5fe4dc5b4b88ed1",
+                "9fe3a71cb5427ec70dfa537a05b97f9e7ed3d27004531b7cb89f0ec7883da5fc",
+                "c04ee7c99cbf063afa0a4f9294250a31ef617231d03f17e2ebe9aa02c1b48e1c",
+                "362f5ab0d1321975e94991ce5b0d13c705ea7181bf7ea694d3683c54b1b35acb",
+                "42181fe25696c0f6288556cf40082e7c96b4a80492938a5f5f6df3fd446cfd39"
+              ],
+              "mean": 0.8,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5219,
+                "output_tokens": 896,
+                "cached_tokens": 4871,
+                "wall_ms": 7628
+              },
+              "judge_usage": {
+                "input_tokens": 21338,
+                "output_tokens": 3013,
+                "cached_tokens": 18134,
+                "wall_ms": 76066
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "2b0817e222c05c4de967a2c322fae039a843a50340f8e1c4bf49810119b203b2",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "bf41a9cf94cc1cd2c469294017ca0177bba65234fedbbbb9b6865810ab565967",
+                "584dffaec5c857dff046eacfb6e815bd1e943934bf5b66bc9961b58e539f569a",
+                "ba9dccc1d2afdc79954f17784abd8dcd3e3a69cec484a36e275ee62dbe0bec71",
+                "9f1285a5e722d0fbb7177ca21271b712011eef9a0c2349b243c7cfc9ff4be900",
+                "3f775f1d3dcc26569c66a48b41d090aa7ad8f7c157cd62845b32bc358c0c5c21"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5219,
+                "output_tokens": 1205,
+                "cached_tokens": 4871,
+                "wall_ms": 9449
+              },
+              "judge_usage": {
+                "input_tokens": 20859,
+                "output_tokens": 2306,
+                "cached_tokens": 12270,
+                "wall_ms": 73451
+              }
+            },
+            {
+              "draw_index": 3,
+              "generation_hash": "923b36d6d85ceaacf74cd75064f3ea90b46e8e9e9678051d7a9e6fef50ea59cd",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.5,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "ab38e87887960a8566d66591df897e3025a0923cd3b8b4ae2bbc4fe091ee937c",
+                "2cf9e05a45e786caf4e211b653776ac3862138b570de7b264b10b20202940902",
+                "97f2e2b636dc716c516f5ddcdbf854d37a3cc2b5ffc4f91df01c5cedfcfe1efa",
+                "2ee7c46b81dd050c4824e3f94e8c6dc1488a3bde39a64bc65019b35e7f102ae2",
+                "6cdf9d7d794356ee9e60ca4f7e3892ee185b74b9b65a0df254939e4e709ebdf1"
+              ],
+              "mean": 0.6,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5218,
+                "output_tokens": 1099,
+                "cached_tokens": 4871,
+                "wall_ms": 7251
+              },
+              "judge_usage": {
+                "input_tokens": 21271,
+                "output_tokens": 2512,
+                "cached_tokens": 18078,
+                "wall_ms": 27138
+              }
+            },
+            {
+              "draw_index": 4,
+              "generation_hash": "aab962824e8f6f3134281c53016ddf4ef30c2b35a6d8a1132e36f07397b736de",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "4f4dc0dfcf21fb18d93b9b5eedb5f11074de758a11f44b90dbea0f0478c8383b",
+                "50f31ed8187d58409f9c53d3c49730903a6877b4f8bae8ce5bd96ddbd1784b01",
+                "9ae95b490a14be45936e3cb672ebc7c27bb3dc046462cb23b53ccd2fa874532a",
+                "472fe29e928d245b61e4cc9333de1df6694ca20e9f140f161cdf6ae2a6aee4e9",
+                "84479678cd32437e33d3a7bf6f4384c2e989dd74a674fca84107252d36983c00"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5220,
+                "output_tokens": 866,
+                "cached_tokens": 4871,
+                "wall_ms": 7132
+              },
+              "judge_usage": {
+                "input_tokens": 20385,
+                "output_tokens": 2977,
+                "cached_tokens": 12270,
+                "wall_ms": 29599
+              }
+            },
+            {
+              "draw_index": 5,
+              "generation_hash": "d7405cb89197828b6dfa7bf2db96a7f76c49e6145bfe17e8e275efb225c1982e",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "bf16ddd3dc7b244dcab96a5ff11842bec39a1eff5d4ce4a3b5bfc854a1d00f19",
+                "d720edd9776932481e4d10827d6020ad1cb0f033e6f64ec9f8af34c0c80d52a5",
+                "2a7565bcf5d8fa6e577bf04628470b666702b99e5ad4d5c5b3fe162627e94a58",
+                "be793d8508bd8710c1327ef3b3f9396fe8f52bd9e3eea418db9e363f277f909b",
+                "80e2b868bce2df192dd01ed6325e105c6ff8e4d84781078aaad96db4afad7c97"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5219,
+                "output_tokens": 1251,
+                "cached_tokens": 4871,
+                "wall_ms": 8070
+              },
+              "judge_usage": {
+                "input_tokens": 21172,
+                "output_tokens": 2236,
+                "cached_tokens": 13703,
+                "wall_ms": 29465
+              }
+            },
+            {
+              "draw_index": 6,
+              "generation_hash": "94db486a6f734229326572896abb6e850bce5b4580e528d5606d9626da7bb513",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "61b6cfeef9cc5e2aa206e67547eb3f1a08f3a106d5f2ab2da0f3523b41b66cc9",
+                "30e3be5010c15ae6761fb0b6c0f80fbae968456de330646812d2388dd31bd540",
+                "cbef7099f061ab4132d28decf409e5d3186f4969e9a0a5266b79c8293027286a",
+                "ae72f00ef1cb1b9140acc0b8bfb7f2dd470a73181ad90dd84f687272a0ecad7e",
+                "784e1313440771f696f3dae053de476e039bedde63fff0f98ce492ba613c2663"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5219,
+                "output_tokens": 1353,
+                "cached_tokens": 4871,
+                "wall_ms": 8885
+              },
+              "judge_usage": {
+                "input_tokens": 20918,
+                "output_tokens": 2632,
+                "cached_tokens": 15034,
+                "wall_ms": 43849
+              }
+            },
+            {
+              "draw_index": 7,
+              "generation_hash": "30517afa25c7d5b783826e9c5b649f5c561a624524abd75eb761820ae3cacfed",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "eb6bc00c9e5885e44552aa4848ed0993e33dde67f9d9ada67e796dd32fef6cd1",
+                "58b8833cbbcf874916cf6e1aa1bc39ea59534b2112321c769e16804f91287d28",
+                "32ee289af6066ac9ea3b36ffc02c6b62d3303f7975ad74f318767b46b1bacf11",
+                "b94567e1eaea61faa6436e5a7779fecf1a346a2345e77be9e486041308e54891",
+                "aee8c0ce65d9259a45804a79a406371f4b0d341141709d2cdf3ad475f1fd8569"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5217,
+                "output_tokens": 840,
+                "cached_tokens": 4871,
+                "wall_ms": 10089
+              },
+              "judge_usage": {
+                "input_tokens": 20655,
+                "output_tokens": 3057,
+                "cached_tokens": 17590,
+                "wall_ms": 29763
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "eefdc38f64aef9172a264e843c9e2b6b11bca19a7d33f0dea25fbd439bba3a7a",
+            "grading_hash": "714d14a2c0368f4f4a60c36d333a7b8e9e591783bc5ff42b7316cc789b113e74",
+            "index": 0,
+            "grading_kind": "rubric"
+          }
+        },
+        "counts": {
+          "generations_per_arm": 8
+        }
+      },
+      {
+        "id": "candidate",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.557143,
+        "mean": 0.557143,
+        "stddev": 0.117006,
+        "samples": [
+          0.5,
+          0.5,
+          0.5,
+          0.25,
+          0.5
+        ],
+        "generation_hash": "599484426e1db207ce8cfaac411bc0789675f93edc35632527be0aace930406a",
+        "judge_sample_hashes": [
+          "1b17637fd8f25e4d3d6831bed42e380fb9955000edba3345db1de1914e17d721",
+          "7b795d05d87792dca9232ecfe4570219d2661b02ded056411f5c8a604a5092f5",
+          "6f89fc5c7a62ab3d4eaa5e90018f8d22fb3f3bee45af16e1753829fd905ca797",
+          "c53c0355c040af5907ae99e698123387a4f4754403b78953345b21ec0d3ca304",
+          "5864219d87c08c2c72f388b2d13926833ee67afde058e159ffa296ca5ee02908"
+        ],
+        "threshold": 0.75,
+        "reason": "Met criteria 1 (prioritizes the validation area) and 2 (identifies ValidateOrder as the forwarding-layer candidate). Missed 3, since it never states whether removal concentrates or merely moves complexity, and missed 4, since it names no test seam and doesn't explain why one survives.",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "1c4b139b8806acaa1fea36149f4b9ce95a037c206e8629cc011e0e5ea03fd335"
+        },
+        "judge_usage": {
+          "input_tokens": 20198,
+          "output_tokens": 2867,
+          "cached_tokens": 17222,
+          "wall_ms": 27788
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 7,
+          "n_measured": 7,
+          "n_unmeasured": 0,
+          "stopping_reason": "stabilised",
+          "mean": 0.557143,
+          "sd": 0.117006,
+          "judge_sd_mean": 0.103011,
+          "variance_ratio": 1.135859,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "03aa3b8a0c1da431ad1125c101cd5c855641363c6b44d5ab6f000c9f476b1d8a",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.5,
+                0.75,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "4b42a1f50543d2fea6ff38a8a1b44fcecf14b9fb57662c7c1c98f7d3d02e05d4",
+                "55a9e0edaa0e5a09fd689eed53dc0237a25fed95aa4683897eed4580f1eb5651",
+                "ccd29d42c6e995c895f2c0b111170ff1f3834edf5fa4468b67bc6a6f90b26e9c",
+                "f1633ec513c8adf1df041431f0955fcfd644556dd25bd32cf6175f5cbc9e3097",
+                "0bca86079f339bc8d9bedcfc52bfc211096a492680e6ef6ee69c7b4e36b66c16"
+              ],
+              "mean": 0.6,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 3080,
+                "output_tokens": 699,
+                "cached_tokens": 2733,
+                "wall_ms": 7793
+              },
+              "judge_usage": {
+                "input_tokens": 19840,
+                "output_tokens": 2895,
+                "cached_tokens": 16934,
+                "wall_ms": 76052
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "df3d4b5269d92646fe8c08acae68b324a292c3d8f965013a1cdc0dd4a304ca3a",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.5,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "8c9f2b5cbead0d602ed5f65939438cd8d8e450e888f78c54bd806492e8df434f",
+                "3248a8f32e67ba2fcd45700fdf9164e4700847dca171ed776d83340702e857b9",
+                "8e9b52c27b36b7bc0057933509df1c2fead19ff07719e4cf52ea43face36c6b2",
+                "e4f3e66d09ddf189d30a4f6b74d631489fe189a4f96bbe3d00c96ba1b42f162c",
+                "26dab33c3833fc8bb30a19b89dd46fdab4e5dc8370ffc2d526c59d4cf807bd13"
+              ],
+              "mean": 0.7,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 3081,
+                "output_tokens": 589,
+                "cached_tokens": 2733,
+                "wall_ms": 6464
+              },
+              "judge_usage": {
+                "input_tokens": 19863,
+                "output_tokens": 2105,
+                "cached_tokens": 16954,
+                "wall_ms": 57878
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "65b43fb502091f746e2b5a9c2127e1db4b4bfe39921ec0d294b815fc7ba46f0e",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.5,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "732c7569b83ab882c20c0ffe2d7817cad385658dc8a71afddac031f6d7137bfd",
+                "95057b0bc9b7312a57ff45d99fa17cc8e6e589febec8a09fae78b01726353c6e",
+                "935e98cee0761fe66c9e94c0b8c8f3781ef94ff0f6581381ccd7f959e7d62b7b",
+                "f891b954893d8c178dc341dc379d130a58ba108714f072f3d52d013ec47aece6",
+                "af77e36b50b66622b9726f0b00b7da3948b45fd2867a13235dfbce4865182da2"
+              ],
+              "mean": 0.7,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 3082,
+                "output_tokens": 1002,
+                "cached_tokens": 2733,
+                "wall_ms": 8864
+              },
+              "judge_usage": {
+                "input_tokens": 19877,
+                "output_tokens": 1434,
+                "cached_tokens": 12270,
+                "wall_ms": 71464
+              }
+            },
+            {
+              "draw_index": 3,
+              "generation_hash": "48eb68aab014cf04b063c528ac98650483713f09d68e8f2af7677fa3525339f0",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "3c652f0c0a18605b110154822ab1aa735bf74fc21acee08f7a257fba377f59ad",
+                "0d989e545dc1a3fda50bf0e82372245b0804730a8af1c8c8d901076709d7e633",
+                "1e4edd1c0a6ce0b1bce9c32cff964b9a1395b8704948b0eefda904c8f37c8882",
+                "b1608affc7586953aff8388c844849a065011ee24d90d867b3ff0137bdee78d5",
+                "c10ec0880b807af2b1b03d4fbfbf892a5f27c716c2d868d9b0c4f0b650deca60"
+              ],
+              "mean": 0.5,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 3082,
+                "output_tokens": 782,
+                "cached_tokens": 2733,
+                "wall_ms": 6135
+              },
+              "judge_usage": {
+                "input_tokens": 20219,
+                "output_tokens": 2290,
+                "cached_tokens": 15996,
+                "wall_ms": 25592
+              }
+            },
+            {
+              "draw_index": 4,
+              "generation_hash": "0c574391c2d1fb4a79ea6a1d27d80fffe786d37b3613a8f02d8d32b5d784db00",
+              "status": "measured",
+              "samples": [
+                0.25,
+                0.5,
+                0.5,
+                0.5,
+                0.25
+              ],
+              "judge_sample_hashes": [
+                "18df6d029fa7e28b5e0f9b62c581d8482bb4c26d58989f267d53653dabf21218",
+                "b4408c78820b1b8b47c3e020097ea086b7f7123137234273a9f1cd1b95ddcb2a",
+                "29a1f281705d4e55445a63bbce15350f69051cc1ebb2c2177e296997ea9a1a7f",
+                "96baa1861de6fe296eeb92e430a30af90314e2b5ae922cbb2cb3ee004fe6f7f2",
+                "f0a08fc11f7a85fdcd11b9393b694578851c6d3dd191dc7711bee670d266303c"
+              ],
+              "mean": 0.4,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 3081,
+                "output_tokens": 686,
+                "cached_tokens": 2733,
+                "wall_ms": 5661
+              },
+              "judge_usage": {
+                "input_tokens": 19954,
+                "output_tokens": 2097,
+                "cached_tokens": 12270,
+                "wall_ms": 25332
+              }
+            },
+            {
+              "draw_index": 5,
+              "generation_hash": "0a771b666a61e4753244153e5a2d3e74989abc17deb73f1a3a1601d5d7666569",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.75,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "5ec476ea01c66400bb4f7324a97208521a990e7687b4edac946021ecedf390d7",
+                "0002767cffd7ed35a0c881a7994375346bfa2e539c52b99587dc4bd5a038738b",
+                "df9fce1d97e129038daf15f8bac27c2df538bb51557298d2a1bd55ad85a8b1f8",
+                "f0557a1289f3966f774a676def62444894c5752e490f0840045865cc4c1cdae0",
+                "39d9888380484c5e2abd0ae88a8458b87fb3fb4ff99375458762f3d6676519aa"
+              ],
+              "mean": 0.55,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 3081,
+                "output_tokens": 837,
+                "cached_tokens": 2733,
+                "wall_ms": 7872
+              },
+              "judge_usage": {
+                "input_tokens": 20111,
+                "output_tokens": 2837,
+                "cached_tokens": 15930,
+                "wall_ms": 28686
+              }
+            },
+            {
+              "draw_index": 6,
+              "generation_hash": "599484426e1db207ce8cfaac411bc0789675f93edc35632527be0aace930406a",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.5,
+                0.25,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "1b17637fd8f25e4d3d6831bed42e380fb9955000edba3345db1de1914e17d721",
+                "7b795d05d87792dca9232ecfe4570219d2661b02ded056411f5c8a604a5092f5",
+                "6f89fc5c7a62ab3d4eaa5e90018f8d22fb3f3bee45af16e1753829fd905ca797",
+                "c53c0355c040af5907ae99e698123387a4f4754403b78953345b21ec0d3ca304",
+                "5864219d87c08c2c72f388b2d13926833ee67afde058e159ffa296ca5ee02908"
+              ],
+              "mean": 0.45,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 3081,
+                "output_tokens": 937,
+                "cached_tokens": 2733,
+                "wall_ms": 7631
+              },
+              "judge_usage": {
+                "input_tokens": 20198,
+                "output_tokens": 2867,
+                "cached_tokens": 17222,
+                "wall_ms": 27788
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "eefdc38f64aef9172a264e843c9e2b6b11bca19a7d33f0dea25fbd439bba3a7a",
+            "grading_hash": "714d14a2c0368f4f4a60c36d333a7b8e9e591783bc5ff42b7316cc789b113e74",
+            "index": 0,
+            "grading_kind": "rubric"
+          }
+        },
+        "counts": {
+          "generations_per_arm": 7
+        }
+      },
+      {
+        "id": "candidate",
+        "mode": "placebo",
+        "outcome": "fail",
+        "score": 0.578571,
+        "mean": 0.578571,
+        "stddev": 0.149603,
+        "samples": [
+          0.75,
+          0.75,
+          0.75,
+          0.75,
+          0.75
+        ],
+        "generation_hash": "45dd9be9f37f1326b7c30e43d437a3b2a6a8521bee05c0c6d4010bb3ff370832",
+        "judge_sample_hashes": [
+          "0ff697dc88ad7f0ed61cece1677372710084cdc3756123cf908c6b0e2eda3244",
+          "6b7048e59a4ec6d7f70ebc353a6cc4dd97ddc92c8158df94a7a248d3eef63bb4",
+          "9daac8a748265fad8a4125108f9021e841899bde27b92741fd4af59432fd12b7",
+          "31bcbd91be5e1b31f478a9be52de21d65508b9306f8a44bb51cd22f7acf4c5ca",
+          "bd1c3f5966c76ce8a3ba1aaa44f96657bf0982e9ce4c2c58ac428cc273ed3fe4"
+        ],
+        "threshold": 0.75,
+        "reason": "Meets criteria 1-3: prioritizes validation, names the ValidateOrder forwarding layer as the candidate, and explains that removal concentrates change. Misses criterion 4: no public test seam is described or justified.",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "1c4b139b8806acaa1fea36149f4b9ce95a037c206e8629cc011e0e5ea03fd335"
+        },
+        "judge_usage": {
+          "input_tokens": 19836,
+          "output_tokens": 2613,
+          "cached_tokens": 15768,
+          "wall_ms": 27670
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 7,
+          "n_measured": 7,
+          "n_unmeasured": 0,
+          "stopping_reason": "stabilised",
+          "mean": 0.578571,
+          "sd": 0.149603,
+          "judge_sd_mean": 0.051505,
+          "variance_ratio": 2.904631,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "6f9dc366e2f62a6cc7a996426469086f866fbfd7d5fa86ff49cbf5d07e7983e8",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "eb50d44e82e8e6b8872a61bc699f37b9572af77d37d5c9847ee2bb8a9dc58d84",
+                "1f11244abf34044f0fbc65c9ebd8057b35ed0be55c52bb8f89c3287ccc9ba494",
+                "b92d7cf9f68f0a36df09a52dbb84fd79894fbc290c9c24482612b398ed36a3c1",
+                "747c9ed4693645106a2848134226deb001d4e25c7d0ac4fa14f1d82ed97394af",
+                "460c058a088c4176fed735ab9ceac29612da81f9f516100aacd1f88796cf18f0"
+              ],
+              "mean": 0.5,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5028,
+                "output_tokens": 627,
+                "cached_tokens": 658,
+                "wall_ms": 7175
+              },
+              "judge_usage": {
+                "input_tokens": 19946,
+                "output_tokens": 1689,
+                "cached_tokens": 17022,
+                "wall_ms": 69713
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "ff37d9bc89827784369615c9da1d70a24c261cdc817f443f1a1feb8db4230130",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.5,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "bab04d9138a93484c9e1678723b2489cda8f1366754bad504036f7f5566de898",
+                "b9676f8ee9a6ba3d4fe3c1a50898cd4785e70fa6ab4ee7411fc157e1a13b90ad",
+                "4cebfd8758711e50d5c9dd9f4370e97b96db7ca64210c542302422988d76b228",
+                "b410230e84ceaa4be55a46562bdbfed45ffbb07eaeb9e9075afb6c5961750510",
+                "5ecd4aa5cb221431c8d1c50f97918b48ae1d5d8e42e1b8a14998e5e6699c8af8"
+              ],
+              "mean": 0.7,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5029,
+                "output_tokens": 618,
+                "cached_tokens": 658,
+                "wall_ms": 7060
+              },
+              "judge_usage": {
+                "input_tokens": 19782,
+                "output_tokens": 2869,
+                "cached_tokens": 14578,
+                "wall_ms": 74863
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "d764147859eb745ae3acce00ccb042ee9ebd306e2afcc1f21d6a9e90de19a15b",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "49230cf6adeb34f4a7f39065f0675f0052b12e37ee689036255430a97e17053e",
+                "4cf05468d4e79c661dc1083dd8a89b36df2188479252529ef8f87f4118ee7473",
+                "376ebdbcaacdba9f3438a05ca469ec1efba7f78e46e4d578239da0d2861ad005",
+                "24c27d4897cc4b4b0153952476fa89e7ba5e6e42352dfdc9b0c419fe9754cde6",
+                "7486680c94059fddf6f3e984a6d5b856f7a1c05659bb96c95d3f63f18172109d"
+              ],
+              "mean": 0.5,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5030,
+                "output_tokens": 340,
+                "cached_tokens": 658,
+                "wall_ms": 5857
+              },
+              "judge_usage": {
+                "input_tokens": 20153,
+                "output_tokens": 2179,
+                "cached_tokens": 17186,
+                "wall_ms": 35026
+              }
+            },
+            {
+              "draw_index": 3,
+              "generation_hash": "4b54570d1cba7ca40abdbad9a11bb31d2e72305e4833d19f0bbd2298637b69cf",
+              "status": "measured",
+              "samples": [
+                0.25,
+                0.25,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "c330f30970d01c6e9f4631bbb0c1a0a499cab9c4ff89578908f61d8ba7eca9c4",
+                "9c1011979ad83ba01e905b18677745df55274cab225b9512f81c4bfcc1ed68d5",
+                "1b5df158bc55fc51018be003deab61b058ed027e36bbd22c500d536b44ede50b",
+                "a2fc20ec34af381056eda393050688a6dec45823ea3eb0813c824ae8855e0851",
+                "f8be56c2f4108d9491cd263b3ceb734b551fc08d1a714c46b39f1d416c7b882f"
+              ],
+              "mean": 0.4,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5030,
+                "output_tokens": 465,
+                "cached_tokens": 4682,
+                "wall_ms": 4165
+              },
+              "judge_usage": {
+                "input_tokens": 19635,
+                "output_tokens": 1861,
+                "cached_tokens": 14522,
+                "wall_ms": 21998
+              }
+            },
+            {
+              "draw_index": 4,
+              "generation_hash": "bd39b7847d25a759fb356ef5779e75595bd401d14ef52f97634d10cfd7dfc8aa",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.5,
+                0.25,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "1c55559159bbde89451b465c09bb8f1f298b0f9c4da8b625d1243a61a160a270",
+                "d90ee6588cb7f20740de28aaed2720d870052c082f0d463d15926f4f670b7957",
+                "15429b82e0066b55c2f9fbeadb8b9679fb7923986c39df9f0698865f31dee669",
+                "51e82ea11d3efd96347f8fe9b7adb4408f9337e8998cbd716506d7a0f4af15d8",
+                "f0febc0847ee8b6f75b6862742cc42217fd5a1f2b930525597c2b9d40efb8874"
+              ],
+              "mean": 0.45,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5030,
+                "output_tokens": 652,
+                "cached_tokens": 4682,
+                "wall_ms": 6067
+              },
+              "judge_usage": {
+                "input_tokens": 19652,
+                "output_tokens": 2283,
+                "cached_tokens": 13399,
+                "wall_ms": 24710
+              }
+            },
+            {
+              "draw_index": 5,
+              "generation_hash": "a4795dcc7d9fbac451c604d969451019b5afb8546ad8a627964dd4dd483f8c43",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "60617840d037b06a6bae463bffe9b063d87da063e4792b2ead815f9298bc0b21",
+                "2638ab563105bed04fcb22c04bd41b91e7b9f50b2de25a9eee2bd198345783d0",
+                "12516f0c0f4e8fa377c8466660e0d2c30556945d13b13f481c244fd76b1e32ac",
+                "0226fa3775adf5e117e78d30624bee3ac85430efc23b65ccc33c619080118a8d",
+                "2254e5b6fd9c836f3e7dcee727942b05253d81a6663e3d921d86d4033d123264"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5030,
+                "output_tokens": 315,
+                "cached_tokens": 4682,
+                "wall_ms": 3692
+              },
+              "judge_usage": {
+                "input_tokens": 20033,
+                "output_tokens": 2974,
+                "cached_tokens": 12270,
+                "wall_ms": 28246
+              }
+            },
+            {
+              "draw_index": 6,
+              "generation_hash": "45dd9be9f37f1326b7c30e43d437a3b2a6a8521bee05c0c6d4010bb3ff370832",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "0ff697dc88ad7f0ed61cece1677372710084cdc3756123cf908c6b0e2eda3244",
+                "6b7048e59a4ec6d7f70ebc353a6cc4dd97ddc92c8158df94a7a248d3eef63bb4",
+                "9daac8a748265fad8a4125108f9021e841899bde27b92741fd4af59432fd12b7",
+                "31bcbd91be5e1b31f478a9be52de21d65508b9306f8a44bb51cd22f7acf4c5ca",
+                "bd1c3f5966c76ce8a3ba1aaa44f96657bf0982e9ce4c2c58ac428cc273ed3fe4"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5030,
+                "output_tokens": 613,
+                "cached_tokens": 4682,
+                "wall_ms": 5181
+              },
+              "judge_usage": {
+                "input_tokens": 19836,
+                "output_tokens": 2613,
+                "cached_tokens": 15768,
+                "wall_ms": 27670
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "eefdc38f64aef9172a264e843c9e2b6b11bca19a7d33f0dea25fbd439bba3a7a",
+            "grading_hash": "714d14a2c0368f4f4a60c36d333a7b8e9e591783bc5ff42b7316cc789b113e74",
+            "index": 0,
+            "grading_kind": "rubric"
+          }
+        },
+        "counts": {
+          "generations_per_arm": 7
+        }
+      },
+      {
+        "id": "adr",
+        "mode": "with_skill",
+        "outcome": "borderline",
+        "score": 0.89,
+        "mean": 0.89,
+        "stddev": 0.151658,
+        "samples": [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "generation_hash": "7646dc6dd7f62e8e4ece035595e4b1bdefb90d7cafbb2575780b1fd8126ed99d",
+        "judge_sample_hashes": [
+          "942d5f182ee8b20141e732c605c9b5b7dd7c705bde6488314a25e0ce3314c946",
+          "6e33b93b4703170aef2c6d5c0affb12e78138ec0c67c5366bf08eaa62771e9a0",
+          "6141ed4aaed5c926b359fe40517950778d00ed21fc5ff71b767e2034bbbcbf58",
+          "048f40a584a51a7238d6ee4513916111a2c43120745c1da08182b7896c4c9b6c",
+          "39c1008eb292dbb5c629122401178a13d5c59d69d977ec3be883466c2c255b9a"
+        ],
+        "threshold": 0.75,
+        "reason": "Uses the Reservation term, explicitly flags the accepted ADR conflict, requires concrete friction evidence before reopening, and proposes no broad merge; all four criteria met.",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "77825086b3dcf4079e23b83e6298c25a3025df84719947447f832f34a27d9a13"
+        },
+        "judge_usage": {
+          "input_tokens": 20945,
+          "output_tokens": 1770,
+          "cached_tokens": 13657,
+          "wall_ms": 28884
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 5,
+          "n_measured": 5,
+          "n_unmeasured": 0,
+          "stopping_reason": "stabilised",
+          "mean": 0.89,
+          "sd": 0.151658,
+          "judge_sd_mean": 0.022361,
+          "variance_ratio": 6.782255,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "695ea4305af909192d65e69514ccc836a06f9750f1bf493c6ed9c53f4618814a",
+              "status": "measured",
+              "samples": [
+                1,
+                1,
+                1,
+                1,
+                1
+              ],
+              "judge_sample_hashes": [
+                "f3c7a15a4a85bed589400114c96373baecbba19b337999545b02f6b3b1481383",
+                "c1c417983abc1850e508bdd1083c93899c5eda84ce1f645ead0d359812ff927d",
+                "1e1506e95b776f7728ed01c4c5119c49d63fc367765baeeeeafc06ef28f1af0a",
+                "d7dbbf5ce0c5f723eb763e3a001a0151c02bf8881005c2195a3ed4011edcefa0",
+                "3f831d2003e17d9bc5738d4eba5adbf93df9d4840cd607662df7580a711a114e"
+              ],
+              "mean": 1,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5191,
+                "output_tokens": 695,
+                "cached_tokens": 4844,
+                "wall_ms": 6087
+              },
+              "judge_usage": {
+                "input_tokens": 20743,
+                "output_tokens": 2034,
+                "cached_tokens": 17658,
+                "wall_ms": 34186
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "4ecd2c45cd03dbca427ffd09d42f98e0cbf114246e152306fca4e207f505e493",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.5,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "948feb8c9a58920176653fa3325524429a0d9d32f0e0904ed971f950301756ef",
+                "aa82805fbd93d62b8e847ecd8199000d0233baed6dab05e1116aeaeb610a50d6",
+                "78eefe7349ab220386fc69ad0b1c0a0e81cdc697cad183d910f9f9ec5704e7d7",
+                "6efa0739e26408a0b21c057b43c4633aa4aea1abf25a208cc6db1e4364dd4625",
+                "c385b20b63cc58d010aeb5f625d98bdd07aaf4c42166abe6701594c4f2f1d61e"
+              ],
+              "mean": 0.7,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5192,
+                "output_tokens": 878,
+                "cached_tokens": 4844,
+                "wall_ms": 6918
+              },
+              "judge_usage": {
+                "input_tokens": 20871,
+                "output_tokens": 2245,
+                "cached_tokens": 16386,
+                "wall_ms": 43636
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "2f115b300159b0a2c5a9ca21f39b38363f7d97c6382989cc853df867b943ae84",
+              "status": "measured",
+              "samples": [
+                1,
+                1,
+                1,
+                1,
+                1
+              ],
+              "judge_sample_hashes": [
+                "5a466a81bdd676e987bbd16346cd297ed0189d2c93e286c84331d83ce625bc41",
+                "61ec8d0f066f2b02c86e65baa8b0d80b9b6e847ab16cf697de4f769ae1776efd",
+                "0b3a5c8926f5e27598210104a4fcaab07dbfc15f3d76b59fd965da1a982845e7",
+                "ed2b132821ba0a97647bcd43ea659126a1e553e64ac7418623ce4c475a6cbdd6",
+                "5a466a81bdd676e987bbd16346cd297ed0189d2c93e286c84331d83ce625bc41"
+              ],
+              "mean": 1,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5190,
+                "output_tokens": 736,
+                "cached_tokens": 4844,
+                "wall_ms": 6636
+              },
+              "judge_usage": {
+                "input_tokens": 20850,
+                "output_tokens": 1414,
+                "cached_tokens": 17742,
+                "wall_ms": 36758
+              }
+            },
+            {
+              "draw_index": 3,
+              "generation_hash": "95d64dca23bdbc1e8709160922aff0c19e169ee96a433bf27f9f5456ff13370a",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "5029698699ae199c934e3fa9d681c0e67b99f492f69a5b9151ebe5e0448a006c",
+                "2e0ae2d8cd8aa916415c0c6a0cef9d82fecfb37837a25838ad00f2a35960eb0d",
+                "14fe69ea32fcb23cbe2489dcd52e27bfa30ba3f720c10f670f18d6b79ea54a54",
+                "3cdba6094c726a4166eb76ddd6b27b297db16f78e1e3f34bd2d3145619e63944",
+                "4284fc19f7d5a8884ee25ae28926d98a69537fa665c24974748f2b7f4d1ac325"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5192,
+                "output_tokens": 526,
+                "cached_tokens": 4844,
+                "wall_ms": 5149
+              },
+              "judge_usage": {
+                "input_tokens": 20038,
+                "output_tokens": 1916,
+                "cached_tokens": 15888,
+                "wall_ms": 32872
+              }
+            },
+            {
+              "draw_index": 4,
+              "generation_hash": "7646dc6dd7f62e8e4ece035595e4b1bdefb90d7cafbb2575780b1fd8126ed99d",
+              "status": "measured",
+              "samples": [
+                1,
+                1,
+                1,
+                1,
+                1
+              ],
+              "judge_sample_hashes": [
+                "942d5f182ee8b20141e732c605c9b5b7dd7c705bde6488314a25e0ce3314c946",
+                "6e33b93b4703170aef2c6d5c0affb12e78138ec0c67c5366bf08eaa62771e9a0",
+                "6141ed4aaed5c926b359fe40517950778d00ed21fc5ff71b767e2034bbbcbf58",
+                "048f40a584a51a7238d6ee4513916111a2c43120745c1da08182b7896c4c9b6c",
+                "39c1008eb292dbb5c629122401178a13d5c59d69d977ec3be883466c2c255b9a"
+              ],
+              "mean": 1,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5194,
+                "output_tokens": 726,
+                "cached_tokens": 4844,
+                "wall_ms": 6786
+              },
+              "judge_usage": {
+                "input_tokens": 20945,
+                "output_tokens": 1770,
+                "cached_tokens": 13657,
+                "wall_ms": 28884
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "a4f81f89d57298524ac706a37a774481f355d2e18ac0d4bba87591b7f75e93cc",
+            "grading_hash": "3cf99b534be1bed847cdf7c2e4d42347581be59838166060dd058abbc3f1a129",
+            "index": 1,
+            "grading_kind": "rubric"
+          }
+        },
+        "counts": {
+          "generations_per_arm": 5
+        }
+      },
+      {
+        "id": "adr",
+        "mode": "baseline",
+        "outcome": "borderline",
+        "score": 0.791667,
+        "mean": 0.791667,
+        "stddev": 0.146344,
+        "samples": [
+          1,
+          1,
+          0.75,
+          1,
+          1
+        ],
+        "generation_hash": "abd0b45782eaaf0d0d2cfed68bbcba58717ee1469e4e876037d729b4c7e775b8",
+        "judge_sample_hashes": [
+          "4b842014b49605a4eff17aefc9da89621c1ee2385f9c467aea2a81b1a02dc86c",
+          "de622721dbbbc060a97ceca503279b780b7a7c9c9cca29aacc6dfff073af9bf1",
+          "b99c62ab1e95d215281ced3cb40b6964d62ec050554a30626915ab9e84d336d9",
+          "2acf203878f7005727f6a44eb83225b1b8d640494b6e7e38dcfaedb382f2dbed",
+          "e3cd022c446f3f05fb0f0edf2b0c9ed78f4ee4693b74334ab1203ea60bda25f2"
+        ],
+        "threshold": 0.75,
+        "reason": "Uses the Reservation term, identifies the conflict with the accepted ADR, requires a superseding ADR with justification before reversing, and does not propose a merge for fewer modules.",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "77825086b3dcf4079e23b83e6298c25a3025df84719947447f832f34a27d9a13"
+        },
+        "judge_usage": {
+          "input_tokens": 19918,
+          "output_tokens": 2096,
+          "cached_tokens": 12270,
+          "wall_ms": 26535
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 6,
+          "n_measured": 6,
+          "n_unmeasured": 0,
+          "stopping_reason": "stabilised",
+          "mean": 0.791667,
+          "sd": 0.146344,
+          "judge_sd_mean": 0.09495,
+          "variance_ratio": 1.541274,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "d43028f5a3a2414ffd86477615d843a5368eb28a08edcef09bd84c996e77970b",
+              "status": "measured",
+              "samples": [
+                1,
+                1,
+                1,
+                1,
+                1
+              ],
+              "judge_sample_hashes": [
+                "da6ad7d456cfcf97d8f31425b6d5e52b92bba7a2ce2e7350ff55429822a2d2ea",
+                "23ec15b45f02310495ded355799b4e1403d02b58dd1bd8de255a42184202d26e",
+                "a18056726da43ba237e308974feb84cc67ea2c07e0b632cf3a1eeb88683c7eda",
+                "1de8f39c097289ca375b8607de03ad6db72d88e0f912fb1662c4e283d30ebce2",
+                "80dee9d779abbee1a291e651f2f963cf71b7c96d3528ccd837a0606c260150a2"
+              ],
+              "mean": 1,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 3054,
+                "output_tokens": 531,
+                "cached_tokens": 2706,
+                "wall_ms": 9243
+              },
+              "judge_usage": {
+                "input_tokens": 19618,
+                "output_tokens": 2304,
+                "cached_tokens": 14514,
+                "wall_ms": 37413
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "0c03c95286769b2badfb9464d48e5b1c7068511a9198cab808ae5b0e61f14e4f",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.5,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "5596476f5530aac62d7bd243cd8b7c136bb35a776390e0881f25f70252f2188e",
+                "c7e477348d8b687937b3dd9ff69e508b40e295e064c5ef2a0a385d87e42556c9",
+                "71bb19435f851747da3197b4bbd456ee8df861a3aee62887cee10ad972663af6",
+                "255c1aedd4758b39ab14a07cdcf2ad9e091c2af7b5c4d00563d27913e79e0439",
+                "01e1172f2bef02c6e52ba52e2cf1c8c50cb5febf1ee1fbebac16a2f1540eba7f"
+              ],
+              "mean": 0.7,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 3054,
+                "output_tokens": 563,
+                "cached_tokens": 2706,
+                "wall_ms": 9899
+              },
+              "judge_usage": {
+                "input_tokens": 20459,
+                "output_tokens": 2991,
+                "cached_tokens": 14850,
+                "wall_ms": 41827
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "16a1aabf8fecd34422f2bb5f267bab65f7e3cfcb706254f733be916dac5efa0c",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.75,
+                1,
+                0.5,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "056db02885568d9aced5ce809d115935c1dec9aeed4acceaa409107b44235117",
+                "498a975a6b45c615c1fd2521fc116fc6ed5b1915c35289e5acea954f5e21f23b",
+                "50d202d8f5e227e87fb1cda1e4db1f994edab2259bb3de6f35b7153632e1b5b6",
+                "05de5ca3a5930dcab6ab7a9f2ce20b749258204224db05ead08294bdc7e02627",
+                "d28c74e0aaffd4b4c22cfbab904a5a1bb6fa5219ee5528907ada79e7d99d00f7"
+              ],
+              "mean": 0.7,
+              "stddev": 0.209165,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 3054,
+                "output_tokens": 577,
+                "cached_tokens": 2348,
+                "wall_ms": 9059
+              },
+              "judge_usage": {
+                "input_tokens": 20522,
+                "output_tokens": 1352,
+                "cached_tokens": 17478,
+                "wall_ms": 30759
+              }
+            },
+            {
+              "draw_index": 3,
+              "generation_hash": "f0d264d37164b23c7ac4812e51821ae0d36ae0b668b0f6b977ee8d663c48f043",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.5,
+                0.5,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "be001add3f3b5413143ab917d575e0b74a345c63d28d8d923271c16d4f3fea48",
+                "b4b4affc7e3d6cfe34d86f8aaad83d2b1de5a0717ff35d763971038242c533ef",
+                "b833a8c16436b64ba933c6b273a2d37f4595217c4fe0b836bbf1bb5a0a8bf89e",
+                "6410e8fee936b0fa206fe73ada5c6cbc72238e3aa69c9bc5dabeacd538bb8ff7",
+                "2d11fdc878634f38ee0527e00236f5eee6b684b3c7838ef9a5322665a636c9d5"
+              ],
+              "mean": 0.65,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 3053,
+                "output_tokens": 394,
+                "cached_tokens": 2706,
+                "wall_ms": 5098
+              },
+              "judge_usage": {
+                "input_tokens": 19492,
+                "output_tokens": 1049,
+                "cached_tokens": 13367,
+                "wall_ms": 19723
+              }
+            },
+            {
+              "draw_index": 4,
+              "generation_hash": "dbce700d8307a06deac8f93dcc2192dfb8774e0ea993755bf3c24a5c8eed143a",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "2f6eb76a9c9b9d342bf42d4318ad55419563f643bb6ef4ef8a0ad13070f3ad70",
+                "68a7eb8f6d9b167bb66163a7432b1032cfc5177bff27950c177d1834113089cf",
+                "36dbeab903139f41d70ede1042f12d545e6becf1e4b6dbb1935604a1e6eea154",
+                "19437fe39d21e60c0f835e48cc5be7f7bdbc10923d0088b12af347d4e1b6798e",
+                "da1aba00f1e916c46f0b3a4bb13519634130cb2926faa8ffddd63cc7210ae3a3"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 3055,
+                "output_tokens": 583,
+                "cached_tokens": 2706,
+                "wall_ms": 5309
+              },
+              "judge_usage": {
+                "input_tokens": 20555,
+                "output_tokens": 2869,
+                "cached_tokens": 12270,
+                "wall_ms": 46343
+              }
+            },
+            {
+              "draw_index": 5,
+              "generation_hash": "abd0b45782eaaf0d0d2cfed68bbcba58717ee1469e4e876037d729b4c7e775b8",
+              "status": "measured",
+              "samples": [
+                1,
+                1,
+                0.75,
+                1,
+                1
+              ],
+              "judge_sample_hashes": [
+                "4b842014b49605a4eff17aefc9da89621c1ee2385f9c467aea2a81b1a02dc86c",
+                "de622721dbbbc060a97ceca503279b780b7a7c9c9cca29aacc6dfff073af9bf1",
+                "b99c62ab1e95d215281ced3cb40b6964d62ec050554a30626915ab9e84d336d9",
+                "2acf203878f7005727f6a44eb83225b1b8d640494b6e7e38dcfaedb382f2dbed",
+                "e3cd022c446f3f05fb0f0edf2b0c9ed78f4ee4693b74334ab1203ea60bda25f2"
+              ],
+              "mean": 0.95,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 3054,
+                "output_tokens": 1013,
+                "cached_tokens": 2706,
+                "wall_ms": 8942
+              },
+              "judge_usage": {
+                "input_tokens": 19918,
+                "output_tokens": 2096,
+                "cached_tokens": 12270,
+                "wall_ms": 26535
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "a4f81f89d57298524ac706a37a774481f355d2e18ac0d4bba87591b7f75e93cc",
+            "grading_hash": "3cf99b534be1bed847cdf7c2e4d42347581be59838166060dd058abbc3f1a129",
+            "index": 1,
+            "grading_kind": "rubric"
+          }
+        },
+        "counts": {
+          "generations_per_arm": 6
+        }
+      },
+      {
+        "id": "adr",
+        "mode": "placebo",
+        "outcome": "borderline",
+        "score": 0.716667,
+        "mean": 0.716667,
+        "stddev": 0.10328,
+        "samples": [
+          0.75,
+          0.5,
+          0.75,
+          0.5,
+          0.5
+        ],
+        "generation_hash": "1e40e491bfaf2a2a38d3897c7a92149d57b4e7ce45a93225f21b0a32d049b614",
+        "judge_sample_hashes": [
+          "291f7546644aff524a425dafbd47cd282a457d774095ebfabb657831a47b7a6a",
+          "e0709a623981d36c5c7f43feb07326e84fc57a5eefc8e7ecca48845a35f31038",
+          "d036b84b562db02e872dda20552f9476e752e798df6c0856e976a54145e29127",
+          "d32e1d7f32f8a6cf3ea9881a91d7f0d7859933e77740772e3ba542b86f0bd3eb",
+          "6dd1312d9c0e5c52df438ce836a0142c9268782390e239636118c82a227ce052"
+        ],
+        "threshold": 0.75,
+        "reason": "Meets criteria 1, 2, and 4: uses the Reservation term, names the conflict with the accepted ADR, and proposes no merge. Misses criterion 3, since it never explicitly requires evidence before reopening the decision.",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "77825086b3dcf4079e23b83e6298c25a3025df84719947447f832f34a27d9a13"
+        },
+        "judge_usage": {
+          "input_tokens": 19678,
+          "output_tokens": 1185,
+          "cached_tokens": 16806,
+          "wall_ms": 25920
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 6,
+          "n_measured": 6,
+          "n_unmeasured": 0,
+          "stopping_reason": "stabilised",
+          "mean": 0.716667,
+          "sd": 0.10328,
+          "judge_sd_mean": 0.105733,
+          "variance_ratio": 0.9768,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "856a0fef751b790fe48eef09b258a9a57a67c4413e1266a86891ae7397cd541e",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.5,
+                0.5,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "7cca5aab4cddd5567d3de61f3753c862c610e9ca6e47c16555e5c8b13f0b9ef5",
+                "acbc2a8533679417fbf745b8576356388ef88d2ba6cf832e01789dd87b369b79",
+                "9013ed718c0f1d64cbbddf4a644681ef0b3fe73b17a51169d89417a7d7d889a4",
+                "c5bf784cb297b91e383978a241cc73f853d10ca1f16cf77e9477a617f69ed9a6",
+                "f1ee9a9efba124cab9e4cccfe1f7b2aa017297631ef4ceb4cda77c72dc138872"
+              ],
+              "mean": 0.65,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5003,
+                "output_tokens": 535,
+                "cached_tokens": 4297,
+                "wall_ms": 6743
+              },
+              "judge_usage": {
+                "input_tokens": 19763,
+                "output_tokens": 1786,
+                "cached_tokens": 16874,
+                "wall_ms": 40498
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "4c3614d0792f978ccb4f002d73f65710e14537d39823541d70fb3c32fb089d16",
+              "status": "measured",
+              "samples": [
+                1,
+                1,
+                0.75,
+                0.75,
+                1
+              ],
+              "judge_sample_hashes": [
+                "b9aecc9bf4847197383f701bf1e4dd4b6468bcf68607c663333811b622d3035d",
+                "842e2994245b35b652c5245568f366c7accd19b4d51768db21b4f881a2acef3f",
+                "b073d5d2ed1be051a961471ad3b4596a708f7f202587385c99d6879959d7a14b",
+                "89a30d250d06ed70b860c035f42edfdc419dcb14beb42c08df50c428651aac9f",
+                "5a1536065ed90b0c1d017b130e16ee3153088f4d6bad717ae85f14950ec7bc16"
+              ],
+              "mean": 0.9,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5004,
+                "output_tokens": 550,
+                "cached_tokens": 4297,
+                "wall_ms": 6691
+              },
+              "judge_usage": {
+                "input_tokens": 20032,
+                "output_tokens": 2953,
+                "cached_tokens": 15885,
+                "wall_ms": 46958
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "a9fc7ceeb3192f989785c055eb193fa35faa35b8e9429e3f11d4b819e954955e",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "6ae8ab7ccd071d1e6c9f3749f0211e9f598f5b84357786f549b8a351c5f1c66b",
+                "4e423d1f58576351c7cc2369a2f5b0e0c231d009dba474b768a2ec152d81f885",
+                "950ba5a767a06b513c306946897ee0f20578c71cacb37b526f8de2c3097c1f55",
+                "ef17026a9108c82fa66f99f0cf2a97e95ffe54afd44ea7ef7b2f953d01908d09",
+                "a65a298a715cc62b4abf291779e63820ab9c1286478941027eb9a6a683c8e6f6"
+              ],
+              "mean": 0.7,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5004,
+                "output_tokens": 521,
+                "cached_tokens": 4655,
+                "wall_ms": 7316
+              },
+              "judge_usage": {
+                "input_tokens": 20109,
+                "output_tokens": 1697,
+                "cached_tokens": 14710,
+                "wall_ms": 42480
+              }
+            },
+            {
+              "draw_index": 3,
+              "generation_hash": "c3506ed4cb6614d116132a92ac96c271b67aaed42375b55a0ad3e13c099ef2bc",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.5,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "796f21d33c4833d257840d9a9d5a49d51313211a702438313f39552c43cb52c8",
+                "d783efeea9c56685c1a6adb419ca482f4ee3ab5607d85bc52d983ea3bf923d33",
+                "51e4583fded1243912a44ab47a5782ca34b9484d3e266f296eb4965acab341b0",
+                "ebf688ae35e5224e8ee0d1d437263c46d511bbdfc1bb5a11802a8d9b7ecf73dc",
+                "1d46cb313560e01acdca50925f7efe781907af17c4d176a4d6a4751b26ba412d"
+              ],
+              "mean": 0.7,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5001,
+                "output_tokens": 668,
+                "cached_tokens": 4655,
+                "wall_ms": 8519
+              },
+              "judge_usage": {
+                "input_tokens": 19507,
+                "output_tokens": 2163,
+                "cached_tokens": 15570,
+                "wall_ms": 23352
+              }
+            },
+            {
+              "draw_index": 4,
+              "generation_hash": "7cfb123f197285a687bc5f4545511e2c267fd2672ae52ec2fbf1226ec6caacf2",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "bc8065a038da821e6492f8e06cee5c2bba67286f2ac7e76b64113eecd4c5f1f7",
+                "4384e587fc47229014c2d9f2bd358b429962eaf4f2c66c505aee2aa5c1fbf6c9",
+                "46feaaab28d6f84243fedbeb54eeb7efe9b0eae14278e4bd2df720f3fec66fb1",
+                "6accc50ca4c2f77aa8edad25fea4a8c228437b149eb6c61bb45d16e3216743b6",
+                "15ba64bf9b9c56572257dc78fe80ca7aca2be099308068b257fb9c8fe88a9345"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5003,
+                "output_tokens": 456,
+                "cached_tokens": 4655,
+                "wall_ms": 5182
+              },
+              "judge_usage": {
+                "input_tokens": 19675,
+                "output_tokens": 2263,
+                "cached_tokens": 15669,
+                "wall_ms": 23441
+              }
+            },
+            {
+              "draw_index": 5,
+              "generation_hash": "1e40e491bfaf2a2a38d3897c7a92149d57b4e7ce45a93225f21b0a32d049b614",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.5,
+                0.75,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "291f7546644aff524a425dafbd47cd282a457d774095ebfabb657831a47b7a6a",
+                "e0709a623981d36c5c7f43feb07326e84fc57a5eefc8e7ecca48845a35f31038",
+                "d036b84b562db02e872dda20552f9476e752e798df6c0856e976a54145e29127",
+                "d32e1d7f32f8a6cf3ea9881a91d7f0d7859933e77740772e3ba542b86f0bd3eb",
+                "6dd1312d9c0e5c52df438ce836a0142c9268782390e239636118c82a227ce052"
+              ],
+              "mean": 0.6,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5003,
+                "output_tokens": 452,
+                "cached_tokens": 4655,
+                "wall_ms": 7059
+              },
+              "judge_usage": {
+                "input_tokens": 19678,
+                "output_tokens": 1185,
+                "cached_tokens": 16806,
+                "wall_ms": 25920
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "a4f81f89d57298524ac706a37a774481f355d2e18ac0d4bba87591b7f75e93cc",
+            "grading_hash": "3cf99b534be1bed847cdf7c2e4d42347581be59838166060dd058abbc3f1a129",
+            "index": 1,
+            "grading_kind": "rubric"
+          }
+        },
+        "counts": {
+          "generations_per_arm": 6
+        }
+      },
+      {
+        "id": "report",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.833333,
+        "mean": 0.833333,
+        "stddev": 0.08165,
+        "samples": [
+          0.5,
+          0.75,
+          0.75,
+          1,
+          0.75
+        ],
+        "generation_hash": "e99827429c006ae8a394f5a5bf6d2533027a6bf39bc849fe000d515e1f6271f9",
+        "judge_sample_hashes": [
+          "d92eda0c2d3f60b404bf85a13172d942f5a5539ae1b8fada4eec79470565cbe6",
+          "63edbf460e69b60701a00d274e6b4fa431e89f2474e6ddd703485bc5f6a735b9",
+          "197e40b9489c48f4d0856f6108be392fa39bbbbf8ae2e776b176209e4d3a2145",
+          "7bb5fb486711346e2b2fc8240140dbb6ead52f3d50d6b291b8f7c5202fa83fb8",
+          "9580351c08bf88ef190810fb2482481bbe386b0589db77dea0039e00806353f7"
+        ],
+        "threshold": 0.75,
+        "reason": "Names modules and friction (criterion 1), proposes a narrower interface (2), and gives benefits plus before/after (3), but ends with decision questions, not an explicit ask to choose a direction, so criterion 4 is only partly met; the rubric is also scored all-or-nothing per criterion, so 0.5 is the",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "5e132f027de3ee4e4626966671c299b45f6e84fcd04427e2896991538014c3e7"
+        },
+        "judge_usage": {
+          "input_tokens": 22660,
+          "output_tokens": 2149,
+          "cached_tokens": 19190,
+          "wall_ms": 29943
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 6,
+          "n_measured": 6,
+          "n_unmeasured": 0,
+          "stopping_reason": "stabilised",
+          "mean": 0.833333,
+          "sd": 0.08165,
+          "judge_sd_mean": 0.112374,
+          "variance_ratio": 0.726592,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "9ced3081023e7607002adf0f122e9eb017f966a41651c56f22ff75c99e69d794",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "224b0966b65da2ce72c410558daf7aed9bdd2a08a7ca4a2f871329bcddb6857d",
+                "b1ab51c1d964153390102079bbb9eb788c1faa359226e8b6c6f71a14334c878f",
+                "50c24f7812bd4f50430f0a5930cd8be04e9fc1aaa564bfcba1574c8e6cc073e8",
+                "86b01ce0502693e1b6f79fd2067918110adfc01051f8ffb00ef56d3589a77d88",
+                "cc61223437c8208e0eaf88b0dfdfe224b702ce01a23d58347679f9a741179c38"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5191,
+                "output_tokens": 1292,
+                "cached_tokens": 4486,
+                "wall_ms": 9222
+              },
+              "judge_usage": {
+                "input_tokens": 22286,
+                "output_tokens": 2326,
+                "cached_tokens": 15582,
+                "wall_ms": 38143
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "3c4620626e13ca59d362759421b1b7487a2fb8accbfc4575fa2ad82005526f93",
+              "status": "measured",
+              "samples": [
+                1,
+                1,
+                1,
+                1,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "4057cc7dbc1f594d675c74775f56252c41cc6602b9c589cadb44d96f0d81a17a",
+                "39c6f79a38fd9edc51960e7229a2ae3f54bc8904ae73ce79e56b672165336846",
+                "d2ee5076afdcc14e412f843b7c31f538ef67792e3c28cbf62baa9493084745f5",
+                "2184523b402e7b3ef6ca350644ceafc2343a3eb11730498b7522521a0cc78d93",
+                "d5110c40561189ab718e5decabd3b80e10f3024442e2b9390fb4dfd84d3cb880"
+              ],
+              "mean": 0.95,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5190,
+                "output_tokens": 1114,
+                "cached_tokens": 4486,
+                "wall_ms": 8078
+              },
+              "judge_usage": {
+                "input_tokens": 22719,
+                "output_tokens": 2433,
+                "cached_tokens": 17496,
+                "wall_ms": 32758
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "0aba20ad0421f80db1712646fb186adea1682949fc7d9154b41f45f6050b4901",
+              "status": "measured",
+              "samples": [
+                1,
+                0.75,
+                1,
+                0.75,
+                1
+              ],
+              "judge_sample_hashes": [
+                "93c28edfa1928f0d2ee78ff10cbbea324c1293bb543a4286dcd585be71c49f76",
+                "597a54c47df5e99dfc31ed8448af0a7e9db8824ff1731d2b205517ffd1f708d5",
+                "09f174bef760e143f688af69236d62713ae063614811c643b259a418800dd707",
+                "c01f71d0ff73536acdec13fe2da51f968f1cfb9b671eb485794d0cee58f5d7cf",
+                "391b11628859f461d7d5019632071fab24018ead0e7cd9d403ab77f25aab7899"
+              ],
+              "mean": 0.9,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5192,
+                "output_tokens": 1587,
+                "cached_tokens": 4486,
+                "wall_ms": 9887
+              },
+              "judge_usage": {
+                "input_tokens": 23459,
+                "output_tokens": 2243,
+                "cached_tokens": 12270,
+                "wall_ms": 38215
+              }
+            },
+            {
+              "draw_index": 3,
+              "generation_hash": "e05e93dbbd3b4e5e8d50ab89edc601ec59e07828f80665a2d8f42a3178a581c2",
+              "status": "measured",
+              "samples": [
+                0.75,
+                1,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "f8664ccf31ba6d2327f3234d63549cf761e3aee698e17271d4ced9dc74fcc571",
+                "7d36c8049cff3ec8a3fa9b187935f21953f9779799b0f00cd4bc2f0da07acd7d",
+                "ae3b41528043092877929a5e23074573cdee4de508c4c2583b1980ed62cd8556",
+                "c2100823f9cd73c57301e2271f28a2a672905420fbb10b23353c3ea2b2e58a7b",
+                "22a92ece4c55c86161064aac3ed37758d0fb93c7e355b1a8be1620df74e2151d"
+              ],
+              "mean": 0.8,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5191,
+                "output_tokens": 863,
+                "cached_tokens": 4843,
+                "wall_ms": 6316
+              },
+              "judge_usage": {
+                "input_tokens": 22005,
+                "output_tokens": 2243,
+                "cached_tokens": 12270,
+                "wall_ms": 25827
+              }
+            },
+            {
+              "draw_index": 4,
+              "generation_hash": "30da6b152eb6926702ab2d4c4ed189b24a7d21106c4444fe337b3d32f876eaff",
+              "status": "measured",
+              "samples": [
+                0.75,
+                1,
+                0.75,
+                0.75,
+                1
+              ],
+              "judge_sample_hashes": [
+                "190d07cd582583d7366a4f72db8aa1ceee42afd18ff0b7686abd49b6fdd94a30",
+                "744a15b1f146a9fc33ac3bbf294d11f113031316efa127dad22a8373ee80292f",
+                "1719623739a9c52c1e016cab6837b5b119cbee935d40b72f4e9e5dbccec991cd",
+                "fb2bba01ec5fd2aae47ff583dc0f6eb349ce0818be8135f686ce45ddb6f5f2cb",
+                "1cbd5fd06b5a2bea22fc007bff8b888b4b9963ad0a23e52df204b7cc182e032d"
+              ],
+              "mean": 0.85,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5191,
+                "output_tokens": 1674,
+                "cached_tokens": 4843,
+                "wall_ms": 10473
+              },
+              "judge_usage": {
+                "input_tokens": 23290,
+                "output_tokens": 2871,
+                "cached_tokens": 19698,
+                "wall_ms": 30337
+              }
+            },
+            {
+              "draw_index": 5,
+              "generation_hash": "e99827429c006ae8a394f5a5bf6d2533027a6bf39bc849fe000d515e1f6271f9",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.75,
+                0.75,
+                1,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "d92eda0c2d3f60b404bf85a13172d942f5a5539ae1b8fada4eec79470565cbe6",
+                "63edbf460e69b60701a00d274e6b4fa431e89f2474e6ddd703485bc5f6a735b9",
+                "197e40b9489c48f4d0856f6108be392fa39bbbbf8ae2e776b176209e4d3a2145",
+                "7bb5fb486711346e2b2fc8240140dbb6ead52f3d50d6b291b8f7c5202fa83fb8",
+                "9580351c08bf88ef190810fb2482481bbe386b0589db77dea0039e00806353f7"
+              ],
+              "mean": 0.75,
+              "stddev": 0.176777,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5191,
+                "output_tokens": 1162,
+                "cached_tokens": 4843,
+                "wall_ms": 7337
+              },
+              "judge_usage": {
+                "input_tokens": 22660,
+                "output_tokens": 2149,
+                "cached_tokens": 19190,
+                "wall_ms": 29943
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "15ff56516267d2bde35edd32e22bf203ebc46f7addf5b66971aa8745755dac89",
+            "grading_hash": "c00ce9b8f016e2139b36aa569fa1041bdb54a660f4757992a90d9c57bb478636",
+            "index": 2,
+            "grading_kind": "rubric"
+          }
+        },
+        "counts": {
+          "generations_per_arm": 6
+        }
+      },
+      {
+        "id": "report",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.5,
+        "mean": 0.5,
+        "stddev": 0.05,
+        "samples": [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "generation_hash": "b2c15bdfb4c1eabdf21e390b9c5415a3a643a899968dd6681566c9a77fb4bc03",
+        "judge_sample_hashes": [
+          "1a4afebe9cc3749864c50992a1f3837cfd90ea414d93bd14c53e49e0aad9efa8",
+          "d3b17920dcce4f551e00066e74ff75c5405fd512f39094e0305fe6664ef5e795",
+          "99d1b04c85d78d358e1fb0cc1e71c5df00eac6295423e5028033e81f60b47b50",
+          "3c13eebf87b36a9edad7a67414267601cc0d7f4328b1b40acc50d9bce730ab94",
+          "e9349ba29a9c007c7a6175438e74c4b4b920c7a2f22f3b590bcfd2d71617f052"
+        ],
+        "threshold": 0.75,
+        "reason": "Meets criterion 1 by naming ShippingFacade, CarrierClient and the shallow-exposure friction, and criterion 4 by framing open decisions without claiming completion. Misses criterion 2 (only vague hiding directions, no concrete smaller interface) and criterion 3 (no benefits or before/after of the cha",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "5e132f027de3ee4e4626966671c299b45f6e84fcd04427e2896991538014c3e7"
+        },
+        "judge_usage": {
+          "input_tokens": 21458,
+          "output_tokens": 2368,
+          "cached_tokens": 16740,
+          "wall_ms": 35749
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 3,
+          "n_measured": 3,
+          "n_unmeasured": 0,
+          "stopping_reason": "min_reached",
+          "mean": 0.5,
+          "sd": 0.05,
+          "judge_sd_mean": 0.074535,
+          "variance_ratio": 0.670826,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "a8f462a622ca9b4f8bafe3bde3e20f013ccf9862fefb89923d311424ceb7f498",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.5,
+                0.75,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "7e411198a25850a714ee7892efcaf5500b1b7bc09726f84ac6ab1a47e5b25228",
+                "4e7cef0e1eeddc9bda92a32cd28f0c56257272b8c4adaab767c0d483a1ed00d0",
+                "9d9da5866a6df3adfed6ea42522afbb3f5fa5415987ff66beddb4d0c7623cb50",
+                "98985c6ef70dbc1ecb259ec869638691334aef4847b1dacd694005cae0fe4db2",
+                "c61b37f2ceb254eebe7e1cc8f82ef5ac45a0015a6336352409fa3862375e1903"
+              ],
+              "mean": 0.55,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 3053,
+                "output_tokens": 1110,
+                "cached_tokens": 2348,
+                "wall_ms": 7742
+              },
+              "judge_usage": {
+                "input_tokens": 22988,
+                "output_tokens": 2946,
+                "cached_tokens": 19454,
+                "wall_ms": 37852
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "e0945be34cadec8d3d1cb2078762031c599b314a09e32c22ad0094afc94bf192",
+              "status": "measured",
+              "samples": [
+                0.25,
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "72df47b742a7b4a1814425a1a6b533cf6fe1ed2a9632ec7005ce9762b55108e5",
+                "9d618431b61651864b57078832aeead7713e8ca6f3b79f19f9122164c5b32d42",
+                "237a636b325196868893313ec5934c31d39070b77c9a3c3f83b35ac617046269",
+                "e6afe0e51136d1377e8e970ce8848865f1be3ef248fb574b7f6caed737a2440c",
+                "18b5913e308209fd20a68260bf0f62d43c54b0b1b576c9ccfdbf8a9ee43faff8"
+              ],
+              "mean": 0.45,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 3053,
+                "output_tokens": 765,
+                "cached_tokens": 2348,
+                "wall_ms": 6318
+              },
+              "judge_usage": {
+                "input_tokens": 20894,
+                "output_tokens": 1758,
+                "cached_tokens": 16401,
+                "wall_ms": 23678
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "b2c15bdfb4c1eabdf21e390b9c5415a3a643a899968dd6681566c9a77fb4bc03",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "1a4afebe9cc3749864c50992a1f3837cfd90ea414d93bd14c53e49e0aad9efa8",
+                "d3b17920dcce4f551e00066e74ff75c5405fd512f39094e0305fe6664ef5e795",
+                "99d1b04c85d78d358e1fb0cc1e71c5df00eac6295423e5028033e81f60b47b50",
+                "3c13eebf87b36a9edad7a67414267601cc0d7f4328b1b40acc50d9bce730ab94",
+                "e9349ba29a9c007c7a6175438e74c4b4b920c7a2f22f3b590bcfd2d71617f052"
+              ],
+              "mean": 0.5,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 3054,
+                "output_tokens": 1069,
+                "cached_tokens": 2705,
+                "wall_ms": 7897
+              },
+              "judge_usage": {
+                "input_tokens": 21458,
+                "output_tokens": 2368,
+                "cached_tokens": 16740,
+                "wall_ms": 35749
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "15ff56516267d2bde35edd32e22bf203ebc46f7addf5b66971aa8745755dac89",
+            "grading_hash": "c00ce9b8f016e2139b36aa569fa1041bdb54a660f4757992a90d9c57bb478636",
+            "index": 2,
+            "grading_kind": "rubric"
+          }
+        },
+        "counts": {
+          "generations_per_arm": 3
+        }
+      },
+      {
+        "id": "report",
+        "mode": "placebo",
+        "outcome": "fail",
+        "score": 0.542857,
+        "mean": 0.542857,
+        "stddev": 0.083808,
+        "samples": [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "generation_hash": "f2e97f9ce481ba0000c445b213c0bb4e222d7d5909561d1f914611b2667bbab5",
+        "judge_sample_hashes": [
+          "a988d85dad4e9cab5051f60a5a2cbba08f04744b6512de98aae41bc436ee328e",
+          "a900541c31794212fafaaf9dabbdae81275000d732a7944ae85faaddbaffd150",
+          "a51a7928f2eb8da9c89eb64017df3e97fcc6b3b921673bda0ecf15175a73a7b8",
+          "56febc631e99a94298818b7ccd4eb5882176a1c7a494c690d30da9e18f1cc1a4",
+          "85ee7c848eac70fed27535da4f8e217786afc0546cc713c114469765952e44a4"
+        ],
+        "threshold": 0.75,
+        "reason": "Names ShippingFacade, CarrierClient, and the pass-through friction (criterion 1) and asks the user to decide the next direction without claiming completion (criterion 4). It proposes narrowing but no concrete smaller interface (criterion 2 is weak), and it gives no benefits or before/after compariso",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "5e132f027de3ee4e4626966671c299b45f6e84fcd04427e2896991538014c3e7"
+        },
+        "judge_usage": {
+          "input_tokens": 21358,
+          "output_tokens": 2832,
+          "cached_tokens": 13740,
+          "wall_ms": 26676
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 7,
+          "n_measured": 7,
+          "n_unmeasured": 0,
+          "stopping_reason": "stabilised",
+          "mean": 0.542857,
+          "sd": 0.083808,
+          "judge_sd_mean": 0.067477,
+          "variance_ratio": 1.242023,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "462900bd8e7e66d74ed8ab9f7b8c84b9d6f558513fe1f266807514803ab65212",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.75,
+                0.75,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "53ca009e541f0d2c35c04d056b989152062dcbf0151bf85e42efe740096a6dad",
+                "7ba59564f4a31cffd8e063458373ed909f767285bf12697af86cc0a18dbb9709",
+                "735e2f6a7b15e3b53f27843bbf502ab39b16d39c61b06db0530f10fb90c62c4a",
+                "6153ed574adb460a6f6709da561a3cf9afef54561e62886967be2dca5a7c8190",
+                "5bcaefa3217d630d681cf405ff885028b62e49e995f9b15a503cf1ac531590b8"
+              ],
+              "mean": 0.6,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5002,
+                "output_tokens": 1163,
+                "cached_tokens": 4297,
+                "wall_ms": 9233
+              },
+              "judge_usage": {
+                "input_tokens": 21817,
+                "output_tokens": 3513,
+                "cached_tokens": 16956,
+                "wall_ms": 41365
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "f8d5475d5053b00d100e813884d1cbff2f5e0f2a32e457209a7e2c8264a28ef9",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "3c9f994f262d5bc665271aa2d00b863d69c14b3c1eb0d7fb4e7aadef43cafa75",
+                "b919da71e9d860c17b816d2c916b35cf89788b08f39e7f9e24148c8fbfa3bf2f",
+                "2f6af2cd13bb7d250138b4428e4704726470567241e2d73c5ae2901ac0a28884",
+                "c356b7929d5f0a23a1be4b3d0fbca01741cf6ae927e06038560d3ccd783cf752",
+                "29d27c382d1d4eda5f703c71fad7b8b45182a1adc2ee073888e8d65c3161cb0d"
+              ],
+              "mean": 0.5,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5002,
+                "output_tokens": 813,
+                "cached_tokens": 4297,
+                "wall_ms": 7782
+              },
+              "judge_usage": {
+                "input_tokens": 21106,
+                "output_tokens": 2642,
+                "cached_tokens": 17946,
+                "wall_ms": 37147
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "277cf86d3b1a5e54d72f99e6e9b68195915284102eed29495d6fdfb0ac00231f",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                0.25
+              ],
+              "judge_sample_hashes": [
+                "1538239542072ecd646b336ed88e2cfb68593c23634e8955aa333b5c975ebccf",
+                "bb09a8201f823edc5356ea3240b5f80859151e4ed3e6362e205d4f22d0490988",
+                "e4a8cc09289206dcae08efa0a0ab0c7729b7f35e89d5c7561df3d830fba4d661",
+                "8547eef0edb1e9d3eaba133454d218a02e6a26a842f65385587631b97bc56625",
+                "3ebdff90bd45e120d2e20e248338e6a04087697030633bede958edfbb17dd3fc"
+              ],
+              "mean": 0.45,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5001,
+                "output_tokens": 834,
+                "cached_tokens": 4297,
+                "wall_ms": 7644
+              },
+              "judge_usage": {
+                "input_tokens": 21459,
+                "output_tokens": 2050,
+                "cached_tokens": 18230,
+                "wall_ms": 31743
+              }
+            },
+            {
+              "draw_index": 3,
+              "generation_hash": "683610448513f6971a76b134f68293cacf72bd3a2b32fa28a5f2e90fcf6990e1",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "96a80cec621fd1e0fb9c5c00fa9aa92af9744589b422909ece1d313a43fc96ed",
+                "d88226532ce78287c83cf5ce138f1eec471832139c6084e003100ef9a2aaae8c",
+                "f1fa6781ed29af8a14e8e04c61cbc2a52631a1f5386db39c84996b722be5a589",
+                "c731a090c36566c2c15a1ae3b6934969429777290a940144eb863360ccd0531a",
+                "ccc8cd1db208addc061b8f6ccba2128d4ec3bd1eb1f24a299f8a29fd5f5ba556"
+              ],
+              "mean": 0.7,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5002,
+                "output_tokens": 915,
+                "cached_tokens": 4654,
+                "wall_ms": 6314
+              },
+              "judge_usage": {
+                "input_tokens": 21097,
+                "output_tokens": 3251,
+                "cached_tokens": 16524,
+                "wall_ms": 28441
+              }
+            },
+            {
+              "draw_index": 4,
+              "generation_hash": "087f953d6952c0ae13d0d7a79dcfd3cc9e35878752a622ee29a72a18283fe2ed",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "a4454f69809e5046f1f856a67f3c9a877c0bb0949a762251a00fa20ecff10be2",
+                "f9d384884b58ad12b6e5944a93451ca2d8abebf2d3a12e4432051ac2de927505",
+                "ca1f9e16b216d6e5b55084de73901077a955719ce9b26aeae67d1a717b09f33a",
+                "9cd029746495fb5caca9abe437b0b497e5f88d30ddd23e2215fbaae3404ee9a2",
+                "7d02b20cf8ae11bd9208852c32cb708886669f0138bfee5e14d1148ae8e8052d"
+              ],
+              "mean": 0.5,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5001,
+                "output_tokens": 1304,
+                "cached_tokens": 4654,
+                "wall_ms": 8374
+              },
+              "judge_usage": {
+                "input_tokens": 22124,
+                "output_tokens": 2920,
+                "cached_tokens": 13893,
+                "wall_ms": 26455
+              }
+            },
+            {
+              "draw_index": 5,
+              "generation_hash": "d2c6360d55db7fa81385b6b7140fd868f518f3dde0b898ef4217cb67495da661",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.75,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "2422f5b33b6db08af6b1fa9ab0a96fe0e1a31a885698663cf0b3a540300205a2",
+                "3f22c0d4f0f8fddc9e0556c50ae522d89ff8ef5dcc97fbf430b8d673b4a73787",
+                "2342dfa9520e3e1d24007ccf390ba1d4ee9bdb5a71aeb007fcce023d824169b3",
+                "09f4197375886278ed75d2e3072e389a102869f13c52d18aea1630c73bec0d05",
+                "062950d0a6d0068860b40167bb0f87daef2489d0e149ee4b0a45435cfcd11e6b"
+              ],
+              "mean": 0.55,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5002,
+                "output_tokens": 1033,
+                "cached_tokens": 4654,
+                "wall_ms": 7258
+              },
+              "judge_usage": {
+                "input_tokens": 21829,
+                "output_tokens": 2489,
+                "cached_tokens": 12270,
+                "wall_ms": 27595
+              }
+            },
+            {
+              "draw_index": 6,
+              "generation_hash": "f2e97f9ce481ba0000c445b213c0bb4e222d7d5909561d1f914611b2667bbab5",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "a988d85dad4e9cab5051f60a5a2cbba08f04744b6512de98aae41bc436ee328e",
+                "a900541c31794212fafaaf9dabbdae81275000d732a7944ae85faaddbaffd150",
+                "a51a7928f2eb8da9c89eb64017df3e97fcc6b3b921673bda0ecf15175a73a7b8",
+                "56febc631e99a94298818b7ccd4eb5882176a1c7a494c690d30da9e18f1cc1a4",
+                "85ee7c848eac70fed27535da4f8e217786afc0546cc713c114469765952e44a4"
+              ],
+              "mean": 0.5,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-haiku-5-5",
+              "usage": {
+                "input_tokens": 5003,
+                "output_tokens": 866,
+                "cached_tokens": 4654,
+                "wall_ms": 6411
+              },
+              "judge_usage": {
+                "input_tokens": 21358,
+                "output_tokens": 2832,
+                "cached_tokens": 13740,
+                "wall_ms": 26676
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "15ff56516267d2bde35edd32e22bf203ebc46f7addf5b66971aa8745755dac89",
+            "grading_hash": "c00ce9b8f016e2139b36aa569fa1041bdb54a660f4757992a90d9c57bb478636",
+            "index": 2,
+            "grading_kind": "rubric"
+          }
+        },
+        "counts": {
+          "generations_per_arm": 7
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 3,
+        "pass_count": 1,
+        "borderline_count": 2,
+        "mean_score": 0.830694,
+        "stddev": 0.060668
+      },
+      "baseline": {
+        "case_count": 3,
+        "pass_count": 0,
+        "borderline_count": 1,
+        "mean_score": 0.61627,
+        "stddev": 0.154562
+      },
+      "band_rule": "per arm: the sample standard deviation (n-1) of the per-case means across the included cases; the comparison band is the quadrature sum of the two arms; null where an arm has fewer than two included cases"
+    },
+    "fake_tool_calls": {
+      "with_skill": {
+        "count": 0,
+        "draws": 19
+      },
+      "baseline": {
+        "count": 0,
+        "draws": 16
+      },
+      "placebo": {
+        "count": 0,
+        "draws": 20
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.830694,
+    "baseline_score": 0.61627,
+    "delta": 0.214424,
+    "delta_uncertainty": 0.166042
+  },
+  "verification_level": "TESTED",
+  "economics": {
+    "basis": "metered-equivalent",
+    "surface": "claude-cli",
+    "with_skill": {
+      "call_count": 19,
+      "mean_input_tokens": 5202.84,
+      "mean_output_tokens": 1041.95,
+      "mean_cost_usd_per_call": 0.001041,
+      "median_wall_ms": 7628,
+      "wall_ms_p25": 6786,
+      "wall_ms_p75": 9449,
+      "wall_ms_iqr": 2663
+    },
+    "baseline": {
+      "call_count": 16,
+      "mean_input_tokens": 3065.75,
+      "mean_output_tokens": 758.56,
+      "mean_cost_usd_per_call": 0.000686,
+      "median_wall_ms": 7767.5,
+      "wall_ms_p25": 6226.5,
+      "wall_ms_p75": 8903,
+      "wall_ms_iqr": 2676.5
+    },
+    "skill_incremental_cost_usd_per_call": 0.000355,
+    "skill_incremental_cost_usd_per_1k_calls": 0.355,
+    "output_tokens_delta": 283.39,
+    "median_wall_ms_delta": -139.5,
+    "judge_excluded": true,
+    "judge_overhead": {
+      "note": "Measurement overhead imposed by Driftproof, NOT a cost of running the skill. Excluded from every field above. Counted over every draw sent to the judge, each once: the usage its answered judge samples reported, including parse retries, at the frozen judge price. Transport retries and samples that reported no usage are not in it.",
+      "total_cost_usd": 0.178503,
+      "case_rows_measured": 9,
+      "judged_draws_counted": 55,
+      "judged_draws_missing_usage": 0
+    },
+    "notes": {
+      "absolute_cost": "Absolute per-call cost on a CLI surface includes a fixed harness preamble (observed ~25k input tokens on claude-cli, ~11k on codex) that we do not control. It is identical in the with-skill and baseline arms, so it cancels in the Δ figures — read the incremental columns, not the absolute ones.",
+      "cache_pricing": "Cached input tokens are costed at the list input rate (an over-estimate where caching is heavy); cached_tokens is recorded per call so a reader can recompute.",
+      "latency": "observed on subscription CLI surface, indicative"
+    }
+  },
+  "placebo": {
+    "revision": 1,
+    "length_measure": "utf8_bytes",
+    "skill_bytes": 6000,
+    "bytes": 6000,
+    "seed": "392c6e6a10d199b2c6d895cd6ee91f0934292e3cf0c71279e79bce94cae04418",
+    "corpus": [
+      "The morning light settled slowly over the hills beyond the old market town.",
+      "A narrow river runs past the mill, where the water turns a wooden wheel all day.",
+      "In late autumn the beech trees along the lane turn copper and then pale brown.",
+      "The harbour wall was built from grey stone carried down from the quarry by cart.",
+      "Swifts arrive each spring and spend most of their lives on the wing above the roofs.",
+      "The library on the square keeps a collection of maps drawn by hand two centuries ago.",
+      "A light rain fell through the afternoon, and the streets shone under the lamps.",
+      "Bakers in the valley still use a starter that has been kept alive for many years.",
+      "The lighthouse keeper once climbed the spiral stair every evening at dusk.",
+      "Wild thyme grows between the rocks on the southern slope of the ridge.",
+      "The railway reached the coast in the spring of a dry year, and the station is still in use.",
+      "Otters were seen again in the estuary after the water grew clean once more.",
+      "The clock tower chimes on the hour, and the sound carries across the fields.",
+      "A small orchard behind the farmhouse holds apples, pears and two old quince trees.",
+      "Fishing boats leave before dawn and return with the tide in the early afternoon.",
+      "The museum displays a loom that weavers in the district used for linen and wool.",
+      "Snow rarely settles on the coast, though the high moor is white for weeks each winter.",
+      "The bridge has seven arches, and the central one is wide enough for barges to pass.",
+      "Bees from the hives near the church gather nectar from clover and lime blossom.",
+      "On clear nights the stars over the moor are bright enough to cast faint shadows.",
+      "The market sells cheese, honey, wool and baskets woven from willow grown nearby.",
+      "Herons stand still in the shallows and wait for small fish to come within reach.",
+      "An old canal links the two towns, and its towpath is now a path for walkers.",
+      "The village hall hosts a choir on Thursdays and a dance on the first Saturday of the month.",
+      "Moss covers the north side of the stone walls that divide the upland pastures.",
+      "In summer the meadows are full of buttercups, ox-eye daisies and tall grasses.",
+      "The ferry crosses the sound twice a day when the weather is calm enough.",
+      "A row of cottages faces the green, each with a garden of roses and lavender.",
+      "The forest to the east was planted with oak and ash after the great storm.",
+      "Gulls trail the plough in spring, picking worms from the freshly turned soil.",
+      "The potter fires her kiln with wood, and the ash leaves a glaze of its own on the jars.",
+      "Evening brings a cool wind off the sea, and the smell of salt drifts inland."
+    ],
+    "corpus_hash": "817668a2a4fdd95353cbcc95927d177bd8764ac4d8473bf30dd72630074fa72e",
+    "sha256": "a5943748fb9a9faff7577006a75a45d25918a6f786e259093fbe93b6e0b7fa40",
+    "skill_tokens_estimate": 1500,
+    "tokens_estimate": 1500,
+    "aggregates": {
+      "with_skill": {
+        "case_count": 3,
+        "pass_count": 1,
+        "borderline_count": 2,
+        "mean_score": 0.830694,
+        "stddev": 0.060668
+      },
+      "placebo": {
+        "case_count": 3,
+        "pass_count": 0,
+        "borderline_count": 1,
+        "mean_score": 0.612698,
+        "stddev": 0.091793
+      },
+      "band_rule": "per arm: the sample standard deviation (n-1) of the per-case means across the included cases; the comparison band is the quadrature sum of the two arms; null where an arm has fewer than two included cases"
+    },
+    "comparison": {
+      "with_skill_score": 0.830694,
+      "placebo_score": 0.612698,
+      "delta": 0.217996,
+      "delta_uncertainty": 0.11003
+    }
+  },
+  "receipt_hash": "16c69348adf10f32e7f53fad9df64947b1effeda19f82c24d57e1c2fd2379494"
+}

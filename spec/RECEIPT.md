@@ -50,8 +50,14 @@ v0.8 was additive over v0.7 in the same way (see *What v0.8 adds*).
 Issue 489 adds optional `run.timeout_ms` to the current v0.15 schema.
 `driftproof run --timeout <seconds>` applies a positive integer number of
 seconds to each generation and judge attempt, on every surface. The maximum
-is 2147478 seconds, within Node's timer bound including CLI cleanup grace. Each retry receives the same
-limit; retry counts and backoff stay unchanged. The setting works with
+is 2147478 seconds, within Node's timer bound including CLI cleanup grace. A call
+that reaches its own time limit is not retried: its draw is recorded unmeasured
+and the run goes on. Only an error whose text names a rate limit (429), a timeout
+the provider itself reports, or a dropped connection is retried, up to three more
+times, each after a longer wait; a repository run retries nothing. A timed-out draw
+carries the reason `the generation call timed out, so no answer was returned` or
+`the judge call timed out, so no score was given`. Receipts written before issue 760 say `timed out after its retries`
+for the same event, and are read as they are. The setting works with
 `--quick` and does not change its sampling or UNVERIFIED level.
 
 The receipt seals the explicit setting in milliseconds. It records a
@@ -66,6 +72,27 @@ callers with an explicit supported `opts.timeoutMs` record it when every
 selected case uses it. Per-case overrides retain their precedence; a varying
 run omits the uniform record. A regrade does not carry this original-run
 setting into its new operation. Frozen versioned schemas remain unchanged.
+
+## CLI setting sources
+
+Issue 760 adds optional `run.capture.setting_sources` to the current v0.16 schema.
+It is the list of CLI setting sources the run's CLI calls loaded, generation and
+judge together. `[]` means none: `claude` runs with `--setting-sources ''` and
+hooks off, so no CLAUDE.md, auto-memory, settings or hooks of yours reach it.
+`["user"]` means a CLI read your own configuration: `codex` has no switch for its
+`config.toml`, so a run with a Codex call records it. Project rules files stay off
+on both CLIs, and a trusted Codex run with your own `$CODEX_HOME/AGENTS.md` is
+refused before any call, since Codex has no switch for it either. Every call also
+runs in a new empty folder of its own, outside any git repository, removed after
+the call. A regrade does not copy `setting_sources`: it names what the original's
+generation calls and the regrade's own judge calls loaded, and names none when the
+original records none, since that leaves the generation side unknown.
+
+The field is absent on an API-only run, a stub run and a repository run (whose
+contract records the same thing), and on every receipt written before this change.
+An absent field is not a claim either way. The measured file still reaches the
+model exactly as before: on the text and files lanes the runner injects it, and the
+field says nothing about that. Frozen versioned schemas remain unchanged.
 
 ## Auxiliary calls on claude-cli
 
@@ -507,7 +534,10 @@ Spec 137. On the two CLI surfaces the child is an agent with tools. Until v0.10 
 harness's default tools in a working directory removed after the call, and only its final message
 reached the judge, so a child that wrote its answer to a file and said so was scored on what it
 said. Both fields below are optional. `run.capture` is written by every run, and a regrade carries
-it when the original records it. A draw's `captured_files` is written only in files capture.
+it when the original records it. A regrade does not copy `setting_sources`: it names what the
+original's generation calls and the regrade's own judge calls loaded, and names none when the original
+records none, since that leaves the generation side unknown. A draw's `captured_files` is written only
+in files capture.
 
 - **`run.capture`** `{mode}`: `text` or `files`. `text`, the default: on a CLI surface the child
   ran with its file-writing tools off (claude: `--disallowedTools
@@ -950,7 +980,7 @@ The v0.3.1 schema gained an **additive interop revision** so receipts can be
   (a coarse `chars/4` proxy, not a model tokenizer), used for the **value-per-token**
   axis: `delta` per 1k skill tokens. Method documented on the methodology page.
 - **Per-case `case_status`** (optional; default `"ok"`) — `"failed_timeout"` marks a
-  case whose model/judge call persistently timed out after retries. Such a case is
+  case whose model or judge call timed out at every draw (a call that reaches its limit is not retried). Such a case is
   **recorded WITHOUT fabricated samples/hashes** and is **excluded from the
   aggregates** — a band is never invented from a case that did not complete. When
   any case failed, the run is stamped **`run.status: "incomplete"`** (+
@@ -1040,7 +1070,7 @@ The v0.3.1 schema gained an **additive interop revision** so receipts can be
 | `judged_at`, `grader_revision` | ISO 8601 UTC, object | **v0.8**, optional, together or not at all: a re-judge of frozen outputs, and the grading definition it applied. |
 | `counts`, `arms` | object | **v0.8**, optional. See *What v0.8 adds*. |
 | `harness`, `import` | object | **v0.9**, optional, imported receipts. See *What v0.9 adds*. `harness` is also written by every run on a CLI or api surface and carried by a regrade; see *What v0.10 adds*. |
-| `capture` | object | **v0.10**, optional, written by every run and carried by a regrade when the original records it: `{mode}`, `text` or `files`, which answer was judged. See *What v0.10 adds*. |
+| `capture` | object | **v0.10**, optional, written by every run and carried by a regrade when the original records it: `{mode}`, `text` or `files`, which answer was judged, and `setting_sources` when the run made a CLI call. A regrade does not copy `setting_sources`: it names what the original's generation calls and the regrade's own judge calls loaded, and names none when the original records none, since that leaves the generation side unknown. See *What v0.10 adds* and *CLI setting sources*. |
 | `timeout_ms` | integer | Optional (issue 489). Explicit uniform per-call setting, in milliseconds, from 1 through 2147478647. Applies to each generation and judge attempt in the original run. See *Explicit per-call timeout*. |
 | `preset` | `"quick"` | **v0.11**, optional. A smoke run (`--quick`); such a receipt is below `TESTED`. See *What v0.11 adds*. |
 | `regraded_from`, `regrade` | object | **v0.12**, optional, together and only with `judged_at`: a regrade's lineage and what it did, sealed inside the receipt's hash. See *What v0.12 adds*. |

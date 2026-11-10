@@ -6,7 +6,7 @@ Driftproof (driftproofhq): open-source agent skill evaluation and regression tes
 
 ## Explore the results
 
-[Can you tell? Every skill](https://driftproofhq.com/can-you-tell/) · [The AI noticed the sugar pill](https://driftproofhq.com/noticed/) · [Which bar is the fake?](https://driftproofhq.com/spot-the-fake/) · [Every task we gave a skill](https://driftproofhq.com/tasks/) · [Skill or sugar pill?](https://driftproofhq.com/sugar-pill/)
+[Can you tell? Every skill](https://driftproofhq.com/can-you-tell/) · [Did the AI change?](https://driftproofhq.com/did-it-change/) · [Inspect these instructions](https://driftproofhq.com/inspect/) · [The AI noticed the sugar pill](https://driftproofhq.com/noticed/) · [Which bar is the fake?](https://driftproofhq.com/spot-the-fake/) · [Every task we gave a skill](https://driftproofhq.com/tasks/) · [Try it yourself](https://driftproofhq.com/try-it/) · [Which section did the work?](https://driftproofhq.com/which-section/) · [Skill or sugar pill?](https://driftproofhq.com/sugar-pill/)
 
 ## What it measures
 

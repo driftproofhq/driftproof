@@ -487,3 +487,26 @@ test('AC-2 issue 716: no marker inside a skill-entry row, past a nested list, an
   // Plant: the same words outside a skill-entry row take their markers.
   assert.deepEqual(ids(applyTerms(page(row.replace('class="skill-entry"', 'class="other-entry"')))), ['term-band', 'term-baseline', 'term-judge']);
 });
+
+// Issue 753 (A-689-2): "type token" is a commit label, not the unit a model counts in, so no token card lands
+// on it; the card still takes the first use in the model's sense.
+const TYPE_TOKEN_CARD = /\b[Tt]ype\s+<!--driftproof:term--><a class="term"[^>]*data-entry="term-token"/;
+test('AC-2 issue 753: the token card does not land on "type token", and the model\'s sense still takes it', () => {
+  const { applyTerms } = require('../scripts/glossary-terms.js');
+  const page = (prose) => `<!doctype html>\n<html lang="en">\n<head>\n<title>Tokens</title>\n</head>\n<body>\n<main>\n<p>${prose}</p>\n</main>\n</body>\n</html>\n`;
+  const tokenWords = (h) => [...h.matchAll(/data-entry="term-token"[^>]*>([^<]*)<\/a>/g)].map((m) => m[1]);
+  assert.deepEqual(tokenWords(applyTerms(page('It asked for a specific Conventional Commits type token in the subject.'))), [], 'plant: the card on a type token');
+  assert.deepEqual(tokenWords(applyTerms(page('It asked for a Type token in the subject.'))), [], 'with a capital');
+  assert.ok(!TYPE_TOKEN_CARD.test(applyTerms(page('A type token here, and one token per word there.'))), 'the commit sense is passed over');
+  assert.ok(applyTerms(page('A type token here, and one token per word there.')).includes(`and one ${'<!--driftproof:term-->'}`), 'the next use, in the model\'s sense, takes the card');
+  // The exclusion is the whole word "type": every other use keeps its card.
+  assert.deepEqual(tokenWords(applyTerms(page('Each token costs money.'))), ['token']);
+  assert.deepEqual(tokenWords(applyTerms(page('Input tokens cost money.'))), ['tokens']);
+  assert.deepEqual(tokenWords(applyTerms(page('A prototype token costs money.'))), ['token']);
+  // No published page carries the card on that sense, and a copy that does reads red.
+  assert.deepEqual(pages().filter((rel) => TYPE_TOKEN_CARD.test(read(rel))), []);
+  const h = read('docs/reports/001/index.html');
+  assert.deepEqual(readPage(h).markers.filter((m) => m.id === 'term-token'), [], 'Report 001 carries no token card');
+  const planted = plant(h, 'Conventional Commits type token (e.g.', `Conventional Commits type ${TERM_OPEN}<a class="term" href="/glossary/#term-token" data-entry="term-token" data-name="Token" data-plain="x">token</a>${TERM_CLOSE} (e.g.`);
+  assert.ok(TYPE_TOKEN_CARD.test(planted), 'plant: a copy with the card on "type token" reads red');
+});

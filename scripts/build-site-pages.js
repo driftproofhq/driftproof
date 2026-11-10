@@ -108,12 +108,15 @@ function receiptWords(receipt) {
   const v = require('../lib/verdict.js').receiptVerdict(receipt);
   return { verdict: v.verdict, label: pageLabel(v), honest: honestLine(v) };
 }
+// Issue 757 (spec 687 A-687-4): each state opens with the plain label the other pages use, then the
+// receipt page's own label in small type where the two differ.
+const stateLead = (plain, receipt) => `<strong>${plain}.</strong>${plain === receipt ? '' : ` <small class="receipt-term">Receipt label: ${receipt}.</small>`}`;
 // Spec 143: the *What a receipt can say* item for the cases kind. Its label and line are the receipt
 // page's own (CASES_PAGE, built from lib/verdict.js's CASES_WORD and CASES_LINE), so a reworded
 // constant moves this item with every other surface.
 function casesItem() {
   const [label, line] = require('./build-receipt-pages.js').CASES_PAGE;
-  return `<li><strong>${label}.</strong> ${line} The cases score too far apart from each other for more draws to be expected to bring the comparison band under the floor, and the receipt prints the band with each case's draw-to-draw spread taken out.</li>`;
+  return `<li>${stateLead(require('../lib/plain.js').LABELS.UNDERPOWERED_CASES, label)} ${line} The cases score too far apart from each other for more draws to be expected to bring the comparison band under the floor, and the receipt prints the band with each case's draw-to-draw spread taken out.</li>`;
 }
 // THE VERDICT ROW IS THE LINKED RECEIPT'S OWN (spec 037 A-037-2, P-10 (b)). The card sits beside a
 // link to that receipt's page, which states the verdict lib/verdict.js reads off the receipt, so the
@@ -173,26 +176,38 @@ function heroReceipt(V, receipt) {
 }
 
 // ── the doors (spec 687 AC-2) ───────────────────────────────────────────────
-// Three ways in, each a card with a small line drawing (inline SVG in the page's own colour), a
-// title and three links. The curious door carries spec 640 AC-13's words for the step-by-step page.
+// Four ways in, each a card with a small line drawing (inline SVG in the page's own colour), a
+// title and a short, fixed list of links. The curious door carries spec 640 AC-13's words for the step-by-step page.
 // No reading time is claimed anywhere (spec 640 AC-12).
 const DOOR_ICONS = {
-  curious: '<svg class="door-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><title>A question mark</title><path d="M16 3.5a12.5 12.5 0 1 0 0 25 12.5 12.5 0 0 0 0-25Z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12.4 12.6a3.8 3.8 0 1 1 5.6 3.4c-1.3.7-2 1.4-2 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="23" r="1.3" fill="currentColor"/></svg>',
+  chat: '<svg class="door-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><title>A speech bubble</title><path d="M5 6.5h22v15H13.5L8 27v-5.5H5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 12h12M10 16.5h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  curious:'<svg class="door-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><title>A question mark</title><path d="M16 3.5a12.5 12.5 0 1 0 0 25 12.5 12.5 0 0 0 0-25Z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12.4 12.6a3.8 3.8 0 1 1 5.6 3.4c-1.3.7-2 1.4-2 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="23" r="1.3" fill="currentColor"/></svg>',
   users: '<svg class="door-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><title>A magnifying glass</title><circle cx="13.5" cy="13.5" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.8 19.8 28 28" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M9.5 13.5a4 4 0 0 1 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
   makers: '<svg class="door-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><title>A receipt with a stamp</title><path d="M8 3.5h16v25l-2.7-2-2.6 2-2.7-2-2.7 2-2.6-2L8 28.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M11.5 10h9M11.5 14.5h9M11.5 19h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="21" cy="21" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6" transform="rotate(-12 21 21)"/></svg>',
 };
+// The reader pages the curious door keeps (spec 702 AC-1), each under its builder's own label.
+const CURIOUS_READERS = ['/spot-the-fake/', '/noticed/', '/can-you-tell/'];
+function readerLink(href) {
+  const page = require('./reader-pages').pages().find((p) => p.href === href);
+  if (!page) throw new Error(`no reader page declares ${href}`);
+  return [page.href, page.label];
+}
 function doors() {
-  const door = (key, title, links) => `<article class="door door-${key}">
+  const door = (key, title, links, note) => `<article class="door door-${key}">
 ${DOOR_ICONS[key]}
 <p class="door-title">${title}</p>
 <ul>
-${links.map(([h, t]) => `<li><a href="${h}">${t}</a></li>`).join('\n')}
-</ul>
+${links.map(([h, t, after]) => `<li><a href="${h}">${t}</a>${after ? ` <span class="door-after">${after}</span>` : ''}</li>`).join('\n')}
+</ul>${note ? `\n<p class="door-note">${note}</p>` : ''}
 </article>`;
   return [
-    door('curious', 'Just curious', [['/how-it-works/', 'New to this? See how it works, step by step'], ['/reports/017/blind/', 'Can you tell which answer had the skill?'], ['/reports/', 'Read the reports'], ...require('./reader-pages').pages().filter(p => p.href !== '/sugar-pill/').map(p => [p.href, p.label])]),
+    // Issue 757 (spec 687 A-687-4): the door for people who only use a chat app, in their own words. The
+    // time is spelled out because spec 020 AC-9 allows no numeral here that names no field of stats.json.
+    door('chat', 'I use ChatGPT or Claude in the browser', [['/try-it/', 'Do my custom instructions do anything?', 'No install, about thirty minutes.'], ['/inspect/', 'Is a file someone sent me safe to paste in?'], ['/did-it-change/', 'Did the AI change lately?']], 'No terminal needed for these three.'),
     door('users', 'I use AI skills', [['/skill-lookup/', 'Look up a skill'], ['/skills/', 'Do popular AI skills help?'], ['/placebo/', "See your file's fake"], ['/sugar-pill/', 'Skill or sugar pill?']]),
-    door('makers', 'I make skills', [['#quickstart', 'Install in Claude Code'], ['#ci', 'Run it in CI: npx and the GitHub Action'], ['/methodology/', 'Read the methodology']]),
+    // A-687-5: this list is fixed, so a reader page added later cannot push the doors below the first
+    // viewport. It joins every page's footer and the generated list this door links to.
+    `<div class="doors-row">\n${door('curious', 'Just curious', [['/how-it-works/', 'New to this? See how it works, step by step'], ['/reports/017/blind/', 'Can you tell which answer had the skill?'], ['/reports/', 'Read the reports'], ...CURIOUS_READERS.map(readerLink), ['/what-is-driftproof/#explore-the-results', 'Explore all the results']])}\n${door('makers', 'I make skills', [['#quickstart', 'Install in Claude Code'], ['#ci', 'Run it in CI: npx and the GitHub Action'], ['/methodology/', 'Read the methodology']])}\n</div>`,
   ].join('\n');
 }
 
@@ -221,6 +236,9 @@ function findingTiles(items, total) {
 ${rects.join('\n')}
 </svg>`;
 }
+// The plain words the card prints for a report sentence written as a double negative (issue 757). The
+// report's sentence stays in the data layer and on the report; a sentence not listed prints as written.
+const PLAIN_POINTS = { 'A skill that did not beat the fake is not shown to do no better than it.': 'Not beating the fake does not show a skill is useless.' };
 function latestFinding(S, V) {
   const n = V('latest_report_number');
   const items = [];
@@ -235,6 +253,14 @@ function latestFinding(S, V) {
   // drawn from the whole tally, so the counts shown sum to the report's N by construction.
   const shown = items.filter((it) => it.count > 0);
   if (items.length && shown.reduce((a, b) => a + b.count, 0) !== Number(V('latest_tally_total'))) throw new Error('the legend\'s counts do not sum to the tally\'s total');
+  // A-687-4 (issue 757): "What we found" leads with the counts computed from the receipts (site-data.mjs
+  // latestFoundFields), then says the report's caveat in plain words, bound to its point.
+  const pointItem = (p) => {
+    const lead = `<b data-stat="latest_point_${p.i}_lead">${esc(p.lead)}</b>`;
+    const plain = PLAIN_POINTS[p.text];
+    if (plain && S.latest_found_above && S.latest_found_counted) return `<li>${lead} ${stat('latest_found_above')} of ${stat('latest_found_counted')} skills scored above the fake on at least one task and below it on none. <span data-plain-of="latest_point_${p.i}_text">${esc(plain)}</span></li>`;
+    return `<li>${lead} ${stat(`latest_point_${p.i}_text`)}</li>`;
+  };
   const tally = items.length ? `${findingTiles(items, Number(V('latest_tally_total')))}
 <p class="finding-legend" id="finding-legend">Of the ${stat('latest_tally_total')} skills counted:${shown.map((it) => ` <span class="tile-key ${tileClassOf(it.label)}"></span>${stat(`latest_tally_${it.i}_count`)} ${stat(`latest_tally_${it.i}_label`)}`).join(',')}.</p>` : '';
   return `<aside class="card finding" aria-labelledby="finding-heading">
@@ -244,7 +270,7 @@ function latestFinding(S, V) {
 <p class="finding-sentence">${stat('latest_report_sentence')}</p>
 ${tally}
 <ul class="finding-caveats">
-${points.map((p) => `<li><b data-stat="latest_point_${p.i}_lead">${esc(p.lead)}</b> ${stat(`latest_point_${p.i}_text`)}</li>`).join('\n')}
+${points.map(pointItem).join('\n')}
 </ul>
 <p class="finding-link"><a class="cta" href="/reports/${esc(n)}/">Read the report</a></p>
 </aside>`;
@@ -290,19 +316,22 @@ function homepage() {
 
   // THE OPENING FOR A READER WHO DOES NOT WRITE CODE (spec 687, Maverick's ruling of 4 Nov 2026).
   // The first screen says in everyday words what a skill is and what Driftproof does with it, then
-  // offers three doors: for the curious, for people who use skills, for people who make them. The
+  // offers four doors: for chat users, for people who use skills, for the curious, for people who make them. The
   // install commands move behind the makers' door, to #quickstart on this page, where spec 037's
   // readers find them in the same order as before. Spec 171's leaderboard-noise line and the
   // invisible-space line stay in the hero, under the doors (spec 175 A-175-3).
   // The finding card beside the opening is the latest report's own headline and tally, drawn as a
   // picture with the report's caveats (latestFinding, below).
   const plugin = ['claude plugin marketplace add driftproofhq/driftproof', 'claude plugin install driftproof@driftproofhq'];
+  const nodeMajor = /\d+/.exec(JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).engines.node)[0];
+  const receiptLabel = require('./build-receipt-pages.js').LABELS;
+  const plainLabel = require('../lib/plain.js').LABELS;
   const copy = (c) => `<span class="copy-cta"><code>${esc(c)}</code><button type="button" data-copy="${esc(c)}">Copy</button></span>`;
   const main = `<main class="screens">
 <section id="hero" class="screen is-wide">
 <div class="hero-words">
 <h1>Someone says this AI skill makes the assistant better. Does it?</h1>
-<p class="hero-sub">An AI skill is a file of instructions that people add to an AI assistant, such as Claude, to make it better at a job. Driftproof tests whether a skill really helps, the way a medicine is tested against a sugar pill. The latest reports give the AI the same tasks three ways: with the skill, with a fake of the same length, and with nothing added. Then it scores every answer, again and again. Every result is a dated receipt anyone can check.</p>
+<p class="hero-sub">An AI skill is a file of instructions that people add to an AI assistant, such as Claude, to make it better at a job. Driftproof tests whether a skill really helps, the way a medicine is tested against a sugar pill. The same test works on custom instructions, saved prompts and CLAUDE.md files. The latest reports give the AI the same tasks three ways: with the skill, with a fake of the same length, and with nothing added. Then it scores every answer, again and again. Every result is a dated receipt with its own page; anyone with a terminal can verify the file.</p>
 </div>
 <div class="doors">
 ${doors()}
@@ -346,7 +375,7 @@ ${panels}
 <p class="section-eyebrow">The reports</p>
 <h2>Latest report</h2>
 ${reportCard(latest, HOME_CARD_STAT, { counts: false })}
-<p>The latest report reads each skill against a same-length placebo as well as against no skill: a text of the skill's length in bytes, in its place, drawn from a fixed corpus chosen without reference to any task. <a href="/placebo/">Fake my file</a> shows the text Driftproof would use for your file, in your browser, before you measure it. On a run that kept its answers, the results page and <code>driftproof blind</code> show each task's two answers without saying which used your file, ask you to pick, and after your picks say how often you were right beside the judge's scores. In Claude Code, <code>/driftproof:blind</code> opens it.</p>
+<p>The latest report reads each skill against a same-length placebo as well as against no skill: a text of the skill's length in bytes, in its place, drawn from a fixed corpus chosen without reference to any task. <a href="/placebo/">See your file's fake</a> shows the text Driftproof would use for your file, in your browser, before you measure it. On a run that kept its answers, the results page and <code>driftproof blind</code> show each task's two answers without saying which used your file, ask you to pick, and after your picks say how often you were right beside the judge's scores. In Claude Code, <code>/driftproof:blind</code> opens it.</p>
 <p><a href="/reports/">All <span data-stat="reports_published">${esc(V('reports_published'))}</span> reports</a></p>
 <p><a href="${drift.HREF}">${esc(drift.TEXT.h1)}</a>: what each receipt read, model by model.</p>
 <p class="writing">Writing: <a href="/writing/three-releases/">${esc(latest.essay_links[0].title.value)}</a>, the launch essay reading all ${esc(V('reports_published_word'))} reports on what a moving model does to encoded expertise.</p>
@@ -356,7 +385,7 @@ ${reportCard(latest, HOME_CARD_STAT, { counts: false })}
 <p class="section-eyebrow">For people who use AI skills</p>
 <h2>Using a skill someone else wrote?</h2>
 <p>Paste its link and see whether it has been measured, or browse the skills already on record. <a href="/skill-lookup/">Look up a skill</a>. <a href="/skills/">Do popular AI skills help?</a></p>
-<p>Before you measure a file of your own, <a href="/placebo/">see its fake</a>: the same-length text that stands in for the sugar pill.</p>
+<p>Before you measure a file of your own, open <a href="/placebo/">See your file's fake</a>: the same-length text that stands in for the sugar pill.</p>
 </section>
 
 <section id="states" class="screen is-wide">
@@ -366,12 +395,12 @@ ${reportCard(latest, HOME_CARD_STAT, { counts: false })}
 <h2>What a receipt can say</h2>
 <p>A skill's own tests passing is one answer. Driftproof asks two more: whether the scores with the skill and without it separate beyond their spread, and whether that held when the model changed. Each answer is a dated, hash-verified receipt, and when there were too few draws to tell, the receipt says so.</p>
 <ul class="states">
-<li><strong>Passing.</strong> A case separated upward under the band rule: the two ranges do not overlap and the move clears the effect floor. That is a separation detected under the rule, not proof that the skill moved the score.</li>
-<li><strong>Regressed.</strong> A case separated downward under the same rule.</li>
-<li><strong>No separation detected.</strong> The ranges overlap at this sample size, which is not evidence that nothing changed.</li>
-<li><strong>Not enough draws.</strong> Not enough draws to conclude at this effect floor. The receipt prints how many draws per arm would have been needed, or that no number of draws reaches the floor at the spreads it measured.</li>
+<li>${stateLead(plainLabel.PASSED, receiptLabel.PASSED[0])} A case separated upward under the band rule: the two ranges do not overlap and the move clears the effect floor. That is a separation detected under the rule, not proof that the skill moved the score.</li>
+<li>${stateLead(plainLabel.REGRESSED, receiptLabel.REGRESSED[0])} A case separated downward under the same rule.</li>
+<li>${stateLead(plainLabel.NO_EFFECT, receiptLabel.NO_EFFECT[0])} The ranges overlap at this sample size, which is not evidence that nothing changed.</li>
+<li>${stateLead(plainLabel.UNDERPOWERED, receiptLabel.UNDERPOWERED[0])} Not enough draws to conclude at this effect floor. The receipt prints how many draws per arm would have been needed, or that no number of draws reaches the floor at the spreads it measured.</li>
 ${casesItem()}
-<li><strong>Not measured.</strong> The receipt carries no verdict, and its page names every reason, such as a run that does not record that a model answered it.${receiptWords(example).label === 'Not measured' ? ' The receipt in the card beside this list is one.' : ''}</li>
+<li>${stateLead(plainLabel.NOT_MEASURED, receiptLabel.NOT_MEASURED[0])} The receipt carries no verdict, and its page names every reason, such as a run that does not record that a model answered it.${receiptWords(example).label === 'Not measured' ? ' The receipt in the card beside this list is one.' : ''}</li>
 </ul>
 <p>Every receipt has its own page, with its verdict, its two arms and a way to verify it yourself. <a href="/how-this-is-built/">How this is built</a> describes how the tool itself is checked.</p>
 </div>
@@ -393,6 +422,7 @@ ${statCards}
 <section id="audience" class="screen is-text">
 <h2>Who it's for</h2>
 <div class="cols">
+<div><h3>People who use AI chat apps</h3><p>See whether your custom instructions do anything, with no install.</p></div>
 <div><h3>Skill authors</h3><p>See whether it helps before you publish, and on which model.</p></div>
 <div><h3>Catalog maintainers</h3><p>See which of your skills stopped separating when the model changed.</p></div>
 <div><h3>Platform teams</h3><p>An evidence trail for the skills your agents run in production.</p></div>
@@ -401,15 +431,18 @@ ${statCards}
 
 <section id="quickstart" class="screen is-text">
 <h2>Install in Claude Code</h2>
+<p>You need Claude Code, <code>Node.js ${nodeMajor}</code> or newer, and your project in a git repository. You do not need an API key: runs use your Claude Code plan's usage.</p>
 ${plugin.map((c) => `<p>${copy(c)}</p>`).join('\n')}
-<p>That installs <code>/driftproof:start</code>, <code>/driftproof:init</code>, <code>/driftproof:run</code>, <code>/driftproof:blind</code> and <code>/driftproof:badge</code>. The plugin hands your arguments to the pinned runner and writes the receipt that runner would have written; <code>/driftproof:run</code> spends your Claude Code subscription rather than an API key. It measures and never changes a skill's instructions. The one file it adds is a new <code>evals/evals.json</code>, from <code>/driftproof:start</code> or <code>/driftproof:init</code>, to a skill that has none, after you say yes in the run.</p>
-<p>Start with a skill you already have. In Claude Code, from the folder above it, in a git repository, run <code>/driftproof:start</code>. Claude lists your skills and asks which to check. If the skill has no test cases, Claude reads your <code>SKILL.md</code> and drafts test cases with you, aimed at outcomes you would check. It writes only after you say yes, then runs a quick check and opens a results page: your first receipt. Drafted cases are labelled as drafted from the skill and approved by you. A quick check is a first look and cannot produce a verdict. For a direct measurement, use <code>/driftproof:run path/to/your-skill</code>. On a skill with no test cases, it offers the same draft. For a new skill, scaffold one with <code>npx driftproof init my-skill</code>, as the next section shows.</p>
-<p>Driftproof is tested on Linux and macOS. In an outside retest on macOS the shipped gate failed only in the publishing helper, which needs GNU <code>realpath -m</code>. Public Windows CI runs the package gate, a stubbed first run, selected core tests and the plugin's own compatibility and runner-launch tests. These checks make no model calls and do not establish real-provider support. On Windows the plugin needs Node, npm's bundled npx and Git for Windows on PATH. <a href="/findings/">The findings page</a> has the figures.</p>
+<p>That installs <code>/driftproof:start</code>, <code>/driftproof:init</code>, <code>/driftproof:run</code>, <code>/driftproof:blind</code>, <code>/driftproof:badge</code>, <code>/driftproof:compare</code>, <code>/driftproof:inspect</code> and <code>/driftproof:recheck</code>. The plugin hands your arguments to the pinned runner and writes the receipt that runner would have written; <code>/driftproof:run</code> spends your Claude Code subscription rather than an API key. It measures and never changes a skill's instructions. The one file it adds is a new <code>evals/evals.json</code>, from <code>/driftproof:start</code> or <code>/driftproof:init</code>, to a skill that has none, after you say yes in the run.</p>
+<p>Compare and recheck need a git repository, and compare takes a <code>CLAUDE.md</code> or <code>AGENTS.md</code>.</p>
+<p>A full run can take up to <span data-stat="max_calls_per_task">${esc(V('max_calls_per_task'))}</span> model calls for each test task from your plan's usage. A quick check takes far fewer.</p>
+<p>Start with a skill you already have. In Claude Code, from the folder above it, in a git repository, run <code>/driftproof:start</code>. Claude lists your skills and asks which to check. If the skill has no test cases, Claude reads your <code>SKILL.md</code> and drafts test cases with you, aimed at outcomes you would check. It writes only after you say yes, then runs a quick check and opens a results page: your first receipt. Drafted cases are labelled as drafted from the skill and approved by you. A quick check is a first look and cannot produce a verdict. For a direct measurement, use <code>/driftproof:run path/to/your-skill</code>. On a skill with no test cases, it offers the same draft. For a new skill, scaffold one with <code>npx driftproof init my-skill</code>, as the next section shows. <code>/driftproof:start</code> works on a <code>CLAUDE.md</code> or <code>AGENTS.md</code> too.</p>
+<p>Tested on Linux and macOS. On Windows the plugin also needs Node, npm's npx and Git for Windows on PATH, and Windows has only been checked without calling a model. <a href="/findings/">The findings page</a> has the test details.</p>
 </section>
 
 <section id="ci" class="screen is-text">
 <h2>In CI: npx and the GitHub Action</h2>
-<p>You need <code>Node 22</code> or newer and an <code>ANTHROPIC_API_KEY</code>. From a clean checkout to a receipt for a new skill, on the command line:</p>
+<p>You need <code>Node ${nodeMajor}</code> or newer and an <code>ANTHROPIC_API_KEY</code>. A Claude Pro or Max plan cannot be used in CI: the Action needs an API key, billed per call, so set <code>max-usd</code>. From a clean checkout to a receipt for a new skill, on the command line:</p>
 <pre><code>npx driftproof init my-skill          # scaffold SKILL.md + evals/evals.json + .driftproofrc
 # edit the 3 example cases so each is grounded in a claim your SKILL.md makes
 export CLAUDE_PROVIDER=api
@@ -417,6 +450,7 @@ read -rsp "Anthropic API key: " ANTHROPIC_API_KEY &amp;&amp; export ANTHROPIC_AP
 npx driftproof run my-skill --models claude-haiku-4-5
 cat receipts/*.summary.md              # read the receipt + human summary</code></pre>
 <p>Wire it into a repository with the <a href="https://github.com/driftproofhq/driftproof#verification-in-ci-github-action--badge">GitHub Action</a> (<code>uses: driftproofhq/driftproof@v${esc(V('version'))}</code>): it re-runs the suite on every push, uploads the receipts, and fails the job when a case separated downward. <code>driftproof badge</code> turns a receipt into a badge that carries the model and the date it was measured.</p>
+<p>To compare a pull request's <code>CLAUDE.md</code> or <code>AGENTS.md</code> with the version on its base branch, on the same tasks, set the Action's <code>compare-with-base</code> input.</p>
 <p><img alt="driftproof badge: ${esc(require('../lib/verdict.js').verdictFromReceipt(example).message)}" src="https://img.shields.io/endpoint?url=https://driftproofhq.com/badges/commit-message-conventions.json"></p>
 </section>
 
@@ -1030,6 +1064,10 @@ function tokensCitation(root = ROOT) {
 // where the criterion puts it and which splits the verdict-rule card in two.
 function patchMethodology(html, root = ROOT) {
   let out = html;
+  // Issue 729: the existing results-reading page explains the printable handoff.
+  const resultSheet = '<p id="result-sheet">To send one result with its limits, run <code>driftproof sheet receipt.json</code>. It writes a file that opens from disk and prints the result and its limits together. Add <code>--suite evals.json</code> only when you want to include the matching tasks and scoring guides. They follow in full as an appendix, which may take extra pages.</p>';
+  if (out.includes('id="result-sheet"')) out = out.replace(/<p id="result-sheet">[\s\S]*?<\/p>/, resultSheet);
+  else out = out.replace('  <p><code>driftproof view</code>', '  ' + resultSheet + '\n  <p><code>driftproof view</code>');
   const textLimit = '<p id="text-capture-limit">Text capture on Claude Code offers only <code>Read</code>, <code>WebFetch</code> and <code>WebSearch</code>; it cannot run shell commands or edit files. Replies ending in fake tool calls are excluded from scores and counted per arm; a comparison is unreliable when they reach 5% of any arm\'s draws.</p>';
   if (out.includes('id="text-capture-limit"')) out = out.replace(/<p id="text-capture-limit">[\s\S]*?<\/p>/, textLimit);
   else out = out.replace('  <p id="judged-answer">', '  ' + textLimit + '\n  <p id="judged-answer">');
@@ -1572,7 +1610,7 @@ function skillLookupPage() {
   const main = `<main class="skill-lookup-page">
 <h1>${esc(T.h1)}</h1>
 <p class="lede">${esc(T.lede)}</p>
-<div class="skill-lookup" data-island="skill-lookup"><p>The lookup needs JavaScript. Without it, every skill the index lists is on <a href="/skills/">the list page</a>.</p><p><a data-request-fallback href="${esc(requestDraft)}">Request a public test on GitHub</a>.</p></div>
+<div class="skill-lookup" data-island="skill-lookup"><p>The lookup needs JavaScript. Without it, every skill the index lists is on <a href="/skills/">the list page</a>.</p><p><a data-request-fallback href="${esc(requestDraft)}">Request a public test on GitHub</a> (needs a GitHub account).</p></div>
 <details class="lookup-privacy">
 <summary>${esc(T.h2)}</summary>
 <p>${esc(T.takes)}</p>
@@ -1602,14 +1640,16 @@ function dropResultsPage() {
 
 // Issue 614: local placebo preview with a complete static fallback.
 function placeboPage() {
-  return shell({ title: "See your file's fake | Driftproof", description: 'Build the same-length fake used by the placebo arm, in your browser.',
+  return shell({ title: "See your file's fake | Driftproof", description: 'See the same-length decoy Driftproof tests in place of your text, built in your browser.',
     head: '<link rel="stylesheet" href="/placebo/style.css">\n',
     main: '<main class="drop-results-page placebo-page"><h1>See your file\'s fake</h1>'
-    + '<p class="lede">Paste or drop your rules file. See the same-length fake that the placebo arm would put in its place.</p>'
+    + '<p class="lede">This is the decoy Driftproof tests in place of your text, the "sugar pill". Paste or drop your file to see its fake.</p>'
     + '<p>Your file stays in this page. Building the fake calls no model and stores no file data.</p>'
     + '<div data-island="placebo"><p>The preview needs JavaScript. You can measure your file with the CLI:</p>'
     + '<pre><code>npx driftproof run &lt;path&gt; --suite tasks.json --placebo</code></pre></div>'
-    + '<details><summary>Which file and mode?</summary><p>Choose context mode for CLAUDE.md or AGENTS.md. Choose skill mode for a skill containing only SKILL.md. Bundled files change a skill\'s seed, so this preview does not match skills with other bundled files.</p>'
+    + '<p>Choose "A CLAUDE.md, AGENTS.md or custom instructions" for a rules file or pasted instructions. Choose "A skill (SKILL.md only)" for a skill that is one SKILL.md file.</p>'
+    + '<p>Using ChatGPT or Claude in the browser? Use this fake in <a href="/try-it/">Try it yourself</a>.</p>'
+    + '<details><summary>Details</summary><p>The fake is seeded from your file. Bundled files change a skill\'s seed, so this preview does not match skills with other bundled files.</p>'
     + '<p>Use a UTF-8 Markdown file. A selected or dropped file keeps its original bytes, including line endings. Pasted text uses the browser\'s line endings.</p>'
     + '<p>The fake uses the runner\'s pinned corpus and algorithm. It is a preview, not a measurement or a receipt. It does not tell you whether your file helps.</p>'
     + '<p>After loading, the reader makes no requests. It keeps file data out of the address, cookies and browser storage.</p></details>'

@@ -50,9 +50,12 @@ cp.spawn = (file, args, options) => {
         const judge = JUDGE.test(call.input);
         call.judge = judge;
         const isCodex = call.args.includes('codex');
-        let out = judge ? cliJson(JSON.stringify({ score: 0.8, pass: true, reason: 'double' }), call.args[call.args.lastIndexOf('--model') + 1])
-          : isCodex ? `${JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text: generate(call) } })}\n${JSON.stringify({ type: 'turn.completed', usage: { input_tokens: 1, output_tokens: 1 } })}\n`
-            : cliJson(generate(call));
+        const grade = JSON.stringify({ score: 0.8, pass: true, reason: 'double' });
+        const codexLines = (text) => `${JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text } })}\n${JSON.stringify({ type: 'turn.completed', usage: { input_tokens: 1, output_tokens: 1 } })}\n`;
+        let out = judge && isCodex ? codexLines(grade)
+          : judge ? cliJson(grade, call.args[call.args.lastIndexOf('--model') + 1])
+            : isCodex ? codexLines(generate(call))
+              : cliJson(generate(call));
         const files = judge ? [] : leave(call);
         const wrapper = call.args.find((a) => / WORKSPACE/.test(a));
         if (wrapper) {
@@ -87,6 +90,15 @@ delete process.env.DRIFTPROOF_EVAL_USER;
 process.env.CLAUDE_PROVIDER = 'cli';
 process.env.OPENAI_SURFACE = 'cli';
 const provider = require('../lib/provider');
+// A-022-8: Codex names no model on its stream, and a regrade refuses a judge that names none, so a real
+// Codex judge's regrade stops before any receipt. The one test of that receipt turns this on, so the
+// double's Codex judge names its model, which is what a later Codex would have to do to reach it.
+let codexJudgeNamesItself = false;
+const realComplete = provider.complete;
+provider.complete = async (a) => {
+  const r = await realComplete(a);
+  return codexJudgeNamesItself && r.surface === 'openai-cli' ? { ...r, reportedModels: [provider.resolveModel(a.model)] } : r;
+};
 const { runSkillOnModel } = require('../lib/run');
 const { regradeReceipt } = require('../lib/regrade');
 const { validateReceipt, verifyReceiptHash, sealReceipt } = require('../lib/receipt');
@@ -110,7 +122,7 @@ test('AC-1 text capture through the hop: the wrapper is unchanged and claude run
   assert.equal(calls[0].file, '/usr/bin/sudo');
   assert.equal(calls[0].args[calls[0].args.indexOf(provider.HOP_LABEL) - 1], provider.ISOLATED_WRAPPER);
   // A-137-4: spec 141 R-1's allow list and no MCP server, still before the SKILL.md.
-  assert.deepEqual(afterLabel(calls[0]), ['claude', '-p', '--output-format', 'json', '--model', 'claude-haiku-4-5-20251001', '--tools', 'Read,WebFetch,WebSearch', '--strict-mcp-config', '--append-system-prompt', SYS]);
+  assert.deepEqual(afterLabel(calls[0]), ['claude', '-p', '--output-format', 'json', '--model', 'claude-haiku-4-5-20251001', '--tools', 'Read,WebFetch,WebSearch', '--strict-mcp-config', '--setting-sources', '', '--settings', '{"disableAllHooks":true}', '--no-session-persistence', '--append-system-prompt', SYS]);
   assert.equal(r.text, 'ok');
   assert.ok(!('workspace' in r));
 });
@@ -119,8 +131,10 @@ test('AC-1 text capture on the trusted path and on codex: the same tools off, co
   reset();
   await provider.complete({ prompt: 'p', model: 'haiku', timeoutMs: 5000, trusted: true });
   assert.equal(calls[0].file, 'claude');
-  assert.equal(calls[0].cwd, null);
-  assert.deepEqual(calls[0].args, ['-p', '--output-format', 'json', '--model', 'claude-haiku-4-5-20251001', '--tools', 'Read,WebFetch,WebSearch', '--strict-mcp-config']);
+  // A-137-19 (issue 760): a trusted text call runs in its own new folder, never the caller's.
+  assert.match(String(calls[0].cwd), /driftproof-eval\.[^/\\]+$/);
+  assert.notEqual(calls[0].cwd, process.cwd());
+  assert.deepEqual(calls[0].args, ['-p', '--output-format', 'json', '--model', 'claude-haiku-4-5-20251001', '--tools', 'Read,WebFetch,WebSearch', '--strict-mcp-config', '--setting-sources', '', '--settings', '{"disableAllHooks":true}', '--no-session-persistence']);
   reset();
   await provider.complete({ prompt: 'p', model: 'gpt-5.6-sol', timeoutMs: 5000 });
   const a = afterLabel(calls[0]);
@@ -174,6 +188,18 @@ function skillOf() {
   return { name: 'fx-adr', version: '1.0.0', contentHash: sha(SYS), skillMd: SYS, suite: { format: 'agentskills.io/evals', suiteHash, caseCount: cases.length, cases } };
 }
 const armOf = (receipt, mode) => receipt.results.cases.find((c) => c.mode === mode);
+// A-022-8 (issue 760): what a regrade's receipt must name, worked out here from the surfaces it records
+// (the original's generation and its own judge), never read from lib/, so a copied list reads red.
+const CLI_SOURCES = { 'claude-cli': [], 'openai-cli': ['user'] };
+function sourcesFor(...surfaces) {
+  const cli = surfaces.filter((s) => Object.hasOwn(CLI_SOURCES, s));
+  return cli.length ? [...new Set(cli.flatMap((s) => CLI_SOURCES[s]))].sort() : undefined;
+}
+function regradeSourcesProblem(r) {
+  const want = sourcesFor(r.run.surface, r.run.judge.surface);
+  const sealed = r.run.capture.setting_sources;
+  return JSON.stringify(sealed) === JSON.stringify(want) ? null : `sealed ${JSON.stringify(sealed)}, the calls loaded ${JSON.stringify(want)}`;
+}
 const withSkill = (call) => call.args.includes('--append-system-prompt');
 
 test('AC-3 every receipt the runner writes records its capture mode, and validates', async () => {
@@ -181,7 +207,8 @@ test('AC-3 every receipt the runner writes records its capture mode, and validat
     reset();
     generate = () => 'Here is the ADR:\n\n# ADR 1\n\nContext: we need a database.';
     const { receipt } = await runSkillOnModel({ skill: skillOf(), model: 'haiku', opts: { samples: 2, trusted: true, ...(mode === 'files' ? { capture: mode } : {}) } });
-    assert.deepEqual(receipt.run.capture, { mode });
+    // A-137-19 (issue 760): and which CLI setting sources the run's calls loaded, none for claude.
+    assert.deepEqual(receipt.run.capture, { mode, setting_sources: [] });
     const v = validateReceipt(receipt);
     assert.ok(v.valid, JSON.stringify(v.errors));
     assert.equal(v.version, require('../config').RECEIPT_SCHEMA_VERSION);
@@ -303,7 +330,7 @@ test('AC-4 a regrade reads the answer the same way: a pointing answer is a lost 
   assert.match(lost[0].reason, /points at a file the judge was not shown \(adr\.md\)/);
   assert.equal(calls.filter((c) => c.judge && /adr\.md/.test(c.input)).length, 0);
   assert.equal(calls.filter((c) => c.judge).length, (draws.length - 1) * 2);
-  assert.deepEqual(out.receipt.run.capture, { mode: 'text' });
+  assert.deepEqual(out.receipt.run.capture, { mode: 'text', setting_sources: sourcesFor(out.receipt.run.surface, out.receipt.run.judge.surface) });
 });
 
 test('AC-4 a regrade refuses an answer planted behind another draw\'s generation_hash, before any call (issue 196)', async () => {
@@ -369,7 +396,7 @@ test('AC-4 a regrade keeps a draw lost for an uncollected workspace lost, and ma
   const out = await regradeReceipt({ receipt, skill: skillOf(), answers, judgeModel: 'haiku', samples: 2, opts: { trusted: true } });
   assert.ok(drawsOf(out.receipt).length >= 2 && drawsOf(out.receipt).every((d) => d.status === 'unmeasured' && /could not be collected/.test(d.reason)), 'a regrade scored a draw whose workspace was never collected');
   assert.equal(calls.filter((c) => c.judge).length, 0, 'a regrade judged an answer the run never saw whole');
-  assert.deepEqual(out.receipt.run.capture, { mode: 'files' });
+  assert.deepEqual(out.receipt.run.capture, { mode: 'files', setting_sources: sourcesFor(out.receipt.run.surface, out.receipt.run.judge.surface) });
   assert.equal(receiptVerdict(out.receipt).verdict, 'NOT_MEASURED');
 });
 
@@ -433,6 +460,67 @@ test('AC-10 a version read that fails records a null version on each CLI surface
     assert.deepEqual(receipt.run.harness, { name, version: null }, model);
     assert.ok(receipt.results.cases.some((c) => c.generation.n_measured >= 1), model);
     assert.ok(validateReceipt(receipt).valid, JSON.stringify(validateReceipt(receipt).errors));
+  }
+});
+
+// A-022-8 (issue 760): a regrade's setting sources name the calls its readings rest on. Through the hop,
+// where the double answers each CLI in its own shape.
+async function regradeOf({ originalJudge = null, regradeJudge, unrecorded = false }) {
+  reset();
+  const texts = new Map();
+  let k = 0;
+  generate = () => { k += 1; const t = `Here is ADR ${k}:\n\nContext: we need a database.`; texts.set(sha(t), t); return t; };
+  const skill = skillOf();
+  const run = await runSkillOnModel({ skill, model: 'haiku', opts: { samples: 2, ...(originalJudge ? { judgeModel: originalJudge } : {}) } });
+  let receipt = run.receipt;
+  if (unrecorded) {
+    receipt = JSON.parse(JSON.stringify(receipt));
+    delete receipt.run.capture.setting_sources;
+    receipt = sealReceipt(receipt);
+  }
+  const answers = {};
+  for (const d of receipt.results.cases.flatMap((c) => c.generation.draws)) answers[d.generation_hash] = texts.get(d.generation_hash);
+  reset();
+  codexJudgeNamesItself = true;
+  try {
+    const out = await regradeReceipt({ receipt, skill, answers, judgeModel: regradeJudge, samples: 2, opts: {} });
+    return { original: receipt, regraded: out.receipt };
+  } finally { codexJudgeNamesItself = false; }
+}
+
+test('AC-11 A-022-8: a claude-cli original regraded with an openai-cli judge names that judge\'s source, and a copied list reads red', async () => {
+  const { original, regraded } = await regradeOf({ regradeJudge: 'gpt-5.6-sol' });
+  assert.deepEqual(original.run.capture.setting_sources, []);
+  assert.equal(regraded.run.judge.surface, 'openai-cli');
+  assert.ok(calls.some((c) => c.judge && c.args.includes('codex')), 'the Codex judge was called');
+  assert.deepEqual(regraded.run.capture, { mode: 'text', setting_sources: ['user'] });
+  assert.equal(regradeSourcesProblem(regraded), null);
+  assert.ok(validateReceipt(regraded).valid, JSON.stringify(validateReceipt(regraded).errors));
+  assert.ok(verifyReceiptHash(regraded));
+  // Plant: the original's list copied onto the regrade.
+  assert.match(String(regradeSourcesProblem({ ...regraded, run: { ...regraded.run, capture: original.run.capture } })), /^sealed \[\], the calls loaded \["user"\]$/);
+});
+
+test('AC-11 A-022-8: an original with a Codex judge, regraded with a claude-cli judge, no longer names the original judge\'s source, and a copied list reads red', async () => {
+  const { original, regraded } = await regradeOf({ originalJudge: 'gpt-5.6-sol', regradeJudge: 'haiku' });
+  assert.equal(original.run.surface, 'claude-cli');
+  assert.deepEqual(original.run.capture.setting_sources, ['user']);
+  assert.equal(regraded.run.judge.surface, 'claude-cli');
+  assert.deepEqual(regraded.run.capture, { mode: 'text', setting_sources: [] });
+  assert.equal(regradeSourcesProblem(regraded), null);
+  assert.ok(validateReceipt(regraded).valid, JSON.stringify(validateReceipt(regraded).errors));
+  assert.ok(verifyReceiptHash(regraded));
+  // Plant: the original's list copied onto the regrade.
+  assert.match(String(regradeSourcesProblem({ ...regraded, run: { ...regraded.run, capture: original.run.capture } })), /^sealed \["user"\], the calls loaded \[\]$/);
+});
+
+test('AC-11 A-022-8: an original that records no setting sources leaves the regrade with none, whatever its judge', async () => {
+  for (const regradeJudge of ['haiku', 'gpt-5.6-sol']) {
+    const { original, regraded } = await regradeOf({ regradeJudge, unrecorded: true });
+    assert.equal('setting_sources' in original.run.capture, false);
+    assert.deepEqual(regraded.run.capture, { mode: 'text' }, `judge ${regradeJudge}`);
+    assert.ok(validateReceipt(regraded).valid, JSON.stringify(validateReceipt(regraded).errors));
+    assert.ok(verifyReceiptHash(regraded));
   }
 });
 

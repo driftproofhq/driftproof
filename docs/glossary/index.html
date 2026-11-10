@@ -18,10 +18,10 @@
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon-180.png" sizes="180x180">
 <link rel="icon" href="/icon-512.png" sizes="512x512" type="image/png">
-<meta name="description" content="Twenty-five words this site uses in a particular way. Each entry opens in plain words, then gives the fuller meaning, and links to the section it comes…">
+<meta name="description" content="32 words this site uses in a particular way. Each entry opens in plain words, then gives the fuller meaning, and links to the section it comes from. The…">
 <meta property="og:site_name" content="Driftproof">
 <meta property="og:title" content="Glossary | Driftproof">
-<meta property="og:description" content="Twenty-five words this site uses in a particular way. Each entry opens in plain words, then gives the fuller meaning, and links to the section it comes…">
+<meta property="og:description" content="32 words this site uses in a particular way. Each entry opens in plain words, then gives the fuller meaning, and links to the section it comes from. The…">
 <meta property="og:image" content="https://driftproofhq.com/og.7a9c3a6e.png">
 <meta property="og:url" content="https://driftproofhq.com/glossary/">
 <meta property="og:type" content="article">
@@ -31,7 +31,7 @@
   "@context": "https://schema.org",
   "@type": "WebPage",
   "name": "Glossary | Driftproof",
-  "description": "Twenty-five words this site uses in a particular way. Each entry opens in plain words, then gives the fuller meaning, and links to the section it comes…",
+  "description": "32 words this site uses in a particular way. Each entry opens in plain words, then gives the fuller meaning, and links to the section it comes from. The…",
   "url": "https://driftproofhq.com/glossary/",
   "isPartOf": {
     "@type": "WebSite",
@@ -103,6 +103,12 @@
 <li><a href="#term-baseline">Baseline</a></li>
 <li><a href="#term-placebo-arm">Placebo arm</a></li>
 <li><a href="#term-judge">Judge</a></li>
+<li><a href="#term-judge-sample">Judge sample</a></li>
+<li><a href="#term-capture">Capture</a></li>
+<li><a href="#term-harness">Harness</a></li>
+<li><a href="#term-test-task">Test task</a></li>
+<li><a href="#term-spread">Spread</a></li>
+<li><a href="#term-seal">Seal</a></li>
 <li><a href="#term-case-rule">Case rule</a></li>
 <li><a href="#term-substrate">Substrate</a></li>
 <li><a href="#term-surface">Surface</a></li>
@@ -118,12 +124,13 @@
 <li><a href="#term-repository-capture">Repository capture</a></li>
 <li><a href="#term-checkpoint">Checkpoint</a></li>
 <li><a href="#term-crossed-judging">Crossed judging</a></li>
+<li><a href="#term-token">Token</a></li>
 </ol></div></nav><!--/driftproof:layout-->
 <main class="screens">
 <section id="glossary" class="screen">
 <div class="split">
 <div><h1>Glossary</h1></div>
-<p>Twenty-five words this site uses in a particular way. Each entry opens in plain words, then gives the fuller meaning, and links to the section it comes from. The verdict rule, in the methodology's own words: Where bands touch or overlap, or a move is below the floor, the report says no separation detected at this sample size: never drift, and never that nothing changed.</p>
+<p>32 words this site uses in a particular way. Each entry opens in plain words, then gives the fuller meaning, and links to the section it comes from. The verdict rule, in the methodology's own words: Where bands touch or overlap, or a move is below the floor, the report says no separation detected at this sample size: never drift, and never that nothing changed.</p>
 </div>
 <dl class="glossary">
 <div><dt id="term-skill">Skill</dt>
@@ -155,7 +162,25 @@
 <p class="term-full">An optional third arm, answered with a text of exactly the skill text's length in bytes in the skill's place, drawn from a fixed corpus chosen without reference to any task, which can by chance bear on a case. Its reading is the verdict's own case rule applied to the skill against that text, given beside the verdict and never in its place. <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md">Source: the receipt specification</a>.</p></dd></div>
 <div><dt id="term-judge">Judge</dt>
 <dd><p class="term-plain">The judge, also called the grader, is an AI model, sometimes the same one that answered, that scores each answer against a guide written for the task. It is an AI, not a person, and it can be wrong.</p>
-<p class="term-full">One fixed grader scores every answer in a report several times, so a moved result cannot come from a changed grader; the judge's model, instructions and sampling are recorded on the receipt. The judge policy says when the grader changes and what it cannot do. <a href="/judge-policy/#plain-why-one-grader">Source: why one grader</a>.</p></dd></div>
+<p class="term-full">Within one report the grader stays fixed and scores every answer several times, so a result that moves inside that report did not come from a changed grader. Between dates the grader's model or Driftproof's scoring code can change, and each receipt records both, with the judge's instructions and sampling. The judge policy says when the grader changes and what it cannot do. <a href="/judge-policy/#plain-why-one-grader">Source: why one grader</a>.</p></dd></div>
+<div><dt id="term-judge-sample">Judge sample</dt>
+<dd><p class="term-plain">One score from the judge for one answer. The judge scores each answer several times, and each of those scores is a judge sample.</p>
+<p class="term-full">One of the several scores the judge gives the same draw. A receipt records how many judge samples each draw took and a hash of each sample, so a kept judge output can be checked against it. <a href="/methodology/#where-a-band-comes-from">Source: where a band comes from</a>.</p></dd></div>
+<div><dt id="term-capture">Capture</dt>
+<dd><p class="term-plain">How a run records what the model produced so it can be scored: its written reply alone, or its reply and the files it wrote or changed.</p>
+<p class="term-full">How a run records an answer for the judge, set for each run and recorded on the receipt. Text capture scores the written reply; file and repository capture also score what the model wrote or changed. Repository capture has its own entry. <a href="/methodology/#the-core-with-vs-without-sampled-banded">Source: with and without the skill</a>.</p></dd></div>
+<div><dt id="term-harness">Harness</dt>
+<dd><p class="term-plain">The program that runs the model during a test, such as Claude Code. A receipt names it and its version when the run could read them.</p>
+<p class="term-full">The program that drives the model during a run, such as Claude Code. A receipt records the harness name and version where the run could read them, and two receipts can differ on it between dates. <a href="/methodology/#providers-surfaces-and-neutrality">Source: providers, surfaces and neutrality</a>.</p></dd></div>
+<div><dt id="term-test-task">Test task</dt>
+<dd><p class="term-plain">One job a model is given in a test, with a guide for scoring the answer. A skill's test tasks together are its test suite.</p>
+<p class="term-full">One case of a suite: the prompt a run asks and the rubric the judge scores the answer against. A suite is the full set of cases, and a receipt records each case's scores and the suite's hash. <a href="/methodology/#the-core-with-vs-without-sampled-banded">Source: with and without the skill</a>.</p></dd></div>
+<div><dt id="term-spread">Spread</dt>
+<dd><p class="term-plain">How much repeated scores of the same thing differ from one another. A wider spread means the scores varied more.</p>
+<p class="term-full">The standard deviation of a set of scores, across draws or across one draw's judge samples. A band is the average plus or minus one spread, and a receipt records the spread beside each average. <a href="/methodology/#where-a-band-comes-from">Source: where a band comes from</a>.</p></dd></div>
+<div><dt id="term-seal">Seal</dt>
+<dd><p class="term-plain">A fingerprint worked out from a finished receipt. If any figure in the receipt changes afterwards, the fingerprint stops matching.</p>
+<p class="term-full">The receipt_hash, a SHA-256 over a receipt's canonical form, written when the run finishes. Anyone holding the file can work it out again, and driftproof validate refuses a receipt whose seal does not match. <a href="https://github.com/driftproofhq/driftproof/blob/main/spec/RECEIPT.md">Source: the receipt specification</a>.</p></dd></div>
 <div><dt id="term-case-rule">Case rule</dt>
 <dd><p class="term-plain">A reading that takes each test task on its own. A skill clearly helped if it scored clearly higher on at least one task and clearly lower on none, and clearly hurt if it scored clearly lower on any.</p>
 <p class="term-full">The rule reads each case's two bands under the effect floor and combines the cases: separated upward on at least one case and downward on none reads as helped, and downward on any case reads as hurt. The aggregate figures over all cases are given beside it and can point the other way. <a href="/how-it-works/#step-4">Source: repeat, then read the case rule</a>.</p></dd></div>
@@ -199,8 +224,11 @@
 <dd><p class="term-plain">Saved progress of a run, so a paused or interrupted run can continue without redoing finished work.</p>
 <p class="term-full">Durable run progress that retains finished draws and saved judge samples for a compatible resume. A pause or resume leaves the verdict rules unchanged and records the run segments in the final receipt. <a href="/methodology/#checkpoint-pause-resume">Source: checkpoint, pause and resume</a>.</p></dd></div>
 <div><dt id="term-crossed-judging">Crossed judging</dt>
-<dd><p class="term-plain">An older grading setup in which two models graded each other's answers. One grader now scores both.</p>
-<p class="term-full">A historical R-2 pairing: Sonnet judged Haiku and Haiku judged Sonnet. Sonnet 5.5 now judges both targets; self-grading is disclosed. <a href="/methodology/#crossed-judging">Source: R-2 judge configuration</a>.</p></dd></div>
+<dd><p class="term-plain">An older grading setup in which two models graded each other's answers. One grader now scores both in that setup.</p>
+<p class="term-full">A historical R-2 pairing: Sonnet judged Haiku and Haiku judged Sonnet. In R-2, Sonnet 5.5 now judges both targets; self-grading is disclosed. <a href="/methodology/#crossed-judging">Source: R-2 judge configuration</a>.</p></dd></div>
+<div><dt id="term-token">Token</dt>
+<dd><p class="term-plain">A piece of text as a model counts it, about four letters of English or a short word. A model is priced by the token, so a longer file costs more on every call that carries it.</p>
+<p class="term-full">The unit a model reads and bills in, roughly four characters of English. Driftproof estimates a text's tokens from its length, not with a tokenizer, and prices the estimate at the registry's per-million rate for input tokens. <a href="/methodology/#the-value-per-token-axis">Source: the value-per-token axis</a>.</p></dd></div>
 </dl>
 </section>
 </main>
@@ -208,7 +236,7 @@
 <!--driftproof:foot--><footer class="site">
 <p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
 <p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/maintainer/">Maintainer</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
-<p class="foot-links"><a href="/can-you-tell/">Can you tell? Every skill</a> · <a href="/noticed/">The AI noticed the sugar pill</a> · <a href="/spot-the-fake/">Which bar is the fake?</a> · <a href="/tasks/">Every task we gave a skill</a> · <a href="/sugar-pill/">Skill or sugar pill?</a></p>
+<p class="foot-links"><a href="/can-you-tell/">Can you tell? Every skill</a> · <a href="/did-it-change/">Did the AI change?</a> · <a href="/inspect/">Inspect these instructions</a> · <a href="/noticed/">The AI noticed the sugar pill</a> · <a href="/spot-the-fake/">Which bar is the fake?</a> · <a href="/tasks/">Every task we gave a skill</a> · <a href="/try-it/">Try it yourself</a> · <a href="/which-section/">Which section did the work?</a> · <a href="/sugar-pill/">Skill or sugar pill?</a></p>
 </footer><!--/driftproof:foot-->
 <!--driftproof:scripts--><script src="/copy-button.js" defer></script>
 <script type="module" src="/islands/loader.js"></script><!--/driftproof:scripts-->

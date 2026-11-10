@@ -35,7 +35,7 @@ const TX = {
   H1: 'Look up a skill',
   P1: "Paste a GitHub skill link. Find its page in this visit's list, or try a guided first run.",
   P2: "It takes a github.com link to a repository, a skill's folder or its SKILL.md, or a raw.githubusercontent.com link to a SKILL.md.",
-  F2: 'Request a public test on GitHub.',
+  F2: 'Request a public test on GitHub (needs a GitHub account).',
   F1: 'The lookup needs JavaScript. Without it, every skill the index lists is on the list page.',
   H2: 'What it reads and sends',
   C1: "Looking up a link sends it nowhere. Requests are optional. Submitting a request sends only the skill link, note and maintainer choice to GitHub. The lookup reads one file from this site, the list at /skills/. Your browser's own features, such as spell check, autofill and page translation, are outside what this page controls.",
@@ -802,7 +802,7 @@ function startFixture423() {
   const root = fs.mkdtempSync('/var/tmp/spec423-start-'); FIXTURES423.push(root);
   const plugin = path.join(root, 'plugin');
   for (const dir of ['lib', '.claude-plugin', 'commands', 'config']) fs.mkdirSync(path.join(plugin, dir), { recursive: true });
-  for (const f of ['input-contract.json', 'version-guard.json', '.claude-plugin/plugin.json', 'config/models.json', 'lib/door.mjs', 'commands/start.md']) fs.copyFileSync(path.join(ROOT, 'plugin/driftproof', f), path.join(plugin, f));
+  for (const f of ['input-contract.json', 'draft-contract.json', 'version-guard.json', '.claude-plugin/plugin.json', 'config/models.json', 'lib/door.mjs', 'commands/start.md']) fs.copyFileSync(path.join(ROOT, 'plugin/driftproof', f), path.join(plugin, f));
   fs.symlinkSync(path.join(ROOT, 'plugin/driftproof/sample'), path.join(plugin, 'sample'));
   const work = path.join(root, 'work'); fs.mkdirSync(work);
   const log = path.join(root, 'events.jsonl'), hook = path.join(root, 'intercept.cjs');

@@ -94,7 +94,8 @@ function fixture(t, { version = PIN, exit = 0, layout = 'global', alias = false,
   }
   const pathKey = Object.keys(env).find(k => k.toLowerCase() === 'path') || 'PATH';
   env[pathKey] = bin + path.delimiter + (env[pathKey] || '');
-  Object.assign(env, { DRIFTPROOF_STUB: '1', PLUGIN_SENTINEL: 'expanded', GIT_CEILING_DIRECTORIES: root });
+  // TEMP and TMP: the door's private folder (spec 752 A-752-3), which a simulated win32 looks for there.
+  Object.assign(env, { DRIFTPROOF_STUB: '1', PLUGIN_SENTINEL: 'expanded', GIT_CEILING_DIRECTORIES: root, TEMP: root, TMP: root });
   assert.equal(spawnSync('git', ['init', '-q'], { cwd: work, env }).status, 0);
   const skillName = 'skill & %PLUGIN_SENTINEL% !literal! (space)';
   const skill = path.join(work, skillName);
@@ -132,7 +133,7 @@ test('Windows init, guided start and page fallback use the same runner transport
   assert.deepEqual(f.calls().slice(2), [
     ['driftproof@' + PIN, '--version'],
     ['driftproof@' + PIN, 'run', f.given, '--models', 'claude-haiku-4-5', '--quick', '--trusted-skill'],
-    ['driftproof@' + PIN, 'view', 'receipts', '--out', 'driftproof-view.html'],
+    ['driftproof@' + PIN, 'view', path.join(f.cwd, 'receipts'), '--out', path.join(f.cwd, 'driftproof-view.html')],
   ]);
   assert.match(start.stdout, /open that file in a browser/);
 });
@@ -208,7 +209,7 @@ test('Windows 8.3 alias: start, its draft, a tasks file and a receipts folder in
   assert.doesNotMatch(blind.stderr, /resolves outside/);
   const view = f.calls().find((v) => v[1] === 'view');
   assert.ok(view, 'blind reached the runner');
-  assert.equal(view[2], 'receipts');
+  assert.equal(view[2], path.join(f.cwd, 'receipts'));
   assert.match(blind.stdout, new RegExp('resolved receipts-dir=' + path.join(f.cwd, 'receipts').replace(/[.*+?^${}()|[\]\\~&%!]/g, '\\$&')));
 });
 test('Windows 8.3 alias: a long name that differs only in case is inside on win32 and outside elsewhere', { skip: NO_ALIAS }, t => {

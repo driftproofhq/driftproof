@@ -16,6 +16,42 @@ const BIN = path.join(ROOT, 'bin/driftproof');
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'blind-619-'));
 const out = path.join(dir, 'receipts');
 let receipt, file, archive, archiveFile;
+test('A-619-3: an answer keeps its emoji whole, and a hidden character still shows', () => {
+  const { termText, shellArg } = require('../lib/names');
+  const of = (...points) => String.fromCodePoint(...points);
+  const emoji = {
+    'a warning sign': of(0x26a0, 0xfe0f),
+    'a text-style heart': of(0x2764, 0xfe0e),
+    'a skin tone': of(0x1f44d, 0x1f3fd),
+    'a joined person': of(0x1f469, 0x1f3fd, 0x200d, 0x1f4bb),
+    'a rainbow flag': of(0x1f3f3, 0xfe0f, 0x200d, 0x1f308),
+    'a keycap': of(0x31, 0xfe0f, 0x20e3),
+    'the flag of England': of(0x1f3f4, 0xe0067, 0xe0062, 0xe0065, 0xe006e, 0xe0067, 0xe007f),
+    'the flag of Wales': of(0x1f3f4, 0xe0067, 0xe0062, 0xe0077, 0xe006c, 0xe0073, 0xe007f),
+  };
+  for (const [what, form] of Object.entries(emoji)) {
+    const text = 'Before ' + form + ' after';
+    assert.equal(termText(text), text, what);
+    assert.equal(shellArg(text), "'" + text + "'", what);
+  }
+  const hidden = {
+    'a zero-width space': [of(0x200b), '\\u{200b}'],
+    'a lone selector': ['a' + of(0xfe0f), 'a\\u{fe0f}'],
+    'a second selector': [of(0x26a0, 0xfe0f, 0xfe0f), of(0x26a0, 0xfe0f) + '\\u{fe0f}'],
+    'a joiner between letters': ['a' + of(0x200d) + 'b', 'a\\u{200d}b'],
+    'a joiner after the last emoji': [of(0x1f600, 0x200d), of(0x1f600) + '\\u{200d}'],
+    'a tag run after a black flag': [of(0x1f3f4, 0xe0041, 0xe0042), of(0x1f3f4) + '\\u{e0041}\\u{e0042}'],
+    'a tag after an emoji': [of(0x1f600, 0xe0041), of(0x1f600) + '\\u{e0041}'],
+    'a right-to-left override': [of(0x202e), '\\u{202e}'],
+    'a control': [of(0x1b), '\\u{1b}'],
+  };
+  for (const [what, [text, shown]] of Object.entries(hidden)) assert.equal(termText(text), shown, what);
+  for (const text of ['it' + of(0x27) + 's ' + of(0x26a0, 0xfe0f), 'a' + of(0x200b) + 'b ' + of(0x26a0, 0xfe0f), of(0xe0041) + of(0x5c)]) {
+    const back = spawnSync('bash', ['-c', 'printf %s ' + shellArg(text)], { encoding: 'utf8' });
+    assert.equal(back.stdout, text, 'shellArg gives back the exact bytes');
+  }
+});
+
 test.before(() => {
   const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/KEY|TOKEN|SECRET|^DRIFTPROOF_/.test(k)));
   const r = spawnSync(process.execPath, [BIN, 'run', path.join(ROOT, 'examples/commit-message-conventions'), '--placebo', '--keep-transcripts', '--out', out], { cwd: dir, env: { ...env, DRIFTPROOF_STUB: '1' }, encoding: 'utf8', timeout: 1800000 });

@@ -18,8 +18,11 @@
 //   1. No shell, ever. Every spawn is an argv ARRAY handed to spawnSync with
 //      shell:false. No string is composed from a user value and executed. There
 //      is no template interpolation anywhere in this file, for the same reason.
-//   2. Nothing is written except by the pinned CLI. This file creates no file,
-//      edits nothing, and proposes nothing about the contents of a skill.
+//   2. Only the pinned CLI writes product files. Compare additionally keeps a
+//      private temporary copy of HEAD, removed on exit. Recheck additionally makes
+//      the empty recheck/ parent, which the CLI's init needs and does not make, and
+//      writes nothing inside a saved folder. It edits no instructions.
+//   Each npx spawn also starts in an empty private folder, removed on exit (spec 752 A-752-3).
 //
 // SPEC 138 adds three flags `run` passes through to the CLI (--samples, --concurrency,
 // --max-cases), each checked by the contract first. SPEC 139 adds --quick on `run` and the
@@ -48,8 +51,20 @@
 // such a run is --confirm-write, and nothing is added beside the rules file. Both commands take
 // --placebo (spec 440); start takes it only beside --full. Repository capture (spec 490) needs the
 // isolated lane, which this door never takes, so --capture stays the CLI's alone.
+// SPEC 727: start and init take --from-failure beside a draft: the cases were drafted from a mistake the
+// person saw and described, and the person approved them. The door then reads the draft before anything
+// is spawned (checkDraft): the suite bounds, spec 185's criteria shape, and the leak classes of
+// draft-contract.json (lib/hygiene.js's, copied as data and held to it by tests/plugin-compat.test.js), so a
+// pasted excerpt carrying a path, an email or a key never reaches the process that writes. The refusal
+// names the case and the field and never the value. The init step then gives the CLI
+// --drafted-from-failure in place of --drafted-from-skill, so the suite says where its cases came from.
+// The two rules above hold: the draft is data, never interpolated, and the one new file is still the CLI's.
+// ISSUE 752: recheck saves a subject's tests once and runs them again on each later use. The person never
+// types init or run: the CLI's own recheck.json, read here and never written, decides which. A run needs
+// --confirm-spend, given by Claude only after the person's yes, and every sentence about a result is the CLI's.
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import crypto from 'node:crypto';
 import tty from 'node:tty';
 import { spawnSync } from 'node:child_process';
@@ -58,6 +73,9 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PLUGIN_ROOT = path.resolve(HERE, '..');
 const MARK = '[driftproof-plugin]';
+// What a trusted call loads, word for word as lib/capture.js LANE_LOADS (spec 022 A-022-6, whose gate
+// holds the two equal). The door ships without the runner, so it cannot import that module.
+const LANE_LOADS = "Each call runs in a new empty folder and loads no project or personal instruction files, memory, hooks or Claude Code settings. Codex still reads its own config file, and with --capture files that file can still turn on Codex's own hooks or memory.";
 // The plain line for the UNDERPOWERED state, as lib/verdict.js carries it (spec 035 AC-9).
 const UNDERPOWERED_LINE = 'Not enough draws to conclude at this effect floor';
 // Spec 143 (A-035-9): the cases line and word, as lib/verdict.js carries them, for the state where the
@@ -72,12 +90,22 @@ const MANIFEST = readJson(path.join(PLUGIN_ROOT, '.claude-plugin', 'plugin.json'
 const PINNED = MANIFEST.version;
 const CONTRACT = readJson(path.join(PLUGIN_ROOT, 'input-contract.json'));
 const GUARD = readJson(path.join(PLUGIN_ROOT, 'version-guard.json'));
+// Spec 727: what a draft from a failure must meet, shipped as data (see that file's header).
+const DRAFT = readJson(path.join(PLUGIN_ROOT, 'draft-contract.json'));
 
 // Spec 139 A-139-18 (issue 368): `start` holds its own setup lines back. On success they give way to one
 // line, before the runner's first (setupLine); a refusal prints every held line, then itself, whole.
 const HELD = [];
 let holding = false;
-function say(line) {
+// A-028-66 (EXT-17): Claude reads door lines to decide its next step, and a folder, file or case name can
+// hold a line break and a door line of its own. So every line shows what cannot be seen, as lib/names.js
+// invisibleShown does, an emoji a person can see left whole (A-438-18). The plugin imports nothing from lib/,
+// so this line is a copy; tests/door.test.js holds it to lib/names.js byte for byte.
+const HIDDEN = /(\u{1F3F4}\u{E0067}\u{E0062}(?:\u{E0065}\u{E006E}\u{E0067}|\u{E0073}\u{E0063}\u{E0074}|\u{E0077}\u{E006C}\u{E0073})\u{E007F}|[0-9#*]\u{FE0F}\u{20E3}|\p{Extended_Pictographic}[\u{FE0E}\u{FE0F}\p{Emoji_Modifier}]?(?:\u{200D}\p{Extended_Pictographic}[\u{FE0E}\u{FE0F}\p{Emoji_Modifier}]?)*)|\p{Cc}|\p{Zl}|\p{Zp}|\p{Default_Ignorable_Code_Point}/gu;
+function shown(text) { return String(text).replace(HIDDEN, (m, emoji) => (emoji === undefined ? '\\u{' + m.codePointAt(0).toString(16) + '}' : m)); }
+function say(text) {
+  const line = shown(text);
+  if (command === 'inspect' && INPUTS.json) { process.stderr.write(MARK + ' ' + line + '\n'); return; }
   if (holding) { HELD.push(line); return; }
   process.stdout.write(MARK + ' ' + line + '\n');
 }
@@ -85,9 +113,10 @@ function flushHeld() {
   holding = false;
   for (const line of HELD.splice(0)) process.stdout.write(MARK + ' ' + line + '\n');
 }
-function refuse(line) {
+// Each argument is one printed line, so a line break in a name can never pass for one of the door's.
+function refuse(...lines) {
   flushHeld();
-  process.stderr.write(MARK + ' REFUSED: ' + line + '\n');
+  process.stderr.write(MARK + ' REFUSED: ' + lines.map(shown).join('\n') + '\n');
   process.exit(2);
 }
 
@@ -100,10 +129,10 @@ function refuse(line) {
 // since spec 026 and it is the same contract, but it runs inside the runner:
 // by the time it refuses, a process has already started. AC-4 asks for the
 // refusal to come first.
-function checkRule(name, value, ruleKey) {
+function checkRule(name, value, ruleKey, tested = value) {
   const rule = CONTRACT.rules[ruleKey];
   if (!rule) refuse('the shipped contract has no rule ' + ruleKey);
-  const hit = new RegExp(rule.re.replace('[[:cntrl:]]', '[\\x00-\\x1f\\x7f]')).test(value);
+  const hit = new RegExp(rule.re.replace('[[:cntrl:]]', '[\\x00-\\x1f\\x7f]')).test(tested);
   // The contract's messages are the Action's, and each names the one input the
   // Action checks with it. This door checks more inputs with some rules (two
   // paths with the path rules; --samples, --concurrency and --max-cases with the
@@ -113,6 +142,7 @@ function checkRule(name, value, ruleKey) {
 }
 
 function validateInputs(inputs, opts) {
+  if (command === 'compare' || command === 'inspect' || command === 'recheck') { validateReadingInputs(inputs); return; }
   const targetMustExist = opts.target_exists !== false;
   for (const name of inputs) {
     const value = INPUTS[name];
@@ -169,10 +199,10 @@ function validateInputs(inputs, opts) {
 // A CLAUDE.md or AGENTS.md is measured as the CLI measures any context file (spec 438): its exact bytes
 // are the with-file system text, against the same tasks answered with none. The target is a rules file
 // when it names something that is not a folder, or names nothing and is called CLAUDE.md or AGENTS.md,
-// so a missing skill folder is still refused as before. Only run and start take one.
+// so a missing skill folder is still refused as before. Only run, start and recheck take one.
 const RULES_FILES = ['CLAUDE.md', 'AGENTS.md'];
 function rulesFileGiven(command, value) {
-  if ((command !== 'run' && command !== 'start') || typeof value !== 'string' || value === '') return false;
+  if ((command !== 'run' && command !== 'start' && command !== 'recheck') || typeof value !== 'string' || value === '') return false;
   const resolved = path.resolve(process.cwd(), value);
   if (kindOf(resolved) === 'dir') return false;
   let there = false;
@@ -182,6 +212,12 @@ function rulesFileGiven(command, value) {
 // The flags a rules file takes and a skill folder does not, and the other way round, refused before
 // anything is read or spawned: a flag is refused, never dropped.
 function checkPairings() {
+  if (command === 'compare' || command === 'inspect') return;
+  if (command === 'recheck' && INPUTS.history === true) {
+    const extra = RECHECK_SETTINGS.concat('confirm-spend').filter((name) => INPUTS[name] !== undefined);
+    if (extra.length) refuse('recheck history takes a folder and nothing else, and was given ' + extra.map((k) => '--' + k).join(', ') + '. Leave that out. Nothing was spawned.');
+    return;
+  }
   if (INPUTS['skill-dir'] === undefined) return;
   if (!rulesFile && INPUTS['suite'] !== undefined) {
     refuse('--suite names the tasks file of a CLAUDE.md or AGENTS.md, and ' + JSON.stringify(INPUTS['skill-dir']) + ' is a skill folder, whose tasks are its own evals/evals.json.'
@@ -195,6 +231,148 @@ function checkPairings() {
     refuse('--placebo adds a third arm to the small full run, and start was given it with no --full, so the quick run would drop it.'
       + ' Give --placebo with --full, after the person says yes to both. Nothing was spawned.');
   }
+  // Spec 727: the failure label is a claim about a draft, so with no draft there is nothing it could label.
+  if (INPUTS['from-failure'] === true && INPUTS['cases'] === undefined && INPUTS['suite'] === undefined) {
+    refuse('--from-failure says the draft was drafted from a failure the person described and approved, and ' + command
+      + ' was given it with no draft (no --cases for a skill, no --suite for a rules file), so there is nothing it could label.'
+      + ' Give it beside the draft, after the person\'s yes, or leave it out. Nothing was spawned.');
+  }
+}
+
+// ── a draft from a failure (spec 727) ────────────────────────────────────────
+// The person's own words go into this draft: a short sanitised excerpt of the task, and what a good
+// answer must and must not contain. So before anything is spawned the door reads it against the
+// shipped contract: the suite bounds the CLI's loader applies (CASE_MAX_CHARS and the rest), spec 185's
+// criteria shape (every case lists criteria objects, so the must and must-not are graded one by one),
+// and the leak classes of lib/hygiene.js, so a path, an email or a credential-shaped string pasted
+// along with the task never reaches the process that writes a committed suite. The refusal names the
+// case by its position and id, the field, and the class; it never prints the matched value (CONSTITUTION
+// § Hygiene scan threat model). A case id is read before it is named, by position alone, for the same
+// reason. For a rules file nothing is added beside the file, so the tasks file is the suite the person
+// keeps, and each task must itself say where it came from.
+const LEAK_CLASSES = DRAFT.leak_classes.map((c) => ({ name: c.name, re: new RegExp(c.re, c.flags) }));
+const EMAIL_RE = new RegExp(DRAFT.email.re, 'g');
+const CRITERION_ID = new RegExp(DRAFT.criterion_id);
+// The same visible-text rule as lib/skill.js hasText: a letter or a digit that is not a format character.
+const hasText = (s) => /(?!\p{Default_Ignorable_Code_Point})[\p{L}\p{N}]/u.test(String(s));
+// A-727-2: the regex spellings read, in one pass: \u{...}, \uNNNN, \xNN, a one-member class and a backslash
+// before anything else. The set is listed in spec 727, and it is not every encoding (CONSTITUTION's hygiene scan).
+const REGEX_MEMBER = '\\\\u\\{[0-9a-fA-F]{1,6}\\}|\\\\u[0-9a-fA-F]{4}|\\\\x[0-9a-fA-F]{2}|\\\\.|[^\\]\\\\]';
+const REGEX_SPELLING = new RegExp('\\\\u\\{([0-9a-fA-F]{1,6})\\}|\\\\u([0-9a-fA-F]{4})|\\\\x([0-9a-fA-F]{2})|\\[(' + REGEX_MEMBER + ')\\]|\\\\(.)', 'g');
+function asMatched(text) {
+  const code = (hex, whole) => { const n = parseInt(hex, 16); return n <= 0x10FFFF ? String.fromCodePoint(n) : whole; };
+  return text.replace(REGEX_SPELLING, (whole, brace, four, two, member, escaped) => {
+    if (brace !== undefined) return code(brace, whole);
+    if (four !== undefined) return code(four, whole);
+    if (two !== undefined) return code(two, whole);
+    if (member !== undefined) return member.length > 1 ? asMatched(member) : member;
+    return escaped;
+  });
+}
+function leakOf(value) {
+  const written = String(value);
+  // PR 734 F-1: a check's regex pattern spells what it matches, so an address or a path written that way
+  // is the same address or path. Each string is read as written, and again as what it matches.
+  const matched = asMatched(written);
+  const readings = matched === written ? [written] : [written, matched];
+  for (const s of readings) {
+    for (const c of LEAK_CLASSES) if (c.re.test(s)) return c.name;
+    for (const e of s.match(EMAIL_RE) || []) {
+      const dom = e.split('@')[1].toLowerCase();
+      if (!DRAFT.email.allow.includes(dom) && !dom.endsWith(DRAFT.email.allow_suffix)) return 'email';
+    }
+  }
+  return null;
+}
+function refuseDraft(file, where, why) {
+  refuse('the draft from a failure at ' + file + ' cannot be taken. ' + where + ': ' + why
+    + ' Change the draft, show the person, and run ' + command + ' again. Nothing was spawned and nothing was written.');
+}
+function checkDraft() {
+  if (INPUTS['from-failure'] !== true) return;
+  const B = DRAFT.bounds;
+  const given = spelled(INPUTS[rulesFile ? 'suite' : 'cases']);
+  let st = null;
+  try { st = fs.statSync(given); } catch (e) { refuseDraft(given, 'the file', 'could not be read (' + (e.code || e.message) + ').'); }
+  if (st.size > B.SUITE_MAX_BYTES) refuseDraft(given, 'the file', st.size + ' bytes exceed SUITE_MAX_BYTES (' + B.SUITE_MAX_BYTES + ').');
+  let raw = null;
+  // The parser's own message quotes the text around the break, which may be the very thing pasted by accident.
+  try { raw = JSON.parse(fs.readFileSync(given, 'utf8')); } catch (e) { refuseDraft(given, 'the file', 'does not parse as JSON. Check its quotes, commas and brackets.'); }
+  const obj = raw && typeof raw === 'object' && !Array.isArray(raw);
+  const list = Array.isArray(raw) ? raw : obj && Array.isArray(raw.cases) ? raw.cases : obj && Array.isArray(raw.evals) ? raw.evals : null;
+  if (!list || !list.length) refuseDraft(given, 'the cases', 'the draft holds no cases: give a list under "cases" with at least one.');
+  if (list.length > B.SUITE_MAX_CASES) refuseDraft(given, 'the cases', list.length + ' cases exceed SUITE_MAX_CASES (' + B.SUITE_MAX_CASES + ').');
+  const hit = (where, cls) => refuseDraft(given, where, 'carries a hit of the leak class ' + cls + ': remove it from the draft, so it is not written into the suite or sent to the model.');
+  const bound = (where, n) => refuseDraft(given, where, n + ' characters exceed CASE_MAX_CHARS (' + B.CASE_MAX_CHARS + ').');
+  list.forEach((c, i) => {
+    const n = i + 1;
+    if (!c || typeof c !== 'object' || Array.isArray(c)) refuseDraft(given, 'case ' + n, 'is not an object.');
+    const id = c.id !== undefined ? c.id : c.name !== undefined ? c.name : 'case-' + n;
+    const idLeak = leakOf(id);
+    if (idLeak) hit('case ' + n + ' id', idLeak);
+    const at = 'case ' + n + ' (id ' + JSON.stringify(String(id).slice(0, 64)) + ')';
+    const prompt = c.prompt !== undefined ? c.prompt : c.input !== undefined ? c.input : c.task;
+    if (typeof prompt !== 'string' || !hasText(prompt)) refuseDraft(given, at + ' prompt', 'no text: the prompt is the task as the person gave it, sanitised.');
+    if (prompt.length > B.CASE_MAX_CHARS) bound(at + ' prompt', prompt.length);
+    const promptLeak = leakOf(prompt);
+    if (promptLeak) hit(at + ' prompt', promptLeak);
+    for (const k of ['rubric', 'expected']) {
+      if (c[k] === undefined) continue;
+      const v = String(c[k]);
+      if (v.length > B.CASE_MAX_CHARS) bound(at + ' ' + k, v.length);
+      const l = leakOf(v);
+      if (l) hit(at + ' ' + k, l);
+    }
+    const crit = c.criteria;
+    if (!Array.isArray(crit) || !crit.length) {
+      refuseDraft(given, at + ' criteria', 'lists no criteria. A case drafted from a failure lists what a good answer must contain or must not contain, each as an object with "id", "weight" and "description".');
+    }
+    if (crit.length > B.CRITERIA_MAX) refuseDraft(given, at + ' criteria', crit.length + ' criteria exceed CRITERIA_MAX (' + B.CRITERIA_MAX + ').');
+    const seen = new Set();
+    crit.forEach((x, j) => {
+      const e = 'entry ' + (j + 1);
+      if (!x || typeof x !== 'object' || Array.isArray(x)) refuseDraft(given, at + ' criteria', e + ' is not an object.');
+      // Read first: the refusals below name a criterion by its id, and an id can have a key's shape.
+      const criterionIdLeak = leakOf(x.id);
+      if (criterionIdLeak) hit(at + ' criteria ' + e + ' id', criterionIdLeak);
+      if (typeof x.id !== 'string' || !CRITERION_ID.test(x.id)) refuseDraft(given, at + ' criteria', e + ' has no id, or one that is not 1 to 64 of A-Z, a-z, 0-9, underscore, dot and hyphen.');
+      if (seen.has(x.id)) refuseDraft(given, at + ' criteria', e + ' repeats the id ' + JSON.stringify(x.id) + '.');
+      seen.add(x.id);
+      if (typeof x.weight !== 'number' || !Number.isFinite(x.weight) || !(x.weight > 0)) refuseDraft(given, at + ' criteria', e + ' (' + JSON.stringify(x.id) + ') has a weight that is not a number greater than 0.');
+      if (typeof x.description !== 'string' || !hasText(x.description)) refuseDraft(given, at + ' criteria', e + ' (' + JSON.stringify(x.id) + ') has no description.');
+      const where = at + ' criterion ' + JSON.stringify(x.id) + ' description';
+      if (x.description.length > B.CASE_MAX_CHARS) bound(where, x.description.length);
+      const l = leakOf(x.description);
+      if (l) hit(where, l);
+    });
+    if (rulesFile && c.origin !== DRAFT.origin_label) {
+      refuseDraft(given, at + ' origin', 'nothing is added beside a rules file, so the tasks file itself says where its tasks came from: give each task "origin": ' + JSON.stringify(DRAFT.origin_label) + '.');
+    }
+    // PR 734 F-1: then every string key and value of the case, at any depth, named by its path. The
+    // loader carries fields the checks above do not name (lib/skill.js normalizeCases keeps a case's
+    // `checks`, whose contains, not_contains and regex entries hold a literal value or a pattern), and
+    // a field the loader drops is still text the person pasted. So nothing in a case goes unread.
+    (function walkCase(v, where) {
+      if (typeof v === 'string') { const l = leakOf(v); if (l) hit(at + ' ' + where, l); return; }
+      if (Array.isArray(v)) { v.forEach((x, j) => walkCase(x, where + '[' + j + ']')); return; }
+      if (v && typeof v === 'object') {
+        for (const k of Object.keys(v)) {
+          const l = leakOf(k);
+          if (l) hit(at + ' ' + where + ' (a key)', l);
+          walkCase(v[k], where ? where + '.' + k : k);
+        }
+      }
+    })(c, '');
+  });
+  // Every other key and value of the document, outside the cases.
+  (function walk(v) {
+    if (v === list) return;
+    if (typeof v === 'string') { const l = leakOf(v); if (l) hit('outside the cases', l); return; }
+    if (Array.isArray(v)) { v.forEach(walk); return; }
+    if (v && typeof v === 'object') for (const k of Object.keys(v)) { const l = leakOf(k); if (l) hit('outside the cases', l); walk(v[k]); }
+  })(raw);
+  say('read the draft from a failure at ' + given + ': ' + list.length + ' case(s), each listing criteria, inside the bounds, and none of the leak classes of draft-contract.json was found.'
+    + (rulesFile ? ' Each task says it was ' + DRAFT.origin_label + '.' : ' init will label the suite and each case as ' + DRAFT.origin_label + '.'));
 }
 // run's tasks file is held to the boundary the rules file is: its prompts reach a child that runs as the
 // person, as a skill's own evals/evals.json does from inside its folder. start's is the draft the person
@@ -229,6 +407,68 @@ function suiteInside() {
 }
 
 // ── spawning the pinned CLI ──────────────────────────────────────────────────
+// A-752-3: npx prefers a package of this name and version found from its working folder, so a door
+// started in a cloned repository could run code planted there, at the version guard, before any
+// question. Every spawn starts in this empty folder. The CLI is told the person's folder, so its
+// receipts and .driftproofrc stay where they were.
+// A-752-5: npm also reads every folder above the one it starts in, for a package.json or a node_modules, and
+// that folder's .npmrc. So the empty folder must sit where only the person can write, all the way up, or
+// another account, the isolation account included, could run code as the person. A shared /tmp never passes.
+let npxFolder = null;
+function removeNpxFolder() {
+  if (npxFolder) { fs.rmSync(npxFolder, { recursive: true, force: true }); npxFolder = null; }
+}
+// Why npm should not start below this folder, or null. Reads each folder from here up to the root.
+function npxPathProblem(start) {
+  const me = typeof process.getuid === 'function' ? process.getuid() : null;
+  for (let dir = start; ; dir = path.dirname(dir)) {
+    if (me !== null) {
+      const st = fs.lstatSync(dir);
+      if (st.uid !== me && st.uid !== 0) return dir + ' belongs to another account';
+      if (st.mode & 0o022) return dir + ' can be written by other accounts';
+    }
+    for (const name of ['node_modules', 'package.json']) {
+      let there = true;
+      try { fs.lstatSync(path.join(dir, name)); } catch (e) { there = e.code !== 'ENOENT' && e.code !== 'ENOTDIR'; }
+      if (there) return path.join(dir, name) + ' is there, and npm would read it';
+    }
+    if (dir === path.dirname(dir)) return null;
+  }
+}
+function npxParent() {
+  const attempt = (read) => { try { return read(); } catch (e) { return null; } };
+  const homes = [attempt(() => os.homedir()), attempt(() => os.userInfo().homedir)].filter(Boolean);
+  const places = [[process.env.XDG_RUNTIME_DIR], [os.tmpdir()], ...homes.map((home) => [path.join(home, '.cache', 'driftproof'), home])];
+  const reasons = new Set();
+  for (const [place, home] of places) {
+    if (!place || !path.isAbsolute(place)) continue;
+    let why = null;
+    try {
+      if (home) why = npxPathProblem(fs.realpathSync(home));
+      if (!why && home) fs.mkdirSync(place, { recursive: true, mode: 0o700 });
+      why = why || npxPathProblem(fs.realpathSync(place));
+    } catch (e) { why = place + ' could not be used (' + (e.code || 'unknown error') + ')'; }
+    if (!why) return fs.realpathSync(place);
+    reasons.add(why);
+  }
+  refuse('the runner starts from an empty folder, and npm reads every folder above it, so that folder must sit where only you can write. None of the places for it will do: '
+    + [...reasons].join('; ') + '. Fix that, then run this command again. Nothing was spawned.');
+  return null; // unreachable: refuse() exits
+}
+function npxCwd() {
+  if (npxFolder) return npxFolder;
+  process.once('exit', removeNpxFolder);
+  for (const [signal, status] of [['SIGINT', 130], ['SIGTERM', 143], ['SIGHUP', 129]]) process.once(signal, () => process.exit(status));
+  const parent = npxParent();
+  try {
+    npxFolder = fs.mkdtempSync(path.join(parent, 'driftproof-npx-'));
+    fs.chmodSync(npxFolder, 0o700);
+  } catch (e) {
+    refuse('could not make a private folder to start the runner from (' + (e.code || 'unknown error') + '). Nothing was spawned.');
+  }
+  return npxFolder;
+}
+
 // Windows cannot launch npm's npx.cmd with shell:false. Resolve the npm entry
 // point beside the first npx.cmd on PATH and run it with this Node executable.
 // This keeps paths and names in argv, including cmd expansion characters. Do
@@ -244,7 +484,7 @@ function windowsNpx(argv, opts) {
     for (const cli of candidates) {
       try { if (!fs.statSync(cli).isFile()) continue; } catch { continue; }
       return spawnSync(process.execPath, [cli].concat(argv), {
-        cwd: process.cwd(), env: process.env, encoding: 'utf8', shell: false,
+        cwd: npxCwd(), env: { ...process.env, DRIFTPROOF_DOOR_CWD: state.cliCwd || process.cwd() }, encoding: 'utf8', shell: false,
         stdio: opts && opts.capture ? ['ignore', 'pipe', 'pipe'] : ['ignore', 'inherit', 'inherit'],
       });
     }
@@ -257,8 +497,8 @@ function windowsNpx(argv, opts) {
 function runCli(args, opts) {
   const argv = ['driftproof@' + PINNED].concat(args);
   const r = process.platform === 'win32' ? windowsNpx(argv, opts) : spawnSync('npx', argv, {
-    cwd: process.cwd(),
-    env: process.env,
+    cwd: npxCwd(),
+    env: { ...process.env, DRIFTPROOF_DOOR_CWD: state.cliCwd || process.cwd() },
     encoding: 'utf8',
     shell: false,
     stdio: opts && opts.capture ? ['ignore', 'pipe', 'pipe'] : ['ignore', 'inherit', 'inherit'],
@@ -325,8 +565,8 @@ function versionGuard(step) {
 // a repository git will not read (dubious ownership), or any other failure is unknown, and the door
 // refuses on it, flag or not: it cannot tell which side of the boundary it is on. LC_ALL=C keeps
 // git's words the ones read here.
-function repoState() {
-  const r = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: process.cwd(), encoding: 'utf8', shell: false, env: { ...process.env, LC_ALL: 'C' } });
+function repoState(cwd = process.cwd()) {
+  const r = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8', shell: false, env: { ...process.env, LC_ALL: 'C' } });
   if (r.error) return { unknown: 'git could not be run: ' + (r.error.code || r.error.message) };
   const root = String(r.stdout || '').trim();
   if (r.status === 0 && root) return { root };
@@ -377,7 +617,7 @@ function requireInsideRepo(value, command) {
       refuse(what + ' at ' + resolved + ' resolves outside the folder you run from (' + here + '). There is no git repository here, so that folder'
         + ' stands where the repository would, and the trusted lane claims the skill is the author\'s own, which is not available for a path'
         + ' outside it, or for a link out of it, flag or not. Nothing was spawned. Run it with the isolation account instead, on the lane spec 022'
-        + ' built for exactly this:\n    ' + isolated);
+        + ' built for exactly this:', '    ' + isolated);
     }
     state.outsideRepo = true;
     return given;
@@ -396,7 +636,7 @@ function requireInsideRepo(value, command) {
       ? mine + ', run this command again with --trust-outside-repo: ' + asYou
       : mine + ', run /driftproof:run ' + resolved + ' --trust-outside-repo instead (' + command + ' does not take that flag): ' + asYou;
     refuse('this is not a git repository, so there is no repository boundary to place the skill inside, and the'
-      + ' trusted-skill claim would rest on nothing. ' + route + '\n    ' + isolated + '\n' + trust);
+      + ' trusted-skill claim would rest on nothing. ' + route, '    ' + isolated, trust);
   }
   const root = repo.root;
   if (confirmed) refuse('--trust-outside-repo is for a folder with no git repository, and this is one (' + realLong(root) + '). A skill inside it runs on the trusted lane without the flag; a skill outside it does not, flag or not.');
@@ -404,9 +644,247 @@ function requireInsideRepo(value, command) {
   if (!within(resolved, realRoot)) {
     refuse(what + ' at ' + resolved + ' resolves outside this repository (' + realRoot + ').'
       + ' The trusted lane claims the skill is the author\'s own, and that claim is not available for a path you do'
-      + ' not own here. Run it with the isolation account instead, on the lane spec 022 built for exactly this:\n    ' + isolated);
+      + ' not own here. Run it with the isolation account instead, on the lane spec 022 built for exactly this:', '    ' + isolated);
   }
   return given;
+}
+
+// A-744-4 (EXT-14): every spawn is an argv array, so an apostrophe is only a character, and a repository
+// can sit under a folder such as Sam's work. Above the boundary an apostrophe is not read. Everything else
+// the contract names still is, and below the boundary all of it is.
+const noApostrophe = (s) => s.replace(/'/g, '');
+// What the person wrote beyond the folder they run from: an absolute path repeats that folder, and did not choose it.
+function spellingBelowHere(value) {
+  if (!path.isAbsolute(value)) return value;
+  const here = process.cwd().split(path.sep), given = value.split(path.sep);
+  let shared = 0;
+  while (shared < here.length && shared < given.length && here[shared] === given[shared]) shared += 1;
+  return given.map((part, i) => (i < shared ? noApostrophe(part) : part)).join(path.sep);
+}
+
+// Issue 744: these commands read untrusted text and delegate every result to the CLI.
+function validateReadingInputs(inputs) {
+  if (INPUTS['skill-dir'] === undefined && INPUTS.history !== true) refuse('name the file or skill directory first. Nothing was spawned.');
+  if (command === 'compare' && INPUTS.suite === undefined) refuse('compare needs --suite <tasks>. Nothing was spawned.');
+  // Check every input's syntax before reading metadata or spawning git.
+  for (const name of inputs) {
+    const value = INPUTS[name];
+    if (value === undefined) continue;
+    if (typeof value !== 'string' || value === '') refuse(name + ': expected a value');
+    if (name === 'models') checkRule(name, value, 'models');
+    else if (name === 'max-calls' || name === 'samples') checkRule(name, value, 'max_calls');
+    else if (name === 'max-usd') { checkRule(name, value, 'max_usd'); checkRule(name, value, 'max_usd_zero'); }
+    else {
+      checkRule(name, value, 'skill_dir_control');
+      checkRule(name, value, 'skill_dir_shell_metachar', spellingBelowHere(value));
+      if (value.split(/[\\/]/).includes('..')) refuse(name + ': a .. path segment is not accepted. Nothing was spawned.');
+    }
+  }
+  for (const name of ['skill-dir', 'against', 'suite', 'folder']) {
+    const value = INPUTS[name];
+    if (value === undefined) continue;
+    let st;
+    try { st = fs.lstatSync(spelled(value)); } catch { refuse(name + ': not a readable file or directory. Nothing was spawned.'); }
+    if (name === 'folder' && !st.isDirectory()) refuse('folder: give a plain folder, not a file or a link. Nothing was spawned.');
+    const directory = name === 'folder' || ((command === 'inspect' || command === 'recheck') && name === 'skill-dir' && st.isDirectory());
+    if (!directory && !st.isFile()) refuse(name + ': give a regular file, not a link or directory. Nothing was spawned.');
+    if (command === 'compare' && name !== 'suite' && !RULES_FILES.includes(path.basename(value))) {
+      refuse(name + ': compare takes a CLAUDE.md or AGENTS.md. Nothing was spawned.');
+    }
+    if (command === 'recheck' && name === 'skill-dir' && !directory && !RULES_FILES.includes(path.basename(value))) {
+      refuse('skill-dir: recheck takes a skill folder, a CLAUDE.md or an AGENTS.md. Nothing was spawned.');
+    }
+  }
+}
+
+let compareTemp = null;
+function cleanCompareTemp() {
+  if (compareTemp) { fs.rmSync(compareTemp, { recursive: true, force: true }); compareTemp = null; }
+}
+function committedCopy(root, target) {
+  const relative = path.relative(root, realLong(target)).split(path.sep).join('/');
+  // A-744-3: a committed symlink shows its target and a committed directory its listing, and neither is the file.
+  const entry = spawnSync('git', ['ls-tree', 'HEAD', '--', relative], {
+    cwd: root, shell: false, encoding: 'utf8', timeout: 10000, env: { ...process.env, LC_ALL: 'C', GIT_NO_LAZY_FETCH: '1' },
+  });
+  const mode = !entry.error && entry.status === 0 ? /^(\d{6}) /.exec(entry.stdout) : null;
+  if (!mode) refuse('nothing to compare against; name another file with --against');
+  if (mode[1] !== '100644' && mode[1] !== '100755') refuse('the committed version of this path is not a regular file, so it has no text to compare against. Name another file with --against. Nothing was spawned.');
+  const read = spawnSync('git', ['show', 'HEAD:' + relative], {
+    cwd: root, shell: false, encoding: null, maxBuffer: 16 * 1024 * 1024, timeout: 10000,
+    env: { ...process.env, LC_ALL: 'C', GIT_NO_LAZY_FETCH: '1' },
+  });
+  if (read.error || read.status !== 0) refuse('nothing to compare against; name another file with --against');
+  process.once('exit', cleanCompareTemp);
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+    process.once(signal, () => { cleanCompareTemp(); process.exit(signal === 'SIGINT' ? 130 : signal === 'SIGTERM' ? 143 : 129); });
+  }
+  compareTemp = fs.mkdtempSync(path.join(os.tmpdir(), 'driftproof-compare-'));
+  fs.chmodSync(compareTemp, 0o700);
+  const copy = path.join(compareTemp, path.basename(target));
+  fs.writeFileSync(copy, read.stdout, { mode: 0o600, flag: 'wx' });
+  return copy;
+}
+
+function resolveReadingTarget() {
+  const repo = repoState(realLong(process.cwd()));
+  if (repo.unknown) refuse('git could not read the repository boundary. Fix git before trying again.');
+  const confirmed = INPUTS['trust-outside-repo'] === true;
+  if (!repo.root && !confirmed) {
+    refuse(command === 'compare' ? 'compare needs a git repository, or, if both files are yours, --trust-outside-repo with --against. Ask first, and do not use that flag for files you did not write.'
+      : 'this is not a git repository. If this file or skill is yours, confirm that before using --trust-outside-repo. Do not use that flag for a skill you did not write.');
+  }
+  if (repo.root && confirmed) refuse('--trust-outside-repo is only for a folder with no git repository.');
+  const root = realLong(repo.root || process.cwd());
+  state.outsideRepo = !repo.root;
+  for (const name of ['skill-dir', 'against', 'suite', 'folder']) {
+    if (INPUTS[name] === undefined) continue;
+    const resolved = realLong(spelled(INPUTS[name]));
+    if (!within(resolved, root)) refuse(name + ': resolves outside ' + (repo.root ? 'this repository' : 'the folder you run from') + '. Nothing was spawned.');
+    // A link in an ancestor can resolve to a path with syntax the original spelling hid.
+    checkRule(name, resolved, 'skill_dir_control');
+    checkRule(name, resolved, 'skill_dir_shell_metachar', noApostrophe(root) + resolved.slice(root.length));
+  }
+  if (command === 'recheck') { pickRecheck(root); return; }
+  state.resolvedTarget = spelled(INPUTS['skill-dir']);
+  if (command === 'inspect') return;
+  state.suite = spelled(INPUTS.suite);
+  const receipts = path.join(root, 'receipts');
+  if (fs.existsSync(receipts)) {
+    if (!fs.statSync(receipts).isDirectory() || !within(realLong(receipts), root)) refuse('receipts resolves outside this repository or is not a directory.');
+  } else {
+    // A dangling link must not turn into an outside write when the runner creates its output.
+    try { fs.lstatSync(receipts); refuse('receipts is not a readable directory.'); } catch (e) { if (e.code !== 'ENOENT') throw e; }
+  }
+  state.compareOut = path.join(receipts, 'compare-' + new Date().toISOString().replace(/:/g, '-'));
+  if (fs.existsSync(state.compareOut)) refuse('this comparison output already exists. Try again with a new date.');
+  state.compareA = INPUTS.against === undefined ? committedCopy(root, state.resolvedTarget) : spelled(INPUTS.against);
+  if (fs.readFileSync(state.compareA).equals(fs.readFileSync(state.resolvedTarget))) {
+    refuse('the files have identical bytes; there is no edit to compare. Nothing was spawned.');
+  }
+}
+
+// ── recheck (issue 752) ──────────────────────────────────────────────────────
+// The CLI's own recheck.json, read here and never written, says which of init and run a use is. The
+// flags below are settings the CLI saves at init. A saved run takes none, so a later use refuses them.
+const RECHECK_MARKER = 'recheck.json';
+const RECHECK_SETTINGS = ['suite', 'models', 'samples', 'placebo'];
+const RECHECK_SLUG = /^[a-z0-9-]+$/;
+function lstatIf(p) {
+  try { return fs.lstatSync(p); } catch (e) {
+    if (e.code === 'ENOENT' || e.code === 'ENOTDIR') return null;
+    refuse('could not read ' + p + ' (' + e.code + '). Nothing was spawned.');
+    return null; // unreachable: refuse() exits
+  }
+}
+// A link named recheck.json is not the CLI's marker: the CLI writes a regular file and reads no link.
+function holdsSavedRecheck(folder) {
+  const marker = lstatIf(path.join(folder, RECHECK_MARKER));
+  return !!marker && marker.isFile();
+}
+// One subject, one folder. The hash keeps a/b-c and a-b/c apart, because a shared folder would run one
+// subject's saved tests as the reading of another. The path read is the long one, so a subject has one
+// folder however it is spelled.
+function recheckFolderFor(root, target) {
+  const rel = path.relative(root, realLong(target)).split(path.sep).join('/');
+  const slug = rel.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60).replace(/-+$/, '') || 'subject';
+  return path.join(root, 'recheck', slug + '-' + sha256Hex(rel).slice(0, 8));
+}
+function pickRecheckHistory(parent) {
+  let folder = INPUTS.folder === undefined ? null : spelled(INPUTS.folder);
+  if (!folder) {
+    const saved = lstatIf(parent) ? fs.readdirSync(parent).filter((name) => {
+      const entry = lstatIf(path.join(parent, name));
+      return entry && entry.isDirectory() && holdsSavedRecheck(path.join(parent, name));
+    }).sort() : [];
+    if (!saved.length) refuse('there is no saved recheck in ' + parent + ' yet. Run /driftproof:recheck on a skill folder or rules file first. Nothing was spawned.');
+    if (saved.length > 1) {
+      // A folder name reaches Claude as text, so a name the door did not make is counted and never printed.
+      const shown = saved.filter((name) => RECHECK_SLUG.test(name));
+      const others = saved.length - shown.length;
+      refuse('there are ' + saved.length + ' saved rechecks in ' + parent + ': ' + shown.join(', ') + (others ? ', and ' + others + ' other' + (others > 1 ? 's' : '') : '')
+        + '. Name the one to show: /driftproof:recheck history recheck/<folder>. Nothing was spawned.');
+    }
+    folder = path.join(parent, saved[0]);
+    checkRule('folder', folder, 'skill_dir_control');
+    checkRule('folder', folder, 'skill_dir_shell_metachar', path.join(noApostrophe(parent), saved[0]));
+  }
+  if (!holdsSavedRecheck(folder)) refuse(folder + ' holds no saved recheck (no regular ' + RECHECK_MARKER + '). Nothing was spawned.');
+  state.recheck = 'history';
+  state.recheckFolder = folder;
+}
+function pickRecheck(root) {
+  const parent = path.join(root, 'recheck');
+  const there = lstatIf(parent);
+  // A link out of the repository must not turn the CLI's new folder into an outside write.
+  if (there && !there.isDirectory()) refuse(parent + ' is a file or a link and not a plain folder, so the saved tests have nowhere safe to go. Nothing was spawned.');
+  state.recheckParent = parent;
+  if (INPUTS.history === true) { pickRecheckHistory(parent); return; }
+  const target = spelled(INPUTS['skill-dir']);
+  state.resolvedTarget = target;
+  // As start refuses for receipts: inside the subject, a saved folder would become bundled skill content.
+  if (within(parent, realLong(target))) refuse('recheck would save into ' + parent + ', which is inside the subject ' + target + '. Run it on a skill that is not the whole repository. Nothing was spawned.');
+  const folder = recheckFolderFor(root, target);
+  state.recheckFolder = folder;
+  const stat = lstatIf(folder);
+  if (stat && !(stat.isDirectory() && holdsSavedRecheck(folder))) {
+    refuse(folder + ' is there and holds no saved recheck (no regular ' + RECHECK_MARKER + '), so it is neither saved tests to run nor free for new ones. Move it, then run this command again. Nothing was spawned.');
+  }
+  if (stat) {
+    const dropped = RECHECK_SETTINGS.filter((name) => INPUTS[name] !== undefined);
+    if (dropped.length) refuse('the tests and settings for this subject are already saved in ' + folder + ', and those are what run each time. ' + dropped.map((k) => '--' + k).join(', ')
+      + (dropped.length > 1 ? ' do' : ' does') + ' not apply to a saved run. Leave ' + (dropped.length > 1 ? 'them' : 'it') + ' out, or move that folder and start again. Nothing was spawned.');
+    state.recheck = 'run';
+    return;
+  }
+  if (INPUTS['confirm-spend'] === true) refuse('--confirm-spend says yes to running saved tests, and ' + folder + ' holds none yet, so there is nothing to run. Leave it out. Nothing was spawned.');
+  if (rulesFile && INPUTS.suite === undefined) refuse('a rules file needs its tasks file the first time, so give --suite <tasks>. Nothing was spawned.');
+  state.recheck = 'init';
+}
+// The question before each run needs the model and the call limit. They reach Claude as text, so each is
+// held to the contract first, and one that fails is refused unprinted. The CLI still checks the seal before it spends.
+function savedRunPlan(folder) {
+  const models = new RegExp(CONTRACT.rules.models.re);
+  let saved = null;
+  try {
+    const file = path.join(folder, RECHECK_MARKER);
+    if (fs.lstatSync(file).size <= 1024 * 1024) saved = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (e) { saved = null; }
+  const s = saved && saved.settings;
+  const ids = (v) => Array.isArray(v) && v.length > 0 && v.every((m) => typeof m === 'string' && models.test(m));
+  if (!s || !ids(s.models) || !ids(s.judge_models) || s.judge_models.length !== s.models.length || !Number.isSafeInteger(s.max_calls) || s.max_calls < 1 || (s.trusted !== undefined && typeof s.trusted !== 'boolean')) {
+    refuse('the saved settings in ' + path.join(folder, RECHECK_MARKER) + ' could not be read, so there is no model or call limit to name before spending. Nothing ran.');
+  }
+  return { models: s.models, judges: s.judge_models, maxCalls: s.max_calls, trusted: s.trusted === true };
+}
+// The CLI applies max_calls to each target model, so the limit is said per model.
+function confirmSpend() {
+  if (state.recheck !== 'run') return;
+  const plan = savedRunPlan(state.recheckFolder);
+  const names = plan.models.join(', ');
+  const graders = plan.judges.join(', ');
+  const what = 'model ' + names + (graders === names ? '' : ', graded by ' + graders) + ', at most ' + plan.maxCalls + ' calls per model';
+  // A-752-2: the CLI takes the trusted lane only when told for this run. resolveReadingTarget has already
+  // held the subject to the terms init gave it: inside the repository, or --trust-outside-repo again.
+  state.recheckTrusted = plan.trusted;
+  const asYou = plan.trusted ? ' It runs as you, with your files and your Claude Code login, because '
+    + (state.outsideRepo ? 'you confirmed with --trust-outside-repo that it is yours.' : 'it resolves inside this repository.') : '';
+  if (INPUTS['confirm-spend'] !== true) {
+    refuse('running the saved tests in ' + state.recheckFolder + ' makes model calls on your own plan or model account: ' + what + '.' + asYou
+      + ' Ask the person once, naming these, and run this command again with --confirm-spend only after their yes. Nothing ran.');
+  }
+  say('running the saved tests in ' + state.recheckFolder + ' because you said yes (--confirm-spend): ' + what + ', on your own plan or model account.' + asYou);
+}
+// recheck init makes only its own folder, so its parent has to be there. An empty folder, after the guard passed.
+function recheckParent() {
+  if (state.recheck !== 'init' || lstatIf(state.recheckParent)) return;
+  try { fs.mkdirSync(state.recheckParent); } catch (e) { refuse('could not make ' + state.recheckParent + ' (' + e.code + '). Nothing was spawned.'); }
+}
+// What the CLI did, read from the folder after it ran, so the door never reports a save that did not happen.
+function recheckSaved() {
+  if (state.recheck !== 'init') return;
+  if (!holdsSavedRecheck(state.recheckFolder)) refuse('the runner finished, and no saved recheck appeared in ' + state.recheckFolder + ', so nothing was saved. Nothing ran.');
+  say('saved the tests and settings for ' + state.resolvedTarget + ' in ' + state.recheckFolder + '. Nothing ran and no model was called. Use /driftproof:recheck on the same subject to run them again.');
 }
 
 // ── the default model, READ and never written into a command file ────────────
@@ -454,9 +932,9 @@ function cheapestRegisteredModel() {
     eligible.sort((a, b) => cost(a) - cost(b) || (a.id < b.id ? -1 : 1));
     return { id: eligible[0].id, from: c.path, why: c.why };
   }
-  refuse('no model registry resolved, so there is no default model to run with, and this command will not guess one.'
-    + ' Looked at:\n    ' + tried.join('\n    ')
-    + '\n  Pass --models <model> to name one, or point DRIFTPROOF_REGISTRY at a registry that carries one.');
+  refuse('no model registry resolved, so there is no default model to run with, and this command will not guess one. Looked at:',
+    ...tried.map((line) => '    ' + line),
+    '  Pass --models <model> to name one, or point DRIFTPROOF_REGISTRY at a registry that carries one.');
   return null; // unreachable: refuse() exits
 }
 
@@ -496,7 +974,7 @@ function readmeSnippetFrom(json) {
   const label = badge && badge.label;
   if (typeof label !== 'string' || !label) refuse('the shields JSON the pinned CLI returned carries no label, and the README snippet is derived from it');
   return 'README snippet (shields.io endpoint, pointed at the badge JSON you commit):\n'
-    + '  ![' + label + '](https://img.shields.io/endpoint?url=' + SNIPPET_HOST + ')\n';
+    + '  ![' + shown(label) + '](https://img.shields.io/endpoint?url=' + SNIPPET_HOST + ')\n';
 }
 
 // THE STATEMENT IS READ FROM THE RECEIPT, NEVER ASSERTED (spec 031 AC-1, AC-2).
@@ -548,7 +1026,7 @@ function notCheckedStatement(checked) {
 
 function sha256Hex(text) { return crypto.createHash('sha256').update(text).digest('hex'); }
 function refuseDigest(digest, t, why) {
-  process.stderr.write(MARK + ' REFUSED: ' + digest + (/ and /.test(digest) ? ' do' : ' does') + ' not verify for case ' + t.id + ' (' + t.mode + '): ' + why + ' Nothing rendered.\n');
+  process.stderr.write(MARK + ' REFUSED: ' + digest + (/ and /.test(digest) ? ' do' : ' does') + ' not verify for case ' + shown(t.id) + ' (' + shown(t.mode) + '): ' + why + ' Nothing rendered.\n');
   process.exit(4);
 }
 
@@ -561,7 +1039,7 @@ function refuseDigest(digest, t, why) {
 // the directory by name, names no file, or leaves it by its real path is refused
 // before it is read, and what is read is the real path that was checked.
 function refuseEntry(entry, why) {
-  process.stderr.write(MARK + ' REFUSED: index.json entry ' + JSON.stringify(entry) + ' ' + why + '. Only transcripts inside the transcripts directory beside this receipt are read. Nothing rendered.\n');
+  process.stderr.write(MARK + ' REFUSED: index.json entry ' + shown(JSON.stringify(entry)) + ' ' + why + '. Only transcripts inside the transcripts directory beside this receipt are read. Nothing rendered.\n');
   process.exit(4);
 }
 function confinedEntry(dir, realDir, entry) {
@@ -629,8 +1107,8 @@ function recheckTranscripts(receiptPath) {
   // so the badge refuses and names both.
   const differing = differingCandidates(dir, alt);
   if (differing) {
-    process.stderr.write(MARK + ' REFUSED: two transcript directories exist for this receipt and their contents differ (' + differing + '): '
-      + tilde(dir) + ' and ' + tilde(alt) + '. Remove the one that is not this run\'s. Nothing rendered.\n');
+    process.stderr.write(MARK + ' REFUSED: two transcript directories exist for this receipt and their contents differ (' + shown(differing) + '): '
+      + shown(tilde(dir)) + ' and ' + shown(tilde(alt)) + '. Remove the one that is not this run\'s. Nothing rendered.\n');
     process.exit(4);
   }
   const useDir = fs.existsSync(dir) ? dir : (fs.existsSync(alt) ? alt : null);
@@ -772,7 +1250,7 @@ function listSkills() {
   for (const d of found) {
     const rel = path.relative(root, d) || '.';
     const has = fs.existsSync(path.join(d, 'evals', 'evals.json'));
-    process.stdout.write('  ' + rel + '  (' + (has ? 'has test cases' : 'no test cases yet') + ')\n');
+    process.stdout.write('  ' + shown(rel) + '  (' + (has ? 'has test cases' : 'no test cases yet') + ')\n');
   }
   if (rules.length) listRules();
   repoNote();
@@ -797,7 +1275,8 @@ function repoNote() {
 // every run one published report holds for one skill on one model, and its page is the CLI's view of
 // them (tests/start.test.js holds both). What the line says is read from the receipts here, never typed.
 const SAMPLE = path.join(PLUGIN_ROOT, 'sample');
-const SAMPLE_PAGE = path.join(SAMPLE, 'driftproof-view.html');
+const VIEW_PAGE = 'driftproof-view.html';
+const SAMPLE_PAGE = path.join(SAMPLE, VIEW_PAGE);
 function openSample() {
   const report = fs.readdirSync(SAMPLE).find((f) => /^report-\d+$/.test(f));
   const runs = [];
@@ -837,6 +1316,34 @@ function outsideSkill() {
     refuse('the draft ' + draft + ' is inside the skill folder ' + dir + ', and ' + command + ' adds no file there but the test cases.'
       + ' Hold the draft under the system temp directory until the person\'s yes, so nothing is written before it, and give that path. Nothing was spawned.');
   }
+}
+
+// A-028-66 (EXT-7): the CLI writes the results page here, so a link in its place would carry that write
+// wherever the link points, a dangling one included. Read before anything is spawned or spent. The CLI
+// holds the same rule when it writes.
+function pageSafe() {
+  const page = lstatIf(spelled(VIEW_PAGE));
+  if (page && (!page.isFile() || page.nlink !== 1)) {
+    refuse(VIEW_PAGE + ' in this folder is a link or is not a regular file, and the results page is written there, so ' + command + ' will not write through it.'
+      + ' Move it, then run this command again. Nothing was spawned.');
+  }
+}
+
+// Where run's receipts and transcripts land (issue 760, A-017-9 AC-12). The CLI writes them under
+// the folder it starts in, and a run refuses to write inside the skill it measures, so a one-skill
+// repository, or a person standing in the skill, would have no way to run this command. So the door
+// starts the CLI from a folder beside the skill and says which. Every path it hands the CLI is
+// absolute, and a rules file has no inside.
+function outputFolder() {
+  if (rulesFile) return;
+  const realDir = realLong(state.resolvedTarget);
+  if (!within(realLong(process.cwd()), realDir)) return;
+  const chosen = path.join(path.dirname(realDir), path.basename(realDir) + '-driftproof');
+  try { fs.mkdirSync(chosen, { recursive: true }); } catch (e) {
+    refuse('this folder is the skill, or inside it, and the receipts must go outside it, but ' + chosen + ' could not be made (' + e.code + '). Run ' + command + ' from a folder outside the skill. Nothing was spawned.');
+  }
+  state.cliCwd = chosen;
+  say('this folder is the skill or inside it, so its receipts and transcripts go in ' + chosen + ', beside the skill. The skill\'s own files do not change.');
 }
 
 // The suite a start runs on, or the cases it will be written from: one of the
@@ -939,7 +1446,7 @@ function quickReceiptIn(dir) {
 }
 // One line from the terminal on stdin, read as typed; the end of input reads as an empty line.
 function askLine(question) {
-  process.stdout.write(MARK + ' ' + question + ' [y/N] ');
+  process.stdout.write(MARK + ' ' + shown(question) + ' [y/N] ');
   const buf = Buffer.alloc(1);
   let line = '';
   for (;;) {
@@ -1093,6 +1600,7 @@ function setupLine() {
     + state.runner + ', model ' + (INPUTS['models'] || state.defaultModel)
     + (INPUTS['cases'] !== undefined ? '; adding one new file, ' + path.join(dir, 'evals', 'evals.json') + ', because you said yes (--confirm-write), and nothing else in the folder' : '')
     + (rulesFile ? '; on the tasks in ' + path.resolve(process.cwd(), INPUTS['suite']) + ', because you said yes (--confirm-write), with nothing added beside the rules file' : '')
+    + (INPUTS['from-failure'] === true ? '; the cases were drafted from a failure the person described and approved (--from-failure), and the ' + (rulesFile ? 'tasks file' : 'suite') + ' says so' : '')
     + (INPUTS['placebo'] === true ? '; with the placebo arm (--placebo)' : '')
     + (state.fullNote ? '; ' + state.fullNote : '') + '.');
 }
@@ -1118,19 +1626,24 @@ const INPUTS = {};
 // start takes --full. A flag in NO_VALUE is set by its name alone, as the CLI's are. Spec 139 A-139-18
 // (issue 368): start takes --trust-outside-repo, on spec 140's lane, given after the person's own yes.
 // Issue 553: run and start take a rules file's tasks file (--suite) and the placebo arm (--placebo).
+// Spec 727: start and init take --from-failure beside a draft, and nowhere else.
+// Issue 752: recheck takes the settings saved at init, the ownership flag and the yes before a run.
 const ACCEPTS = {
-  init: ['confirm-write', 'cases', 'models'],
+  init: ['confirm-write', 'cases', 'models', 'from-failure'],
   run: ['models', 'max-calls', 'max-usd', 'samples', 'concurrency', 'max-cases', 'quick', 'trust-outside-repo', 'suite', 'placebo', 'keep-transcripts'],
   badge: [],
   blind: [],
-  start: ['models', 'cases', 'confirm-write', 'full', 'trust-outside-repo', 'suite', 'placebo'],
+  compare: ['suite', 'against', 'placebo', 'models', 'max-calls', 'max-usd', 'trust-outside-repo'],
+  inspect: ['json', 'trust-outside-repo'],
+  recheck: ['suite', 'models', 'samples', 'placebo', 'trust-outside-repo', 'confirm-spend'],
+  start: ['models', 'cases', 'confirm-write', 'full', 'trust-outside-repo', 'suite', 'placebo', 'from-failure'],
 };
-const NO_VALUE = new Set(['quick', 'confirm-write', 'trust-outside-repo', 'full', 'placebo', 'keep-transcripts']);
+const NO_VALUE = new Set(['quick', 'confirm-write', 'trust-outside-repo', 'full', 'placebo', 'keep-transcripts', 'from-failure', 'json', 'confirm-spend']);
 const QUICK_SETS = ['samples', 'concurrency', 'max-cases'];
 function parseArgv(argv) {
   const command = argv[0];
   if (!Object.prototype.hasOwnProperty.call(ACCEPTS, command)) {
-    process.stderr.write(MARK + ' unknown command ' + JSON.stringify(command) + '\n');
+    process.stderr.write(MARK + ' unknown command ' + shown(JSON.stringify(command)) + '\n');
     process.exit(2);
   }
   const rest = argv.slice(1);
@@ -1168,6 +1681,9 @@ function parseArgv(argv) {
       i += 1;
     } else positional.push(a);
   }
+  // Issue 752: `recheck history [<folder>]` is the one two-word form. A subject called history is
+  // written with a path, such as ./history.
+  if (command === 'recheck' && positional[0] === 'history') { INPUTS.history = true; positional.shift(); }
   // Spec 138: one folder (or receipt), never two. A second positional used to be
   // dropped: the door read the first and ran on it, saying nothing of the rest.
   if (positional.length > 1) {
@@ -1183,6 +1699,7 @@ function parseArgv(argv) {
   }
   if (command === 'badge') INPUTS['receipt'] = positional[0];
   else if (command === 'blind') INPUTS['receipts-dir'] = positional[0] === undefined ? 'receipts' : positional[0];
+  else if (command === 'recheck' && INPUTS.history === true) INPUTS.folder = positional[0];
   else INPUTS['skill-dir'] = positional[0];
   return command;
 }
@@ -1190,6 +1707,13 @@ function parseArgv(argv) {
 function resolveArg(token, state) {
   if (typeof token !== 'string' || token[0] !== '@') return token;
   const key = token.slice(1);
+  if (key === 'compare-a') return state.compareA;
+  if (key === 'compare-out') return state.compareOut;
+  if (key === 'recheck-folder') return state.recheckFolder;
+  // A-752-3: every path reaches the runner absolute.
+  if (key === 'receipts-here') return spelled('receipts');
+  if (key === 'view-page') return spelled(VIEW_PAGE);
+  if (key === 'receipts-dir' && state.resolvedTarget) return state.resolvedTarget;
   if (key === 'skill-dir' && state.resolvedTarget) return state.resolvedTarget;
   if (key === 'receipt' && state.resolvedTarget) return state.resolvedTarget;
   if (key === 'models' && !INPUTS['models']) return state.defaultModel;
@@ -1232,7 +1756,12 @@ function buildVector(args, state) {
   for (const a of args) {
     if (typeof a === 'string') { emitGroup([a], state, out, 'cli'); continue; }
     if (a && a.when) { if (INPUTS[a.when] !== undefined) emitGroup(a.emit, state, out, 'cli'); continue; }
+    // Spec 727: a group guarded by `unless` is emitted only when that input was not given, so the init
+    // step gives the CLI one label flag or the other, never both and never neither.
+    if (a && a.unless) { if (INPUTS[a.unless] === undefined) emitGroup(a.emit, state, out, 'cli'); continue; }
     if (a && a.unless_default) { if (state.defaultModel || INPUTS[a.unless_default] !== undefined) emitGroup(a.emit, state, out, 'cli'); continue; }
+    // A-752-2: a recheck run is told its lane only when the folder saved that lane, since the CLI refuses a mismatch.
+    if (a && a.when_saved_trusted) { if (state.recheckTrusted) emitGroup(a.emit, state, out, 'cli'); continue; }
     if (a && a.emit) { emitGroup(a.emit, state, out, 'cli'); continue; }
   }
   return out;
@@ -1240,13 +1769,15 @@ function buildVector(args, state) {
 
 const command = parseArgv(process.argv.slice(2));
 const steps = stepsFor(command);
-const state = { resolvedTarget: null, defaultModel: null, rendered: null, outsideRepo: false, adding: false, hadSuite: false, runner: null, fullNote: null, suite: null };
+const state = { resolvedTarget: null, defaultModel: null, rendered: null, outsideRepo: false, adding: false, hadSuite: false, runner: null, fullNote: null, suite: null, recheck: null, recheckFolder: null, recheckParent: null, recheckTrusted: false, exitCode: 0 };
 const rulesFile = rulesFileGiven(command, INPUTS['skill-dir']);
 holding = command === 'start';
 checkPairings();
 
 for (let at = 0; at < steps.length; at++) {
   const step = steps[at];
+  // Issue 752: a recheck step runs only for the use pickRecheck read from the saved folder.
+  if (step.when_recheck && step.when_recheck !== state.recheck) continue;
   // Spec 139: `start` with no folder lists the skills and stops there. Given a flag and no folder,
   // it refuses, naming the flag: a flag is refused, never dropped (DR-41's rule for a word).
   if (step.op === 'list-skills') {
@@ -1260,16 +1791,24 @@ for (let at = 0; at < steps.length; at++) {
   if (step.op === 'guided-existing') { guidedExisting(steps, at); continue; }
   if (step.op === 'offer-draft') { offerDraft(); continue; }
   if (step.op === 'outside-skill') { outsideSkill(); continue; }
+  if (step.op === 'page-safe') { pageSafe(); continue; }
+  if (step.op === 'output-folder') { outputFolder(); continue; }
   if (step.op === 'require-suite') { requireSuite(); continue; }
+  if (step.op === 'check-draft') { checkDraft(); continue; }
   if (step.op === 'confirm-write') { confirmWrite(); continue; }
   if (step.op === 'confirm-full') { confirmFull(); continue; }
   if (step.op === 'confirm-add') { confirmAdd(); continue; }
   if (step.op === 'report-add') { reportAdd(); continue; }
+  if (step.op === 'confirm-spend') { confirmSpend(); continue; }
+  if (step.op === 'recheck-parent') { recheckParent(); continue; }
+  if (step.op === 'recheck-saved') { recheckSaved(); continue; }
   if (step.op === 'open-view') { openView(step.file); continue; }
   if (step.op === 'validate') { validateInputs(step.inputs, step); continue; }
   if (step.op === 'resolve-target') {
+    if (command === 'recheck') { resolveReadingTarget(); continue; }
     const given = INPUTS[step.input];
     if (given === undefined) refuse(step.input + ': expected a value');
+    if (command === 'compare' || command === 'inspect') { resolveReadingTarget(); continue; }
     if (step.input === 'receipts-dir') {
       // Issue 623: viewing receipts needs a repository boundary, not skill trust.
       const repo = repoState();
@@ -1286,13 +1825,17 @@ for (let at = 0; at < steps.length; at++) {
     continue;
   }
   if (step.op === 'state-trusted') {
-    const subject = rulesFile ? 'this rules file' : 'this skill';
+    const both = command === 'compare';
+    const subject = both ? 'both files' : rulesFile ? 'this rules file' : 'this skill';
+    // Issue 752: recheck saves the lane once, so every later run of that folder takes it.
+    const why = command === 'recheck' ? 'That is why recheck saves --trusted-skill with the tests: each run of them'
+      : both ? 'That is why compare passes --trusted-skill: each version' : 'That is why the run passes --trusted-skill: it';
     if (state.outsideRepo) {
-      say('treating ' + subject + ' as the author\'s own, because you confirmed it with --trust-outside-repo where there is no git repository.'
-        + ' That is why the run passes --trusted-skill: it runs as you, in ' + process.cwd() + ', with your files and your Claude Code login, and no isolation hop.');
+      say('treating ' + subject + ' as the author\'s own, because you confirmed ' + (both ? 'them' : 'it') + ' with --trust-outside-repo where there is no git repository.'
+        + ' ' + why + ' runs as you, with your files and your Claude Code login, and no isolation hop. ' + LANE_LOADS);
     } else {
-      say('treating ' + subject + ' as the author\'s own, because it resolves inside this repository.'
-        + ' That is why the run passes --trusted-skill: it runs as you, in your checkout, with no isolation hop.');
+      say('treating ' + subject + ' as the author\'s own, because ' + (both ? 'they resolve' : 'it resolves') + ' inside this repository.'
+        + ' ' + why + ' runs as you, with no isolation hop. ' + LANE_LOADS);
     }
     continue;
   }
@@ -1332,7 +1875,12 @@ for (let at = 0; at < steps.length; at++) {
         if (/"message":\s*"not enough draws on /.test(r.out)) say(UNDERPOWERED_LINE + '.');
         else if (new RegExp('"message":\\s*"' + CASES_WORD + ' on ').test(r.out)) say(CASES_LINE + '.');
       } else if (r.out) process.stdout.write(r.out);
-    } else if (r.code !== 0) process.exit(r.code);
+    } else if (r.code !== 0) {
+      // Issue 752: recheck run exits 1 when it saved an incomplete receipt, so the dated reading is still
+      // shown. The status is kept and the door ends with it.
+      if (r.code !== step.continue_on) process.exit(r.code);
+      state.exitCode = r.code;
+    }
     continue;
   }
   if (step.op === 'recheck-transcripts') { state.checked = recheckTranscripts(state.resolvedTarget); continue; }
@@ -1342,3 +1890,4 @@ for (let at = 0; at < steps.length; at++) {
   process.stderr.write(MARK + ' unknown step op ' + JSON.stringify(step.op) + '\n');
   process.exit(2);
 }
+if (state.exitCode) process.exit(state.exitCode);

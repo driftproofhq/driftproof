@@ -37,13 +37,19 @@ function tallyOf(reportHtml) {
 }
 const TILE_CLASS = { 'beat the fake': 'is-up', 'below the fake': 'is-down', 'too few answers to tell': 'is-few', 'not measured': 'is-none' };
 const tileClassOf = (label) => TILE_CLASS[label] || 'is-flat';
-// The caveats: every summary sentence except the repeated headline sentence.
+// A-687-4 (issue 757): the first sentence of the text that says its lead again goes, and the report's
+// double negative is printed in its plain form, bound to its point.
+const REPEATS = { "The judge is the target's model.": 'The judge uses the same model as the target.' };
+const PLAIN_POINTS = { 'A skill that did not beat the fake is not shown to do no better than it.': 'Not beating the fake does not show a skill is useless.' };
+// The caveats: every summary sentence except the repeated headline sentence and a repeated lead.
 function caveatsOf(n, reportHtml) {
   const points = require('../scripts/site-chrome.js').summaryPoints(n) || [];
   const big = text((/<div class="headline">[\s\S]*?<p class="big"[^>]*>([\s\S]*?)<\/p>/.exec(reportHtml) || [])[1] || '');
   const head = big.slice(0, 40);
   // A-687-3, issue 702: retain all sentences after the repeated headline.
   return points.flatMap(p => {
+    const said = REPEATS[p.lead];
+    if (said && p.text.startsWith(`${said} `)) return [{ ...p, text: p.text.slice(said.length).trim() }];
     if (!(head && p.text.startsWith(head))) return [p];
     const sentences = p.text.match(/[^]*?[.!?](?=\s|$)|[^]+$/g) || [];
     const rest = sentences.slice(1).join('').trim();
@@ -86,16 +92,18 @@ function readOpening(h) {
   if (!/Install in Claude Code/.test(text(quick))) hits.push('#quickstart does not say Install in Claude Code');
   return hits;
 }
+// A-687-4 and A-687-5 (issue 757): four doors, the chat door first, in the order the wide layout reads.
 const DOORS = [
-  ['Just curious', ['/how-it-works/', '/reports/017/blind/', '/reports/']],
+  ['I use ChatGPT or Claude in the browser', ['/try-it/', '/inspect/', '/did-it-change/']],
   ['I use AI skills', ['/skill-lookup/', '/skills/', '/placebo/']],
+  ['Just curious', ['/how-it-works/', '/reports/017/blind/', '/reports/']],
   ['I make skills', ['#quickstart', '#ci', '/methodology/']],
 ];
 function readDoors(h) {
   const hits = [];
   const x = hero(h);
   const doors = [...x.matchAll(/<(a|div|article)\b[^>]*class="[^"]*\bdoor\b[^"]*"[^>]*>([\s\S]*?)<\/\1>/g)].map((m) => m[2]);
-  if (doors.length !== 3) hits.push(`${doors.length} doors, not three`);
+  if (doors.length !== 4) hits.push(`${doors.length} doors, not four`);
   doors.forEach((d, i) => {
     const want = DOORS[i];
     if (!want) return;
@@ -162,7 +170,12 @@ function readFinding(h, S, reportHtml, n) {
   caveatsOf(n, reportHtml).forEach((p, i) => {
     const k = i + 1;
     if (statOf(card, `latest_point_${k}_lead`) !== p.lead) hits.push(`caveat ${k}'s lead is not "${p.lead}"`);
-    if (statOf(card, `latest_point_${k}_text`) !== p.text) hits.push(`caveat ${k}'s text is not the report's: ${p.text.slice(0, 50)}`);
+    const plain = PLAIN_POINTS[p.text];
+    if (plain) {
+      const el = new RegExp(`<span data-plain-of="latest_point_${k}_text">([^<]*)</span>`).exec(card);
+      if (!el || el[1] !== plain) hits.push(`caveat ${k}'s plain form is missing or not bound to its point`);
+      if (text(card).includes(p.text)) hits.push(`caveat ${k} still prints the report's double negative`);
+    } else if (statOf(card, `latest_point_${k}_text`) !== p.text) hits.push(`caveat ${k}'s text is not the report's: ${p.text.slice(0, 50)}`);
     if (String(S[`latest_point_${k}_text`] && S[`latest_point_${k}_text`].value) !== p.text) hits.push(`stats.json latest_point_${k}_text is not the summary's`);
   });
   return hits;
@@ -208,13 +221,32 @@ test('AC-1 a plain opening: no command, hash or jargon in the hero; the commands
   assert.ok(readOpening(withBand).some((x) => /"band"/.test(x)), 'jargon in the opening reads red');
 });
 
-test('AC-2 three doors, each link resolving', () => {
+test('AC-2 four doors, each link resolving', () => {
   const h = home();
   assert.deepEqual(readDoors(h), []);
   // The first occurrence on the page is the door's: the hero comes first.
   assert.ok(hero(h).includes('href="/skill-lookup/"'));
   const broken = h.replace('href="/skill-lookup/"', 'href="/skill-lookup-planted/"');
   assert.ok(readDoors(broken).some((x) => /resolves to nothing|does not link/.test(x)), 'a broken door link reads red');
+});
+
+// A-687-5 (issue 757): a reader page added later joins the full list, not a door, and every reader page
+// is reachable without a door link: from every page's footer and from the list the curious door names.
+test('A-687-5 the doors do not grow with the site, and the full list is one link away', () => {
+  const site = require('../scripts/build-site-pages.js');
+  const reader = require('../scripts/reader-pages');
+  const before = site.doors();
+  const real = reader.pages;
+  reader.pages = (dir) => [...real(dir), ...Array.from({ length: 30 }, (_, i) => ({ href: `/planted-${i}/`, label: `Planted page ${i}` }))];
+  try { assert.equal(site.doors(), before, 'thirty more reader pages leave the doors as they were'); } finally { reader.pages = real; }
+  const h = home(), list = read('docs/what-is-driftproof/index.html');
+  const full = (x) => [
+    /<a href="\/what-is-driftproof\/#explore-the-results">[^<]+<\/a>/.test(hero(x)) ? null : 'no link from the curious door to the full list',
+    /id="explore-the-results"/.test(list) ? null : 'the full list has no anchor',
+    ...real().flatMap((p) => [h.includes(`<footer class="site">`) && h.slice(h.indexOf('<footer class="site">')).includes(`href="${p.href}"`) ? null : `${p.href} is not in the footer`, list.includes(`href="${p.href}"`) ? null : `${p.href} is not on the full list`]),
+  ].filter(Boolean);
+  assert.deepEqual(full(h), []);
+  assert.notDeepEqual(full(h.replace('href="/what-is-driftproof/#explore-the-results"', 'href="/what-is-driftproof/"')), [], 'plant: the door without its link to the full list');
 });
 
 test('AC-3 the latest finding is the report\'s own headline, tally and caveats, read not typed', async () => {
@@ -271,7 +303,7 @@ test('AC-5 the menu: five plain entries, the group keeps every old link, one fen
   fs.writeFileSync(path.join(dir, 'planted.html'), h.replace('<a href="/glossary/">Glossary</a>', '<a href="/glossary/">Planted</a>'));
   assert.ok(readNav(fence, [path.join(dir, 'planted.html')]).some((x) => /not the home page's/.test(x)), 'a page with another fence reads red');
   const css = read('docs/tokens.css');
-  for (const href of ['/reports/', '/skills/', '/how-it-works/']) assert.match(css, new RegExp(`href\\^="https://driftproofhq\\.com${href.replace(/\//g, '\\/')}"\\]\\)[^{]*nav\\.site-nav > a\\[href="${href.replace(/\//g, '\\/')}"\\]`), `a current-page rule for ${href}`);
+  for (const href of ['/reports/', '/skills/', '/how-it-works/']) assert.match(css, new RegExp(`href\\^="https://driftproofhq\\.com${href.replace(/[\\/]/g, '\\$&')}"\\]\\)[^{]*nav\\.site-nav > a\\[href="${href.replace(/[\\/]/g, '\\$&')}"\\]`), `a current-page rule for ${href}`);
   assert.match(css, /\[href\$="\/glossary\/"\][^{]*nav\.site-nav \.docs-menu > summary/, 'the group is marked current for a page it lists');
 });
 
@@ -345,7 +377,7 @@ test('AC-2, AC-4 Chromium: the first phone screen, both widths, the doors and th
     assert.equal(m.overflow, 0, 'no sideways scroll at 390');
     assert.ok(m.h1Top !== null && m.h1Top < 844, 'the h1 is on the first phone screen');
     assert.deepEqual(m.technical, [], 'nothing technical on the first phone screen');
-    assert.equal(m.doorHeights.length, 3);
+    assert.equal(m.doorHeights.length, 4);
     for (const d of m.doorHeights) assert.ok(d >= 44, `a door is ${d}px tall`);
     await page.screenshot({ path: path.join(shots, 'home-390.png'), fullPage: true });
     await page.screenshot({ path: path.join(shots, 'home-390-first-screen.png'), fullPage: false });
@@ -357,6 +389,14 @@ test('AC-2, AC-4 Chromium: the first phone screen, both widths, the doors and th
     assert.ok(m.h1Lines !== null && m.h1Lines <= 3, `the h1 sets in at most three lines at 1280 (${m.h1Lines})`);
     await page.screenshot({ path: path.join(shots, 'home-1280.png'), fullPage: true });
     await page.screenshot({ path: path.join(shots, 'home-1280-first-screen.png'), fullPage: false });
+    // A-687-5 (issue 757, spec 037 A-037-37): at 1470 by 900 the h1 and all four doors, each read by its
+    // class, sit wholly in the first viewport.
+    await page.setViewportSize({ width: 1470, height: 900 });
+    await page.waitForTimeout(200);
+    const fold = await page.evaluate(() => ['h1', '#hero .door-chat', '#hero .door-curious', '#hero .door-users', '#hero .door-makers'].map((s) => { const e = document.querySelector(s); const r = e ? e.getBoundingClientRect() : null; return [s, r ? Math.round(r.top) : null, r ? Math.round(r.bottom) : null]; }));
+    console.log(`first viewport at 1470 by 900: ${JSON.stringify(fold)}`);
+    for (const [s, top, bottom] of fold) assert.ok(top !== null && top >= 0 && bottom <= 900, `${s} is at ${top} to ${bottom}, not wholly in the first viewport at 1470`);
+    await page.screenshot({ path: path.join(shots, 'home-1470-first-screen.png'), fullPage: false });
     // The plant: a command placed in the hero is seen on the first phone screen.
     await page.setViewportSize({ width: 390, height: 844 });
     await page.setExtraHTTPHeaders({ 'x-planted': '1' });

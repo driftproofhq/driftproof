@@ -39,7 +39,7 @@ const WORDS = {
   private: 'Flipping through the cards sends nothing anywhere and stores nothing.',
   counter: 'The site\'s visit counter (Cloudflare Web Analytics) still counts the page view.',
   // The three links the issue asks for, as text; the markup is in pageHtml.
-  next: 'See the fake for your own file on Fake my file. Guess which answer had the skill on Can you tell? Walk through a whole test on How it works.',
+  next: "Try it on your own file: See your file's fake. Guess which answer had the skill on Can you tell? Walk through a whole test on How it works.",
 };
 // The two sentences every task of these suites opens with (spec 408); shown muted on the card.
 const PREAMBLE = 'Do not use tools, access the network, write files, run commands or install anything. Answer only in text using the supplied facts.';
@@ -186,7 +186,7 @@ function pageHtml({ reports }) {
   const p = (text, cls) => '<p' + (cls ? ' class="' + cls + '"' : '') + '>' + esc(text) + '</p>';
   need(WORDS.lede.length >= 50 && WORDS.lede.length <= 155, 'DESCRIPTION');
   const deck = reports.flatMap((r) => r.cards.map((c) => cardHTML(c, r.caveats))).join('');
-  const links = 'See the fake for your own file on <a href="/placebo/">Fake my file</a>. Guess which answer had the skill on <a href="/reports/017/blind/">Can you tell?</a> Walk through a whole test on <a href="/how-it-works/">How it works</a>.';
+  const links = 'Try it on your own file: <a href="/placebo/">See your file\'s fake</a>. Guess which answer had the skill on <a href="/reports/017/blind/">Can you tell?</a> Walk through a whole test on <a href="/how-it-works/">How it works</a>.';
   const main = '<main class="noticed-page">'
     + '<h1>' + esc(WORDS.h1) + '</h1>' + p(WORDS.lede, 'lede')
     + '<h2 id="sugar-pill">What a sugar pill is here</h2>' + p(WORDS.sugar) + p(WORDS.cards)

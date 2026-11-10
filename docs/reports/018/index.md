@@ -897,10 +897,10 @@ Read and built by:
 - `specs/613-placebo-skills-report/tally.cjs`, SHA-256 `a7d334796f32591a9488baa2286e3ba9462305ff6a92b8b2f0c7695a96a415dd`
 - `specs/408-skill-measurements/ledger.cjs`, SHA-256 `263a3d3423feea70aaf90074a58bcaf48d4ddb8b0eea262ec634450b17b63aae`
 - `specs/408-skill-measurements/reconstruct.cjs`, SHA-256 `f64871c647c3482a0d05e6a2308a05192b5934816097978ece34d553a360f2dd`
-- `lib/verdict.js`, SHA-256 `336cacca9ab4f80797de2ad12da8b393984843863f37e6839929aa8d44859ce8`
+- `lib/verdict.js`, SHA-256 `c09edd5e1a8c62c43fa0e0d1f1a268d5d6076e474846e2cf9247a1f0e35b5b6e`
 - `lib/plain.js`, SHA-256 `46f471b1487460b6101680f0b4c1191e358611020f326898e37f0e420011dbb9`
 - `lib/placebo.js`, SHA-256 `f9511bdbb9928f615017addebfa305b1f7b27c544cc5dbd377e668d661be26a0`
-- `lib/receipt.js`, SHA-256 `6f4d56e9be11dd8dea52810d458d4c84b3eb188359f834e3bc771f2f3f8605d8`
+- `lib/receipt.js`, SHA-256 `65ade3218647c74a1bceef84be9d772ecf11738c507f3c3b73698b82068fcbcb`
 - `scripts/skill-handoff.js`, SHA-256 `261c15ba3c979f74bf69d4a6f7e192f8458a0b9635b7a17effd8e7cf1d53fda2`
 
 ## Amendments

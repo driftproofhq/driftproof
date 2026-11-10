@@ -3,8 +3,8 @@
 'use strict';
 // Site builder: {"href":"/tasks/","label":"Every task we gave a skill"}
 // Issue 703. Only existing suites and report readers supply task content.
-// Issue 707: the marker above registers /tasks/ with scripts/reader-pages.js, so the footer, the home
-// door, README.md, llms.txt and llms-full.txt list it like the other reader pages. A page's description
+// Issue 707: the marker above registers /tasks/ with scripts/reader-pages.js, so the footer,
+// README.md, llms.txt and llms-full.txt list it like the other reader pages. A page's description
 // is derived from its first paragraphs (spec 020 AC-14), so the breadcrumb is a nav, not a paragraph,
 // and each skill page's lede names its skill: twenty pages no longer ship one description between them.
 const fs = require('node:fs');

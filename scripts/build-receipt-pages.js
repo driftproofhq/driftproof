@@ -27,7 +27,8 @@
 // THIS SCRIPT RENDERS, IT DOES NOT RUN: no model call and no network call.
 //
 //   node scripts/build-receipt-pages.js          # write docs/r/ and the cards
-//   node scripts/build-receipt-pages.js --check  # exit 1 if a page, badge or card is stale
+//   node scripts/build-receipt-pages.js --check  # exit 1 if a page or badge is stale; it draws no card
+//                                                  (spec 036 AC-5 redraws each card and compares bytes)
 
 const fs = require('fs');
 const path = require('path');
@@ -145,8 +146,25 @@ function receiptPlace(rel) {
 // report, then the run), and then the same rungs with the model's family and version alone. Where no
 // rung fits, the shortest unique rung is taken, so the title stays unique and may pass 60; spec 133
 // R-3 leaves that choice to the operator.
+// THE LAST RUNG CARRIES THE DATE AND THE SHORT CONTENT HASH (A-133-126, issue 743). Two receipts of
+// one skill, one model and one date outside a report, the whole file and the file without a section,
+// share every rung above it; the hash of the text each measured is what tells them apart. The date
+// stays on this rung because the whole file is the very text a Report 018 receipt measured six days
+// earlier, so the hash alone would be that receipt's too.
+// THE PLACE RUNGS SAY WHERE A RECEIPT WAS PUBLISHED (A-133-127, issue 743). Two receipts outside a report
+// can share the skill, the model, the date and the text and differ only in where they were published. These
+// rungs come after the ladder's own and are no shorter than its date rung, so a receipt that already has a
+// title keeps it. A section comparison takes no rung without a tag, so it cannot take the title of a
+// report's receipt of the same text.
 const SUFFIX = ' | Driftproof';
+const HASH_RUNG = 12;
 const TITLE_MAX = 60;
+const SECTION_PLACE = 'section comparison';
+function publishedPlace(rel) {
+  if (rel.startsWith('receipts/canary/')) return 'canary run'; // spec 639 A-639-5's words
+  const side = /^receipts\/which-section\/[^/]+\/compare-([AB])-/.exec(rel);
+  return side ? (side[1] === 'A' ? SECTION_PLACE : `${SECTION_PLACE}, section removed`) : null;
+}
 let report016Subjects;
 function subjectName(rel, r) {
   if (!rel.startsWith('receipts/report-016/')) return (r.skill || {}).name;
@@ -161,22 +179,35 @@ function titleRungs({ rel, receipt: r }) {
   const full = humanModelName(r.run.model_id);
   const short = shortModelName(r.run.model_id);
   const drops = [[report && `report ${report}`, run, date], [report && `report ${report}`, run], [run], []].map((ts) => ts.filter(Boolean));
+  const place = publishedPlace(rel);
+  const section = Boolean(place) && place.startsWith(SECTION_PLACE);
   const out = [];
-  for (const model of [full, short]) for (const tags of drops) {
+  const add = (model, tags) => {
     const t = `${subjectName(rel, r)} on ${model}${tags.map((x) => `, ${x}`).join('')}${SUFFIX}`;
     if (!out.includes(t)) out.push(t);
-  }
+  };
+  for (const model of [full, short]) for (const tags of drops) if (tags.length || !section) add(model, tags);
+  if (place) for (const model of [full, short]) for (const tags of [[place, date].filter(Boolean), [place]]) add(model, tags);
+  out.push(`${subjectName(rel, r)} on ${short}${date ? `, ${date}` : ''}, ${String((r.skill || {}).content_hash || '').slice(0, HASH_RUNG)}${SUFFIX}`);
   return out;
 }
-function receiptTitles(all = receipts()) {
-  const ladders = all.map((x) => ({ hash: x.receipt.receipt_hash, rungs: titleRungs(x) }));
+function receiptTitles(all = receipts(), ladder = titleRungs) {
+  const twinOf = ({ receipt: r }) => JSON.stringify([(r.skill || {}).name, (r.run || {}).model_id, String((r.run || {}).date_utc || '').slice(0, 10), (r.skill || {}).content_hash]);
+  const ladders = all.map((x) => ({ hash: x.receipt.receipt_hash, rungs: ladder(x), twin: twinOf(x), place: publishedPlace(x.rel) }));
   const count = new Map();
-  for (const l of ladders) for (const t of l.rungs) count.set(t, (count.get(t) || 0) + 1);
+  const twins = new Map();
+  for (const l of ladders) {
+    twins.set(l.twin, (twins.get(l.twin) || 0) + 1);
+    for (const t of l.rungs) count.set(t, (count.get(t) || 0) + 1);
+  }
   const out = new Map();
   for (const l of ladders) {
     const unique = l.rungs.filter((t) => count.get(t) === 1);
     if (!unique.length) throw new Error(`receipt ${l.hash.slice(0, 12)}: every title rung is another receipt's too`);
-    out.set(l.hash, unique.find((t) => t.length <= TITLE_MAX) || [...unique].sort((a, b) => a.length - b.length)[0]);
+    // A receipt that only its place tells apart says so, even where a rung without the place is free (A-133-127).
+    const named = l.place && twins.get(l.twin) > 1 ? unique.filter((t) => t.includes(`, ${l.place}`)) : [];
+    const pool = named.length ? named : unique;
+    out.set(l.hash, pool.find((t) => t.length <= TITLE_MAX) || [...pool].sort((a, b) => a.length - b.length)[0]);
   }
   return out;
 }

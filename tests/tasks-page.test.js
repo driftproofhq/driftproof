@@ -10,12 +10,13 @@ const { HtmlValidate } = require('html-validate');
 const B = require('../scripts/build-tasks');
 const S = require('../scripts/sugar-pill-page');
 const { STATE_WORDS } = require('../scripts/how-it-works');
+const { htmlToText } = require('../scripts/html-text.js');
 const ROOT = path.join(__dirname, '..');
 const skills = S.skillsOf();
 const read = p => fs.readFileSync(path.join(ROOT, p), 'utf8');
 const suiteOf = m => JSON.parse(read('docs/skills/receipts/issue-408/suites/' + m.row.attempt.protocol.evals_sha256 + '.json'));
 const planOf = m => JSON.parse(read('receipts/report-' + (m.report === '017' ? '017c' : '018') + '/plan.json'));
-const decode = h => h.replace(/<[^>]*>/g, '').replace(/&(amp|lt|gt|quot|#39);/g, (_, k) => ({amp:'&',lt:'<',gt:'>',quot:'"','#39':"'"})[k]);
+const decode = h => htmlToText(h).replace(/&(amp|lt|gt|quot|#39);/g, (_, k) => ({amp:'&',lt:'<',gt:'>',quot:'"','#39':"'"})[k]);
 function expectedLine(m, task, kind) {
   const row = require('../scripts/prepare-report-' + m.report).rowHTML(m.row);
   const list = new RegExp('<ul class="' + kind + '-tasks">([\\s\\S]*?)</ul>').exec(row);

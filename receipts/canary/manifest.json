@@ -1,0 +1,110 @@
+{
+  "format": "driftproof-canary/1",
+  "_what": "The canary: the same skills with the same frozen tests, run again on the same model on a later date (spec 742). Each pair names its skill, the repository and commit the skill text was pinned at, the sha256 of that text (specs/408-skill-measurements/sources.json), the frozen suite, the earlier receipt and the later one. scripts/build-did-it-change.js reads this file, the receipts it names, their entries in sources.json, their suite files and their receipt pages for /did-it-change/. A later run is added as more pairs; no code changes. `rule` is the sentence the page prints, in plain words; `rule_machine` keeps the sentence as first written before any result.",
+  "rule": "The first five skills in Report 018's fixed order that do real work rather than hand off to another skill, chosen before any result: grill-me, grill-with-docs, improve-codebase-architecture and tdd from mattpocock/skills at 49dd158d, and hyperframes-cli from heygen-com/hyperframes at c4440dfb. Each was run with its exact skill text and its frozen tests, and both were checked against the earlier receipt's.",
+  "rule_machine": "The first five skills in the frozen attempt order of receipts/report-018/plan.json that are not routers (plan.routers.skills), read before any result: grill-me, grill-with-docs, improve-codebase-architecture and tdd from mattpocock/skills at 49dd158d, and hyperframes-cli from heygen-com/hyperframes at c4440dfb. Each was run with the pinned skill text, refused unless its sha256 matched, and the committed suite, refused unless the loaded skill reproduced the earlier receipt's skill and suite hashes.",
+  "runs": [
+    {
+      "date": "2026-11-08",
+      "operator": "the subscription claude CLI through the eval user, CLI 0.27.0 from dev 25b53862f",
+      "command": "node bin/driftproof run <dir> --models claude-haiku-5-5 --judge-model claude-haiku-5-5 --samples 5 --placebo --concurrency 3 --max-calls 600 --max-usd 20 --out <scratch>/<skill>"
+    },
+    {
+      "date": "2026-11-08",
+      "operator": "the subscription claude CLI through the eval user, CLI 0.27.0 from dev 25b53862f",
+      "settings_from_run_log": "models claude-sonnet-5-5, judge claude-haiku-5-5, 5 samples per case, concurrency 3, per-model cap 600 calls, budget $40.00; the receipts also carry the placebo arm"
+    }
+  ],
+  "pairs": [
+    {
+      "skill": "grill-me",
+      "repository": "mattpocock/skills",
+      "commit": "49dd158d1076134a641b33efb035946536778336",
+      "skill_sha256": "caaf8b8de1684f96e26b28f3c29189db5c89cce4b73e1c93d86164f66ef88637",
+      "suite": "suites/mattpocock--skills--grill-me.json",
+      "before": "receipts/report-018/campaign-3/15f184740eeb8f5b8a59bbca38b7874ef631c46764ad7082f0d8b9920d7503fb.json",
+      "after": "receipts/canary/2026-11-08/grill-me-claude-haiku-5-5-2026-11-08-77d54fcf4a7f.json"
+    },
+    {
+      "skill": "grill-with-docs",
+      "repository": "mattpocock/skills",
+      "commit": "49dd158d1076134a641b33efb035946536778336",
+      "skill_sha256": "7de372c13488f1ee96cc11cd8907b56b6809cc93eef776eeddd37de6b6cbe3fe",
+      "suite": "suites/mattpocock--skills--grill-with-docs.json",
+      "before": "receipts/report-018/campaign-3/6824deb80c68dc4468abbb5632513899800efd9b1e354b98e3c6a1237390fc96.json",
+      "after": "receipts/canary/2026-11-08/grill-with-docs-claude-haiku-5-5-2026-11-08-001cec366d9b.json"
+    },
+    {
+      "skill": "improve-codebase-architecture",
+      "repository": "mattpocock/skills",
+      "commit": "49dd158d1076134a641b33efb035946536778336",
+      "skill_sha256": "552240a5ab5cec6b67c15dd1ad6e9f6962b1bca6ce870059a8c2713760c20392",
+      "suite": "suites/mattpocock--skills--improve-codebase-architecture.json",
+      "before": "receipts/report-018/campaign-3/b82af8993f7de808d929929f51237c199fed5b77070457ad5063862817bd3c15.json",
+      "after": "receipts/canary/2026-11-08/improve-codebase-architecture-claude-haiku-5-5-2026-11-08-16c69348adf1.json"
+    },
+    {
+      "skill": "tdd",
+      "repository": "mattpocock/skills",
+      "commit": "49dd158d1076134a641b33efb035946536778336",
+      "skill_sha256": "5505d25bbaa8fc14a79e4d20163936958992a2995b7f1dd1d6197edc9ed722e0",
+      "suite": "suites/mattpocock--skills--tdd.json",
+      "before": "receipts/report-018/campaign-3/01a1a4d088c9eadbc2517089778a286cf77017e9a868d4d0c250fd33f6bb08a4.json",
+      "after": "receipts/canary/2026-11-08/tdd-claude-haiku-5-5-2026-11-08-af48d1c09e9d.json"
+    },
+    {
+      "skill": "hyperframes-cli",
+      "repository": "heygen-com/hyperframes",
+      "commit": "c4440dfb200def5e0c0afee938778f05b5985039",
+      "skill_sha256": "be481984f8d3c871c353a4ba82bb295a416634e11938de2081b950e9e488a3ff",
+      "suite": "suites/heygen-com--hyperframes--hyperframes-cli.json",
+      "before": "receipts/report-018/campaign-3/1460f2fbadb049e68e4b07c2a0628f83ebd89ff596b1dcf7f30a8d6b7bd35e33.json",
+      "after": "receipts/canary/2026-11-08/hyperframes-cli-claude-haiku-5-5-2026-11-08-6682f47cf474.json"
+    },
+    {
+      "skill": "grill-me",
+      "repository": "mattpocock/skills",
+      "commit": "49dd158d1076134a641b33efb035946536778336",
+      "skill_sha256": "caaf8b8de1684f96e26b28f3c29189db5c89cce4b73e1c93d86164f66ef88637",
+      "suite": "suites/mattpocock--skills--grill-me.json",
+      "before": "receipts/report-017c/campaign-1/9ad7ac527a21f178392b4ae9d146922b7ad58ee6ca8dcef4f8d5172f95cdb027.json",
+      "after": "receipts/canary/2026-11-08/grill-me-claude-sonnet-5-5-2026-11-08-2e97fc71213f.json"
+    },
+    {
+      "skill": "grill-with-docs",
+      "repository": "mattpocock/skills",
+      "commit": "49dd158d1076134a641b33efb035946536778336",
+      "skill_sha256": "7de372c13488f1ee96cc11cd8907b56b6809cc93eef776eeddd37de6b6cbe3fe",
+      "suite": "suites/mattpocock--skills--grill-with-docs.json",
+      "before": "receipts/report-017c/campaign-1/bfc0fd31bf2c53d679e22d467a049c6f8a5e2209265a755d14c5d2ca68a1ef02.json",
+      "after": "receipts/canary/2026-11-08/grill-with-docs-claude-sonnet-5-5-2026-11-08-7ee1c4663d56.json"
+    },
+    {
+      "skill": "improve-codebase-architecture",
+      "repository": "mattpocock/skills",
+      "commit": "49dd158d1076134a641b33efb035946536778336",
+      "skill_sha256": "552240a5ab5cec6b67c15dd1ad6e9f6962b1bca6ce870059a8c2713760c20392",
+      "suite": "suites/mattpocock--skills--improve-codebase-architecture.json",
+      "before": "receipts/report-017c/campaign-1/95d64cad7267275a0b44ec0d34324121590d1f55dff9e34ccd09b722214164e2.json",
+      "after": "receipts/canary/2026-11-08/improve-codebase-architecture-claude-sonnet-5-5-2026-11-08-a523261d64aa.json"
+    },
+    {
+      "skill": "tdd",
+      "repository": "mattpocock/skills",
+      "commit": "49dd158d1076134a641b33efb035946536778336",
+      "skill_sha256": "5505d25bbaa8fc14a79e4d20163936958992a2995b7f1dd1d6197edc9ed722e0",
+      "suite": "suites/mattpocock--skills--tdd.json",
+      "before": "receipts/report-017c/campaign-1/5b5214d520f0c5ba96d4f97e379bf12e096d7ffabf2c0bdd8db1983edfebade8.json",
+      "after": "receipts/canary/2026-11-08/tdd-claude-sonnet-5-5-2026-11-08-9ca6bc6c1a10.json"
+    },
+    {
+      "skill": "hyperframes-cli",
+      "repository": "heygen-com/hyperframes",
+      "commit": "c4440dfb200def5e0c0afee938778f05b5985039",
+      "skill_sha256": "be481984f8d3c871c353a4ba82bb295a416634e11938de2081b950e9e488a3ff",
+      "suite": "suites/heygen-com--hyperframes--hyperframes-cli.json",
+      "before": "receipts/report-017c/campaign-1/f5ae440882dd7c62585dfab749f5a8995c082176c2a63877a8487f1df570aba6.json",
+      "after": "receipts/canary/2026-11-08/hyperframes-cli-claude-sonnet-5-5-2026-11-08-710f3b25a115.json"
+    }
+  ]
+}

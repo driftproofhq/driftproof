@@ -18,6 +18,7 @@ const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const { documentationText } = require('../.github/windows-ci/common.cjs');
+const { tokenize, attrOf } = require('../scripts/html-text');
 const crypto = require('crypto');
 const { validateReceipt, sealReceipt } = require('../lib/receipt');
 const { receiptVerdict } = require('../lib/verdict');
@@ -600,6 +601,14 @@ function firstLookBox(receipt, archive) {
   if (archive) fs.writeFileSync(path.join(tdir, 'answers.json'), JSON.stringify(archive, null, 2));
   return view().renderView(path.join(box, 'receipts'), { now: new Date('2026-10-16T00:00:00Z'), label: 'receipts' }).html;
 }
+// A-139-29 (issue 766): a page's script start tags, read as a browser reads them. Spec 619 AC-7's blind-read
+// data block is the one form a browser never runs, matched whole, so any other tag counts as one that can.
+const BLIND_DATA_TAG = '<script type="application/json" data-blind-data>';
+function scriptTagsOf(html) {
+  const tags = tokenize(html).filter((t) => t.type === 'start' && t.name === 'script').map((t) => t.raw);
+  return { running: tags.filter((t) => t !== BLIND_DATA_TAG), data: tags.filter((t) => t === BLIND_DATA_TAG) };
+}
+const blindMountsOf = (html) => tokenize(html).filter((t) => t.type === 'start' && attrOf(t, 'data-island') === 'blind-read').length;
 
 test('issue 367 AC-367-4: the view shows draw 0 of each arm side by side, checked against the sealed hash', () => {
   const { s, root } = fixtures();
@@ -643,7 +652,19 @@ test('issue 367 AC-367-5: the first look is escaped text, and the page still loa
   const { s, root } = fixtures();
   const page = firstLookBox(s.receipt, archiveOf(root, s.receipt));
   assert.ok(page.includes(`content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:"`));
-  assert.equal((page.match(/<script\b/g) || []).length, 1, 'one inline script');
+  // Plants (A-139-29): a second running script in any letter case, a source on the data block, the data block
+  // made to run, and a data block no blind read owns.
+  const added = (tag) => page.replace('</body>', `${tag}</script></body>`);
+  assert.equal(scriptTagsOf(added('<script>')).running.length, 2, 'plant: a second inline script');
+  assert.equal(scriptTagsOf(added('<SCRIPT SRC="/x.js">')).running.length, 2, 'plant: a script tag in capitals, with a source');
+  assert.equal(scriptTagsOf(page.replace(BLIND_DATA_TAG, '<script type="application/json" data-blind-data src="/x.js">')).running.length, 2, 'plant: a source on the data block');
+  assert.equal(scriptTagsOf(page.replace(BLIND_DATA_TAG, '<script>')).running.length, 2, 'plant: the data block made to run');
+  const stray = added(BLIND_DATA_TAG);
+  assert.notEqual(scriptTagsOf(stray).data.length, blindMountsOf(stray), 'plant: a data block no blind read owns');
+  const tags = scriptTagsOf(page);
+  assert.deepEqual(tags.running, ['<script>'], 'one inline script');
+  assert.equal(tags.data.length, 1, 'the fixture shows one blind read');
+  assert.equal(tags.data.length, blindMountsOf(page), 'one data block for each blind read');
   assert.doesNotMatch(page, /\s(?:src|href)\s*=\s*["']?(?:https?:|\/\/|file:)|url\(\s*["']?(?:https?:|\/\/|file:)/i);
 });
 
@@ -734,6 +755,15 @@ test('issue 367 AC-367-10: plan reads the quick case\'s spread and names every o
     if (c.counts && Number.isInteger(c.counts.generations_per_arm)) c.counts.generations_per_arm = 1;
   }
   if (one.run.counts && Number.isInteger(one.run.counts.generations_per_arm)) one.run.counts.generations_per_arm = 1;
+  if (one.results.fake_tool_calls) one.results.fake_tool_calls = require('../lib/text-capture').fakeToolCallCounts(one);
+  // Plant (A-139-29): a fake tool call count left at the quick run's two draws is refused, as spec 538 AC-3 reads it.
+  const stale = JSON.parse(JSON.stringify(one));
+  stale.results.fake_tool_calls = s.receipt.results.fake_tool_calls;
+  const g = path.join(root, 'one-draw-stale.json');
+  fs.writeFileSync(g, JSON.stringify(sealReceipt(stale), null, 2));
+  const q = planOf(g);
+  assert.equal(q.status, 2, q.stderr);
+  assert.match(q.stderr, /Fake tool call counts differ from the recorded draws/, 'the stale count is refused for that reason');
   const f = path.join(root, 'one-draw.json');
   fs.writeFileSync(f, JSON.stringify(sealReceipt(one), null, 2));
   const p = planOf(f);

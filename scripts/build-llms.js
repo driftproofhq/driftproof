@@ -85,7 +85,7 @@ function phraseLines() {
   return [
     `- [AI benchmark gaps vs sampling noise](${ORIGIN}/leaderboard-noise/): a piece by Maverick that checks the gaps quoted in frontier launch posts and on public leaderboards against each benchmark's own sampling noise, with its code and data linked.`,
     `- [Evaluation receipts](${ORIGIN}/r/): every published receipt, dated and hash-verified, listed by the report it belongs to.`,
-    `- [The same skill on different models](${ORIGIN}/across-models/): each skill and instruction file measured on two or more models, with each receipt's plain reading by model and a link to it; nothing is combined or ranked.`,
+    `- [The same skill on different models and dates](${ORIGIN}/across-models/): each skill and instruction file measured on two or more models, with each receipt's plain reading by model and a link to it, and each skill measured with the same tests on different dates, with what Driftproof's comparison read between each two; nothing is combined or ranked.`,
     `- [Maintainer](${ORIGIN}/maintainer/): who maintains Driftproof: Maverick (mavericksea-ai on GitHub), who also writes its reports and the paper.`,
     `- [Fixes merged into other evaluation tools](${ORIGIN}/what-is-driftproof/#fixes-merged-upstream): the fixes the maintainer contributed upstream, each credited in its project's own release notes.`,
   ];

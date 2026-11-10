@@ -12,6 +12,18 @@ die() {
   exit 1
 }
 
+# fence_begin / fence_end: the output between them cannot act as workflow commands (issue 762, EXT-3).
+# A suite comes from the pull request, and the CLI prints its case ids. A runner reads `::command` at
+# the start of a line and `##[command` anywhere in one, so no escape of a single line is enough. The
+# token is made here, after the suite was read, so nothing in the suite can name it and resume commands.
+fence_begin() {
+  FENCE_TOKEN="driftproof-$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
+  printf '::stop-commands::%s\n' "$FENCE_TOKEN"
+}
+fence_end() {
+  printf '::%s::\n' "$FENCE_TOKEN"
+}
+
 # require_env NAME...: every named variable must be set (it may be empty; the
 # validators decide what an empty value means).
 require_env() {
@@ -112,4 +124,11 @@ validate_delta() {  # value, verdict; issue 579's exact unavailable-reading sent
     case "${2:-}" in REFUSED|INCONCLUSIVE|NOT_MEASURED) return 0 ;; esac
   fi
   [[ "$1" =~ $RE_DELTA ]] || die "delta: expected a decimal number, got $(shown "$1")"
+}
+
+# Issue 746: a base branch is data, never a refspec or an option.
+validate_base_ref() {
+  local re='^[A-Za-z0-9/._-]+$'
+  [[ "$1" =~ $re ]] && [[ "$1" != -* ]] && [[ "$1" != *..* ]] || die "base-ref: expected a branch name without dot-dot or a leading dash"
+  git check-ref-format --branch "$1" >/dev/null 2>&1 || die "base-ref: not a valid branch name"
 }

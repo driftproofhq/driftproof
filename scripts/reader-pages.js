@@ -15,7 +15,7 @@ function builders(dir = __dirname) {
 const pages = dir => builders(dir).filter(b => b.href);
 const escape = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const links = () => pages().map(p => '<a href="'+p.href+'">'+escape(p.label)+'</a>').join(' · ');
-const section = () => '<section class="reader-pages"><h2>Explore the results</h2><p>'+links()+'</p></section>';
+const section = () => '<section class="reader-pages"><h2 id="explore-the-results">Explore the results</h2><p>'+links()+'</p></section>';
 function run(check, dir = __dirname) {
   const {execFileSync}=require('node:child_process');
   for (const b of builders(dir)) execFileSync(process.execPath,[path.join(dir,b.file),...(check?['--check']:[])],{stdio:'inherit',timeout:1800000});

@@ -121,7 +121,7 @@ export function repoTreeUrl(root, rel) {
 function viewBlock(root, v) {
   if (!v || !v.image) return '';
   const caption = String(v.caption || '').replace('{receipts_url}', repoTreeUrl(root, (v.receipts || [])[0] || ''));
-  return `![${v.alt}](${siteUrl(v.image)})\n${wrap(caption)}\n\n`;
+  return `![${v.alt}](${siteUrl(v.image)})\n${wrap(caption)}\n${v.note ? `${wrap(v.note)}\n` : ''}\n`;
 }
 
 export function composeOpening({ root = DEFAULT_ROOT } = {}) {

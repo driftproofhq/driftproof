@@ -8,6 +8,64 @@ makes this one a record.
 
 ---
 
+## v0.28.0 - 2026-11-10
+
+### What's new
+
+- **Compare two versions.** `driftproof compare A B` runs the same tests on two versions of a prompt, rules file or skill and names which one scored lower. `--without-section "Heading"` compares a rules file with one section taken out, so you can see which part does the work. In Claude Code: `/driftproof:compare`.
+- **Recheck later.** `driftproof recheck init` saves your tests and settings without running them; `recheck run` runs the saved copy later, and `recheck history` lists every run. In Claude Code: `/driftproof:recheck`, on your own subscription. History cannot say why a result moved.
+- **Inspect before you install.** `driftproof inspect` reads a skill or rules file offline and lists places to look, the files it bundles and an estimate of its input cost. The same reading is in the browser at /inspect/ and in Claude Code as `/driftproof:inspect`. A clean reading is not a guarantee: your assistant can load files this check never saw.
+- **See a run before it runs.** `driftproof run --preview` shows what a text run would send, where, its estimated calls and cost, and what it would keep. It makes no model call and writes no run files.
+- **One printable result page.** `driftproof sheet receipt.json` writes a single page with the result and its limits.
+- **Turn a real failure into a saved test** while you set up in `/driftproof:start`.
+- **New pages.** /did-it-change/ asks whether the AI changed this week and lists every possible cause of a move. /which-section/ asks which part of a skill does the work and says only what was detected. /try-it/ lets you try a skill yourself against a fake file of the same length, with a blind worksheet that needs no install. /across-models/ now lists the same skill and the same tests on different dates.
+- **A door for people who use AI in a chat app,** and plainer words on the home page.
+- **GitHub Action.** It compares a changed CLAUDE.md or AGENTS.md with its base version, and it leaves your checkout as it found it. With no API key secret it now stops at once and says to set the `api-key` input from a repository secret. Pull requests from forks get no secrets, so they cannot be measured by the Action.
+- **Changed: `run` writes nothing into the skill it measures.** A run whose receipts or transcripts would land inside the skill folder is refused before anything is written, and the message names a folder to use instead. `/driftproof:run` started from inside a skill folder writes to `<skill-folder>-driftproof` beside it.
+- **Changed: a provider error ends a run in one plain line** with exit code 2, not a stack trace. Receipts already written stay. A call that reaches Driftproof's own time limit is tried once, and receipts no longer say it was retried.
+- **Changed: the GitHub Action on fake tool calls.** A receipt where the model wrote out tool calls as text, with a case that clearly got worse, used to fail the job as a regression. It now reads inconclusive and warns. With `fail-on-underpowered: true` it still fails the job, with a "Comparison unreliable" error.
+- **Changed: `badge`, `export` and `diff` refuse extra files** with exit code 2. Before, `driftproof badge receipts/*.json` quietly read only the first file. Pass the folder instead: `driftproof badge receipts/`.
+- **Reports 017 and 018** show a new last-updated date and record the newer verdict code. They are read from the same sealed receipts, and their figures are unchanged.
+- **Known issue: plugin commands can refuse to start on some setups.** Each plugin command starts npx in a new empty folder that only you can write to, so a package planted in a project folder can't run. If no such place passes, every command refuses and names why. This happens, for example, in a container run as root with a shared `/tmp`, no `XDG_RUNTIME_DIR`, and a `package.json` or `node_modules` in the home folder. To fix it, set `XDG_RUNTIME_DIR` to a folder you own that no one else can write to, with no `package.json` or `node_modules` in it or above it, or move the stray `package.json` or `node_modules` out of your home folder.
+- PR 779: test(778): seven gates, CodeQL and pipeline tests read what this round shipped
+- PR 764: docs(763): carry the 9 Nov audit and release-review findings in BACKLOG
+- PR 776: fix(761): verdicts match their own rules
+- PR 775: feat(757): a door for chat-app users and plain words on the home page
+- PR 759: fix(756): polish compare, inspect, preview and sheet before 0.28.0
+- PR 773: fix(765): /did-it-change/ says what moved and every possible cause
+- PR 755: feat(752): /driftproof:recheck in Claude Code, and recheck on your own subscription
+- PR 774: fix(762): the Action leaves your checkout alone; the public build ships no linked or private files
+- PR 772: fix(758): compare names which file scored lower; /which-section/ says only what was detected
+- PR 751: feat(745): Try it yourself, with a same-length fake
+- PR 750: feat(743): which part of a skill does the work? /which-section/
+- PR 754: fix(753): dates list needs two dates and one arm set; inspect page link notice on pasted text only
+- PR 770: fix(760): runs on your own plan measure only what they say
+- PR 771: test(766): three dev reds read true again
+- PR 748: feat(742): did the AI change this week? /did-it-change/
+- PR 749: feat(744): /driftproof:compare and /driftproof:inspect inside Claude Code
+- PR 747: feat(746): the Action compares a changed CLAUDE.md or AGENTS.md with its base
+- PR 741: feat(728): run --preview - what would be sent, where, how often, what is kept
+- PR 734: feat(727): turn a real failure into a saved test in /driftproof:start
+- PR 737: feat(731): the same skill, the same tests, on different dates
+- PR 739: feat(725): inspect these instructions in the browser at /inspect/
+- PR 735: feat(726): Try it yourself, blind - a no-install worksheet
+- PR 740: feat(730): compare a rules file with one section removed
+- PR 738: feat(729): driftproof sheet - one printable result page
+- PR 736: feat(723): recheck - did it get worse? re-run the same tests later
+- PR 733: feat(724): inspect instructions offline before you install them
+- PR 732: feat(722): compare two versions of a prompt, rules file or skill
+- PR 721: 0.27.0 release-log entry; page gates and CodeQL before a feature release draft (#720)
+
+
+### Engineering log
+
+- Spec 072's amendment A-072-6 says its change only moves a job from passing to failing. That is wrong: with default inputs, a receipt with fake tool calls and a case that got worse used to read `regression` and fail, and now reads `inconclusive` and warns. The note above states the behaviour; the amendment's sentence is corrected on dev next.
+- The README's first-screen line reads "read one task at a time" where it said "by the case rule" (spec 126; Maverick kept the wording and test 652-5 unchanged).
+- Reports 017 and 018: the page provenance (the verdict code's hash and `dateModified`) was refreshed in PR 776 with no amendment line; carried in BACKLOG.
+- Nightly-only gates 066 and 067 read red in the nightly sweep's checkout and green alone on dev; release sweeps leave them out (C-288). Carried in BACKLOG.
+
+---
+
 ## v0.27.0 - 2026-11-05
 
 ### What's new

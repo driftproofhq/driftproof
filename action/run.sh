@@ -19,6 +19,7 @@ require_env GITHUB_ACTION_PATH RUNNER_TEMP GITHUB_OUTPUT \
 # Optional Action defaults also apply to direct callers of this script.
 : "${INPUT_SUITE=}"
 : "${INPUT_PLACEBO=false}"
+: "${INPUT_COMPARE_WITH_BASE=false}"
 
 # Validated before anything is created or started (AC-3): a bad value fails
 # here, with a message naming the input, before any model call is projected.
@@ -29,7 +30,20 @@ validate_max_calls "$INPUT_MAX_CALLS"
 validate_bool fail-on-regression "$INPUT_FAIL_ON_REGRESSION"
 validate_bool fail-on-underpowered "$INPUT_FAIL_ON_UNDERPOWERED"
 validate_bool placebo "$INPUT_PLACEBO"
+validate_bool compare-with-base "$INPUT_COMPARE_WITH_BASE"
 if [ -n "$INPUT_SUITE" ]; then validate_suite "$INPUT_SUITE"; fi
+COMPARE_ELIGIBLE=false
+if [ "$INPUT_COMPARE_WITH_BASE" = true ] && [ "${GITHUB_EVENT_NAME:-}" = pull_request ] && [ -f "$INPUT_SKILL_DIR" ] && [ -n "$INPUT_SUITE" ]; then
+  validate_base_ref "${GITHUB_BASE_REF:-}"
+  COMPARE_ELIGIBLE=true
+fi
+
+# Issue 762 (EXT-8). With no key the CLI's isolation check would refuse and advise a flag this Action
+# cannot pass. A pull request from a fork never receives secrets, so it reached that on every run.
+# Checked after every input, so a bad input is still named, and before anything is created.
+if [ -z "${ANTHROPIC_API_KEY:-}" ] && [ -z "${OPENAI_API_KEY:-}" ] && [ "${DRIFTPROOF_STUB:-}" != 1 ]; then
+  die "this Action needs an API key secret: set the api-key input from a repository secret. Pull requests from forks do not receive secrets, so they cannot be measured here."
+fi
 
 # SPEC 050 (AC-5). A directory made for THIS invocation, after every input has been
 # validated, so a refused input still creates nothing. Until this it was the fixed
@@ -60,15 +74,103 @@ if [ -n "$INPUT_SUITE" ]; then
 fi
 if [ "$INPUT_PLACEBO" = true ]; then EXTRA_ARGS+=(--placebo); fi
 RUN_CWD="$(mktemp -d "$RUNNER_TEMP/driftproof-cwd.XXXXXX")"
-trap 'rm -rf -- "$RUN_CWD"' EXIT
+BASE_TMP=''
+COMPARE_READING=''
+# Issue 762 (EXT-4). The base is fetched into this ref, and the step leaves the checkout as it found it.
+BASE_REF=refs/driftproof/base
+SHALLOW_SAVED=''
+restore_checkout() {
+  [ -n "$BASE_TMP" ] || return 0
+  git update-ref -d "$BASE_REF" >/dev/null 2>&1 || true
+  if [ -f "$SHALLOW_SAVED" ]; then cp -- "$SHALLOW_SAVED" "$(git rev-parse --git-path shallow)" || true; fi
+}
+trap 'restore_checkout; rm -rf -- "$RUN_CWD" "$BASE_TMP"' EXIT
+# Only a file with explicit tasks can use the revision comparison.
+COMPARE=false
+if [ "$INPUT_COMPARE_WITH_BASE" = true ]; then
+  if [ "$COMPARE_ELIGIBLE" != true ]; then
+    printf '%s\n' '::notice title=Driftproof::Base comparison needs a pull request, a Markdown rules file and a suite. Running the new file only.'
+  else
+    BASE_TMP="$(mktemp -d "$RUNNER_TEMP/driftproof-base.XXXXXX")"
+    REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+    FILE_ROOT="$(git -C "$(dirname "$SKILL_DIR")" rev-parse --show-toplevel 2>/dev/null || true)"
+    if [ -z "$REPO_ROOT" ] || [ "$FILE_ROOT" != "$REPO_ROOT" ]; then
+      printf '%s\n' '::notice title=Driftproof::The rules file is outside this checkout. Running the new file only.'
+    else
+      BASE_PREFIX="$(git -C "$(dirname "$SKILL_DIR")" rev-parse --show-prefix)"
+      BASE_PATH="$BASE_PREFIX$(basename "$SKILL_DIR")"
+      # --depth would make a full-history checkout shallow, so it is passed only to a checkout that
+      # already is. There it can still cut history at the base tip, so the shallow file is put back.
+      # --refmap= keeps git from also moving origin/<base>.
+      DEPTH_ARGS=()
+      if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
+        DEPTH_ARGS=(--depth=1)
+        SHALLOW_SAVED="$BASE_TMP/shallow"
+        cp -- "$(git rev-parse --git-path shallow)" "$SHALLOW_SAVED"
+      fi
+      if ! git fetch --no-tags --no-write-fetch-head --refmap= "${DEPTH_ARGS[@]}" origin "+refs/heads/$GITHUB_BASE_REF:$BASE_REF" >/dev/null 2>&1; then
+        printf '%s\n' '::notice title=Driftproof::The base branch could not be fetched. Running the new file only.'
+      elif ! git --literal-pathspecs ls-tree "$BASE_REF" -- "$BASE_PATH" | grep -qE '^100(644|755) blob '; then
+        printf '%s\n' '::notice title=Driftproof::The base branch has no regular rules file at this path. Running the new file only.'
+      elif ! git show "$BASE_REF:$BASE_PATH" > "$BASE_TMP/base.md" 2>/dev/null; then
+        printf '%s\n' '::notice title=Driftproof::The base branch has no version of this rules file. Running the new file only.'
+      elif cmp -s -- "$BASE_TMP/base.md" "$SKILL_DIR"; then
+        printf '%s\n' '::notice title=Driftproof::The old and new rules have the same bytes. Running the new file only.'
+      else
+        COMPARE=true
+      fi
+      # The base is read, so the checkout goes back now, before the long run. A runner's cancel can
+      # end this step before the EXIT trap runs; the trap is only the backstop for the fetch itself.
+      restore_checkout
+    fi
+  fi
+fi
+
 # A key selects the metered Messages API; without one the run uses the
 # default cli surface (or the offline stub when DRIFTPROOF_STUB=1).
 if [ -n "${ANTHROPIC_API_KEY:-}" ]; then export CLAUDE_PROVIDER=api; fi
-if ! ( cd "$RUN_CWD" && node "$GITHUB_ACTION_PATH/bin/driftproof" run "$SKILL_DIR" \
+fence_begin
+if [ "$COMPARE" = true ]; then
+  if ! ( cd "$RUN_CWD" && node "$GITHUB_ACTION_PATH/bin/driftproof" compare "$BASE_TMP/base.md" "$SKILL_DIR" \
+    --models "$INPUT_MODELS" --max-usd "$INPUT_MAX_USD" \
+    --max-calls "$INPUT_MAX_CALLS" --out "$OUT" "${EXTRA_ARGS[@]}" ); then
+    fence_end
+    die "run: driftproof compare refused or failed; see the CLI diagnostic above"
+  fi
+  fence_end
+  # Keep both versions in the artifact. Existing decision readers read only
+  # the root directory, which must contain the new version's receipts alone.
+  mkdir "$OUT/base"
+  for base_receipt in "$OUT"/compare-A-*.json; do
+    mv -- "$base_receipt" "$OUT/base/"
+  done
+  COMPARE_READING="$(node - "$OUT/compare.md" <<'NODE_COMPARE'
+const fs = require('node:fs');
+const lines = fs.readFileSync(process.argv[2], 'utf8').split('\n');
+const headlines = [];
+for (let i = 0; i < lines.length; i++) {
+  if (!lines[i].startsWith('These tasks, this judge, this day:')) continue;
+  let j = i - 1;
+  while (j >= 0 && !lines[j].trim()) j--;
+  if (j < 0) throw new Error('Comparison headline is missing');
+  headlines.push(lines[j]);
+}
+if (!headlines.length) throw new Error('Comparison caveat is missing');
+process.stdout.write(headlines.join(' '));
+NODE_COMPARE
+)"
+else
+  if ! ( cd "$RUN_CWD" && node "$GITHUB_ACTION_PATH/bin/driftproof" run "$SKILL_DIR" \
   --models "$INPUT_MODELS" --max-usd "$INPUT_MAX_USD" \
   --max-calls "$INPUT_MAX_CALLS" --out "$OUT" "${EXTRA_ARGS[@]}" ); then
-  die "run: driftproof run refused or failed; see the CLI diagnostic above"
+    fence_end
+    die "run: driftproof run refused or failed; see the CLI diagnostic above"
+  fi
+  fence_end
 fi
+# An omitted step output resolves to empty in the declared composite output.
+# Keep the default shell output keys unchanged for existing local callers.
+if [ "$INPUT_COMPARE_WITH_BASE" = true ]; then gh_output compare_reading "$COMPARE_READING"; fi
 # SPEC 030 (AC-1). The decision is taken over EVERY receipt this run produced,
 # and the receipt DIRECTORY is what reaches the enforcement step. Until this,
 # the line below was

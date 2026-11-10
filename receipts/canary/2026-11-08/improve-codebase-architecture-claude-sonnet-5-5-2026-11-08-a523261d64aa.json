@@ -1,0 +1,2228 @@
+{
+  "schema_version": "0.16",
+  "generation_sampled": true,
+  "skill": {
+    "name": "improve-codebase-architecture",
+    "version": "0.0.0",
+    "content_hash": "392c6e6a10d199b2c6d895cd6ee91f0934292e3cf0c71279e79bce94cae04418",
+    "unit": "skill",
+    "tokens": 1500
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "808374fd9d1978c553ce7aef6bf5722469a74851217bd22dc31eea30d6f4d5e1",
+    "case_count": 3,
+    "canary": "4b16b436-88eb-1ca4-6df5-c26fe31a4d2b"
+  },
+  "run": {
+    "model_id": "claude-sonnet-5-5",
+    "model_release_date": null,
+    "provider": "anthropic",
+    "surface": "claude-cli",
+    "delivery": "injected",
+    "runner_version": "0.27.0",
+    "date_utc": "2026-11-08T16:09:46.003Z",
+    "generated_at": "2026-11-08T16:06:58.371Z",
+    "registry": "registered",
+    "transcripts": "hashes-only",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli",
+      "model_id": "claude-haiku-5-5",
+      "prompt_template_hash": "82586d1e44f84df2b8ce5f18ac777866465cb5ad9686503c93d9776c93c344ed",
+      "harness": {
+        "name": "claude-code",
+        "version": "2.1.311"
+      },
+      "isolation": "eval-user",
+      "endpoint": {
+        "custom": false,
+        "sha256": null,
+        "resolved_by": "cli",
+        "routing": {
+          "ANTHROPIC_BEDROCK_BASE_URL": {
+            "set": false,
+            "sha256": null
+          },
+          "ANTHROPIC_VERTEX_BASE_URL": {
+            "set": false,
+            "sha256": null
+          },
+          "CLAUDE_CODE_USE_BEDROCK": {
+            "set": false,
+            "sha256": null
+          },
+          "CLAUDE_CODE_USE_VERTEX": {
+            "set": false,
+            "sha256": null
+          },
+          "HTTPS_PROXY": {
+            "set": false,
+            "sha256": null
+          }
+        }
+      },
+      "code_revision": "judge-code-f991576d73d966ab",
+      "reported_models": [
+        "claude-haiku-5-5"
+      ],
+      "parse_retries": 1,
+      "parse_recoveries": 1
+    },
+    "answered_by": {
+      "kind": "model",
+      "attested": true,
+      "reported_model": "claude-sonnet-5-5",
+      "reported_models": [
+        "claude-haiku-5-5",
+        "claude-sonnet-5-5"
+      ],
+      "isolation": "eval-user"
+    },
+    "capture": {
+      "mode": "text"
+    },
+    "harness": {
+      "name": "claude-code",
+      "version": "2.1.311"
+    },
+    "pricing_snapshot": {
+      "frozen_at": "2026-11-08T16:09:46.003Z",
+      "source": "config/models.json",
+      "currency": "USD",
+      "models": {
+        "claude-sonnet-5-5": {
+          "input_per_mtok": 2,
+          "output_per_mtok": 10,
+          "registered": true
+        },
+        "claude-haiku-5-5": {
+          "input_per_mtok": 0.1,
+          "output_per_mtok": 0.5,
+          "registered": true
+        }
+      },
+      "note": "Prices frozen at run time. Every derived cost in this receipt is computed from THIS snapshot, never from the live registry, so the receipt keeps its meaning when registry prices later change."
+    },
+    "arms": {
+      "with_skill": {
+        "counts": {
+          "generations_per_arm": 3
+        }
+      }
+    },
+    "counts": {
+      "judge_samples_per_generation": 5
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "candidate",
+        "mode": "with_skill",
+        "outcome": "borderline",
+        "score": 0.766667,
+        "mean": 0.766667,
+        "stddev": 0.028868,
+        "samples": [
+          0.75,
+          0.75,
+          0.75,
+          0.75,
+          0.75
+        ],
+        "generation_hash": "e937b457f518a5be8ad638b3b5c1caf5797d009e3b39d308cb9c9b3ae021a699",
+        "judge_sample_hashes": [
+          "b5456bcdfd564a69fd2de1227a6e4b6c40edab9a710d0cb21362c5b4f9887d10",
+          "a00b3f9ab39a5179e72455f4fe6c9664a23261ee16a2513e521b076257cf9f03",
+          "c693eda01ce6c47541b06ffe99dc718d7e552a20ccdd59efffcd1f066e8adb43",
+          "0e174e531fc00e12c94de6d883286858d569dc764f29852f5f2939f9c890e841",
+          "4b992e0879fa65311717d9c678363f04eee149e7b85b538dfcc8960d36a532db"
+        ],
+        "threshold": 0.75,
+        "reason": "Meets criteria 1-3: it targets the validation area, names ValidateOrder as the forwarding layer, and explains via the deletion test that removal moves rather than adds complexity. Criterion 4 is weak: it names OrderRules' interface as the test surface but never argues why that seam survives the chan",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "1c4b139b8806acaa1fea36149f4b9ce95a037c206e8629cc011e0e5ea03fd335"
+        },
+        "judge_usage": {
+          "input_tokens": 22115,
+          "output_tokens": 2934,
+          "cached_tokens": 15512,
+          "wall_ms": 69017
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 3,
+          "n_measured": 3,
+          "n_unmeasured": 0,
+          "stopping_reason": "min_reached",
+          "mean": 0.766667,
+          "sd": 0.028868,
+          "judge_sd_mean": 0.037268,
+          "variance_ratio": 0.774606,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "cafbc75181e555e7a07e928b971ae1d2dd44b7c57a55eee9e6eb88e351d0d996",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "151589705d8d1737d658c816d2487bb79e87009537a84bf9a0ec54f294b8dfa4",
+                "072016da8cdfd374386ee9ce3b033e46ad4f76dc74982bf2a2c080935ddd0895",
+                "d63249b709f6c703bee53905bfcd9cfe6004e6b8cbb99a6467eeb7d0ef50b127",
+                "d039748c85fa1595cd0754bf3af5a17fcb9338f7c5ec9927e6cbfdba4ceb9cb1",
+                "3fed02a3e1d62d278e30ba955ac00698d0ed332423dcba87b4a8a569910cdd33"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4395,
+                "output_tokens": 1018,
+                "cached_tokens": 658,
+                "wall_ms": 16593
+              },
+              "judge_usage": {
+                "input_tokens": 21622,
+                "output_tokens": 2878,
+                "cached_tokens": 12270,
+                "wall_ms": 59866
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "a1c5c5a53b7bc2b9d0becbbe17cef03ac6ea517b70b8fde4924cbf521bfb51f3",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                1
+              ],
+              "judge_sample_hashes": [
+                "0e9c6e2261b350c1d722be8a8feda7210e92af6497f0c479ddafa16ecde3c5e6",
+                "9d60cdfd484ab5dc589c2df7570054f5993eb8edcdf3302fefaf3a380672abeb",
+                "7459c37d24fc68c9e547c1fba19458add5a6e3010d16a14f35dd47922c7bf33c",
+                "6bc87f8ed3d74bdfeaeac4fa2518411ea2c87db464e1610624fec8f19a1e39c1",
+                "5613fa33ebb398fc072c6a3511d95b14a79e7dcc1058ec80da96e71d4317e211"
+              ],
+              "mean": 0.8,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4395,
+                "output_tokens": 1060,
+                "cached_tokens": 658,
+                "wall_ms": 13903
+              },
+              "judge_usage": {
+                "input_tokens": 21555,
+                "output_tokens": 3640,
+                "cached_tokens": 16797,
+                "wall_ms": 71191
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "e937b457f518a5be8ad638b3b5c1caf5797d009e3b39d308cb9c9b3ae021a699",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "b5456bcdfd564a69fd2de1227a6e4b6c40edab9a710d0cb21362c5b4f9887d10",
+                "a00b3f9ab39a5179e72455f4fe6c9664a23261ee16a2513e521b076257cf9f03",
+                "c693eda01ce6c47541b06ffe99dc718d7e552a20ccdd59efffcd1f066e8adb43",
+                "0e174e531fc00e12c94de6d883286858d569dc764f29852f5f2939f9c890e841",
+                "4b992e0879fa65311717d9c678363f04eee149e7b85b538dfcc8960d36a532db"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4395,
+                "output_tokens": 1264,
+                "cached_tokens": 658,
+                "wall_ms": 14288
+              },
+              "judge_usage": {
+                "input_tokens": 22115,
+                "output_tokens": 2934,
+                "cached_tokens": 15512,
+                "wall_ms": 69017
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "eefdc38f64aef9172a264e843c9e2b6b11bca19a7d33f0dea25fbd439bba3a7a",
+            "grading_hash": "714d14a2c0368f4f4a60c36d333a7b8e9e591783bc5ff42b7316cc789b113e74",
+            "index": 0,
+            "grading_kind": "rubric"
+          }
+        }
+      },
+      {
+        "id": "candidate",
+        "mode": "baseline",
+        "outcome": "fail",
+        "score": 0.53,
+        "mean": 0.53,
+        "stddev": 0.075829,
+        "samples": [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "generation_hash": "d6fdcf49d1bb2fefeee9377fda1818bb2b3395dbf0da434fd8f8f0dff7074389",
+        "judge_sample_hashes": [
+          "84166b9326a52b14a39d81f1608d4041af3731b93ad18bf6bd1159335ff7036a",
+          "557e54badc475054608418b7309faaa03a80ec9ae3e659b7282fc05f01d6f249",
+          "8d61a0038d4191bbe97f1ab692333a7ae62e3f6a580dbb68a27341397b35a0df",
+          "ea09dc364c453c10e90829a19d5c3de454e5af46e9935c648154be022ded521f",
+          "b1d7f03aff1742d24db1dfd1b5f070e4b4c58cb964c2c4ec4a4dbb8fdff52467"
+        ],
+        "threshold": 0.75,
+        "reason": "Prioritizes validation area (criterion 1) and identifies the forwarding layer as candidate (criterion 2) and explains removal vs. deepening tradeoff (criterion 3 partly). Misses criterion 4: no public test seam is described.",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "1c4b139b8806acaa1fea36149f4b9ce95a037c206e8629cc011e0e5ea03fd335"
+        },
+        "judge_usage": {
+          "input_tokens": 21766,
+          "output_tokens": 2061,
+          "cached_tokens": 18478,
+          "wall_ms": 24947
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 5,
+          "n_measured": 5,
+          "n_unmeasured": 0,
+          "stopping_reason": "stabilised",
+          "mean": 0.53,
+          "sd": 0.075829,
+          "judge_sd_mean": 0.072107,
+          "variance_ratio": 1.051618,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "6bbb6db41a4d163b57243273164f49c22576fe7ecd25784fca77f3fa0d6ef0d6",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.5,
+                0.5,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "f13658343e3f0ee269efbdaab0d9702babf21044c0272f374a3f01b872a557ea",
+                "6de22e18c62bc146003faf1e7a9caf540c446629e0fd475882864a5be8de0697",
+                "b1faf4a57ae2793e4fce38cb1afe34e95cc57b2b49700b7873f123dd79f3f069",
+                "d515442c7ea45b1a3565ce83636b873ba8486ad3c009e63e4bc4301ec9e246eb",
+                "873b485b437fca48d6734accff5d011565e7156d7e23506b64054d7faf289ac9"
+              ],
+              "mean": 0.65,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 2257,
+                "output_tokens": 567,
+                "cached_tokens": 1545,
+                "wall_ms": 12118
+              },
+              "judge_usage": {
+                "input_tokens": 21289,
+                "output_tokens": 3070,
+                "cached_tokens": 13726,
+                "wall_ms": 69233
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "99e3305eb917bf71a2f6e381036017e4cd873eeb74ea3240541719635184038a",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                0.25
+              ],
+              "judge_sample_hashes": [
+                "0b6a3f102a7e2b573bc1654c37859aab7f2fdb2bcdac3f44439f211da4ccd881",
+                "48c8536746d881d9559c00b56b0d79800707cab21d438784cdca48c77e141879",
+                "9ff1839b4cc924b8cb208d1a1bc6180d7bfb8b5f168c6a501ac40e00642dc12e",
+                "0e7c4035c995dbf8f42678a19a816577d88d98661e0dfa3de3818bbab282d59a",
+                "acad4b60964208142760a7077bcb0ed4840362c2fefbb62f79f885e94d08a027"
+              ],
+              "mean": 0.45,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 2257,
+                "output_tokens": 620,
+                "cached_tokens": 1545,
+                "wall_ms": 10206
+              },
+              "judge_usage": {
+                "input_tokens": 21556,
+                "output_tokens": 2541,
+                "cached_tokens": 18306,
+                "wall_ms": 49455
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "22413870569a520d6061f1ef7b113c4e0ca1fc4392a18aa89cbb8d2ca4f1bd8c",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.75,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "7be34fe92733ec10d295d5c38623679543a6419611b86e49da2cd65d98c9f78d",
+                "48a8c61a5a0abda19b535fdc9522c10f6b234589f37941425b007e0807fa7f3f",
+                "e0cfa860be15c4480cccadd9b4e6ea4326c2c1e6dbdd5cffb4bcbafd9d8c4ed6",
+                "8877c550b509f87adb986442d4c61e43a9a5dc09a692ac43e52995cf4b0b1bcd",
+                "a46d3feeb781c6ce045f5527d812e937787e7ca4eeeb336ed8c5f46ac92a5921"
+              ],
+              "mean": 0.55,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 2257,
+                "output_tokens": 540,
+                "cached_tokens": 1545,
+                "wall_ms": 9479
+              },
+              "judge_usage": {
+                "input_tokens": 21153,
+                "output_tokens": 3249,
+                "cached_tokens": 16557,
+                "wall_ms": 35782
+              }
+            },
+            {
+              "draw_index": 3,
+              "generation_hash": "dfb95ef497b3e6e3c29b7cfd88b1774e08d8e469c7042a7d92b290547673fabb",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "b5588e74049f7e437351a90382bf7a56efd1d6a5cd533cdd67c345b4b5923144",
+                "3d0bb5eacf3f104dbf59f4278a274dc01c091dff4bbbb930d7c86d098d4708cb",
+                "5a0f56459be364257c6554be949a4101253ba44f6958c255dbe54536f3878945",
+                "050353ff6cd6a48aac057e62ce7a9018e563b555e6ff4cd6a1bf705db0d313e5",
+                "11271a3820fbc56085281e36b1a397297e105ec2bbac0dbffdd0033deba7e5c4"
+              ],
+              "mean": 0.5,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 2257,
+                "output_tokens": 618,
+                "cached_tokens": 1930,
+                "wall_ms": 10695
+              },
+              "judge_usage": {
+                "input_tokens": 21542,
+                "output_tokens": 3250,
+                "cached_tokens": 18298,
+                "wall_ms": 29216
+              }
+            },
+            {
+              "draw_index": 4,
+              "generation_hash": "d6fdcf49d1bb2fefeee9377fda1818bb2b3395dbf0da434fd8f8f0dff7074389",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "84166b9326a52b14a39d81f1608d4041af3731b93ad18bf6bd1159335ff7036a",
+                "557e54badc475054608418b7309faaa03a80ec9ae3e659b7282fc05f01d6f249",
+                "8d61a0038d4191bbe97f1ab692333a7ae62e3f6a580dbb68a27341397b35a0df",
+                "ea09dc364c453c10e90829a19d5c3de454e5af46e9935c648154be022ded521f",
+                "b1d7f03aff1742d24db1dfd1b5f070e4b4c58cb964c2c4ec4a4dbb8fdff52467"
+              ],
+              "mean": 0.5,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 2257,
+                "output_tokens": 663,
+                "cached_tokens": 1930,
+                "wall_ms": 11125
+              },
+              "judge_usage": {
+                "input_tokens": 21766,
+                "output_tokens": 2061,
+                "cached_tokens": 18478,
+                "wall_ms": 24947
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "eefdc38f64aef9172a264e843c9e2b6b11bca19a7d33f0dea25fbd439bba3a7a",
+            "grading_hash": "714d14a2c0368f4f4a60c36d333a7b8e9e591783bc5ff42b7316cc789b113e74",
+            "index": 0,
+            "grading_kind": "rubric"
+          }
+        },
+        "counts": {
+          "generations_per_arm": 5
+        }
+      },
+      {
+        "id": "candidate",
+        "mode": "placebo",
+        "outcome": "fail",
+        "score": 0.516667,
+        "mean": 0.516667,
+        "stddev": 0.08756,
+        "samples": [
+          0.75,
+          0.25,
+          0.5,
+          0.75,
+          0.5
+        ],
+        "generation_hash": "373439a46bebf033fc215a8e60a6198de1afc538cf476a94e88d19b7a9546c7c",
+        "judge_sample_hashes": [
+          "f103bc3dcce2023d749c8a2a92ffb6d44ce1f31b3469dfb2a837d3b9defb2a18",
+          "19c23aff6d95a8764ece9f397986e4b7bf80519e5eeb50889310904f9be179c7",
+          "01a61f5847eb900106da25b1f64ecca030b9eb4456e08292deee74c53c80aa14",
+          "17bbbfb8fc63b5efd27a3bcc53f178803391c7411885dd3ae4c76b80cbb863eb",
+          "816a6145828335ad00699ed246232105d5ac641b857b8f3ebac2df41c6b1f681"
+        ],
+        "threshold": 0.75,
+        "reason": "Meets criteria 1, 2, and 3: prioritizes validation churn, identifies the ValidateOrder pass-through, and argues removal deepens OrderRules. Misses 4: the test-seam caveat never describes a public seam that survives the change.",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "1c4b139b8806acaa1fea36149f4b9ce95a037c206e8629cc011e0e5ea03fd335"
+        },
+        "judge_usage": {
+          "input_tokens": 21340,
+          "output_tokens": 3487,
+          "cached_tokens": 16668,
+          "wall_ms": 38217
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 6,
+          "n_measured": 6,
+          "n_unmeasured": 0,
+          "stopping_reason": "stabilised",
+          "mean": 0.516667,
+          "sd": 0.08756,
+          "judge_sd_mean": 0.117772,
+          "variance_ratio": 0.74347,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "261ae052e0820a496426eaa15f4a0fabea4badc538e8206ed4078a05d4c28796",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.25,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "56107ec5798f5498a6e2c01998d020980640f18aee948d83cd95e841defc63c8",
+                "98be25c3436d4c629eda9d2e01e552d1e1159270f9b9889189129e396cfe95ab",
+                "7114244b1811fe26599cdce9b710f018010e4cd98f29b9615d3273724a5519ff",
+                "9b4f3e5acad1a75dd547d083d11314fefedb99619fc15b500138073fc566c822",
+                "1fc02ba21a6fd46bd14231a3020883bacba9be1b316d9a939d30388e93531497"
+              ],
+              "mean": 0.45,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4205,
+                "output_tokens": 798,
+                "cached_tokens": 658,
+                "wall_ms": 11516
+              },
+              "judge_usage": {
+                "input_tokens": 21469,
+                "output_tokens": 3237,
+                "cached_tokens": 16746,
+                "wall_ms": 65330
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "dc320ffa5d0ff066248cda506414fdb7c9e8093c2610cc6fe47fb892f23c2ce2",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.25,
+                0.5,
+                0.25,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "b1a5c0735f83fd4a7fa82c217f76569ab8fa9efadf7e37b4b52bfe764822af65",
+                "5e5cdeb00303a96328895650e70cff1cc87ac5c880c0c146821f3284fad7c681",
+                "313293223d0dfa250741f20c94f235b057d997109d4380a06de7befe22e3e8ca",
+                "f4b9643767f66909bb8f4d21917ed3f3fb0f08086b2927e42b84a54766021dbe",
+                "32ac606fd894487e72db5ffe3187fbb0ecc0f4bda36aee0732f2edb2462ed46b"
+              ],
+              "mean": 0.4,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4206,
+                "output_tokens": 901,
+                "cached_tokens": 658,
+                "wall_ms": 12998
+              },
+              "judge_usage": {
+                "input_tokens": 21420,
+                "output_tokens": 2476,
+                "cached_tokens": 13752,
+                "wall_ms": 66852
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "e4418d1cd9910dca1b50108e28706c2e98ffb8910c202c80bb465851a0525aca",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.5,
+                0.5,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "b5ffe49f2e638c745cb0ee931ee302f47b335dc44f17fdeda298f48455287f7a",
+                "042ce30aa506ed0be891938ddac5f201ec546e9c510394a7be9b3f6b1bf2d1b0",
+                "ff00c2197567017c26b90f98a0c27c172b96954488d9702457870caf79c6d511",
+                "3e385a7cc5d14e30fa34a1020e8ab392437e7d9dea372473ed77beb888264caa",
+                "2549e3904caeea145affc36ea0d0e2c7344543c80dce9006f2c43f9e253ff1e6"
+              ],
+              "mean": 0.65,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4204,
+                "output_tokens": 812,
+                "cached_tokens": 658,
+                "wall_ms": 11431
+              },
+              "judge_usage": {
+                "input_tokens": 21584,
+                "output_tokens": 3412,
+                "cached_tokens": 16815,
+                "wall_ms": 65727
+              }
+            },
+            {
+              "draw_index": 3,
+              "generation_hash": "591de1e2a96557e1914fb2fdfb09ed5f0c57fc1b828cfeb5ef7260f96d407d48",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "e45932e2e589505fb875c4d9c8a89661cbdd680e4b772ccd6fe5f38889aa834f",
+                "deb6be912122a2e8108a3b4efe95622a89acb1228de4adb8d9582c9b1a34b9c6",
+                "7dc1c76e059f7c61fc0f3581d4e8696bc8b89c70d010a0f764dbb0dbccdfc96d",
+                "7869d919aad2749f79b1a7d8ee361f789eecc908d8752ef033e537fcdc7187b9",
+                "3a9e364cd0e5b9803a2f30a485897b337b3b7ca8529163d19994df1e21bf43e6"
+              ],
+              "mean": 0.55,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4206,
+                "output_tokens": 842,
+                "cached_tokens": 3879,
+                "wall_ms": 12459
+              },
+              "judge_usage": {
+                "input_tokens": 21177,
+                "output_tokens": 3345,
+                "cached_tokens": 18006,
+                "wall_ms": 33261
+              }
+            },
+            {
+              "draw_index": 4,
+              "generation_hash": "01fdadee1f739485e508ef2230392cdac5a36e4ccfe4e5ad3f78ec97334608be",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "7805b2047f161e50ed575fc32c91be2f5e6b65d14afa460125901216893cfa98",
+                "b8f546a299536961555fc2b7ef66c635a99a368f2e5ed37a3ff2489316dd6050",
+                "4b54b5ac906f2e97565f61bad6aac83c4d3194795e5ed36f7f801ef70c1f48d3",
+                "bcab59a2737de267ae0eddb7ade0f5d4795f368ad985d013cf89e3f450054f45",
+                "f7eff36f688e54a9d8bec640401da306275f4af878cda406b1d5fbb4e969b8dc"
+              ],
+              "mean": 0.5,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4206,
+                "output_tokens": 800,
+                "cached_tokens": 3879,
+                "wall_ms": 9509
+              },
+              "judge_usage": {
+                "input_tokens": 20833,
+                "output_tokens": 2744,
+                "cached_tokens": 12270,
+                "wall_ms": 31810
+              }
+            },
+            {
+              "draw_index": 5,
+              "generation_hash": "373439a46bebf033fc215a8e60a6198de1afc538cf476a94e88d19b7a9546c7c",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.25,
+                0.5,
+                0.75,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "f103bc3dcce2023d749c8a2a92ffb6d44ce1f31b3469dfb2a837d3b9defb2a18",
+                "19c23aff6d95a8764ece9f397986e4b7bf80519e5eeb50889310904f9be179c7",
+                "01a61f5847eb900106da25b1f64ecca030b9eb4456e08292deee74c53c80aa14",
+                "17bbbfb8fc63b5efd27a3bcc53f178803391c7411885dd3ae4c76b80cbb863eb",
+                "816a6145828335ad00699ed246232105d5ac641b857b8f3ebac2df41c6b1f681"
+              ],
+              "mean": 0.55,
+              "stddev": 0.209165,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4204,
+                "output_tokens": 784,
+                "cached_tokens": 3879,
+                "wall_ms": 13589
+              },
+              "judge_usage": {
+                "input_tokens": 21340,
+                "output_tokens": 3487,
+                "cached_tokens": 16668,
+                "wall_ms": 38217
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "eefdc38f64aef9172a264e843c9e2b6b11bca19a7d33f0dea25fbd439bba3a7a",
+            "grading_hash": "714d14a2c0368f4f4a60c36d333a7b8e9e591783bc5ff42b7316cc789b113e74",
+            "index": 0,
+            "grading_kind": "rubric"
+          }
+        },
+        "counts": {
+          "generations_per_arm": 6
+        }
+      },
+      {
+        "id": "adr",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.883333,
+        "mean": 0.883333,
+        "stddev": 0.028868,
+        "samples": [
+          0.75,
+          1,
+          0.75,
+          0.75,
+          1
+        ],
+        "generation_hash": "d602bb86724657cdea32034470b36e48f473bc3144aeb28d0b50f4815a8be257",
+        "judge_sample_hashes": [
+          "a88242052b2ff72ee5f55e378bf80ba2854c468fc637206d529f2aaa74a495ab",
+          "9cd94b6df028b744a1b243bae9d7f6157e0d18a6deaae2d2172124310d5d9b7d",
+          "ddaffb1677646afa9bd13ff254a8f938e97cdf2ec1ae72ae84579297925dd76a",
+          "7e4fdfd268de384f86a2494bf17683c94247a409370fcea5bf41cf866715e049",
+          "ab7548443df181bcf1ddfae0484649bf20d63ae7d2acc865d3a8bfbe9436fe92"
+        ],
+        "threshold": 0.75,
+        "reason": "Uses the Reservation term, identifies the conflict with the accepted ADR, and requires concrete evidence plus an ADR amendment before reopening; avoids a broad merge. Rubric criterion 4 is met by rejecting the merge, so the response fully satisfies all four and should be near 1.0, but it proposes co",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "77825086b3dcf4079e23b83e6298c25a3025df84719947447f832f34a27d9a13"
+        },
+        "judge_usage": {
+          "input_tokens": 26739,
+          "output_tokens": 1502,
+          "cached_tokens": 21344,
+          "wall_ms": 35125
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 3,
+          "n_measured": 3,
+          "n_unmeasured": 0,
+          "stopping_reason": "min_reached",
+          "mean": 0.883333,
+          "sd": 0.028868,
+          "judge_sd_mean": 0.136931,
+          "variance_ratio": 0.210822,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "c2a04690baccdb7cba3061aed8eb71343295f7157f25c42dcdaed0387f0944ae",
+              "status": "measured",
+              "samples": [
+                1,
+                1,
+                0.75,
+                1,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "d6fd1acfd16e904769a62289336a47ca6bfb8e7a352fb6b9cf9cf5babc89ca84",
+                "834a06ff695a32b2fbe852426b0bfceb29f60c7cae1c24e17efe6baa17884a25",
+                "3d3611225b3f6ce7cafa347e2c08fc5fef2024abda9df6067c095a3841955e6a",
+                "1df1b5e81b27a71714c86339959ba3e875d9a6563c2bf1a30ab31e9d1ffde8b1",
+                "05141ef548aed4bbc83ffc127c8a80da91f4af48a615307e0c969cd15020fa95"
+              ],
+              "mean": 0.9,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4369,
+                "output_tokens": 1175,
+                "cached_tokens": 3683,
+                "wall_ms": 13548
+              },
+              "judge_usage": {
+                "input_tokens": 22901,
+                "output_tokens": 1606,
+                "cached_tokens": 15826,
+                "wall_ms": 33105
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "4f72195feb9e4e025f49a2e2e7edc4ce790b1109317d58b245831c0428201b2d",
+              "status": "measured",
+              "samples": [
+                1,
+                1,
+                0.75,
+                1,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "d6e9e1cdf0b5430c5aa079b150e4fbac9521e29e716a387feeeedae6df1a4a14",
+                "453c3035967dff4e27cba4e53f696c5b6af131e287fc9b2b0681fffefd19f3b6",
+                "2e173406c479d5f85e72cd4107f2dde2b25dde0621c0a7b85953717bd06e9d17",
+                "0cdd5e4cb39d3533a7a4472490057ebd6d1f23ce57074f6e4e2f92837099af64",
+                "f65bfa436b2ed5b603055a6c9f8a1f9020ff4ae69c7d878cdf62b9bbb0448788"
+              ],
+              "mean": 0.9,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4367,
+                "output_tokens": 1026,
+                "cached_tokens": 3683,
+                "wall_ms": 11231
+              },
+              "judge_usage": {
+                "input_tokens": 22461,
+                "output_tokens": 1645,
+                "cached_tokens": 15650,
+                "wall_ms": 30004
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "d602bb86724657cdea32034470b36e48f473bc3144aeb28d0b50f4815a8be257",
+              "status": "measured",
+              "samples": [
+                0.75,
+                1,
+                0.75,
+                0.75,
+                1
+              ],
+              "judge_sample_hashes": [
+                "a88242052b2ff72ee5f55e378bf80ba2854c468fc637206d529f2aaa74a495ab",
+                "9cd94b6df028b744a1b243bae9d7f6157e0d18a6deaae2d2172124310d5d9b7d",
+                "ddaffb1677646afa9bd13ff254a8f938e97cdf2ec1ae72ae84579297925dd76a",
+                "7e4fdfd268de384f86a2494bf17683c94247a409370fcea5bf41cf866715e049",
+                "ab7548443df181bcf1ddfae0484649bf20d63ae7d2acc865d3a8bfbe9436fe92"
+              ],
+              "mean": 0.85,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4368,
+                "output_tokens": 1066,
+                "cached_tokens": 3683,
+                "wall_ms": 13620
+              },
+              "judge_usage": {
+                "input_tokens": 26739,
+                "output_tokens": 1502,
+                "cached_tokens": 21344,
+                "wall_ms": 35125
+              },
+              "judge_parse_retries": [
+                {
+                  "sample_index": 4,
+                  "recovered": true,
+                  "attempts": [
+                    {
+                      "output_sha256": "169940199cf11cebe086ac7cce25e755338ba3db64566abc3b3a238f86cac0ae",
+                      "usage": {
+                        "input_tokens": 4456,
+                        "output_tokens": 95,
+                        "cached_tokens": 2454,
+                        "wall_ms": 5509
+                      },
+                      "attempts": 1,
+                      "cost_usd": 0.000493
+                    },
+                    {
+                      "output_sha256": "ab7548443df181bcf1ddfae0484649bf20d63ae7d2acc865d3a8bfbe9436fe92",
+                      "usage": {
+                        "input_tokens": 4456,
+                        "output_tokens": 579,
+                        "cached_tokens": 4109,
+                        "wall_ms": 4705
+                      },
+                      "attempts": 1,
+                      "cost_usd": 0.000735
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "a4f81f89d57298524ac706a37a774481f355d2e18ac0d4bba87591b7f75e93cc",
+            "grading_hash": "3cf99b534be1bed847cdf7c2e4d42347581be59838166060dd058abbc3f1a129",
+            "index": 1,
+            "grading_kind": "rubric"
+          }
+        }
+      },
+      {
+        "id": "adr",
+        "mode": "baseline",
+        "outcome": "borderline",
+        "score": 0.8125,
+        "mean": 0.8125,
+        "stddev": 0.075,
+        "samples": [
+          0.75,
+          0.75,
+          0.75,
+          0.75,
+          0.75
+        ],
+        "generation_hash": "4ee2b31eaa3fd121a21ea72456aa04ad1d75b2b6fd82c12d3cc3d37c13a20aa1",
+        "judge_sample_hashes": [
+          "8144c384299125d80a258c72c7e143f2eb4b0d2af0774c65c543de3eea189435",
+          "3f83b7b072d127585f293fdca4a3be3c501b4042f688a7c311921b037d98ccf3",
+          "e5e05cf05de12e7a9bcf1005a1b554c0b8c3891bda3b2670f1783d4e60bfe1c2",
+          "79a4d90e08821764a4233b96a593cdc3372a68acaebe6413d2b6ec98fc907f14",
+          "3937c5e0dca2ade7180b3a8969a306e2c69d51c05218cd28ac05b6b47e3b3b53"
+        ],
+        "threshold": 0.75,
+        "reason": "Uses the Reservation term, identifies the conflict with the accepted ADR, and rejects the merge without proposing one. It only partly meets requiring evidence: it asks for a superseding ADR but never demands supporting evidence.",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "77825086b3dcf4079e23b83e6298c25a3025df84719947447f832f34a27d9a13"
+        },
+        "judge_usage": {
+          "input_tokens": 20816,
+          "output_tokens": 2270,
+          "cached_tokens": 14994,
+          "wall_ms": 26769
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 4,
+          "n_measured": 4,
+          "n_unmeasured": 0,
+          "stopping_reason": "stabilised",
+          "mean": 0.8125,
+          "sd": 0.075,
+          "judge_sd_mean": 0.090135,
+          "variance_ratio": 0.832085,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "46eb053ecbcf6dfbaa16f1577c3a94fb190ee5e4450a0148373ea1e323d9a7b2",
+              "status": "measured",
+              "samples": [
+                0.75,
+                1,
+                0.75,
+                0.75,
+                1
+              ],
+              "judge_sample_hashes": [
+                "1fa9402d23959a37cffd24ac8d01ae68c590a2a0e9baa5ee50f1594a9b6d7df2",
+                "3f95cfd064fc8f1de7d60dee849857862e2c32998dbc70311556b7c19e5ec31a",
+                "d7ccee72f5de7f512b594bb2d69a22decd2678594509e276ba36fa60aedb339a",
+                "b1ad3ac583952c3134107a99e3d5bd56d0b44942422d2d28a6b3a5c1976fe06c",
+                "6c0f803810712df51e3201ef4cd0e1dfea804e4b47b4d444f9af3899ec0be661"
+              ],
+              "mean": 0.85,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 2231,
+                "output_tokens": 563,
+                "cached_tokens": 1545,
+                "wall_ms": 7774
+              },
+              "judge_usage": {
+                "input_tokens": 21128,
+                "output_tokens": 1174,
+                "cached_tokens": 17966,
+                "wall_ms": 29736
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "b58bbaa280c3920063a579d0a66101fcd8fb2e5e567f14f3d2b51b941220da98",
+              "status": "measured",
+              "samples": [
+                1,
+                1,
+                0.5,
+                1,
+                1
+              ],
+              "judge_sample_hashes": [
+                "ea9d82d1e1fc778184b3c4183b6272ef47ff1c3464e134d8490ec7e15955faab",
+                "21d25598481d69fda3fb401a2295f456b3c2ab0565298743baaa00847516f440",
+                "1f1372e16b3924ffa3575407a15b63c26afe62ffaa4d7caf23e8f0caa2a85d8f",
+                "edcfa2968fb69f03b82f39a499bd1e67bad9fc91c66c59f4792fe0192ba77483",
+                "ea9d82d1e1fc778184b3c4183b6272ef47ff1c3464e134d8490ec7e15955faab"
+              ],
+              "mean": 0.9,
+              "stddev": 0.223607,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 2229,
+                "output_tokens": 647,
+                "cached_tokens": 1545,
+                "wall_ms": 8282
+              },
+              "judge_usage": {
+                "input_tokens": 20951,
+                "output_tokens": 1647,
+                "cached_tokens": 13658,
+                "wall_ms": 35575
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "fe293b0d5cb1d86dea1cddeb93b8c3986c25862717dedb970ebabfa17429ce57",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "5a92387a483c3cff070fc3f3e70fb5a9006d8590a23ba5039fa57ae328bc4cec",
+                "221229967652f778d3168d7aaae13c1c5c64deb9ce5d83ca0075496a65de7891",
+                "81db1a9835d9ab425a83733fcb752bc5e764567099758ee830493b4d051bdf8b",
+                "0a6428ca404a67320de491aabb370b77aec24256a0e8ea15ef89597f136629d6",
+                "36262c92dcc06f420871f8e940b3dbf18ba2eb9144c835a4096494e373003cbf"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 2231,
+                "output_tokens": 672,
+                "cached_tokens": 1545,
+                "wall_ms": 10012
+              },
+              "judge_usage": {
+                "input_tokens": 20989,
+                "output_tokens": 3726,
+                "cached_tokens": 13666,
+                "wall_ms": 43817
+              }
+            },
+            {
+              "draw_index": 3,
+              "generation_hash": "4ee2b31eaa3fd121a21ea72456aa04ad1d75b2b6fd82c12d3cc3d37c13a20aa1",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "8144c384299125d80a258c72c7e143f2eb4b0d2af0774c65c543de3eea189435",
+                "3f83b7b072d127585f293fdca4a3be3c501b4042f688a7c311921b037d98ccf3",
+                "e5e05cf05de12e7a9bcf1005a1b554c0b8c3891bda3b2670f1783d4e60bfe1c2",
+                "79a4d90e08821764a4233b96a593cdc3372a68acaebe6413d2b6ec98fc907f14",
+                "3937c5e0dca2ade7180b3a8969a306e2c69d51c05218cd28ac05b6b47e3b3b53"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 2230,
+                "output_tokens": 623,
+                "cached_tokens": 1903,
+                "wall_ms": 8956
+              },
+              "judge_usage": {
+                "input_tokens": 20816,
+                "output_tokens": 2270,
+                "cached_tokens": 14994,
+                "wall_ms": 26769
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "a4f81f89d57298524ac706a37a774481f355d2e18ac0d4bba87591b7f75e93cc",
+            "grading_hash": "3cf99b534be1bed847cdf7c2e4d42347581be59838166060dd058abbc3f1a129",
+            "index": 1,
+            "grading_kind": "rubric"
+          }
+        },
+        "counts": {
+          "generations_per_arm": 4
+        }
+      },
+      {
+        "id": "adr",
+        "mode": "placebo",
+        "outcome": "borderline",
+        "score": 0.707143,
+        "mean": 0.707143,
+        "stddev": 0.120515,
+        "samples": [
+          0.5,
+          0.75,
+          0.75,
+          0.75,
+          0.5
+        ],
+        "generation_hash": "b746f1893e8ac567c9b04e1bb2846d1df44dbc4fa5011df724c455aac0321c94",
+        "judge_sample_hashes": [
+          "b8f5bc657337ca4201a44577e5e31363cc95603c59fa58e2edc962e9dc2b3130",
+          "1ba13d1dd618fd3cb04bff848d1ab2b08caa1631c2399c276988b2c24d7aaf81",
+          "dbc026fc1687a9adb6a63d0a3327883168e81481a067bcb4f51fed2b3ff2e45d",
+          "19945f849add1edcf59e06131029671195800325ff97f68cfd9dea4c173249e0",
+          "8ac1ff9017cabebd6f493f31bacdfc44ca2725361af02a0f6e35cfc135d22e74"
+        ],
+        "threshold": 0.75,
+        "reason": "Uses the Reservation term and identifies the conflict with the accepted ADR, but never requires evidence before reopening the decision (it only says revisiting needs a superseding ADR), and it does propose a thin facade alternative rather than a broad merge, so criteria 1, 2, and 4 are met while 3 i",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "77825086b3dcf4079e23b83e6298c25a3025df84719947447f832f34a27d9a13"
+        },
+        "judge_usage": {
+          "input_tokens": 20928,
+          "output_tokens": 1339,
+          "cached_tokens": 16422,
+          "wall_ms": 21119
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 7,
+          "n_measured": 7,
+          "n_unmeasured": 0,
+          "stopping_reason": "stabilised",
+          "mean": 0.707143,
+          "sd": 0.120515,
+          "judge_sd_mean": 0.096321,
+          "variance_ratio": 1.251181,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "f7eba8720098dd18f4d440e9e565bd308b71e23c03a52188f55c3b83ab6ca72f",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.5,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "b2e8fe1792123a6722c8b40d086af1a13fdd31dbe6d699a8b059e5400519ddae",
+                "58300f3894247c05925a6bf1621dd02e961ee72797d5abb5e2849d407496b09f",
+                "0a6eaaa8f1a8b387e98f96050177876737752385378cdfe17c6500732539aa48",
+                "5856673a6c7564a41410493aed32e0416626f79adde37788360b24e91521a7e5",
+                "ad30e813194e120b27d0ef8808789f7e330a0ecb8a86a36da7ffd3f7ce7a9e34"
+              ],
+              "mean": 0.7,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4179,
+                "output_tokens": 685,
+                "cached_tokens": 3494,
+                "wall_ms": 12805
+              },
+              "judge_usage": {
+                "input_tokens": 20966,
+                "output_tokens": 1596,
+                "cached_tokens": 15054,
+                "wall_ms": 35931
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "bcfd6fd6542005603bc1bf50bc7f4104d8ba136da0f8c3edcacd9f8b76109aa8",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "ed62b4b78b0e8e5cc6ede7c377c727f34c718935657562292c6b7f4573e9e164",
+                "da3b9b5a1211f49ec07b1a5d4077483fc856de589f8b8c368107bb5579cd4725",
+                "7fa53eb452d0151702c7ae90bde22bea583695e580f62bc3e6ccabea8f95afa7",
+                "95f6d2911eb9c53fab6bc60ca4fe631daae9dc296716be4fb362a51c66cd4e77",
+                "349bb65ae3a23202c457c00bf787979811cdb707dd89b0849f6f974f2adde931"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4180,
+                "output_tokens": 814,
+                "cached_tokens": 3494,
+                "wall_ms": 12393
+              },
+              "judge_usage": {
+                "input_tokens": 21176,
+                "output_tokens": 2509,
+                "cached_tokens": 18002,
+                "wall_ms": 36137
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "f88a7b148f4e1b1d0ac6b8ec8054825d0bd6b83bbe517eccfa0564431750cf25",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.5,
+                0.5,
+                0.25,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "7b3591c39afba978ab35f664e21facc809293d9f6a386497df061cc8f4eeaeae",
+                "8cf605d7ef46f7590c3d3bff4cc3ed444dd8e1c9085d4e586c1854ee0e13118a",
+                "be81333b18e7fc48d99a0d03d949a43c071c73b6c03050377e6df7625ae2f547",
+                "5cf7fe9c0bbd415086ea1532901feb25175c23ed8b18272672c3c694130187db",
+                "f211ba6dad9200a91f49dce8f2e897320e2a81871f3183bcc54c160152a9d5a3"
+              ],
+              "mean": 0.5,
+              "stddev": 0.176777,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4179,
+                "output_tokens": 641,
+                "cached_tokens": 3494,
+                "wall_ms": 12478
+              },
+              "judge_usage": {
+                "input_tokens": 20648,
+                "output_tokens": 2344,
+                "cached_tokens": 17582,
+                "wall_ms": 38396
+              }
+            },
+            {
+              "draw_index": 3,
+              "generation_hash": "dfd83dd96fbe7bd06842e7fadc943af8a943df4c380b2a8e90048e06fd7a1c39",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "02f42ef7dc31cfd3003026cadde48a4217c58ee6e451ab7f1c9d2f84b94d2a91",
+                "0b43769d2431b36e74b309982fa5b833652d20022f7cd49b860bc7d66c7324ba",
+                "864e8ed9e7cbc4434ff4f8710d90a57d19ac5b122837ee0b5951a1813a7f683d",
+                "c4a8db3f409097c535da489d2986a7710b1e6e9c206859b5b84a4eb13492fcb4",
+                "a6f0acdf3713f4c2d60e8cfd49fa6929eba36a709ac2fabbf6f718af29f62846"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4179,
+                "output_tokens": 624,
+                "cached_tokens": 3852,
+                "wall_ms": 10947
+              },
+              "judge_usage": {
+                "input_tokens": 20653,
+                "output_tokens": 4173,
+                "cached_tokens": 12270,
+                "wall_ms": 33857
+              }
+            },
+            {
+              "draw_index": 4,
+              "generation_hash": "95c44986081f8231528eac767b54733d80068ee658b1aebdcaaddc514b0ccfa4",
+              "status": "measured",
+              "samples": [
+                0.75,
+                1,
+                1,
+                1,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "5bc41c85ce7bc431576d7606aad7b270bd3956288d877478b22ba5cd6762068f",
+                "3d312b2625fb60e85ce8cf0ddd42d068008dca84e8b118cf8ca45cf19bb249ae",
+                "4765a7f9ee685c7de973599fad451ad164216d8eec7a1ec407d285a59e02830a",
+                "d64f83d6c92e3b30cab38dc5e3bab2625f76f4aea78076cdc7183af7a7ba5795",
+                "de767792db2f8d4a1b8a994ecd814efda78cc32f3acb260b2679b7359fe9e1c6"
+              ],
+              "mean": 0.9,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4179,
+                "output_tokens": 698,
+                "cached_tokens": 3852,
+                "wall_ms": 12850
+              },
+              "judge_usage": {
+                "input_tokens": 21168,
+                "output_tokens": 3502,
+                "cached_tokens": 12270,
+                "wall_ms": 30907
+              }
+            },
+            {
+              "draw_index": 5,
+              "generation_hash": "1243646b92c6bba48a1cc5227253a039fe2d8bb132b94035bbd66138931b1efa",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.5,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "8dfeb4fe749e44f188031c8c6abb6a31d0fb9ef0d55cf56344b08e7a075c7a8f",
+                "c679a3110c00f877a0c127281c4224d2a35ddd8bb1b18cc9a0f689eda6c0e6fd",
+                "2607635c8e82955048d76c0840d56ed9deeb7e63367ad96f6c14f0dc466a6953",
+                "521f8f227cd14a2f65d337d41e3313e388b042e7cd6e7bbcbe4816b62871c0d7",
+                "ebf97819534fb9b9066b59f24527c1cc4eca7cab7c90298e06e40dde456bb563"
+              ],
+              "mean": 0.7,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4179,
+                "output_tokens": 695,
+                "cached_tokens": 3852,
+                "wall_ms": 12191
+              },
+              "judge_usage": {
+                "input_tokens": 21028,
+                "output_tokens": 1854,
+                "cached_tokens": 16482,
+                "wall_ms": 22640
+              }
+            },
+            {
+              "draw_index": 6,
+              "generation_hash": "b746f1893e8ac567c9b04e1bb2846d1df44dbc4fa5011df724c455aac0321c94",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.75,
+                0.75,
+                0.75,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "b8f5bc657337ca4201a44577e5e31363cc95603c59fa58e2edc962e9dc2b3130",
+                "1ba13d1dd618fd3cb04bff848d1ab2b08caa1631c2399c276988b2c24d7aaf81",
+                "dbc026fc1687a9adb6a63d0a3327883168e81481a067bcb4f51fed2b3ff2e45d",
+                "19945f849add1edcf59e06131029671195800325ff97f68cfd9dea4c173249e0",
+                "8ac1ff9017cabebd6f493f31bacdfc44ca2725361af02a0f6e35cfc135d22e74"
+              ],
+              "mean": 0.65,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4179,
+                "output_tokens": 753,
+                "cached_tokens": 3852,
+                "wall_ms": 10064
+              },
+              "judge_usage": {
+                "input_tokens": 20928,
+                "output_tokens": 1339,
+                "cached_tokens": 16422,
+                "wall_ms": 21119
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "a4f81f89d57298524ac706a37a774481f355d2e18ac0d4bba87591b7f75e93cc",
+            "grading_hash": "3cf99b534be1bed847cdf7c2e4d42347581be59838166060dd058abbc3f1a129",
+            "index": 1,
+            "grading_kind": "rubric"
+          }
+        },
+        "counts": {
+          "generations_per_arm": 7
+        }
+      },
+      {
+        "id": "report",
+        "mode": "with_skill",
+        "outcome": "borderline",
+        "score": 0.733333,
+        "mean": 0.733333,
+        "stddev": 0.028868,
+        "samples": [
+          0.75,
+          0.75,
+          0.75,
+          0.5,
+          0.75
+        ],
+        "generation_hash": "549d645123e57add3b8932304ebd0bd9205bc452bf88be2c7a60585b2e09e9be",
+        "judge_sample_hashes": [
+          "189c4bd185e7a09f9c66903c3adfb7d34afcb237c198c9176c7ac0fc6a7a6c4f",
+          "233e1e108c452cdb54bf2dcaca5c3e07be6c2f46a094b8d0b8419cc215d06c8c",
+          "69cdc6baf4bdf015d4b1b94afa29325ea5ae5fd285af2dc469629eb588525c04",
+          "2d3576267ce18c0539bce0a9e3bc4be2b4bee43c7fa4f05100430872b06d5547",
+          "35f05fe49737f4bda0161c6d9abafce62985ec13e9a5a94953679a59f2034a9f"
+        ],
+        "threshold": 0.75,
+        "reason": "Meets criteria 1 (modules and friction named), 3 (benefits and before/after diagram), and 4 (asks which direction to take). Misses full credit on 2: the smaller interface is described only as 'a few operations', with no concrete proposal.",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "5e132f027de3ee4e4626966671c299b45f6e84fcd04427e2896991538014c3e7"
+        },
+        "judge_usage": {
+          "input_tokens": 23298,
+          "output_tokens": 1879,
+          "cached_tokens": 17844,
+          "wall_ms": 42948
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 3,
+          "n_measured": 3,
+          "n_unmeasured": 0,
+          "stopping_reason": "min_reached",
+          "mean": 0.733333,
+          "sd": 0.028868,
+          "judge_sd_mean": 0.037268,
+          "variance_ratio": 0.774606,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "3d84a38c65b4dbb1e79e03929e295efa25e1429aef9c0e5df05c2fe157d027f2",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "91f4a116239d1f3c3674f6e7d83795e294ce22716918d11cdccd00794619decf",
+                "4c25485abd1c64e35d3a035ee829eedea870b52787a14245cc404b23f03683b3",
+                "664be814ddfd154e56434d98355826c83f5f9717fe003b8a813d7e1403a326cd",
+                "04672a880b4df2da67a3805ec4dc77ad86390b3989961ae5c48f63ac39d06489",
+                "a2e490dabcf81d6b9259f07b053f7954625c48bc3725443e090d3fc03a7386e3"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4367,
+                "output_tokens": 1717,
+                "cached_tokens": 3683,
+                "wall_ms": 16622
+              },
+              "judge_usage": {
+                "input_tokens": 24507,
+                "output_tokens": 1832,
+                "cached_tokens": 20670,
+                "wall_ms": 41186
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "36f7a8c72f5f9ace578ab460f2904f50eb0104b316a1e77e53da160f9fb4e164",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "6641bcc2bac92c082a5c0254ae768f700e74a06d1f50fe5ffc631e0ba2695372",
+                "c286a670f4dd085d4fbc174d377b4ed81c91096cf36875966b10421e86c1ac4d",
+                "794463e5b4647c197a3af2373d98388481a2200a6e3cd097e22091a8bd87dda4",
+                "bd24d599ec84e1832b4d332bf6dd20dc7ee444399b8d706c38944da01fa2e153",
+                "81619910c9e43bacc9f79c8c1b6d0bd69d496b545be8f20b2d1a6954e91b17ca"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4367,
+                "output_tokens": 1327,
+                "cached_tokens": 3683,
+                "wall_ms": 18958
+              },
+              "judge_usage": {
+                "input_tokens": 24044,
+                "output_tokens": 2703,
+                "cached_tokens": 18291,
+                "wall_ms": 43445
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "549d645123e57add3b8932304ebd0bd9205bc452bf88be2c7a60585b2e09e9be",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.5,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "189c4bd185e7a09f9c66903c3adfb7d34afcb237c198c9176c7ac0fc6a7a6c4f",
+                "233e1e108c452cdb54bf2dcaca5c3e07be6c2f46a094b8d0b8419cc215d06c8c",
+                "69cdc6baf4bdf015d4b1b94afa29325ea5ae5fd285af2dc469629eb588525c04",
+                "2d3576267ce18c0539bce0a9e3bc4be2b4bee43c7fa4f05100430872b06d5547",
+                "35f05fe49737f4bda0161c6d9abafce62985ec13e9a5a94953679a59f2034a9f"
+              ],
+              "mean": 0.7,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4367,
+                "output_tokens": 1440,
+                "cached_tokens": 3683,
+                "wall_ms": 18520
+              },
+              "judge_usage": {
+                "input_tokens": 23298,
+                "output_tokens": 1879,
+                "cached_tokens": 17844,
+                "wall_ms": 42948
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "15ff56516267d2bde35edd32e22bf203ebc46f7addf5b66971aa8745755dac89",
+            "grading_hash": "c00ce9b8f016e2139b36aa569fa1041bdb54a660f4757992a90d9c57bb478636",
+            "index": 2,
+            "grading_kind": "rubric"
+          }
+        }
+      },
+      {
+        "id": "report",
+        "mode": "baseline",
+        "outcome": "borderline",
+        "score": 0.75,
+        "mean": 0.75,
+        "stddev": 0,
+        "samples": [
+          0.75,
+          0.75,
+          0.75,
+          0.75,
+          0.75
+        ],
+        "generation_hash": "4aad095550294867cb9a5d75fb6218e0ae9a8f1061b338338ae71d967506b73f",
+        "judge_sample_hashes": [
+          "125cc87cdfaa85e84ef2f1ec324db6d1e0b8293ba603b75306efd3213363d5a7",
+          "905e34eba34f98f194878a74d43c82c0f89edb5375b7ca50362304ba0f5dad9b",
+          "ba8f00004d7ecc2aa5e0d5df76e5c4e8fe172b6f168c4a551aa65aa978c1c832",
+          "6e52a0535f9482c6354bab2b67f7554953aa9c1a99cab118cf6768a205c2f25f",
+          "1ac10f4a0b3deadbc5ee51c1f81f175129bf3b0d4e637ded6c32fd9a95cc0d8d"
+        ],
+        "threshold": 0.75,
+        "reason": "Names ShippingFacade and CarrierClient with concrete friction (pass-through ripple, delegation-only tests), proposes a narrower interface, and asks the user to choose direction. Benefits of the after-state are only implied, so criterion 3 is weakly met.",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "5e132f027de3ee4e4626966671c299b45f6e84fcd04427e2896991538014c3e7"
+        },
+        "judge_usage": {
+          "input_tokens": 23593,
+          "output_tokens": 2826,
+          "cached_tokens": 16104,
+          "wall_ms": 45061
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 3,
+          "n_measured": 3,
+          "n_unmeasured": 0,
+          "stopping_reason": "min_reached",
+          "mean": 0.75,
+          "sd": 0,
+          "judge_sd_mean": 0,
+          "variance_ratio": null,
+          "variance_ratio_unavailable": "judge_sd_zero",
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "35bb17f460f459764215fe370a6bbb838086c2758522c4e429659c747a79eab0",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "feeb67c649e93cf79fcb2a7f43e1ebe2baec573dcaa21ecb01f1b136736a117b",
+                "087afed24651e9e81987662d0db56ff93eb85d7e06c370795d01563d6d145a90",
+                "bc512334d4a53f203e870c34f9a5a65f5678c3e8221c8a0e875a72683bb051d3",
+                "7acf1eb26e29439d21464b81b44b9c024965e0d38603a48352ed8c6385985288",
+                "3826d1d2d8a4be7306b84f9bf60d0b21c13593663f5227b5b16aa7e2a1fedbf4"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 2229,
+                "output_tokens": 853,
+                "cached_tokens": 1545,
+                "wall_ms": 10907
+              },
+              "judge_usage": {
+                "input_tokens": 22116,
+                "output_tokens": 2785,
+                "cached_tokens": 17133,
+                "wall_ms": 32552
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "7b9d9093a305aa30ccffd32b3c813708319b36c7ab6865c2660471a04cbd8b83",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "02fc061fdcedf9ec310885bef5ebb96613f084e684a84c3e6988a7f3f4dd389c",
+                "a24e3cde2fa3f8ddb6c3115ba9ce2ec521266f99c932cf65e3e7c05691dc1941",
+                "a127a254ff2a9e9f24e7a51a39044e1bdcd6ca923972e2ca164ddb3a52a2c269",
+                "af5e9626874a92e96a5b1de8ac77576ee0b2792dd988c13a11506d91c6a339e4",
+                "6915a026a63f0abfb480d1e76ed307fd88686e70b2d6342f892027e6d555f80a"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 2229,
+                "output_tokens": 922,
+                "cached_tokens": 1545,
+                "wall_ms": 11731
+              },
+              "judge_usage": {
+                "input_tokens": 22414,
+                "output_tokens": 3069,
+                "cached_tokens": 18990,
+                "wall_ms": 40317
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "4aad095550294867cb9a5d75fb6218e0ae9a8f1061b338338ae71d967506b73f",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.75,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "125cc87cdfaa85e84ef2f1ec324db6d1e0b8293ba603b75306efd3213363d5a7",
+                "905e34eba34f98f194878a74d43c82c0f89edb5375b7ca50362304ba0f5dad9b",
+                "ba8f00004d7ecc2aa5e0d5df76e5c4e8fe172b6f168c4a551aa65aa978c1c832",
+                "6e52a0535f9482c6354bab2b67f7554953aa9c1a99cab118cf6768a205c2f25f",
+                "1ac10f4a0b3deadbc5ee51c1f81f175129bf3b0d4e637ded6c32fd9a95cc0d8d"
+              ],
+              "mean": 0.75,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 2228,
+                "output_tokens": 1167,
+                "cached_tokens": 1545,
+                "wall_ms": 13195
+              },
+              "judge_usage": {
+                "input_tokens": 23593,
+                "output_tokens": 2826,
+                "cached_tokens": 16104,
+                "wall_ms": 45061
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "15ff56516267d2bde35edd32e22bf203ebc46f7addf5b66971aa8745755dac89",
+            "grading_hash": "c00ce9b8f016e2139b36aa569fa1041bdb54a660f4757992a90d9c57bb478636",
+            "index": 2,
+            "grading_kind": "rubric"
+          }
+        },
+        "counts": {
+          "generations_per_arm": 3
+        }
+      },
+      {
+        "id": "report",
+        "mode": "placebo",
+        "outcome": "fail",
+        "score": 0.6,
+        "mean": 0.6,
+        "stddev": 0.070711,
+        "samples": [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          0.75
+        ],
+        "generation_hash": "84c067225966b773e99b7dba133bd8aa8aa490093cec703c104f0763bbeba920",
+        "judge_sample_hashes": [
+          "328046af686782bd680e30e139d617ebe5d9987a5a196da0c0a2c9c5b7681351",
+          "e9622d504d2e37bfdaf894b3362a58cc23d7738b9d5181ee6ab6952af367f9ed",
+          "6d71dd95ccaac45306a1cc1b9ecb5d64bb0a81b030b40b9daa80030440c24936",
+          "41c1afd8db9f99fb26af1e21c7f21694f28fa58b9bca660d6750d2e972d9133d",
+          "028f79abb4bba2bc34075df6f8916b392593b5171c625cf54cedd13568f6ec2d"
+        ],
+        "threshold": 0.75,
+        "reason": "Meets criterion 4 (asks which direction to pursue via decision questions) and mostly criterion 3 (benefits given). Criterion 2 is missed because no concrete smaller interface is proposed, and criterion 1's friction is generic.",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "5e132f027de3ee4e4626966671c299b45f6e84fcd04427e2896991538014c3e7"
+        },
+        "judge_usage": {
+          "input_tokens": 22140,
+          "output_tokens": 3064,
+          "cached_tokens": 17148,
+          "wall_ms": 28815
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 5,
+          "n_measured": 5,
+          "n_unmeasured": 0,
+          "stopping_reason": "stabilised",
+          "mean": 0.6,
+          "sd": 0.070711,
+          "judge_sd_mean": 0.104519,
+          "variance_ratio": 0.676537,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "cb865928ddd640f7cbb6c4de5ac7dc9302b011d9e1b4dc857f4e4e66698acdb4",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.75,
+                0.5,
+                0.75,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "2533d9e70ad57ff69db7a0525dcf3c050aa0795e3a5582fc639dcc5624757d95",
+                "75cab8510e0cc702c03dc36edfa609ede3f3609af438563fd66d0aef1e0cfe94",
+                "a9377d9c0913ea8136058e9360e3bd2ab84c9c7516a86d9ec5260c0dcca32519",
+                "ef995730476c3799c31a578e8e43eb5fa0513c5eb2fce163f9b17d1fcd070fe3",
+                "bdf6cbf8640941ddfcf06799cd524f063be4fad865f3d25bcb9fc4f98272cb21"
+              ],
+              "mean": 0.65,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4178,
+                "output_tokens": 930,
+                "cached_tokens": 3494,
+                "wall_ms": 11622
+              },
+              "judge_usage": {
+                "input_tokens": 22339,
+                "output_tokens": 2590,
+                "cached_tokens": 18934,
+                "wall_ms": 32417
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "7b5e582f23546a90e5d91551ec67e279f908da31db8f3dbf130c2bb8b79b3ea4",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.5,
+                0.5,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "0778d00d78ec9880e2c95a708a7a72188dd742d9920eb04239e7a09100628517",
+                "df06abe8e2b73a70d7d676cc6b8e8b5facf9b2e1dcbe385c94e59ff180e8d23c",
+                "56057cbbd3b6bac1fd1904c62636852097f5e31b54bf977acfbf0b0a61220789",
+                "165958c1256e8707ec5b6b77476276cf65ac0e98ac0d548a3e593ac79a734b2a",
+                "deb231052dd3a1c4a7bf85e755b7f6f9a5764e38c394ea40f235a2fdeef4aefc"
+              ],
+              "mean": 0.65,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4177,
+                "output_tokens": 864,
+                "cached_tokens": 3494,
+                "wall_ms": 9477
+              },
+              "judge_usage": {
+                "input_tokens": 22001,
+                "output_tokens": 2736,
+                "cached_tokens": 15466,
+                "wall_ms": 29229
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "ec6346611ead174f0b70d71c4878a022375f697d50793c49ce96e3183a6ff887",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "1be84edd6b4599560fecd5403af2b2a2c9326c9abce02d182dfb3461555bfbb1",
+                "89c3264426dfb5b572ca45acfca6e5505c04c3506272769ef318eaa7758535be",
+                "dd5277db401aecd25d0abf07a7c47b597ccf482e2f67c790f701d29090730760",
+                "8f60d43514ab3b7f16e289625ea17a090ad79854428273ad15cdea075380d043",
+                "5d055815783c53881eb00f2559eac406754c65e77cb79db282d4fa875d178e9f"
+              ],
+              "mean": 0.5,
+              "stddev": 0,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4178,
+                "output_tokens": 844,
+                "cached_tokens": 3494,
+                "wall_ms": 12646
+              },
+              "judge_usage": {
+                "input_tokens": 21940,
+                "output_tokens": 2280,
+                "cached_tokens": 13856,
+                "wall_ms": 31730
+              }
+            },
+            {
+              "draw_index": 3,
+              "generation_hash": "e4ea90c624abd82272245f0a5341aa93a44cb9b5c4d6669aee615159c38bd281",
+              "status": "measured",
+              "samples": [
+                0.75,
+                0.75,
+                0.5,
+                0.5,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "0573ef33840def7d5db9d7e708ca354e929948a0e970b87b15e2b134a3c1dc94",
+                "b286dfb1ca60909dcc3723dff8cb962c4ad257932450aa5ad5a2c4a4777c8215",
+                "90a9cf92d544250d997c7a387b65496e9666bcdd1e3272022a371f1308464c44",
+                "eabb84e420f242c7cb2381760d3d10fb9e5db725ad6d95063d2936267db15d01",
+                "a20dc9c5a9e582af9f8e8e4ebca7911b5064a97eed8b84017fa9a65e9a07796e"
+              ],
+              "mean": 0.65,
+              "stddev": 0.136931,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4178,
+                "output_tokens": 973,
+                "cached_tokens": 3851,
+                "wall_ms": 13119
+              },
+              "judge_usage": {
+                "input_tokens": 22539,
+                "output_tokens": 3780,
+                "cached_tokens": 19094,
+                "wall_ms": 31339
+              }
+            },
+            {
+              "draw_index": 4,
+              "generation_hash": "84c067225966b773e99b7dba133bd8aa8aa490093cec703c104f0763bbeba920",
+              "status": "measured",
+              "samples": [
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "328046af686782bd680e30e139d617ebe5d9987a5a196da0c0a2c9c5b7681351",
+                "e9622d504d2e37bfdaf894b3362a58cc23d7738b9d5181ee6ab6952af367f9ed",
+                "6d71dd95ccaac45306a1cc1b9ecb5d64bb0a81b030b40b9daa80030440c24936",
+                "41c1afd8db9f99fb26af1e21c7f21694f28fa58b9bca660d6750d2e972d9133d",
+                "028f79abb4bba2bc34075df6f8916b392593b5171c625cf54cedd13568f6ec2d"
+              ],
+              "mean": 0.55,
+              "stddev": 0.111803,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-sonnet-5-5",
+              "usage": {
+                "input_tokens": 4178,
+                "output_tokens": 923,
+                "cached_tokens": 3851,
+                "wall_ms": 11693
+              },
+              "judge_usage": {
+                "input_tokens": 22140,
+                "output_tokens": 3064,
+                "cached_tokens": 17148,
+                "wall_ms": 28815
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "15ff56516267d2bde35edd32e22bf203ebc46f7addf5b66971aa8745755dac89",
+            "grading_hash": "c00ce9b8f016e2139b36aa569fa1041bdb54a660f4757992a90d9c57bb478636",
+            "index": 2,
+            "grading_kind": "rubric"
+          }
+        },
+        "counts": {
+          "generations_per_arm": 5
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 3,
+        "pass_count": 1,
+        "borderline_count": 2,
+        "mean_score": 0.794444,
+        "stddev": 0.078763
+      },
+      "baseline": {
+        "case_count": 3,
+        "pass_count": 0,
+        "borderline_count": 2,
+        "mean_score": 0.6975,
+        "stddev": 0.148387
+      },
+      "band_rule": "per arm: the sample standard deviation (n-1) of the per-case means across the included cases; the comparison band is the quadrature sum of the two arms; null where an arm has fewer than two included cases"
+    },
+    "fake_tool_calls": {
+      "with_skill": {
+        "count": 0,
+        "draws": 9
+      },
+      "baseline": {
+        "count": 0,
+        "draws": 12
+      },
+      "placebo": {
+        "count": 0,
+        "draws": 18
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.794444,
+    "baseline_score": 0.6975,
+    "delta": 0.096944,
+    "delta_uncertainty": 0.167995
+  },
+  "verification_level": "TESTED",
+  "economics": {
+    "basis": "metered-equivalent",
+    "surface": "claude-cli",
+    "with_skill": {
+      "call_count": 9,
+      "mean_input_tokens": 4376.67,
+      "mean_output_tokens": 1232.56,
+      "mean_cost_usd_per_call": 0.021079,
+      "median_wall_ms": 14288,
+      "wall_ms_p25": 13584,
+      "wall_ms_p75": 17571,
+      "wall_ms_iqr": 3987
+    },
+    "baseline": {
+      "call_count": 12,
+      "mean_input_tokens": 2241,
+      "mean_output_tokens": 704.58,
+      "mean_cost_usd_per_call": 0.011528,
+      "median_wall_ms": 10450.5,
+      "wall_ms_p25": 9217.5,
+      "wall_ms_p75": 11428,
+      "wall_ms_iqr": 2210.5
+    },
+    "skill_incremental_cost_usd_per_call": 0.009551,
+    "skill_incremental_cost_usd_per_1k_calls": 9.551,
+    "output_tokens_delta": 527.98,
+    "median_wall_ms_delta": 3837.5,
+    "judge_excluded": true,
+    "judge_overhead": {
+      "note": "Measurement overhead imposed by Driftproof, NOT a cost of running the skill. Excluded from every field above. Counted over every draw sent to the judge, each once: the usage its answered judge samples reported, including parse retries, at the frozen judge price. Transport retries and samples that reported no usage are not in it.",
+      "total_cost_usd": 0.13677,
+      "case_rows_measured": 9,
+      "judged_draws_counted": 39,
+      "judged_draws_missing_usage": 0
+    },
+    "notes": {
+      "absolute_cost": "Absolute per-call cost on a CLI surface includes a fixed harness preamble (observed ~25k input tokens on claude-cli, ~11k on codex) that we do not control. It is identical in the with-skill and baseline arms, so it cancels in the Δ figures — read the incremental columns, not the absolute ones.",
+      "cache_pricing": "Cached input tokens are costed at the list input rate (an over-estimate where caching is heavy); cached_tokens is recorded per call so a reader can recompute.",
+      "latency": "observed on subscription CLI surface, indicative"
+    }
+  },
+  "placebo": {
+    "revision": 1,
+    "length_measure": "utf8_bytes",
+    "skill_bytes": 6000,
+    "bytes": 6000,
+    "seed": "392c6e6a10d199b2c6d895cd6ee91f0934292e3cf0c71279e79bce94cae04418",
+    "corpus": [
+      "The morning light settled slowly over the hills beyond the old market town.",
+      "A narrow river runs past the mill, where the water turns a wooden wheel all day.",
+      "In late autumn the beech trees along the lane turn copper and then pale brown.",
+      "The harbour wall was built from grey stone carried down from the quarry by cart.",
+      "Swifts arrive each spring and spend most of their lives on the wing above the roofs.",
+      "The library on the square keeps a collection of maps drawn by hand two centuries ago.",
+      "A light rain fell through the afternoon, and the streets shone under the lamps.",
+      "Bakers in the valley still use a starter that has been kept alive for many years.",
+      "The lighthouse keeper once climbed the spiral stair every evening at dusk.",
+      "Wild thyme grows between the rocks on the southern slope of the ridge.",
+      "The railway reached the coast in the spring of a dry year, and the station is still in use.",
+      "Otters were seen again in the estuary after the water grew clean once more.",
+      "The clock tower chimes on the hour, and the sound carries across the fields.",
+      "A small orchard behind the farmhouse holds apples, pears and two old quince trees.",
+      "Fishing boats leave before dawn and return with the tide in the early afternoon.",
+      "The museum displays a loom that weavers in the district used for linen and wool.",
+      "Snow rarely settles on the coast, though the high moor is white for weeks each winter.",
+      "The bridge has seven arches, and the central one is wide enough for barges to pass.",
+      "Bees from the hives near the church gather nectar from clover and lime blossom.",
+      "On clear nights the stars over the moor are bright enough to cast faint shadows.",
+      "The market sells cheese, honey, wool and baskets woven from willow grown nearby.",
+      "Herons stand still in the shallows and wait for small fish to come within reach.",
+      "An old canal links the two towns, and its towpath is now a path for walkers.",
+      "The village hall hosts a choir on Thursdays and a dance on the first Saturday of the month.",
+      "Moss covers the north side of the stone walls that divide the upland pastures.",
+      "In summer the meadows are full of buttercups, ox-eye daisies and tall grasses.",
+      "The ferry crosses the sound twice a day when the weather is calm enough.",
+      "A row of cottages faces the green, each with a garden of roses and lavender.",
+      "The forest to the east was planted with oak and ash after the great storm.",
+      "Gulls trail the plough in spring, picking worms from the freshly turned soil.",
+      "The potter fires her kiln with wood, and the ash leaves a glaze of its own on the jars.",
+      "Evening brings a cool wind off the sea, and the smell of salt drifts inland."
+    ],
+    "corpus_hash": "817668a2a4fdd95353cbcc95927d177bd8764ac4d8473bf30dd72630074fa72e",
+    "sha256": "a5943748fb9a9faff7577006a75a45d25918a6f786e259093fbe93b6e0b7fa40",
+    "skill_tokens_estimate": 1500,
+    "tokens_estimate": 1500,
+    "aggregates": {
+      "with_skill": {
+        "case_count": 3,
+        "pass_count": 1,
+        "borderline_count": 2,
+        "mean_score": 0.794444,
+        "stddev": 0.078763
+      },
+      "placebo": {
+        "case_count": 3,
+        "pass_count": 0,
+        "borderline_count": 1,
+        "mean_score": 0.607937,
+        "stddev": 0.095486
+      },
+      "band_rule": "per arm: the sample standard deviation (n-1) of the per-case means across the included cases; the comparison band is the quadrature sum of the two arms; null where an arm has fewer than two included cases"
+    },
+    "comparison": {
+      "with_skill_score": 0.794444,
+      "placebo_score": 0.607937,
+      "delta": 0.186507,
+      "delta_uncertainty": 0.123779
+    }
+  },
+  "receipt_hash": "a523261d64aa70ccb1d132d93928f197fb03ab3f2a2c8a9fafaff3c159185a0d"
+}

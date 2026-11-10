@@ -268,6 +268,56 @@ test('the CLI: --drafted-from-skill labels the cases, and is refused with no --c
 });
 
 
+// Spec 727 AC-1: the label on cases drafted from a failure the person described and approved. One origin
+// per suite: the two label flags are refused together, and either is refused with no cases to label.
+test('727 AC-1: drafted "failure" labels the suite and every case with the failure label; the loader keeps it and does not hash it; drafted true keeps spec 165\'s label', () => {
+  const { DRAFTED_LABEL, FAILURE_LABEL } = require('../lib/init');
+  const { suiteIdentity } = require('../lib/skill');
+  assert.equal(FAILURE_LABEL, 'drafted from a failure the person described and approved');
+  assert.equal(DRAFTED_LABEL, 'drafted from the skill and approved by the user');
+  const root = tmp();
+  const criteria = [{ id: 'one-file', weight: 1, description: 'Stages the one file named.' }, { id: 'no-add-all', weight: 2, description: 'Does not stage every change.' }];
+  const cases = { cases: [{ id: 'the-mistake', prompt: 'Commit the README change.', criteria }, { id: 'transfer', prompt: 'Commit the test change.', criteria }] };
+  const dir = path.join(root, 'from-failure');
+  scaffoldInit(dir, { cases, drafted: 'failure' });
+  const suite = JSON.parse(fs.readFileSync(path.join(dir, 'evals', 'evals.json'), 'utf8'));
+  assert.equal(suite.origin, FAILURE_LABEL);
+  assert.ok(suite.cases.every((c) => c.origin === FAILURE_LABEL), 'every case carries the failure label');
+  assert.deepEqual(suite.cases.map((c) => c.criteria), [criteria, criteria], 'the criteria are written as the loader reads them');
+  const kept = suiteIdentity(suite);
+  assert.ok(kept.cases.every((c) => c.origin === FAILURE_LABEL), 'the loader keeps the label');
+  assert.equal(kept.suiteHash, suiteIdentity(cases).suiteHash, 'the label is not in suite_hash');
+  const skill = path.join(root, 'from-skill');
+  scaffoldInit(skill, { cases, drafted: true });
+  const s2 = JSON.parse(fs.readFileSync(path.join(skill, 'evals', 'evals.json'), 'utf8'));
+  assert.equal(s2.origin, DRAFTED_LABEL);
+  assert.ok(s2.cases.every((c) => c.origin === DRAFTED_LABEL));
+});
+
+test('727 AC-1: the CLI: init --cases --drafted-from-failure labels the suite and every case; refused with no --cases and beside --drafted-from-skill, writing nothing', () => {
+  const { FAILURE_LABEL } = require('../lib/init');
+  const { root, dir } = existingSkill();
+  const draft = path.join(root, 'failure-draft.json');
+  fs.writeFileSync(draft, JSON.stringify({ cases: [{ id: 'the-mistake', prompt: 'p', criteria: [{ id: 'c', weight: 1, description: 'Does the thing.' }] }] }));
+  const before = tree(dir);
+  const noCases = cli(['init', dir, '--drafted-from-failure'], root);
+  assert.equal(noCases.status, 2);
+  assert.match(noCases.stderr, /--drafted-from-failure labels the cases given with --cases/);
+  assert.deepEqual(tree(dir), before);
+  const both = cli(['init', dir, '--cases', draft, '--drafted-from-skill', '--drafted-from-failure'], root);
+  assert.equal(both.status, 2);
+  assert.match(both.stderr, /one origin/);
+  assert.deepEqual(tree(dir), before);
+  const r = cli(['init', dir, '--cases', draft, '--drafted-from-failure'], root);
+  assert.equal(r.status, 0, r.stderr);
+  const suite = JSON.parse(fs.readFileSync(path.join(dir, 'evals', 'evals.json'), 'utf8'));
+  assert.equal(suite.origin, FAILURE_LABEL);
+  assert.ok(suite.cases.every((c) => c.origin === FAILURE_LABEL));
+  assert.doesNotMatch(suite.origin, /from the skill/);
+  assert.deepEqual(suite.cases[0].criteria, [{ id: 'c', weight: 1, description: 'Does the thing.' }]);
+  assert.equal(fs.readFileSync(path.join(dir, 'SKILL.md'), 'utf8'), SKILL);
+});
+
 // Issue 237, spec 139 A-139-16: the generic examples do not establish intended-task performance.
 const EXAMPLE_LIMIT = "These generic examples are not grounded in your skill's claims. Their scores do not establish performance on your intended tasks.";
 const VERDICT_LIMIT = 'The CLI still computes scores and verdicts, but these do not validate a skill-specific suite.';

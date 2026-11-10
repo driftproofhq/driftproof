@@ -1290,6 +1290,18 @@
               ],
               "description": "text: on a CLI surface the child ran with its file-writing tools off, and its reply is the judged answer (an api surface has no tools). files: the child could write files in its own fresh working directory, and the regular files there were collected, within the runner limits, and judged with its reply. repository: a fresh pinned starter, tools confined by the mandatory eval boundary, and the reply plus captured text changes. Issue 490."
             },
+            "setting_sources": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "user",
+                  "project",
+                  "local"
+                ]
+              },
+              "description": "Issue 760. The CLI setting sources the run's CLI calls loaded, generation and judge together. Empty means none: claude ran with no user, project or local settings and with hooks off. user means a CLI read the person's own configuration, as codex always reads its config.toml. Absent on an api-only run, a stub run, a repository run (its contract records the same thing) and on a receipt written before issue 760. A regrade does not copy this field: it names what the original's generation calls and the regrade's own judge calls loaded, and names none when the original records none, since that leaves the generation side unknown."
+            },
             "starter_hash": {
               "type": "string",
               "pattern": "^[0-9a-f]{64}$"

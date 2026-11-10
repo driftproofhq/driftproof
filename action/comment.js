@@ -22,8 +22,9 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const decision = require('../lib/decision');
-const { listReceipts, verifyReceiptHash } = require('../lib/receipt');
-const { commentMarkdown, markerLine } = require('../lib/plain');
+const { listReceipts, verifyReceiptHash, validateReceipt } = require('../lib/receipt');
+const { markerLine } = require('../lib/plain');
+const { commentMarkdown } = require('../lib/action-words');
 
 const env = process.env;
 const TIMEOUT_MS = Number(env.DRIFTPROOF_COMMENT_TIMEOUT_MS) > 0 ? Number(env.DRIFTPROOF_COMMENT_TIMEOUT_MS) : 15000;
@@ -90,6 +91,29 @@ function prNumber(eventPath) {
   } catch { return null; }
 }
 
+function comparisonMarkdown(dir) {
+  const file = path.join(dir, 'compare.md');
+  if (!fs.existsSync(file)) return '';
+  const a = listReceipts(path.join(dir, 'base'));
+  const b = listReceipts(dir);
+  if (!a.length || a.length !== b.length) throw new Error('comparison receipt pairs are missing');
+  for (const entry of [...a, ...b]) {
+    if (!entry.receipt || !verifyReceiptHash(entry.receipt) || !validateReceipt(entry.receipt).valid) {
+      throw new Error('a comparison receipt does not verify');
+    }
+  }
+  for (const entry of a) {
+    const matches = b.filter((other) => other.receipt.run.model_id === entry.receipt.run.model_id);
+    if (matches.length !== 1) throw new Error('comparison model pairs are ambiguous');
+  }
+  // compare.md is written by the comparison library, including its shared
+  // Markdown escaping. Preserve every task line, length and closing caveat.
+  const report = fs.readFileSync(file, 'utf8');
+  const hashes = 'Base (A): ' + a[0].receipt.skill.content_hash.slice(0, 8) +
+    '. New (B): ' + b[0].receipt.skill.content_hash.slice(0, 8) + '.';
+  return report + '\n' + hashes + '\n\n';
+}
+
 async function main() {
   const dir = env.DRIFTPROOF_RECEIPTS;
   if (!dir || !fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) return notice('the run wrote no receipts directory');
@@ -106,7 +130,10 @@ async function main() {
   });
   const key = crypto.createHash('sha256').update(String(env.INPUT_SKILL_DIR || '')).digest('hex').slice(0, 16);
   const runUrl = env.GITHUB_SERVER_URL && env.GITHUB_RUN_ID ? `${env.GITHUB_SERVER_URL}/${repo}/actions/runs/${env.GITHUB_RUN_ID}` : null;
-  const body = commentMarkdown(d, dir, { key, runUrl });
+  const plain = commentMarkdown(d, dir, { key, runUrl });
+  const comparison = comparisonMarkdown(dir);
+  const marker = markerLine(key);
+  const body = comparison ? marker + "\n" + comparison + plain.slice(marker.length + 1) : plain;
   const base = `${(env.GITHUB_API_URL || 'https://api.github.com').replace(/\/+$/, '')}/repos/${repo}`;
   const existing = await findComment(base, pr, markerLine(key));
   if (existing) {

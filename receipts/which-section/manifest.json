@@ -1,0 +1,116 @@
+{
+  "_what": "Issue 743, the worked example of compare: three Report 018 skills, each with the heading that holds the most text of its own removed by the rule below, run as A (the pinned file) against B (the file without that heading and its text). The receipts beside this file are the run's own outputs, committed byte for byte; compare.md is the current renderer's reading of those sealed receipts, re-rendered with no model call (scripts/build-which-section.js --readings). The third-party SKILL.md bytes of A and B are not committed; A is fetched from skill_url in specs/408-skill-measurements/sources.json and refused unless its sha256 is skill_sha256, and B is rebuilt from A by the removal rule and checked against b.sha256.",
+  "issue": 743,
+  "selection_rule": "Skills whose Report 018 receipt reads PASSED (lib/verdict.js receiptVerdict), that are not routers (receipts/report-018/plan.json routers.skills), and whose SKILL.md has at least two heading sections below its title, taken in the plan's frozen attempt order; the first three.",
+  "skipped": [{ "skill": "grill-me", "reason": "no heading below the title" }],
+  "removal_rule": "A heading line is a line outside a fenced code block that starts with one to six # characters and a space. The first level-one heading is the title and is not measured. Each other heading's own text runs from its heading line through the line before the next heading line of any level, so a subsection is measured on its own and does not count toward the heading above it. Remove the lines of the heading with the most UTF-8 bytes of its own text and leave every other byte untouched.",
+  "list_sections_note": "driftproof compare FILE --list-sections measures differently: it runs each section to the next heading of the same or a higher level, so a heading's subsections count toward its size, and on improve-codebase-architecture and setup-matt-pocock-skills it shows Process as larger than the heading removed. The removals here used the any-level measure. Each removed heading has no subsections, so --without-section on the pinned file gives the same reduced file.",
+  "subject_rule": "Directory A holds SKILL.md as the pinned bytes and evals/evals.json as a copy of the suite file; loadSkill(A).contentHash and suite.suiteHash must equal the Report 018 receipt's before any call. Directory B is the same with the section removed from SKILL.md.",
+  "run": {
+    "date": "2026-11-08",
+    "operator": "Driftproof, through the eval user on the claude CLI; the builder made no call",
+    "cli": "driftproof 0.27.0 (source commit 25b53862f)",
+    "command": "node bin/driftproof compare <A> <B> --models claude-haiku-5-5 --samples 5 --max-calls 800 --max-usd 20 --out <scratch>/<skill>",
+    "model": "claude-haiku-5-5",
+    "judge": "claude-haiku-5-5",
+    "judge_note": "compare grades with the target model itself (lib/compare.js: judge || model), Report 018's own arrangement.",
+    "samples": 5,
+    "placebo": false,
+    "order": "A then B, the three skills in parallel"
+  },
+  "skills": [
+    {
+      "skill": "improve-codebase-architecture",
+      "repository": "mattpocock/skills",
+      "commit": "49dd158d1076134a641b33efb035946536778336",
+      "skill_path": "skills/engineering/improve-codebase-architecture/SKILL.md",
+      "skill_sha256": "552240a5ab5cec6b67c15dd1ad6e9f6962b1bca6ce870059a8c2713760c20392",
+      "suite": "specs/408-skill-measurements/suites/mattpocock--skills--improve-codebase-architecture.json",
+      "report_018_attempt_id": "b82af8993f7de808d929929f51237c199fed5b77070457ad5063862817bd3c15",
+      "removed": {
+        "heading": "2. Present candidates as an HTML report",
+        "level": 3
+      },
+      "removed_bytes": 2304,
+      "removed_share_percent": 38.4,
+      "removed_tokens_estimate": 576,
+      "a": {
+        "bytes": 6000,
+        "sha256": "552240a5ab5cec6b67c15dd1ad6e9f6962b1bca6ce870059a8c2713760c20392",
+        "subject_sha256": "392c6e6a10d199b2c6d895cd6ee91f0934292e3cf0c71279e79bce94cae04418",
+        "tokens_estimate": 1500,
+        "receipt": "compare-A-f95f2a97f82743a4039ece0c0cc3bbc3aff33368e6c459dc15d6b7617d59a5ff.json"
+      },
+      "b": {
+        "bytes": 3696,
+        "sha256": "e2111574b01a03c22fd746fced2c4e42413a6732c6c1323f0d8a94a88b0980ca",
+        "subject_sha256": "abfc8882a64083bd5e30b98399789c24d6a6a283a7bdee8781b1ab678b2bbd3f",
+        "tokens_estimate": 924,
+        "receipt": "compare-B-3c42e2155cb6c63bebdd50471de6df5de4074ab9b617bb0c649b04cd6c35b4e1.json"
+      },
+      "reading": "compare.md"
+    },
+    {
+      "skill": "hyperframes-cli",
+      "repository": "heygen-com/hyperframes",
+      "commit": "c4440dfb200def5e0c0afee938778f05b5985039",
+      "skill_path": "skills/hyperframes-cli/SKILL.md",
+      "skill_sha256": "be481984f8d3c871c353a4ba82bb295a416634e11938de2081b950e9e488a3ff",
+      "suite": "specs/408-skill-measurements/suites/heygen-com--hyperframes--hyperframes-cli.json",
+      "report_018_attempt_id": "1460f2fbadb049e68e4b07c2a0628f83ebd89ff596b1dcf7f30a8d6b7bd35e33",
+      "removed": {
+        "heading": "Agent conventions",
+        "level": 2
+      },
+      "removed_bytes": 6659,
+      "removed_share_percent": 25.6,
+      "removed_tokens_estimate": 1664,
+      "a": {
+        "bytes": 25989,
+        "sha256": "be481984f8d3c871c353a4ba82bb295a416634e11938de2081b950e9e488a3ff",
+        "subject_sha256": "93bc719ae762f5f4ac4eaa3be58529d9f48dbbcbe90ac07ba20b40a0965ca3b6",
+        "tokens_estimate": 6491,
+        "receipt": "compare-A-2961784c8388bbd3fed5e88c22b015ea49163f35e5bea8d3794615e3f63a2043.json"
+      },
+      "b": {
+        "bytes": 19330,
+        "sha256": "bfe78e0b081ab280292f11e65d034c9a03e16f013177068a8bab7f9b4e8813d0",
+        "subject_sha256": "5d678bce4498eb290a0b3270da003d5384c7f5992501b751adb9af37bf1061ba",
+        "tokens_estimate": 4827,
+        "receipt": "compare-B-73f7eb993f53d23133cff1a2e2da8edd78bcd4e33f4258b70a4d1404dbe134ca.json"
+      },
+      "reading": "compare.md"
+    },
+    {
+      "skill": "setup-matt-pocock-skills",
+      "repository": "mattpocock/skills",
+      "commit": "49dd158d1076134a641b33efb035946536778336",
+      "skill_path": "skills/engineering/setup-matt-pocock-skills/SKILL.md",
+      "skill_sha256": "f148858ffb7f63c03c06fca06e6fdb1d91a35c6b293244b8fdfacd5f4cc028c4",
+      "suite": "specs/408-skill-measurements/suites/mattpocock--skills--setup-matt-pocock-skills.json",
+      "report_018_attempt_id": "631cae5f531ab2ae0285bbc99e8ca42b2694abc79d0e1cd5626101a93b6dea0f",
+      "removed": {
+        "heading": "2. Present findings and ask",
+        "level": 3
+      },
+      "removed_bytes": 2814,
+      "removed_share_percent": 40.3,
+      "removed_tokens_estimate": 704,
+      "a": {
+        "bytes": 6978,
+        "sha256": "f148858ffb7f63c03c06fca06e6fdb1d91a35c6b293244b8fdfacd5f4cc028c4",
+        "subject_sha256": "f11021a04851b50f14fb1584bb974c9eb44fe0c81027df4f7d04c25deff52771",
+        "tokens_estimate": 1745,
+        "receipt": "compare-A-de973b2be878049b7c236e782010db51004d5c73d4a2f150de890e02c2ec78d4.json"
+      },
+      "b": {
+        "bytes": 4164,
+        "sha256": "686627dd3cb7ba6829a0d641a1ffd097ffa96ad5a10d954fd916cd23490a7ef7",
+        "subject_sha256": "f4a27912fe59a7f49bd69ce1b2f8a9dae116d0a17c86cedaec22876efdb2bad8",
+        "tokens_estimate": 1041,
+        "receipt": "compare-B-3517654bcdb0c2f3ad9cc03e02319eb7bda47d92331bc964f9ee2db5837b4926.json"
+      },
+      "reading": "compare.md"
+    }
+  ]
+}

@@ -15,6 +15,8 @@ const { PassThrough } = require('stream');
 const calls = [];
 let generate = () => 'ok';
 let leave = () => [];
+// A-538-5 (issue 761): a test may set what the double's judge scores, to build a case that separates.
+let judgeScore = () => 0.8;
 const JUDGE = /Return ONLY this JSON object/;
 // Issue 220: judge replies name the requested model; generations keep their original shape.
 const cliJson = (result, model) => JSON.stringify({ type: 'result', result, ...(model ? { model, modelUsage: { [model]: { inputTokens: 10, outputTokens: 5 } } } : {}), stop_reason: 'end_turn', usage: { input_tokens: 10, output_tokens: 5 } });
@@ -32,7 +34,7 @@ cp.spawn = (file, args, options) => {
         const judge = JUDGE.test(call.input);
         call.judge = judge;
         const isCodex = call.args.includes('codex');
-        let out = judge ? cliJson(JSON.stringify({ score: 0.8, pass: true, reason: 'double' }), call.args[call.args.lastIndexOf('--model') + 1])
+        let out = judge ? cliJson(JSON.stringify({ score: judgeScore(call), pass: true, reason: 'double' }), call.args[call.args.lastIndexOf('--model') + 1])
           : isCodex ? `${JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text: generate(call) } })}\n${JSON.stringify({ type: 'turn.completed', usage: { input_tokens: 1, output_tokens: 1 } })}\n`
             : cliJson(generate(call));
         const files = judge ? [] : leave(call);
@@ -77,7 +79,7 @@ const { staleReport } = require('../lib/stale');
 
 const SYS = '---\nname: fx\n---\nWrite the ADR.';
 const reset = () => {
-  calls.length = 0; generate = () => 'ok'; leave = () => [];
+  calls.length = 0; generate = () => 'ok'; leave = () => []; judgeScore = () => 0.8;
   versionCalls.length = 0; Object.assign(versionOut, VERSION_DEFAULT); versionFails = false;
 };
 const afterLabel = (c) => c.args.slice(c.args.indexOf(provider.HOP_LABEL) + 1);
@@ -272,6 +274,114 @@ test('issue 542 current and served schema descriptions name the current version 
   assert.doesNotMatch(description,new RegExp('Every run writes v'+v(prior)));
   for(const term of ['results.fake_tool_calls','count','draws','unmeasured','5%'])assert.ok(description.includes(term),term);
   assert.equal(schema.properties.schema_version.const,CURRENT);
+});
+// A-538-5 (issue 761, VERD-1): the audit's receipt. One with-skill reply is a fake tool call, and the
+// with-skill answers score far below the baseline's, so the case separates down and holds over the
+// lost draw. Every path that reads it must say the comparison is unreliable, and none may say it regressed.
+const LOW='Use a flat file and hope.',HIGH='Use PostgreSQL for transactional consistency.';
+const UNRELIABLE=/Comparison unreliable/;
+async function separatedDown(fakes){
+  reset();let n=0;
+  generate=c=>withSkill(c)?(n++<fakes?endings[0]:LOW):HIGH;
+  judgeScore=c=>c.input.includes(LOW)?0.1:0.95;
+  const {receipt}=await runSkillOnModel({skill:skillOf(),model:'haiku',opts:{samples:2,trusted:true}});
+  assert.ok(validateReceipt(receipt).valid,JSON.stringify(validateReceipt(receipt).errors));
+  return receipt;
+}
+const inDir=(receipt,fn)=>{
+  const dir=fs.mkdtempSync(path.join('/var/tmp','issue761-'));
+  try{fs.writeFileSync(path.join(dir,'fx-adr-'+receipt.run.model_id+'-2026-11-09.json'),JSON.stringify(receipt));return fn(dir,receipt.run.model_id);}
+  finally{fs.rmSync(dir,{recursive:true,force:true});}
+};
+const entryOf=(out,name)=>(new RegExp('^'+name+'<<(ghadelim_[0-9a-f]+)\\n([\\s\\S]*?)\\n\\1$','m').exec(out)||[])[2];
+test('A-538-5 AC-8 the guard runs before the regression shortcut',async()=>{
+  const {decisionState}=require('../lib/decision');
+  const bad=await separatedDown(1);
+  assert.equal(receiptVerdict(bad).verdict,'INCONCLUSIVE');
+  assert.equal(decisionState(bad),'inconclusive');
+  const clean=await separatedDown(0);
+  assert.equal(receiptVerdict(clean).verdict,'REGRESSED');
+  assert.equal(decisionState(clean),'regression');
+});
+test('A-538-5 AC-9 the set badge, decide, the summary and the comment all say it',async()=>{
+  const D=require('../lib/decision');
+  const {summaryLead,commentMarkdown}=require('../lib/plain');
+  inDir(await separatedDown(1),(dir,model)=>{
+    const d=D.decideSet(dir,model);
+    assert.equal(d.rows[0].state,'inconclusive');
+    assert.deepEqual(d.regressed,[]);
+    const badge=D.badgeEndpointForSet(d);
+    assert.match(badge.message,UNRELIABLE);
+    assert.match(badge.message,new RegExp(model.replace(/-\d{8}$/,'')));
+    assert.doesNotMatch(badge.message,/regressed/i);
+    assert.equal(badge.color,'yellow');
+    const out=D.githubOutputLines(d);
+    assert.equal(entryOf(out,'verdict'),'INCONCLUSIVE');
+    assert.equal(entryOf(out,'regressed_models'),'');
+    assert.match(entryOf(out,'message'),UNRELIABLE);
+    const lines=D.enforcementLines(d).join('\n');
+    assert.doesNotMatch(lines,/^::error/m);
+    assert.doesNotMatch(lines,/REGRESSED/);
+    assert.match(lines,/^::warning title=Driftproof: inconclusive on .*Comparison unreliable/m);
+    const summary=D.summaryMarkdown(d,{lead:summaryLead(d,dir,{})});
+    assert.match(summary,UNRELIABLE);
+    assert.doesNotMatch(summary,/\| .*regression .*\|/);
+    const row=summary.split('\n').find(l=>l.startsWith('| `'));
+    assert.match(row,UNRELIABLE);
+    const comment=commentMarkdown(d,dir,{key:'k'});
+    assert.match(comment,/\*\*Driftproof: Comparison unreliable\*\*/);
+    assert.doesNotMatch(comment,/Clearly hurt/);
+  });
+});
+test('A-538-5 AC-10 the exit follows the documented rule',async()=>{
+  const D=require('../lib/decision');
+  inDir(await separatedDown(1),(dir,model)=>{
+    assert.equal(D.decideSet(dir,model).fails,false,'fail-on-regression does not fail an unreliable row');
+    assert.equal(D.decideSet(dir,model,{failOnRegression:false}).fails,false);
+    const d=D.decideSet(dir,model,{failOnUnderpowered:true});
+    assert.equal(d.fails,true,'fail-on-underpowered fails it, as a row that measured and did not resolve');
+    const err=D.enforcementLines(d,{failOnUnderpowered:true}).join('\n');
+    assert.match(err,/^::error title=Driftproof: inconclusive on .*Comparison unreliable/m);
+  });
+});
+test('A-538-5 AC-11 the differ forms no per-case verdict on an unreliable side',async()=>{
+  const {buildDriftReport}=require('../lib/diff');
+  const bad=await separatedDown(1);
+  const clean=await separatedDown(0);
+  for(const [a,b] of [[bad,clean],[clean,bad]]){
+    const rep=buildDriftReport(a,b,{labelA:'A',labelB:'B'});
+    assert.ok(rep.perCase.length>0);
+    for(const r of rep.perCase)assert.equal(r.verdict,'not measured');
+    assert.deepEqual(rep.regressions,[]);
+    assert.match(rep.markdown,/NOT MEASURED/);
+    assert.match(rep.markdown,UNRELIABLE);
+  }
+  const control=buildDriftReport(clean,clean,{labelA:'A',labelB:'B'});
+  assert.ok(control.perCase.every(r=>r.verdict!=='not measured'),'a clean pair still reads its own verdicts');
+  assert.doesNotMatch(control.markdown,UNRELIABLE);
+});
+test('A-538-5 AC-12 the view adds no reassurance beside an unreliable comparison',async()=>{
+  const {renderView}=require('../lib/view');
+  const {NONE_HURT}=require('../lib/plain');
+  inDir(await separatedDown(1),(dir)=>{
+    const {html}=renderView(dir,{stale:{noHarnessCheck:true}});
+    assert.match(html,UNRELIABLE);
+    assert.ok(!html.includes(NONE_HURT));
+  });
+  inDir(await separatedDown(0),(dir)=>{
+    const {html}=renderView(dir,{stale:{noHarnessCheck:true}});
+    assert.doesNotMatch(html,UNRELIABLE);
+  });
+});
+test('A-538-5 AC-13 a warning on the placebo arm alone leaves the decision alone',async()=>{
+  const {decisionState}=require('../lib/decision');
+  const clean=await separatedDown(0);
+  const r=structuredClone(clean);
+  const w=r.results.cases.find(c=>c.mode==='with_skill');
+  r.results.cases.push({...structuredClone(w),mode:'placebo',generation:{...structuredClone(w.generation),draws:w.generation.draws.map(d=>({...d,status:'unmeasured',capture_outcome:'fake_tool_call'}))}});
+  assert.equal(require('../lib/verdict').verdictFakeToolCallWarning(r),null);
+  assert.ok(fakeToolCallWarning(r));
+  assert.equal(decisionState(r),'regression');
 });
 test('issue 542 interop derives its frozen range from the current schema version',()=>{
   const {PATCHES}=require('../scripts/build-site-pages');

@@ -189,7 +189,7 @@ function stepsHTML(ex) {
   const count = fig(r.suite.case_count, src, 'tasks');
   const step = (n, title, body) => `<section class="how-step" id="step-${n}" data-step="${n}" aria-labelledby="step-${n}-title">\n<h2 id="step-${n}-title" tabindex="-1">${n}. ${esc(title)}</h2>\n${body}\n</section>`;
   const one = step(1, 'One task, three ways', [
-    `<p>Driftproof gives an AI model a task Driftproof wrote to test the skill, and it gives the same task three ways. Here is a real task, for the ${skill} skill:</p>`,
+    `<p>Driftproof gives an AI model a task Driftproof wrote to test the skill, in three ways. Here is a real task, for the ${skill} skill:</p>`,
     quote(ex.task.prompt, 'blockquote', ' data-prompt'),
   ].join('\n'));
   const two = step(2, 'With the skill, a placebo, or no skill text', [
@@ -206,8 +206,9 @@ function stepsHTML(ex) {
 <p>The judge scored it ${fig(w.draw.samples.length, src)} times: ${w.draw.samples.map((s) => fig(s, src)).join(', ')}; average ${fig(w.draw.mean, src)}.</p>
 <p>One of its reasons: ${quote(w.reason, 'q')}</p>
 </article>`;
-  const three = step(3, 'A separate judge scores each answer', [
-    `<p data-term="judge">The judge is a second AI model, here ${esc(judge)}, that scores each answer against a guide written for the task.</p>`,
+  const three = step(3, 'A judge model scores each answer', [
+    `<p data-term="judge">The judge is an AI model, here ${esc(judge)}, that scores each answer against a guide written for the task.</p>`,
+    '<p>In your own plugin runs the same model answers and grades by default, and Driftproof prints a warning.</p>',
     '<p data-term="score">A score runs from 0, no point of the guide met, to 1, every point met.</p>',
     `<p>The answers came from ${esc(model)}. The judge gets the task, one answer and the guide, and is not told which way the answer was made; an answer can still show which way it was made.</p>`,
     `<p>This task's guide gives ${fig(ex.guide.weight, ex.suiteRel)} for each point met:</p>`,
@@ -232,7 +233,7 @@ function stepsHTML(ex) {
   const four = step(4, 'Repeat, then read the case rule', [
     `<p data-term="draw">Each way answers the task at least ${fig(SAMPLING.min, 'config.js', 'sampling-min')} times and at most ${fig(SAMPLING.max, 'config.js', 'sampling-max')}, stopping once the scores settle, and each answer is called a draw.</p>`,
     `<p>On this task there were ${drawsOf('with_skill')} draws with the skill, ${drawsOf('placebo')} with the placebo and ${drawsOf('baseline')} with no skill text, and the judge scored each draw ${fig(r.run.judge.samples, src, 'judge-samples')} times.</p>`,
-    '<p data-term="spread">The spread measures how much the scores of repeated draws differ from one another.</p>',
+    '<p data-term="spread">The spread is how much the scores of repeated draws differ.</p>',
     `<p data-term="case-rule effect-floor">The case rule reads each case, meaning each task, on its own, and the effect floor, ${fig(EFFECT_FLOOR, 'config.js', 'effect-floor')}, is the smallest gap it counts.</p>`,
     `<p><strong>${esc(LABELS.PASSED)}</strong> means: ${lib(KEY.PASSED)}</p>`,
     own,
@@ -246,7 +247,7 @@ function stepsHTML(ex) {
     `<p>Against the placebo: ${lib(ex.placeboLine)}.</p>`,
     decided('verdict', 'no skill text added', 'none', 'without'),
     decided('placebo', 'the placebo', 'placebo', 'with the placebo'),
-    "<p>Task by task: the skill's average, then each other way's and the rule's reading:</p>",
+    "<p>Task by task, the skill's average first:</p>",
     `<ul class="how-tasks">${ex.tasks.map(taskLine).join('')}</ul>`,
     '</div>',
     `<p class="how-scope" data-scope>Scope: ${count} tasks, written by Driftproof; answers in text only, with tools forbidden; ${esc(model)} answering, ${esc(judge)} judging; ${date}.</p>`,
@@ -271,6 +272,7 @@ function page(shell) {
   const ex = exampleOf();
   const headTags = require('./build-head-tags.js');
   const beacon = !!headTags.beaconFor(headTags.siteConfig().cloudflare_analytics_token);
+  const nodeMajor = /\d+/.exec(JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).engines.node)[0];
   const main = `<main class="how-page">
 <h1>${esc(H1)}</h1>
 <p class="lede">${esc(LEDE)}</p>
@@ -278,7 +280,19 @@ function page(shell) {
 ${stepsHTML(ex)}
 </div>
 <p class="how-why">Why this skill: it is the shortest skill counted in Report 017 that does more than hand the work to another skill. It was chosen by its length, not by its results.</p>
-${beacon ? '<p class="muted">Like every page on this site, this one counts a visit with Cloudflare Web Analytics. Moving between the screens makes no further request.</p>\n' : ''}</main>`;
+${beacon ? '<p class="muted">Like every page on this site, this one counts a visit with Cloudflare Web Analytics. Moving between the screens makes no further request.</p>\n' : ''}<p>Before testing your own text, add <code>--preview</code> to <code>driftproof run</code> to see what it would send and keep, where it would send it, and its estimated calls and cost, without calling a model or writing run files.</p>
+<p>To save your own tests for later, use <code>driftproof recheck init</code>, then <code>recheck run</code> and <code>recheck history</code>. Start today, run again later; it cannot compare with last month unless you saved then. A difference between dates says something changed, not what: the model, Claude Code, the grader, Driftproof itself, or chance.</p>
+<section aria-labelledby="compare-versions">
+<h2 id="compare-versions">Did your edit help?</h2>
+<p>Run <code>driftproof compare before.md after.md --suite tasks.json</code> to test two versions on the same tasks. It saves two records and a plain reading in <code>receipts/compare.md</code>. Use <code>--placebo</code> to add a length control, or <code>--out DIR</code> to choose another folder.</p>
+<p>The reading shows each file's length and fingerprint. The runs are sequential. A difference on these tasks is not proof, and no clear difference is not proof the versions are the same.</p>
+<p>In Claude Code, <code>/driftproof:compare CLAUDE.md --suite tasks.json</code> compares your edited file with its last commit on the same tasks.</p>
+</section>
+<section aria-labelledby="what-you-need">
+<h2 id="what-you-need">What you need</h2>
+<p>You need Claude Code, <code>Node.js ${nodeMajor}</code> or newer, and your project in a git repository. You do not need an API key: runs use your Claude Code plan's usage. In Claude Code, compare and recheck need a git repository, and compare takes a <code>CLAUDE.md</code> or <code>AGENTS.md</code>. <a href="/#quickstart">Install in Claude Code</a>.</p>
+</section>
+</main>`;
   assertPageText(main);
   return shell({ title: TITLE, description: LEDE, main, head: '<link rel="stylesheet" href="/how-it-works/style.css">\n' });
 }

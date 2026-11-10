@@ -24,7 +24,12 @@ test('the whole trailing finding sentence survives',async()=>{
   const points=D.latestCaveats(n,html).map(p=>p.text).join(' ');
   const sentence='A skill that did not beat the fake is not shown to do no better than it.';
   assert.ok(points.includes(sentence));
-  const home=read('docs/index.html');assert.ok(home.includes(sentence));
+  // A-702-3 (issue 757): the home card says the report's sentence in plain words, bound to its point.
+  const plain='Not beating the fake does not show a skill is useless.';
+  const carried=h=>h.includes(plain)&&/data-plain-of="latest_point_\d+_text"/.test(h)&&!h.includes(sentence);
+  const home=read('docs/index.html');assert.ok(carried(home));
+  assert.equal(carried(home.replace(plain,'')),false,'plant: the plain form removed');
+  assert.equal(carried(home.replace(plain,sentence)),false,'plant: the double negative put back');
 });
 test('builder discovery includes every reader and the notes data builder',()=>{
   const B=require('../scripts/reader-pages');

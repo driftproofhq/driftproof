@@ -532,10 +532,12 @@ test('AC-2 the homepage\'s receipt words pair the page\'s own label with its hon
 test('AC-2 the homepage\'s list of what a receipt can say carries the cases word and line', () => {
   const site = require('../scripts/build-site-pages');
   const label = `${casesWord.charAt(0).toUpperCase()}${casesWord.slice(1)}`;
-  assert.ok(site.casesItem().startsWith(`<li><strong>${label}.</strong> ${casesLine}. `), site.casesItem());
+  // A-143-11 (issue 757): the plain label leads and the cases word follows in small type.
+  const lead = `<li><strong>${plain.LABELS.UNDERPOWERED_CASES}.</strong> <small class="receipt-term">Receipt label: ${label}.</small> ${casesLine}.`;
+  assert.ok(site.casesItem().startsWith(`${lead} `), site.casesItem());
   const home = site.homepage();
   assert.ok(home.includes(site.casesItem()), 'the homepage does not carry the cases item');
-  assert.ok(home.includes(`<strong>${label}.</strong> ${casesLine}.`), 'the homepage does not carry the cases word and line');
+  assert.ok(home.includes(lead), 'the homepage does not carry the cases word and line');
 });
 
 test('AC-2 the answer pages\' meaning reads the result\'s own plain label', () => {

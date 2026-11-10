@@ -192,8 +192,8 @@ test('start with a draft: init with the cases, a quick run, the view, then the p
   assert.deepEqual(v.map((x) => x[0]), ['--version', 'init', 'run', 'view']);
   assert.deepEqual(v[1], ['init', fs.realpathSync(sb.skill), '--cases', draft, '--drafted-from-skill']);
   assert.ok(v[2].includes('--quick') && v[2].includes('--trusted-skill'), JSON.stringify(v[2]));
-  assert.deepEqual(v[3], ['view', 'receipts', '--out', 'driftproof-view.html']);
   const page = path.join(sb.work, 'driftproof-view.html');
+  assert.deepEqual(v[3], ['view', path.join(sb.work, 'receipts'), '--out', page]);
   assert.deepEqual(fs.readFileSync(sb.openLog, 'utf8').trim().split('\n').map((l) => JSON.parse(l)), [[page]]);
   assert.ok(fs.readFileSync(page, 'utf8').includes('Smoke run, no verdict'));
   assert.equal(fs.readFileSync(path.join(sb.skill, 'SKILL.md'), 'utf8'), skillMd);
@@ -414,6 +414,8 @@ const BASE_368 = (() => {
 })();
 const DESCRIPTOR = 'Driftproof (driftproofhq): open-source agent skill evaluation and regression testing across model releases';
 const WHAT_TO_TYPE = 'in the folder that holds your skills.';
+// A-139-31 (issue 752): the plugin README's first line also names a rules file.
+const README_WHAT_TO_TYPE = 'in the folder that holds your skills or your CLAUDE.md.';
 // A copy of the plugin with each [file, from, to] applied; a plant whose text is not there fails the test.
 function planted(...edits) {
   const dir = path.join(tmp(), 'plugin');
@@ -790,7 +792,7 @@ async function readWhatToType(pluginDir) {
   const md = fs.readFileSync(path.join(pluginDir, 'README.md'), 'utf8');
   const lines = md.split('\n');
   const first = lines.slice(1).find((l) => l.trim());
-  if (lines[0] !== '# Driftproof for Claude Code' || first !== `Type \`/driftproof:start\` ${WHAT_TO_TYPE}`) out.push(`the README's first line after its title is ${JSON.stringify(first)}`);
+  if (lines[0] !== '# Driftproof for Claude Code' || first !== `Type \`/driftproof:start\` ${README_WHAT_TO_TYPE}`) out.push(`the README's first line after its title is ${JSON.stringify(first)}`);
   const head = '## What it sends, and where';
   const at = md.indexOf(head);
   const list = md.indexOf('- `/driftproof:badge');
@@ -798,7 +800,12 @@ async function readWhatToType(pluginDir) {
   const base = baseText('plugin/driftproof/README.md');
   const body = (t) => { const i = t.indexOf(head); if (i === -1) return null; const j = t.indexOf('\n## ', i + head.length); return t.slice(i, j === -1 ? undefined : j); };
   const aside = (sec, manifest) => sec === null ? null : setAside(sec, JSON.parse(manifest).version);
-  const tree = aside(body(md), JSON.stringify(m));
+  // A-139-31 (issues 744 and 752): the declared lines those issues added or moved are taken back to the Base's. Any other byte reads RED.
+  const declared = (sec) => sec === null ? null : sec.split('\n').filter((l) => !l.startsWith('- `/driftproof:compare` ') && !l.startsWith('- A later use of `/driftproof:recheck` ')).join('\n')
+    .replace('- Even if your project already has', '- Unless your project already has').replace('`npx` starts from an empty folder and does not use that copy: it asks', '`npx` asks')
+    .replace('`/driftproof:init`, `/driftproof:inspect`, `/driftproof:badge`, the first use of `/driftproof:recheck`, `/driftproof:recheck history` and the version check', '`/driftproof:init`, `/driftproof:badge` and the version check')
+    .replace('\n\nEach command checks that the runner is new enough before it starts the runner for any work, and says so if it is not.', '');
+  const tree = declared(aside(body(md), JSON.stringify(m)));
   if (tree === null || tree !== aside(body(base), baseText('plugin/driftproof/.claude-plugin/plugin.json'))) out.push('the section What it sends, and where is not the Base\'s byte for byte');
   return out;
 }
@@ -822,7 +829,7 @@ test('AC-368-10: the description and the README\'s first line say what to type, 
   const md = fs.readFileSync(path.join(PLUGIN, 'README.md'), 'utf8');
   const i = md.indexOf('## What it sends, and where');
   const sec = md.slice(i);
-  const commandList = 'This plugin adds five commands:'; // A-139-28, issue 623.
+  const commandList = 'This plugin adds eight commands:'; // A-139-28, issue 623; A-139-31, issue 752.
   assert.ok(md.slice(0, i).includes(commandList), 'the command-list plant anchor exists');
   const moved = md.slice(0, i).replace(commandList, `${sec}\n${commandList}`);
   assert.ok(reds(await readWhatToType(planted(['README.md', md, moved])), /does not come after the command list/), 'the section above the command list was not read RED');

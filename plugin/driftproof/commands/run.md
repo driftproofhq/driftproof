@@ -61,6 +61,11 @@ Before the run, offer `--keep-transcripts`: it keeps answers and judge outputs
 under `transcripts/<receipt_hash>/` in the working folder for later reading; it
 takes no value and is passed only when chosen.
 
+When the folder you run from is the skill itself, or a folder inside it, the
+receipts and transcripts cannot go there: they would become part of the skill and
+change its hash. The command then starts the runner from a folder it makes beside
+the skill, named after the skill with `-driftproof` added, and says which.
+
 Those are the only flags this command takes. **Anything else is refused, not
 ignored.** A door that quietly dropped a flag would let you ask for one judge
 sample, get five, and read a receipt recording five with nothing to say your
@@ -140,7 +145,10 @@ flag only after the person's yes to it.
 ## The trusted lane, and why the boundary is the repository
 
 The run passes `--trusted-skill`, which means the runner measures the skill as
-you, in your checkout, with no isolation hop. That flag is a claim that a person
+you, with no isolation hop. Each call runs in a new empty folder and loads no
+project or personal instruction files, memory, hooks or Claude Code settings.
+Codex still reads its own config file, and with --capture files that file can
+still turn on Codex's own hooks or memory. That flag is a claim that a person
 looked at the skill and owns it. It is available only for a skill that resolves
 inside this repository, on its real path — a symlink pointing out of the tree
 resolves outside and is refused. Where the person confirmed it with
@@ -199,6 +207,7 @@ measured, and it has no opinion about how to make a score better.
   {"op": "state-trusted"},
   {"op": "version-guard"},
   {"op": "resolve-model"},
+  {"op": "output-folder"},
   {"op": "cli", "args": [
     "run", "@skill-dir",
     {"emit": ["--models", "@models"]},

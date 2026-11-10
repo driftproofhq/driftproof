@@ -45,12 +45,13 @@ live badge for the bundled example, generated from its own receipt.
 
 [All seventeen reports](#reports) · [driftproofhq.com](https://driftproofhq.com)
 
-[Can you tell? Every skill](https://driftproofhq.com/can-you-tell/) · [The AI noticed the sugar pill](https://driftproofhq.com/noticed/) · [Which bar is the fake?](https://driftproofhq.com/spot-the-fake/) · [Every task we gave a skill](https://driftproofhq.com/tasks/) · [Skill or sugar pill?](https://driftproofhq.com/sugar-pill/)
+[Can you tell? Every skill](https://driftproofhq.com/can-you-tell/) · [Did the AI change?](https://driftproofhq.com/did-it-change/) · [Inspect these instructions](https://driftproofhq.com/inspect/) · [The AI noticed the sugar pill](https://driftproofhq.com/noticed/) · [Which bar is the fake?](https://driftproofhq.com/spot-the-fake/) · [Every task we gave a skill](https://driftproofhq.com/tasks/) · [Try it yourself](https://driftproofhq.com/try-it/) · [Which section did the work?](https://driftproofhq.com/which-section/) · [Skill or sugar pill?](https://driftproofhq.com/sugar-pill/)
 
 ![The page driftproof view makes from Report 013's receipts: three skills by three models, each result in plain words: clearly helped, no clear difference, or too few answers to tell.](https://driftproofhq.com/assets/view-report-013.png)
 The page `npx driftproof view` makes from [Report 013's
 receipts](https://github.com/driftproofhq/driftproof/tree/main/receipts/report-013),
-in one file that opens from disk.
+in one file that opens from disk. To send one result with its limits, use
+`driftproof sheet receipt.json`.
 
 Driftproof **consumes** the [`agentskills.io/evals`](https://agentskills.io) eval
 format; it does not invent its own.
@@ -257,7 +258,10 @@ claude plugin install driftproof@driftproofhq
 ```
 
 That installs `/driftproof:start`, `/driftproof:init`, `/driftproof:run`,
-`/driftproof:blind` and `/driftproof:badge`.
+`/driftproof:blind`, `/driftproof:badge`, `/driftproof:compare`, `/driftproof:inspect` and `/driftproof:recheck`.
+`/driftproof:compare <rules-file> --suite <tasks>` compares your edit with the committed file, or a file named with `--against`, and shows the runner's per-task reading and caveat.
+`/driftproof:inspect <file-or-skill-dir>` shows what is in a local file without running it, including the reminder that a clean reading is not a guarantee.
+`/driftproof:recheck <skill-dir-or-rules-file>` saves its tests and settings the first time, runs them again after you say yes on later uses, and shows the runner's dated reading unchanged.
 The CLI is the product and it runs on every surface Driftproof measures, while
 the plugin is one install path for Claude Code users: it builds one argument
 vector, hands it to the pinned runner, and writes the receipt that runner would
@@ -299,6 +303,27 @@ Check the installed copy's version again after updating.
 
 ### Other commands
 
+To check an edit on the same tasks, run
+`driftproof compare before.md after.md --suite tasks.json`. It saves two
+ordinary receipts per model and a plain reading in `receipts/compare.md`.
+Use `--out DIR` for another folder or `--placebo` for a length control.
+For files you wrote yourself, `--trusted-skill` runs both versions on your own CLI,
+with no isolation account, as `run --trusted-skill` does.
+Two skill directories can also be compared when their task suites match.
+The call and cost caps cover both versions. The reading shows each file's
+length and fingerprint, and the draws ceiling from its sealed runner version.
+The runs are sequential: a difference on these tasks is not proof, and no
+clear difference is not proof the versions are the same.
+
+To check one section of your rules file, first run
+`driftproof compare CLAUDE.md --list-sections`. Then run
+`driftproof compare CLAUDE.md --without-section "Heading" --suite tasks.json`.
+It removes that heading and its section, keeps every other byte, and saves the
+shorter file beside the receipts with its sha256. The reading covers these
+tasks, this judge, this day. No clear difference is not proof the section does
+nothing. Length changes too, and sections can matter together.
+[Section matching and limits](specs/730-without-section/spec.md).
+
 ```bash
 # Diff two receipts across a model release into a drift report (markdown)
 npx driftproof diff receiptA.json receiptB.json --out drift.md
@@ -320,6 +345,10 @@ npx driftproof export receipt.json --to summary-json
 # words, its band plot, and whether it is up to date. It opens from disk and
 # loads nothing from the network.
 npx driftproof view receipts/ --out results.html
+
+# Write a printable result with its limits. Add --suite only to include private
+# task text and scoring guides. Full tasks follow in an appendix without cuts.
+npx driftproof sheet receipt.json --suite evals.json --out result.html
 
 # Try identifying the file's kept answer in each pair, in a terminal.
 npx driftproof blind receipts/receipt.json
@@ -380,6 +409,18 @@ my-skill/
 
 Writing a suite that measures fairly is its own craft — see
 **[AUTHORING.md](AUTHORING.md)** ([site](https://driftproofhq.com/authoring.html)).
+
+### Inspect instructions before installing them
+
+`driftproof inspect <file.md | skill-dir | -> [--json]` reads local instructions
+offline and points out fixed text patterns worth a look. A skill directory also
+gets a list of bundled file names and sizes; their contents are not scanned.
+Token and input cost figures are estimates for the input text only, per 1,000
+calls at registered prices. Nothing is run or fetched. Text is limited to 2 MiB.
+This reads only the text given here, and a clean reading is not a guarantee: when
+your assistant loads a file it can also pull in other files or fill in values that
+this check never saw. The [checked patterns](lib/import-core/inspect-patterns.json)
+are published with the module.
 
 ### Inspect a suite before a run
 
@@ -511,8 +552,12 @@ default name:
    sudo -n -u driftproof-eval env LC_ALL=C ls -d "$HOME/."
    ```
 
-**`--trusted-skill`** runs the legacy same-user path instead: your environment,
-your cwd, your CLI login. It exists for exactly one case, a skill you authored
+**`--trusted-skill`** runs the legacy same-user path instead: your environment
+and your CLI login. Each call runs in a new empty folder and loads no project or
+personal instruction files, memory, hooks or Claude Code settings. Codex still
+reads its own config file, and with --capture files that file can still turn on
+Codex's own hooks or memory. So a rules file you measure is not in the baseline
+too. It exists for exactly one case, a skill you authored
 yourself on a machine with no eval user. Never pass it for a skill fetched from
 anywhere else. The api surfaces are unaffected either way; they make HTTP calls
 and spawn nothing.
@@ -529,6 +574,32 @@ count, and refuses before spending anything** if the projection exceeds the
 per-model call cap (`DEV_MAX_CALLS`) or the dollar budget (`DEV_MAX_USD`) — both
 declared with their derivation in [`config.js`](config.js), both overridable with
 `--max-calls` / `--max-usd`. The default model list is `haiku` only.
+
+### Save tests for later
+
+Save a copy of your instructions, test tasks and run settings before an update:
+
+```sh
+driftproof recheck init ./my-skill --models haiku --out recheck/
+driftproof recheck run recheck/
+driftproof recheck history recheck/
+```
+
+For a rules file, use `driftproof recheck init rules.md --suite tasks.json`.
+For a skill or rules file you wrote yourself, `--trusted-skill` on init saves that
+the tests run as you, on your own CLI, with no isolation account, as
+`run --trusted-skill` does. Give `--trusted-skill` to each `recheck run` of that
+folder too, because a folder never carries that trust by itself. A folder saved without it refuses the
+flag, because results from different lanes are never compared.
+A recheck compares with its first run, so "since last month" works
+only if you ran a recheck last month.
+Init makes local copies and calls no model. Run uses those copies and refuses
+changed files or settings. Run it again later to keep another dated receipt.
+History compares each result with the previous and first result for that model.
+It shows the recorded judge and harness, and keeps incomplete runs as not measured.
+A separation between dates cannot be attributed to the model, the harness or chance.
+Use `--json` for the history data or `driftproof view recheck/receipts`
+to see the saved results. Nothing is published by these commands.
 
 <!-- spec 145: begin. Run options, progress lines, the judge warning and --capture. Every fact below is read from the code by specs/145-user-docs-and-view-label; edit it there. -->
 ### Run options
@@ -560,11 +631,22 @@ directory is the skill directory, its `.driftproofrc` is the skill's, so
 
 `driftproof run` also accepts `--timeout <seconds>` for every generation and
 judge attempt on every surface. Give a positive integer with no leading zero,
-within Node's timer bound, shown by `driftproof --help`. Each retry gets that
-limit; retry counts and backoff
-stay unchanged. The receipt seals the setting as `run.timeout_ms`, in
+within Node's timer bound, shown by `driftproof --help`. A call that reaches its
+own time limit is not retried: its draw is recorded unmeasured and the run goes
+on. Only an error whose text names a rate limit (429), a timeout the provider
+itself reports, or a dropped connection is retried, up to three more times, each
+after a longer wait; a repository run retries nothing. The receipt seals the setting as `run.timeout_ms`, in
 milliseconds. Without the flag, each surface keeps its current default.
 The flag works with `--quick` and keeps its sampling and UNVERIFIED level.
+
+### See what a run would send
+
+Add `--preview` to a text run, for example `driftproof run my-skill --preview`.
+It shows the text fingerprint, tasks and grading guides, destinations, estimated
+calls and cost, and what would be kept. It makes no model call and writes no run
+files. `--preview --json` gives the same facts as JSON. The preview may look up
+the local isolation account. It cannot tell you what a vendor CLI connects to or
+logs, or how a provider keeps your data.
 
 ### What a run prints
 
@@ -701,7 +783,7 @@ A receipt is the unit of evidence — one JSON document conforming to
 
 ```jsonc
 {
-  "schema_version": "0.15",
+  "schema_version": "0.16",
   "skill":  { "name": "commit-message-conventions", "version": "0.2.0",
               "content_hash": "…sha256 over SKILL.md + bundled files…" },
   "suite":  { "format": "agentskills.io/evals", "suite_hash": "…", "case_count": 10 },
@@ -710,7 +792,7 @@ A receipt is the unit of evidence — one JSON document conforming to
     "model_release_date": "2025-10-01",
     "provider": "anthropic",
     "surface": "claude-cli",
-    "runner_version": "0.27.0",
+    "runner_version": "0.28.0",
     "date_utc": "2026-07-27T…Z",
     "registry": "registered",
     "transcripts": "hashes-only",
@@ -793,7 +875,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: driftproofhq/driftproof@v0.27.0
+      - uses: driftproofhq/driftproof@v0.28.0
         with:
           skill-dir: skills/my-skill
           models: claude-haiku-4-5
@@ -810,6 +892,8 @@ The action runs the suite on **every** id in `models`, writes one receipt per
 model, uploads the whole receipt directory as a build artifact, and renders the
 run on three surfaces: the **badge**, a **job summary** carrying one row per
 requested model, and the **check title** of the enforcement step.
+
+For a pull request that edits your rules, set `compare-with-base: 'true'` with a Markdown `skill-dir` and a `suite`. The Action compares the base branch's file with the new file on the same tasks and settings. The comment includes the comparison, both file lengths and hashes, and the limits of two sequential runs. The artifact keeps both versions' receipts and `compare.md`; `compare_reading` holds the comparison headline. Job decisions still use only the new file against no rules. A missing base file, unchanged bytes, an unavailable base branch or an event other than a pull request gives a notice and runs the new file alone. See the [offline workflow](examples/workflows/driftproof-compare-rules-file.yml) and [comparison contract](specs/746-action-compare-with-base/spec.md). Stub receipts measure nothing.
 
 **The checkout's `.driftproofrc` is not read.** The action starts the run in an
 empty working directory, so no key of a `.driftproofrc` at the repository root
@@ -857,7 +941,9 @@ does not hold for every score its lost draws could have had. Set it to `'true'`
 and each such model fails the job with one `::error` that names the model. For an
 underpowered model it says how many draws per arm it would need, or that no draw
 count would resolve it at its spreads, or, when draws were lost, which ones and
-that no count is given. For an inconclusive model it names the lost draws. An
+that no count is given. For an inconclusive model it names the lost draws. A
+comparison marked unreliable by fake tool calls is one of these too, since those
+replies are lost draws. It warns by default and fails under this input. An
 `INCONCLUSIVE` run that did not complete, and `NOT_MEASURED`, still do not fail
 the job on their own.
 
@@ -928,7 +1014,7 @@ permissions:
   contents: read
   issues: write
 # ...
-      - uses: driftproofhq/driftproof/stale@v0.27.0
+      - uses: driftproofhq/driftproof/stale@v0.28.0
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill
@@ -963,9 +1049,13 @@ JSON object. Commit it somewhere public and point a shields endpoint URL at it:
 
 ```bash
 npx driftproof run skills/my-skill --models claude-haiku-4-5 --out receipts
-npx driftproof badge receipts/*.json --out badges/my-skill.json
+npx driftproof badge receipts/my-skill-claude-haiku-4-5-2026-11-09.json --out badges/my-skill.json
 git add badges/my-skill.json && git commit -m "chore: driftproof badge"
 ```
+
+`badge` takes one receipt, or one directory. Given several files it refuses in one line
+and picks none, so name the newest receipt yourself. `validate` takes any number of
+files, reports each one, and fails if any of them does.
 
 ```markdown
 ![driftproof](https://img.shields.io/endpoint?url=https://<your-site>/badges/my-skill.json)

@@ -14,6 +14,10 @@ inputs:
     description: 'Tasks file for a Markdown rules file, relative to the repo root. Omit for skill directories.'
     required: false
     default: ''
+  compare-with-base:
+    description: 'On a pull request, compare the base and new Markdown rules file on the same suite. Caps cover both versions together. Default false. Missing or unchanged base files run the new file only. Enforcement still reads only the new file against no rules.'
+    required: false
+    default: 'false'
   placebo:
     description: 'Add a same-length placebo control. Makes half as many calls again.'
     required: false
@@ -52,6 +56,9 @@ inputs:
     default: ${{ github.token }}
 
 outputs:
+  compare_reading:
+    description: 'Comparison headline, or empty when no comparison ran. For several models, their headlines in requested order. Reported only; never used to fail the job.'
+    value: ${{ steps.run.outputs.compare_reading }}
   verdict:
     description: 'The WORST decision across every receipt the run produced: PASSED | NO_EFFECT | UNDERPOWERED | INCONCLUSIVE | NOT_MEASURED | REFUSED | REGRESSED (spec 030; UNDERPOWERED, spec 035).'
     value: ${{ steps.run.outputs.verdict }}
@@ -110,6 +117,7 @@ runs:
         INPUT_SKILL_DIR: ${{ inputs.skill-dir }}
         INPUT_SUITE: ${{ inputs.suite }}
         INPUT_PLACEBO: ${{ inputs.placebo }}
+        INPUT_COMPARE_WITH_BASE: ${{ inputs.compare-with-base }}
         INPUT_MODELS: ${{ inputs.models }}
         INPUT_MAX_USD: ${{ inputs.max-usd }}
         INPUT_MAX_CALLS: ${{ inputs.max-calls }}

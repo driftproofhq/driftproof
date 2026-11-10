@@ -33,9 +33,9 @@ const commands = {
 };
 
 export function mount(el) {
-  const modeLabel = node('label', 'Seed mode');
+  const modeLabel = node('label', 'What is your text?');
   const mode = marked('select', 'mode');
-  for (const [value, text] of [['context', 'Context file: CLAUDE.md or AGENTS.md'], ['skill', 'Skill: SKILL.md alone']]) {
+  for (const [value, text] of [['context', 'A CLAUDE.md, AGENTS.md or custom instructions'], ['skill', 'A skill (SKILL.md only)']]) {
     const option = node('option', text); option.value = value; mode.append(option);
   }
   modeLabel.append(mode);
@@ -59,7 +59,7 @@ export function mount(el) {
       metadata.append(node('dt', label), marked('dd', key, String(value)));
     }
     const command = node('pre'); command.append(marked('code', 'command', commands[selected]));
-    output.replaceChildren(node('p', selected === 'skill' ? 'Seed mode: skill containing SKILL.md alone.' : 'Seed mode: context file bytes.'), comparison, metadata,
+    output.replaceChildren(node('p', selected === 'skill' ? 'Read as: A skill (SKILL.md only).' : 'Read as: A CLAUDE.md, AGENTS.md or custom instructions.'), comparison, metadata,
       node('p', 'To measure it, replace the path below. Context files need your task suite; skills need their evals directory. A measurement run can call a model and incur costs.'), command);
   }
   async function build() {

@@ -316,8 +316,11 @@ gate.section('hygiene');
   // The scanner BITES. A deny-list nobody has fired is a deny-list nobody knows
   // is connected — samples are decoded in memory and never written to disk.
   const samples = JSON.parse(Buffer.from(
-    'eyJob21lLXBhdGgiOiAic2VlIC9ob21lL3NvbWVvbmUvdGhpbmciLCAiZWMyLWludGVybmFsLWhvc3QiOiAiaXAtMTAtMC0wLTEuYXAtc291dGhlYXN0LTEuY29tcHV0ZS5pbnRlcm5hbCIsICJwcml2YXRlLWlwIjogIjEwLjEuMi4zIiwgImFudGhyb3BpYy1rZXkiOiAic2stYW50LUFBQUFBQUFBQUFBQUFBQUFBQUFBIiwgImdpdGh1Yi10b2tlbiI6ICJnaHBfYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiIiwgImF3cy1rZXkiOiAiQUtJQUFCQ0RFRkdISUpLTE1OT1AiLCAicHJpdmF0ZS1rZXktYmxvY2siOiAiLS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLSIsICJlbnYtc2VjcmV0LWFzc2lnbm1lbnQiOiAiQU5USFJPUElDX0FQSV9LRVk9enp6IiwgImp3dC10b2tlbiI6ICJleUphYmNkZWZnaGlqay5leUpsbW5vcHFyc3R1di53eHl6YWIiLCAib3BlbmFpLXNlY3JldC1rZXkiOiAic2stcHJvai1jY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2MiLCAiZW1haWwiOiAicGVyc29uQG5vdGFsbG93ZWQudGVzdCJ9',
+    'eyJob21lLXBhdGgiOiJzZWUgL2hvbWUvc29tZW9uZS90aGluZyIsImFudGhyb3BpYy1rZXkiOiJzay1hbnQtQUFBQUFBQUFBQUFBQUFBQUFBQUEiLCJnaXRodWItdG9rZW4iOiJnaHBfYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiIiwiYXdzLWtleSI6IkFLSUFBQkNERUZHSElKS0xNTk9QIiwicHJpdmF0ZS1rZXktYmxvY2siOiItLS0tLUJFR0lOIFJTQSBQUklWQVRFIEtFWS0tLS0tIiwiZW52LXNlY3JldC1hc3NpZ25tZW50IjoiQU5USFJPUElDX0FQSV9LRVk9enp6Iiwiand0LXRva2VuIjoiZXlKYWJjZGVmZ2hpamsuZXlKbG1ub3BxcnN0dXYud3h5emFiIiwib3BlbmFpLXNlY3JldC1rZXkiOiJzay1wcm9qLWNjY2NjY2NjY2NjY2NjY2NjY2NjY2NjYyIsImVtYWlsIjoicGVyc29uQG5vdGFsbG93ZWQudGVzdCJ9',
     'base64').toString('utf8'));
+  // The two address classes are put together here, so this shipped file carries no address, even encoded (spec 011 A-011-11).
+  samples['ec2-internal-host'] = ['ip-10-0-0-1.ap-southeast-1', 'compute', 'internal'].join('.');
+  samples['private-ip'] = ['10', '1', '2', '3'].join('.');
   const missed = Object.entries(samples)
     .filter(([kind, body]) => !hygiene.scanContent('probe.md', `prose ${body} more`).some((h) => h.kind === kind))
     .map(([kind]) => kind);
@@ -1981,6 +1984,8 @@ gate.section('codex exec template');
     '-c', 'features.skill_search=false', '-c', 'features.tool_suggest=false', '-c', 'features.undo=false',
     '-c', 'features.unified_exec=false', '-c', 'features.unified_exec_zsh_fork=false',
     '-c', 'features.workspace_dependencies=false', '-c', 'mcp_servers={}',
+    // A-022-5 (issue 760): and no project rules file.
+    '-c', 'project_doc_max_bytes=0',
     '-m', 'gpt-5.6-sol'];
   gate.checkEqual('codex exec argv matches the verified recon template', args, expected);
   const flat = [...prov.CODEX_EXEC_ARGS, ...args].join(' ');
@@ -5497,7 +5502,7 @@ gate.section('report 010 (published path)');
     { type: type10 });
   // The sentence is read as a reader sees it, tags and the chrome's fenced markers dropped (spec 041
   // A-041-14, issue 689): the page must still say it, and no markup around a word changes that.
-  const text10 = String(page10 || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ');
+  const text10 = require('../scripts/html-text.js').htmlToText(String(page10 || ''), { collapse: true });
   gate.check('report 010: no receipt directory exists for a report that publishes none',
     !fs.existsSync(path.join(SCAN_ROOT, 'receipts', 'report-010')) && /no Driftproof receipts/.test(text10));
   const sums10 = fs.existsSync(path.join(ev10, 'raw-SHA256SUMS'))
@@ -6172,8 +6177,9 @@ gate.section('eval-user isolation: the hop is the default (spec 022)');
     !iso.error && iso.calls.length === 1 && c0.file === '/usr/bin/sudo', { error: iso.error, files: (iso.calls || []).map((c) => c.file) });
   const U = 'driftproof-eval';
   // Spec 137 R-1: text capture, the default, runs claude with its file-writing tools off; spec 141
-  // R-1: by an allow list of the tools that only read, with no MCP server.
-  const head = ['-n', '-u', U, '/usr/bin/env', '-i', 'HOME=/home/' + U, 'PATH=/home/' + U + '/.local/bin:/usr/bin:/bin', 'bash', '-lc', prov.ISOLATED_WRAPPER, prov.HOP_LABEL, 'claude', '-p', '--output-format', 'json', '--model', 'claude-haiku-4-5-20251001', '--tools', 'Read,WebFetch,WebSearch', '--strict-mcp-config', '--append-system-prompt'];
+  // R-1: by an allow list of the tools that only read, with no MCP server. A-022-5 (issue 760): and with
+  // none of the person's settings, hooks or session records.
+  const head = ['-n', '-u', U, '/usr/bin/env', '-i', 'HOME=/home/' + U, 'PATH=/home/' + U + '/.local/bin:/usr/bin:/bin', 'bash', '-lc', prov.ISOLATED_WRAPPER, prov.HOP_LABEL, 'claude', '-p', '--output-format', 'json', '--model', 'claude-haiku-4-5-20251001', '--tools', 'Read,WebFetch,WebSearch', '--strict-mcp-config', '--setting-sources', '', '--settings', '{"disableAllHooks":true}', '--no-session-persistence', '--append-system-prompt'];
   gate.check('the hop argv is sudo -n -u <user> /usr/bin/env -i HOME PATH bash -lc <wrapper> <label> claude <args>, one element each, SKILL.md last and whole',
     JSON.stringify(c0.args.slice(0, head.length)) === JSON.stringify(head) && c0.args.length === head.length + 1 && /rm -rf/.test(c0.args[head.length]), { got: c0.args.slice(0, 12) });
   const envSeg = c0.args.slice(c0.args.indexOf('-i') + 1, c0.args.indexOf('bash')).map((kv) => kv.split('=')[0]);

@@ -1,0 +1,50 @@
+{
+  "revision": 2,
+  "limits": {
+    "INSPECT_MAX_BYTES": 2097152,
+    "INSPECT_WORK": 64000000,
+    "INSPECT_OUTPUT": 2097152,
+    "INSPECT_DIRECTORY_ENTRIES": 8192,
+    "SKILL_MAX_FILES": 2000,
+    "SKILL_MAX_BYTES": 33554432,
+    "SKILL_MAX_DEPTH": 16
+  },
+  "excerptWidth": 160,
+  "encodedThreshold": 128,
+  "invisible": {
+    "pattern": "^(?:[\\u0000-\\u001f\\u007f-\\u009f\\u200e-\\u200f\\u2028-\\u202e\\u2066-\\u2069]|\\p{Default_Ignorable_Code_Point})$",
+    "message": "Look here: this character is hidden or changes how text is displayed."
+  },
+  "encoded": {
+    "base64Character": "^[A-Za-z0-9+/=]$",
+    "message": "Look here: this long character run may hold encoded text; it has not been decoded."
+  },
+  "url": {
+    "prefixes": ["https://", "http://"],
+    "message": "Look here: this text names a URL; nothing was fetched."
+  },
+  "tools": {
+    "keys": ["allowed-tools", "tools", "disallowed-tools"],
+    "message": "Look here: this front-matter key names tool permissions."
+  },
+  "duplicate": {
+    "structural": [
+      "^[ \\t]{0,16}(?:`{3,64}|~{3,64})[ \\t]{0,8}[A-Za-z0-9_+.#-]{0,32}[ \\t]{0,16}$",
+      "^[ \\t]{0,16}([-*_])(?:[ \\t]{0,8}\\1){2,255}[ \\t]{0,16}$",
+      "^[ \\t]{0,16}\\|?(?:[ \\t]{0,8}:?-{1,64}:?[ \\t]{0,8}\\|){1,64}(?:[ \\t]{0,8}:?-{1,64}:?[ \\t]{0,8})?[ \\t]{0,16}$",
+      "^[ \\t]{0,16}(?:[-*+]|[0-9]{1,9}[.)])[ \\t]{0,16}$"
+    ],
+    "message": "Look here: this exact line already appeared in the text."
+  },
+  "phrases": [
+    { "class": "shell", "starts": ["curl", "wget", "eval", "powershell"], "pattern": "^(?:curl|wget|eval|powershell)\\b", "message": "Look here: this text names a shell or download command." },
+    { "class": "shell", "starts": ["sh", "bash"], "pattern": "^(?:sh|bash)[ \\t]{1,8}-c\\b", "message": "Look here: this text asks a shell to run a command." },
+    { "class": "shell", "starts": ["base64"], "pattern": "^base64[ \\t]{1,8}(?:-d|--decode)\\b", "message": "Look here: this command decodes base64 text." },
+    { "class": "shell", "starts": ["|"], "pattern": "^\\|[ \\t]{0,8}(?:sh|bash|powershell)\\b", "message": "Look here: this pipe sends output into a shell." },
+    { "class": "agent", "starts": ["do"], "pattern": "^do[ \\t]{1,8}not[ \\t]{1,8}(?:mention|tell|show|reveal)[^\\r\\n]{0,80}\\buser\\b", "message": "Look here: this text asks the agent to keep information from the user." },
+    { "class": "agent", "starts": ["hide"], "pattern": "^hide[ \\t]{1,8}(?:output|information)[^\\r\\n]{0,80}\\buser\\b", "message": "Look here: this text asks the agent to hide information from the user." },
+    { "class": "agent", "starts": ["ignore"], "pattern": "^ignore[ \\t]{1,8}(?:all[ \\t]{1,8})?(?:previous|system)[ \\t]{1,8}instructions\\b", "message": "Look here: this text asks the agent to ignore other instructions." },
+    { "class": "agent", "starts": ["read", "open", "access"], "pattern": "^(?:read|open|access)[ \\t]{1,8}(?:the[ \\t]{1,8})?(?:~/\\.ssh|\\.env\\b|keys\\b|tokens\\b)", "message": "Look here: this text requests files or values that may contain credentials." },
+    { "class": "agent", "starts": ["send", "post"], "pattern": "^(?:send|post)[ \\t]{1,8}(?:the[ \\t]{1,8})?(?:data|output|files|keys|tokens)\\b", "message": "Look here: this text asks the agent to send data elsewhere." }
+  ]
+}

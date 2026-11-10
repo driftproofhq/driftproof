@@ -33,9 +33,9 @@ const { subjectName, pageLabel } = require('../scripts/build-receipt-pages.js');
 
 // ── the page texts, the spec's own copy (§ Page texts) ────────────────────────────────────────────
 const T = {
-  title: 'The same skill on different models | Driftproof',
-  h1: 'The same skill on different models',
-  lede: 'Driftproof measured some skills and instruction files on more than one model. Here is what each receipt read, model by model, linked to the receipt.',
+  title: 'The same skill on different models and dates | Driftproof',
+  h1: 'The same skill on different models and dates',
+  lede: 'Driftproof measured some skills and instruction files on more than one model, and some with the same tests on different dates. Here is what each receipt read, linked to the receipt.',
   meaning: '“Clearly helped” means the answers with the skill scored clearly higher on at least one test task, and clearly lower on none. “Clearly hurt” means they scored clearly lower on at least one test task, even if another task scored clearly higher. “Too few answers to tell” means there were too few answers, or they varied too much, to call it either way; it does not mean the skill does nothing. A skill that helped on one model is not a guarantee that it helps on another.',
   caution: 'Readings of one text on one model can differ between runs, so two different readings on two models do not show that the model made the difference.',
   how: [
@@ -66,6 +66,44 @@ const T = {
 };
 const BANNED_PHRASES = /\bnew model|\bstill help|\bbroke\b|\bbreak\b/i;
 const BANNED_WORDS = /\bnew\b|\bstill\b/i;
+
+// ── spec 731: the same skill and the same tests on different dates (the spec's own copy of its texts) ──
+const { buildDriftReport } = require('../lib/diff');
+const { judgeSamplesOrNull } = require('../lib/counts');
+const { kindOf: subjectKind, deliveryOf: subjectDelivery, validateReceipt, SCHEMA_FILES } = require('../lib/receipt');
+const { canonicalModelId } = require('../lib/usage');
+const { sha256 } = require('../lib/canonical');
+const D = {
+  heading: 'The same skill and the same tests on different dates',
+  how: 'Where receipts from two or more dates record the same skill text, the same test tasks, the same model, the same judge model and number of judge samples, the same answer capture, and the same arms, they are listed here by date: each with the version of Driftproof that ran it, the harness it ran in, the average score with the skill and without it, each with its band, and a link to the receipt. Between each two receipts is what Driftproof read when it compared that pair as a release comparison, with its label written in plain words.',
+  setup: (model) => `Every receipt in this group records the same skill text, the same test tasks and the same model, ${model}, scored by the same judge model with the same number of judge samples, with the answer captured the same way.`,
+  judge: { same: 'The judge was the same model as the one measured.', other: 'The judge was a different model from the one measured.' },
+  harnessNone: 'harness not recorded',
+  notMeasured: 'not measured',
+  noBand: 'no band',
+  pair: (a, b) => (a === b ? `Comparing two receipts of ${a}, Driftproof read:` : `Comparing ${a} with ${b}, Driftproof read:`),
+  fn: 'lib/diff.js buildDriftReport release',
+  // The mapping and a refused pair's words (A-731-2), the spec's own copy.
+  labels: [['NO SEPARATION DETECTED', 'No separation detected'], ['DRIFT', 'A separation detected, downward'], ['IMPROVED', 'A separation detected, upward'], ['MIXED', 'A separation detected both ways'], ['INCONCLUSIVE', 'Inconclusive'], ['NOT MEASURED', 'Not measured'], ['REFUSED', 'Refused']],
+  refused: (task, first, second, more) => `on the task ${task}, the scores without the skill averaged ${first} in the first receipt and ${second} in the second, and their bands do not overlap.${more ? ` The same held on ${more}.` : ''} No verdict is asserted, and the cause cannot be established.`,
+  key: [
+    'A separation between two dates is detected under the rule, never attributed. Between the dates any of these could have moved: the model behind the name, the harness that ran it, Driftproof\'s own version and scoring code, the judge\'s own variation, and chance. This page does not say which one made the difference.',
+    'Where the judge is the same model as the one measured, a change in that model also changes the scoring, so the two cannot be told apart.',
+    'No separation is not evidence of sameness: it means no test task separated under the rule at this sample size.',
+    'A refusal is a result: where the scores without the skill did not reproduce between the dates, Driftproof forms no verdict and cannot say what caused the change.',
+    'Driftproof\'s comparison puts a label before each reading. This page writes each label in plain words and keeps the rest of the reading as printed, except a refusal, which it writes out with the test tasks it rests on. Downward means the answers with the skill scored lower in the second of the two receipts, and upward that they scored higher. The plain words are:',
+  ],
+};
+// The words that attribute a separation or give it a direction (731 AC-7), and an internal name.
+const DIRECTION = /\bgot (?:better|worse)\b|\bworse\b|\bbetter\b|\bimproved\b|\bdegraded\b/i;
+const INTERNAL_NAME = /\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b|\b[a-z]+_[a-z_]+_[a-z_]+\b/;
+// The differ's labels as it prints them, and the words only its own reader uses (A-731-2).
+const RAW_LABEL = new RegExp(`\\b(?:${D.labels.map(([l]) => l).join('|')})\\b`);
+const DIFFER_JARGON = /\bthis run\b|\bbaseline arm\b|\bcontrol\b/i;
+// The shell's plain-word markers (spec 689) may wrap a word inside the quoted headline, so the span is
+// read to its close and its text through the tokenizer.
+const HEADLINE_SPAN = /<span data-headline>[\s\S]*?<\/span>/g;
+const DATA_EL = /<data\b[^>]*>[^<]*<\/data>/g;
 
 test('AC-10 the meaning sentences and the verdict gloss carry the library labels verbatim', () => {
   for (const s of ['PASSED', 'REGRESSED', 'UNDERPOWERED']) assert.ok(T.meaning.includes(`“${LABELS[s]}”`), s);
@@ -132,6 +170,8 @@ const handoffOracle = (t) => { const lines = t.replace(/^---\r?\n[\s\S]*?\r?\n--
 const reportsText = (ns) => (ns.length === 1 ? `Report ${ns[0]}` : `Reports ${and(ns)}`);
 function placeOf(x, reportsOf) {
   const ns = [...new Set(reportsOf(x.receipt))].sort();
+  // A-639-5 (issue 742): a receipt under receipts/canary/ that no report lists is placed as the canary run.
+  if (!ns.length) return /^receipts\/canary\//.test(x.rel) ? 'canary run' : null;
   const run = /\/run-(\d+)\//.exec(x.rel);
   const word = /^receipts\/report-\d+-([a-z]+)\//.exec(x.rel);
   return reportsText(ns) + (run ? `, run ${run[1]}` : word ? `, ${word[1]}` : '');
@@ -199,7 +239,8 @@ function kindOf(x, ref) {
 function whoText(row, named) {
   const noun = named.length === 1 ? 'receipt' : 'receipts';
   const reps = [...new Set(named.flatMap((x) => row.rep.get(x)))].sort();
-  if (row.xs.filter((x) => row.rep.get(x).some((n) => reps.includes(n))).every((x) => named.includes(x))) return `${noun} from ${reportsText(reps)}`;
+  // By their reports only where every named receipt has one (A-639-5).
+  if (reps.length && named.every((x) => row.rep.get(x).length) && row.xs.filter((x) => row.rep.get(x).some((n) => reps.includes(n))).every((x) => named.includes(x))) return `${noun} from ${reportsText(reps)}`;
   const items = [];
   for (const p of [...new Set(named.map((x) => row.place.get(x)))]) {
     const all = row.xs.filter((x) => row.place.get(x) === p), here = named.filter((x) => row.place.get(x) === p);
@@ -225,7 +266,9 @@ function conditionsText(row) {
   return out.join(' ');
 }
 
-function expectedRows(entries, { reportsOf, texts = textsOracle(), notes = noteOfReport }) {
+function expectedRows(allEntries, { reportsOf, texts = textsOracle(), notes = noteOfReport }) {
+  // A-639-8 (issue 743): a row's receipts are those some report lists, or that A-639-5 places as the canary run. Rows only.
+  const entries = allEntries.filter((x) => reportsOf(x.receipt).length > 0 || /^receipts\/canary\//.test(x.rel));
   const by = new Map();
   for (const x of entries) { const k = x.receipt.skill.content_hash; if (!by.has(k)) by.set(k, []); by.get(k).push(x); }
   const rows = [];
@@ -374,20 +417,231 @@ async function checkPage(html, { entries, reportsOf, pages = true, texts, notes 
   if (JSON.stringify(keyGot.map((k) => [k.s, k.text])) !== JSON.stringify(keyExpected(exp).map((k) => [k.s, k.text]))) P.push('AC-10 key entries');
   const router = keyGot.find((k) => k.s === 'ROUTER');
   if (router && !router.html.includes(`href="${policy.AMENDMENT}"`)) P.push('AC-10 router key link');
-  // AC-9: no numeral outside the names, places, dates, notes and the key's library sentences.
-  const bare = main.replace(/<span data-(?:place|date|model-name|note)>[^<]*<\/span>/g, '').replace(/<h3 data-subject-name>[\s\S]*?<\/h3>/g, '').replace(/<p data-key="[^"]*">[\s\S]*?<\/p>/g, '');
+  // AC-9: no numeral outside the names, places, dates, notes and the key's library sentences, and
+  // (A-639-4) the dates list's bound <data> elements and quoted headlines.
+  const bare = main.replace(/<span data-(?:place|date|model-name|note)>[^<]*<\/span>/g, '').replace(/<h3 data-subject-name>[\s\S]*?<\/h3>/g, '').replace(/<p data-key="[^"]*">[\s\S]*?<\/p>/g, '').replace(DATA_EL, '').replace(HEADLINE_SPAN, '');
   const digit = /\d/.exec(textOf(bare));
   if (digit) P.push(`AC-9 a numeral outside the named spans: ${JSON.stringify(textOf(bare).slice(Math.max(0, digit.index - 30), digit.index + 30))}`);
-  // AC-11 and AC-14: wording.
+  // AC-11 and AC-14: wording. The em dash reading sets aside the differ's quoted headlines (A-639-4).
   const words = textOf(main);
-  if (/—/.test(main)) P.push('AC-11 em dash');
+  if (/—/.test(main.replace(HEADLINE_SPAN, ''))) P.push('AC-11 em dash');
   for (const { cls, re } of await lexicon) if (re.test(words)) P.push(`AC-11 band lexicon ${cls}`);
   if (/\bconfiden(t|tly|ce)\b|\bsignifican(t|tly|ce)\b/i.test(words)) P.push('AC-11 confidence language');
   if (BANNED_PHRASES.test(words)) P.push(`AC-14 release framing in the page: ${BANNED_PHRASES.exec(words)[0]}`);
   const head = [/<title>([^<]*)<\/title>/, /<meta name="description" content="([^"]*)">/, /<meta property="og:title" content="([^"]*)">/, /<meta property="og:description" content="([^"]*)">/].map((re) => (re.exec(html) || [])[1]).filter((v) => v !== undefined);
   for (const v of [...head, T.lede]) if (BANNED_WORDS.test(decode(v)) || BANNED_PHRASES.test(decode(v))) P.push(`AC-14 release framing in the head: ${v.slice(0, 60)}`);
+  // Spec 731: the dates list.
+  P.push(...checkDates(main, { entries, reportsOf, pages }));
   return P;
 }
+// ── spec 731's oracle: the dates groups, rebuilt from the receipts ────────────────────────────────
+const VERSIONS = Object.keys(SCHEMA_FILES);
+const day = (x) => String(x.receipt.run.date_utc).slice(0, 10);
+const n3 = (v) => Number(v).toFixed(3);
+// The capture mode: recorded, or text for a receipt before schema 0.10 (that runner had one capture).
+function captureOf(r) {
+  const m = get(r, 'run.capture.mode');
+  if (typeof m === 'string') return m;
+  const at = VERSIONS.indexOf(r.schema_version);
+  return at >= 0 && at < VERSIONS.indexOf('0.10') ? 'text' : null;
+}
+// The judge models, canonical, when every arm row records one.
+function judgesOf(r) {
+  const rows = arms(r);
+  const js = rows.map((c) => get(c, 'judge.model_id') ?? get(r, 'run.judge.model_id'));
+  if (!rows.length || js.some(none)) return null;
+  return [...new Set(js.map((j) => canonicalModelId(j)))].sort();
+}
+// The arm set (A-731-1): the modes the rows carry, and the placebo arm where its block is sealed.
+const armSet = (r) => [...new Set([...((r.results || {}).cases || []).map((c) => c.mode), ...(r.placebo ? ['placebo'] : [])])].sort();
+function groupKey(r) {
+  const judges = judgesOf(r); const n = judgeSamplesOrNull(r); const cap = captureOf(r);
+  const k = subjectKind(r).value; const d = subjectDelivery(r).value;
+  if (!judges || n === null || cap === null || k === 'unknown' || d === 'unknown') return null;
+  return JSON.stringify([r.skill.content_hash, r.suite.suite_hash, canonicalModelId(r.run.model_id), r.run.surface, judges, n, cap, k, d, armSet(r)]);
+}
+const judgeSelf = (r) => { const s = get(r, 'run.judge.relationship'); return s && s.comparison_scope === 'within-model' && typeof s.same_model === 'boolean' ? s.same_model : (judgesOf(r) || []).includes(canonicalModelId(r.run.model_id)); };
+// The pair's headline: the first non-empty line under "## Headline", its bold markers off (spec 031 AC-3 reads it so).
+function headlineOf(a, b) {
+  try {
+    const rep = buildDriftReport(a.receipt, b.receipt, { labelA: day(a), labelB: day(b), mode: 'release' });
+    const ls = rep.markdown.split('\n'); const i = ls.findIndex((l) => /^## Headline\s*$/.test(l));
+    const line = i < 0 ? '' : (ls.slice(i + 1).find((l) => l.trim()) || '');
+    const text = line.trim().replace(/^\*\*/, '').replace(/\*\*$/, '');
+    // A-731-2: the label, its plain words, and the words after it.
+    const m = /^([A-Z][A-Z ]*[A-Z])(?:: | — )([\s\S]*)$/.exec(text);
+    const entry = m && D.labels.find(([l]) => l === m[1]);
+    return { text, refusal: rep.refusal_key || null, label: m ? m[1] : null, plain: entry ? entry[1] : null, rest: m ? m[2] : null };
+  } catch (e) { return { text: null, error: e.message }; }
+}
+// The answers without the skill on one task, read here from the row: the mean, its spread, and its field.
+function withoutSkill(c) {
+  const g = c.generation;
+  const sd = (v) => (typeof v === 'number' ? v : 0);
+  if (g && typeof g.mean === 'number') return { mean: g.mean, sd: sd(g.sd), at: 'generation.mean' };
+  return typeof c.mean === 'number' ? { mean: c.mean, sd: sd(c.stddev), at: 'mean' } : { mean: c.score, sd: sd(c.stddev), at: 'score' };
+}
+// The tasks a refused pair rests on, rebuilt from the two receipts: every task the second receipt holds
+// whose answers without the skill have bands that do not overlap the first receipt's.
+function refusedTasksOf(a, b) {
+  const rows = (x) => arms(x.receipt).filter((c) => c.mode === 'baseline');
+  const out = [];
+  for (const nb of rows(b)) {
+    const ob = rows(a).find((c) => c.id === nb.id);
+    if (!ob) continue;
+    const A = withoutSkill(ob), B = withoutSkill(nb);
+    if (A.mean - A.sd > B.mean + B.sd || B.mean - B.sd > A.mean + A.sd) out.push({ id: nb.id, a: A, b: B });
+  }
+  return out;
+}
+const armText = (r, arm) => {
+  if (r.run && r.run.status === 'incomplete') return D.notMeasured;
+  const a = get(r, `results.aggregates.${arm}`) || {};
+  if (typeof a.mean_score !== 'number') return D.notMeasured;
+  return typeof a.stddev === 'number' ? `${n3(a.mean_score)} ± ${n3(a.stddev)}` : `${n3(a.mean_score)} ${D.noBand}`;
+};
+// The <data> elements a row binds, in order: runner, harness, the four figures.
+function rowFigures(r) {
+  const out = [{ at: 'run.runner_version', value: r.run.runner_version }];
+  const h = get(r, 'run.harness');
+  if (h && typeof h.name === 'string') { out.push({ at: 'run.harness.name', value: h.name }); if (h.version !== undefined && h.version !== null) out.push({ at: 'run.harness.version', value: h.version }); }
+  if (!(r.run && r.run.status === 'incomplete')) {
+    for (const arm of ['with_skill', 'baseline']) {
+      const a = get(r, `results.aggregates.${arm}`) || {};
+      if (typeof a.mean_score !== 'number') continue;
+      out.push({ at: `results.aggregates.${arm}.mean_score`, value: a.mean_score, text: n3(a.mean_score) });
+      if (typeof a.stddev === 'number') out.push({ at: `results.aggregates.${arm}.stddev`, value: a.stddev, text: n3(a.stddev) });
+    }
+  }
+  return out.map((f) => ({ ...f, value: String(f.value), text: f.text === undefined ? String(f.value) : f.text }));
+}
+const harnessText = (r) => { const h = get(r, 'run.harness'); return h && typeof h.name === 'string' ? `harness ${h.name}${h.version !== undefined && h.version !== null ? ` ${h.version}` : ''}` : D.harnessNone; };
+function expectedDates(entries, reportsOf) {
+  const by = new Map();
+  for (const x of entries) { const k = groupKey(x.receipt); if (k === null) continue; if (!by.has(k)) by.set(k, []); by.get(k).push(x); }
+  const groups = [];
+  for (const [key, xs0] of by) {
+    // A-731-1: two or more distinct dates, so a same-day group is not listed.
+    if (xs0.length < 2 || new Set(xs0.map(day)).size < 2) continue;
+    const xs = [...xs0].sort((a, b) => cmp(a.receipt.run.date_utc, b.receipt.run.date_utc) || cmp(a.rel, b.rel));
+    const r0 = xs[0].receipt;
+    const selves = xs.map((x) => judgeSelf(x.receipt));
+    const g = {
+      key, id: sha256(key), subject: r0.skill.content_hash, name: subjectName(xs[0].rel, r0), model: humanModelName(r0.run.model_id), xs, first: r0.run.date_utc,
+      judge: selves.every(Boolean) ? 'same' : selves.every((s) => !s) ? 'other' : 'mixed',
+      pairs: xs.slice(1).map((b, i) => ({ a: xs[i], b, ...headlineOf(xs[i], b) })),
+    };
+    g.place = new Map(xs.map((x) => { const ns = [...new Set(reportsOf(x.receipt))].sort(); return [x, ns.length ? placeOf(x, reportsOf) : null]; }));
+    g.rowText = new Map(xs.map((x) => [x, `${day(x)}${g.place.get(x) ? ` (${g.place.get(x)})` : ''}: Driftproof ${x.receipt.run.runner_version}, ${harnessText(x.receipt)}. With the skill ${armText(x.receipt, 'with_skill')}, without it ${armText(x.receipt, 'baseline')}.`]));
+    groups.push(g);
+  }
+  groups.sort((a, b) => cmp(a.name.toLowerCase(), b.name.toLowerCase()) || cmp(a.first, b.first) || cmp(a.key, b.key));
+  return groups;
+}
+// Every problem the dates list has against the receipts, each tagged 731-AC-n.
+function checkDates(main, { entries, reportsOf, pages = true }) {
+  const P = [];
+  const exp = expectedDates(entries, reportsOf);
+  const entryOf = new Map(entries.map((x) => [x.receipt.receipt_hash, x]));
+  const iOther = main.indexOf(`<h2>${T.other}</h2>`); const iDates = main.indexOf(`<h2>${D.heading}</h2>`); const iKey = main.indexOf(`<h2 id="key">${T.key}</h2>`);
+  if (iDates < 0 || iDates < iOther || iKey < iDates) P.push('731-AC-8 the dates heading is missing or out of place');
+  const how = /<p class="dates-how">([\s\S]*?)<\/p>/.exec(main);
+  if (!how || textOf(how[1]) !== D.how) P.push('731-AC-8 the how paragraph of the dates list');
+  const got = [...main.matchAll(/<section class="drift-dates" data-group="([^"]*)" data-subject="([^"]*)">([\s\S]*?)<\/section>/g)].map((m) => ({ id: m[1], subject: m[2], body: m[3] }));
+  for (const s of [...main.matchAll(/<section class="drift-dates"/g)]) if (s.index < iDates || s.index > iKey) P.push('731-AC-8 a dates group outside the dates list');
+  const want = new Map(exp.map((g) => [g.id, g]));
+  for (const g of got) if (!want.has(g.id)) P.push(`731-AC-1 extra group ${g.id.slice(0, 12)} (${g.subject.slice(0, 12)})`);
+  for (const g of exp) if (!got.some((h) => h.id === g.id)) P.push(`731-AC-1 missing group ${g.name} on ${g.model} (${g.xs.map(day).join(', ')})`);
+  const order = got.map((g) => g.id).filter((id) => want.has(id));
+  if (JSON.stringify(order) !== JSON.stringify(exp.map((g) => g.id).filter((id) => order.includes(id)))) P.push('731-AC-4 groups out of order');
+  for (const h of got) {
+    const g = want.get(h.id);
+    if (!g) continue;
+    if (h.subject !== g.subject) P.push(`731-AC-1 group ${g.name} names another text`);
+    const name = /<h3 data-subject-name>([\s\S]*?)<\/h3>/.exec(h.body);
+    if (!name || textOf(name[1]) !== g.name) P.push(`731-AC-1 group name for ${g.name}`);
+    const setup = /<p class="dates-setup">([\s\S]*?)<\/p>/.exec(h.body);
+    const judgeAttr = /<span data-judge="([^"]*)">/.exec(h.body);
+    if (g.judge === 'mixed') P.push(`731-AC-6 ${g.name}: the receipts do not agree on whether the judge is the model; the builder must refuse`);
+    else if (!setup || textOf(setup[1]) !== `${D.setup(g.model)} ${D.judge[g.judge]}` || !judgeAttr || judgeAttr[1] !== g.judge) P.push(`731-AC-6 setup paragraph of ${g.name}: ${setup ? JSON.stringify(textOf(setup[1]).slice(0, 120)) : 'missing'}`);
+    const rows = [...h.body.matchAll(/<li class="dates-row" data-receipt="([^"]*)">([\s\S]*?)<\/li>/g)].map((m) => ({ hash: m[1], body: m[2] }));
+    if (rows.length < 2) P.push(`731-AC-1 ${g.name}: a group with ${rows.length} receipt${rows.length === 1 ? '' : 's'}`);
+    const wantHashes = g.xs.map((x) => x.receipt.receipt_hash);
+    for (const r of rows) if (!wantHashes.includes(r.hash)) P.push(`731-AC-1 ${g.name}: a receipt not of this group ${r.hash.slice(0, 12)}`);
+    for (const x of wantHashes) { const n = rows.filter((r) => r.hash === x).length; if (n !== 1) P.push(`731-AC-1 ${g.name}: receipt ${x.slice(0, 12)} appears ${n} times`); }
+    const seq = rows.map((r) => r.hash).filter((x) => wantHashes.includes(x));
+    if (JSON.stringify([...new Set(seq)]) !== JSON.stringify(wantHashes.filter((x) => seq.includes(x)))) P.push(`731-AC-4 ${g.name}: rows out of order`);
+    for (const r of rows) {
+      const x = entryOf.get(r.hash);
+      if (!x || !g.xs.includes(x)) continue;
+      const a = /<a href="([^"]*)">/.exec(r.body);
+      if (!a || a[1] !== `/r/${r.hash}/`) P.push(`731-AC-2 ${g.name}: row ${r.hash.slice(0, 12)} links ${a ? a[1] : 'nothing'}`);
+      if (pages && a) { const f = path.join(ROOT, 'docs', a[1], 'index.html'); if (!fs.existsSync(f) || !fs.readFileSync(f, 'utf8').includes(r.hash)) P.push(`731-AC-2 ${a[1]} is not that receipt's page`); }
+      const d = /<span data-date>([^<]*)<\/span>/.exec(r.body);
+      if (!d || d[1] !== day(x)) P.push(`731-AC-2 ${g.name}: row ${r.hash.slice(0, 12)} date ${d ? d[1] : 'missing'}`);
+      const figs = [...r.body.matchAll(/<data value="([^"]*)" data-src="([^"]*)" data-at="([^"]*)">([^<]*)<\/data>/g)].map((m) => ({ value: decode(m[1]), src: decode(m[2]), at: m[3], text: decode(m[4]) }));
+      const wantFigs = rowFigures(x.receipt).map((f) => ({ value: f.value, src: x.rel, at: f.at, text: f.text }));
+      if (JSON.stringify(figs) !== JSON.stringify(wantFigs)) P.push(`731-AC-2 ${g.name}: row ${r.hash.slice(0, 12)} figures ${JSON.stringify(figs).slice(0, 160)}`);
+      if ([...r.body.matchAll(/<data\b/g)].length !== figs.length) P.push(`731-AC-2 ${g.name}: a data element without its binding`);
+      if (textOf(r.body) !== g.rowText.get(x)) P.push(`731-AC-2 ${g.name}: row text ${JSON.stringify(textOf(r.body).slice(0, 160))}`);
+    }
+    const pairs = [...h.body.matchAll(/<li class="dates-pair"([^>]*)>([\s\S]*?)<\/li>/g)].map((m) => ({ a: attrs(m[1]), body: m[2] }));
+    if (pairs.length !== g.pairs.length) P.push(`731-AC-3 ${g.name}: ${pairs.length} pair lines for ${g.pairs.length} pairs`);
+    g.pairs.forEach((p, i) => {
+      const got2 = pairs[i];
+      if (!got2) return;
+      if (p.text === null) { P.push(`731-AC-3 ${g.name}: the differ throws for a pair the page shows: ${p.error}`); return; }
+      const where = `${g.name}: pair ${day(p.a)} to ${day(p.b)}`;
+      if (!p.plain) { P.push(`731-AC-3 ${where}: a label outside the mapping: ${p.text.slice(0, 40)}`); return; }
+      if (got2.a.src !== `${p.a.rel} ${p.b.rel}` || got2.a.fn !== D.fn) P.push(`731-AC-3 ${where} is not bound to both receipts and the differ`);
+      if ((got2.a.refusal || null) !== p.refusal) P.push(`731-AC-3 ${where} refusal attribute ${got2.a.refusal || 'absent'}`);
+      if (got2.a.label !== p.label) P.push(`731-AC-3 ${where} label attribute ${got2.a.label || 'absent'}`);
+      const shown = /<b data-plain>([\s\S]*?)<\/b>/.exec(got2.body);
+      if (!shown || textOf(shown[1]) !== p.plain) P.push(`731-AC-3 ${where} label reads ${shown ? JSON.stringify(textOf(shown[1])) : 'nothing'}`);
+      const lead = D.pair(day(p.a), day(p.b));
+      if (p.label !== 'REFUSED') {
+        const span = /<span data-headline>([\s\S]*?)<\/span>/.exec(got2.body);
+        if (!span || textOf(span[1]) !== p.rest) P.push(`731-AC-3 ${where} reads ${span ? JSON.stringify(textOf(span[1]).slice(0, 80)) : 'no headline'}`);
+        if (textOf(got2.body) !== `${lead} ${p.plain}: ${p.rest}`) P.push(`731-AC-3 ${g.name}: pair line text ${JSON.stringify(textOf(got2.body).slice(0, 120))}`);
+        return;
+      }
+      // A refused pair, in fixed words: every task and figure rebuilt from the two receipts (A-731-2).
+      const tasks = refusedTasksOf(p.a, p.b);
+      if (!tasks.length) { P.push(`731-AC-3 ${where}: refused with no task the receipts show`); return; }
+      const [first, ...others] = tasks;
+      const task = (id) => ({ value: id, src: p.b.rel, at: `results.cases[${id}/baseline].id`, text: id });
+      const mean = (x, v) => ({ value: String(v.mean), src: x.rel, at: `results.cases[${first.id}/baseline].${v.at}`, text: n3(v.mean) });
+      const wantFigs = [task(first.id), mean(p.a, first.a), mean(p.b, first.b), ...others.map((t) => task(t.id))];
+      const figs = [...got2.body.matchAll(/<data value="([^"]*)" data-src="([^"]*)" data-at="([^"]*)">([^<]*)<\/data>/g)].map((m) => ({ value: decode(m[1]), src: decode(m[2]), at: decode(m[3]), text: decode(m[4]) }));
+      if (JSON.stringify(figs) !== JSON.stringify(wantFigs)) P.push(`731-AC-3 ${where}: refused figures ${JSON.stringify(figs).slice(0, 200)}`);
+      const named = others.map((t) => t.id);
+      const words = D.refused(first.id, n3(first.a.mean), n3(first.b.mean), named.length ? `${named.length === 1 ? 'the task' : 'the tasks'} ${and(named)}` : '');
+      if (textOf(got2.body) !== `${lead} ${p.plain}: ${words}`) P.push(`731-AC-3 ${g.name}: refused pair text ${JSON.stringify(textOf(got2.body).slice(0, 160))}`);
+      // The figures are the differ's own: its headline names the same two, to its six places.
+      const printed = /observed ([0-9.]+), the earlier receipt recorded ([0-9.]+)/.exec(p.text);
+      if (!printed || Math.abs(Number(printed[1]) - first.b.mean) > 5e-7 || Math.abs(Number(printed[2]) - first.a.mean) > 5e-7) P.push(`731-AC-3 ${where}: the figures are not the differ's: ${p.text.slice(0, 120)}`);
+    });
+    // AC-7 in the list: no numeral outside the bound elements, no internal name, no direction word.
+    const bare = h.body.replace(DATA_EL, '').replace(HEADLINE_SPAN, '').replace(/<span data-(?:date|place|model-name)>[^<]*<\/span>/g, '').replace(/<h3 data-subject-name>[\s\S]*?<\/h3>/g, '');
+    const digit = /\d/.exec(textOf(bare));
+    if (digit) P.push(`731-AC-7 a numeral in the dates list: ${JSON.stringify(textOf(bare).slice(Math.max(0, digit.index - 30), digit.index + 30))}`);
+    const words = textOf(h.body.replace(HEADLINE_SPAN, ''));
+    if (INTERNAL_NAME.test(words)) P.push(`731-AC-7 an internal name in the dates list: ${INTERNAL_NAME.exec(words)[0]}`);
+  }
+  const keys = [...main.matchAll(/<p class="dates-key" data-dates-key="([^"]*)">([\s\S]*?)<\/p>/g)].map((m) => [m[1], textOf(m[2])]);
+  if (JSON.stringify(keys) !== JSON.stringify(D.key.map((k, i) => [String(i + 1), k]))) P.push(`731-AC-6 key sentences: ${JSON.stringify(keys.map((k) => k[1].slice(0, 40)))}`);
+  const shownMap = [...main.matchAll(/<li data-differ-label="([^"]*)">([\s\S]*?)<\/li>/g)].map((m) => [decode(m[1]), textOf(m[2])]);
+  if (JSON.stringify(shownMap) !== JSON.stringify(D.labels)) P.push(`731-AC-6 the mapping: ${JSON.stringify(shownMap).slice(0, 160)}`);
+  const outside = textOf(main.replace(HEADLINE_SPAN, ''));
+  if (DIRECTION.test(outside)) P.push(`731-AC-7 direction word: ${DIRECTION.exec(outside)[0]}`);
+  // A-731-2: what a reader sees of the list carries no label as the differ prints it, and none of its reader's
+  // words. Names and task ids are the receipts' own.
+  const seen = iDates < 0 ? '' : textOf(main.slice(iDates, iKey).replace(DATA_EL, '').replace(/<h3 data-subject-name>[\s\S]*?<\/h3>/g, ''));
+  if (RAW_LABEL.test(seen)) P.push(`731-AC-7 a raw differ label on the dates list: ${RAW_LABEL.exec(seen)[0]}`);
+  if (DIFFER_JARGON.test(seen)) P.push(`731-AC-7 the differ's own words on the dates list: ${DIFFER_JARGON.exec(seen)[0]}`);
+  return P;
+}
+
 // The link a page carries to this one, and its words.
 function linkProblems(html) {
   const m = [...html.matchAll(new RegExp(`<a href="${URL_PATH}">([^<]*)</a>([^<]*)`, 'g'))];
@@ -404,6 +658,19 @@ const scriptSources = (html) => [...html.matchAll(/<script\b[^>]*\bsrc="([^"]*)"
 const archive = { entries: null, reportsOf: reportsOfArchive };
 const ctx = () => { if (!archive.entries) archive.entries = publishedReceipts(); return archive; };
 const page = () => read(`docs/${REL}`);
+
+// The real receipts the rule keeps apart (A-731-1), read by this file's own key: a group on one date,
+// and two receipts that share every field but the arm set, on two dates.
+const keyedBy = (keyOf) => { const by = new Map(); for (const x of ctx().entries) { const k = keyOf(x.receipt); if (k === null) continue; if (!by.has(k)) by.set(k, []); by.get(k).push(x); } return [...by]; };
+const withoutArms = (r) => { const k = groupKey(r); return k === null ? null : JSON.stringify(JSON.parse(k).slice(0, -1)); };
+const sameDayGroup = () => keyedBy(groupKey).find(([, xs]) => xs.length >= 2 && new Set(xs.map(day)).size === 1);
+const mixedArmsGroup = () => keyedBy(withoutArms).find(([, xs]) => new Set(xs.map((x) => JSON.stringify(armSet(x.receipt)))).size === 2 && new Set(xs.map(day)).size >= 2);
+// A group section for those receipts, in the page's markup, put before the first listed group.
+function withGroup(h, [key, xs]) {
+  const rows = xs.map((x) => `<li class="dates-row" data-receipt="${x.receipt.receipt_hash}"><a href="/r/${x.receipt.receipt_hash}/"><span data-date>${day(x)}</span></a></li>`).join('\n');
+  const section = `<section class="drift-dates" data-group="${sha256(key)}" data-subject="${xs[0].receipt.skill.content_hash}">\n<h3 data-subject-name>x</h3>\n<ol class="dates-rows">\n${rows}\n</ol>\n</section>\n`;
+  return h.replace('<section class="drift-dates"', () => `${section}<section class="drift-dates"`);
+}
 
 // ── the built page against the receipts ───────────────────────────────────────────────────────────
 test('AC-1 to AC-16 the built page reads GREEN against the published receipts', async () => {
@@ -460,10 +727,71 @@ const plants = [
   ['AC-14', '"break" in the title', (h) => h.replace('<title>The same skill', '<title>Did it break? The same skill')],
   ['AC-15', 'a row\'s dated note removed', (h) => h.replace(/<p class="drift-note">[\s\S]*?<\/p>\n/, '')],
   ['AC-15', 'a note quoted without its report\'s lead-in', (h) => h.replace('\'s note, on its own page: “', ' carries this dated note: “')],
-  ['AC-10', 'the router gloss removed from the key', (h) => h.replace(` ${T.router}`, '')],
+  // The gloss is read through the plain-word marker spec 689 writes over "router" (A-639-4).
+  ['AC-10', 'the router gloss removed from the key', (h) => h.replace(/ Here a (?:<[^>]*>)*router(?:<[^>]*>)* is a skill that mostly hands the task to other skills\./, '')],
   ['AC-10', 'the answered_by gloss removed from the key', (h) => h.replace(` ${T.answeredBy}`, '')],
   ['AC-16', 'the hand-off note removed', (h) => h.replace(/<p class="drift-handoff">[\s\S]*?<\/p>\n/, '')],
+  // ── spec 731: the dates list ──
+  ['731-AC-1', 'a row for a receipt whose suite hash differs by one byte, inserted into a group', (h) => {
+    const g = expectedDates(ctx().entries, reportsOfArchive)[0];
+    const suite = g.xs[0].receipt.suite.suite_hash;
+    const flipped = suite.slice(0, -1) + (suite.endsWith('0') ? '1' : '0');
+    const other = ctx().entries.find((x) => x.receipt.suite.suite_hash !== suite && x.receipt.suite.suite_hash !== flipped) || ctx().entries.find((x) => !g.xs.includes(x));
+    const row = /<li class="dates-row" data-receipt="([^"]*)">[\s\S]*?<\/li>/.exec(h);
+    return h.replace(row[0], `${row[0].split(row[1]).join(other.receipt.receipt_hash)}\n${row[0]}`);
+  }],
+  ['731-AC-1', 'a group with one receipt shown', (h) => h.replace(/(<section class="drift-dates"[\s\S]*?<ol class="dates-rows">\n<li class="dates-row"[\s\S]*?<\/li>)[\s\S]*?(<\/ol>)/, '$1\n$2')],
+  ['731-AC-1', 'a group removed', (h) => h.replace(/<section class="drift-dates"[\s\S]*?<\/section>\n/, '')],
+  ['731-AC-1', 'a same-day-only group listed', (h) => withGroup(h, sameDayGroup())],
+  ['731-AC-1', 'a placebo receipt paired with a two-arm one', (h) => withGroup(h, mixedArmsGroup())],
+  ['731-AC-2', 'a date typed by hand', (h) => h.replace(/(<li class="dates-row"[^>]*>[\s\S]*?<span data-date>)(\d{4})/, (m, a, y) => `${a}${Number(y) - 1}`)],
+  ['731-AC-2', 'a band typed by hand', (h) => h.replace(/(data-at="results\.aggregates\.with_skill\.mean_score">)([^<]*)(<\/data>)/, '$10.999$3')],
+  ['731-AC-2', 'a bound value changed', (h) => h.replace(/<data value="([^"]*)"( data-src="[^"]*" data-at="results\.aggregates\.baseline\.stddev">)/, '<data value="0.000001"$2')],
+  ['731-AC-2', 'two rows\' links swapped', (h) => {
+    // Inside the first dates group, so the model lists' own links (spec 639 AC-6) stay as they are.
+    const section = /<section class="drift-dates"[\s\S]*?<\/section>/.exec(h)[0];
+    const rows = [...section.matchAll(/<li class="dates-row" data-receipt="([^"]*)">/g)].map((m) => m[1]);
+    const swapped = section.replace(`<a href="/r/${rows[0]}/">`, '<a href="@L@">').replace(`<a href="/r/${rows[1]}/">`, `<a href="/r/${rows[0]}/">`).replace('<a href="@L@">', `<a href="/r/${rows[1]}/">`);
+    return h.replace(section, swapped);
+  }],
+  ['731-AC-2', 'a harness typed by hand', (h) => (/data-at="run\.harness\.version">/.test(h) ? h.replace(/(data-at="run\.harness\.version">)[^<]*/, '$19.9.9') : h.replace(D.harnessNone, 'harness x 9.9.9'))],
+  ['731-AC-3', 'one word of a pair line changed', (h) => h.replace(/(<span data-headline>)([^<]*)/, (m, a, t) => `${a}${t.replace(/[A-Za-z]+/, 'altered')}`)],
+  ['731-AC-3', 'a pair line removed', (h) => h.replace(/<li class="dates-pair"[\s\S]*?<\/li>\n/, '')],
+  ['731-AC-3', 'a pair line added', (h) => h.replace(/(<li class="dates-pair"[\s\S]*?<\/li>\n)/, '$1$1')],
+  ['731-AC-3', 'a pair line\'s refusal attribute removed or added', (h) => (/ data-refusal="/.test(h) ? h.replace(/ data-refusal="[^"]*"/, '') : h.replace('<li class="dates-pair"', '<li class="dates-pair" data-refusal="baseline_did_not_reproduce"'))],
+  // A-731-2: the plain label, and a refused pair's task and figures.
+  ['731-AC-3', 'a plain label that is not the mapping\'s', (h) => h.replace(/<b data-plain>[\s\S]*?<\/b>/, '<b data-plain>A change detected</b>')],
+  ['731-AC-3', 'a refused pair without its task id', (h) => h.replace(/(<span data-refused>on the task )<data\b[^>]*>[^<]*<\/data>/, '$1this one')],
+  ['731-AC-3', 'a refused pair\'s average moved', (h) => h.replace(/(<span data-refused>[\s\S]*?averaged )<data value="[^"]*"/, '$1<data value="0.111111"')],
+  ['731-AC-3', 'a refused pair naming only its first task', (h) => h.replace(/ The same held on [\s\S]*?\. No verdict is asserted/, ' No verdict is asserted')],
+  ['731-AC-7', 'a raw differ label on the dates list', (h) => h.replace(/<b data-plain>[\s\S]*?<\/b>/, '<b data-plain>DRIFT</b>')],
+  ['731-AC-7', 'a refused pair saying "this run"', (h) => h.replace('in the second, and their bands', 'in this run, and their bands')],
+  ['731-AC-7', 'a refused pair saying "baseline arm"', (h) => h.replace('the scores without the skill averaged', 'the baseline arm averaged')],
+  // A-731-3: most refused pairs rest on a receipt holding one answer per task, scored several times.
+  ['731-AC-3', 'a refused pair saying "the answers averaged"', (h) => h.replace('the scores without the skill averaged', 'the answers without the skill averaged')],
+  ['731-AC-6', 'the key saying "the answers" did not reproduce', (h) => h.replace('where the scores without the skill did not reproduce', 'where the answers without the skill did not reproduce')],
+  ['731-AC-6', '"all moved" in the key', (h) => h.replace('any of these could have moved', 'all moved')],
+  ['731-AC-6', 'Driftproof\'s own version left out of the key', (h) => h.replace('Driftproof\'s own version and scoring code, ', '')],
+  ['731-AC-6', 'a word of the mapping changed', (h) => h.replace(/(<li data-differ-label="DRIFT">)[\s\S]*?<\/li>/, '$1A change, downward</li>')],
+  ['731-AC-4', 'two rows swapped', (h) => {
+    const rows = [...h.matchAll(/<li class="dates-row"[\s\S]*?<\/li>/g)].map((m) => m[0]);
+    return h.replace(rows[0], '@R0@').replace(rows[1], rows[0]).replace('@R0@', rows[1]);
+  }],
+  ['731-AC-6', 'a key sentence removed', (h) => h.replace(/<p class="dates-key" data-dates-key="3">[\s\S]*?<\/p>\n/, '')],
+  ['731-AC-6', 'a key sentence reworded', (h) => h.replace('never attributed', 'attributed to the model')],
+  ['731-AC-6', 'a group\'s judge sentence contradicting its receipts', (h) => h.replace(/<span data-judge="(same|other)">[^<]*<\/span>/, (m, k) => `<span data-judge="${k === 'same' ? 'other' : 'same'}">${k === 'same' ? D.judge.other : D.judge.same}</span>`)],
+  ['731-AC-7', 'the direction word "worse" on the page', (h) => h.replace('<p class="dates-how">', '<p class="dates-how">The model got worse. ')],
+  ['731-AC-7', 'a numeral typed into a setup paragraph', (h) => h.replace('<p class="dates-setup">', '<p class="dates-setup">Run 3 of 3. ')],
+  ['731-AC-7', 'a refusal key written into the text', (h) => h.replace('<p class="dates-setup">', '<p class="dates-setup">Refused as baseline_did_not_reproduce. ')],
+  ['731-AC-8', 'the dates heading removed', (h) => h.replace(`<h2>${D.heading}</h2>\n`, '')],
 ];
+// Two groups can be swapped only where the receipts form two.
+if (expectedDates(ctx().entries, reportsOfArchive).length >= 2) {
+  plants.push(['731-AC-4', 'two groups swapped', (h) => {
+    const gs = [...h.matchAll(/<section class="drift-dates"[\s\S]*?<\/section>/g)].map((m) => m[0]);
+    return h.replace(gs[0], '@G0@').replace(gs[1], gs[0]).replace('@G0@', gs[1]);
+  }]);
+}
 for (const [ac, what, plant] of plants) {
   test(`${ac} plant: ${what} reads RED`, async () => {
     assert.ok(fs.existsSync(path.join(ROOT, 'docs', REL)), `docs/${REL} is not built`);
@@ -484,6 +812,13 @@ test('AC-10 the key oracle names a "Comparison unreliable" entry before the rout
 // ── the builder's call paths, on sealed fixtures ──────────────────────────────────────────────────
 const base = () => clone(JSON.parse(read('receipts/report-014/run-1/code-review-and-quality-claude-haiku-5-5-2026-10-07.json')));
 const other = () => clone(JSON.parse(read('receipts/report-014/run-1/code-review-and-quality-claude-haiku-4-5-20251001-2026-10-07.json')));
+// Spec 731 AC-5: the builder validates every receipt, so a fixture carries only fields its schema admits.
+// A current-schema text receipt for the fields 0.6 lacks (timeout, code revision); a repository receipt,
+// the one kind that seals a judge relationship; a 0.5 receipt, which records no judge template.
+const base16 = () => clone(JSON.parse(read('receipts/report-017c/campaign-1/9edec01658bd1dd3181739e2133b892dd7036c5bb275aba29f8e3a2cfbcf529a.json')));
+const base15 = () => clone(JSON.parse(read('receipts/report-016/receipt-15f01115639f.json')));
+const base05 = () => clone(JSON.parse(read('receipts/report-007-rerun/writing-plans-claude-fable-5-2026-08-31.json')));
+const { repositoryJudgeRelationship } = require('../lib/receipt');
 const fx = (name, r) => ({ rel: `receipts/fixture-639/${name}.json`, receipt: r });
 const onModel = (r, id, edit = () => {}) => { const c = clone(r); c.run.model_id = id; edit(c); return sealReceipt(c); };
 const reports014 = () => ['014'];
@@ -535,27 +870,57 @@ test('AC-7 a row receipt no report lists, and two ids with one name, are refused
   assert.throws(() => driftRows([fx('a', onModel(base(), 'claude-haiku-4-5')), fx('b', other())], quiet), /name/i);
 });
 
+test('A-639-8 a receipt no report lists leaves the rows only, and its seal is still read', () => {
+  const { driftRows, driftMain } = builder();
+  const a = base(), b = other();
+  const unlisted = (hash) => ({ ...quiet, reportsOf: (r) => (r.receipt_hash === hash ? [] : ['014']) });
+  const html = driftMain([fx('a', a), fx('b', b)], unlisted(a.receipt_hash));
+  assert.ok(!html.includes(`data-receipt="${a.receipt_hash}"`), 'no row reads it');
+  assert.ok(driftMain([{ ...fx('a', a), rel: 'receipts/canary/2026-11-08/a.json' }, fx('b', b)], unlisted(a.receipt_hash)).includes(`data-receipt="${a.receipt_hash}"`), 'plant: a canary receipt, which A-639-5 places, keeps its row');
+  assert.throws(() => driftRows([fx('a', a), fx('b', b)], unlisted(a.receipt_hash)), /report/i, 'handed straight to the rows it is still refused (AC-7)');
+  const edited = base(); edited.comparison.with_skill_score = 0.123456;
+  assert.throws(() => driftMain([fx('a', edited), fx('b', b)], unlisted(edited.receipt_hash)), /seal|verif/i, 'plant: an unsealed receipt no report lists is refused');
+});
+
+// Spec 731's dates list arrives with dev. This row reads it from the moment the merge brings it in.
+test('A-639-8 plant: every published receipt reaches the dates list, so commit-message-conventions stays listed', { skip: typeof builder().datesGroups === 'function' ? false : 'the dates list is not on this branch until dev is merged' }, () => {
+  const { datesGroups, driftMain } = builder();
+  const all = publishedReceipts();
+  const names = (entries) => datesGroups(entries, { reportsOf: reportsOfArchive }).map((g) => g.name);
+  assert.ok(names(all).includes('commit-message-conventions'), 'the group is listed from every published receipt');
+  assert.ok(!names(all.filter((x) => reportsOfArchive(x.receipt).length > 0)).includes('commit-message-conventions'), 'plant: a filter ahead of the dates list would drop it');
+  assert.match(driftMain(), /<section class="drift-dates"[^>]*>\n<h3 data-subject-name>commit-message-conventions<\/h3>/, 'the page lists it');
+});
+
 test('AC-8 each group moves alone, a judge counts as recorded on its rows, and self-grading reads different', async () => {
   const { driftRows, driftMain } = builder();
   const groups = (entries) => driftRows(entries, quiet)[0].conditions;
   const a = base();
-  const pair = (edit, edit0 = () => {}) => { const a0 = clone(a); edit0(a0); return [fx('a', sealReceipt(a0)), fx('a2', onModel(a, 'claude-sonnet-5-5', (c) => { edit0(c); edit(c); }))]; };
+  const pair = (edit, edit0 = () => {}, from = a, target = 'claude-sonnet-5-5') => { const a0 = clone(from); edit0(a0); return [fx('a', sealReceipt(a0)), fx('a2', onModel(from, target, (c) => { edit0(c); edit(c); }))]; };
   const same = { tasks: 'same', grading: 'same', setup: 'same' };
   assert.deepEqual(groups(pair(() => {})), same);
   assert.deepEqual(groups(pair((c) => { c.suite.suite_hash = 'd'.repeat(64); })), { ...same, tasks: 'differ' });
   assert.deepEqual(groups(pair((c) => { c.run.runner_version = '9.9.9'; })), { ...same, setup: 'differ' });
   assert.deepEqual(groups(pair((c) => { c.results.cases[0].judge.rubric_hash = 'c'.repeat(64); })), { ...same, grading: 'differ' });
-  assert.deepEqual(groups(pair((c) => { c.run.timeout_ms = 1; })), { ...same, setup: 'differ' }, 'a TBD-2 setup field');
-  assert.deepEqual(groups(pair((c) => { c.run.judge.code_revision = 'judge-code-x'; })), { ...same, grading: 'differ' }, 'a TBD-2 grading field');
-  // M2: the run's judge removed while each arm row names its own stays recorded; both removed is unrecorded.
-  assert.deepEqual(groups(pair(() => {}, (c) => { delete c.run.judge.model_id; })), same);
-  assert.deepEqual(groups(pair(() => {}, (c) => { delete c.run.judge.model_id; for (const x of c.results.cases) delete x.judge.model_id; })), { ...same, grading: 'unrecorded' });
-  // M1: the judge is the answering model in one receipt only, computed or sealed in scope.
+  // The TBD-2 fields on a receipt whose schema admits them (A-639-4: the builder validates).
+  const a16 = base16();
+  assert.deepEqual(groups(pair(() => {}, () => {}, a16, 'claude-opus-5-5')), same);
+  assert.deepEqual(groups(pair((c) => { c.run.timeout_ms = 1; }, () => {}, a16, 'claude-opus-5-5')), { ...same, setup: 'differ' }, 'a TBD-2 setup field');
+  assert.deepEqual(groups(pair((c) => { c.run.judge.code_revision = 'judge-code-x'; }, () => {}, a16, 'claude-opus-5-5')), { ...same, grading: 'differ' }, 'a TBD-2 grading field');
+  // M2: a receipt whose judge has no model id is invalid under every schema, so the builder refuses it
+  // (spec 731 AC-5); a receipt that records no judge template (0.5) reads unrecorded.
+  assert.throws(() => groups(pair(() => {}, (c) => { delete c.run.judge.model_id; })), /valid/i);
+  const a05 = base05();
+  assert.deepEqual(groups([fx('a', a05), fx('a2', onModel(a05, 'claude-sonnet-5-5'))]), { ...same, grading: 'unrecorded' });
+  // M1: the judge is the answering model in one receipt only, computed, or sealed in scope on a
+  // repository receipt, the one kind whose schema admits a relationship (A-639-4).
   assert.deepEqual(groups([fx('a', a), fx('a2', onModel(a, a.run.judge.model_id))]), { ...same, grading: 'differ' });
-  assert.deepEqual(groups(pair((c) => { c.run.judge.relationship = { same_model: true, comparison_scope: 'within-model', limitation: 'x' }; })), { ...same, grading: 'differ' });
+  const a15 = base15();
+  assert.equal(a15.run.judge.relationship.same_model, false);
+  assert.deepEqual(groups([fx('a', a15), fx('a2', onModel(a15, a15.run.judge.model_id, (c) => { c.run.judge.relationship = repositoryJudgeRelationship(c.run.model_id, c.run.judge.model_id); }))]), { ...same, grading: 'differ' });
   // A field compared where present: one receipt records the suite case and the other does not.
   assert.deepEqual(groups(pair((c) => { for (const x of c.results.cases) x.generation = { ...(x.generation || {}), suite_case: { prompt_hash: 'p', grading_hash: 'g' } }; })), same);
-  for (const entries of [pair(() => {}), pair((c) => { c.suite.suite_hash = 'd'.repeat(64); }), pair(() => {}, (c) => { delete c.run.judge.model_id; for (const x of c.results.cases) delete x.judge.model_id; })]) {
+  for (const entries of [pair(() => {}), pair((c) => { c.suite.suite_hash = 'd'.repeat(64); }), [fx('a', a05), fx('a2', onModel(a05, 'claude-sonnet-5-5'))]]) {
     assert.deepEqual(await checkPage(driftMain(entries, quiet), { entries, pages: false, ...quiet }), []);
   }
   assert.ok(driftMain(pair((c) => { c.suite.suite_hash = 'd'.repeat(64); }), quiet).includes('The receipt from <span data-place>Report 014</span> on <span data-model-name>Claude Sonnet 5.5</span> records different test tasks.'));
@@ -563,12 +928,13 @@ test('AC-8 each group moves alone, a judge counts as recorded on its rows, and s
 
 test('AC-8 a grading difference is said by the field that moved', async () => {
   const { driftMain } = builder();
-  const a = base();
+  const a = base(); const a16 = base16();
   const named = (who) => `The receipt from <span data-place>Report 014</span> on <span data-model-name>${who}</span>`;
   const cases = [
     ['self', [fx('a', a), fx('a2', onModel(a, a.run.judge.model_id))], `${named(humanModelName(a.run.judge.model_id))} was scored by the same model that answered it.`],
     ['model', [fx('a', a), fx('a2', onModel(a, 'claude-sonnet-5-5', (c) => { c.run.judge.model_id = 'claude-sonnet-5'; for (const x of c.results.cases) x.judge.model_id = 'claude-sonnet-5'; }))], `${named('Claude Sonnet 5.5')} was scored by a different model.`],
-    ['code', [fx('a', a), fx('a2', onModel(a, 'claude-sonnet-5-5', (c) => { c.run.judge.code_revision = 'judge-code-x'; }))], `${named('Claude Sonnet 5.5')} was scored by a different version of the scoring code.`],
+    // The code revision is a field of the current schema, so its fixture is a current receipt (A-639-4).
+    ['code', [fx('a', a16), fx('a2', onModel(a16, 'claude-opus-5-5', (c) => { c.run.judge.code_revision = 'judge-code-x'; }))], `${named('Claude Opus 5.5')} was scored by a different version of the scoring code.`],
     ['other', [fx('a', a), fx('a2', onModel(a, 'claude-sonnet-5-5', (c) => { c.results.cases[0].judge.rubric_hash = 'c'.repeat(64); }))], `${named('Claude Sonnet 5.5')} records different grading instructions or settings.`],
   ];
   for (const [kind, entries, sentence] of cases) {
@@ -577,6 +943,103 @@ test('AC-8 a grading difference is said by the field that moved', async () => {
     for (const k of ['self', 'model', 'code', 'other']) if (k !== kind) assert.ok(!html.includes(T.scored[k][0]), `${kind} is not said as ${k}`);
     assert.deepEqual(await checkPage(html, { entries, pages: false, ...quiet }), [], kind);
   }
+});
+
+// ── spec 731: the dates groups on sealed fixtures ────────────────────────────────────────────────
+// A second receipt of one setup on a later day; one byte of its suite hash flipped.
+const later = (r, edit = () => {}) => { const c = clone(r); c.run.date_utc = '2026-10-08T10:00:00.000Z'; edit(c); return sealReceipt(c); };
+const flipHash = (s) => s.slice(0, -1) + (s.endsWith('0') ? '1' : '0');
+
+test('731 AC-1 a group is two or more receipts of one key: one byte of the suite hash, another judge, or a receipt alone forms none', () => {
+  const { datesGroups } = builder();
+  const a = base();
+  const two = datesGroups([fx('a', a), fx('b', later(a))], quiet);
+  assert.equal(two.length, 1);
+  assert.deepEqual(two[0].xs.map((x) => x.rel), ['receipts/fixture-639/a.json', 'receipts/fixture-639/b.json']);
+  assert.deepEqual(datesGroups([fx('a', a), fx('c', later(a, (c) => { c.suite.suite_hash = flipHash(c.suite.suite_hash); }))], quiet), [], 'plant: one byte of the suite hash forms no group');
+  assert.deepEqual(datesGroups([fx('a', a)], quiet), [], 'a receipt alone forms no group');
+  // A-731-1: a judge removed is refused by the schema, so the public path reaches a different judge.
+  // A failed comparison reports counts here, never the groups: a group holds whole receipts.
+  assert.equal(datesGroups([fx('a', a), fx('d', later(a, (c) => { c.run.judge.model_id = 'claude-sonnet-5'; for (const x of c.results.cases) x.judge.model_id = 'claude-sonnet-5'; }))], quiet).length, 0, 'plant: a different judge model forms no group');
+  // The capture is a field of the current schema, so its fixture is a current receipt (the builder validates).
+  const a16 = base16();
+  assert.equal(datesGroups([fx('a', a16), fx('e', later(a16, (c) => { c.run.capture = { ...c.run.capture, mode: 'files' }; delete c.results.fake_tool_calls; }))], quiet).length, 0, 'a different capture forms no group');
+  assert.deepEqual(datesGroups([fx('a', a), fx('f', onModel(a, 'claude-sonnet-5-5'))], quiet), [], 'another model forms no group');
+  assert.equal(datesGroups([fx('a', a), fx('g', later(a, (c) => { c.run.model_id = `${c.run.model_id}-20260101`; }))], quiet).length, 1, 'a dated id of the same model is the same model');
+});
+
+test('731 AC-1 a group needs two distinct dates: same-day receipts form none, and a third on another date joins them (A-731-1)', () => {
+  const { datesGroups } = builder();
+  const a = base();
+  const sameDay = later(a, (c) => { c.run.date_utc = a.run.date_utc.replace(/T.*/, 'T23:59:59.000Z'); });
+  assert.equal(day(fx('s', sameDay)), day(fx('a', a)), 'the fixture shares the date');
+  assert.notEqual(sameDay.run.date_utc, a.run.date_utc, 'the fixture is a separate receipt on that date');
+  assert.equal(datesGroups([fx('a', a), fx('s', sameDay)], quiet).length, 0, 'plant: a same-day-only group is not listed');
+  const three = datesGroups([fx('a', a), fx('s', sameDay), fx('b', later(a))], quiet);
+  assert.equal(three.length, 1, 'a group that spans dates is listed');
+  assert.deepEqual(three[0].xs.map((x) => x.rel), ['a', 's', 'b'].map((n) => `receipts/fixture-639/${n}.json`), 'it keeps both receipts of the shared date');
+  assert.equal(three[0].pairs.length, 2);
+  const entries = [fx('a', a), fx('s', sameDay), fx('b', later(a))];
+  assert.deepEqual(expectedDates(entries, () => ['014']).map((g) => g.xs.length), [3], 'the oracle reads the same rule');
+  assert.equal(expectedDates(entries.slice(0, 2), () => ['014']).length, 0, 'the oracle lists no same-day group');
+});
+
+test('731 AC-1 a placebo-arm receipt is never paired with a two-arm one, and matching arms still group (A-731-1)', () => {
+  const { datesGroups } = builder();
+  // The real pair the page used to show: one key but for the arms, on two dates.
+  const [, xs] = mixedArmsGroup();
+  const placebo = xs.find((x) => armSet(x.receipt).includes('placebo'));
+  const twoArm = xs.find((x) => !armSet(x.receipt).includes('placebo'));
+  assert.ok(placebo && twoArm, 'the archive holds a placebo receipt beside a two-arm one');
+  assert.equal(withoutArms(placebo.receipt), withoutArms(twoArm.receipt), 'the two differ only in the arm set');
+  assert.notEqual(day(placebo), day(twoArm), 'and they are on two dates');
+  assert.equal(datesGroups([placebo, twoArm], quiet).length, 0, 'plant: a placebo receipt paired with a two-arm one forms no group');
+  assert.equal(expectedDates([placebo, twoArm], () => ['014']).length, 0, 'the oracle keeps them apart');
+  // Control: the arm set separates only what differs in it.
+  const a16 = base16();
+  assert.ok(armSet(a16).includes('placebo'), 'the fixture has a placebo arm');
+  assert.equal(datesGroups([fx('p', a16), fx('q', later(a16))], quiet).length, 1, 'two placebo-arm receipts on two dates form a group');
+});
+
+test('731 AC-3 a label outside the mapping and a refusal with no fixed words each refuse the build (A-731-2)', () => {
+  const { labelOfHeadline, refusedTasks } = builder();
+  assert.deepEqual(labelOfHeadline('DRIFT: some words.'), { label: 'DRIFT', plain: 'A separation detected, downward', rest: 'some words.' });
+  assert.throws(() => labelOfHeadline('WOBBLED: some words.'), /label/, 'plant: a new differ label reaching the page unmapped');
+  const a = fx('a', base()), b = fx('b', later(base()));
+  assert.throws(() => refusedTasks(a, b, 'baseline_missing'), /fixed words/, 'plant: a refusal in the differ\'s own jargon');
+});
+
+test('731 AC-3 and AC-6 the fixture pair renders the differ\'s words after its label, bound to both receipts, and the oracle reads it GREEN', async () => {
+  const { driftMain } = builder();
+  const a = base(); const b = later(a);
+  const entries = [fx('a', a), fx('b', b)];
+  const html = driftMain(entries, quiet);
+  const want = headlineOf(entries[0], entries[1]);
+  assert.ok(want.text && want.text.length > 20, 'the fixture pair has a headline');
+  assert.ok(html.includes(`<b data-plain>${want.plain}</b>`), 'the label is in its plain words');
+  assert.ok(html.includes(`<span data-headline>${want.rest.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')}</span>`), 'the words after the label are on the page verbatim');
+  assert.ok(html.includes(`data-src="receipts/fixture-639/a.json receipts/fixture-639/b.json" data-fn="${D.fn}"`));
+  assert.deepEqual(await checkPage(html, { entries, pages: false, ...quiet }), []);
+  // The same receipt with the skill arm's scores moved by one draw refuses on the baseline check only when the versions differ; here the headline moves with the scores.
+  const c = later(a, (x) => { for (const row of x.results.cases) if (row.mode === 'with_skill') { row.mean = Math.min(1, row.mean + 0.3); row.generation.mean = row.mean; } });
+  const moved = driftMain([fx('a', a), fx('c', c)], quiet);
+  assert.notEqual(/<span data-headline>([^<]*)<\/span>/.exec(moved)[1], want.rest, 'plant: a pair whose scores moved reads another headline');
+});
+
+test('731 AC-5 an edited receipt and an invalid one are refused before anything is rendered', () => {
+  const { driftMain, driftRows } = builder();
+  const a = base();
+  const edited = later(a); edited.results.aggregates.with_skill.mean_score = 0.123456;
+  assert.throws(() => driftMain([fx('a', a), fx('b', edited)], quiet), /seal|verif/i);
+  const invalid = later(a, (c) => { c.schema_version = '9.9'; });
+  assert.throws(() => driftMain([fx('a', a), fx('b', invalid)], quiet), /valid/i);
+  assert.throws(() => driftRows([fx('a', a), fx('b', invalid)], quiet), /valid/i);
+  // A-731-1: datesGroups is exported, so it refuses on its own path.
+  const { datesGroups } = builder();
+  assert.throws(() => datesGroups([fx('a', a), fx('b', invalid)], quiet), /valid/i, 'plant: datesGroups accepting a receipt of an unknown schema');
+  const noJudge = later(a, (c) => { delete c.run.judge.model_id; for (const x of c.results.cases) delete x.judge.model_id; });
+  assert.throws(() => datesGroups([fx('a', a), fx('b', noJudge)], quiet), /valid/i, 'plant: datesGroups accepting a receipt with no judge model');
+  assert.throws(() => datesGroups([fx('a', a), fx('b', edited)], quiet), /seal|verif/i, 'plant: datesGroups accepting an edited receipt');
 });
 
 test('AC-12 the page module\'s own CLI: --check rebuilds the page and compares it byte for byte', () => {
@@ -688,6 +1151,7 @@ test('AC-13 Chromium at 1280 and 390 px: no sideways scroll on a phone', { timeo
     const p = await context.newPage();
     await p.goto(`http://127.0.0.1:${server.address().port}${URL_PATH}`, { waitUntil: 'networkidle' });
     assert.equal(await p.locator('section.drift-row').count(), expectedRows(ctx().entries, { reportsOf: reportsOfArchive }).length);
+    assert.equal(await p.locator('section.drift-dates').count(), expectedDates(ctx().entries, reportsOfArchive).length, 'spec 731: every dates group is on the served page');
     const wide = path.join(shots, 'across-models-1280.png'), phone = path.join(shots, 'across-models-390.png');
     await p.screenshot({ path: wide, fullPage: true });
     await p.setViewportSize({ width: 390, height: 844 });

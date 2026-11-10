@@ -957,28 +957,35 @@ html:is(:has(body.measurement-ui .page-grid:not(.is-reading)), :has(.page-grid:n
 .is-bleed > .bleed-inner { max-width: var(--w-wide); margin: 0 auto; }
 .eyebrow { font-size: var(--t-eyebrow); color: var(--shell-muted); margin: 0 0 0.5rem; }
 
-/* ── the hero (spec 687) ──────────────────────────────────────────────────────
-   THE HEADLINE GETS THE ROOM AND THE FINDING GETS A FLOOR. The opening and the three doors stack
-   in the wide column; the finding card stands beside them from 1024px and spans both rows. On a
-   phone the order is the source's: the opening, the doors, then the finding. The minimums are what
-   keep the headline in three lines (spec 025 AC-11, spec 038 AC-9) and the finding's tiles in two
-   rows. */
+/* ── the hero (spec 687, A-687-5) ─────────────────────────────────────────────
+   THE HEADLINE GETS THE ROOM AND EVERY DOOR IS ON THE FIRST SCREEN. From 1024px the doors leave their
+   stack: chat and users stand beside the opening, curious and makers share the row under it, and the
+   finding takes the full width below as one sheet in two columns. On a phone the order is the
+   source's: the opening, the doors, then the finding. The column minimums are what keep the headline
+   in three lines (spec 025 AC-11, spec 038 AC-9). */
 #hero { display: grid; gap: var(--s-5) var(--s-6); grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 1024px) {
-  #hero { grid-template-columns: minmax(0, 7fr) minmax(400px, 5fr); grid-template-rows: auto auto 1fr; align-items: start; }
-  #hero > .hero-words { grid-column: 1; grid-row: 1; }
-  #hero > .doors { grid-column: 1; grid-row: 2; }
-  #hero > .hero-more { grid-column: 1; grid-row: 3; }
-  #hero > .finding { grid-column: 2; grid-row: 1 / span 3; }
+  #hero { grid-template-columns: minmax(0, 7fr) minmax(400px, 5fr); align-items: start; gap: var(--s-2) var(--s-6); }
+  #hero > .doors { display: contents; }
+  #hero > .hero-words { grid-column: 1; grid-row: 1 / span 2; }
+  #hero .door-chat { grid-column: 2; grid-row: 1; }
+  #hero .door-users { grid-column: 2; grid-row: 2; }
+  /* A real row in the flow, so anything placed before a door in it pushes that door down. */
+  #hero .doors-row { grid-column: 1 / -1; grid-row: 3; display: grid; grid-template-columns: minmax(0, 7fr) minmax(400px, 5fr); gap: var(--s-2) var(--s-6); }
+  #hero > .hero-more { grid-column: 1 / -1; grid-row: 4; }
+  #hero > .finding { grid-column: 1 / -1; grid-row: 5; columns: 2; column-gap: var(--s-6); }
+  #hero > .finding > * { break-inside: avoid; }
+  #hero > .finding > .finding-caveats { break-before: column; }
 }
 .hero-words h1 { margin-bottom: var(--s-3); }
 .hero-sub { font-size: var(--t-lede); line-height: var(--lh-body); color: var(--shell-text); margin: 0; max-width: var(--w-read); }
 .hero-more .gap-line { margin: 0 0 var(--s-1); color: var(--shell-muted); font-size: var(--t-fine); }
-/* THE DOORS: three ways in, each an explainer card on the desk with an accent edge, a line drawing,
+/* THE DOORS: four ways in, each an explainer card on the desk with an accent edge, a line drawing,
    a title in the display face and its links at a touch target's height. */
 .doors { display: grid; gap: var(--s-2); grid-template-columns: minmax(0, 1fr); }
+.doors-row { display: contents; }
 .door {
-  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 var(--s-2); align-items: start;
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 var(--s-2); align-items: start; align-content: start;
   background: var(--surface); color: var(--shell-text); border: 1px solid var(--border); border-left: 3px solid var(--shell-accent);
   border-radius: var(--radius); padding: var(--s-2) var(--s-3) var(--s-2) var(--s-2);
 }
@@ -988,6 +995,11 @@ html:is(:has(body.measurement-ui .page-grid:not(.is-reading)), :has(.page-grid:n
 .door li { margin: 0; max-width: none; }
 .door a { display: inline-flex; align-items: center; min-height: var(--touch); color: var(--shell-accent); text-decoration-color: var(--border-strong); }
 .door a:hover { color: var(--shell-text); }
+/* Issue 757: the line under the chat door's links, and the plain note after a link. */
+.door-note { grid-column: 2; margin: 0; max-width: none; font-size: var(--t-fine); color: var(--shell-muted); }
+.door-after { font-size: var(--t-fine); color: var(--shell-muted); }
+/* The receipt's own label, after the plain label a reader sees first. */
+.receipt-term { font-size: var(--t-fine); color: var(--shell-muted); }
 /* THE FINDING: the latest report's headline and tally on one sheet of stock, half a degree off
    square as every receipt-type card lies. The tiles are one small card per skill counted, drawn in
    the ink of their reading: the stamp pad for a skill that beat the fake, the regression red as an

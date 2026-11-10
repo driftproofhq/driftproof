@@ -234,7 +234,7 @@ const FAKE_NOTE = 'Every fake starts with the same sentence about the morning li
 const OPENING_NOTE = 'Each card shows the opening of the answer, whole paragraphs and never a cut sentence, with the whole answer one tap away. The task is shown as the model saw it; its first two sentences are the same rules every task carries.';
 const PRIVATE = 'Flipping through the cards sends nothing anywhere and stores nothing.';
 const COUNTER = 'The site\'s visit counter (Cloudflare Web Analytics) still counts the page view.';
-const NEXT = 'See the fake for your own file on Fake my file. Guess which answer had the skill on Can you tell? Walk through a whole test on How it works.';
+const NEXT = "Try it on your own file: See your file's fake. Guess which answer had the skill on Can you tell? Walk through a whole test on How it works.";
 
 test('AC-4: the page\'s own words, in order, and no verdict word or typed number', () => {
   const main = /<main\b[\s\S]*<\/main>/.exec(html)[0];

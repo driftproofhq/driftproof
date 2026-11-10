@@ -21,7 +21,9 @@ flags. It checks the path against `input-contract.json`, requires an existing
 directory inside this repository on its real path, then reads the pinned
 runner's `--version` against the minimum in `version-guard.json`. It runs
 `view <receipts-dir> --out driftproof-view.html` and opens that file from disk.
-A failed version check or view stops before the opener.
+A failed version check or view stops before the opener. It refuses before
+anything runs when `driftproof-view.html` here is a link or is not a regular
+file, because the page would be written wherever the link points.
 
 ## Leave the reading to the person
 
@@ -47,8 +49,9 @@ do not start another run until the person chooses it.
 [
   {"op": "validate", "inputs": ["receipts-dir"]},
   {"op": "resolve-target", "input": "receipts-dir", "inside_repo": true},
+  {"op": "page-safe"},
   {"op": "version-guard"},
-  {"op": "cli", "args": ["view", "@receipts-dir", "--out", "driftproof-view.html"]},
+  {"op": "cli", "args": ["view", "@receipts-dir", "--out", "@view-page"]},
   {"op": "open-view", "file": "driftproof-view.html"}
 ]
 ```

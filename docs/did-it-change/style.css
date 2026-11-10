@@ -1,0 +1,23 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Did the AI change? (spec 742): one column per model, one list per skill, each receipt a row and the
+   comparison between two rows a ruled note. Tokens only (spec 025 AC-3); no motion anywhere, so there is
+   nothing for prefers-reduced-motion to ask away (spec 025 AC-7). Rows are blocks that stack at any width;
+   long words wrap rather than scroll the page sideways (spec 025 AC-12). */
+.canary-page { max-width: var(--w-text); }
+.canary-page p, .canary-page li, .canary-page dd { overflow-wrap: anywhere; }
+.canary-page .canary-headline { font-family: var(--display); font-size: var(--t-verdict); line-height: 1.3; }
+/* The page sits on the shell's dark surface, so its quiet lines take the shell's muted ink, not the paper's. */
+.canary-page .canary-setup, .canary-page .canary-moved, .canary-page .canary-source { font-size: var(--t-fine); color: var(--shell-muted); }
+.canary-page .canary-what q { quotes: "\201C" "\201D"; }
+.canary-rows { list-style: none; padding: 0; margin: 0 0 var(--s-4); }
+.canary-row, .canary-pair { margin: 0 0 var(--s-2); padding: var(--s-2); border-radius: var(--radius); }
+.canary-row { border: 1px solid var(--rule); }
+/* The comparison sits on the shell's own surface, in the shell's ink: a paper background here would put
+   the shell's light text on a light ground. */
+.canary-pair { border-left: 3px solid var(--shell-accent); background: var(--surface-2); }
+.canary-pair b { font-weight: 500; }
+.canary-row a:focus-visible, .canary-page a:focus-visible { outline: 2px solid var(--shell-accent); outline-offset: 2px; }
+.canary-map { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--s-1) var(--s-2); margin: 0 0 var(--s-4); }
+.canary-map dt code { font-size: var(--t-mono-sm); }
+.canary-map dd { margin: 0; }
+@media (max-width: 480px) { .canary-map { grid-template-columns: minmax(0, 1fr); } .canary-map dd { margin: 0 0 var(--s-1); } }

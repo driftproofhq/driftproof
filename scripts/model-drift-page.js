@@ -9,13 +9,22 @@
 // every other row goes in the second list. Nothing is combined, averaged or ranked: rows are in name
 // order, and no figure the receipts carry is printed. scripts/build-site-pages.js wraps the <main>
 // this writes in the site's shell; this module renders, it does not run, and calls no model.
+//
+// Spec 731 adds the dates list: every group of published receipts from two or more dates that record
+// the same skill text, test tasks, model, surface, judge model and sample count, capture mode, kind,
+// delivery and arm set, each receipt by date with its own figures bound to its file, and between each
+// two what lib/diff.js buildDriftReport reads for the pair in release mode, its label in fixed plain
+// words. A generic rule, no picked row; a fixed key under the list.
 const fs = require('fs');
 const path = require('path');
 const { plainOf, LABELS, KEY, LEDE_ORDER } = require('../lib/plain');
 const { receiptVerdict, verdictFakeToolCallWarning, UNDERPOWERED_LINE, CASES_LINE } = require('../lib/verdict');
-const { verifyReceiptHash } = require('../lib/receipt');
-const { sha256Files } = require('../lib/canonical');
+const { verifyReceiptHash, validateReceipt, kindOf, deliveryOf, SCHEMA_FILES } = require('../lib/receipt');
+const { sha256Files, sha256 } = require('../lib/canonical');
 const { canonicalModelId } = require('../lib/usage');
+const { judgeSamplesOrNull } = require('../lib/counts');
+const { buildDriftReport } = require('../lib/diff');
+const { baselineReproduces, bandOf } = require('../lib/reuse');
 const policy = require('../lib/report-015-publication');
 const { humanModelName } = require('./model-names');
 const { htmlToText } = require('./html-text.js');
@@ -34,9 +43,41 @@ const refuse = (msg) => { throw Object.assign(new Error(`across-models: ${msg}`)
 // ── the page texts (spec 639 § Page texts) ───────────────────────────────────────────────────────
 const q = (s) => `“${LABELS[s]}”`;
 const TEXT = {
-  title: 'The same skill on different models | Driftproof',
-  h1: 'The same skill on different models',
-  lede: 'Driftproof measured some skills and instruction files on more than one model. Here is what each receipt read, model by model, linked to the receipt.',
+  title: 'The same skill on different models and dates | Driftproof',
+  h1: 'The same skill on different models and dates',
+  lede: 'Driftproof measured some skills and instruction files on more than one model, and some with the same tests on different dates. Here is what each receipt read, linked to the receipt.',
+  // The dates list (spec 731 § Page texts).
+  dates: {
+    heading: 'The same skill and the same tests on different dates',
+    how: 'Where receipts from two or more dates record the same skill text, the same test tasks, the same model, the same judge model and number of judge samples, the same answer capture, and the same arms, they are listed here by date: each with the version of Driftproof that ran it, the harness it ran in, the average score with the skill and without it, each with its band, and a link to the receipt. Between each two receipts is what Driftproof read when it compared that pair as a release comparison, with its label written in plain words.',
+    setup: (model) => `Every receipt in this group records the same skill text, the same test tasks and the same model, ${model}, scored by the same judge model with the same number of judge samples, with the answer captured the same way.`,
+    judge: { same: 'The judge was the same model as the one measured.', other: 'The judge was a different model from the one measured.' },
+    harnessNone: 'harness not recorded',
+    notMeasured: 'not measured',
+    noBand: 'no band',
+    pair: (a, b) => (a === b ? `Comparing two receipts of ${a}, Driftproof read:` : `Comparing ${a} with ${b}, Driftproof read:`),
+    fn: 'lib/diff.js buildDriftReport release',
+    // The fixed mapping from each label lib/diff.js prints to its plain words: the table /did-it-change/ uses
+    // (spec 742 AC-4), defined once here because that builder is not on this branch (A-731-2).
+    labels: [
+      ['NO SEPARATION DETECTED', 'No separation detected'],
+      ['DRIFT', 'A separation detected, downward'],
+      ['IMPROVED', 'A separation detected, upward'],
+      ['MIXED', 'A separation detected both ways'],
+      ['INCONCLUSIVE', 'Inconclusive'],
+      ['NOT MEASURED', 'Not measured'],
+      ['REFUSED', 'Refused'],
+    ],
+    // A refused pair (A-731-2): its arguments are HTML, each bound to its receipt.
+    refused: (task, first, second, more) => `on the task ${task}, the scores without the skill averaged ${first} in the first receipt and ${second} in the second, and their bands do not overlap.${more ? ` The same held on ${more}.` : ''} No verdict is asserted, and the cause cannot be established.`,
+    key: [
+      'A separation between two dates is detected under the rule, never attributed. Between the dates any of these could have moved: the model behind the name, the harness that ran it, Driftproof\'s own version and scoring code, the judge\'s own variation, and chance. This page does not say which one made the difference.',
+      'Where the judge is the same model as the one measured, a change in that model also changes the scoring, so the two cannot be told apart.',
+      'No separation is not evidence of sameness: it means no test task separated under the rule at this sample size.',
+      'A refusal is a result: where the scores without the skill did not reproduce between the dates, Driftproof forms no verdict and cannot say what caused the change.',
+      'Driftproof\'s comparison puts a label before each reading. This page writes each label in plain words and keeps the rest of the reading as printed, except a refusal, which it writes out with the test tasks it rests on. Downward means the answers with the skill scored lower in the second of the two receipts, and upward that they scored higher. The plain words are:',
+    ],
+  },
   meaning: [
     `${q('PASSED')} means the answers with the skill scored clearly higher on at least one test task, and clearly lower on none.`,
     `${q('REGRESSED')} means they scored clearly lower on at least one test task, even if another task scored clearly higher.`,
@@ -103,6 +144,10 @@ function reportsOfArchive(receipt) {
   return [...(archiveIndex.get(receipt.receipt_hash) || [])];
 }
 const reportsText = (ns) => (ns.length === 1 ? `Report ${ns[0]}` : `Reports ${listed(ns)}`);
+// A-639-5 (issue 742): a receipt under receipts/canary/ is listed by no report; its place is the canary
+// run. Every other receipt no report lists is still refused.
+const CANARY_PLACE = 'canary run';
+const canaryPlace = (rel) => (/^receipts\/canary\//.test(rel) ? CANARY_PLACE : null);
 function runOf(rel) {
   const run = /\/run-(\d+)\//.exec(rel);
   if (run) return `run ${run[1]}`;
@@ -235,11 +280,21 @@ function reportNote(n, root = ROOT) {
   return m ? htmlToText(m[1], { skip: ['script', 'style'], decode, collapse: true }) : null;
 }
 
-function driftRows(entries, { reportsOf = reportsOfArchive, texts = committedTexts(), notes = reportNote } = {}) {
+// Spec 731 AC-5: every receipt is validated and verified before anything is rendered, on every path.
+function readable(entries) {
+  for (const x of entries) {
+    const v = validateReceipt(x.receipt);
+    if (!v.valid) refuse(`${x.rel}: the receipt is not valid against schema ${JSON.stringify(x.receipt && x.receipt.schema_version)}: ${(v.errors || []).slice(0, 2).map((e) => `${e.instancePath || '/'} ${e.message}`).join('; ')}`);
+    if (!verifyReceiptHash(x.receipt)) refuse(`${x.rel}: receipt_hash does not verify; an unsealed receipt is not read`);
+  }
+}
+
+function driftRows(entries, { reportsOf = reportsOfArchive, texts = committedTexts(), notes = reportNote, listedOnly = false } = {}) {
   const { subjectName } = receiptPages();
+  readable(entries);
   const by = new Map();
   for (const x of entries) {
-    if (!verifyReceiptHash(x.receipt)) refuse(`${x.rel}: receipt_hash does not verify; an unsealed receipt is not read`);
+    if (listedOnly && !reportsOf(x.receipt).length && !canaryPlace(x.rel)) continue;
     const k = x.receipt.skill.content_hash;
     if (!by.has(k)) by.set(k, []);
     by.get(k).push(x);
@@ -253,9 +308,9 @@ function driftRows(entries, { reportsOf = reportsOfArchive, texts = committedTex
     if (new Set(names).size !== names.length) refuse(`${subject.slice(0, 12)}: two model ids share one name (${ids.join(', ')})`);
     const readings = new Map(xs.map((x) => {
       const ns = [...new Set(reportsOf(x.receipt))].sort();
-      if (!ns.length) refuse(`${x.rel}: no report lists this receipt, so its place cannot be read`);
+      if (!ns.length && !canaryPlace(x.rel)) refuse(`${x.rel}: no report lists this receipt, so its place cannot be read`);
       const run = runOf(x.rel);
-      return [x, { hash: x.receipt.receipt_hash, ...readingOf(x.receipt), reports: ns, place: reportsText(ns) + (run ? `, ${run}` : ''), date: String(x.receipt.run.date_utc).slice(0, 10) }];
+      return [x, { hash: x.receipt.receipt_hash, ...readingOf(x.receipt), reports: ns, place: ns.length ? reportsText(ns) + (run ? `, ${run}` : '') : canaryPlace(x.rel), date: String(x.receipt.run.date_utc).slice(0, 10) }];
     }));
     const models = ids.map((id) => ({ id, name: humanModelName(id), entries: xs.filter((x) => x.receipt.run.model_id === id) }))
       .sort((a, b) => cmp(a.entries[0].receipt.run.date_utc, b.entries[0].receipt.run.date_utc) || cmp(a.id, b.id))
@@ -287,6 +342,157 @@ function driftRows(entries, { reportsOf = reportsOfArchive, texts = committedTex
   return rows;
 }
 
+// ── spec 731: the same skill and the same tests on different dates ────────────────────────────────
+const VERSIONS = Object.keys(SCHEMA_FILES);
+// The version that added run.capture (spec 137). A receipt before it recorded no mode because that
+// runner captured answers one way: the reply text was the answer. Later receipts without one are unknown.
+const CAPTURE_FROM = '0.10';
+function captureModeOf(r) {
+  const m = get(r, 'run.capture.mode');
+  if (typeof m === 'string') return m;
+  const at = VERSIONS.indexOf(r.schema_version);
+  return at >= 0 && at < VERSIONS.indexOf(CAPTURE_FROM) ? 'text' : null;
+}
+// The judge models, canonical, when every arm row records one (spec 639 M2's rule).
+function judgeModelsOf(r) {
+  const rows = armRows(r);
+  const js = rows.map((c) => caseJudge(r, c));
+  if (!rows.length || js.some(absent)) return null;
+  return [...new Set(js.map((j) => canonicalModelId(j)))].sort();
+}
+// The arm set: the modes a receipt's rows carry, and the placebo arm where its block is sealed. A
+// placebo-arm receipt is a different setup from a two-arm one, so the two never share a key (A-731-1).
+function armSetOf(r) {
+  const arms = new Set(((r.results || {}).cases || []).map((c) => c.mode));
+  if (r.placebo) arms.add('placebo');
+  return [...arms].sort();
+}
+// The group key: the fields two receipts must share to be read as one setup on two dates. A receipt
+// with an unknown field has no key and joins no group (spec 731 AC-1).
+function groupKeyOf(r) {
+  const judges = judgeModelsOf(r); const n = judgeSamplesOrNull(r); const cap = captureModeOf(r);
+  const k = kindOf(r).value; const d = deliveryOf(r).value;
+  if (!judges || n === null || cap === null || k === 'unknown' || d === 'unknown') return null;
+  return JSON.stringify([r.skill.content_hash, r.suite.suite_hash, canonicalModelId(r.run.model_id), r.run.surface, judges, n, cap, k, d, armSetOf(r)]);
+}
+const dayOf = (x) => String(x.receipt.run.date_utc).slice(0, 10);
+// The differ's label and the words after it. A label outside the mapping refuses the build, so a new
+// differ label never reaches the page unmapped (A-731-2).
+function labelOfHeadline(text) {
+  const m = /^([A-Z][A-Z ]*[A-Z])(?:: | — )([\s\S]*)$/.exec(String(text));
+  const entry = m && TEXT.dates.labels.find(([label]) => label === m[1]);
+  if (!entry) refuse(`the differ printed a headline with no mapped label: ${String(text).slice(0, 60)}`);
+  return { label: entry[0], plain: entry[1], rest: m[2] };
+}
+// The tasks a refused pair rests on, each with the answers without the skill that did not reproduce. Only
+// that refusal has fixed words; any other would reach the page in the differ's own jargon, so it refuses.
+function refusedTasks(a, b, key) {
+  if (key !== 'baseline_did_not_reproduce') refuse(`${a.rel} against ${b.rel}: the differ refused for ${key}, which has no fixed words on this page`);
+  return baselineReproduces(a.receipt, b.receipt).cases.map((c) => c.id);
+}
+// The pair's headline: the first non-empty line under "## Headline" of the differ's markdown, its
+// bold markers off, read as spec 031's AC-3 probe reads it. The differ's throw is a refusal to build.
+function pairHeadline(a, b) {
+  const rep = buildDriftReport(a.receipt, b.receipt, { labelA: dayOf(a), labelB: dayOf(b), mode: 'release' });
+  const ls = rep.markdown.split('\n');
+  const i = ls.findIndex((l) => /^## Headline\s*$/.test(l));
+  const line = i < 0 ? null : (ls.slice(i + 1).find((l) => l.trim()) || null);
+  if (line === null) refuse(`${a.rel} against ${b.rel}: the differ printed no headline`);
+  const text = line.trim().replace(/^\*\*/, '').replace(/\*\*$/, '');
+  const mapped = labelOfHeadline(text);
+  const refusal = rep.refusal_key || null;
+  return { text, ...mapped, refusal, tasks: mapped.label === 'REFUSED' ? refusedTasks(a, b, refusal) : null };
+}
+function datesGroups(entries, { reportsOf = reportsOfArchive } = {}) {
+  const { subjectName } = receiptPages();
+  readable(entries);
+  const by = new Map();
+  for (const x of entries) { const k = groupKeyOf(x.receipt); if (k === null) continue; if (!by.has(k)) by.set(k, []); by.get(k).push(x); }
+  const groups = [];
+  for (const [key, all] of by) {
+    // A group needs two or more distinct dates, so the list's heading holds (A-731-1).
+    if (all.length < 2 || new Set(all.map(dayOf)).size < 2) continue;
+    const xs = [...all].sort((a, b) => cmp(a.receipt.run.date_utc, b.receipt.run.date_utc) || cmp(a.rel, b.rel));
+    const r0 = xs[0].receipt;
+    const selves = xs.map((x) => judgeIsModel(x.receipt, judgeModelsOf(x.receipt)));
+    if (!(selves.every(Boolean) || selves.every((s) => !s))) refuse(`${xs[0].rel}: the receipts of one group do not agree on whether the judge is the model measured`);
+    const places = new Map(xs.map((x) => { const ns = [...new Set(reportsOf(x.receipt))].sort(); const run = runOf(x.rel); return [x, ns.length ? reportsText(ns) + (run ? `, ${run}` : '') : null]; }));
+    groups.push({
+      key, id: sha256(key), subject: r0.skill.content_hash, name: subjectName(xs[0].rel, r0), model: humanModelName(r0.run.model_id),
+      first: r0.run.date_utc, judge: selves[0] ? 'same' : 'other', xs, places,
+      pairs: xs.slice(1).map((b, i) => ({ a: xs[i], b, ...pairHeadline(xs[i], b) })),
+    });
+  }
+  groups.sort((a, b) => cmp(a.name.toLowerCase(), b.name.toLowerCase()) || cmp(a.first, b.first) || cmp(a.key, b.key));
+  return groups;
+}
+// A figure bound to the receipt it comes from, as the report pages bind theirs (data-src, data-at).
+const n3 = (v) => Number(v).toFixed(3);
+const bound = (x, at, value, text = String(value)) => `<data value="${esc(String(value))}" data-src="${esc(x.rel)}" data-at="${esc(at)}">${esc(text)}</data>`;
+function armHTML(x, arm) {
+  const r = x.receipt;
+  if (r.run && r.run.status === 'incomplete') return TEXT.dates.notMeasured;
+  const a = get(r, `results.aggregates.${arm}`) || {};
+  if (typeof a.mean_score !== 'number') return TEXT.dates.notMeasured;
+  const mean = bound(x, `results.aggregates.${arm}.mean_score`, a.mean_score, n3(a.mean_score));
+  return typeof a.stddev === 'number' ? `${mean} ± ${bound(x, `results.aggregates.${arm}.stddev`, a.stddev, n3(a.stddev))}` : `${mean} ${TEXT.dates.noBand}`;
+}
+function harnessHTML(x) {
+  const h = get(x.receipt, 'run.harness');
+  if (!h || typeof h.name !== 'string') return TEXT.dates.harnessNone;
+  const version = h.version !== undefined && h.version !== null ? ` ${bound(x, 'run.harness.version', h.version)}` : '';
+  return `harness ${bound(x, 'run.harness.name', h.name)}${version}`;
+}
+function datesRowHTML(g, x) {
+  const h = x.receipt.receipt_hash;
+  const place = g.places.get(x);
+  return `<li class="dates-row" data-receipt="${h}"><a href="/r/${h}/"><span data-date>${dayOf(x)}</span></a>${place ? ` (<span data-place>${esc(place)}</span>)` : ''}: Driftproof ${bound(x, 'run.runner_version', x.receipt.run.runner_version)}, ${harnessHTML(x)}. With the skill ${armHTML(x, 'with_skill')}, without it ${armHTML(x, 'baseline')}.</li>`;
+}
+// A refused pair in fixed words (A-731-2): its first task's two averages, each bound to the receipt it
+// is from, and every other task that did not reproduce.
+function refusedHTML(p) {
+  const task = (id) => bound(p.b, `results.cases[${id}/baseline].id`, id);
+  const mean = (x, id) => {
+    const c = armRows(x.receipt).find((r) => r.mode === 'baseline' && r.id === id);
+    const field = c.generation && typeof c.generation.mean === 'number' ? 'generation.mean' : typeof c.mean === 'number' ? 'mean' : 'score';
+    const v = bandOf(c).mean;
+    return bound(x, `results.cases[${id}/baseline].${field}`, v, n3(v));
+  };
+  const [first, ...more] = p.tasks;
+  const others = more.length ? `${more.length === 1 ? 'the task' : 'the tasks'} ${listed(more.map(task))}` : '';
+  return TEXT.dates.refused(task(first), mean(p.a, first), mean(p.b, first), others);
+}
+function datesPairHTML(p) {
+  // The two dates sit in data-date spans, as every date on the page does.
+  const [a, b] = [dayOf(p.a), dayOf(p.b)];
+  const lead = esc(TEXT.dates.pair(a === b ? '@A@' : '@A@', a === b ? '@A@' : '@B@')).replace('@A@', `<span data-date>${a}</span>`).replace('@B@', `<span data-date>${b}</span>`);
+  const words = p.tasks ? `<span data-refused>${refusedHTML(p)}</span>` : `<span data-headline>${esc(p.rest)}</span>`;
+  return `<li class="dates-pair" data-src="${esc(`${p.a.rel} ${p.b.rel}`)}" data-fn="${TEXT.dates.fn}" data-label="${esc(p.label)}"${p.refusal ? ` data-refusal="${esc(p.refusal)}"` : ''}>${lead} <b data-plain>${esc(p.plain)}</b>: ${words}</li>`;
+}
+function datesGroupHTML(g) {
+  const L = [];
+  L.push(`<section class="drift-dates" data-group="${g.id}" data-subject="${g.subject}">`);
+  L.push(`<h3 data-subject-name>${esc(g.name)}</h3>`);
+  L.push(`<p class="dates-setup">${esc(TEXT.dates.setup('@')).replace('@', `<span data-model-name>${esc(g.model)}</span>`)} <span data-judge="${g.judge}">${esc(TEXT.dates.judge[g.judge])}</span></p>`);
+  L.push('<ol class="dates-rows">');
+  g.xs.forEach((x, i) => { if (i) L.push(datesPairHTML(g.pairs[i - 1])); L.push(datesRowHTML(g, x)); });
+  L.push('</ol>');
+  L.push('</section>');
+  return L.join('\n');
+}
+function datesHTML(groups) {
+  return [
+    `<h2>${esc(TEXT.dates.heading)}</h2>`,
+    `<p class="dates-how">${esc(TEXT.dates.how)}</p>`,
+    ...groups.map(datesGroupHTML),
+    ...TEXT.dates.key.map((k, i) => `<p class="dates-key" data-dates-key="${i + 1}">${esc(k)}</p>`),
+    // The mapping's plain words. The differ's label stays in the attribute: it is an internal name (A-731-2).
+    '<ul class="dates-map">',
+    ...TEXT.dates.labels.map(([label, plain]) => `<li data-differ-label="${esc(label)}">${esc(plain)}</li>`),
+    '</ul>',
+  ].join('\n');
+}
+
 // ── rendering ─────────────────────────────────────────────────────────────────────────────────────
 const place = (s) => `<span data-place>${esc(s)}</span>`;
 const modelName = (s) => `<span data-model-name>${esc(s)}</span>`;
@@ -297,7 +503,8 @@ function who(row, named) {
   const noun = named.length === 1 ? 'receipt' : 'receipts';
   const reports = [...new Set(named.flatMap((x) => row.readings.get(x).reports))].sort();
   const inThem = row.xs.filter((x) => row.readings.get(x).reports.some((n) => reports.includes(n)));
-  if (inThem.every((x) => named.includes(x))) return `${noun} from ${place(reportsText(reports))}`;
+  // By their reports only where every named receipt has one (A-639-5: a canary receipt has none).
+  if (reports.length && named.every((x) => row.readings.get(x).reports.length) && inThem.every((x) => named.includes(x))) return `${noun} from ${place(reportsText(reports))}`;
   const items = [];
   for (const p of [...new Set(named.map((x) => row.readings.get(x).place))]) {
     const atPlace = row.xs.filter((x) => row.readings.get(x).place === p);
@@ -369,8 +576,12 @@ function keyHTML(rows) {
   }).join('\n');
 }
 
+// A ROW'S RECEIPTS ARE THE PUBLISHED RECEIPTS SOME REPORT LISTS (A-639-8, issue 743). A reading's place
+// in a row is the report that published it (AC-7), so driftRows is asked to leave out a receipt outside
+// every report. Rows only: entries stays every published receipt for anything else this page reads.
 function driftMain(entries = receiptPages().receipts(), opts = {}) {
-  const rows = driftRows(entries, opts);
+  const rows = driftRows(entries, { ...opts, listedOnly: true });
+  const dates = datesGroups(entries, opts);
   const main = rows.filter((r) => r.list === 'main');
   const other = rows.filter((r) => r.list === 'other');
   const how = TEXT.how.map((t) => (t === null
@@ -386,6 +597,7 @@ ${how.join('\n')}
 ${main.map(rowHTML).join('\n')}
 <h2>${esc(TEXT.other)}</h2>
 ${other.map(rowHTML).join('\n')}
+${datesHTML(dates)}
 <h2 id="key">${esc(TEXT.key)}</h2>
 ${keyHTML(rows)}
 </main>`;
@@ -422,5 +634,5 @@ function main(argv) {
   return 0;
 }
 
-module.exports = { REL, HREF, TEXT, driftRows, driftMain, isHandoff, committedTexts, reportNote, reportsOfArchive, renderPage, main };
+module.exports = { REL, HREF, TEXT, driftRows, driftMain, datesGroups, groupKeyOf, captureModeOf, pairHeadline, labelOfHeadline, refusedTasks, isHandoff, committedTexts, reportNote, reportsOfArchive, renderPage, main };
 if (require.main === module) process.exitCode = main(process.argv.slice(2));

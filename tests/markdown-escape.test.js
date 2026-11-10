@@ -230,16 +230,32 @@ test('the job summary: a case id and a draw reason carry no live construct, and 
   const md = decision.summaryMarkdown(d, { lead: plain.summaryLead(d, dir, {}) });
   const rows = md.split('\n').filter((l) => /^\| `/.test(l));
   assert.equal(rows.length, 2);
+  // The cells of a row, counting a backslash as escaping any character (reader A) and only before a pipe (reader B).
+  const cellsOf = (row, readerA) => {
+    let n = 1;
+    for (let i = 0; i < row.length; i += 1) {
+      if (row[i] === '\\' && (readerA || row[i + 1] === '|')) { i += 1; continue; }
+      if (row[i] === '|') n += 1;
+    }
+    return n - 2;
+  };
+  // A-144-9 (issue 766): the columns are the summary's own header row, and they are the five spec 077 AC-14 leaves.
+  const COLUMNS = ['Model', 'Decision', 'Lift', 'Token cost', 'Receipt'];
+  const columnsOf = (line) => line.split('|').slice(1, -1).map((c) => c.trim());
+  const header = md.split('\n').find((l) => l.startsWith('| Model |'));
+  const columns = columnsOf(header);
+  assert.deepEqual(columns, COLUMNS, 'the header row names spec 077\'s five columns');
+  // Plants (A-144-9): the header with a column dropped or added, a pipe left unescaped in a row, a row short of a cell.
+  assert.notDeepEqual(columnsOf(header.replace(' Token cost |', '')), COLUMNS, 'plant: the token cost column dropped');
+  assert.notDeepEqual(columnsOf(`${header} Extra |`), COLUMNS, 'plant: a sixth column');
+  for (const readerA of [true, false]) {
+    assert.equal(cellsOf(rows[0].replace('a\\|b', 'a|b'), readerA), columns.length + 1, 'plant: a pipe left unescaped');
+    assert.equal(cellsOf(rows[0].replace(/^\| [^|]*\|/, '|'), readerA), columns.length - 1, 'plant: a row short of a cell');
+  }
   for (const row of rows) {
     assertNoneLive(row, 'a row');
-    // Four cells, counting a backslash as escaping any character (reader A) and only before a pipe (reader B).
     for (const readerA of [true, false]) {
-      let n = 1;
-      for (let i = 0; i < row.length; i += 1) {
-        if (row[i] === '\\' && (readerA || row[i + 1] === '|')) { i += 1; continue; }
-        if (row[i] === '|') n += 1;
-      }
-      assert.equal(n - 2, 4, `${readerA ? 'reader A' : 'reader B'}: ${row.slice(0, 120)}`);
+      assert.equal(cellsOf(row, readerA), columns.length, `${readerA ? 'reader A' : 'reader B'}: ${row.slice(0, 120)}`);
     }
   }
   assert.ok(md.includes(lostDrawsLine(markdownLost(d.rows[0].lostDraws))));

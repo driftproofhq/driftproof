@@ -337,7 +337,7 @@ function requestOf(originalLink) {
   const details = document.createElement('details');
   details.className = 'lookup-request';
   const summary = document.createElement('summary');
-  summary.textContent = 'Request a public test';
+  summary.textContent = 'Request a public test (needs a GitHub account)';
   const form = document.createElement('form');
   form.className = 'lookup-request-form';
   const link = document.createElement('input');

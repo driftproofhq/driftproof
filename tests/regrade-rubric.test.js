@@ -1148,7 +1148,7 @@ test('AC-32 a judge timeout in a regrade records fixed words as its reason, neve
   try {
     out = await regrade.regradeReceipt({ receipt: o.receipt, skill: o.skill(), answers: o.answers, judgeModel: 'claude-haiku-4-5', samples: SAMPLES, revised: o.revised(), opts: { trusted: true } });
   } finally { override = null; }
-  const FIXED = 'the judge call timed out after its retries, so no score was given';
+  const FIXED = 'the judge call timed out, so no score was given';
   const c3 = out.receipt.results.cases.filter((c) => c.id === 'c3');
   assert.equal(c3.length, 2);
   for (const c of c3) {
@@ -1197,7 +1197,7 @@ test('AC-35 a judge timeout preserves the completed answer hash and fixed reason
   for (const c of o.receipt.results.cases.filter(c => c.id === 'c3')) for (const d of c.generation.draws) {
     assert.ok(d.generation_hash && Object.hasOwn(o.answers, d.generation_hash), 'completed answer is sealed');
     assert.equal(d.generation_hash, sha(o.answers[d.generation_hash]));
-    assert.equal(d.reason, 'the judge call timed out after its retries, so no score was given');
+    assert.equal(d.reason, 'the judge call timed out, so no score was given');
   }
   const args = { receipt:o.receipt, skill:o.skill(), answers:o.answers, judgeModel:'claude-haiku-4-5', samples:SAMPLES, revised:o.revised(), trusted:true };
   const plan = R('lib/regrade.js').planRegrade(args);
