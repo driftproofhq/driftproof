@@ -110,6 +110,8 @@ const BLIND = 'reports/017/blind/index.html';
 const blindLines = (root) => pageLines(root, BLIND);
 const readerLines = root => require('./reader-pages').pages().flatMap(p => pageLines(root, p.href.slice(1)+'index.html'));
 const NOTICED = 'noticed/index.html';
+// Issue 781: the free offer, how to ask for a skill to be measured or a result to be re-run.
+const MEASURE = 'measure/index.html';
 const noticedLines = (root) => pageLines(root, NOTICED);
 
 function articleLines(root) {
@@ -150,7 +152,7 @@ ${answerLines(root).join('\n')}
 
 ## Optional
 
-- [Interop](${ORIGIN}/interop/): importing results from other tools as DECLARED, and exporting a summary.
+${pageLines(root, MEASURE).map((line) => `${line}\n`).join('')}- [Interop](${ORIGIN}/interop/): importing results from other tools as DECLARED, and exporting a summary.
 - [Authoring](${ORIGIN}/authoring/): writing a skill and an eval suite worth measuring.
 - [Judge policy](${ORIGIN}/judge-policy/): which model judges, and why it is held fixed.
 - [Findings](${ORIGIN}/findings/): what three external audits of 0.10.0 and 0.10.1 found, what is fixed, and what is still open.

@@ -582,6 +582,16 @@ export function buildSkillIndex({ root = REPO, buildDate } = {}) {
     if (!pages.has(x.id.page)) pages.set(x.id.page, { id: x.id, rows: [] });
     pages.get(x.id.page).rows.push({...x.row, markup:x.row.markup+sendResult.render(sendResult.campaignPayload(receipt,x.id.name))});
   }
+  // Issue 781 (spec 781): each published request of the free offer, one reading box per skill and per
+  // model, on the skill's own page; the box is scripts/build-measure.js's, the label scripts/offer.js's.
+  const measure = require('./build-measure.js');
+  for (const v of measure.views(root)) for (const x of measure.skillRows(v)) {
+    if (heldPages.has(x.id.page)) refuse('OFFER_HELD_IDENTITY');
+    const old = idents.get(x.id.page.toLowerCase());
+    if (old && (old.page !== x.id.page || old.path !== x.id.path || old.unit !== x.id.unit)) refuse('OFFER_IDENTITY_COLLISION');
+    if (!pages.has(x.id.page)) pages.set(x.id.page, { id: x.id, rows: [] });
+    pages.get(x.id.page).rows.push(x.row);
+  }
   for(const p of pages.values())p.rows.sort((a,b)=>SOURCES.indexOf(a.source)-SOURCES.indexOf(b.source)||Date.parse(b.date||'1970-01-01')-Date.parse(a.date||'1970-01-01')||byCodeUnit(a.file,b.file));
   const ordered = [...pages.values()].sort((a, b) => byCodeUnit(`${a.id.page}/index.html`, `${b.id.page}/index.html`));
   const title = titles(ordered, sources);

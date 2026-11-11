@@ -1,0 +1,83 @@
+name: Challenge a result
+description: Think we tested your skill unfairly? Send your own three tasks. We re-run with them and publish both results side by side.
+title: "Challenge a result: "
+labels: [offer, offer-challenge]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We run your three tasks, word for word, on Claude Haiku 5.5 and Claude Sonnet 5.5 with the skill, with no skill and with a same-length placebo, and publish the result beside the one you challenge, whatever it says. The terms and the queue are on https://driftproofhq.com/measure/.
+
+        Write tasks that can be answered in text. Say for each how a good answer is scored.
+  - type: input
+    id: result
+    attributes:
+      label: Result page link
+      description: The Driftproof page with the result you challenge.
+      placeholder: https://driftproofhq.com/skills/owner/repo/skill/
+    validations:
+      required: true
+  - type: input
+    id: repository
+    attributes:
+      label: Repository link
+      description: The public GitHub repository that holds the skill.
+      placeholder: https://github.com/owner/repo
+    validations:
+      required: true
+  - type: input
+    id: skill
+    attributes:
+      label: Skill path
+      description: The skill's SKILL.md path or its folder.
+      placeholder: skills/my-skill/SKILL.md
+    validations:
+      required: true
+  - type: textarea
+    id: task1
+    attributes:
+      label: Task 1
+      description: The first task, as the model should read it.
+    validations:
+      required: true
+  - type: textarea
+    id: score1
+    attributes:
+      label: How to score task 1
+      description: What a good answer does.
+    validations:
+      required: true
+  - type: textarea
+    id: task2
+    attributes:
+      label: Task 2
+    validations:
+      required: true
+  - type: textarea
+    id: score2
+    attributes:
+      label: How to score task 2
+    validations:
+      required: true
+  - type: textarea
+    id: task3
+    attributes:
+      label: Task 3
+    validations:
+      required: true
+  - type: textarea
+    id: score3
+    attributes:
+      label: How to score task 3
+    validations:
+      required: true
+  - type: dropdown
+    id: author
+    attributes:
+      label: Are you the author?
+      description: Anyone can ask. If you are not the author, the result page says so.
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true

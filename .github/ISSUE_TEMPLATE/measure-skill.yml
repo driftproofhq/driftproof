@@ -1,0 +1,37 @@
+name: Measure a skill
+description: Send one public skill. We measure it and publish what we find. It's free.
+title: "Measure a skill: "
+labels: [offer, offer-skill]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We write three tasks for the skill and run them on Claude Haiku 5.5 and Claude Sonnet 5.5 with the skill, with no skill and with a same-length placebo. The skill gets Keep, Delete candidate or Cannot tell on each model, and we publish the result, whatever it says. The terms and the queue are on https://driftproofhq.com/measure/.
+
+        If the skill is private, do not open a public request. Email hello@driftproofhq.com instead.
+  - type: input
+    id: repository
+    attributes:
+      label: Repository link
+      description: The public GitHub repository that holds the skill.
+      placeholder: https://github.com/owner/repo
+    validations:
+      required: true
+  - type: input
+    id: skill
+    attributes:
+      label: Skill path
+      description: The skill's SKILL.md path or its folder.
+      placeholder: skills/my-skill/SKILL.md
+    validations:
+      required: true
+  - type: dropdown
+    id: author
+    attributes:
+      label: Are you the author?
+      description: Anyone can ask. If you are not the author, the result page says so.
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true

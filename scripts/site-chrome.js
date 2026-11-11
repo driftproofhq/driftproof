@@ -47,6 +47,10 @@ const ANCHOR_CLOSE = '<!--/driftproof:anchor-->';
 const RECEIPTS_ANCHOR = 'receipts';
 const SUB_OPEN = '<!--driftproof:subscribe-->';
 const SUB_CLOSE = '<!--/driftproof:subscribe-->';
+// THE OFFER LINE (spec 781 AC-11): one line on every skill page and report, above the footer and outside
+// <main>, so no report body moves and no plain-word card is written into it. Its words are scripts/offer.js's.
+const ASK_OPEN = '<!--driftproof:ask-->';
+const ASK_CLOSE = '<!--/driftproof:ask-->';
 
 const esc = escapeAttr;
 
@@ -623,6 +627,7 @@ function applyChrome(html, rel, data) {
   // summary a report's fence carries takes them as the body does. Rendering twice is rendering once.
   let out = applyNavFooter(terms.stripCards(terms.unwrapTerms(html)));
   out = stripBetween(out, TLDR_OPEN, TLDR_CLOSE);
+  out = stripBetween(out, ASK_OPEN, ASK_CLOSE);
   // The `-draft` suffix is part of the PATH, never part of the report. An
   // unapproved report is published nowhere (build-public.sh drops `*-draft/`).
   // This comment used to add that nothing in the bytes marks the draft state, so
@@ -657,6 +662,9 @@ function applyChrome(html, rel, data) {
   out = applyLayout(out, rel, data);
   // Issue 408: an explicit route boundary keeps the measurement theme local.
   if ((rel.startsWith('skills/') && rel.endsWith('/index.html')) || rel === 'skills/index.html' || rel === 'reports/015/index.html') out = out.replace('<body>', '<body class="measurement-ui">');
+  // Required here, not at load: scripts/offer.js reads lib/verdict.js and the skill hand-off rule.
+  const offer = require('./offer.js');
+  if (offer.asksOn(rel)) out = out.replace(FOOT_OPEN, `${ASK_OPEN}${offer.askLine()}${ASK_CLOSE}\n${FOOT_OPEN}`);
   return terms.applyTerms(out);
 }
 

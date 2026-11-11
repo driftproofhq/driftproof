@@ -1077,7 +1077,11 @@ test('AC-14, AC-14a: no banned word, confidence language or band lexicon phrasin
 // A-267-5 (approval finding F-2 at 88ad2bc0): a page whose rows are all reported says "measured"
 // nowhere; a page with a measured row keeps its words. LABELS.REPORTED ("Reported, not measured") is
 // the one text that carries the word, to say no measurement was made, so it is taken out first.
-const measuredWords = (html) => partsOf(html).map((s) => s.split(LABELS.REPORTED).join(' ')).filter((s) => /\bmeasured\b/i.test(s)).map((s) => s.slice(0, 80));
+// A-267-24 (issue 781): the free offer's line, word for word as scripts/offer.js writes it above the
+// footer of every skill page ("Want a skill measured, ...?"), invites a request and says nothing of the
+// page it is on, so it is taken out the same way. Any other "measured", the line reworded included, reads.
+const ASK_TEXT = textOf(require('../scripts/offer.js').askLine());
+const measuredWords = (html) => partsOf(html).map((s) => s.split(LABELS.REPORTED).join(' ').split(ASK_TEXT).join(' ')).filter((s) => /\bmeasured\b/i.test(s)).map((s) => s.slice(0, 80));
 // Where a page's verb words disagree with its receipts: [] when they agree. `verb` is the page's,
 // `rowVerb(file)` a row's, each read from the receipts.
 function verbFaults(html, verb, rowVerb) {
@@ -1130,6 +1134,10 @@ test('AC-24: a page whose rows are all reported says "measured" nowhere, and a p
   assert.notDeepEqual(verbFaults(nvPage.replace('<h2>Reported results</h2>', '<h2>Measured results</h2>'), 'Reported', rowVerb), []);
   assert.notDeepEqual(verbFaults(nvPage.replace('<dt>Reported by</dt>', '<dt>Measured by</dt>'), 'Reported', rowVerb), []);
   assert.notDeepEqual(verbFaults(nvPage.replace('Reported on ', 'Measured on '), 'Reported', rowVerb), []);
+  // A-267-24: the offer line, exactly, reads green on a reported page; reworded into a claim, red.
+  assert.ok(nvPage.includes(require('../scripts/offer.js').askLine()), 'the reported page carries the offer line');
+  assert.deepEqual(verbFaults(nvPage, 'Reported', rowVerb), []);
+  assert.notDeepEqual(verbFaults(nvPage.replace('Want a skill measured, or think', 'This skill was measured. Think'), 'Reported', rowVerb), [], 'plant: the line reworded into a claim');
   // A skill-placebo page reads green with its label "Reported, not measured", and red with the word
   // anywhere else; a plugin page's G-2 says "reported as one bundle".
   const spPage = out.pages.get(pagePath(SP_ARMS[0].identity));
