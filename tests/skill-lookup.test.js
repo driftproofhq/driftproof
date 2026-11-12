@@ -35,10 +35,10 @@ const TX = {
   H1: 'Look up a skill',
   P1: "Paste a GitHub skill link. Find its page in this visit's list, or try a guided first run.",
   P2: "It takes a github.com link to a repository, a skill's folder or its SKILL.md, or a raw.githubusercontent.com link to a SKILL.md.",
-  F2: 'Request a public test on GitHub (needs a GitHub account).',
+  F2: 'Want a skill measured? See how to ask. A public request needs a GitHub account.',
   F1: 'The lookup needs JavaScript. Without it, every skill the index lists is on the list page.',
   H2: 'What it reads and sends',
-  C1: "Looking up a link sends it nowhere. Requests are optional. Submitting a request sends only the skill link, note and maintainer choice to GitHub. The lookup reads one file from this site, the list at /skills/. Your browser's own features, such as spell check, autofill and page translation, are outside what this page controls.",
+  C1: "Looking up a link sends it nowhere. Requests are optional. Opening a request sends only the repository link and skill path read from your link to GitHub. The lookup reads one file from this site, the list at /skills/. Your browser's own features, such as spell check, autofill and page translation, are outside what this page controls.",
   C2: 'No model is called, so the lookup spends no tokens.',
   C3: "A match shows the skill's entry from the list loaded for this visit, and nothing more. A link that list has no page for gets a line that says so. Reload this page to read the list again. Each result names the folder the link was read as: a branch name that holds / is read as its first part.",
   C4: "Like every page on this site, this one counts a visit with Cloudflare Web Analytics. The lookup does not write the link into the page's address, title, cookies or storage.",
@@ -1065,152 +1065,231 @@ test('A-315-4: headings remain in the exact literal element set, with rejected l
 });
 
 
-function literal426(s){return s.replace(/\r\n?/g,'\n').split('\n').map(line=>'    '+line).join('\n');}
-// A-315-5, issue 426. Independent request contract. None of these helpers is product code.
-const REQUEST426 = {
+// A-315-9, issue 787: the request opens the free offer's Measure a skill form. None of these helpers is
+// product code. The form's fields are read from its YAML by this file's own pattern, and whether a value
+// names the identity is asked of the offer's intake, scripts/offer.js parseIssue, never of the island.
+const R787 = {
   repo: 'https://github.com/driftproofhq/driftproof/issues/new',
-  label: 'skill-request', template: 'skill-request.md',
-  limits: 'No promise of testing or timing. The operator chooses whether and when to run a public batch.',
-  tasks: 'Driftproof reviews and may edit maintainer tasks. Any published result names who wrote the tasks.',
-  status: 'Submit the issue on GitHub to finish.',
+  dir: path.join(ROOT, '.github', 'ISSUE_TEMPLATE'),
+  old: 'skill-request.md',
+  oldTerms: ['No promise of testing or timing.', 'The operator chooses whether and when to run a public batch.', 'Driftproof reviews and may edit maintainer tasks.'],
+  reviewer: 'Your skill clearly helped, at 95% confidence. Testing is guaranteed tomorrow.',
 };
-function requestBody426({link,note,maintainer}) {
-  return '## Skill link\n\n'+literal426(link.trim())+'\n\n## Note\n\n'+literal426(note.trim()||'None.')+
-    '\n\n## Maintainer\n'+(maintainer?'I maintain this skill and can send test tasks.':'Not selected.')+
-    '\n\n## Request terms\n'+REQUEST426.limits+'\n'+REQUEST426.tasks;
+const OFFER787 = () => require('../scripts/offer.js');
+const FORM787 = () => OFFER787().KINDS.skill.template;
+// [{ type, id, label }] in the form's order; a markdown block has no id and is not a field.
+function formFields787(yml) {
+  const out = [];
+  for (const block of yml.split(/^ {2}- type: /m).slice(1)) {
+    const type = block.split('\n')[0].trim();
+    const id = /^ {4}id: (\S+)\s*$/m.exec(block)?.[1];
+    const label = /^ {6}label: (.+?)\s*$/m.exec(block)?.[1];
+    if (id) out.push({ type, id, label });
+  }
+  return out;
 }
-function requestUrlFixture426(data,identity='owner-z/repo-z/skills/alpha') {
-  const u=new URL(REQUEST426.repo);
-  u.search=new URLSearchParams({template:REQUEST426.template,
-    title:'Skill request: '+identity,body:requestBody426(data)}).toString();
+const FIELDS787 = () => formFields787(fs.readFileSync(path.join(R787.dir, FORM787()), 'utf8'));
+// An issue as GitHub renders an issue form: a ### heading per field, its value under it, the author answer.
+function issueOf787(fields, values) {
+  const body = fields.map((f) => `### ${f.label}\n\n${f.type === 'dropdown' ? 'Yes' : (values[f.id] || '_No response_')}`).join('\n\n');
+  return { number: 1, state: 'OPEN', labels: ['offer', 'offer-skill'], body };
+}
+// AC-787-3 and AC-787-4: what the form may be filled with, decided by the intake reading each value back.
+function intakeFill787(x, fields = FIELDS787()) {
+  const { parseIssue } = OFFER787();
+  const repository = `https://github.com/${x.owner}/${x.repo}`;
+  const repoOk = parseIssue(issueOf787(fields, { repository, skill: 'skills/probe' })).repository === `${x.owner}/${x.repo}`;
+  const skillOk = !!x.path && JSON.stringify(parseIssue(issueOf787(fields, { repository: 'https://github.com/probe/probe', skill: x.path })).skills) === JSON.stringify([`${x.path}/SKILL.md`]);
+  return { ...(repoOk ? { repository } : {}), ...(skillOk ? { skill: x.path } : {}) };
+}
+function url787(fill) {
+  const u = new URL(R787.repo);
+  u.search = new URLSearchParams({ template: 'measure-skill.yml', ...fill }).toString();
   return u.href;
 }
-function draftHits426(value,data,identity='owner-z/repo-z/skills/alpha') {
-  let u;try{u=new URL(value);}catch{return ['no draft URL'];}
-  const hits=[];
-  if(u.origin+u.pathname!==REQUEST426.repo||u.hash||u.username||u.password)hits.push('wrong public destination');
-  const params=[...u.searchParams.keys()].sort();
-  if(JSON.stringify(params)!==JSON.stringify(['body','template','title']))hits.push('missing, repeated or extra draft parameters');
-  if(u.searchParams.get('template')!==REQUEST426.template)hits.push('missing template');
-  if(u.searchParams.has('labels'))hits.push('privileged labels parameter');
-  if(u.searchParams.get('title')!=='Skill request: '+identity)hits.push('wrong identity in title');
-  if(u.searchParams.get('body')!==requestBody426(data))hits.push('request fields or terms changed');
+const boundHits787 = (value) => (Buffer.byteLength(String(value)) <= 8192 ? [] : ['over 8,192 bytes']);
+function draftHits787(value, x, fields = FIELDS787()) {
+  let u; try { u = new URL(value); } catch { return ['no request URL']; }
+  const hits = [...boundHits787(value)];
+  if (u.origin + u.pathname !== R787.repo || u.hash || u.username || u.password) hits.push('wrong public destination');
+  const keys = [...u.searchParams.keys()];
+  if (keys.filter((k) => k === 'template').length !== 1 || u.searchParams.get('template') !== FORM787()) hits.push('not the offer\'s Measure a skill form');
+  if (new Set(keys).size !== keys.length) hits.push('a parameter given twice');
+  const ids = new Set(fields.filter((f) => f.type === 'input').map((f) => f.id));
+  for (const k of keys) if (k !== 'template' && !ids.has(k)) hits.push(`a parameter the form has no field for: ${k}`);
+  const got = [...u.searchParams].filter(([k]) => k !== 'template').sort();
+  const want = Object.entries(intakeFill787(x, fields)).sort();
+  if (JSON.stringify(got) !== JSON.stringify(want)) hits.push(`fills ${JSON.stringify(got)}; the intake reads back ${JSON.stringify(want)}`);
   return hits;
 }
-const DATA426={link:'https://github.com/owner-z/repo-z/tree/release-v1/skills/alpha?tab=readme#source',note:'',maintainer:false};
-test('AC-426-1 and AC-426-6: draft readers reject wrong destinations, data loss, attribution loss and parameter injection',()=>{
-  const good=requestUrlFixture426(DATA426);
-  assert.deepEqual(draftHits426(good,DATA426),[]);
-  const plants={
-    repository:u=>u.pathname='/driftproofhq/driftproof-source/issues/new',
-    label:u=>u.searchParams.set('labels','skill-request'),
-    template:u=>u.searchParams.delete('template'),
-    title:u=>u.searchParams.set('title','Skill request: guessed folder'),
-    ref:u=>u.searchParams.set('body',u.searchParams.get('body').replace('/tree/release-v1/','/tree/main/')),
-    maintainer:u=>u.searchParams.set('body',u.searchParams.get('body').replace('Not selected.','I maintain this skill and can send test tasks.')),
-    attribution:u=>u.searchParams.set('body',u.searchParams.get('body').replace(REQUEST426.tasks,'')),
-    timing:u=>u.searchParams.set('body',u.searchParams.get('body').replace(REQUEST426.limits,'We will test it tomorrow.')),
-    injection:u=>u.search+='&labels=run-now',
+function formHits787(name, build) {
+  const hits = [];
+  if (name !== FORM787()) hits.push('not the offer\'s Measure a skill form');
+  if (!fs.existsSync(path.join(R787.dir, name))) hits.push('no such template');
+  const exclude = /^EXCLUDE_RE='([^']*)'/m.exec(build)?.[1];
+  if (!exclude) hits.push('public tree filter not read');
+  else if (new RegExp(exclude).test(`.github/ISSUE_TEMPLATE/${name}`)) hits.push('template excluded from the public tree');
+  return hits;
+}
+// Links the lookup reads whose identity the intake reads otherwise, or only in part (AC-787-4).
+const EXTRA787 = [
+  'https://github.com/owner-z/.github/tree/main/skills/alpha',
+  'https://raw.githubusercontent.com/owner-z/x.git/main/skills/alpha/SKILL.md',
+  'https://github.com/owner-z/repo-z/tree/main/skills/SKILL.md/SKILL.md',
+  'https://github.com/owner-z/repo-z/tree/main/skills/caf%C3%A9',
+  'https://github.com/owner-z/repo-z/tree/main/skills/.hidden',
+  'https://github.com/owner-z/repo-z/tree/main/skills/a%20b',
+  'https://github.com/-owner/repo-z/tree/main/skills/alpha',
+  'https://github.com/owner-z/_repo/tree/main/skills/alpha',
+];
+const LINKS787 = () => [...TABLE.filter((r) => r[2].ok).map((r) => r[1]), ...EXTRA787];
+
+test('AC-787-1 and AC-787-2: the request opens the offer\'s form, filled only by the form\'s own field ids; plants', () => {
+  const fields = FIELDS787();
+  assert.deepEqual(fields.map((f) => [f.type, f.id, f.label]), [['input', 'repository', 'Repository link'], ['input', 'skill', 'Skill path'], ['dropdown', 'author', 'Are you the author?']], 'the form as the offer ships it');
+  const build = fs.readFileSync(path.join(ROOT, 'scripts', 'build-public.sh'), 'utf8');
+  assert.deepEqual(formHits787('measure-skill.yml', build), []);
+  assert.notDeepEqual(formHits787('skill-request.md', build), [], 'plant: the old template');
+  assert.notDeepEqual(formHits787('measure-pack.yml', build), [], 'plant: the pack form');
+  assert.notDeepEqual(formHits787('measure-skill.yml', "EXCLUDE_RE='^\\.github/ISSUE_TEMPLATE/'"), [], 'plant: the filter excludes the forms');
+  const x = id('owner-z', 'repo-z', 'skills/alpha');
+  const good = url787(intakeFill787(x, fields));
+  assert.deepEqual(draftHits787(good, x, fields), []);
+  const plants = {
+    'old template': (u) => u.searchParams.set('template', 'skill-request.md'),
+    'pack form': (u) => u.searchParams.set('template', 'measure-pack.yml'),
+    'source repository': (u) => { u.pathname = '/driftproofhq/driftproof-source/issues/new'; },
+    fragment: (u) => { u.hash = 'x'; },
+    title: (u) => u.searchParams.set('title', 'Measure a skill: owner-z/repo-z/skills/alpha'),
+    body: (u) => u.searchParams.set('body', 'note'),
+    labels: (u) => u.searchParams.set('labels', 'offer'),
+    author: (u) => u.searchParams.set('author', 'Yes'),
+    'an id the form lacks': (u) => u.searchParams.set('skill_path', 'skills/alpha'),
+    'repository twice': (u) => u.searchParams.append('repository', 'https://github.com/owner-z/repo-z'),
   };
-  for(const [name,mutate]of Object.entries(plants)){
-    const u=new URL(good);mutate(u);assert.notDeepEqual(draftHits426(u.href,DATA426),[],'plant: '+name);
+  for (const [name, mutate] of Object.entries(plants)) {
+    const u = new URL(good); mutate(u);
+    assert.notDeepEqual(draftHits787(u.href, x, fields), [], `plant: ${name}`);
   }
 });
-test('AC-426-1: the real draft preserves the original link, optional values and hostile text, and refuses invalid input',async()=>{
-  const island=await freshIsland();
-  assert.equal(typeof island.requestIssueUrl,'function','requestIssueUrl is not built');
-  for(const note of ['', 'A short task offer.', 'Symbols &labels=run-now #hash ?x=1\nUnicode: café 🧪 <img src=/leak>']){
-    for(const maintainer of [false,true]){
-      const data={...DATA426,link:'  '+DATA426.link+'  ',note,maintainer};
-      const got=await withFetch(()=>{throw Error('a draft helper must not fetch');},async calls=>{
-        const value=island.requestIssueUrl(data);assert.equal(calls.length,0);return value;
-      });
-      assert.deepEqual(draftHits426(got,data),[]);
-      if(note){const u=new URL(got);u.searchParams.set('body',u.searchParams.get('body').replace(literal426(note),literal426('None.')));assert.notDeepEqual(draftHits426(u.href,data),[],'plant: lost note');}
+
+test('AC-787-3 and AC-787-4: each filled value is the identity as the intake reads it, and nothing is guessed; plants', async () => {
+  const fields = FIELDS787();
+  // The reader's own expectations, read from the intake, on the rows the criterion names.
+  const fill = (text) => intakeFill787(readLinkRef(text), fields);
+  assert.deepEqual(fill(rowOf(1)[1]), { repository: 'https://github.com/owner-a/repo-a', skill: 'skills/alpha' });
+  assert.deepEqual(fill(rowOf(7)[1]), { repository: 'https://github.com/OWNER-A/Repo-A', skill: 'skills/alpha' });
+  assert.deepEqual(fill(rowOf(30)[1]), { repository: 'https://github.com/owner-a/repo-a', skill: 'v2/skills/alpha' });
+  for (const n of [12, 13, 14]) assert.deepEqual(Object.keys(fill(rowOf(n)[1])), ['repository'], `row ${n}: an empty path fills no skill path`);
+  assert.deepEqual(Object.keys(fill(rowOf(28)[1])), ['repository'], 'row 28: markup fills no skill path');
+  for (const link of EXTRA787.slice(2, 6)) assert.deepEqual(Object.keys(fill(link)), ['repository'], link);
+  for (const link of [EXTRA787[0], EXTRA787[1], ...EXTRA787.slice(6)]) assert.deepEqual(Object.keys(fill(link)), ['skill'], link);
+  const run = (build) => LINKS787().flatMap((text) => {
+    const x = readLinkRef(text);
+    return draftHits787(build(x, text), x, fields).map((h) => `${text}: ${h}`);
+  });
+  assert.deepEqual(run((x) => url787(intakeFill787(x, fields))), [], 'the reader\'s own builder');
+  // Builders with one fault each; every one reads red on the links the criterion names.
+  const all = (x) => ({ repository: `https://github.com/${x.owner}/${x.repo}`, ...(x.path ? { skill: x.path } : {}) });
+  const builders = {
+    'lowercased owner': (x) => url787({ ...intakeFill787(x, fields), repository: `https://github.com/${x.owner.toLowerCase()}/${x.repo}` }),
+    'ref kept': (x) => url787({ ...intakeFill787(x, fields), skill: `main/${x.path}` }),
+    'path from the pasted text': (x, text) => url787({ ...intakeFill787(x, fields), ...(x.path ? { skill: x.path + new URL(text.trim().replace(/^(?![a-z]+:\/\/)/, 'https://')).search } : {}) }),
+    'SKILL.md doubled': (x) => url787({ ...intakeFill787(x, fields), skill: `${x.path}/SKILL.md/SKILL.md` }),
+    'another repository': () => url787({ repository: 'https://github.com/owner-a/repo-a' }),
+    'empty path filled as SKILL.md': (x) => url787({ ...intakeFill787(x, fields), skill: x.path || 'SKILL.md' }),
+    'every value filled unread': (x) => url787(all(x)),
+  };
+  for (const [name, build] of Object.entries(builders)) assert.notDeepEqual(run(build), [], `plant: ${name}`);
+  // Each AC-787-4 subject reads red on its own under the unread builder.
+  for (const text of [rowOf(28)[1], EXTRA787[0], EXTRA787[1], EXTRA787[2]]) {
+    const x = readLinkRef(text);
+    assert.notDeepEqual(draftHits787(url787(all(x)), x, fields), [], `plant: ${text} filled`);
+  }
+  assert.notDeepEqual(run((x, text) => (text === rowOf(8)[1] ? url787({ ...intakeFill787(x, fields), skill: `${x.path}?tab=readme` }) : url787(intakeFill787(x, fields)))), [], 'plant: row 8 query sent');
+  // The island, read last.
+  const island = await freshIsland();
+  assert.equal(typeof island.requestIssueUrl, 'function', 'requestIssueUrl(identity) is not built');
+  const real = await withFetch(() => { throw Error('a request builder must not fetch'); }, async (calls) => {
+    const hits = run((x) => island.requestIssueUrl(island.readLink(x.text)));
+    assert.equal(calls.length, 0);
+    return hits;
+  });
+  assert.deepEqual(real, []);
+  for (const bad of [null, {}, { owner: 'o', repo: 'r' }, { owner: 1, repo: 'r', path: '' }]) assert.equal(island.requestIssueUrl(bad), null, `refuses ${JSON.stringify(bad)}`);
+});
+// readLink by the island would make the reader share code with it; the table's own identities are the
+// reader's. EXTRA787's identities are read here by § Reading a link's steps for the shapes they hold.
+function readLinkRef(text) {
+  const row = TABLE.find((r) => r[1] === text);
+  if (row) return { ...row[2], text };
+  const u = new URL(text);
+  const seg = u.pathname.split('/').filter(Boolean).map(decodeURIComponent);
+  const [owner, repo] = seg;
+  let rest = u.hostname === 'raw.githubusercontent.com' ? seg.slice(3) : seg.slice(4);
+  if (rest.length && rest[rest.length - 1].toLowerCase() === 'skill.md') rest = rest.slice(0, -1);
+  return { ok: true, owner, repo, path: rest.join('/'), text };
+}
+
+test('AC-787-8: the old form is retired from the templates, the island, the page and its builder; plants', () => {
+  const read = (f) => (fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '');
+  const now = { oldExists: fs.existsSync(path.join(R787.dir, R787.old)), island: read(ISLAND), page: read(PAGE), builder: read(path.join(ROOT, 'scripts', 'build-site-pages.js')) };
+  function retiredHits(s) {
+    const hits = [];
+    if (s.oldExists) hits.push('skill-request.md still ships');
+    for (const k of ['island', 'page', 'builder']) {
+      if (s[k].includes('skill-request')) hits.push(`${k} names skill-request`);
+      for (const t of R787.oldTerms) if (s[k].includes(t)) hits.push(`${k} carries the old terms`);
+      if (/data-request-(note|maintainer)|\brequest(Note|Maintainer)\b/.test(s[k])) hits.push(`${k} asks for the old note or maintainer choice`);
     }
+    return hits;
   }
-  for(const patch of [{link:'https://example.org/skill'},{link:'https://github.com/o/r/issues/1'},
-    {link:'x'.repeat(2049)},{note:'x'.repeat(1001)},{maintainer:'yes'},{maintainer:1}]){
-    assert.equal(island.requestIssueUrl({...DATA426,...patch}),null,'invalid request '+JSON.stringify(Object.keys(patch)));
-  }
-  assert.notEqual(island.requestIssueUrl({...DATA426,note:'x'.repeat(1000)}),null,'boundary note accepted');
-  // Root, raw SKILL.md, uppercase identity and slash-bearing refs retain the original URL text.
-  for(const [link,identity]of [
-    ['https://github.com/owner-z/repo-z','owner-z/repo-z'],
-    ['https://raw.githubusercontent.com/OWNER-Z/repo-z/refs/heads/main/skills/alpha/SKILL.md','OWNER-Z/repo-z/skills/alpha'],
-    ['github.com/owner-z/repo-z/tree/release/v2/skills/alpha','owner-z/repo-z/v2/skills/alpha'],
-  ]){
-    const data={...DATA426,link};assert.deepEqual(draftHits426(island.requestIssueUrl(data),data,identity),[]);
-  }
-});
-function templateHits426(text,buildSource){
-  const hits=[];
-  const front=/^---\r?\n([\s\S]*?)\r?\n---/.exec(text)?.[1]||'';
-  if(!/^labels:\s*['"]?skill-request['"]?\s*$/m.test(front))hits.push('template label missing');
-  for(const title of ['Skill link','Note','Maintainer','Request terms'])if(!text.includes('## '+title+'\n'))hits.push('template section missing: '+title);
-  for(const terms of [REQUEST426.limits,REQUEST426.tasks])if(!text.includes(terms))hits.push('request terms missing');
-  const exclude=/^EXCLUDE_RE='([^']*)'/m.exec(buildSource)?.[1];
-  if(!exclude)hits.push('public tree filter not read');
-  else if(new RegExp(exclude).test('.github/ISSUE_TEMPLATE/skill-request.md'))hits.push('template excluded from public tree');
-  return hits;
-}
-test('AC-426-6 and AC-426-7: the public template records request limits and task authorship and survives the build filter',async()=>{
-  const build=fs.readFileSync(path.join(ROOT,'scripts/build-public.sh'),'utf8');
-  const fixture='---\nname: Request a public test\nabout: Offer a skill for a future public batch\ntitle: "Skill request: "\nlabels: skill-request\n---\n\n'+requestBody426(DATA426)+'\n';
-  assert.deepEqual(templateHits426(fixture,build),[]);
-  for(const [name,text,source]of [
-    ['label',fixture.replace('labels: skill-request','labels: other'),build],
-    ['link',fixture.replace('## Skill link','## Something else'),build],
-    ['limits',fixture.replace(REQUEST426.limits,''),build],
-    ['authorship',fixture.replace(REQUEST426.tasks,''),build],
-    ['excluded',fixture,"EXCLUDE_RE='^\\.github/ISSUE_TEMPLATE/'"],
-  ])assert.notDeepEqual(templateHits426(text,source),[],'plant: '+name);
-  const template=path.join(ROOT,'.github/ISSUE_TEMPLATE/skill-request.md');
-  assert.ok(fs.existsSync(template),'public skill-request template is not built');
-  const live=fs.readFileSync(template,'utf8');
-  assert.deepEqual(templateHits426(live,build),[]);
-  assert.deepEqual(await wordHits([live.split('\n').filter(l=>!l.startsWith('    ')).join('\n')]),[]);
-  assert.notDeepEqual(await wordHits(['Your skill clearly helped, at 95% confidence. Testing is guaranteed tomorrow.']),[],'reviewer wording plant');
+  const clean = { oldExists: false, island: 'export function requestIssueUrl() {}', page: '<main></main>', builder: '' };
+  assert.deepEqual(retiredHits(clean), []);
+  assert.notDeepEqual(retiredHits({ ...clean, oldExists: true }), [], 'plant: the template restored');
+  assert.notDeepEqual(retiredHits({ ...clean, island: "url.search = new URLSearchParams({ template: 'skill-request.md' })" }), [], 'plant: the island names the old template');
+  assert.notDeepEqual(retiredHits({ ...clean, page: `<p>${R787.oldTerms[0]}</p>` }), [], 'plant: the page carries the old terms');
+  assert.deepEqual(retiredHits(now), []);
 });
 
-
-function boundary426(){
-  for(let n=100;n<600;n++){
-    const data={...DATA426,note:'x',link:'https://github.com/owner-z/repo-z/tree/main/skills/'+'界'.repeat(n)};
-    const identity='owner-z/repo-z/skills/'+'界'.repeat(n);
-    const bytes=Buffer.byteLength(requestUrlFixture426(data,identity));
-    if(bytes<=8192&&bytes>=7192)return {data:{...data,note:'x'.repeat(1+8192-bytes)},identity};
+test('AC-787-9 and AC-787-10: the request and the fallback promise nothing of their own, and the fallback links /measure/; plants', async () => {
+  function fallbackHits(html) {
+    const mount = /<div class="skill-lookup" data-island="skill-lookup">([\s\S]*?)<\/div>/.exec(mainOf(html) || '')?.[1] || '';
+    const hits = [];
+    const links = [...mount.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)];
+    const f = links.filter((m) => /\sdata-request-fallback(\s|=|$)/.test(m[1]));
+    if (f.length !== 1 || !/\shref="\/measure\/"/.test(f[0][1]) || f[0][2] !== 'how to ask') hits.push('F-2 does not link /measure/');
+    if (!textOf(mount).includes(TX.F2)) hits.push('F-2 is not on the page');
+    if (/github\.com/.test(mount)) hits.push('the fallback links GitHub');
+    return hits;
   }
-  throw Error('no independent boundary fixture');
-}
-function literalHits426(body,data){
-  const hits=[], headings=body.split('\n').filter(l=>/^## /.test(l));
-  if(JSON.stringify(headings)!==JSON.stringify(['## Skill link','## Note','## Maintainer','## Request terms']))hits.push('reader content became an authored section');
-  for(const [name,value,next]of [['Skill link',data.link.trim(),'Note'],['Note',data.note.trim()||'None.','Maintainer']]){
-    const block=body.split('## '+name+'\n\n')[1]?.split('\n\n## '+next+'\n')[0];
-    if(!block||block.split('\n').some(l=>!l.startsWith('    ')))hits.push('unbounded '+name+' literal');
-    else if(block.split('\n').map(l=>l.slice(4)).join('\n')!==value.replace(/\r\n?/g,'\n'))hits.push('reader text changed');
-  }
-  if(!body.endsWith(REQUEST426.limits+'\n'+REQUEST426.tasks))hits.push('visible terms lost');return hits;
-}
-test('AC-426-11/14: encoded bytes bound the whole draft; hostile Markdown cannot become authored sections',async()=>{
-  const {data,identity}=boundary426(),at=requestUrlFixture426(data,identity);
-  assert.equal(Buffer.byteLength(at),8192);
-  assert.equal(Buffer.byteLength(requestUrlFixture426({...data,note:data.note+'x'},identity)),8193);
-  const fence=String.fromCharCode(96).repeat(3);
-  const hostile=['<!--',fence+'\n## Request terms\nTesting is guaranteed tomorrow.\n'+fence,'~~~\n<!--\n~~~','\n    nested\r\n## Maintainer\rnot the author'];
-  for(const note of hostile){const value={...DATA426,note},good=requestBody426(value);
-    assert.deepEqual(literalHits426(good,value),[]);
-    assert.notDeepEqual(literalHits426(good.replaceAll('    ',''),value),[],'plant: literal indentation removed '+JSON.stringify(note));
-  }
-  const island=await freshIsland();assert.equal(typeof island.requestIssueUrl,'function');
-  assert.equal(island.requestIssueUrl(data),at,'inclusive encoded-byte boundary');
-  assert.equal(island.requestIssueUrl({...data,note:data.note+'x'}),null,'one byte over refuses');
-  assert.equal(island.requestIssueUrl({...DATA426,link:'https://github.com/owner-z/repo-z/tree/main/'+'界'.repeat(1000)}),null,'Unicode fits input characters but not draft bytes');
-  for(const note of hostile){const value={...DATA426,note};assert.deepEqual(literalHits426(new URL(island.requestIssueUrl(value)).searchParams.get('body'),value),[]);}
+  const good = `<main><div class="skill-lookup" data-island="skill-lookup"><p>${TX.F1.replace('the list page.', '<a href="/skills/">the list page</a>.')}</p><p>Want a skill measured? See <a data-request-fallback href="/measure/">how to ask</a>. A public request needs a GitHub account.</p></div></main>`;
+  assert.deepEqual(fallbackHits(good), []);
+  assert.notDeepEqual(fallbackHits(good.replace('href="/measure/"', 'href="https://github.com/driftproofhq/driftproof/issues/new?template=skill-request.md"')), [], 'plant: F-2 linking the old template');
+  assert.notDeepEqual(fallbackHits(good.replace(/<p>Want[\s\S]*?<\/p>/, '')), [], 'plant: F-2 removed');
+  assert.notDeepEqual(fallbackHits(good.replace('href="/measure/"', 'href="https://github.com/driftproofhq/driftproof/issues/new"')), [], 'plant: F-2 linking a GitHub issue');
+  assert.ok(fs.existsSync(PAGE), 'docs/skill-lookup/index.html is not built yet');
+  const html = fs.readFileSync(PAGE, 'utf8');
+  assert.deepEqual(fallbackHits(html), []);
+  assert.ok(fs.readFileSync(path.join(ROOT, 'docs', 'measure', 'index.html'), 'utf8').includes(`href="${R787.repo}?template=${FORM787()}"`), '/measure/ links the Measure a skill form');
+  // Every authored string of the island, the page and the form passes 031/035; the reviewer sentence does not.
+  const island = fs.readFileSync(ISLAND, 'utf8'), page = textOf(mainOf(html)), form = fs.readFileSync(path.join(R787.dir, FORM787()), 'utf8');
+  assert.deepEqual(await wordHits([island, page, form]), []);
+  assert.notDeepEqual(await wordHits([`${page} ${R787.reviewer}`]), [], 'plant: the reviewer sentence');
 });
-test('AC-426-15: every authored island string, static fallback and public template follows 031/035, including manual and invalid states',async()=>{
-  const island=fs.readFileSync(ISLAND,'utf8'),template=fs.readFileSync(path.join(ROOT,'.github/ISSUE_TEMPLATE/skill-request.md'),'utf8');
-  const page=textOf(mainOf(fs.readFileSync(PAGE,'utf8')));
-  assert.deepEqual(await wordHits([island,template,page]),[]);
+
+test('AC-787-11: every request URL is bounded, and the longest identity the lookup reads is far below it; plants', async () => {
+  assert.deepEqual(boundHits787('x'.repeat(8192)), []);
+  assert.notDeepEqual(boundHits787('x'.repeat(8193)), [], 'plant: an 8,193-byte URL');
+  assert.notDeepEqual(boundHits787(url787({ repository: 'https://github.com/o/r', skill: '界'.repeat(2000) })), [], 'plant: a non-ASCII path filled');
+  const island = await freshIsland();
+  assert.equal(typeof island.requestIssueUrl, 'function', 'requestIssueUrl(identity) is not built');
+  const head = `https://github.com/${'o'.repeat(39)}/${'r'.repeat(100)}/tree/main/`;
+  const longest = head + 'a/'.repeat((2048 - head.length) >> 1).slice(0, 2048 - head.length).replace(/\/$/, 'a');
+  assert.equal(longest.length, 2048);
+  const x = island.readLink(longest);
+  assert.equal(x.ok, true, 'the longest link reads');
+  const url = island.requestIssueUrl(x);
+  assert.deepEqual(draftHits787(url, { ...x }), []);
+  assert.ok(Buffer.byteLength(url) < 8192 / 2, `${Buffer.byteLength(url)} bytes`);
 });

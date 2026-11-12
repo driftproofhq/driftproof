@@ -1603,7 +1603,7 @@ const SKILL_LOOKUP = {
   lede: "Paste a GitHub skill link. Find its page in this visit's list, or try a guided first run.",
   takes: "It takes a github.com link to a repository, a skill's folder or its SKILL.md, or a raw.githubusercontent.com link to a SKILL.md.",
   h2: 'What it reads and sends',
-  sends: "Looking up a link sends it nowhere. Requests are optional. Submitting a request sends only the skill link, note and maintainer choice to GitHub. The lookup reads one file from this site, the list at /skills/. Your browser's own features, such as spell check, autofill and page translation, are outside what this page controls.",
+  sends: "Looking up a link sends it nowhere. Requests are optional. Opening a request sends only the repository link and skill path read from your link to GitHub. The lookup reads one file from this site, the list at /skills/. Your browser's own features, such as spell check, autofill and page translation, are outside what this page controls.",
   tokens: 'No model is called, so the lookup spends no tokens.',
   shows: "A match shows the skill's entry from the list loaded for this visit, and nothing more. A link that list has no page for gets a line that says so. Reload this page to read the list again. Each result names the folder the link was read as: a branch name that holds / is read as its first part.",
   beacon: "Like every page on this site, this one counts a visit with Cloudflare Web Analytics. The lookup does not write the link into the page's address, title, cookies or storage.",
@@ -1612,11 +1612,11 @@ function skillLookupPage() {
   const T = SKILL_LOOKUP;
   const headTags = require('./build-head-tags.js');
   const beacon = !!headTags.beaconFor(headTags.siteConfig().cloudflare_analytics_token);
-  const requestDraft = 'https://github.com/driftproofhq/driftproof/issues/new?' + new URLSearchParams({ template: 'skill-request.md', title: 'Skill request' }).toString();
+  // A-315-9 (issue 787): without JavaScript, a request starts on the free offer's page.
   const main = `<main class="skill-lookup-page">
 <h1>${esc(T.h1)}</h1>
 <p class="lede">${esc(T.lede)}</p>
-<div class="skill-lookup" data-island="skill-lookup"><p>The lookup needs JavaScript. Without it, every skill the index lists is on <a href="/skills/">the list page</a>.</p><p><a data-request-fallback href="${esc(requestDraft)}">Request a public test on GitHub</a> (needs a GitHub account).</p></div>
+<div class="skill-lookup" data-island="skill-lookup"><p>The lookup needs JavaScript. Without it, every skill the index lists is on <a href="/skills/">the list page</a>.</p><p>Want a skill measured? See <a data-request-fallback href="/measure/">how to ask</a>. A public request needs a GitHub account.</p></div>
 <details class="lookup-privacy">
 <summary>${esc(T.h2)}</summary>
 <p>${esc(T.takes)}</p>

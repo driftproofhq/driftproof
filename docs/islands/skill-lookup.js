@@ -289,37 +289,35 @@ function stepOf(number, title, note, command, copyLabel, after) {
   return li;
 }
 
-// A-315-5, issue 426: an explicit request is separate from the private lookup.
+// A-315-9, issue 787: an explicit request, separate from the private lookup, opens the free offer's
+// Measure a skill form. Only the form's own fields are filled, by their ids, and only with a value the
+// offer's intake reads back as this identity; any other field is left for the reader on GitHub.
 const REQUEST_REPO = 'https://github.com/driftproofhq/driftproof/issues/new';
 const REQUEST = {
-  limits: 'No promise of testing or timing. The operator chooses whether and when to run a public batch.',
-  tasks: 'Driftproof reviews and may edit maintainer tasks. Any published result names who wrote the tasks.',
-  disclosure: 'Submitting sends the link, note and maintainer choice to GitHub.',
+  summary: 'Ask us to measure it (needs a GitHub account)',
+  intro: "This opens the free offer's Measure a skill form on GitHub. Fields read from your link are filled in. You say there whether you are the author, then submit the issue.",
+  empty: 'An empty field was not read from your link. Fill it in on GitHub.',
+  disclosure: 'Opening the form sends only the repository link and skill path shown here to GitHub.',
   status: 'Submit the issue on GitHub to finish.',
-  manual: 'This request is too long for a GitHub link. Copy the request below, then open the template. No data was sent.',
 };
-function requestData(data) {
-  if (!data || typeof data.link !== 'string' || typeof data.note !== 'string' || typeof data.maintainer !== 'boolean') return null;
-  if (data.note.length > 1000 || !data.note.isWellFormed()) return null;
-  const identity = readLink(data.link);
-  if (!identity.ok) return null;
-  return { link: data.link.trim(), note: data.note.trim(), maintainer: data.maintainer, identity };
+// The intake's plain names (scripts/offer.js REPO_RE, SEGMENT and skillPath), restated: an island imports nothing.
+const PLAIN_OWNER = /^[A-Za-z0-9][A-Za-z0-9-]*$/;
+const PLAIN_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+export function requestFields(identity) {
+  const x = identity || {};
+  if (typeof x.owner !== 'string' || typeof x.repo !== 'string' || typeof x.path !== 'string') return null;
+  const fields = {};
+  if (PLAIN_OWNER.test(x.owner) && PLAIN_NAME.test(x.repo) && !x.repo.endsWith('.git')) fields.repository = `https://github.com/${x.owner}/${x.repo}`;
+  const segments = x.path.split('/');
+  // An empty path is not filled: a repository link may name a pack, not a skill at its root.
+  if (x.path && segments.every((s) => PLAIN_NAME.test(s)) && segments[segments.length - 1] !== 'SKILL.md') fields.skill = x.path;
+  return fields;
 }
-function literalBlock(text) {
-  return text.replace(/\r\n?/g, '\n').split('\n').map(line => '    ' + line).join('\n');
-}
-export function requestIssueBody(data) {
-  const d = requestData(data);
-  if (!d) return null;
-  return '## Skill link\n\n' + literalBlock(d.link) + '\n\n## Note\n\n' + literalBlock(d.note || 'None.') +
-    '\n\n## Maintainer\n' + (d.maintainer ? 'I maintain this skill and can send test tasks.' : 'Not selected.') +
-    '\n\n## Request terms\n' + REQUEST.limits + '\n' + REQUEST.tasks;
-}
-export function requestIssueUrl(data) {
-  const d = requestData(data);
-  if (!d) return null;
+export function requestIssueUrl(identity) {
+  const fields = requestFields(identity);
+  if (!fields) return null;
   const url = new URL(REQUEST_REPO);
-  url.search = new URLSearchParams({ template: 'skill-request.md', title: 'Skill request: ' + idText(d.identity), body: requestIssueBody(d) }).toString();
+  url.search = new URLSearchParams({ template: 'measure-skill.yml', ...fields }).toString();
   return new TextEncoder().encode(url.href).byteLength <= 8192 ? url.href : null;
 }
 function requestLink(href, text) {
@@ -333,72 +331,49 @@ function requestField(labelText, field) {
   label.append(labelText, ' ', field);
   return label;
 }
-function requestOf(originalLink) {
+function shownField(value) {
+  const input = document.createElement('input');
+  input.type = 'text'; input.readOnly = true; input.value = value || '';
+  input.autocomplete = 'off'; input.spellcheck = false;
+  return input;
+}
+function requestOf(identity) {
+  const fields = requestFields(identity) || {};
+  const url = requestIssueUrl(identity);
   const details = document.createElement('details');
   details.className = 'lookup-request';
   const summary = document.createElement('summary');
-  summary.textContent = 'Request a public test (needs a GitHub account)';
+  summary.textContent = REQUEST.summary;
   const form = document.createElement('form');
   form.className = 'lookup-request-form';
-  const link = document.createElement('input');
-  link.type = 'text'; link.readOnly = true; link.value = originalLink; link.dataset.requestLink = '';
-  link.autocomplete = 'off'; link.spellcheck = false;
-  const note = document.createElement('textarea');
-  note.dataset.requestNote = ''; note.maxLength = 1000; note.rows = 2;
-  note.autocomplete = 'off'; note.spellcheck = false;
-  const maintainer = document.createElement('input');
-  maintainer.type = 'checkbox'; maintainer.dataset.requestMaintainer = '';
-  maintainer.autocomplete = 'off'; maintainer.spellcheck = false;
-  const choice = requestField('', maintainer);
-  choice.className = 'lookup-request-choice';
-  choice.append('I maintain this skill and can send test tasks.');
+  const repository = shownField(fields.repository);
+  repository.dataset.requestRepository = '';
+  const skill = shownField(fields.skill);
+  skill.dataset.requestSkill = '';
+  const terms = document.createElement('p');
+  terms.append('The terms and the queue are on ', linkOf('/measure/', 'the offer page'), '.');
   const submit = document.createElement('button');
-  submit.type = 'submit'; submit.textContent = 'Request and open GitHub';
-  const github = requestLink('', 'Continue on GitHub');
-  github.dataset.requestGithub = '';
+  submit.type = 'submit'; submit.textContent = 'Open the form on GitHub'; submit.disabled = !url;
+  const github = requestLink(url || '', 'Continue on GitHub');
+  github.dataset.requestGithub = ''; github.hidden = !url;
   const status = paragraph('');
   status.dataset.requestStatus = ''; status.setAttribute('aria-live', 'polite');
-  const manual = document.createElement('div');
-  manual.className = 'lookup-request-manual';
-  const data = () => ({ link: originalLink, note: note.value, maintainer: maintainer.checked });
-  function refresh() {
-    const d = data(), url = requestIssueUrl(d), body = requestIssueBody(d);
-    github.hidden = !url; submit.disabled = !url || opening;
-    manual.replaceChildren();
-    if (url) { github.href = url; return url; }
-    status.textContent = body ? REQUEST.manual : 'Check the request fields before continuing.';
-    if (body) {
-      const text = document.createElement('textarea');
-      text.value = body; text.readOnly = true; text.rows = 6; text.dataset.requestManual = '';
-      text.autocomplete = 'off'; text.spellcheck = false;
-      const copy = document.createElement('button');
-      copy.type = 'button'; copy.textContent = 'Copy request'; copy.dataset.copy = body; copy.dataset.requestCopy = '';
-      const blank = requestLink(REQUEST_REPO + '?template=skill-request.md', 'Open GitHub template');
-      blank.dataset.requestTemplate = '';
-      append(manual, requestField('Request text', text), copy, blank);
-    }
-    return null;
-  }
   let opening = false;
-  note.addEventListener('input', () => { status.textContent = ''; refresh(); });
-  maintainer.addEventListener('change', () => { status.textContent = ''; refresh(); });
-  github.addEventListener('click', e => { if (!refresh()) e.preventDefault(); });
-  form.addEventListener('submit', e => {
+  form.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (opening || !refresh()) return;
+    if (opening || !url) return;
     opening = true; submit.disabled = true; status.textContent = REQUEST.status;
     github.click();
-    queueMicrotask(() => { opening = false; refresh(); });
+    queueMicrotask(() => { opening = false; submit.disabled = false; });
   });
-  append(form, requestField('Skill link', link), requestField('Note (optional)', note), choice,
-    paragraph(REQUEST.limits), paragraph(REQUEST.tasks), paragraph(REQUEST.disclosure, 'lookup-request-disclosure'),
-    submit, github, status, manual);
+  append(form, paragraph(REQUEST.intro), requestField('Repository link', repository), requestField('Skill path', skill));
+  if (!fields.repository || !fields.skill) append(form, paragraph(REQUEST.empty));
+  append(form, terms, paragraph(REQUEST.disclosure, 'lookup-request-disclosure'), submit, github, status);
   append(details, summary, form);
-  refresh();
   return details;
 }
 
-function compactResult(r, originalLink) {
+function compactResult(r) {
   const section = document.createElement('section');
   section.className = 'lookup-summary lookup-' + r.kind;
   if (r.kind === 'refused' || r.kind === 'unreadable') {
@@ -434,7 +409,7 @@ function compactResult(r, originalLink) {
       x.path ? 'If the linked folder is a skill, pick the matching local folder by its full path.'
         : 'Pick the local skill folder you want to test by its full path.'));
   append(section, steps, paragraph(VIEW.cost, 'lookup-cost'), paragraph(VIEW.cache, 'lookup-cache'),
-    recordOf(r, 'Run details, sample result and CLI'), requestOf(originalLink));
+    recordOf(r, 'Run details, sample result and CLI'), requestOf(r.identity));
   return section;
 }
 function previewOf() {
@@ -479,7 +454,7 @@ export function mount(el) {
     const n = ++latest;
     const submittedLink = input.value.trim();
     lookup(submittedLink).then((r) => {
-      if (n === latest) area.replaceChildren(compactResult(r, submittedLink));
+      if (n === latest) area.replaceChildren(compactResult(r));
     });
   });
   el.replaceChildren(form, note, area);

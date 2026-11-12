@@ -305,9 +305,11 @@ test('757-7: the fake has one link label and its page speaks plainly', () => {
   assert.notDeepEqual(fakePageHits(h.replace('<a href="/try-it/">Try it yourself</a>', ''), island), [], 'plant: no next step');
 });
 
+// Spec 315 A-315-9 (issue 787): the words moved to F-2 and Q-1 with the Measure a skill form.
 test('757-8: the lookup says the public request needs a GitHub account', () => {
   const h = read('docs/skill-lookup/index.html'), island = read('docs/islands/skill-lookup.js');
-  const hits = (page, script) => [!textOf(page).includes('Request a public test on GitHub (needs a GitHub account).'), !script.includes("'Request a public test (needs a GitHub account)'")].filter(Boolean);
+  const hits = (page, script) => [!textOf(page).includes('A public request needs a GitHub account.'), !script.includes("'Ask us to measure it (needs a GitHub account)'")].filter(Boolean);
   assert.deepEqual(hits(h, island), []);
-  assert.notDeepEqual(hits(h.replace(' (needs a GitHub account)', ''), island), [], 'plant: the page without the words');
+  assert.notDeepEqual(hits(h.replace(' A public request needs a GitHub account.', ''), island), [], 'plant: the page without the words');
+  assert.notDeepEqual(hits(h, island.replace(' (needs a GitHub account)', '')), [], 'plant: the summary without the words');
 });
