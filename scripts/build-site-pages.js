@@ -619,8 +619,13 @@ const reportName = (r) => r.title.value.replace(REPORT_PREFIX, '');
 // (spec 020 AC-18, amendment 13). Issue 652 made the tail the report's name, and the old test
 // compared the title with its own tail, which always held, so Report 017's card lost the line.
 // The comparison is the row's name against the row's what_moved, the reading the gate makes.
+// THE SKILLS LINE RIDES WITH THE SUMMARY LINE (spec 782 AC-11): the skills and packs the report's own
+// receipts measured, read by scripts/build-results.js, on /reports/ and not on the homepage, whose card
+// drops the summary line by the same option (spec 039) and whose every numeral must name a stats field.
 function reportCard(r, stat = () => '', { counts = true } = {}) {
   const tail = esc(reportName(r));
+  const results = require('./build-results.js');
+  const skills = counts ? results.skillsSentence(results.reportSkillGroups({ report: r.number.value })) : '';
   const plain = `Report <span${stat('number')}>${esc(r.number.value)}</span>: ${tail}`;
   const moved = reportName(r) === r.what_moved.value ? '' : `<p class="card-moved">What moved: ${esc(r.what_moved.value)}</p>\n`;
   // Spec 047: where the caller names a field for the title's tail, the tail is wrapped in it,
@@ -633,7 +638,7 @@ function reportCard(r, stat = () => '', { counts = true } = {}) {
 <h3><a href="/reports/${esc(r.number.value)}/">${title}</a></h3>
 ${moved}<p class="card-models">${r.model_ids.map((m) => `<code>${esc(m.value)}</code>`).join(' ')}</p>
 <p class="card-date"><span${stat('date')}>${esc(r.date.value)}</span></p>
-${counts ? `<p class="card-counts">${esc(r.headline_counts.value)}</p>\n` : ''}</div>
+${counts ? `<p class="card-counts">${esc(r.headline_counts.value)}</p>\n` : ''}${skills ? `<p class="report-skills" data-report="${esc(r.number.value)}">${esc(skills)}</p>\n` : ''}</div>
 ${r.plot ? `${chrome.inlinePlot(r.plot.value, 'card-plot', `Band plot for the first cell of Report ${r.number.value}.`)}\n` : ''}</article>`;
 }
 
@@ -672,6 +677,7 @@ function reportsIndex() {
 <p><a href="${drift.HREF}">${esc(drift.TEXT.h1)}</a>: what each receipt read, model by model, across the reports.</p>
 <p><a href="/sugar-pill/">${esc(require('./sugar-pill-page.js').TEXT.h1)}</a>: pick what you want help with and see what each of Reports 017 and 018's skills did against a same-length fake and against nothing.</p>
 <p><a href="/spot-the-fake/">Which bar is the fake?</a> A quick guessing game with the reports’ real score ranges.</p>
+${chrome.RESULTS_LINKS}
 ${cards}
 </section>
 

@@ -123,7 +123,10 @@ function reportLines(root) {
   const summaries = readJson(root, 'docs/data/report-summaries.json');
   // Issue 652: the link text is the report's title, as the cards read it (build-site-pages.js reportName).
   const { reportName } = require('./build-site-pages.js');
-  return rows.map((r) => ({ number: r.number.value, line: `- [Report ${r.number.value}: ${r.scope_title?.value || reportName(r)}](${ORIGIN}/reports/${r.number.value}/): ${finding(summaries, r.number.value)} Models: ${r.model_ids.map((m) => humanModelName(m.value)).join(', ')}.${r.scope_title ? ' Driftproof wrote the text-task suites from the pinned skill descriptions and READMEs. Both model sets use Haiku 5.5 as judge. The eval account’s configuration was read and found clean before and after each run, not during it.' : ''}` }));
+  // Spec 782 AC-11: each line ends with the skills and packs the report's own receipts measured.
+  const results = require('./build-results.js');
+  const skills = (r) => { const s = results.skillsSentence(results.reportSkillGroups({ root, report: r.number.value })); return s ? ` ${s}` : ''; };
+  return rows.map((r) => ({ number: r.number.value, line: `- [Report ${r.number.value}: ${r.scope_title?.value || reportName(r)}](${ORIGIN}/reports/${r.number.value}/): ${finding(summaries, r.number.value)} Models: ${r.model_ids.map((m) => humanModelName(m.value)).join(', ')}.${r.scope_title ? ' Driftproof wrote the text-task suites from the pinned skill descriptions and READMEs. Both model sets use Haiku 5.5 as judge. The eval account’s configuration was read and found clean before and after each run, not during it.' : ''}${skills(r)}` }));
 }
 
 // How many kinds of report the site lists, said as /report-types/ says it: the distinct report types

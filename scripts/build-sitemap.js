@@ -271,6 +271,12 @@ function publishedArticles(root = ROOT, dates = null) {
   return articles.sort((a, b) => compare(a.url, b.url));
 }
 
+// Spec 782 AC-11: a report's entry ends with the skills and packs its own receipts measured.
+function skillsOf(r) {
+  const results = require('./build-results.js');
+  const s = results.skillsSentence(results.reportSkillGroups({ report: r.number.value }));
+  return s ? ` ${s}` : '';
+}
 function renderFeed(rows, articles = publishedArticles()) {
   if (articles.some(a => !/^\d{4}-\d{2}-\d{2}$/.test(a.date || ''))) throw new Error('article dates missing: run scripts/build-sitemap.js');
   articles = articles.slice().sort((a, b) => compare(b.date, a.date) || compare(a.url, b.url));
@@ -291,7 +297,7 @@ ${rows.map((r) => `  <entry>
     <id>${ORIGIN}/reports/${r.number.value}/</id>
     <updated>${updated(r.date.value)}</updated>
     <category term="${esc(r.type.value)}"/>
-    <summary>${esc(`${r.headline_counts.value} Models: ${r.model_ids.map((m) => m.value).join(', ')}.`)}</summary>
+    <summary>${esc(`${r.headline_counts.value} Models: ${r.model_ids.map((m) => m.value).join(', ')}.${skillsOf(r)}`)}</summary>
   </entry>`).join('\n')}
 ${articles.map(a => `  <entry>
     <title>${esc(a.title)}</title>

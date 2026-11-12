@@ -51,6 +51,20 @@ const SUB_CLOSE = '<!--/driftproof:subscribe-->';
 // <main>, so no report body moves and no plain-word card is written into it. Its words are scripts/offer.js's.
 const ASK_OPEN = '<!--driftproof:ask-->';
 const ASK_CLOSE = '<!--/driftproof:ask-->';
+// WHAT A REPORT MEASURED AND WHERE ITS ROWS ARE (spec 782 AC-11, AC-15): the skills its own receipts
+// measured, by pack, read by scripts/build-results.js, and the links to every result in one file. Above
+// the offer line and outside <main>, so no report body moves; outside the TL;DR fence, whose every numeral
+// must be the body's (spec 020 AC-19), because a pack's name may carry digits.
+const MEASURED_OPEN = '<!--driftproof:measured-->';
+const MEASURED_CLOSE = '<!--/driftproof:measured-->';
+const RESULTS_LINKS = '<p class="report-data">Every Driftproof result in one file: <a href="/data/driftproof-results.jsonl">JSONL</a> or <a href="/data/driftproof-results.csv">CSV</a>, and <a href="/data/">what a row is and is not</a>.</p>';
+function measuredLine(number) {
+  const results = require('./build-results.js');
+  const sentence = results.skillsSentence(results.reportSkillGroups({ report: number }));
+  return `<section class="report-results" aria-label="Skills measured and results files">
+${sentence ? `<p class="report-skills" data-report="${esc(number)}">${esc(sentence)}</p>\n` : ''}${RESULTS_LINKS}
+</section>`;
+}
 
 const esc = escapeAttr;
 
@@ -628,6 +642,7 @@ function applyChrome(html, rel, data) {
   let out = applyNavFooter(terms.stripCards(terms.unwrapTerms(html)));
   out = stripBetween(out, TLDR_OPEN, TLDR_CLOSE);
   out = stripBetween(out, ASK_OPEN, ASK_CLOSE);
+  out = stripBetween(out, MEASURED_OPEN, MEASURED_CLOSE);
   // The `-draft` suffix is part of the PATH, never part of the report. An
   // unapproved report is published nowhere (build-public.sh drops `*-draft/`).
   // This comment used to add that nothing in the bytes marks the draft state, so
@@ -663,6 +678,10 @@ function applyChrome(html, rel, data) {
   // Issue 408: an explicit route boundary keeps the measurement theme local.
   if ((rel.startsWith('skills/') && rel.endsWith('/index.html')) || rel === 'skills/index.html' || rel === 'reports/015/index.html') out = out.replace('<body>', '<body class="measurement-ui">');
   // Required here, not at load: scripts/offer.js reads lib/verdict.js and the skill hand-off rule.
+  const published = /^reports\/(\d+)\/index\.html$/.exec(rel);
+  if (published && (data || reportsData()).some((r) => String(r.number.value) === published[1])) {
+    out = out.replace(FOOT_OPEN, `${MEASURED_OPEN}${measuredLine(published[1])}${MEASURED_CLOSE}\n${FOOT_OPEN}`);
+  }
   const offer = require('./offer.js');
   if (offer.asksOn(rel)) out = out.replace(FOOT_OPEN, `${ASK_OPEN}${offer.askLine()}${ASK_CLOSE}\n${FOOT_OPEN}`);
   return terms.applyTerms(out);
@@ -733,7 +752,7 @@ module.exports = {
   splitReportBody,
   stripSiteFooter, SITE_FOOTER_RE,
   NAV, FOOTER, SCRIPTS, DOCS_LINKS, BUILDER_LINKS, ORIGIN, esc, ARTICLES, isArticle,
-  TLDR_OPEN, TLDR_CLOSE, TW_OPEN, TW_CLOSE, SUB_OPEN, SUB_CLOSE,
+  TLDR_OPEN, TLDR_CLOSE, TW_OPEN, TW_CLOSE, SUB_OPEN, SUB_CLOSE, MEASURED_OPEN, MEASURED_CLOSE, RESULTS_LINKS, measuredLine,
   ANCHOR_OPEN, ANCHOR_CLOSE, RECEIPTS_ANCHOR,
   unwrapTerms: terms.unwrapTerms, TERM_OPEN: terms.TERM_OPEN, TERM_CLOSE: terms.TERM_CLOSE, CARDS_OPEN: terms.CARDS_OPEN, CARDS_CLOSE: terms.CARDS_CLOSE,
 };

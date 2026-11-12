@@ -345,6 +345,28 @@ function modelsDescription(row) {
   if (out.length > DESC_MAX) throw new Error(`report ${row.number.value}: the models description is ${out.length} characters, past ${DESC_MAX}`);
   return out;
 }
+// A REPORT'S DESCRIPTION NAMES WHAT IT MEASURED (spec 782 TBD-1 (a), Maverick's ruling of 11 Nov 2026):
+// "<pack>: <skills>, on <models>.", the skills and packs its own receipts measured (scripts/build-results.js),
+// whole names and "and N more" where they do not fit, every model whole, so a report titled past 60 still
+// names all its models (Amendment 2, C-117). A report with no receipt keeps its row's description. Where two
+// reports measured the same skills on the same models, each leads with "Report NNN: ", so no two pages
+// share a description (spec 133 AC-4). The headline stays on the page, in its TL;DR card, the index and
+// the feed.
+function skillsBase(row) {
+  const results = require('./build-results.js');
+  const groups = results.reportSkillGroups({ report: row.number.value });
+  if (!groups.length) return null;
+  const models = listOf([...new Set(row.model_ids.map((x) => humanModelName(x.value)))]);
+  return { groups, models, base: results.skillsDescription(groups, models, DESC_MAX) };
+}
+function skillsDescriptionOf(row, rows = reportsData()) {
+  const own = skillsBase(row);
+  if (!own) return null;
+  const shared = rows.some((r) => String(r.number.value) !== String(row.number.value) && (skillsBase(r) || {}).base === own.base);
+  const out = require('./build-results.js').skillsDescription(own.groups, own.models, DESC_MAX, shared ? `Report ${row.number.value}: ` : '');
+  if (!out) throw new Error(`report ${row.number.value}: no skills description fits ${DESC_MAX} characters`);
+  return out;
+}
 // A RECEIPT'S TITLE comes from the receipt builder's ladder (spec 133 R-3), which needs every
 // receipt to know which rungs are unique. Required at call time: that module requires this one.
 // The uniqueness ladder is the archive's; a receipt the caller hands in that is not under receipts/
@@ -565,6 +587,11 @@ function jsonLd(html, rel, rows, title, description) {
     const headline = row ? `Report ${m[1]}: ${row.what_moved.value}` : strip(first(html, /<h1[^>]*>([\s\S]*?)<\/h1>/) || title);
     const published = row ? row.date.value : undefined;
     const modified = pageDates()[rel] || published;
+    // WHAT THE REPORT MEASURED (spec 782 AC-11): one SoftwareSourceCode per skill its own receipts
+    // measured, its repository where an identity record names one (scripts/build-results.js).
+    const about = row ? require('./build-results.js').reportSkillGroups({ report: m[1] }).flatMap((g) => g.skills.map((name) => ({
+      '@type': 'SoftwareSourceCode', name, ...(g.pack ? { codeRepository: `https://github.com/${g.pack}` } : {}),
+    }))) : [];
     return [
       ld({
         '@context': 'https://schema.org',
@@ -579,6 +606,7 @@ function jsonLd(html, rel, rows, title, description) {
         author: ORG_REF,
         publisher: ORG_REF,
         license: 'https://www.apache.org/licenses/LICENSE-2.0',
+        ...(about.length ? { about } : {}),
         hasPart: linked.map((href) => ({
           '@type': 'Dataset',
           name: href.split('/').pop(),
@@ -606,7 +634,28 @@ function jsonLd(html, rel, rows, title, description) {
     description,
     url,
     isPartOf: { '@type': 'WebSite', name: 'Driftproof', url: `${ORIGIN}/` },
-  }), ...faqLd(html), ...paperLd(rel), ...maintainerLd(rel)].join('\n');
+  }), ...faqLd(html), ...paperLd(rel), ...maintainerLd(rel), ...datasetLd(html, rel, title, description)].join('\n');
+}
+
+// THE RESULTS FILES AS A DATASET (spec 782), on the datasheet page alone, derived from the page: each
+// file it links under /data/ is a distribution, and the licence is the one the page states.
+function datasetLd(html, rel, title, description) {
+  if (rel !== 'data/index.html') return [];
+  const { DATA_LICENCE_URL } = require('./build-results.js');
+  if (!String(html).includes(`href="${DATA_LICENCE_URL}"`)) throw new Error(`${rel}: the datasheet does not link its licence`);
+  const files = [...new Set([...String(html).matchAll(/href="(\/data\/[^"]+\.(jsonl|csv))"/g)].map((x) => x[1]))].sort();
+  return [ld({
+    '@context': 'https://schema.org',
+    '@type': 'Dataset',
+    name: title.replace(BRAND_SUFFIX, ''),
+    description,
+    url: urlOf(rel),
+    creator: ORG_REF,
+    publisher: ORG_REF,
+    license: DATA_LICENCE_URL,
+    isAccessibleForFree: true,
+    distribution: files.map((f) => ({ '@type': 'DataDownload', encodingFormat: f.endsWith('.csv') ? 'text/csv' : 'application/jsonl', contentUrl: `${ORIGIN}${f}` })),
+  })];
 }
 
 // ── spec 135: the question pages and the paper ──────────────────────────────────────────
@@ -811,7 +860,8 @@ function applyHeadTags(html, rel, config, own, reportRows) {
   const rows = reportRows || reportsData();
   const title = pageTitle(out, rel, rows, own);
   const row = rowFor(rel, rows);
-  const description = (row && rel === `reports/${row.number.value}/index.html` && modelsDescription(row))
+  const description = (row && rel === `reports/${row.number.value}/index.html` && skillsDescriptionOf(row, rows))
+    || (row && rel === `reports/${row.number.value}/index.html` && modelsDescription(row))
     || (ownDescription(row, out, rel) ? ownDescription(row, out, rel).value : pageDescription(out));
   out = /<title>[\s\S]*?<\/title>/.test(out)
     ? out.replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(title)}</title>`)
@@ -837,7 +887,7 @@ const render = (html, rel, cfg) => applyHeadTags(html, rel, cfg);
 // description derived by site-data.mjs, which loads prepare-report-007.js, which
 // takes applyHeadTags from this file; run as a script, this file is mid-load at that
 // moment, so the exports have to exist already (spec 031 A-031-24).
-module.exports = { esc, escapeRegExp, escapeAttr, PRIVACY_LINE, ogDescriptionOf, rowFor, pageFiles, render, applyHeadTags, defaultCardName, titleOf, descriptionOf, pageTitle, pageDescription, cardFor, canonicalOf, siteConfig, beaconFor, subscribeForm, verificationTags, BEACON, ORIGIN, CARD, HOME_TITLE, TITLE_MAX, DESC_MAX, reportTitle, modelsDescription, organization, ORG_ID, confirmedProfiles, pageDates };
+module.exports = { esc, escapeRegExp, escapeAttr, PRIVACY_LINE, ogDescriptionOf, rowFor, pageFiles, render, applyHeadTags, defaultCardName, titleOf, descriptionOf, pageTitle, pageDescription, cardFor, canonicalOf, siteConfig, beaconFor, subscribeForm, verificationTags, BEACON, ORIGIN, CARD, HOME_TITLE, TITLE_MAX, DESC_MAX, reportTitle, modelsDescription, skillsDescriptionOf, organization, ORG_ID, confirmedProfiles, pageDates };
 
 if (require.main === module) {
   const check = process.argv.includes('--check');
