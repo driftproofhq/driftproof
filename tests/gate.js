@@ -6334,13 +6334,15 @@ gate.section('claude code plugin self-test (028)');
   // plugin has always carried must be there, so a deleted one reads as missing.
   const cmdDir = path.join(PLUGIN, 'commands');
   const shipped = fs.existsSync(cmdDir) ? fs.readdirSync(cmdDir).filter((f) => f.endsWith('.md')).map((f) => f.slice(0, -3)) : [];
+  // Spec 777: the steps moved to the runner, so the file carries none, and the runner holds some for it.
+  const moved = JSON.parse(fs.readFileSync(path.join(ROOT, 'lib', 'door', 'commands.json'), 'utf8'));
   const cmdShapes = [...new Set(['init', 'run', 'badge', ...shipped])].sort().map((c) => {
     const f = path.join(PLUGIN, 'commands', `${c}.md`);
     const t = fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '';
     const fm = /^---\n([\s\S]*?)\n---/.exec(t);
-    return { c, ok: /```driftproof-steps\n[\s\S]*?\n```/.test(t) && !!fm && /^description:\s*\S/m.test(fm[1]) };
+    return { c, ok: !/```driftproof-steps/.test(t) && moved[c] && moved[c].length > 0 && !!fm && /^description:\s*\S/m.test(fm[1]) };
   });
-  gate.check('each command file carries a description and the steps block the door executes',
+  gate.check('each command file carries a description, and the runner holds its steps',
     cmdShapes.every((x) => x.ok), { read: cmdShapes.map((x) => x.c), missing: cmdShapes.filter((x) => !x.ok).map((x) => x.c) });
 
   // The shipped contract is the Action's, in both trees: action/ is published.
@@ -6361,7 +6363,7 @@ gate.section('claude code plugin self-test (028)');
   const contractDrift = [];
   try {
     const lib = fs.readFileSync(path.join(ROOT, 'action', 'lib.sh'), 'utf8');
-    const shipped = JSON.parse(fs.readFileSync(path.join(PLUGIN, 'input-contract.json'), 'utf8'));
+    const shipped = JSON.parse(fs.readFileSync(path.join(ROOT, 'lib', 'door', 'input-contract.json'), 'utf8'));
     let heldAgainstAction = 0;
     for (const [name, rule] of Object.entries(shipped.rules || {})) {
       if (!rule.bash_name) continue;
@@ -6373,7 +6375,7 @@ gate.section('claude code plugin self-test (028)');
     const govern = [...lib.matchAll(/^(RE_[A-Z_]+)=/gm)].map((m) => m[1]).filter((n) => !['RE_VERDICT', 'RE_DELTA'].includes(n));
     if (heldAgainstAction !== govern.length) contractDrift.push(`${heldAgainstAction} rule(s) held against action/lib.sh, which declares ${govern.length} governing the inputs (${govern.join(', ')})`);
   } catch (e) { contractDrift.push(String(e.message)); }
-  gate.check("the plugin's shipped input contract is byte-identical to action/lib.sh",
+  gate.check("the runner's door input contract is byte-identical to action/lib.sh",
     contractDrift.length === 0, { drift: contractDrift });
 
   // ── the probe-driven half ──────────────────────────────────────────────────

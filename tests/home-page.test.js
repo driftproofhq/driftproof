@@ -35,7 +35,8 @@ function tallyOf(reportHtml) {
   const items = head[2].split(', ').map((x) => { const q = /^(\d+) (.+)$/.exec(x); assert.ok(q, x); return { count: Number(q[1]), label: q[2] }; });
   return { total: Number(head[1]), items };
 }
-const TILE_CLASS = { 'beat the fake': 'is-up', 'below the fake': 'is-down', 'too few answers to tell': 'is-few', 'not measured': 'is-none' };
+// A-687-6 (issue 798): Report 019's counts line says "not enough draws", the verdict library's word.
+const TILE_CLASS = { 'beat the fake': 'is-up', 'below the fake': 'is-down', 'too few answers to tell': 'is-few', 'not enough draws': 'is-few', 'not measured': 'is-none' };
 const tileClassOf = (label) => TILE_CLASS[label] || 'is-flat';
 // A-687-4 (issue 757): the first sentence of the text that says its lead again goes, and the report's
 // double negative is printed in its plain form, bound to its point.

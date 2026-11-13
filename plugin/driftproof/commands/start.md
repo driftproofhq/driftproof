@@ -17,18 +17,25 @@ run (step 4).
 
 ## How to run it
 
+Form in use: npx.
+
+Run the line exactly as it reads, with your own arguments. Do not drop its `cd` or its `--prefix`, and do not add anything before it. Starting npm in the plugin's own folder is what keeps a package or a program planted in the project from running, and these words are all that holds it. Two gaps remain in this form: a program in a parent folder's `node_modules/.bin` can run before the runner, and the line you run can be altered. The installed form is the safer alternative, because npm starts nothing and the first of those gaps closes. If a person has installed this version of the runner, each line can be written instead in the installed form:
+
+    driftproof door --pin 0.29.0 start <skill-dir>
+
+If the runner prints `unknown command: door`, it is older than this plugin. Tell the person to install the version the line names.
 Claude Code puts the plugin's installation directory into the lines below when
 it loads this command, so the path is already absolute: run a line as it reads,
 with your own folder and file.
 
-    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" start
-    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" start <skill-dir>
-    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" start <skill-dir> --cases <draft> --confirm-write
-    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" start <skill-dir> --full
-    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" start <rules-file> --suite <draft> --confirm-write
-    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" start <rules-file> --suite <draft> --confirm-write --full [--placebo]
-    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" start <skill-dir> --cases <draft> --confirm-write --from-failure
-    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" start <rules-file> --suite <draft> --confirm-write --from-failure
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" start)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" start <skill-dir>)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" start <skill-dir> --cases <draft> --confirm-write)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" start <skill-dir> --full)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" start <rules-file> --suite <draft> --confirm-write)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" start <rules-file> --suite <draft> --confirm-write --full [--placebo])
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" start <skill-dir> --cases <draft> --confirm-write --from-failure)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" start <rules-file> --suite <draft> --confirm-write --from-failure)
 
 ## The steps, in order
 
@@ -38,8 +45,9 @@ with your own folder and file.
    `.claude/skills` here, that holds a `SKILL.md`, and says whether each has test
    cases yet. Ask the person which skill to start with. If it says this folder is
    itself a skill folder, move to the folder above it and run it again. If it
-   finds no skill, it opens a sample results page from this plugin, with no model
-   call and nothing written: tell the person what it printed, that the page is a
+   finds no skill, the runner makes a sample results page from receipts it ships,
+   with no model call and nothing written in the person's folders, and opens it:
+   tell the person what it printed, that the page is a
    sample of a published report's runs and not a result of theirs, and that their
    own skills are usually in `~/.claude/skills`, so they can type
    `/driftproof:start` in the folder that holds them. If the listing says there
@@ -114,7 +122,7 @@ with your own folder and file.
    yes, or the second line, after the yes of step 2, when the skill already had
    test cases. In order, it
    checks the runner's version (the pinned runner's `--version` against the
-   minimum in `version-guard.json`, and against this command's own minimum
+   minimum in its `version-guard.json`, and against this command's own minimum
    there, `start_minimum`, the first runner whose `init` takes `--cases`), adds the agreed cases as the skill's test
    cases (third line only), runs a quick smoke run on the trusted lane, writes
    the results page over the `receipts` folder, and opens it with this
@@ -304,24 +312,3 @@ after a yes, and never touches a file that is already there. It adds nothing
 beside a rules file and never changes one. The results page is
 a file on this computer; it loads nothing.
 
-```driftproof-steps
-[
-  {"op": "list-skills"},
-  {"op": "validate", "inputs": ["skill-dir", "models", "cases", "suite"]},
-  {"op": "resolve-target", "input": "skill-dir", "inside_repo": true},
-  {"op": "outside-skill"},
-  {"op": "page-safe"},
-  {"op": "require-suite"},
-  {"op": "check-draft"},
-  {"op": "confirm-write"},
-  {"op": "confirm-full"},
-  {"op": "state-trusted"},
-  {"op": "version-guard", "minimum": "start_minimum"},
-  {"op": "resolve-model"},
-  {"op": "cli", "when": "cases", "args": ["init", "@skill-dir", "--cases", "@cases", {"when": "from-failure", "emit": ["--drafted-from-failure"]}, {"unless": "from-failure", "emit": ["--drafted-from-skill"]}]},
-  {"op": "cli", "unless": "full", "args": ["run", "@skill-dir", {"emit": ["--models", "@models"]}, {"when": "suite", "emit": ["--suite", "@suite"]}, "--quick", "--trusted-skill"]},
-  {"op": "cli", "when": "full", "args": ["run", "@skill-dir", {"emit": ["--models", "@models"]}, {"when": "suite", "emit": ["--suite", "@suite"]}, "--max-cases", "5", "--concurrency", "4", {"when": "placebo", "emit": ["--placebo"]}, "--trusted-skill"]},
-  {"op": "cli", "args": ["view", "@receipts-here", "--out", "@view-page"]},
-  {"op": "open-view", "file": "driftproof-view.html"}
-]
-```

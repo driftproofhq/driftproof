@@ -26,7 +26,7 @@ const { sideBySide } = require('../lib/view');
 
 const ROOT = path.join(__dirname, '..');
 const BIN = path.join(ROOT, 'bin', 'driftproof');
-const DOOR = path.join(ROOT, 'plugin', 'driftproof', 'lib', 'door.mjs');
+const { LAUNCHER: DOOR } = require('../specs/028-claude-code-plugin/probes/door-copy.cjs');
 const FAKE_BIN = path.join(ROOT, 'specs', '028-claude-code-plugin', 'probes', 'bin');
 const MODEL = 'claude-haiku-4-5';
 const made = [];

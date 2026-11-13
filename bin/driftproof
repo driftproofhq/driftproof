@@ -4,19 +4,6 @@
 
 const fs = require('fs');
 const path = require('path');
-// Spec 752 A-752-3: the plugin door starts npx in an empty folder, so npx cannot find a package planted in the
-// person's repository, and names the folder the person runs from here. Entered before anything reads it.
-if (process.env.DRIFTPROOF_DOOR_CWD !== undefined) {
-  const given = process.env.DRIFTPROOF_DOOR_CWD;
-  delete process.env.DRIFTPROOF_DOOR_CWD;
-  try {
-    if (!path.isAbsolute(given)) throw new Error('relative');
-    process.chdir(given);
-  } catch (_e) {
-    console.error('REFUSED: DRIFTPROOF_DOOR_CWD is not an absolute path to a folder that can be entered. Nothing run, no receipt written.');
-    process.exit(2);
-  }
-}
 const { PROJECT_NAME, RUNNER_VERSION, DEFAULT_JUDGE_SAMPLES, DEV_MAX_USD, DEV_MAX_CALLS, SKILL_MAX_BYTES } = require('../config');
 const { loadSkill, normalizeCases, loadSubject, SUBJECT_CODES, readRequired, SUITE_MAX_BYTES } = require('../lib/skill');
 // Spec 438: a name or path escaped for the terminal.
@@ -2154,6 +2141,8 @@ async function main() {
   // statement goes to stderr just before that refusal, still first in write order.
   const stubDoor = process.env.DRIFTPROOF_STUB === '1' && (cmd === 'compare' || cmd === 'run' || cmd === 'regrade' || (cmd === 'recheck' && rest[0] === 'run'));
   const STUB_STATEMENT = 'STUB RUN (DRIFTPROOF_STUB=1): no model will be called; any emitted receipt will be UNVERIFIED and measure nothing.';
+  // Spec 777: the plugin's commands run this entry. Its arguments are its own.
+  if (cmd === 'door') return require('../lib/door').runDoor(rest);
   if (cmd === 'doctor') return cmdDoctor(rest);
   if (cmd === 'activation-drift') return cmdActivationDrift(rest);
   if (cmd === 'overlap') return cmdOverlap(rest);

@@ -9,8 +9,10 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const ROOT = path.resolve(__dirname, '..');
-const DOOR = path.join(ROOT, 'plugin/driftproof/lib/door.mjs');
+const BIN = path.join(ROOT, 'bin/driftproof');
 const PIN = require('../plugin/driftproof/.claude-plugin/plugin.json').version;
+// Spec 777: the door runs inside the runner and spawns this package's bin/driftproof with this Node, so no
+// Windows npm lookup remains. Each spawn is routed to the recording cli below, as the argv the door gave it.
 
 // Issue 649 and issue 663: `alias` models a Windows 8.3 short name, and the door's working directory
 // is the alias's spelling. On win32 the alias is the temp directory's own: on the hosted runner
@@ -60,12 +62,13 @@ function fixture(t, { version = PIN, exit = 0, layout = 'global', alias = false,
     'else process.exitCode = ' + exit + ';',
   ].join('\n'));
   const preload = path.join(root, 'platform.cjs');
+  const realPlatform = process.platform;
   fs.writeFileSync(preload, [
     "const cp = require('node:child_process');",
-    "const native = cp.spawnSync, windows = process.platform === 'win32';",
+    "const native = cp.spawnSync;",
     "cp.spawnSync = (file, args, opts) => {",
     "  if (opts && opts.shell) throw new Error('a plugin spawn used a shell');",
-    "  if (!windows && (file === 'npx' || /\\.cmd$/i.test(file))) return { status: null, error: { code: 'EINVAL' } };",
+    "  if (file === process.execPath && Array.isArray(args) && String(args[0]).split(require('node:path').sep).slice(-2).join('/') === 'bin/driftproof') return native(process.execPath, [" + JSON.stringify(cli) + ", 'driftproof@' + " + JSON.stringify(PIN) + "].concat(args.slice(1)), opts);",
     "  return native(file, args, opts);",
     "};",
     ...(alias ? [
@@ -94,7 +97,6 @@ function fixture(t, { version = PIN, exit = 0, layout = 'global', alias = false,
   }
   const pathKey = Object.keys(env).find(k => k.toLowerCase() === 'path') || 'PATH';
   env[pathKey] = bin + path.delimiter + (env[pathKey] || '');
-  // TEMP and TMP: the door's private folder (spec 752 A-752-3), which a simulated win32 looks for there.
   Object.assign(env, { DRIFTPROOF_STUB: '1', PLUGIN_SENTINEL: 'expanded', GIT_CEILING_DIRECTORIES: root, TEMP: root, TMP: root });
   assert.equal(spawnSync('git', ['init', '-q'], { cwd: work, env }).status, 0);
   const skillName = 'skill & %PLUGIN_SENTINEL% !literal! (space)';
@@ -108,7 +110,7 @@ function fixture(t, { version = PIN, exit = 0, layout = 'global', alias = false,
   const given = path.join(cwd, skillName);
   return {
     root, work, skill, skillName, cli, longHome, caseHome, cwd, given,
-    run: args => spawnSync(process.execPath, ['--require', preload, DOOR, ...args], { cwd, env, encoding: 'utf8', timeout: 300000 }),
+    run: args => spawnSync(process.execPath, ['--require', preload, BIN, 'door', '--pin', PIN, ...args], { cwd, env, encoding: 'utf8', timeout: 300000 }),
     calls: () => fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trim().split('\n').map(JSON.parse) : [],
   };
 }
@@ -162,7 +164,7 @@ test('Windows contract and consent refusals happen before the runner', t => {
   assert.match(r.stderr, /--confirm-write/);
   assert.deepEqual(f.calls(), []);
 });
-test('Windows missing npm entry point fails closed before the runner', t => {
+test('Windows: a runner that cannot be started fails closed before any work', t => {
   const f = fixture(t);
   fs.unlinkSync(f.cli);
   const r = f.run(['run', f.skillName]);

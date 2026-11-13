@@ -121,7 +121,7 @@ test('driftproof view offers the full run after a quick run, and not once a newe
 test('start.md runs the full run at lib/firstrun.js FULL in place of the quick run, and the door takes --full', () => {
   const { FULL } = require('../lib/firstrun');
   const md = fs.readFileSync(path.join(ROOT, 'plugin', 'driftproof', 'commands', 'start.md'), 'utf8');
-  const steps = JSON.parse(/```driftproof-steps\n([\s\S]*?)\n```/.exec(md)[1]);
+  const steps = JSON.parse(fs.readFileSync(path.join(ROOT, 'lib', 'door', 'commands.json'), 'utf8')).start;
   const full = steps.find((s) => s.op === 'cli' && s.when === 'full');
   const quick = steps.find((s) => s.op === 'cli' && s.unless === 'full');
   assert.ok(full && quick, 'a full step and a quick step');
@@ -149,7 +149,7 @@ test('the door\'s start --full spawns the version probe, the full run and the vi
     SPEC028_ROOT: ROOT, SPEC028_SPAWNLOG: log, GIT_CEILING_DIRECTORIES: root,
   });
   for (const k of Object.keys(env)) if (/^GIT_(?!CEILING)/.test(k)) delete env[k];
-  const r = spawnSync(process.execPath, [path.join(ROOT, 'plugin', 'driftproof', 'lib', 'door.mjs'), 'start', 'my-skill', '--full'], { cwd: work, env, encoding: 'utf8', timeout: 300000 });
+  const r = spawnSync(process.execPath, [require('../specs/028-claude-code-plugin/probes/door-copy.cjs').LAUNCHER, 'start', 'my-skill', '--full'], { cwd: work, env, encoding: 'utf8', timeout: 300000 });
   assert.equal(r.status, 0, r.stderr);
   const npx = fs.readFileSync(log, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l)).filter((s) => s.bin === 'npx').map((s) => s.argv.slice(1));
   assert.deepEqual(npx.map((v) => v[0]), ['--version', 'run', 'view']);

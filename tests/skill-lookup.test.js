@@ -782,13 +782,15 @@ test('AC-423-3: both plugin commands and the slash command agree with the shippe
 test('AC-423-4 and AC-423-5: the scope has an artefact basis and new prose obeys the wording rules', async () => {
   const { QUICK } = require('../lib/firstrun');
   const start = fs.readFileSync(path.join(ROOT, 'plugin/driftproof/commands/start.md'), 'utf8');
-  const steps = JSON.parse(/```driftproof-steps\s*([\s\S]*?)```/.exec(start)[1]);
+  const steps = JSON.parse(fs.readFileSync(path.join(ROOT, 'lib/door/commands.json'), 'utf8')).start;
   assert.equal(QUICK.maxCases, 1, 'the guided first look runs one test task');
   assert.ok(steps.some((s) => s.op === 'cli' && s.unless === 'full' && s.args.includes('--quick')));
   assert.ok(steps.some((s) => s.op === 'confirm-write'), 'the guided path waits for agreement');
   const access = fs.readFileSync(path.join(ROOT, 'plugin/driftproof/README.md'), 'utf8');
   assert.ok(access.includes('your own Claude Code account'));
-  assert.ok(access.includes('CLAUDE_PROVIDER') && access.includes('ANTHROPIC_API_KEY'));
+  // Spec 777 AC-4: the plugin names no key variable. Provider setup is the runner's and the site's.
+  const setup = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
+  assert.ok(setup.includes('CLAUDE_PROVIDER') && setup.includes('ANTHROPIC_API_KEY'));
   const paragraphs = TX.N4({ owner: 'o', repo: 'r', path: 'skills/alpha' });
   assert.deepEqual(await wordHits(paragraphs), []);
   assert.notDeepEqual(await wordHits([paragraphs[5] + ' At 95% confidence.']), [], 'plant: confidence added to N-4');
@@ -801,9 +803,7 @@ test.after(() => { for (const d of FIXTURES423) fs.rmSync(d, { recursive: true, 
 function startFixture423() {
   const root = fs.mkdtempSync('/var/tmp/spec423-start-'); FIXTURES423.push(root);
   const plugin = path.join(root, 'plugin');
-  for (const dir of ['lib', '.claude-plugin', 'commands', 'config']) fs.mkdirSync(path.join(plugin, dir), { recursive: true });
-  for (const f of ['input-contract.json', 'draft-contract.json', 'version-guard.json', '.claude-plugin/plugin.json', 'config/models.json', 'lib/door.mjs', 'commands/start.md']) fs.copyFileSync(path.join(ROOT, 'plugin/driftproof', f), path.join(plugin, f));
-  fs.symlinkSync(path.join(ROOT, 'plugin/driftproof/sample'), path.join(plugin, 'sample'));
+  require('../specs/028-claude-code-plugin/probes/door-copy.cjs').copyDoor(plugin);
   const work = path.join(root, 'work'); fs.mkdirSync(work);
   const log = path.join(root, 'events.jsonl'), hook = path.join(root, 'intercept.cjs');
   fs.writeFileSync(hook, `
@@ -814,7 +814,7 @@ function startFixture423() {
     cp.spawnSync = (cmd, args=[], opts={}) => {
       record({cmd,args});
       if(cmd==='git') return ok(args.includes('--show-toplevel') ? process.env.SPEC423_WORK+'\\n' : '0'.repeat(40)+'\\n');
-      if(cmd==='npx') return realSpawn(process.execPath,['--require',__filename,path.join(process.env.SPEC423_ROOT,'bin/driftproof'),...args.slice(1)],{...opts,env:{...opts.env,DRIFTPROOF_STUB:'1',SPEC423_RUNNER:'1'},encoding:'utf8',timeout:1800000});
+      if(cmd==='npx') return realSpawn(process.execPath,['--require',__filename,path.join(process.env.SPEC423_ROOT,'bin/driftproof'),...args.slice(1)],{...opts,env:{...process.env,...opts.env,DRIFTPROOF_STUB:'1',SPEC423_RUNNER:'1'},encoding:'utf8',timeout:1800000});
       if(['open','xdg-open','cmd'].includes(cmd)) return ok();
       if(['claude','codex'].includes(cmd) && args.includes('--version')) return ok('fixture harness\\n');
       throw Error('unexpected process: '+cmd);
@@ -841,7 +841,7 @@ function runStart423(fx, args = [], extra = {}) {
   for (const [k,v] of Object.entries(process.env)) if (!/API_KEY|TOKEN|SECRET|^CLAUDE_|^OPENAI_|^ANTHROPIC_|^DRIFTPROOF_|^SPEC|^NODE_OPTIONS$|^GIT_/.test(k)) env[k]=v;
   Object.assign(env, { TMPDIR:'/var/tmp', SPEC423_EVENTS:fx.log, SPEC423_WORK:fx.work, SPEC423_ROOT:ROOT, ...extra });
   fs.writeFileSync(fx.log, '');
-  const run = spawnSync(process.execPath, ['--require', fx.hook, path.join(fx.plugin,'lib/door.mjs'), 'start', ...args], { cwd:fx.work, env, encoding:'utf8', timeout:1800000 });
+  const run = spawnSync(process.execPath, ['--require', fx.hook, path.join(fx.plugin,'lib/door-launch.cjs'), 'start', ...args], { cwd:fx.work, env, encoding:'utf8', timeout:1800000 });
   const events=fs.readFileSync(fx.log,'utf8').trim().split('\n').filter(Boolean).map(l=>JSON.parse(l));
   const dir=path.join(fx.work,'receipts');
   const receipts=fs.existsSync(dir) ? fs.readdirSync(dir).filter(f=>f.endsWith('.json')&&!f.endsWith('.summary.json')).map(f=>JSON.parse(fs.readFileSync(path.join(dir,f),'utf8'))) : [];
@@ -860,7 +860,8 @@ const opens423 = r => r.events.filter(e=>['open','xdg-open','cmd'].includes(e.cm
 function sampleHits423(r, shouldOpen) {
   const hits=[];
   if(r.status!==0) hits.push('search failed unexpectedly');
-  if(runnerCalls423(r).length || r.receipts.length || r.page) hits.push('search ran or wrote');
+  // Spec 777 AC-14: the sample page is made by the CLI's view, so that one call is the search's own.
+  if((shouldOpen ? runnerCalls423(r).some(v=>v[0]!=='view') : runnerCalls423(r).length) || r.receipts.length || r.page) hits.push('search ran or wrote');
   if(opens423(r).length !== (shouldOpen?1:0)) hits.push('wrong sample open count');
   if(shouldOpen && !/sample results page/.test(r.stdout)) hits.push('sample not disclosed');
   if(!shouldOpen && !/walk did not read every folder/.test(r.stdout)) hits.push('incomplete search not disclosed');
@@ -992,7 +993,7 @@ test('AC-423-2 and AC-423-5: hostile names are delimited attributed input; adjac
 });
 
 test('AC-423-4a: configured target and grader choose their own surfaces, including Codex and API destinations', () => {
-  const registry=JSON.parse(fs.readFileSync(path.join(ROOT,'plugin/driftproof/config/models.json'),'utf8'));
+  const registry=JSON.parse(fs.readFileSync(path.join(ROOT,'config/models.json'),'utf8'));
   const priced=registry.models.filter(m=>m.provider==='anthropic').sort((a,b)=>(a.input_price+a.output_price)-(b.input_price+b.output_price)||a.id.localeCompare(b.id));
   const target=priced[0].id, grader=registry.models.find(m=>m.provider==='openai').id;
   const fx=startFixture423();putSkill423(fx,'local-skill',{suite:true});
@@ -1018,9 +1019,9 @@ test('AC-423-4a: configured target and grader choose their own surfaces, includi
   assert.deepEqual(routeProseHits(prose),[]);
   assert.notDeepEqual(routeProseHits('The run always uses your Claude Code account.'),[]);
   // Read the complete published disclosure as the basis, not isolated account/key words.
-  const readme=fs.readFileSync(path.join(ROOT,'plugin/driftproof/README.md'),'utf8');
-  const section=readme.split('## What it sends, and where\n')[1];
-  assert.ok(section && section.split('\n').some(l=>l.startsWith('- Some settings change this.') && /OpenAI model.*codex.*OPENAI_SURFACE.*CLAUDE_PROVIDER.*judge_model/.test(l)));
+  // Spec 777 AC-4: the disclosure of the provider settings moved to the root README.
+  const readme=fs.readFileSync(path.join(ROOT,'README.md'),'utf8');
+  assert.ok(readme.split('\n').some(l=>/OpenAI model.*codex.*OPENAI_SURFACE.*CLAUDE_PROVIDER.*judge_model/.test(l)), 'the root README keeps the provider disclosure');
   assert.deepEqual(registry.providers.openai.surfaces,['api','cli']);
 });
 

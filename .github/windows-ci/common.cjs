@@ -26,9 +26,18 @@ function prepare() {
   Object.assign(process.env, env);
   endpointPlant();
 }
-function run(file, args, options = {}) {
-  const result = spawnSync(file, args, { cwd: ROOT, env: cleanEnv(), encoding: 'utf8', timeout: 1800000, ...options });
+// Issue 807: argv form only. `shell` is set after the caller's options, so no path taken from the
+// environment (process.execPath, PATH) is ever read by a shell.
+function observed(result) {
   return { status: result.status, stdout: result.stdout || '', stderr: result.stderr || '', ...(result.error ? { error: result.error.message } : {}) };
+}
+function run(file, args, options = {}) {
+  return observed(spawnSync(file, args, { cwd: ROOT, env: cleanEnv(), encoding: 'utf8', timeout: 1800000, ...options, shell: false }));
+}
+// Spec 777 AC-11 runs the plugin's own command line in Git Bash. That one line is the only one a shell
+// reads, so it has its own spawn and run() never starts a shell for any caller (issue 807).
+function runLine(bash, line, options = {}) {
+  return observed(spawnSync(bash, ['-c', line], { cwd: ROOT, env: cleanEnv(), encoding: 'utf8', timeout: 1800000, ...options, shell: false }));
 }
 function success(result, name) {
   assert.equal(result.status, 0, name + ': ' + result.stderr + (result.error || ''));
@@ -182,5 +191,5 @@ function documentationText(text) {
 
 function main(fn) { Promise.resolve().then(fn).catch((error) => { console.error(error.message); process.exitCode = 1; }); }
 if (require.main === module) main(() => { prepare(); assert.equal(process.argv[2], '--verify-installed'); verifyFromNpx(process.argv[3]); });
-module.exports = { ROOT, CLOSED, sha256, cleanEnv, prepare, run, success, npmArguments, npm, npx, snapshot, textFiles,
+module.exports = { ROOT, CLOSED, sha256, cleanEnv, prepare, run, runLine, success, npmArguments, npm, npx, snapshot, textFiles,
   assertUnchanged, readPacked, assertInstalled, endpointAttempt, endpointPlant, plantArg, ownMutation, visibleHtml, htmlOutsideScriptBodies, documentationText, main };

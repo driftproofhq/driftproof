@@ -1,0 +1,85 @@
+{
+  "start": [
+    {"op": "list-skills"},
+    {"op": "validate", "inputs": ["skill-dir", "models", "cases", "suite"]},
+    {"op": "resolve-target", "input": "skill-dir", "inside_repo": true},
+    {"op": "outside-skill"},
+    {"op": "page-safe"},
+    {"op": "require-suite"},
+    {"op": "check-draft"},
+    {"op": "confirm-write"},
+    {"op": "confirm-full"},
+    {"op": "state-trusted"},
+    {"op": "version-guard", "minimum": "start_minimum"},
+    {"op": "resolve-model"},
+    {"op": "cli", "when": "cases", "args": ["init", "@skill-dir", "--cases", "@cases", {"when": "from-failure", "emit": ["--drafted-from-failure"]}, {"unless": "from-failure", "emit": ["--drafted-from-skill"]}]},
+    {"op": "cli", "unless": "full", "args": ["run", "@skill-dir", {"emit": ["--models", "@models"]}, {"when": "suite", "emit": ["--suite", "@suite"]}, "--quick", "--trusted-skill"]},
+    {"op": "cli", "when": "full", "args": ["run", "@skill-dir", {"emit": ["--models", "@models"]}, {"when": "suite", "emit": ["--suite", "@suite"]}, "--max-cases", "5", "--concurrency", "4", {"when": "placebo", "emit": ["--placebo"]}, "--trusted-skill"]},
+    {"op": "cli", "args": ["view", "@receipts-here", "--out", "@view-page"]},
+    {"op": "open-view", "file": "driftproof-view.html"}
+  ],
+  "run": [
+    {"op": "validate", "inputs": ["skill-dir", "models", "max-calls", "max-usd", "samples", "concurrency", "max-cases", "suite"]},
+    {"op": "resolve-target", "input": "skill-dir", "inside_repo": true},
+    {"op": "offer-draft"},
+    {"op": "state-trusted"},
+    {"op": "version-guard"},
+    {"op": "resolve-model"},
+    {"op": "output-folder"},
+    {"op": "cli", "args": ["run", "@skill-dir", {"emit": ["--models", "@models"]}, {"when": "max-calls", "emit": ["--max-calls", "@max-calls"]}, {"when": "max-usd", "emit": ["--max-usd", "@max-usd"]}, {"when": "samples", "emit": ["--samples", "@samples"]}, {"when": "concurrency", "emit": ["--concurrency", "@concurrency"]}, {"when": "max-cases", "emit": ["--max-cases", "@max-cases"]}, {"when": "quick", "emit": ["--quick"]}, {"when": "suite", "emit": ["--suite", "@suite"]}, {"when": "placebo", "emit": ["--placebo"]}, {"when": "keep-transcripts", "emit": ["--keep-transcripts"]}, "--trusted-skill"]}
+  ],
+  "init": [
+    {"op": "validate", "inputs": ["skill-dir"], "target_exists": false},
+    {"op": "guided-existing"},
+    {"op": "resolve-target", "input": "skill-dir", "inside_repo": false},
+    {"op": "confirm-add"},
+    {"op": "version-guard", "minimum": "start_minimum", "only_adding": true},
+    {"op": "cli", "args": ["init", "@skill-dir"]},
+    {"op": "report-add"},
+    {"op": "say", "text": "scaffolded. Nothing outside that directory was written.", "only_new": true}
+  ],
+  "badge": [
+    {"op": "validate", "inputs": ["receipt"]},
+    {"op": "resolve-target", "input": "receipt", "inside_repo": false},
+    {"op": "version-guard"},
+    {"op": "cli", "args": ["validate", "@receipt"], "capture": true, "on_fail": "the pinned CLI refused this receipt, so nothing was rendered. The digest that failed is receipt_hash: the receipt has been altered since it was sealed."},
+    {"op": "recheck-transcripts"},
+    {"op": "cli", "args": ["badge", "@receipt"], "capture": true, "render": true, "on_fail": "the pinned CLI refused to render a badge for this receipt (receipt_hash did not verify)."},
+    {"op": "readme-snippet", "from": "render"},
+    {"op": "not-checked"}
+  ],
+  "blind": [
+    {"op": "validate", "inputs": ["receipts-dir"]},
+    {"op": "resolve-target", "input": "receipts-dir", "inside_repo": true},
+    {"op": "page-safe"},
+    {"op": "version-guard"},
+    {"op": "cli", "args": ["view", "@receipts-dir", "--out", "@view-page"]},
+    {"op": "open-view", "file": "driftproof-view.html"}
+  ],
+  "compare": [
+    {"op": "validate", "inputs": ["skill-dir", "suite", "against", "models", "max-calls", "max-usd"]},
+    {"op": "resolve-target", "input": "skill-dir", "inside_repo": true},
+    {"op": "state-trusted"},
+    {"op": "version-guard", "minimum": "compare_minimum"},
+    {"op": "cli", "args": ["compare", "@compare-a", "@skill-dir", "--suite", "@suite", "--out", "@compare-out", {"when": "placebo", "emit": ["--placebo"]}, {"when": "models", "emit": ["--models", "@models"]}, {"when": "max-calls", "emit": ["--max-calls", "@max-calls"]}, {"when": "max-usd", "emit": ["--max-usd", "@max-usd"]}, "--trusted-skill"]}
+  ],
+  "inspect": [
+    {"op": "validate", "inputs": ["skill-dir"]},
+    {"op": "resolve-target", "input": "skill-dir", "inside_repo": true},
+    {"op": "version-guard", "minimum": "inspect_minimum"},
+    {"op": "cli", "args": ["inspect", "@skill-dir", {"when": "json", "emit": ["--json"]}]}
+  ],
+  "recheck": [
+    {"op": "validate", "inputs": ["skill-dir", "folder", "suite", "models", "samples"]},
+    {"op": "resolve-target", "input": "skill-dir", "inside_repo": true},
+    {"op": "state-trusted", "when_recheck": "init"},
+    {"op": "version-guard", "minimum": "recheck_minimum"},
+    {"op": "confirm-spend"},
+    {"op": "recheck-parent"},
+    {"op": "cli", "when_recheck": "init", "args": ["recheck", "init", "@skill-dir", "--out", "@recheck-folder", {"when": "suite", "emit": ["--suite", "@suite"]}, {"when": "models", "emit": ["--models", "@models"]}, {"when": "samples", "emit": ["--samples", "@samples"]}, {"when": "placebo", "emit": ["--placebo"]}, "--trusted-skill"]},
+    {"op": "recheck-saved"},
+    {"op": "cli", "when_recheck": "run", "continue_on": 1, "args": ["recheck", "run", "@recheck-folder", {"when_saved_trusted": true, "emit": ["--trusted-skill"]}]},
+    {"op": "cli", "when_recheck": "run", "args": ["recheck", "history", "@recheck-folder"]},
+    {"op": "cli", "when_recheck": "history", "args": ["recheck", "history", "@recheck-folder"]}
+  ]
+}

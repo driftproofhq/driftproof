@@ -47,7 +47,7 @@
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Node.js 22+",
   "url": "https://driftproofhq.com/",
-  "softwareVersion": "0.28.0",
+  "softwareVersion": "0.29.0",
   "downloadUrl": "https://www.npmjs.com/package/driftproof",
   "author": {
     "@id": "https://driftproofhq.com/#organization"
@@ -452,6 +452,7 @@ svg {
 <p>You need Claude Code, <code>Node.js 22</code> or newer, and your project in a git repository. You do not need an API key: runs use your Claude Code plan's usage.</p>
 <p><span class="copy-cta"><code>claude plugin marketplace add driftproofhq/driftproof</code><button type="button" data-copy="claude plugin marketplace add driftproofhq/driftproof">Copy</button></span></p>
 <p><span class="copy-cta"><code>claude plugin install driftproof@driftproofhq</code><button type="button" data-copy="claude plugin install driftproof@driftproofhq">Copy</button></span></p>
+<p>Each command starts the pinned runner with <code>npx</code>, so a first run has no extra install step. Two gaps remain, and the plugin's words cannot close them: a program in a parent folder's <code>node_modules/.bin</code> can run before the runner, and the line Claude runs can be altered. The safer alternative is to install the runner with <code>npm install -g</code>, at the version the command names, and use the installed line each command file gives. npm then starts nothing, so the first gap closes. The line Claude runs can still be altered in either form.</p>
 <p>That installs <code>/driftproof:start</code>, <code>/driftproof:init</code>, <code>/driftproof:run</code>, <code>/driftproof:blind</code>, <code>/driftproof:badge</code>, <code>/driftproof:compare</code>, <code>/driftproof:inspect</code> and <code>/driftproof:recheck</code>. The plugin hands your arguments to the pinned runner and writes the receipt that runner would have written; <code>/driftproof:run</code> spends your Claude Code subscription rather than an API key. It measures and never changes a skill's instructions. The one file it adds is a new <code>evals/evals.json</code>, from <code>/driftproof:start</code> or <code>/driftproof:init</code>, to a skill that has none, after you say yes in the run.</p>
 <p>Compare and recheck need a git repository, and compare takes a <code>CLAUDE.md</code> or <code>AGENTS.md</code>.</p>
 <p>A full run can take up to <span data-stat="max_calls_per_task">120</span> model calls for each test task from your plan's usage. A quick check takes far fewer.</p>
@@ -468,7 +469,7 @@ export CLAUDE_PROVIDER=api
 read -rsp "Anthropic API key: " ANTHROPIC_API_KEY &amp;&amp; export ANTHROPIC_API_KEY
 npx driftproof run my-skill --models claude-haiku-4-5
 cat receipts/*.summary.md              # read the receipt + human summary</code></pre>
-<p>Wire it into a repository with the <a href="https://github.com/driftproofhq/driftproof#verification-in-ci-github-action--badge">GitHub Action</a> (<code>uses: driftproofhq/driftproof@v0.28.0</code>): it re-runs the suite on every push, uploads the receipts, and fails the job when a case separated downward. <code>driftproof badge</code> turns a receipt into a badge that carries the model and the date it was measured.</p>
+<p>Wire it into a repository with the <a href="https://github.com/driftproofhq/driftproof#verification-in-ci-github-action--badge">GitHub Action</a> (<code>uses: driftproofhq/driftproof@v0.29.0</code>): it re-runs the suite on every push, uploads the receipts, and fails the job when a case separated downward. <code>driftproof badge</code> turns a receipt into a badge that carries the model and the date it was measured.</p>
 <p>To compare a pull request's <code>CLAUDE.md</code> or <code>AGENTS.md</code> with the version on its base branch, on the same tasks, set the Action's <code>compare-with-base</code> input.</p>
 <p><img alt="driftproof badge: passing on claude-haiku-4-5" src="https://img.shields.io/endpoint?url=https://driftproofhq.com/badges/commit-message-conventions.json"></p>
 </section>

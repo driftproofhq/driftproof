@@ -22,11 +22,26 @@ test('the whole trailing finding sentence survives',async()=>{
   const n=JSON.parse(read('docs/data/stats.json')).latest_report_number.value;
   const html=read('docs/reports/'+n+'/index.html');
   const points=D.latestCaveats(n,html).map(p=>p.text).join(' ');
+  // A-702-5 (issue 798): the following sentence is read from the latest report's own finding, not
+  // typed, and a headline that repeats the finding's first sentence still leaves every later one.
+  const found=(require('../scripts/site-chrome.js').summaryPoints(n)||[]).find(p=>p.lead==='What we found.');
+  const said=found?found.text.split(/(?<=[.?!])\s+/):[];
+  assert.ok(said.length>1,'the latest finding has a sentence after its first');
+  const trailing=said[said.length-1];
+  const keeps=t=>t.includes(trailing);
+  assert.ok(keeps(points));
+  assert.equal(keeps(points.split(trailing).join('')),false,'plant: the following caveat dropped');
+  const big=/(<div class="headline">[\s\S]*?<p class="big"[^>]*>)[\s\S]*?(<\/p>)/;
+  assert.ok(big.test(html),'the report has a headline');
+  const head=said[0].replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const rest=D.latestCaveats(n,html.replace(big,(_,a,b)=>a+head+b)).find(p=>p.lead==='What we found.');
+  assert.equal(rest&&rest.text,said.slice(1).join(' '),'the repeated headline sentence goes and every later one stays');
   const sentence='A skill that did not beat the fake is not shown to do no better than it.';
-  assert.ok(points.includes(sentence));
   // A-702-3 (issue 757): the home card says the report's sentence in plain words, bound to its point.
+  // A-702-5: a report that says the plain form itself, as Report 019 does, is printed in its own words.
   const plain='Not beating the fake does not show a skill is useless.';
-  const carried=h=>h.includes(plain)&&/data-plain-of="latest_point_\d+_text"/.test(h)&&!h.includes(sentence);
+  const bound=found.text.includes(sentence)?h=>/data-plain-of="latest_point_\d+_text"/.test(h):h=>h.includes(found.text);
+  const carried=h=>h.includes(plain)&&bound(h)&&!h.includes(sentence);
   const home=read('docs/index.html');assert.ok(carried(home));
   assert.equal(carried(home.replace(plain,'')),false,'plant: the plain form removed');
   assert.equal(carried(home.replace(plain,sentence)),false,'plant: the double negative put back');

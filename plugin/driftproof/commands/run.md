@@ -10,26 +10,33 @@ repository and the person confirmed the skill is theirs, it measures a skill ins
 folder you run from instead. A `CLAUDE.md` or `AGENTS.md` is measured the same way, with
 its tasks file; see *A CLAUDE.md or AGENTS.md* below.
 
-This is a door onto the published Driftproof CLI. It builds one argument vector
-and hands it to the pinned runner. It bundles no runner, reimplements no
+This is a door onto the published Driftproof CLI. The pinned runner builds one
+argument vector and runs it. It bundles no runner, reimplements no
 measurement, and holds no copy of the receipt shape. The receipt it produces is
 byte-for-byte the receipt `driftproof run` would have produced from the same
 arguments, but for the fields that move on every run.
 
 ## How to run it
 
+Form in use: npx.
+
+Run the line exactly as it reads, with your own arguments. Do not drop its `cd` or its `--prefix`, and do not add anything before it. Starting npm in the plugin's own folder is what keeps a package or a program planted in the project from running, and these words are all that holds it. Two gaps remain in this form: a program in a parent folder's `node_modules/.bin` can run before the runner, and the line you run can be altered. The installed form is the safer alternative, because npm starts nothing and the first of those gaps closes. If a person has installed this version of the runner, each line can be written instead in the installed form:
+
+    driftproof door --pin 0.29.0 run <skill-dir>
+
+If the runner prints `unknown command: door`, it is older than this plugin. Tell the person to install the version the line names.
 Claude Code puts the plugin's installation directory into the lines below when
 it loads this command, so the path is already absolute: run a line as it reads,
 with your own `<skill-dir>` and any values you chose.
 
-    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" run <skill-dir>
-    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" run <skill-dir> --models a,b --max-calls <n> --max-usd <n>
-    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" run <skill-dir> --samples <n> --concurrency <n> --max-cases <n>
-    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" run <skill-dir> --quick
-    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" run <skill-dir> --trust-outside-repo
-    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" run <skill-dir> --placebo
-    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" run <rules-file> --suite <tasks> [--placebo]
-    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" run <rules-file> --suite <tasks> --placebo --keep-transcripts
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" run <skill-dir>)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" run <skill-dir> --models a,b --max-calls <n> --max-usd <n>)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" run <skill-dir> --samples <n> --concurrency <n> --max-cases <n>)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" run <skill-dir> --quick)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" run <skill-dir> --trust-outside-repo)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" run <skill-dir> --placebo)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" run <rules-file> --suite <tasks> [--placebo])
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" run <rules-file> --suite <tasks> --placebo --keep-transcripts)
 
 With no `--models`, the run uses the cheapest registered model in the runner's
 own registry, resolved by reading it. The model id is deliberately not written
@@ -99,7 +106,7 @@ with its own message, the folder is exactly as it was, and nothing is written.
 A rules file is measured as a skill is: its exact text is given to the model as a
 skill's text is given, and the same tasks are answered without it. Give the file and its
 tasks file, a `{"cases": [...]}` file inside the same boundary as the rules file, as the
-last line above shows. The door refuses a file not named `CLAUDE.md` or `AGENTS.md`, a
+last line above shows. The runner refuses a file not named `CLAUDE.md` or `AGENTS.md`, a
 link, and a tasks file outside that boundary, before anything runs; for any other Markdown
 file it prints the CLI command instead. A rules file given no `--suite` is offered a
 draft, as a skill with no test cases is: `/driftproof:start <rules-file>` drafts the
@@ -126,7 +133,7 @@ flag only after the person's yes to it.
 ## What it will do, in order
 
 1. Check every input you gave against the shipped contract in
-   `input-contract.json` — the same rules the Action uses, held identical to
+   the runner's `input-contract.json` — the same rules the Action uses, held identical to
    `action/lib.sh` by the spec's gate. **This happens before anything is
    spawned.** A model list, a cap or a path carrying a quote, a semicolon, a
    command substitution, a backtick or a newline is refused here, named, and
@@ -136,9 +143,9 @@ flag only after the person's yes to it.
    this repository, or, where there is no git repository and the person
    confirmed it with `--trust-outside-repo`, to be a skill inside that folder, on its real path. See
    *the trusted lane* below.
-3. Read the resolved runner version with `--version` and compare it against the
-   minimum in `version-guard.json`, refusing an older runner with both versions
-   named.
+3. Read its own `--version` against the minimum in its `version-guard.json`, refusing
+   an older runner with both versions named. It has already refused if it is not
+   the version this line names.
 4. Resolve the default model, if you did not name one.
 5. Run the pinned CLI once, with `--trusted-skill`.
 
@@ -179,48 +186,18 @@ git cannot say whether there is a repository the command refuses, flag or not.
 
 ## What it depends on that nobody has promised
 
-This command spends your Claude Code subscription, not an API key. It works
-because the runner's `claude` lane spawns `claude -p` and that child reaches the
-subscription surface when it is started from **inside a Claude Code session**,
-with `ANTHROPIC_API_KEY` deleted from the child environment rather than
-required. Measured here on Claude Code **2.1.263**, re-measured on this tree
+This command spends your Claude Code subscription. It works because the runner's
+`claude` lane spawns `claude -p` and that child reaches the subscription surface
+when it is started from **inside a Claude Code session**. Measured here on Claude Code **2.1.263**, re-measured on this tree
 rather than carried over from an earlier session.
 
-That behaviour is **not documented** and is not a contract. The session sets
-CLAUDE_CODE_CHILD_SESSION and a set of CLAUDE_CODE_ variables, and the runner's
-trusted branch copies the environment wholesale; nothing in that set refuses the
-child today. If a future version does, the failure looks like a `claude -p`
+That behaviour is **not documented** and is not a contract. Nothing refuses the child today. If a future version does, the failure looks like a `claude -p`
 child exiting non-zero with an authentication message, and every case in the run
-becomes an unmeasured draw. The fix then is to run the CLI directly with an API
-key on the `api` surface, which is a metered path and a different bill.
+becomes an unmeasured draw. The fix then is to run the CLI directly on a metered path, which is a
+different bill. The runner's own documentation says how.
 
 ## What it will not do
 
 It measures and never changes a skill's instructions. It never changes what it
 measured, and it has no opinion about how to make a score better.
 
-```driftproof-steps
-[
-  {"op": "validate", "inputs": ["skill-dir", "models", "max-calls", "max-usd", "samples", "concurrency", "max-cases", "suite"]},
-  {"op": "resolve-target", "input": "skill-dir", "inside_repo": true},
-  {"op": "offer-draft"},
-  {"op": "state-trusted"},
-  {"op": "version-guard"},
-  {"op": "resolve-model"},
-  {"op": "output-folder"},
-  {"op": "cli", "args": [
-    "run", "@skill-dir",
-    {"emit": ["--models", "@models"]},
-    {"when": "max-calls", "emit": ["--max-calls", "@max-calls"]},
-    {"when": "max-usd", "emit": ["--max-usd", "@max-usd"]},
-    {"when": "samples", "emit": ["--samples", "@samples"]},
-    {"when": "concurrency", "emit": ["--concurrency", "@concurrency"]},
-    {"when": "max-cases", "emit": ["--max-cases", "@max-cases"]},
-    {"when": "quick", "emit": ["--quick"]},
-    {"when": "suite", "emit": ["--suite", "@suite"]},
-    {"when": "placebo", "emit": ["--placebo"]},
-    {"when": "keep-transcripts", "emit": ["--keep-transcripts"]},
-    "--trusted-skill"
-  ]}
-]
-```

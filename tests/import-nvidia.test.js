@@ -819,8 +819,8 @@ test('AC-57: action/comment.js posts no verdict word for a marked receipt', asyn
   assert.match(await post(RJ(BASE_A)), PLAIN, 'the unmarked control is commented with a verdict');
   for (const s of subjects()) assert.doesNotMatch(await post(s.r), PLAIN, s.name);
 });
-test('AC-58: plugin/driftproof/lib/door.mjs reads no verdict from a receipt itself', () => {
-  const src = fs.readFileSync(path.join(ROOT, 'plugin', 'driftproof', 'lib', 'door.mjs'), 'utf8');
+test('AC-58: lib/door.js reads no verdict from a receipt itself', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'lib', 'door.js'), 'utf8');
   const reads = /\b(?:receiptVerdict|verdictFromReceipt|readCases|decisionState|plainOf|buildDriftReport|cellOf)\s*\(/;
   assert.doesNotMatch(src, reads, 'the door takes its words from the pinned runner\'s badge only');
 });

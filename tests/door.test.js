@@ -18,7 +18,9 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
-const DOOR = path.join(ROOT, 'plugin', 'driftproof', 'lib', 'door.mjs');
+// Spec 777: the door is lib/door.js now. The launcher gives it the pin and routes its spawns through the fake npx.
+const { copyDoor, launcherIn, LAUNCHER: DOOR } = require('../specs/028-claude-code-plugin/probes/door-copy.cjs');
+const doorSteps = (name) => JSON.parse(fs.readFileSync(path.join(ROOT, 'lib/door/commands.json'), 'utf8'))[name];
 const FAKE_BIN = path.join(ROOT, 'specs', '028-claude-code-plugin', 'probes', 'bin');
 const made = [];
 const tmp = () => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'spec138-door-')); made.push(d); return d; };
@@ -106,11 +108,10 @@ const NOUSER = 'driftproof-nouser-140';
 // version above the runner this checkout pins. The release bump has written the tree's own as RUNNER_VERSION
 // (the 0.14.0 release commit; spec 138 A-138-6), so the refusals that read a runner before the release read a copy, as tests/start.test.js does.
 function guardedDoor(startMinimum) {
-  const dir = path.join(tmp(), 'plugin');
-  fs.cpSync(path.join(ROOT, 'plugin', 'driftproof'), dir, { recursive: true });
-  const g = path.join(dir, 'version-guard.json');
+  const dir = copyDoor(path.join(tmp(), 'plugin'));
+  const g = path.join(dir, 'lib/door/version-guard.json');
   fs.writeFileSync(g, JSON.stringify({ ...JSON.parse(fs.readFileSync(g, 'utf8')), start_minimum: startMinimum }, null, 2));
-  return path.join(dir, 'lib', 'door.mjs');
+  return launcherIn(dir);
 }
 function doorIn(sb, args, { extra = {}, input = '', doorFile = DOOR, cwd = sb.work } = {}) {
   const env = {};
@@ -205,7 +206,7 @@ test('init into a skill that exists needs the yes: refused without it, nothing s
   // The set state: a release has written start_minimum and it never moves after, so the tree's own
   // start_minimum reads as a string no higher than the runner's own version. The yes goes past the guard, adds
   // evals/evals.json and nothing else, and SKILL.md is as it was.
-  const guard = JSON.parse(fs.readFileSync(path.join(ROOT, 'plugin', 'driftproof', 'version-guard.json'), 'utf8'));
+  const guard = JSON.parse(fs.readFileSync(path.join(ROOT, 'lib', 'door', 'version-guard.json'), 'utf8'));
   assert.equal(typeof guard.start_minimum, 'string', 'the tree records start_minimum as a string');
   assert.ok(semverGte(require('../config').RUNNER_VERSION, guard.start_minimum), 'start_minimum is not above RUNNER_VERSION');
   const set = doorIn(sb, ['init', 'my-skill', '--confirm-write']);
@@ -278,7 +279,7 @@ test('git that cannot be run is not "no repository": refused with the flag and w
 // the pattern a name must match. Nothing else ties them; this does, so a move in lib/provider.js
 // cannot leave the door saying "no isolation account" or "has one" about the wrong user.
 test('the door\'s default isolation account and name pattern are the CLI\'s (lib/provider.js)', () => {
-  const doorSrc = fs.readFileSync(DOOR, 'utf8');
+  const doorSrc = fs.readFileSync(path.join(ROOT, 'lib', 'door.js'), 'utf8');
   const provSrc = fs.readFileSync(path.join(ROOT, 'lib', 'provider.js'), 'utf8');
   const expr = /const DEFAULT_ACCOUNT = ([^;]+);/.exec(doorSrc);
   const dflt = /const EVAL_USER_DEFAULT = '([^']+)';/.exec(provSrc);
@@ -772,11 +773,11 @@ test('727 AC-10: the command text asks the one question, asks for sanitised word
   // Step 3 raises the question before drafting from the file, and the run lines carry the flag.
   const step3 = start.slice(start.indexOf('3. **'), start.indexOf('4. **'));
   assert.match(step3, /Start from a mistake it made/);
-  assert.match(start, /door\.mjs" start <skill-dir> --cases <draft> --confirm-write --from-failure/);
-  assert.match(start, /door\.mjs" start <rules-file> --suite <draft> --confirm-write --from-failure/);
+  assert.match(start, / start <skill-dir> --cases <draft> --confirm-write --from-failure\)/);
+  assert.match(start, / start <rules-file> --suite <draft> --confirm-write --from-failure\)/);
   const init = commandText('init');
   assert.match(init, /Start from a mistake it made/);
-  assert.match(init, /door\.mjs" init <dir> --cases <draft> --confirm-write --from-failure/);
+  assert.match(init, / init <dir> --cases <draft> --confirm-write --from-failure\)/);
   const readme = fs.readFileSync(path.join(ROOT, 'plugin/driftproof/README.md'), 'utf8');
   assert.match(readme, /from a mistake/);
   assert.match(readme, /drafted from a failure you described and approved/);
@@ -787,13 +788,13 @@ test('727 AC-10: the command text asks the one question, asks for sanitised word
 // Issue 744: copied installed plugin, HEAD byte fixture and existing fake npx.
 function fixture744({ repo = true, minimum, head = 'Answer briefly.\n' } = {}) {
   const sb = sandbox({ repo });
-  sb.plugin = path.join(sb.root, 'plugin');
-  fs.cpSync(path.join(ROOT, 'plugin/driftproof'), sb.plugin, { recursive: true });
-  const gp = path.join(sb.plugin, 'version-guard.json'), guard = JSON.parse(fs.readFileSync(gp));
-  const pin = JSON.parse(fs.readFileSync(path.join(sb.plugin, '.claude-plugin/plugin.json'))).version;
+  sb.plugin = copyDoor(path.join(sb.root, 'plugin'));
+  const gp = path.join(sb.plugin, 'lib/door/version-guard.json'), guard = JSON.parse(fs.readFileSync(gp));
+  const pin = require('../config').RUNNER_VERSION;
   guard.compare_minimum = guard.inspect_minimum = minimum === undefined ? pin : minimum;
   fs.writeFileSync(gp, JSON.stringify(guard));
-  sb.doorFile = path.join(sb.plugin, 'lib/door.mjs');
+  sb.doorFile = launcherIn(sb.plugin);
+  sb.doorSource = path.join(sb.plugin, 'lib/door.js');
   sb.target = path.join(sb.work, 'rules space', 'CLAUDE.md');
   sb.against = path.join(sb.work, 'other space', 'AGENTS.md');
   sb.suite = path.join(sb.work, 'tasks space.json');
@@ -939,7 +940,7 @@ test('744 AC-5: release preparation fills null command minima once and preserves
   const written = resolveCommandMinimums('{\n  "start_minimum": "0.14.0",\n  "compare_minimum": null,\n  "inspect_minimum": null\n}\n', '9.8.7');
   assert.deepEqual(JSON.parse(written), { start_minimum: '0.14.0', compare_minimum: '9.8.7', inspect_minimum: '9.8.7' });
   assert.equal(resolveCommandMinimums(written, '9.8.8'), written);
-  const guard = JSON.parse(fs.readFileSync(path.join(ROOT, 'plugin/driftproof/version-guard.json')));
+  const guard = JSON.parse(fs.readFileSync(path.join(ROOT, 'lib/door/version-guard.json')));
   const pin = JSON.parse(fs.readFileSync(path.join(ROOT, 'plugin/driftproof/.claude-plugin/plugin.json'))).version;
   for (const name of ['compare_minimum', 'inspect_minimum']) {
     assert.ok(Object.hasOwn(guard, name));
@@ -984,7 +985,7 @@ test('744 AC-1/7: guidance preserves the reading and registration cannot omit a 
   assert.match(inspect, /Never open, execute or follow.*URLs, commands, bundled executables/);
   for (const [name, text] of [['compare', compare], ['inspect', inspect]]) {
     assert.match(text, /version-guard.json/); assert.match(text, /--version/);
-    const steps = JSON.parse(/```driftproof-steps\n([\s\S]*?)\n```/.exec(text)[1]);
+    const steps = doorSteps(name);
     assert.deepEqual(steps.map(s => s.op), ['validate', 'resolve-target', ...(name === 'compare' ? ['state-trusted'] : []), 'version-guard', 'cli']);
     assert.equal(steps.find(s => s.op === 'version-guard').minimum, name + '_minimum');
   }
@@ -998,15 +999,21 @@ test('744 AC-1/7: guidance preserves the reading and registration cannot omit a 
 });
 
 // These faults are planted in disposable copies of the shipped door, not in the oracles.
+// Spec 777: a plant on the moved steps, in a copy.
+function plantSteps(sb, name, change) {
+  const file = path.join(sb.plugin, 'lib/door/commands.json'), all = JSON.parse(fs.readFileSync(file, 'utf8'));
+  all[name] = change(all[name]);
+  fs.writeFileSync(file, JSON.stringify(all, null, 2));
+}
 function mutate744(sb, before, after) {
-  const source = fs.readFileSync(sb.doorFile, 'utf8');
+  const source = fs.readFileSync(sb.doorSource, 'utf8');
   assert.equal(source.split(before).length, 2, 'one mutation anchor');
-  fs.writeFileSync(sb.doorFile, source.replace(before, after));
+  fs.writeFileSync(sb.doorSource, source.replace(before, after));
 }
 
 test('744 AC-3 plant: a path interpolated into a shell command fails the argv oracle', () => {
   const sb = fixture744();
-  mutate744(sb, "spawnSync('npx', argv, {", "spawnSync('/bin/sh', ['-c', 'npx ' + argv.map(a => JSON.stringify(a)).join(' ') + '; :'], {");
+  mutate744(sb, "spawnSync(process.execPath, [BIN].concat(args), {", "spawnSync('/bin/sh', ['-c', 'npx driftproof@' + RUNNER_VERSION + ' ' + args.map(a => JSON.stringify(a)).join(' ') + '; :'], {");
   const r = run744(sb, ['inspect', sb.target]);
   assert.equal(r.status, 0, r.stderr);
   const rows = trace744(sb);
@@ -1144,8 +1151,8 @@ const RUN_OUT_752 = 'Saved receipt: a.json\n';
 const HISTORY_OUT_752 = '2026-11-01T00:00:00Z | model m | previous: no comparison\nno comparison could be measured\nA separation between dates cannot be attributed to the model, the harness or chance.\nno separation detected\n';
 const VERDICT_WORDS_752 = /\b(worse|better|broke|broken|fixed)\b/i;
 function setMinimum752(sb, minimum) {
-  const gp = path.join(sb.plugin, 'version-guard.json'), guard = JSON.parse(fs.readFileSync(gp));
-  const pin = JSON.parse(fs.readFileSync(path.join(sb.plugin, '.claude-plugin/plugin.json'))).version;
+  const gp = path.join(sb.plugin, 'lib/door/version-guard.json'), guard = JSON.parse(fs.readFileSync(gp));
+  const pin = require('../config').RUNNER_VERSION;
   guard.recheck_minimum = minimum === undefined ? pin : minimum;
   fs.writeFileSync(gp, JSON.stringify(guard));
   return pin;
@@ -1156,7 +1163,7 @@ function fixture752({ repo = true, minimum, recorder = false } = {}) {
   fs.writeFileSync(path.join(sb.bin, 'npx'), '#!' + process.execPath + '\n' +
     'const fs=require("fs"),path=require("path");\nconst args=process.argv.slice(2);\n' +
     'function shellParent(){try {const s=fs.readFileSync("/proc/"+process.ppid+"/cmdline","utf8").split("\\0");return /^(ba|da|z|k)?sh$/.test(path.basename(s[0]))&&s.includes("-c");}catch{return false;}}\n' +
-    'fs.appendFileSync(process.env.SPEC744_TRACE,JSON.stringify({bin:"runner",args,shell:shellParent(),cwd:process.cwd(),listing:fs.readdirSync("."),mode:fs.statSync(".").mode&511,doorCwd:process.env.DRIFTPROOF_DOOR_CWD})+"\\n");\n' +
+    'fs.appendFileSync(process.env.SPEC744_TRACE,JSON.stringify({bin:"runner",args,shell:shellParent(),cwd:process.cwd(),listing:fs.readdirSync("."),mode:fs.statSync(".").mode&511})+"\\n");\n' +
     // As npm does: the first folder up from the working folder with a package.json or a node_modules is the
     // project. Its .npmrc is read, and a package of this name there runs instead of the registry's.
     'let prefix=null;for(let d=process.cwd();;d=path.dirname(d)){if(fs.existsSync(path.join(d,"package.json"))||fs.existsSync(path.join(d,"node_modules"))){prefix=d;break;}if(d===path.dirname(d))break;}\n' +
@@ -1388,8 +1395,7 @@ test('752 AC-5: no run without a yes, and the question names the model, the limi
     neverRan752(runner752(h));
   }
   const plant = fixture752({ recorder: true }); saved752(plant);
-  const steps = path.join(plant.plugin, 'commands/recheck.md');
-  fs.writeFileSync(steps, fs.readFileSync(steps, 'utf8').replace('{"op": "confirm-spend"},', ''));
+  plantSteps(plant, 'recheck', (steps) => steps.filter((s) => s.op !== 'confirm-spend'));
   run744(plant, ['recheck', plant.skill]);
   assert.throws(() => neverRan752(runner752(plant)), 'a door with no question fails');
 });
@@ -1408,8 +1414,7 @@ test('752 AC-6: a null, invalid or too-new minimum refuses in words before any r
     }
   }
   const plant = fixture752({ minimum: null, recorder: true });
-  const file = path.join(plant.plugin, 'commands/recheck.md');
-  fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace('{"op": "version-guard", "minimum": "recheck_minimum"},', ''));
+  plantSteps(plant, 'recheck', (steps) => steps.filter((s) => s.op !== 'version-guard'));
   run744(plant, ['recheck', plant.skill]);
   assert.throws(() => assert.deepEqual(runner752(plant), [['--version']]), 'a door with no guard fails');
 });
@@ -1424,7 +1429,7 @@ test('752 AC-6: the release stage fills recheck_minimum once and the shipped val
   oracle(resolveCommandMinimums);
   const before = (text, version) => text.replace(/("(?:start|compare|inspect)_minimum": )null/g, (_, prefix) => prefix + JSON.stringify(version));
   assert.throws(() => oracle(before), 'a release stage that skips recheck fails');
-  const guard = JSON.parse(fs.readFileSync(path.join(ROOT, 'plugin/driftproof/version-guard.json')));
+  const guard = JSON.parse(fs.readFileSync(path.join(ROOT, 'lib/door/version-guard.json')));
   const pin = JSON.parse(fs.readFileSync(path.join(ROOT, 'plugin/driftproof/.claude-plugin/plugin.json'))).version;
   assert.ok(Object.hasOwn(guard, 'recheck_minimum'));
   assert.ok(guard.recheck_minimum === null || (/^\d+\.\d+\.\d+$/.test(guard.recheck_minimum) && semverGte(pin, guard.recheck_minimum)));
@@ -1451,7 +1456,7 @@ test('752 AC-7: hostile paths and malformed flags reach neither git nor the runn
 
 test('752 AC-7 plant: a path sent through a shell fails the no-shell oracle', () => {
   const sb = fixture752({ recorder: true });
-  mutate744(sb, "spawnSync('npx', argv, {", "spawnSync('/bin/sh', ['-c', 'npx ' + argv.map(a => JSON.stringify(a)).join(' ') + '; :'], {");
+  mutate744(sb, "spawnSync(process.execPath, [BIN].concat(args), {", "spawnSync('/bin/sh', ['-c', 'npx driftproof@' + RUNNER_VERSION + ' ' + args.map(a => JSON.stringify(a)).join(' ') + '; :'], {");
   const r = run744(sb, ['recheck', sb.skill]);
   assert.equal(r.status, 0, r.stderr);
   const rows = trace744(sb);
@@ -1526,7 +1531,7 @@ test('752 AC-1/5/8: the command text asks before each run, adds no verdict word,
   assert.throws(() => asks(text.replace('Ask the person once before each run', 'Start the run')), 'a text with no question fails');
   assert.throws(() => plain(text + '\nSay it got worse.\n'), 'a text with a verdict word fails');
   assert.match(text, /version-guard\.json/); assert.match(text, /--version/);
-  const steps = JSON.parse(/```driftproof-steps\n([\s\S]*?)\n```/.exec(text)[1]);
+  const steps = doorSteps('recheck');
   assert.deepEqual(steps.map(s => s.op), ['validate', 'resolve-target', 'state-trusted', 'version-guard', 'confirm-spend', 'recheck-parent', 'cli', 'recheck-saved', 'cli', 'cli', 'cli']);
   assert.equal(steps[3].minimum, 'recheck_minimum');
   const registration = read('tests/plugin-compat.test.js');
@@ -1564,64 +1569,31 @@ test('752 A-752-1: the door saves the trusted lane on the terms run.md gives it,
   const text = fs.readFileSync(path.join(ROOT, 'plugin/driftproof/commands/recheck.md'), 'utf8');
   assert.doesNotMatch(text, /isolation account/);
   const carries = rows => assert.ok(rows.find(v => v[1] === 'init').includes('--trusted-skill'));
-  const plant = fixture752({ recorder: true }), file = path.join(plant.plugin, 'commands/recheck.md'), before = fs.readFileSync(file, 'utf8');
-  fs.writeFileSync(file, before.replace(', "--trusted-skill"', ''));
-  assert.notEqual(fs.readFileSync(file, 'utf8'), before, 'the plant changed the command text');
+  const plant = fixture752({ recorder: true }), file = path.join(plant.plugin, 'lib/door/commands.json'), before = fs.readFileSync(file, 'utf8');
+  plantSteps(plant, 'recheck', (steps) => steps.map((s) => (s.op === 'cli' && s.when_recheck === 'init' ? { ...s, args: s.args.filter((a) => a !== '--trusted-skill') } : s)));
+  assert.notEqual(fs.readFileSync(file, 'utf8'), before, 'the plant changed the moved steps');
   run744(plant, ['recheck', plant.skill]);
   assert.throws(() => carries(runner752(plant)), 'a door that drops the flag fails');
 });
 
-test('752 A-752-3: every npx spawn starts in an empty private folder, so a package planted in the repository never runs', () => {
-  const pin = JSON.parse(fs.readFileSync(path.join(ROOT, 'plugin/driftproof/.claude-plugin/plugin.json'))).version;
-  const plant = (sb) => {
-    const dir = path.join(sb.work, 'node_modules/driftproof'), mark = path.join(sb.root, 'planted-ran');
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'driftproof', version: pin }));
-    fs.writeFileSync(path.join(dir, 'planted.js'), 'require("fs").writeFileSync(' + JSON.stringify(mark) + ',"ran");\n');
-    return mark;
-  };
-  const oracle = (sb, mark) => {
+test('752 A-752-3, moved by spec 777: the door runs in the person\'s folder, and gives the runner absolute paths (the planted package reads on the real npm, in spec 777 AC-11)', () => {
+  const pin = require('../config').RUNNER_VERSION;
+  for (const build of [sb => ['inspect', sb.target], sb => compare744(sb), sb => ['recheck', sb.skill]]) {
+    const sb = fixture752({ recorder: true }), args = build(sb);
+    run744(sb, args, args[0] === 'compare' ? { SPEC752_HISTORY_OUT: '' } : {});
     const rows = trace744(sb).filter(x => x.bin === 'runner');
     assert.ok(rows.length, 'the runner was reached');
-    const work = fs.realpathSync(sb.work);
-    for (const row of rows) {
-      assert.ok(!row.cwd.startsWith(work), 'npx started outside the repository');
-      assert.deepEqual(row.listing, [], 'the folder is empty');
-      assert.equal(row.mode, 0o700);
-      assert.equal(row.doorCwd, work, 'the CLI is told the person\'s folder');
-      assert.equal(fs.existsSync(row.cwd), false, 'the folder was removed');
-    }
-    assert.equal(fs.existsSync(mark), false, 'the planted package never ran');
-    assert.deepEqual(fs.readdirSync(sb.temp), [], 'the folder was removed');
-  };
-  for (const build of [sb => ['inspect', sb.target], sb => compare744(sb), sb => ['recheck', sb.skill]]) {
-    const sb = fixture752({ recorder: true }), mark = plant(sb), args = build(sb);
-    run744(sb, args, args[0] === 'compare' ? { SPEC752_HISTORY_OUT: '' } : {});
-    oracle(sb, mark);
-    assert.ok(trace744(sb).filter(x => x.bin === 'runner').slice(1).every(x => x.args.slice(2).every(a => !/CLAUDE\.md$|my-skill$/.test(a) || path.isAbsolute(a))), 'paths are absolute');
+    assert.ok(rows.slice(1).every(x => x.args.slice(2).every(a => !/CLAUDE\.md$|my-skill$/.test(a) || path.isAbsolute(a))), 'paths are absolute');
+    assert.deepEqual(fs.readdirSync(sb.temp), [], 'the private copies are gone');
   }
-  const refusedGuard = fixture752({ recorder: true, minimum: null }), refusedMark = plant(refusedGuard);
-  assert.equal(run744(refusedGuard, ['recheck', refusedGuard.skill]).status, 2);
-  oracle(refusedGuard, refusedMark);
-  const failing = fixture752({ recorder: true }), failingMark = plant(failing); saved752(failing);
-  assert.equal(run744(failing, ['recheck', failing.skill, '--confirm-spend'], { SPEC752_RUN_STATUS: '3' }).status, 3);
-  oracle(failing, failingMark);
-
-  const planted = fixture752({ recorder: true }), plantedMark = plant(planted);
-  mutate744(planted, 'function npxCwd() {', 'function npxCwd() { return process.cwd();');
-  run744(planted, ['inspect', planted.target]);
-  assert.throws(() => oracle(planted, plantedMark), 'a door that spawns from the working folder fails');
-  assert.equal(fs.existsSync(plantedMark), true, 'the plant really ran the package');
-
   const rc = sandbox();
   fs.writeFileSync(path.join(rc.work, '.driftproofrc'), JSON.stringify({ judge_model: 'claude-sonnet-5-5' }));
   assert.equal(door(rc, ['run', 'my-skill', '--models', 'claude-haiku-4-5']).status, 0);
   const written = fs.readdirSync(path.join(rc.work, 'receipts')).filter(n => n.endsWith('.json'));
   assert.equal(written.length, 1, 'the receipt is in the person\'s folder');
   assert.equal(JSON.parse(fs.readFileSync(path.join(rc.work, 'receipts', written[0]))).run.judge.model_id, 'claude-sonnet-5-5', 'the person\'s .driftproofrc was read');
-
-  const bad = spawnSync(process.execPath, [path.join(ROOT, 'bin/driftproof'), '--version'], { encoding: 'utf8', env: { ...process.env, DRIFTPROOF_DOOR_CWD: 'relative/folder' } });
-  assert.equal(bad.status, 2, bad.stdout); assert.match(bad.stderr, /DRIFTPROOF_DOOR_CWD/);
+  const bad = spawnSync(process.execPath, [path.join(ROOT, 'bin/driftproof'), 'door', '--pin', pin, '--from', 'relative/folder', 'init', 'x'], { encoding: 'utf8', env: { ...process.env, DRIFTPROOF_STUB: '1' } });
+  assert.equal(bad.status, 2, bad.stdout); assert.match(bad.stderr, /--from is not an absolute path/);
 });
 
 test('752 A-752-2: the door gives a run --trusted-skill only for a trusted folder, and asks again outside a repository', () => {
@@ -1770,7 +1742,7 @@ test('028 A-028-66, 438 A-438-18, 316 A-316-2: the door and the island hold lib/
   const { invisibleShown } = require('../lib/names');
   const lineOf = (file) => { const m = /^const HIDDEN = .+;$/m.exec(fs.readFileSync(path.join(ROOT, file), 'utf8')); assert.ok(m, file + ' declares HIDDEN on one line'); return m[0]; };
   const line = lineOf('lib/names.js');
-  assert.equal(lineOf('plugin/driftproof/lib/door.mjs'), line, 'the door holds the same line');
+  assert.equal(lineOf('lib/door.js'), line, 'the door holds the same line');
   assert.equal(lineOf('docs/islands/drop-results.js'), line, 'the island holds the same line');
   const source = /^const HIDDEN = \/(.+)\/gu;$/.exec(line)[1];
   const shown = (s) => s.replace(new RegExp(source, 'gu'), (m, emoji) => (emoji === undefined ? '\\u{' + m.codePointAt(0).toString(16) + '}' : m));
@@ -1797,87 +1769,34 @@ function privateBase() {
   }
   throw new Error('A-752-5: no private folder for the plants: the home folder cannot be written and RUNNER_TEMP is not set');
 }
-function plantNpm(dir, mark, pin) {
-  const pkg = path.join(dir, 'node_modules/driftproof');
-  fs.mkdirSync(pkg, { recursive: true });
-  fs.writeFileSync(path.join(pkg, 'package.json'), JSON.stringify({ name: 'driftproof', version: pin, bin: { driftproof: 'planted.js' } }));
-  fs.writeFileSync(path.join(pkg, 'planted.js'), '#!' + process.execPath + '\nrequire("fs").writeFileSync(' + JSON.stringify(mark) + ',"ran");\n', { mode: 0o755 });
-  fs.writeFileSync(path.join(dir, '.npmrc'), 'node-options=--require=' + mark + '\n');
-}
-
-test('752 A-752-5: a package or an .npmrc planted in shared temp, or in any parent of the door\'s folder, is never read or run', () => {
-  const pin = JSON.parse(fs.readFileSync(path.join(ROOT, 'plugin/driftproof/.claude-plugin/plugin.json'))).version;
-  const set = (extraOf, plantAt) => {
-    const sb = fixture752({ recorder: true }), base = privateBase(), mark = path.join(base, 'planted-ran'), read = path.join(base, 'npmrc-read');
-    const home = path.join(base, 'home');
-    fs.mkdirSync(path.join(home, '.cache', 'driftproof'), { recursive: true, mode: 0o700 });
-    fs.mkdirSync(path.join(base, 'run'), { mode: 0o700 });
-    const extra = { HOME: home, XDG_RUNTIME_DIR: '', SPEC752_NPMRC_READ: read, ...extraOf(base, home) };
-    const where = plantAt(sb, base, home);
-    plantNpm(where, mark, pin);
-    return { sb, extra, mark, read, where };
+// Spec 777 AC-12: A-752-5's refusals, read after npx has started the runner, on a door that runs from a copy.
+const launchEnv = (prefix) => ({ npm_lifecycle_event: 'npx', npm_config_local_prefix: prefix });
+test('752 A-752-5, moved by spec 777 AC-12: the launch reading refuses as the place search did, naming the way out', () => {
+  const readLaunch = (extra, plant) => {
+    const sb = fixture752({ recorder: true }), base = privateBase(), start = path.join(base, 'plugin');
+    fs.mkdirSync(start, { mode: 0o700 });
+    if (plant) plant(sb, base, start);
+    const r = run744(sb, ['inspect', sb.target], { ...launchEnv(start), ...extra });
+    return { r, sb, base, start };
   };
-  const never = ({ sb, mark, read }, what) => {
-    const rows = trace744(sb).filter(x => x.bin === 'runner');
-    assert.ok(rows.length, what + ': the runner was reached');
-    for (const row of rows) {
-      assert.deepEqual(row.listing, [], what + ': the folder is empty');
-      assert.equal(row.mode, 0o700, what);
-      assert.equal(fs.existsSync(row.cwd), false, what + ': the folder was removed');
-    }
-    assert.equal(fs.existsSync(mark), false, what + ': the planted package never ran');
-    assert.equal(fs.existsSync(read), false, what + ': the planted .npmrc was never read');
-  };
-  const noXdg = () => ({});
-  const withXdg = (base) => ({ XDG_RUNTIME_DIR: path.join(base, 'run') });
-  const cases = [
-    ['the shared temp folder', noXdg, (sb) => sb.temp],
-    ['the runtime folder', withXdg, (sb, base) => path.join(base, 'run')],
-    ['the folder above the runtime folder', withXdg, (sb, base) => base],
-    ['the door\'s cache folder', noXdg, (sb, base, home) => path.join(home, '.cache', 'driftproof')],
-    ['the cache folder', noXdg, (sb, base, home) => path.join(home, '.cache')],
-    ['the home folder', noXdg, (sb, base, home) => home],
-    ['the folder above the home folder', noXdg, (sb, base) => base],
-  ];
-  for (const [what, extraOf, plantAt] of cases) {
-    const c = set(extraOf, plantAt);
-    assert.equal(run744(c.sb, ['inspect', c.sb.target], c.extra).status, 0, what);
-    never(c, what);
-  }
-
-  const shared = set(noXdg, (sb) => sb.temp);
-  run744(shared.sb, ['inspect', shared.sb.target], shared.extra);
-  const usedHome = fs.realpathSync(path.join(shared.extra.HOME, '.cache', 'driftproof'));
-  assert.ok(trace744(shared.sb).filter(x => x.bin === 'runner').every(x => x.cwd.startsWith(usedHome + path.sep)), 'with no runtime folder and a shared temp folder, the folder is in the private cache');
-
-  const back = set(noXdg, (sb) => sb.temp);
-  mutate744(back.sb, 'const parent = npxParent();', 'const parent = os.tmpdir();');
-  run744(back.sb, ['inspect', back.sb.target], back.extra);
-  assert.throws(() => never(back, 'the planted door'), 'a door that starts in the temp folder again fails');
-  assert.equal(fs.existsSync(back.mark), true, 'the plant really ran the package');
-  assert.equal(fs.existsSync(back.read), true, 'the plant really read the .npmrc');
-
   for (const mode of [0o770, 0o707]) {
-    const loose = set((base) => ({ XDG_RUNTIME_DIR: path.join(base, 'loose') }), (sb, base) => { fs.mkdirSync(path.join(base, 'loose')); fs.chmodSync(path.join(base, 'loose'), mode); return path.join(base, 'home', 'unused'); });
-    assert.equal(run744(loose.sb, ['inspect', loose.sb.target], loose.extra).status, 0);
-    const rows = trace744(loose.sb).filter(x => x.bin === 'runner');
-    assert.ok(rows.length && rows.every(x => !x.cwd.includes(path.sep + 'loose' + path.sep)), 'a place others can write is passed over, mode ' + mode.toString(8));
+    const { r, start } = readLaunch({}, (sb, base, s) => fs.chmodSync(s, mode));
+    assert.equal(r.status, 2, r.stderr); assert.match(r.stderr, /can be written by other accounts/); assert.ok(r.stderr.includes(start));
+    assert.match(r.stderr, /npm install -g driftproof@/);
   }
-
-  const none = set(noXdg, (sb, base, home) => home);
-  mutate744(none.sb, 'attempt(() => os.userInfo().homedir)', 'null');
-  const refused = run744(none.sb, ['inspect', none.sb.target], none.extra);
-  assert.equal(refused.status, 2, refused.stderr);
-  assert.match(refused.stderr, /npm reads every folder above it/);
-  assert.match(refused.stderr, /node_modules is there, and npm would read it/);
-  assert.deepEqual(trace744(none.sb).filter(x => x.bin === 'runner'), [], 'nothing was spawned');
-
-  const foreign = set(noXdg, (sb, base, home) => path.join(home, 'unused'));
-  mutate744(foreign.sb, "const me = typeof process.getuid === 'function' ? process.getuid() : null;", 'const me = 4242;');
-  const owned = run744(foreign.sb, ['inspect', foreign.sb.target], foreign.extra);
+  for (const name of ['node_modules', 'package.json']) {
+    const { r, sb } = readLaunch({}, (s, base) => { if (name === 'node_modules') fs.mkdirSync(path.join(base, name)); else fs.writeFileSync(path.join(base, name), '{}'); });
+    assert.equal(r.status, 2, r.stderr); assert.match(r.stderr, new RegExp(name + ' is there, and npm would read it'));
+    assert.match(r.stderr, /npm install -g driftproof@/);
+    assert.deepEqual(trace744(sb).filter(x => x.bin === 'runner'), [], 'nothing was spawned');
+  }
+  const foreign = fixture752({ recorder: true }), base = privateBase(), start = path.join(base, 'plugin');
+  fs.mkdirSync(start, { mode: 0o700 });
+  mutate744(foreign, "const me = typeof process.getuid === 'function' ? process.getuid() : null;", 'const me = 4242;');
+  const owned = run744(foreign, ['inspect', foreign.target], launchEnv(start));
   assert.equal(owned.status, 2, owned.stderr);
   assert.match(owned.stderr, /belongs to another account/);
-  assert.deepEqual(trace744(foreign.sb).filter(x => x.bin === 'runner'), [], 'nothing was spawned');
+  assert.deepEqual(trace744(foreign).filter(x => x.bin === 'runner'), [], 'nothing was spawned');
 
   const sb = sandbox();
   assert.equal(door(sb, ['run', 'my-skill']).status, 0);
@@ -1885,25 +1804,6 @@ test('752 A-752-5: a package or an .npmrc planted in shared temp, or in any pare
   const of = (verb) => npx(sb).find(v => v[0] === verb);
   assert.ok(path.isAbsolute(of('run')[1]), 'run is given an absolute path');
   assert.ok(path.isAbsolute(of('init')[1]), 'init is given an absolute path');
-});
-
-test('752 A-752-5: with the real npm, a package planted in the shared temp folder is never run by the door', () => {
-  const pin = JSON.parse(fs.readFileSync(path.join(ROOT, 'plugin/driftproof/.claude-plugin/plugin.json'))).version;
-  const sb = fixture744(), base = privateBase(), mark = path.join(base, 'planted-ran'), home = path.join(base, 'home');
-  fs.mkdirSync(home, { mode: 0o700 });
-  plantNpm(sb.temp, mark, pin);
-  fs.rmSync(path.join(sb.temp, '.npmrc'));
-  fs.mkdirSync(path.join(sb.temp, 'node_modules/.bin'));
-  fs.symlinkSync('../driftproof/planted.js', path.join(sb.temp, 'node_modules/.bin/driftproof'));
-  const real = { PATH: [path.dirname(process.execPath), '/usr/bin', '/bin'].join(path.delimiter), HOME: home, XDG_RUNTIME_DIR: '', TMPDIR: sb.temp, npm_config_offline: 'true', npm_config_cache: path.join(base, 'cache'), npm_config_update_notifier: 'false' };
-  const child = path.join(sb.temp, 'driftproof-npx-control');
-  fs.mkdirSync(child);
-  spawnSync('npx', ['driftproof@' + pin, '--version'], { cwd: child, env: { ...process.env, ...real }, encoding: 'utf8', timeout: 120000 });
-  assert.equal(fs.existsSync(mark), true, 'control: this npm runs a package planted in a parent of its working folder');
-  fs.rmSync(mark);
-  fs.rmSync(child, { recursive: true });
-  doorIn(sb, ['inspect', sb.target], { doorFile: sb.doorFile, extra: real });
-  assert.equal(fs.existsSync(mark), false, 'the planted package never ran');
 });
 
 // A repository moved under a folder of the given name, with its paths moved too.

@@ -21,7 +21,7 @@ const { spawnSync } = require('child_process');
 const { htmlOutsideScriptBodies } = require('../.github/windows-ci/common.cjs');
 
 const ROOT = path.join(__dirname, '..');
-const DOOR = path.join(ROOT, 'plugin', 'driftproof', 'lib', 'door.mjs');
+const { copyDoor, launcherIn, LAUNCHER: DOOR } = require('../specs/028-claude-code-plugin/probes/door-copy.cjs');
 const FAKE_BIN = path.join(ROOT, 'specs', '028-claude-code-plugin', 'probes', 'bin');
 const made = [];
 const tmp = () => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'spec139-start-')); made.push(d); return d; };
@@ -64,11 +64,10 @@ function sandbox({ suite = true } = {}) {
 // start_minimum set as that bump sets it, to the runner's own version, read from config.js and never typed.
 let releasedPlugin = null;
 function released(startMinimum = require('../config').RUNNER_VERSION) {
-  const dir = path.join(tmp(), 'plugin');
-  fs.cpSync(path.join(ROOT, 'plugin', 'driftproof'), dir, { recursive: true });
-  const g = path.join(dir, 'version-guard.json');
+  const dir = copyDoor(path.join(tmp(), 'plugin'));
+  const g = path.join(dir, 'lib', 'door', 'version-guard.json');
   fs.writeFileSync(g, JSON.stringify({ ...JSON.parse(fs.readFileSync(g, 'utf8')), start_minimum: startMinimum }, null, 2));
-  return path.join(dir, 'lib', 'door.mjs');
+  return launcherIn(dir);
 }
 const releasedDoor = () => (releasedPlugin = releasedPlugin || released());
 function doorEnv(sb, { stub = true, extra = {} } = {}) {
@@ -287,7 +286,7 @@ test('start on a skill with a suite runs without init', () => {
 // folder asks one question at a terminal, then runs; with no terminal it neither refuses nor asks.
 test('the door\'s copy of the quick preset is lib/smoke.js\'s', () => {
   const { PRESET_QUICK } = require('../lib/smoke');
-  assert.match(fs.readFileSync(DOOR, 'utf8'), new RegExp(`^const PRESET_QUICK = '${PRESET_QUICK}';$`, 'm'));
+  assert.match(fs.readFileSync(path.join(ROOT, 'lib', 'door.js'), 'utf8'), new RegExp(`^const PRESET_QUICK = '${PRESET_QUICK}';$`, 'm'));
 });
 
 test('start --full with no quick run\'s receipt and no terminal is not refused and not asked: it says whose yes it is and runs', () => {
@@ -347,7 +346,7 @@ function snapshot(dir) {
 test('start on a runner before its own minimum refuses after --version, spawning no init and changing nothing (F-2)', () => {
   // The set state: a release has written start_minimum and it never moves after, so the tree's own
   // start_minimum reads as a string no higher than the runner's own version.
-  const guard = JSON.parse(fs.readFileSync(path.join(ROOT, 'plugin', 'driftproof', 'version-guard.json'), 'utf8'));
+  const guard = JSON.parse(fs.readFileSync(path.join(ROOT, 'lib', 'door', 'version-guard.json'), 'utf8'));
   assert.equal(typeof guard.start_minimum, 'string', 'the tree records start_minimum as a string');
   assert.ok(semverGte(require('../config').RUNNER_VERSION, guard.start_minimum), 'start_minimum is not above RUNNER_VERSION');
   for (const [name, doorFile] of [['no release recorded (null)', released(null)], ['a minimum above the runner', released('999.0.0')]]) {
@@ -416,10 +415,13 @@ const DESCRIPTOR = 'Driftproof (driftproofhq): open-source agent skill evaluatio
 const WHAT_TO_TYPE = 'in the folder that holds your skills.';
 // A-139-31 (issue 752): the plugin README's first line also names a rules file.
 const README_WHAT_TO_TYPE = 'in the folder that holds your skills or your CLAUDE.md.';
-// A copy of the plugin with each [file, from, to] applied; a plant whose text is not there fails the test.
+// Spec 777: the plugin's Markdown and the runner's door, in one copy, so a plant reaches either.
+const DOOR_TREE = () => { const dir = path.join(tmp(), 'plugin'); fs.cpSync(PLUGIN, dir, { recursive: true }); return copyDoor(dir); };
+let shipped = null;
+const SHIPPED = () => (shipped = shipped || DOOR_TREE());
+// A copy of that tree with each [file, from, to] applied; a plant whose text is not there fails the test.
 function planted(...edits) {
-  const dir = path.join(tmp(), 'plugin');
-  fs.cpSync(PLUGIN, dir, { recursive: true });
+  const dir = DOOR_TREE();
   for (const [file, from, to] of edits) {
     const f = path.join(dir, file);
     const t = fs.readFileSync(f, 'utf8');
@@ -428,11 +430,12 @@ function planted(...edits) {
   }
   return dir;
 }
-const doorOf = (pluginDir) => path.join(pluginDir, 'lib', 'door.mjs');
+const doorOf = (pluginDir) => launcherIn(pluginDir);
+const SAMPLE_DIR = (d) => path.join(d, 'lib', 'door', 'sample');
 const reds = (problems, re) => problems.some((p) => re.test(p));
 const SAMPLE_PAGE = 'driftproof-view.html';
 // The sample's one report folder, and every receipt under it by its path inside that folder.
-const sampleReport = (pluginDir) => fs.readdirSync(path.join(pluginDir, 'sample')).filter((f) => /^report-\d{3}$/.test(f));
+const sampleReport = (pluginDir) => fs.readdirSync(SAMPLE_DIR(pluginDir)).filter((f) => /^report-\d{3}$/.test(f));
 function receiptsUnder(dir) {
   const out = {};
   for (const f of fs.readdirSync(dir, { recursive: true }).sort()) {
@@ -442,13 +445,21 @@ function receiptsUnder(dir) {
   }
   return out;
 }
-const sampleReceipts = (pluginDir) => Object.values(receiptsUnder(path.join(pluginDir, 'sample', sampleReport(pluginDir)[0])));
+const sampleReceipts = (pluginDir) => Object.values(receiptsUnder(path.join(SAMPLE_DIR(pluginDir), sampleReport(pluginDir)[0])));
+// Spec 777 AC-14: the page the CLI makes for the sample receipts, from the folder the door makes it in.
+function viewOfSample(pluginDir, epoch) {
+  const page = path.join(tmp(), SAMPLE_PAGE);
+  const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^DRIFTPROOF_|^SPEC0|^SOURCE_DATE_EPOCH$/.test(k)));
+  const v = spawnSync(process.execPath, [path.join(ROOT, 'bin', 'driftproof'), 'view', `sample/${sampleReport(pluginDir)[0]}`, '--out', page], { cwd: path.join(pluginDir, 'lib', 'door'), encoding: 'utf8', env: { ...env, SOURCE_DATE_EPOCH: epoch } });
+  return v.status === 0 ? fs.readFileSync(page, 'utf8') : `the CLI did not write the page: ${v.stderr.slice(-200)}`;
+}
+const EPOCH_368 = '1790000000';
 
 // AC-368-1 to AC-368-3, the files: exactly the receipts of one pair in one published report, byte for
 // byte, sealed; the page the CLI writes for them; the page named sample/report-NNN, naming the pair.
 function readSampleFiles(pluginDir) {
   const out = [];
-  const dir = path.join(pluginDir, 'sample');
+  const dir = SAMPLE_DIR(pluginDir);
   if (!fs.existsSync(dir)) return ['there is no sample folder'];
   const reports = sampleReport(pluginDir);
   if (reports.length !== 1) return [`the sample folder holds ${reports.length} report folders, not one`];
@@ -470,17 +481,7 @@ function readSampleFiles(pluginDir) {
     if (!pairOf.includes(f) || !fs.readFileSync(path.join(dir, report, f)).equals(fs.readFileSync(path.join(ROOT, 'receipts', report, f)))) out.push(`no tracked receipt of report ${num} has the bytes of the sample's ${f}`);
     if (!require('../lib/receipt').verifyReceiptHash(mine[f])) out.push(`the sample's ${f} receipt_hash does not verify`);
   }
-  const pageFile = path.join(dir, SAMPLE_PAGE);
-  if (!fs.existsSync(pageFile)) return [...out, `there is no sample/${SAMPLE_PAGE}`];
-  const page = fs.readFileSync(pageFile, 'utf8');
-  const made = /· made (\d{1,2} [A-Z][a-z]{2} \d{4}) ·/.exec(page);
-  if (!made) return [...out, 'the sample page says no day it was made'];
-  const epoch = String(Date.parse(`${made[1]} 00:00:00 UTC`) / 1000);
-  const again = path.join(tmp(), SAMPLE_PAGE);
-  const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^DRIFTPROOF_|^SPEC0|^SOURCE_DATE_EPOCH$/.test(k)));
-  const v = spawnSync(process.execPath, [path.join(ROOT, 'bin', 'driftproof'), 'view', `sample/${report}`, '--out', again], { cwd: pluginDir, encoding: 'utf8', env: { ...env, SOURCE_DATE_EPOCH: epoch } });
-  if (v.status !== 0) out.push(`the CLI did not write the page again: ${v.stderr.slice(-200)}`);
-  else if (!fs.readFileSync(again).equals(Buffer.from(page))) out.push('the sample page is not the page the CLI writes for the sample receipts');
+  const page = viewOfSample(pluginDir, EPOCH_368);
   const title = /<title>([^<]*)<\/title>/.exec(page);
   const eyebrow = /<p class="eyebrow">([^<]*)<\/p>/.exec(page);
   if (!title || !title[1].includes(`sample/${report}`)) out.push(`the sample page's title does not say sample/${report}`);
@@ -491,11 +492,10 @@ function readSampleFiles(pluginDir) {
 }
 
 test('AC-368-1 to AC-368-3: the sample is every receipt of one pair in a published report, unaltered, the page is the CLI\'s for them, and it says it is a sample', () => {
-  assert.deepEqual(readSampleFiles(PLUGIN), []);
-  const reportDir = (d) => path.join(d, 'sample', sampleReport(d)[0]);
+  assert.deepEqual(readSampleFiles(SHIPPED()), []);
+  const reportDir = (d) => path.join(SAMPLE_DIR(d), sampleReport(d)[0]);
   // Plant (AC-368-1): one score changed in a copy of a sample receipt.
-  const a = path.join(tmp(), 'plugin');
-  fs.cpSync(PLUGIN, a, { recursive: true });
+  const a = DOOR_TREE();
   const f = path.join(reportDir(a), Object.keys(receiptsUnder(reportDir(a)))[0]);
   const t = fs.readFileSync(f, 'utf8');
   const m = /"with_skill_score": ([0-9.]+)/.exec(t);
@@ -504,33 +504,33 @@ test('AC-368-1 to AC-368-3: the sample is every receipt of one pair in a publish
   const pa = readSampleFiles(a);
   assert.ok(reds(pa, /no tracked receipt/) && reds(pa, /does not verify/), pa.join('\n'));
   // Plant (AC-368-1, M1): one run's receipt removed from a copy, so the sample would pick runs.
-  const g = path.join(tmp(), 'plugin');
-  fs.cpSync(PLUGIN, g, { recursive: true });
+  const g = DOOR_TREE();
   const keys = Object.keys(receiptsUnder(reportDir(g)));
   assert.ok(keys.length > 1, 'plant not applied: the sample holds one receipt');
   fs.rmSync(path.join(reportDir(g), keys[keys.length - 1]));
   assert.ok(reds(readSampleFiles(g), /leaves out/), 'a sample with a run left out was not read RED');
-  // Plant (AC-368-2): one figure changed in a copy of the page.
-  const page = fs.readFileSync(path.join(PLUGIN, 'sample', SAMPLE_PAGE), 'utf8');
-  const fig = /\d\.\d{3}/.exec(page);
-  assert.ok(fig, 'plant not applied: the sample page carries no figure');
-  const b = planted([path.join('sample', SAMPLE_PAGE), fig[0], fig[0] === '0.999' ? '0.998' : '0.999']);
-  assert.ok(reds(readSampleFiles(b), /not the page the CLI writes/), 'a changed figure was not seen');
 });
 
-// AC-368-3 to AC-368-5, the door: with no skill, the sample opened from the plugin by its path, no CLI
-// and no model spawned, nothing written, and the way on named; with a skill, or from a skill folder, none.
+// AC-368-3 to AC-368-5, the door, spec 777 AC-14: with no skill, the sample page made by the CLI's view and
+// opened by its path, in a private folder, no model spawned, nothing written in the person's folders, and the
+// way on named; with a skill, or from a skill folder, none.
 function readSampleDoor(pluginDir) {
   const out = [];
   const sb = sandbox();
   fs.rmSync(sb.skill, { recursive: true, force: true });
   const before = snapshot(sb.work);
-  const r = door(sb, ['start'], { doorFile: doorOf(pluginDir) });
+  const r = door(sb, ['start'], { doorFile: doorOf(pluginDir), extra: { SOURCE_DATE_EPOCH: EPOCH_368 } });
   if (r.status !== 0) out.push(`start with no skill exited ${r.status}: ${r.stderr.slice(-200)}`);
-  if (spawns(sb).length) out.push(`start with no skill spawned ${spawns(sb).map((s) => s.bin).join(', ')}`);
+  const cliRuns = spawns(sb).filter((s) => s.bin === 'npx').map((s) => s.argv[1]);
+  if (cliRuns.join() !== 'view' || spawns(sb).some((s) => s.bin !== 'npx' && !s.argv.includes('--version'))) out.push(`start with no skill spawned ${spawns(sb).map((s) => s.bin + ' ' + s.argv[1]).join(', ')}, not the CLI's view alone`);
   const opened = fs.existsSync(sb.openLog) ? fs.readFileSync(sb.openLog, 'utf8').trim().split('\n').map((l) => JSON.parse(l)) : [];
-  const want = path.join(fs.realpathSync(pluginDir), 'sample', SAMPLE_PAGE);
-  if (JSON.stringify(opened) !== JSON.stringify([[want]])) out.push(`the opener was given ${JSON.stringify(opened)}, not the sample page's path alone`);
+  const page = opened.length === 1 && opened[0].length === 1 ? opened[0][0] : null;
+  if (!page || path.basename(page) !== SAMPLE_PAGE || !path.basename(path.dirname(page)).startsWith('driftproof-sample-')) out.push(`the opener was given ${JSON.stringify(opened)}, not the sample page's path alone`);
+  else {
+    made.push(path.dirname(page));
+    if ((fs.statSync(path.dirname(page)).mode & 0o777) !== 0o700) out.push('the sample page\'s folder is not private');
+    if (fs.readFileSync(page, 'utf8') !== viewOfSample(pluginDir, EPOCH_368)) out.push('the sample page is not the page the CLI writes for the sample receipts');
+  }
   if (JSON.stringify(snapshot(sb.work)) !== JSON.stringify(before)) out.push('start with no skill changed the working folder');
   const recs = sampleReceipts(pluginDir);
   const num = sampleReport(pluginDir)[0].slice('report-'.length);
@@ -563,30 +563,30 @@ function readSampleDoor(pluginDir) {
   return out;
 }
 
-test('AC-368-3 to AC-368-5: with no skill, start opens the sample by its path alone, spawns no CLI and writes nothing; with a skill it does not', () => {
-  assert.deepEqual(readSampleDoor(PLUGIN), []);
-  const page = fs.readFileSync(path.join(PLUGIN, 'sample', SAMPLE_PAGE), 'utf8');
+test('AC-368-3 to AC-368-5, spec 777 AC-14: with no skill, start makes the sample page with the CLI and opens it by its path alone, and writes nothing in the person\'s folders; with a skill it does not', () => {
+  assert.deepEqual(readSampleDoor(SHIPPED()), []);
+  const page = viewOfSample(SHIPPED(), EPOCH_368);
   const csp = /<meta http-equiv="Content-Security-Policy" content="([^"]*)">/.exec(page);
   assert.ok(csp && /default-src 'none'/.test(csp[1]), 'the sample page carries no default-src \'none\'');
   assert.doesNotMatch(htmlOutsideScriptBodies(page), /(?:src|href)="(?:https?:)?\/\/|@import|url\((?!#|data:)/);
   for (const [name, edits, re] of [
-    ['the sample rendered through the CLI', [['lib/door.mjs', 'openView(SAMPLE_PAGE);', "runCli(['view', path.join(PLUGIN_ROOT, 'sample'), '--out', 'driftproof-view.html']); openView(SAMPLE_PAGE);"]], /spawned npx|changed the working folder/],
-    ['a line that drops the word sample', [['lib/door.mjs', "'a sample results page", "'a results page"]], /does not call it a sample/],
-    ['the sample opened on every listing', [['lib/door.mjs', "  say('skills under ' + root + ':');", "  openSample();\n  say('skills under ' + root + ':');"]], /with a skill listed opened/],
-    ['a line that drops ~/.claude/skills', [['lib/door.mjs', "'~/.claude/skills'", "'your skills folder'"]], /~\/\.claude\/skills/],
+    ['a page that is not the CLI\'s', [['lib/door.js', '  openView(page);\n', "  fs.appendFileSync(page, '<!-- changed -->');\n  openView(page);\n"]], /not the page the CLI writes/],
+    ['a line that drops the word sample', [['lib/door.js', "'a sample results page", "'a results page"]], /does not call it a sample/],
+    ['the sample opened on every listing', [['lib/door.js', "  say('skills under ' + root + ':');", "  openSample();\n  say('skills under ' + root + ':');"]], /with a skill listed opened/],
+    ['a line that drops ~/.claude/skills', [['lib/door.js', "'~/.claude/skills'", "'your skills folder'"]], /~\/\.claude\/skills/],
     // B1: a walk that does not look in .claude/skills, that does not follow links, or that reads a folder
     // it could not read as empty.
-    ['no walk of .claude/skills', [['lib/door.mjs', '  walk(DOT_SKILLS, 1);\n', '']], /\.claude\/skills alone opened/],
-    ['no link followed', [['lib/door.mjs', 'const followed = (d, e) => e.isSymbolicLink() && kindOf(path.join(d, e.name));', 'const followed = () => null;']], /linked skill folder and a link cycle opened|linked SKILL\.md opened/],
-    ...(process.getuid && process.getuid() !== 0 ? [['a folder it could not read read as empty', [['lib/door.mjs', "if (!entries) { short = short || 'it could not read ' + d", "if (!entries) { void 0 && 'it could not read ' + d"]], /cannot read opened/]] : []),
+    ['no walk of .claude/skills', [['lib/door.js', '  walk(DOT_SKILLS, 1);\n', '']], /\.claude\/skills alone opened/],
+    ['no link followed', [['lib/door.js', 'const followed = (d, e) => e.isSymbolicLink() && kindOf(path.join(d, e.name));', 'const followed = () => null;']], /linked skill folder and a link cycle opened|linked SKILL\.md opened/],
+    ...(process.getuid && process.getuid() !== 0 ? [['a folder it could not read read as empty', [['lib/door.js', "if (!entries) { short = short || 'it could not read ' + d", "if (!entries) { void 0 && 'it could not read ' + d"]], /cannot read opened/]] : []),
   ]) assert.ok(reds(readSampleDoor(planted(...edits)), re), `${name}: not read RED`);
-  // Sample receipts that name another skill: the door's line follows the receipts, never a typed name.
-  const c = path.join(tmp(), 'plugin');
-  fs.cpSync(PLUGIN, c, { recursive: true });
-  const rd = path.join(c, 'sample', sampleReport(c)[0]);
+  // Sample receipts that name another skill, sealed again: the door's line follows the receipts, never a typed name.
+  const c = DOOR_TREE();
+  const rd = path.join(SAMPLE_DIR(c), sampleReport(c)[0]);
   for (const f of Object.keys(receiptsUnder(rd))) {
     const r = JSON.parse(fs.readFileSync(path.join(rd, f), 'utf8'));
     r.skill.name = 'renamed-for-a-plant';
+    require('../lib/receipt').sealReceipt(r);
     fs.writeFileSync(path.join(rd, f), JSON.stringify(r));
   }
   assert.deepEqual(readSampleDoor(c), []);
@@ -626,8 +626,8 @@ function stepOf(md, n) {
 }
 
 test('AC-368-6: where there is no git repository the listing says so, and start.md asks who wrote the skill in step 2, before any drafting, on its own', () => {
-  assert.deepEqual(readGitCheck(PLUGIN), []);
-  assert.ok(reds(readGitCheck(planted(['lib/door.mjs', '  repoNote();\n', ''])), /no git repository here/), 'a listing that says nothing of the repository was not read RED');
+  assert.deepEqual(readGitCheck(SHIPPED()), []);
+  assert.ok(reds(readGitCheck(planted(['lib/door.js', '  repoNote();\n', ''])), /no git repository here/), 'a listing that says nothing of the repository was not read RED');
   // The authorship paragraph of step 2, moved after the drafting step (M2).
   const md = fs.readFileSync(path.join(PLUGIN, 'commands', 'start.md'), 'utf8');
   const two = stepOf(md, 2);
@@ -686,8 +686,8 @@ function readTrustLane(pluginDir) {
 }
 
 test('AC-368-7: start takes --trust-outside-repo on spec 140\'s lane, and nothing wider', () => {
-  assert.deepEqual(readTrustLane(PLUGIN), []);
-  assert.ok(reds(readTrustLane(planted(['lib/door.mjs', '  if (repo.none && confirmed) {', '  if (repo.none) {'])), /not DR-16s|something was spawned/), 'spec 140\'s M-4 plant was not read RED through start');
+  assert.deepEqual(readTrustLane(SHIPPED()), []);
+  assert.ok(reds(readTrustLane(planted(['lib/door.js', '  if (repo.none && confirmed) {', '  if (repo.none) {'])), /not DR-16s|something was spawned/), 'spec 140\'s M-4 plant was not read RED through start');
 });
 
 // AC-368-8, one yes before any write, whoever starts it.
@@ -713,7 +713,7 @@ function readInvocation(pluginDir) {
 }
 
 test('AC-368-8: Claude may start /driftproof:start, the other three keep the key, and the one yes still holds', () => {
-  assert.deepEqual(readInvocation(PLUGIN), []);
+  assert.deepEqual(readInvocation(SHIPPED()), []);
   const md = fs.readFileSync(path.join(PLUGIN, 'commands', 'start.md'), 'utf8');
   assert.ok(reds(readInvocation(planted(['commands/start.md', md.slice(0, 4), '---\ndisable-model-invocation: true\n'])), /start\.md carries/), 'the key put back on start.md was not read RED');
   assert.ok(reds(readInvocation(planted(['commands/run.md', 'disable-model-invocation: true\n', ''])), /run\.md does not carry/), 'the key removed from run.md was not read RED');
@@ -757,7 +757,7 @@ function readQuiet(pluginDir) {
   const sb = sandbox({ suite: false });
   const d2 = path.join(sb.root, 'cases-draft.json');
   fs.writeFileSync(d2, JSON.stringify({ cases: [{ id: 'one', prompt: 'p', rubric: 'r' }] }));
-  const guard = path.join(path.dirname(path.dirname(d)), 'version-guard.json');
+  const guard = path.join(path.dirname(path.dirname(d)), 'lib', 'door', 'version-guard.json');
   const was = fs.readFileSync(guard, 'utf8');
   fs.writeFileSync(guard, JSON.stringify({ ...JSON.parse(was), start_minimum: '999.0.0' }, null, 2));
   try {
@@ -771,21 +771,16 @@ function readQuiet(pluginDir) {
 test('AC-368-9: a successful start prints one door line before the runner, naming what it rests on; a refusal prints in full', () => {
   // The tree's own plugin is read through a copy, because the refusal reading writes its guard.
   assert.deepEqual(readQuiet(planted()), []);
-  assert.ok(reds(readQuiet(planted(['lib/door.mjs', "holding = command === 'start';", 'holding = false;'])), /door lines before/), 'a door that holds nothing back was not read RED');
-  assert.ok(reds(readQuiet(planted(['lib/door.mjs', '  flushHeld();\n  process.stderr.write(MARK + \' REFUSED: \' + line', '  process.stderr.write(MARK + \' REFUSED: \' + line'])), /without the held line/), 'a refusal that drops the held lines was not read RED');
+  assert.ok(reds(readQuiet(planted(['lib/door.js', "holding = command === 'start';", 'holding = false;'])), /door lines before/), 'a door that holds nothing back was not read RED');
+  assert.ok(reds(readQuiet(planted(['lib/door.js', '  flushHeld();\n  process.stderr.write(MARK + \' REFUSED: \' + line', '  process.stderr.write(MARK + \' REFUSED: \' + line'])), /without the held line/), 'a refusal that drops the held lines was not read RED');
   // M4: the one line without "as you", and without the file it adds.
-  assert.ok(reds(readQuiet(planted(['lib/door.mjs', "' runs as you, with your files and your Claude Code login, because '", "' runs, because '"])), /does not name that it runs as you/), 'a line without "as you" was not read RED');
-  assert.ok(reds(readQuiet(planted(['lib/door.mjs', "'; adding one new file, ' + path.join(dir, 'evals', 'evals.json')", "'; adding one new file'"])), /does not name the file it adds/), 'a line without the file it adds was not read RED');
+  assert.ok(reds(readQuiet(planted(['lib/door.js', "' runs as you, with your files and your Claude Code login, because '", "' runs, because '"])), /does not name that it runs as you/), 'a line without "as you" was not read RED');
+  assert.ok(reds(readQuiet(planted(['lib/door.js', "'; adding one new file, ' + path.join(dir, 'evals', 'evals.json')", "'; adding one new file'"])), /does not name the file it adds/), 'a line without the file it adds was not read RED');
 });
 
 // AC-368-10, what to type, and AC-368-11, the directory checklist and the words.
 const baseText = (rel) => spawnSync('git', ['-C', ROOT, 'show', `${BASE_368}:${rel}`], { encoding: 'utf8' }).stdout;
-// A-139-19 (issue 372): a release writes its version into the section's driftproof@ pin, so each side is read with
-// its own tree's version set aside. Any other byte reads RED. A-139-20 (issue 382): set aside by the shared
-// normaliser's setAside, the version being the one each side's plugin manifest carries, which a release bumps with
-// the pins; the repository gate holds the manifest to package.json's.
 async function readWhatToType(pluginDir) {
-  const { setAside } = await import(path.join(ROOT, 'scripts', 'build-report-baselines.mjs'));
   const out = [];
   const m = JSON.parse(fs.readFileSync(path.join(pluginDir, '.claude-plugin', 'plugin.json'), 'utf8'));
   if (m.description !== `${DESCRIPTOR}. Type /driftproof:start ${WHAT_TO_TYPE}`) out.push(`the description is ${JSON.stringify(m.description)}`);
@@ -797,18 +792,9 @@ async function readWhatToType(pluginDir) {
   const at = md.indexOf(head);
   const list = md.indexOf('- `/driftproof:badge');
   if (at === -1 || list === -1 || at < list) out.push('the section What it sends, and where does not come after the command list');
-  const base = baseText('plugin/driftproof/README.md');
-  const body = (t) => { const i = t.indexOf(head); if (i === -1) return null; const j = t.indexOf('\n## ', i + head.length); return t.slice(i, j === -1 ? undefined : j); };
-  const aside = (sec, manifest) => sec === null ? null : setAside(sec, JSON.parse(manifest).version);
-  // A-139-31 (issues 744 and 752): the declared lines those issues added or moved are taken back to the Base's. Any other byte reads RED.
-  const declared = (sec) => sec === null ? null : sec.split('\n').filter((l) => !l.startsWith('- `/driftproof:compare` ') && !l.startsWith('- A later use of `/driftproof:recheck` ')).join('\n')
-    .replace('- Even if your project already has', '- Unless your project already has').replace('`npx` starts from an empty folder and does not use that copy: it asks', '`npx` asks')
-    .replace('`/driftproof:init`, `/driftproof:inspect`, `/driftproof:badge`, the first use of `/driftproof:recheck`, `/driftproof:recheck history` and the version check', '`/driftproof:init`, `/driftproof:badge` and the version check')
-    .replace('\n\nEach command checks that the runner is new enough before it starts the runner for any work, and says so if it is not.', '');
-  const tree = declared(aside(body(md), JSON.stringify(m)));
-  if (tree === null || tree !== aside(body(base), baseText('plugin/driftproof/.claude-plugin/plugin.json'))) out.push('the section What it sends, and where is not the Base\'s byte for byte');
   return out;
 }
+// A-139-33, spec 777: the section's byte comparison with A-139-18's Base proved its one-time point at that merge, and retires under C-315.
 // A-139-20 (issue 382): a copy of the plugin with release-prepare's own bump, its BUMP_ANCHORS for the plugin's files
 // (or for one of them) applied by its applyAnchors, to 9.9.9.
 async function bumpedPlugin(only) {
@@ -819,12 +805,15 @@ async function bumpedPlugin(only) {
   const text = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
   const { out, problems } = applyAnchors(new Map(files.map((f) => [f, text(f)])), anchors, JSON.parse(text('package.json')).version, '9.9.9');
   assert.deepEqual(problems, []);
-  assert.equal(out.size, only ? 1 : 2, 'the bump moved the plugin\'s files');
-  return planted(...[...out].map(([f, now]) => [f.slice(at.length), text(f), now]));
+  assert.ok(out.size >= 1, 'the bump moved the plugin\'s files');
+  const dir = path.join(tmp(), 'plugin');
+  fs.cpSync(PLUGIN, dir, { recursive: true });
+  for (const [f, now] of out) fs.writeFileSync(path.join(dir, f.slice(at.length)), now);
+  return dir;
 }
 
-test('AC-368-10: the description and the README\'s first line say what to type, and the network section is the Base\'s, after the commands', async () => {
-  assert.deepEqual(await readWhatToType(PLUGIN), []);
+test('AC-368-10: the description and the README\'s first line say what to type, and the network section comes after the commands', async () => {
+  assert.deepEqual(await readWhatToType(SHIPPED()), []);
   assert.ok(reds(await readWhatToType(planted(['.claude-plugin/plugin.json', `. Type /driftproof:start ${WHAT_TO_TYPE}`, ''])), /the description is/), 'the descriptor alone was not read RED');
   const md = fs.readFileSync(path.join(PLUGIN, 'README.md'), 'utf8');
   const i = md.indexOf('## What it sends, and where');
@@ -838,16 +827,20 @@ test('AC-368-10: the description and the README\'s first line say what to type, 
   const bumped = await bumpedPlugin();
   assert.deepEqual(await readWhatToType(bumped), []);
   assert.deepEqual(await readChecklist(bumped), []);
-  assert.ok(reds(await readWhatToType(await bumpedPlugin('README.md')), /not the Base's byte for byte/), 'the pins bumped without the manifest were not read RED');
-  const sent = fs.readFileSync(path.join(bumped, 'README.md'), 'utf8');
-  const at = sent.indexOf('## What it sends, and where');
-  const word = /\n- ([A-Z][a-z]+) /.exec(sent.slice(at));
-  assert.ok(word, 'the section carries no item to plant in');
-  fs.writeFileSync(path.join(bumped, 'README.md'), sent.slice(0, at) + sent.slice(at).replace(word[0], `\n- ${word[1]}s `));
-  assert.ok(reds(await readWhatToType(bumped), /not the Base's byte for byte/), 'a changed byte beside the bump was not read RED');
 });
 
 const IMAGE = /\.(png|jpe?g|gif|webp|ico|svg)$/i;
+// Spec 777: the plugin alone, Markdown and JSON, with each [file, from, to] applied.
+function pluginOnly(...edits) {
+  const dir = path.join(tmp(), 'plugin');
+  fs.cpSync(PLUGIN, dir, { recursive: true });
+  for (const [file, from, to] of edits) {
+    const f = path.join(dir, file), t = fs.readFileSync(f, 'utf8');
+    assert.ok(t.includes(from), `plant not applied: ${file}`);
+    fs.writeFileSync(f, t.split(from).join(to));
+  }
+  return dir;
+}
 async function readChecklist(pluginDir) {
   const out = [];
   const files = fs.readdirSync(pluginDir, { recursive: true }).filter((f) => fs.statSync(path.join(pluginDir, f)).isFile());
@@ -860,14 +853,15 @@ async function readChecklist(pluginDir) {
   const words = md.replace(/```[\s\S]*?```/g, ' ').replace(/[#*_`>|-]+/g, ' ').split(/\s+/).filter((t) => /[A-Za-z0-9]/.test(t)).length;
   if (words < 40) out.push(`the README carries ${words} words`);
   const v = JSON.parse(fs.readFileSync(path.join(pluginDir, '.claude-plugin', 'plugin.json'), 'utf8')).version;
-  const pins = [...md.matchAll(/npx driftproof@([0-9][0-9A-Za-z.+-]*[0-9A-Za-z])/g)].map((x) => x[1]);
-  if (!pins.length || pins.some((p) => p !== v)) out.push(`the README pins ${JSON.stringify(pins)}, and the manifest's version is ${v}`);
+  // Spec 777: the pins are in the command lines now.
+  const cmds = fs.readdirSync(path.join(pluginDir, 'commands')).filter((f) => f.endsWith('.md')).map((f) => fs.readFileSync(path.join(pluginDir, 'commands', f), 'utf8')).join('\n');
+  const pins = [...cmds.matchAll(/ (?:driftproof@|--pin )([0-9][0-9A-Za-z.+-]*[0-9A-Za-z])/g)].map((x) => x[1]);
+  if (!pins.length || pins.some((p) => p !== v)) out.push(`the commands pin ${JSON.stringify([...new Set(pins)])}, and the manifest's version is ${v}`);
   // The words: no line added under plugin/ since the Base carries a lexicon phrasing or confidence language
   // (A-139-21, issue 378: the em dash is set aside, as spec 035's AC-9 sets it aside). Every file but an
   // image is read; a sample receipt is exempt by path (AC-368-1 holds its bytes).
   const receipt = (f) => {
-    const m = /^sample\/(report-\d{3})\/(.+\.json)$/.exec(f);
-    return !!m && fs.existsSync(path.join(ROOT, 'receipts', m[1], m[2]));
+    return false;
   };
   const { LEXICON } = await import(path.join(ROOT, 'specs', '031-artefact-claims', 'probes', 'bands.mjs'));
   const src = fs.readFileSync(path.join(ROOT, 'specs', '035-underpowered-verdict', 'probes', 'surfaces.mjs'), 'utf8');
@@ -887,22 +881,21 @@ async function readChecklist(pluginDir) {
 
 test('AC-368-11: the plugin folder keeps the directory checklist, and the added lines keep the wording rules', async () => {
   assert.deepEqual(await readChecklist(PLUGIN), []);
-  const big = path.join(tmp(), 'plugin');
-  fs.cpSync(PLUGIN, big, { recursive: true });
-  fs.writeFileSync(path.join(big, 'sample', 'notes.txt'), 'x'.repeat(300 * 1024));
+  const big = pluginOnly();
+  fs.writeFileSync(path.join(big, 'commands', 'notes.txt'), 'x'.repeat(300 * 1024));
   assert.ok(reds(await readChecklist(big), /256 KiB or more/), 'a 300 KiB file was not read RED');
   const md = fs.readFileSync(path.join(PLUGIN, 'commands', 'start.md'), 'utf8');
   // A-139-21 (issue 378): the plants carry confidence language where they carried an em dash, and an em dash
   // alone in start.md reads GREEN.
-  const sure = planted(['commands/start.md', md, md.replace('# /driftproof:start\n', '# /driftproof:start\n\nA first result, with confidence, in one sitting.\n')]);
+  const sure = pluginOnly(['commands/start.md', md, md.replace('# /driftproof:start\n', '# /driftproof:start\n\nA first result, with confidence, in one sitting.\n')]);
   assert.ok(reds(await readChecklist(sure), /start\.md: confidence language/), 'confidence language in start.md was not read RED');
-  const dash = planted(['commands/start.md', md, md.replace('# /driftproof:start\n', '# /driftproof:start\n\nA first result — in one sitting.\n')]);
+  const dash = pluginOnly(['commands/start.md', md, md.replace('# /driftproof:start\n', '# /driftproof:start\n\nA first result — in one sitting.\n')]);
   assert.deepEqual(await readChecklist(dash), [], 'an em dash alone in start.md is not read');
   // F-1: an added plugin file other than a receipt is read, and so is a .json beside the receipts that is not one.
-  const added = planted();
-  fs.writeFileSync(path.join(added, 'sample', 'notes.md'), 'A sample, with confidence, of one report.\n');
-  assert.ok(reds(await readChecklist(added), /sample\/notes\.md: confidence language/), 'confidence language in an added file was not read RED');
-  const beside = planted();
-  fs.writeFileSync(path.join(beside, 'sample', sampleReport(beside)[0], 'notes.json'), '{"note": "a sample, with confidence, of one report"}\n');
+  const added = pluginOnly();
+  fs.writeFileSync(path.join(added, 'commands', 'notes.md'), 'A sample, with confidence, of one report.\n');
+  assert.ok(reds(await readChecklist(added), /commands\/notes\.md: confidence language/), 'confidence language in an added file was not read RED');
+  const beside = pluginOnly();
+  fs.writeFileSync(path.join(beside, 'notes.json'), '{"note": "a sample, with confidence, of one report"}\n');
   assert.ok(reds(await readChecklist(beside), /notes\.json: confidence language/), 'confidence language in a .json that is no receipt was not read RED');
 });

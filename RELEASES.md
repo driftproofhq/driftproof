@@ -8,6 +8,51 @@ makes this one a record.
 
 ---
 
+## v0.29.0 - 2026-11-13
+
+### What's new
+
+- **The Claude Code plugin is now only Markdown and JSON.** It ships no code and names no API key or token. Each command is a Markdown file that has Claude run the pinned Driftproof runner, and the runner makes every check the plugin's own code used to make, with the same refusals. Install and use it as before: `claude plugin marketplace add driftproofhq/driftproof`, then `claude plugin install driftproof@driftproofhq`.
+- **Changed: how a command starts the runner.** Each command starts the pinned runner with `npx`, so a first run needs no extra install step. Two gaps remain, and the plugin's words cannot close them: a program in a parent folder's `node_modules/.bin` can run before the runner, and the line Claude runs can be altered. The safer alternative is `npm install -g driftproof@0.29.0` and the installed line each command file gives. npm then starts nothing, so the first gap closes. The line Claude runs can still be altered in either form.
+- **Changed: the 0.28.0 known issue about the start folder.** The runner now checks one start folder, the plugin's own. If that folder or one above it is writable by others, belongs to another account, or holds a `package.json` or `node_modules`, the command refuses and names the way out: fix the folder, or use the installed form.
+- **Report 019: twenty skills on Claude Fable 5.2, each against a same-length fake.** 10 beat the fake, 4 did not beat it (1 scored below it, 3 showed no clear difference), and for 6 we can't tell yet. Fourteen were graded on the reply, and six were run with tools on and graded on what Claude Code ended up doing. At /reports/019/.
+- **Report 020, as its own section of Report 019:** three of Addy Osmani's skills on Claude Fable 5.2 against Claude Fable 5.1, one task each. code-review-and-quality scored higher on 5.2, git-workflow-and-versioning showed no clear difference, and documentation-and-adrs scored lower on 5.2.
+- **A free offer: send us your skills, and we tell you which ones you can delete on Claude 5.** A pack, a single skill, or a challenge with your own three tasks, at /measure/. Each reading is Keep, Delete candidate or Cannot tell, per skill and per model. The old skill-request form is retired; the skill lookup now asks through this form.
+- **One results file you can cite.** `docs/data/driftproof-results.jsonl` and `.csv` carry one row per arm of every published Driftproof receipt, under CC BY 4.0, with a datasheet at /data/. Imported results are in their own files, with a warning not to average across the two. Each report now names the skills it measured.
+- PR 803: 802: the release draft provisions the ignored inputs before release-prepare
+- PR 799: 798: nightly reds before 0.29.0 (066, 687, 702)
+- PR 796: 777: the plugin ships only Markdown and JSON (0.29.0)
+- PR 795: Report 019 page: plain answer first, one chart of all twenty, method folded (issue 794)
+- PR 793: Report 019 page: results at a glance, laid-out rows, a table that fits (issue 792)
+- PR 791: Report 019: twenty skills on Fable 5.2, with the tools-on six and Report 020 (issues 790, 786)
+- PR 788: Retire the old skill-request form; the lookup asks through the free offer's form (#787)
+- PR 789: Findable, creditable results: one CC BY 4.0 results file, and reports name their skills (#782)
+- PR 785: spec(783): Fable 5.2 plans and cost (Reports 019/020); eval audit admits an empty memory folder (A-408-67, C-334)
+- PR 784: feat(781): a standing free offer: send us your skills, we tell you what you can delete on Claude 5
+
+
+- PR 806: 805: spec 786's finished plan records the version the six ran at
+
+- PR 808: 807: CodeQL 0 new before 0.29.0 (Report 019 tests, session timer clamp, windows-ci no shell)
+
+### Engineering log
+
+- C-342: the plugin's `npx` default is accepted as weaker than 0.28.0's door, on Maverick's ruling of 10 Nov 2026. The gaps are stated on the plugin README, the docs and the site (spec 777 AC-15).
+- Spec 033 A-033-7: AC-3 reads the homepage platform line as it now stands (Windows checked without calling a model). The 0.10.2-era wording it required is gone.
+- The release train's draft job now provisions the gates' ignored inputs before release-prepare (#802). The first 0.29.0 draft died there on ENOENT, because `scripts/site-data.mjs` reads Report 019's sealed readings.
+- Nightly reds before this release (#798): spec 066's scratch HOME carries its own git identity (A-066-2), and the stale tests behind 687 and 702 read Report 019's wording (A-687-6, A-702-5). Spec 067 NFR-1 still reads red on the CI runner, which has no `~/driftproof` since its 1 Nov rebuild. Maverick ruled it re-pointed (C-343, PR 801, after this release). Release sweeps leave 066 and 067 out (C-288).
+- Report 019 retained answers write the eval account's home path as `~/` with a reversible record (C-341).
+
+**Merged from dev by a refresh, after the draft.** `release-prepare --stage refresh` lists every merge on dev between `a1642c2c44b6` and `ddd5b7c4861a`, the commit the refresh merged, so this release ships each of them, and `release-record.json`'s `source_commit` moves to `ddd5b7c4861a`, where the next release's list starts.
+
+- PR 806, merge `ddd5b7c4`: 805: spec 786's finished plan records the version the six ran at
+
+**Merged from dev by a refresh, after the draft.** `release-prepare --stage refresh` lists every merge on dev between `ddd5b7c4861a` and `03260460b307`, the commit the refresh merged, so this release ships each of them, and `release-record.json`'s `source_commit` moves to `03260460b307`, where the next release's list starts.
+
+- PR 808, merge `03260460`: 807: CodeQL 0 new before 0.29.0 (Report 019 tests, session timer clamp, windows-ci no shell)
+
+---
+
 ## v0.28.0 - 2026-11-10
 
 ### What's new

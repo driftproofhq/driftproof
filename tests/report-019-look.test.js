@@ -22,6 +22,7 @@ const CSS_REL = 'docs/tokens.css';
 
 const { placeboReading } = require(path.join(ROOT, 'lib/verdict'));
 const { plainOf } = require(path.join(ROOT, 'lib/plain'));
+const { htmlToText } = require(path.join(ROOT, 'scripts/html-text'));
 const O = require(path.join(ROOT, 'scripts/offer.js'));
 const B = () => require(path.join(ROOT, 'scripts/prepare-report-019.js'));
 
@@ -31,9 +32,11 @@ const newPage = () => fs.readFileSync(path.join(ROOT, PAGE_REL), 'utf8');
 let model; const M = () => (model = model || B().readReport({}));
 
 // ── HTML, read the way a person sees it ──
-const decode = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, '\'').replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n))).replace(/&amp;/g, '&');
-const BLOCK = /^(p|li|h[1-6]|th|td|tr|dt|dd|div|section|summary|details|ul|ol|table|thead|tbody|caption|aside|header|footer|nav|main|br|pre|figure|figcaption|dl|blockquote)$/i;
-const visible = (html) => decode(html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<!--[\s\S]*?-->/g, '').replace(/<\/?([a-zA-Z][\w-]*)\b[^>]*>/g, (_, n) => (BLOCK.test(n) ? ' ' : ''))).replace(/\s+/g, ' ').trim();
+// Issue 807: the tags are read by spec 148's tokenizer, not a regex, and the entities decoded once.
+const ENTITIES = { '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': '\'', '&amp;': '&' };
+const decode = (s) => s.replace(/&(?:lt|gt|quot|#39|amp|#\d+);/g, (e) => ENTITIES[e] || String.fromCodePoint(Number(e.slice(2, -1))));
+const BLOCK = ['p', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'th', 'td', 'tr', 'dt', 'dd', 'div', 'section', 'summary', 'details', 'ul', 'ol', 'table', 'thead', 'tbody', 'caption', 'aside', 'header', 'footer', 'nav', 'main', 'br', 'pre', 'figure', 'figcaption', 'dl', 'blockquote'];
+const visible = (html) => htmlToText(html, { skip: ['script', 'style'], blockTags: BLOCK, decode, collapse: true });
 const mainOf = (html) => html.slice(html.indexOf('<main'), html.indexOf('</main>') + 7);
 const attrs = (tag) => Object.fromEntries([...tag.matchAll(/([a-zA-Z][\w-]*)="([^"]*)"/g)].map((m) => [m[1], decode(m[2])]));
 // The element that starts at `start`, with its nested elements of the same name.
@@ -356,7 +359,7 @@ test('AC-8: Report 020\'s table is rounded for display, with the exact text and 
 
 test('AC-12: only the listed words are new, and spec 790\'s lexicon still holds', RETIRED('AC-6 and AC-7, with spec 790\'s lexicon test'), () => {
   const h = newPage();
-  checkNewWords(basePage.replace('', ''));
+  checkNewWords(basePage);
   plantOn(checkNewWords, h, [['a word added to the glance\'s lead', replaceOnce('task by task.', 'task by task, dramatically.')]]);
   assert.doesNotMatch(visible(mainOf(h)), /\b(confiden\w*|significan\w*|likely|probabl\w*|prove[sn]?|proof|ratio|ranking|ranked|winners?|best|worst|percent)\b|%/i);
 });

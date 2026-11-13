@@ -30,6 +30,7 @@ const { sealReceipt } = require(path.join(ROOT, 'lib/receipt'));
 const { placeboReading } = require(path.join(ROOT, 'lib/verdict'));
 const O = require(path.join(ROOT, 'scripts/offer.js'));
 const hygiene = require(path.join(ROOT, 'lib/hygiene.js'));
+const { htmlToText } = require(path.join(ROOT, 'scripts/html-text'));
 const RA = () => require(path.join(S783, 'placebo/run-campaign.cjs'));
 const RB = () => require(path.join(S783, 'boundary/run-campaign.cjs'));
 const B = () => require(path.join(ROOT, 'scripts/prepare-report-019.js'));
@@ -39,7 +40,9 @@ const write = (f, v) => fs.writeFileSync(f, JSON.stringify(v, null, 2) + '\n');
 const code = (c) => (e) => e && e.code === c;
 const round6 = (n) => Math.round(n * 1e6) / 1e6;
 const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
-const textOf = (html) => html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&#39;/g, '\'').replace(/&quot;/g, '"').replace(/\s+/g, ' ');
+// Issue 807: the tags are read by spec 148's tokenizer, not a regex, and the entities decoded once.
+const TEXT_ENTITIES = { '&amp;': '&', '&#39;': '\'', '&quot;': '"' };
+const textOf = (html) => htmlToText(html, { skip: ['script'], tagText: ' ', commentText: ' ', decode: (s) => s.replace(/&(?:amp|#39|quot);/g, (e) => TEXT_ENTITIES[e]) }).replace(/\s+/g, ' ');
 
 // ── oracles ──
 const toolsManifest = () => json(path.join(TOOLS, 'manifest.json'));

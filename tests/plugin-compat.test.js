@@ -14,20 +14,21 @@ test('plugin registries and manifest agree on the runner version',()=>{
   assert.equal(manifest.version,JSON.parse(read('package.json')).version);
   assert.ok(market.plugins.some(p=>p.name===manifest.name));
 });
-test('every plugin command has a description and an executable steps block',()=>{
+test('every plugin command has a description, and its moved steps are in the runner',()=>{
   const dir=path.join(root,'plugin/driftproof/commands');
   const files=fs.readdirSync(dir).filter(f=>f.endsWith('.md'));
   for(const required of ['init.md','run.md','badge.md','start.md','blind.md','compare.md','inspect.md','recheck.md']) assert.ok(files.includes(required));
   for(const file of files) {
     const text=fs.readFileSync(path.join(dir,file),'utf8');
     assert.match(text,/^---\n[\s\S]*?^description: *\S[\s\S]*?^---/m);
-    assert.match(text,/```driftproof-steps\n[\s\S]*?\n```/);
+    assert.ok(Array.isArray(JSON.parse(read('lib/door/commands.json'))[file.slice(0,-3)]),file+' has steps in lib/door/commands.json');
+    assert.doesNotMatch(text,/```driftproof-steps/);
   }
 });
-// Spec 727 AC-6: the plugin imports nothing from lib/, so its copies of the leak classes, the email rule,
+// Spec 727 AC-6: lib/door.js keeps its own copies, as it did in the plugin, so the leak classes, the email rule,
 // the bounds, the criterion id pattern and the failure label are held here to their one definition each.
 test('727 AC-6: draft-contract.json agrees with lib/hygiene.js, config.js, lib/skill.js and lib/init.js',()=>{
-  const contract=JSON.parse(read('plugin/driftproof/draft-contract.json'));
+  const contract=JSON.parse(read('lib/door/draft-contract.json'));
   const hygiene=require('../lib/hygiene');
   assert.deepEqual(contract.leak_classes,hygiene.PATTERNS.map(p=>({name:p.name,re:p.re.source,flags:p.re.flags})));
   assert.ok(contract.leak_classes.length>=5,'the classes are the repository\'s, not a short list');
@@ -65,7 +66,7 @@ test('727 AC-6: draft-contract.json agrees with lib/hygiene.js, config.js, lib/s
 });
 test('plugin input contract agrees with every Action input rule',()=>{
   const lib=read('action/lib.sh');
-  const rules=JSON.parse(read('plugin/driftproof/input-contract.json')).rules;
+  const rules=JSON.parse(read('lib/door/input-contract.json')).rules;
   const declared=[...lib.matchAll(/^(RE_[A-Z_]+)=/gm)].map(m=>m[1]).filter(n=>!['RE_VERDICT','RE_DELTA'].includes(n));
   const compared=[];
   for(const [name,rule] of Object.entries(rules)) if(rule.bash_name) {

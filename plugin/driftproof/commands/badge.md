@@ -9,15 +9,22 @@ Render a badge from a receipt — and say what the badge does not prove.
 
 ## How to run it
 
+Form in use: npx.
+
+Run the line exactly as it reads, with your own arguments. Do not drop its `cd` or its `--prefix`, and do not add anything before it. Starting npm in the plugin's own folder is what keeps a package or a program planted in the project from running, and these words are all that holds it. Two gaps remain in this form: a program in a parent folder's `node_modules/.bin` can run before the runner, and the line you run can be altered. The installed form is the safer alternative, because npm starts nothing and the first of those gaps closes. If a person has installed this version of the runner, each line can be written instead in the installed form:
+
+    driftproof door --pin 0.29.0 badge <receipt.json>
+
+If the runner prints `unknown command: door`, it is older than this plugin. Tell the person to install the version the line names.
 Claude Code puts the plugin's installation directory into the line below when
 it loads this command, so the path is already absolute: run the line as it reads,
 with your own `<receipt.json>`.
 
-    node "${CLAUDE_PLUGIN_ROOT}/lib/door.mjs" badge <receipt.json>
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" badge <receipt.json>)
 
 ## What it will do, in order
 
-1. Check the path against the shipped contract in `input-contract.json`, and
+1. Check the path against the runner's contract in `input-contract.json`, and
    require it to be a file that is already there.
 2. Read the resolved runner version with `--version` and compare it against the
    minimum in `version-guard.json`.
@@ -37,7 +44,7 @@ with your own `<receipt.json>`.
    before it is read.
 5. Ask the pinned CLI for the shields JSON and print it byte-for-byte as the CLI
    produced it. This command does not compose it: reproduce it by running
-   `npx driftproof@<pinned> badge <receipt>` yourself.
+   the pinned CLI's `badge` command on the receipt yourself.
 6. Print the README snippet, **derived from the JSON of step 5** by this rule and
    nothing else:
 
@@ -84,17 +91,3 @@ statement says to put them beside the receipt.
 
 It renders. It changes nothing, and it does not tell you how to score better.
 
-```driftproof-steps
-[
-  {"op": "validate", "inputs": ["receipt"]},
-  {"op": "resolve-target", "input": "receipt", "inside_repo": false},
-  {"op": "version-guard"},
-  {"op": "cli", "args": ["validate", "@receipt"], "capture": true,
-   "on_fail": "the pinned CLI refused this receipt, so nothing was rendered. The digest that failed is receipt_hash: the receipt has been altered since it was sealed."},
-  {"op": "recheck-transcripts"},
-  {"op": "cli", "args": ["badge", "@receipt"], "capture": true, "render": true,
-   "on_fail": "the pinned CLI refused to render a badge for this receipt (receipt_hash did not verify)."},
-  {"op": "readme-snippet", "from": "render"},
-  {"op": "not-checked"}
-]
-```

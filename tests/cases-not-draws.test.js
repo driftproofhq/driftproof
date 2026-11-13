@@ -459,7 +459,7 @@ test('AC-2 the badge door says the cases line after a more cases needed badge, a
   const a = validReceipt(CASES, 'fx-a'); const b = validReceipt(CASE_DRAWS, 'fx-b');
   const dir = setDir(t, [a, b]);
   const env = { ...process.env, PATH: [path.join(root, 'specs', '028-claude-code-plugin', 'probes', 'bin'), path.dirname(process.execPath), '/usr/bin', '/bin'].join(path.delimiter), SPEC028_ROOT: path.join(__dirname, '..') };
-  const run = (r) => spawnSync(process.execPath, [path.join(__dirname, '..', 'plugin', 'driftproof', 'lib', 'door.mjs'), 'badge', `${r.skill.name}-${r.run.model_id}-2026-10-02.json`], { cwd: dir, env, encoding: 'utf8', timeout: 120000 });
+  const run = (r) => spawnSync(process.execPath, [require('../specs/028-claude-code-plugin/probes/door-copy.cjs').LAUNCHER, 'badge', `${r.skill.name}-${r.run.model_id}-2026-10-02.json`], { cwd: dir, env, encoding: 'utf8', timeout: 120000 });
   const said = (out) => out.split('\n').filter((l) => l.startsWith('[driftproof-plugin] ') && !/render$/.test(l)).map((l) => l.slice('[driftproof-plugin] '.length));
   const da = run(a);
   assert.equal(da.status, 0, da.stderr);

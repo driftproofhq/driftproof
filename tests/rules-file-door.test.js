@@ -19,7 +19,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
-const DOOR = path.join(ROOT, 'plugin', 'driftproof', 'lib', 'door.mjs');
+const { LAUNCHER: DOOR } = require('../specs/028-claude-code-plugin/probes/door-copy.cjs');
 const FAKE_BIN = path.join(ROOT, 'specs', '028-claude-code-plugin', 'probes', 'bin');
 const made = [];
 const tmp = () => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'issue553-')); made.push(d); return d; };
@@ -226,8 +226,8 @@ test('with no git repository a rules file runs only after the person says it is 
 test('the command files say how to test a rules file, what the placebo and repository capture cost', () => {
   const start = fs.readFileSync(path.join(ROOT, 'plugin', 'driftproof', 'commands', 'start.md'), 'utf8');
   const run = fs.readFileSync(path.join(ROOT, 'plugin', 'driftproof', 'commands', 'run.md'), 'utf8');
-  assert.match(start, /door\.mjs" start <rules-file> --suite <draft> --confirm-write\n/);
-  assert.match(run, /door\.mjs" run <rules-file> --suite <tasks> \[--placebo\]\n/);
+  assert.match(start, / start <rules-file> --suite <draft> --confirm-write\)\n/);
+  assert.match(run, / run <rules-file> --suite <tasks> \[--placebo\]\)\n/);
   for (const text of [start, run]) {
     for (const word of ['CLAUDE.md', 'AGENTS.md', '--placebo', '--capture repository', 'half as many calls again']) assert.ok(text.includes(word), word);
   }
@@ -251,7 +251,7 @@ test('the README section is short and its commands are ones the CLI and the plug
   assert.ok(section.trim().split('\n').length <= 25, `the section is ${section.trim().split('\n').length} lines`);
   const bin = fs.readFileSync(path.join(ROOT, 'bin', 'driftproof'), 'utf8');
   const cliRun = JSON.parse(`[${/^ {2}run: \[(.*)\],$/m.exec(bin)[1].replace(/'/g, '"')}]`);
-  const doorText = fs.readFileSync(DOOR, 'utf8');
+  const doorText = fs.readFileSync(path.join(ROOT, 'lib', 'door.js'), 'utf8');
   const doorAccepts = (c) => JSON.parse(`[${new RegExp(`^ {2}${c}: \\[(.*)\\],$`, 'm').exec(doorText)[1].replace(/'/g, '"')}]`);
   const lines = section.split('\n').filter((l) => /^(npx driftproof|\/driftproof:)/.test(l.trim()));
   assert.ok(lines.length >= 2, 'the section gives the command');

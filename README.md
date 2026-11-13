@@ -263,13 +263,22 @@ That installs `/driftproof:start`, `/driftproof:init`, `/driftproof:run`,
 `/driftproof:inspect <file-or-skill-dir>` shows what is in a local file without running it, including the reminder that a clean reading is not a guarantee.
 `/driftproof:recheck <skill-dir-or-rules-file>` saves its tests and settings the first time, runs them again after you say yes on later uses, and shows the runner's dated reading unchanged.
 The CLI is the product and it runs on every surface Driftproof measures, while
-the plugin is one install path for Claude Code users: it builds one argument
-vector, hands it to the pinned runner, and writes the receipt that runner would
-have written from the same arguments. The plugin's version is the runner version
+the plugin is one install path for Claude Code users: each command is Markdown
+that has Claude run the pinned runner, which writes the receipt it would have
+written from the same arguments. The plugin's version is the runner version
 it pins, and `/driftproof:run` spends your Claude Code subscription rather than
 an API key. It measures and never changes a skill's instructions. The one file it
 adds is a new `evals/evals.json`, from `/driftproof:start` or
 `/driftproof:init`, to a skill that has none, after you say yes in the run.
+
+Each command starts the pinned runner with `npx`, so a first run has no extra install step.
+Two gaps remain, and the plugin's words cannot close them: a program in a parent folder's
+`node_modules/.bin` can run before the runner, and the line Claude runs can be altered.
+The safer alternative is to run `npm install -g driftproof@<version>`, at the version the
+command names, and use the installed line each command file gives. npm then starts nothing,
+so the first gap closes. The line Claude runs can still be altered in either form.
+
+Some settings change this. An OpenAI model named with `--models` goes to OpenAI through the `codex` command line, or to the OpenAI API with your `OPENAI_API_KEY`; `OPENAI_SURFACE` chooses which, and when it is not set the API is used whenever `OPENAI_API_KEY` is set. `OPENAI_BASE_URL`, or a model list named by `DRIFTPROOF_REGISTRY`, can point that call at another address, and the list can name another key variable. `CLAUDE_PROVIDER` set to `api` sends the calls to the Anthropic API, or to `ANTHROPIC_BASE_URL` if you set it, with your `ANTHROPIC_API_KEY`. A `judge_model` in a `.driftproofrc` in the folder you run from chooses the grader.
 
 The only runtime dependency is `ajv` (schema validation); `@anthropic-ai/sdk` is
 optional and pulled in only for `CLAUDE_PROVIDER=api`. The CLI resolves its spec,
@@ -792,7 +801,7 @@ A receipt is the unit of evidence — one JSON document conforming to
     "model_release_date": "2025-10-01",
     "provider": "anthropic",
     "surface": "claude-cli",
-    "runner_version": "0.28.0",
+    "runner_version": "0.29.0",
     "date_utc": "2026-07-27T…Z",
     "registry": "registered",
     "transcripts": "hashes-only",
@@ -875,7 +884,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: driftproofhq/driftproof@v0.28.0
+      - uses: driftproofhq/driftproof@v0.29.0
         with:
           skill-dir: skills/my-skill
           models: claude-haiku-4-5
@@ -1014,7 +1023,7 @@ permissions:
   contents: read
   issues: write
 # ...
-      - uses: driftproofhq/driftproof/stale@v0.28.0
+      - uses: driftproofhq/driftproof/stale@v0.29.0
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill
