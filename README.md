@@ -35,15 +35,15 @@ measures a skill in your repository and writes its receipt. It runs on your
 Claude Code subscription. You need Node.js 22 or later.
 [First run](#first-run) · [Other ways to install](#install) · [Measure your own skill](#quickstart-receipt-for-your-own-skill)
 
-**Latest finding** · [Report 018](https://driftproofhq.com/reports/018/), 2 Nov
-2026: 12 of 16 skills beat the fake on Haiku 5.5: read one task at a time, each
+**Latest finding** · [Report 019](https://driftproofhq.com/reports/019/), 11 Nov
+2026: 10 of 20 skills beat the fake on Fable 5.2: read one task at a time, each
 scored above the same-length placebo on at least one of three tasks and below it
 on none.
 
 [![driftproof](https://img.shields.io/endpoint?url=https://driftproofhq.com/badges/commit-message-conventions.json)](https://driftproofhq.com)
 live badge for the bundled example, generated from its own receipt.
 
-[All seventeen reports](#reports) · [driftproofhq.com](https://driftproofhq.com)
+[All eighteen reports](#reports) · [driftproofhq.com](https://driftproofhq.com)
 
 [Can you tell? Every skill](https://driftproofhq.com/can-you-tell/) · [Did the AI change?](https://driftproofhq.com/did-it-change/) · [Inspect these instructions](https://driftproofhq.com/inspect/) · [The AI noticed the sugar pill](https://driftproofhq.com/noticed/) · [Which bar is the fake?](https://driftproofhq.com/spot-the-fake/) · [Every task we gave a skill](https://driftproofhq.com/tasks/) · [Try it yourself](https://driftproofhq.com/try-it/) · [Which section did the work?](https://driftproofhq.com/which-section/) · [Skill or sugar pill?](https://driftproofhq.com/sugar-pill/)
 
@@ -1088,7 +1088,7 @@ with exit 4, and `--out` never writes over a file the command did not write.
 
 ## Reports
 
-Seventeen reports are published, spanning nine report types. A report page lives at a
+Eighteen reports are published, spanning nine report types. A report page lives at a
 draft path — `docs/reports/NNN-draft/` — until the publish sequence renames it, and
 `scripts/build-public.sh` excludes every `*-draft/` path from the published tree
 (see the roll below, and
@@ -1099,7 +1099,7 @@ under [`receipts/`](receipts/)
 Report #010 takes no Driftproof measurement and has no receipts: it is re-derived
 from the upstream harness's output files, published beside its page.
 
-📊 **Seventeen published reports** (each re-derived from committed files, nothing
+📊 **Eighteen published reports** (each re-derived from committed files, nothing
 hand-entered: Driftproof's receipts, or for Report #010 the upstream harness's own
 output), spanning nine published report types, the newest being placebo comparison. Reports that measure with Driftproof retain its correctness reader. The rules-file behaviour report also compares output tokens and code with paired task intervals, and the placebo comparison report reads each skill against a same-length text from a fixed corpus:
 
@@ -1209,7 +1209,7 @@ output), spanning nine published report types, the newest being placebo comparis
 <!--/driftproof:campaign-readme-->
 
 ✍️ The launch essay, **[Three model releases later: what actually happens to agent
-skills](https://driftproofhq.com/writing/three-releases/)**, reads all seventeen reports
+skills](https://driftproofhq.com/writing/three-releases/)**, reads all eighteen reports
 together: what moves underneath a skill, what the skill costs to run, and what a
 corrected instrument did to three published results. Revised 2026-10-07; every
 figure in it is gate-checked against the report page it cites.

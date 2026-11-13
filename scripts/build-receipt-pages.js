@@ -237,10 +237,11 @@ function armRow(receipt, mode, name) {
 
 const report015Policy = require('../lib/report-015-publication');
 // Issue 627: a Report 017 campaign receipt names the page that shows its placebo reading. Issue 669:
-// a Report 018 campaign receipt names Report 018's page the same way.
+// a Report 018 campaign receipt names Report 018's page the same way. Issue 790: Report 019's text-only
+// and tools-on receipts name Report 019's page.
 const REPORT017_ROOT = 'receipts/report-017c/';
 const REPORT018_ROOT = 'receipts/report-018/';
-const PLACEBO_REPORTS = [[REPORT017_ROOT, '017'], [REPORT018_ROOT, '018']];
+const PLACEBO_REPORTS = [[REPORT017_ROOT, '017'], [REPORT018_ROOT, '018'], ['receipts/report-019/', '019'], ['receipts/report-019-tools-on/', '019']];
 const placeboLink = (rel, r) => {
   const hit = PLACEBO_REPORTS.find(([root]) => rel.startsWith(root));
   return hit && r.placebo

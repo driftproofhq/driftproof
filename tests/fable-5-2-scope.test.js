@@ -97,6 +97,18 @@ function copyRoot(rels) {
   for (const rel of rels) { fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true }); fs.cpSync(path.join(ROOT, rel), path.join(root, rel), { recursive: true }); }
   return root;
 }
+// A-783-5 (issue 790): with its campaign root committed, plan (b) is historical: its pins are read at the
+// commit its log records, so the live tree no longer reads as its runner. Its plants, preflight and stub
+// campaign run on a copy whose plan is rebuilt, offline, over that copy's own runner bytes, as Report
+// 018's plan test does (spec 655 A-655-1). Every plant still bites; the committed plan is not rebuilt.
+function boundaryFixture() {
+  const root = copyRoot([SPEC, R011, BUNDLE + '/SHA256SUMS', BUNDLE + '/inputs', S408, 'lib', 'bin', 'config', 'config.js', 'scripts', 'spec', 'package.json', ...planB().comparison_side.existing.map((e) => e.receipt)]);
+  fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(root, 'node_modules'));
+  const planFile = path.join(root, SPEC, 'boundary/plan.json');
+  const built = node(['-e', 'const B=require(process.argv[1]);require("node:fs").writeFileSync(process.argv[3],JSON.stringify(B.buildPlan({root:process.argv[2]}),null,2)+"\\n")', path.join(B, 'build-plan.cjs'), root, planFile]);
+  assert.equal(built.status, 0, built.stderr);
+  return { root, plan: json(planFile) };
+}
 function planted(file, mutate) { const bytes = fs.readFileSync(file); const p = JSON.parse(bytes); mutate(p); fs.writeFileSync(file, JSON.stringify(p, null, 2) + '\n'); return () => fs.writeFileSync(file, bytes); }
 
 // ---- the catalog, the model id and the release ------------------------------------------------------
@@ -183,7 +195,12 @@ test('AC-1 to AC-4: plan (a) is Report 017\'s twenty, in order, with its pins, F
   const pin = /<!--placebo_plan_sha256-->([0-9a-f]{64})<!--\/placebo_plan_sha256-->/.exec(specText());
   assert.ok(pin, 'the spec pins plan (a)'); assert.equal(pin[1], sha256(fs.readFileSync(path.join(A, 'plan.json'))));
   const r = node([path.join(A, 'build-plan.cjs'), '--check']); assert.equal(r.status, 0, r.stderr);
-  assert.match(r.stdout, /^report 019 plan: 20 attempts; 10800 planned calls; .*Fable 5\.2 price an estimate; no spend; current$/m);
+  // A-783-5 (issue 790): once plan (a)'s campaign root holds its frozen plan, --check reads the plan as
+  // historical and says so, as plan (b)'s does (A-783-1, spec 613 A-613-3).
+  const ownA = path.join(ROOT, 'receipts/report-019');
+  const ranA = fs.existsSync(path.join(ownA, 'plan.json')) && fs.readFileSync(path.join(ownA, 'plan.json')).equals(fs.readFileSync(path.join(A, 'plan.json')));
+  assert.match(r.stdout, ranA ? /^report 019 plan: 20 attempts; 10800 planned calls; .*Fable 5\.2 price an estimate; no spend; current \(historical: the frozen plan of receipts\/report-019; not rebuilt from the live tree\)$/m
+    : /^report 019 plan: 20 attempts; 10800 planned calls; .*Fable 5\.2 price an estimate; no spend; current$/m);
   const md = fs.readFileSync(path.join(A, 'projection.md'), 'utf8');
   for (const l of r.stdout.split('\n').filter((x) => x.startsWith('|'))) assert.ok(md.includes(l), 'the printed table is the committed one: ' + l);
 });
@@ -423,7 +440,7 @@ test('AC-13, AC-14, AC-16: plan (b) is six fresh runs on Report 011\'s bytes and
 });
 
 test('AC-14, AC-15, AC-18: plan (b)\'s readPlan refuses every planted change, on a copy of its inputs', () => {
-  const root = copyRoot([SPEC, R011, BUNDLE + '/SHA256SUMS', BUNDLE + '/inputs', S408, ...RB.runnerFiles(ROOT).filter((f) => !f.startsWith(SPEC))]);
+  const { root } = boundaryFixture();
   assert.equal(RB.readPlan(root).plan.execution.attempts.length, 6, 'control: the copy reads');
   const file = path.join(root, SPEC, 'boundary/plan.json');
   const reads = (mutate, want, why) => { const undo = planted(file, mutate); try { assert.throws(() => RB.readPlan(root), (e) => [].concat(want).includes(e.code), why); } finally { undo(); } };
@@ -480,27 +497,26 @@ test('AC-17: plan (b)\'s note pre-registers Report 011\'s four labels, the with-
 });
 
 test('AC-12, AC-13, AC-14: plan (b)\'s zero-cost preflight reads the runner\'s own preview of each run, and refuses an API credential', () => {
-  const calls = [];
+  const { root } = boundaryFixture(); const calls = [];
   const spy = (file, args, opts) => { calls.push(args); return spawnSync(file, args, opts); };
-  const r = RB.preflight({ spawn: spy });
+  const r = RB.preflight({ root, spawn: spy });
   assert.equal(r.rows.length, 6); assert.equal(r.problem, null, JSON.stringify(r.rows)); assert.ok(r.rows.every((x) => x.status === 'ok'));
   assert.ok(calls.every((a) => a.includes('--preview') && a.includes('--json')), 'every spawn is the runner\'s no-call preview');
   // Plant: a preview that says it would send other bytes.
   const lie = (file, args, opts) => { const out = spawnSync(file, args, opts); const v = JSON.parse(out.stdout); v.what_is_sent.system.sha256 = '0'.repeat(64); return { ...out, stdout: JSON.stringify(v) }; };
-  assert.equal(RB.preflight({ spawn: lie }).problem, 'SKILL_BYTES');
+  assert.equal(RB.preflight({ root, spawn: lie }).problem, 'SKILL_BYTES');
   // Plant: a preview that would spend API credits on its judge.
   const metered = (file, args, opts) => { const out = spawnSync(file, args, opts); const v = JSON.parse(out.stdout); v.where[1].spend = 'metered'; return { ...out, stdout: JSON.stringify(v) }; };
-  assert.equal(RB.preflight({ spawn: metered }).problem, 'SURFACE_BINDING');
+  assert.equal(RB.preflight({ root, spawn: metered }).problem, 'SURFACE_BINDING');
   process.env[CREDENTIAL] = 'planted';
-  try { assert.throws(() => RB.preflight({ spawn: () => { throw Error('PROVIDER_CALL'); } }), code('SURFACE_BINDING')); } finally { delete process.env[CREDENTIAL]; }
+  try { assert.throws(() => RB.preflight({ root, spawn: () => { throw Error('PROVIDER_CALL'); } }), code('SURFACE_BINDING')); } finally { delete process.env[CREDENTIAL]; }
 });
 
 test('AC-17, AC-18: a stub campaign runs plan (b)\'s six runs through the runner, each receipt verified and read as not measured; a failed run stops the rest', async () => {
-  const croot = fresh();
-  const m = await RB.runCampaign({ campaignRoot: croot });
+  const { root, plan } = boundaryFixture(); const croot = fresh();
+  const m = await RB.runCampaign({ root, campaignRoot: croot });
   assert.equal(m.report, '020'); assert.equal(m.stub, true); assert.equal(m.stop, null, JSON.stringify(m.outcomes));
   assert.ok(m.outcomes.every((o) => o.status === 'receipt'), JSON.stringify(m.outcomes));
-  const plan = planB();
   for (const [i, o] of m.outcomes.entries()) {
     const a = plan.execution.attempts[i]; const r = json(path.join(croot, o.receipt));
     assert.equal(r.run.model_id, a.protocol.model); assert.equal(r.run.judge.model_id, HAIKU); assert.equal(r.run.judge.samples, 5);
@@ -511,22 +527,32 @@ test('AC-17, AC-18: a stub campaign runs plan (b)\'s six runs through the runner
     // A paid reading of the stub receipt refuses: it is not TESTED on the subscription surface.
     assert.throws(() => RB.verifyReceipt({ plan }, a, r, false), (e) => ['RECEIPT_ELIGIBILITY', 'MODEL_BINDING'].includes(e.code));
   }
-  const v = RB.verdicts({ campaignRoot: croot });
+  const v = RB.verdicts({ root, campaignRoot: croot });
   assert.equal(v.rows.length, 3); assert.ok(v.rows.every((x) => x.verdict === 'not-measured' && x.label === 'not measured'));
   assert.equal(v.report_011, NOT_BESIDE_011); assert.deepEqual(v.effort, plan.effort); assert.equal(v.judge, HAIKU);
   // A second start continues the chain and runs nothing again.
-  const again = await RB.runCampaign({ campaignRoot: croot, spawn: () => { throw Error('PROVIDER_CALL'); } });
+  const again = await RB.runCampaign({ root, campaignRoot: croot, spawn: () => { throw Error('PROVIDER_CALL'); } });
   assert.ok(again.outcomes.every((o) => o.reason === 'PREVIOUS_RECEIPT'));
   // A failed run stops the campaign: the next runs are cancelled, not dispatched.
   let spawned = 0;
-  const fail = await RB.runCampaign({ campaignRoot: fresh(), spawn: () => { spawned++; return { status: 1, stdout: '', stderr: 'planted failure' }; } });
+  const fail = await RB.runCampaign({ root, campaignRoot: fresh(), spawn: () => { spawned++; return { status: 1, stdout: '', stderr: 'planted failure' }; } });
   assert.equal(spawned, 1); assert.equal(fail.stop, 'RUN_FAILED'); assert.equal(fail.outcomes[0].reason, 'RUN_FAILED');
   assert.ok(fail.outcomes.slice(1).every((o) => o.reason === 'CANCELLED'));
   // A paid start without the plan's hash, or with an API credential, refuses before any run.
   delete process.env.DRIFTPROOF_STUB;
-  try { await assert.rejects(RB.runCampaign({ campaignRoot: fresh(), execute: true, expectedPlan: 'f'.repeat(64) }), code('PLAN_BINDING')); } finally { process.env.DRIFTPROOF_STUB = '1'; }
+  try { await assert.rejects(RB.runCampaign({ root, campaignRoot: fresh(), execute: true, expectedPlan: 'f'.repeat(64) }), code('PLAN_BINDING')); } finally { process.env.DRIFTPROOF_STUB = '1'; }
   process.env[CREDENTIAL] = 'planted';
-  try { await assert.rejects(RB.runCampaign({ campaignRoot: fresh(), spawn: () => { throw Error('PROVIDER_CALL'); } }), code('SURFACE_BINDING')); } finally { delete process.env[CREDENTIAL]; }
+  try { await assert.rejects(RB.runCampaign({ root, campaignRoot: fresh(), spawn: () => { throw Error('PROVIDER_CALL'); } }), code('SURFACE_BINDING')); } finally { delete process.env[CREDENTIAL]; }
+});
+
+test('A-783-5: plan (b)\'s committed root reads at the commit its log records; a pinned byte, the file list or the commit itself that differs there refuses', () => {
+  const own = path.join(ROOT, 'receipts/report-020'); const real = RB.gitAt(ROOT);
+  const v = RB.verdicts({ campaignRoot: own });
+  assert.equal(v.rows.length, 3); assert.ok(v.rows.every((r) => r.verdict !== 'not-measured'), 'control: the committed root reads');
+  const reads = (reader, want, why) => assert.throws(() => RB.verdicts({ campaignRoot: own, gitReader: reader }), code(want), why);
+  reads({ ...real, show: (h, f) => { const b = real.show(h, f); return f === 'lib/run.js' ? Buffer.concat([b, Buffer.from('\n')]) : b; } }, 'RUNNER_BINDING', 'a pinned byte that differs at the head');
+  reads({ ...real, list: (h, d) => [...real.list(h, d), 'lib/new-module.js'] }, 'RUNNER_BINDING', 'a library file the plan does not pin');
+  reads({ ...real, isAncestor: () => false }, 'CAMPAIGN_HEAD', 'a head that is not in this history');
 });
 
 // ---- both plans --------------------------------------------------------------------------------------
@@ -601,7 +627,7 @@ test('AC-20, AC-21: one cost table, recomputed from both plans, inside the issue
   ]) assert.notDeepEqual(c ? correctionProblems({ placebo: [c], boundary: [] }) : correctionProblems({ placebo: [], boundary: [valid] }), [], why);
 });
 
-test('AC-7: every builder is offline, and no campaign root exists for either plan', () => {
+test('AC-7: every builder is offline, and the campaign roots are the committed ones, each holding its frozen plan', () => {
   for (const builder of [path.join(A, 'build-plan.cjs'), path.join(B, 'build-plan.cjs')]) {
     const b = JSON.stringify(builder);
     const control = node(['-e', 'require(' + b + ').buildPlan();console.log("built")']);
@@ -618,7 +644,19 @@ test('AC-7: every builder is offline, and no campaign root exists for either pla
   // A-783-1: a campaign root may exist under receipts/ once a run starts. The build committed no receipt
   // bytes before a run, and a root that holds a plan holds its plan's frozen bytes.
   const tracked = spawnSync('git', ['ls-files', '--', 'receipts/report-019*', 'receipts/report-020*'], { cwd: ROOT, encoding: 'utf8' });
-  assert.equal(tracked.status, 0, tracked.stderr); assert.equal(tracked.stdout, '', 'no file under a Report 019 or 020 campaign root is tracked');
+  assert.equal(tracked.status, 0, tracked.stderr);
+  // A-783-5 (issue 790): the finished campaign roots are committed with the write-up, as spec 655
+  // A-655-1 committed Report 018's. Every tracked file lies under the three roots issue 790 names, and
+  // each plan's root holds the manifest its log names last.
+  const ROOTS = ['report-019', 'report-019-tools-on', 'report-020'];
+  const trackedOk = (files) => assert.deepEqual([...new Set(files.map((f) => f.split('/')[1]))].sort(), ROOTS, 'tracked files lie under the three committed roots');
+  const files = tracked.stdout.split('\n').filter(Boolean); trackedOk(files);
+  for (const name of ['report-019', 'report-020']) {
+    const log = fs.readFileSync(path.join(ROOT, 'receipts', name, 'campaign.log'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    assert.ok(files.includes('receipts/' + name + '/' + log.at(-1).manifest), name + '\'s log names a committed manifest');
+  }
+  // Plant: a tracked file under another root.
+  assert.throws(() => trackedOk([...files, 'receipts/report-019-draft/x.json']), /three committed roots/);
   const frozen = { 'report-019': fs.readFileSync(path.join(A, 'plan.json')), 'report-020': fs.readFileSync(path.join(B, 'plan.json')) };
   const rootsHold = (receipts) => {
     for (const name of fs.readdirSync(receipts).filter((n) => /^report-0(19|20)/.test(n))) {

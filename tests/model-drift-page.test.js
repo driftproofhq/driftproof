@@ -50,6 +50,8 @@ const T = {
   key: 'What each reading means',
   version: (r) => `Driftproof measured more than one version of this text. This row is the version in ${r}.`,
   handoff: 'This text only tells the model to call another skill with the Skill tool, so its receipts read that instruction, not the skill it names.',
+  // A-639-9 (issue 790): a hand-off row that holds a tools-on receipt.
+  handoffToolsOn: 'This text only tells the model to call another skill with the Skill tool. Its text-only receipts read that instruction, not the skill it names; a receipt marked tools on ran with that skill installed and was scored on what Claude Code ended up doing.',
   alone: 'These receipts were not all measured the same way, so read each one on its own.',
   noun: { tasks: 'test tasks', grading: 'judge and grading', setup: 'run setup' },
   differs: { tasks: 'different test tasks', setup: 'a different run setup' },
@@ -174,7 +176,9 @@ function placeOf(x, reportsOf) {
   if (!ns.length) return /^receipts\/canary\//.test(x.rel) ? 'canary run' : null;
   const run = /\/run-(\d+)\//.exec(x.rel);
   const word = /^receipts\/report-\d+-([a-z]+)\//.exec(x.rel);
-  return reportsText(ns) + (run ? `, run ${run[1]}` : word ? `, ${word[1]}` : '');
+  // A-639-9 (issue 790): a tools-on receipt (spec 786) is placed with "tools on".
+  const toolsOn = ((x.receipt.run || {}).capture || {}).mode === 'repository-tools-on';
+  return reportsText(ns) + (run ? `, run ${run[1]}` : word ? `, ${word[1]}` : '') + (toolsOn ? ', tools on' : '');
 }
 const wordsOf = (r) => { if (policy.routerLimit(r)) return 'ROUTER'; if (verdictFakeToolCallWarning(r)) return 'UNRELIABLE'; const p = plainOf(r); return p.words || p.state; };
 const readingOf = (r) => (policy.routerLimit(r) ? policy.LABEL : plainOf(r).label);
@@ -286,6 +290,7 @@ function expectedRows(allEntries, { reportsOf, texts = textsOracle(), notes = no
     row.conditions = Object.fromEntries(Object.entries(row.groups).map(([g, a]) => [g, a.state]));
     row.router = xs.some((x) => policy.routerLimit(x.receipt));
     row.handoff = texts.has(subject) && handoffOracle(texts.get(subject));
+    row.toolsOn = xs.some((x) => ((x.receipt.run || {}).capture || {}).mode === 'repository-tools-on');
     row.reports = [...new Set(xs.flatMap((x) => rep.get(x)))].sort();
     const byNote = new Map();
     for (const n of row.reports) { const t = notes(n); if (t) { if (!byNote.has(t)) byNote.set(t, []); byNote.get(t).push(n); } }
@@ -302,7 +307,7 @@ function expectedRows(allEntries, { reportsOf, texts = textsOracle(), notes = no
     if (r.list === 'main') { r.conditionsText = conditionsText(r); parts.push(r.conditionsText); }
     if (r.router) parts.push(`${policy.REASON} Report 015 Amendment 1.`);
     if (r.versioned) parts.push(T.version(reportsText(r.reports)));
-    if (r.handoff) parts.push(T.handoff);
+    if (r.handoff) parts.push(r.toolsOn ? T.handoffToolsOn : T.handoff);
     for (const m of r.models) parts.push(`On ${humanModelName(m.id)}: ${m.list.map((x) => `${readingOf(x.receipt)} (${r.place.get(x)}, ${String(x.receipt.run.date_utc).slice(0, 10)})`).join('; ')}.`);
     parts.push(...r.notes);
     r.text = parts.join(' ');
@@ -374,7 +379,7 @@ async function checkPage(html, { entries, reportsOf, pages = true, texts, notes 
     if (e.router && !(g.body.includes(`<p class="drift-router">${policy.REASON} <a href="${policy.AMENDMENT}">`))) P.push(`AC-4 router row ${e.name} has no REASON line`);
     for (const n of e.notes) if (!textOf(g.body).includes(n)) P.push(`AC-15 ${e.name} lacks the note: ${n.slice(0, 40)}`);
     if (e.notes.length !== [...g.body.matchAll(/<p class="drift-note">/g)].length) P.push(`AC-15 ${e.name} carries ${[...g.body.matchAll(/<p class="drift-note">/g)].length} notes`);
-    if (e.handoff !== g.body.includes(`<p class="drift-handoff">${T.handoff}</p>`)) P.push(`AC-16 hand-off note for ${e.name}`);
+    if (e.handoff !== g.body.includes(`<p class="drift-handoff">${e.toolsOn ? T.handoffToolsOn : T.handoff}</p>`)) P.push(`AC-16 hand-off note for ${e.name}`);
     // AC-7: each model paragraph holds that model's readings and names it; each place and date.
     for (const m of g.body.matchAll(/<p class="drift-model" data-model="([^"]*)">([\s\S]*?)<\/p>/g)) {
       const name = /<span data-model-name>([\s\S]*?)<\/span>/.exec(m[2]);
@@ -715,7 +720,8 @@ const plants = [
   ['AC-8', 'a named receipt changed', (h) => h.replace(new RegExp(`The receipts? from (?:(?!The receipts? from)[\\s\\S])*? records? ${T.differs.setup}`), (sentence) =>
     sentence.replace(/(<span data-place>Reports? )(\d{3})/, (m, lead, n) => `${lead}${n === '015' ? '014' : '015'}`))],
   ['AC-8', 'a named list joined without its semicolon', (h) => h.replace('; and <span data-place>Report 011</span> on', ' and <span data-place>Report 011</span> on')],
-  ['AC-8', 'a grading difference said generically', (h) => h.replace('was scored by a different version of the scoring code', 'records a different judge or grading')],
+  // A-639-9 (issue 790): the row that carried the singular now reads in the plural; either form is planted.
+  ['AC-8', 'a grading difference said generically', (h) => h.replace(/(?:was|were) scored by a different version of the scoring code/, 'records a different judge or grading')],
   ['AC-9', 'a score inserted', (h) => h.replace(/(<p class="drift-model"[^>]*>[\s\S]*?)(\.<\/p>)/, '$1, 0.906 with the skill$2')],
   ['AC-9', 'two rows swapped', (h) => { const rows = rowsOf(h); return h.replace(rows[0], '@R0@').replace(rows[1], rows[0]).replace('@R0@', rows[1]); }],
   ['AC-9', 'a comparing sentence added to a row', (h) => h.replace(/(<p class="drift-model")/, '<p>It helps more on the larger model.</p>\n$1')],

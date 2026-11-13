@@ -1286,9 +1286,10 @@
               "enum": [
                 "text",
                 "files",
-                "repository"
+                "repository",
+                "repository-tools-on"
               ],
-              "description": "text: on a CLI surface the child ran with its file-writing tools off, and its reply is the judged answer (an api surface has no tools). files: the child could write files in its own fresh working directory, and the regular files there were collected, within the runner limits, and judged with its reply. repository: a fresh pinned starter, tools confined by the mandatory eval boundary, and the reply plus captured text changes. Issue 490."
+              "description": "text: on a CLI surface the child ran with its file-writing tools off, and its reply is the judged answer (an api surface has no tools). files: the child could write files in its own fresh working directory, and the regular files there were collected, within the runner limits, and judged with its reply. repository: a fresh pinned starter, tools confined by the mandatory eval boundary, and the reply plus captured text changes. Issue 490. repository-tools-on: the repository lane with the Skill tool, installed called skills and hashed local fixtures in every arm, internal to the measurement driver; the end state is checked (issue 786)."
             },
             "setting_sources": {
               "type": "array",
@@ -1356,6 +1357,85 @@
                 }
               },
               "description": "Issue 490 A-490-11. New repository grades append an exact character inventory. Absent means the historical grading contract did not record this annotation."
+            },
+            "world": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "skills",
+                "manifest_sha256",
+                "fixtures",
+                "network",
+                "env",
+                "starter_sha256"
+              ],
+              "properties": {
+                "skills": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "manifest_sha256": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "fixtures": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "name",
+                      "sha256"
+                    ],
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      },
+                      "kind": {
+                        "enum": [
+                          "static",
+                          "skills-api",
+                          "npm",
+                          "app"
+                        ]
+                      },
+                      "port": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "network": {
+                  "enum": [
+                    "none",
+                    "draw-loopback"
+                  ]
+                },
+                "env": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                "starter_sha256": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              },
+              "description": "Issue 786. The installed world of a tools-on run: its called skills, the hashes the plan pins, its network (none, or the draw's own loopback), the environment its tool session gets, its starter and its fixtures."
             }
           },
           "allOf": [
@@ -1381,6 +1461,32 @@
                   "runtime_image_digest",
                   "effective_environment_hash",
                   "contract_hash"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "mode": {
+                    "const": "repository-tools-on"
+                  }
+                },
+                "required": [
+                  "mode"
+                ]
+              },
+              "then": {
+                "required": [
+                  "starter_hash",
+                  "starter_manifest",
+                  "tools",
+                  "limits",
+                  "resources",
+                  "isolation",
+                  "runtime_image_digest",
+                  "effective_environment_hash",
+                  "contract_hash",
+                  "world"
                 ]
               }
             }
@@ -1743,87 +1849,153 @@
           }
         },
         "scoring": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "contract",
-            "freeze_hash",
-            "component_hashes",
-            "primary_case_ids",
-            "judge_only_case_ids",
-            "secondary_role",
-            "limitations"
-          ],
-          "properties": {
-            "contract": {
-              "const": "execution-primary-v1"
-            },
-            "freeze_hash": {
-              "type": "string",
-              "pattern": "^[0-9a-f]{64}$"
-            },
-            "component_hashes": {
+          "oneOf": [
+            {
               "type": "object",
               "additionalProperties": false,
               "required": [
-                "prompts",
-                "rubrics",
-                "hidden_tests",
-                "references",
-                "broken_versions"
+                "contract",
+                "freeze_hash",
+                "component_hashes",
+                "primary_case_ids",
+                "judge_only_case_ids",
+                "secondary_role",
+                "limitations"
               ],
               "properties": {
-                "prompts": {
+                "contract": {
+                  "const": "execution-primary-v1"
+                },
+                "freeze_hash": {
                   "type": "string",
                   "pattern": "^[0-9a-f]{64}$"
                 },
-                "rubrics": {
-                  "type": "string",
-                  "pattern": "^[0-9a-f]{64}$"
+                "component_hashes": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "prompts",
+                    "rubrics",
+                    "hidden_tests",
+                    "references",
+                    "broken_versions"
+                  ],
+                  "properties": {
+                    "prompts": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "rubrics": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "hidden_tests": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "references": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "broken_versions": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    }
+                  }
                 },
-                "hidden_tests": {
-                  "type": "string",
-                  "pattern": "^[0-9a-f]{64}$"
+                "primary_case_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true,
+                  "minItems": 19,
+                  "maxItems": 19
                 },
-                "references": {
-                  "type": "string",
-                  "pattern": "^[0-9a-f]{64}$"
+                "judge_only_case_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true,
+                  "minItems": 1,
+                  "maxItems": 1
                 },
-                "broken_versions": {
-                  "type": "string",
-                  "pattern": "^[0-9a-f]{64}$"
+                "secondary_role": {
+                  "const": "test-quality"
+                },
+                "limitations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
                 }
-              }
-            },
-            "primary_case_ids": {
-              "type": "array",
-              "items": {
-                "type": "string"
               },
-              "uniqueItems": true,
-              "minItems": 19,
-              "maxItems": 19
+              "description": "Issue 490. Explicit execution-primary contract. Existing receipts without this field keep judge-primary meanings."
             },
-            "judge_only_case_ids": {
-              "type": "array",
-              "items": {
-                "type": "string"
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "contract",
+                "draw_max",
+                "tasks",
+                "freeze_hash",
+                "secondary_role",
+                "limitations"
+              ],
+              "properties": {
+                "contract": {
+                  "const": "end-state-v1"
+                },
+                "draw_max": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "tasks": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "id",
+                      "threshold",
+                      "check_sha256"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "threshold": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "maximum": 1
+                      },
+                      "check_sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      }
+                    }
+                  }
+                },
+                "freeze_hash": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "secondary_role": {
+                  "const": "reply-judge"
+                },
+                "limitations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
               },
-              "uniqueItems": true,
-              "minItems": 1,
-              "maxItems": 1
-            },
-            "secondary_role": {
-              "const": "test-quality"
-            },
-            "limitations": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "description": "Issue 786. End-state-primary contract: each task's frozen check over the end state is the primary score; the judge grades the reply as the secondary score."
             }
-          },
-          "description": "Issue 490. Explicit execution-primary contract. Existing receipts without this field keep judge-primary meanings."
+          ]
         },
         "secondary_complete": {
           "type": "boolean"
@@ -2506,7 +2678,8 @@
                         "score_basis": {
                           "enum": [
                             "hidden-tests",
-                            "judge-only"
+                            "judge-only",
+                            "end-state"
                           ]
                         },
                         "primary": {
@@ -2754,6 +2927,34 @@
                               }
                             }
                           }
+                        },
+                        "end_state": {
+                          "type": "object",
+                          "required": [
+                            "status",
+                            "check_sha256"
+                          ],
+                          "properties": {
+                            "status": {
+                              "enum": [
+                                "measured",
+                                "unmeasured"
+                              ]
+                            },
+                            "score": {
+                              "type": [
+                                "number",
+                                "null"
+                              ],
+                              "minimum": 0,
+                              "maximum": 1
+                            },
+                            "check_sha256": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            }
+                          },
+                          "description": "Issue 786. The frozen check's reading of this draw's end state, with its hashes."
                         }
                       },
                       "allOf": [
@@ -2923,7 +3124,8 @@
               "score_basis": {
                 "enum": [
                   "hidden-tests",
-                  "judge-only"
+                  "judge-only",
+                  "end-state"
                 ]
               },
               "primary": {

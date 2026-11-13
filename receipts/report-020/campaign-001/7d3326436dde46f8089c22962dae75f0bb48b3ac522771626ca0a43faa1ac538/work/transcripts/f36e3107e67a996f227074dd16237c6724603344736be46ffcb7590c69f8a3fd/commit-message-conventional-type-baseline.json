@@ -1,0 +1,12 @@
+{
+  "id": "commit-message-conventional-type",
+  "mode": "baseline",
+  "generation": "```\nFix password-reset links expiring after ~1 hour\n\nReset links were meant to stay valid for 24 hours, but the expiry\nduration was computed in the wrong time unit, so they expired after\nabout an hour.\n\nConvert the configured 24-hour window to the unit the stored expiry\nexpects before saving it. Links issued before this change keep their\noriginal short expiry.\n```\n\nThe last sentence assumes the expiry is stored per link at creation time, as the bug description implies; drop it if expiry is computed at validation time instead.",
+  "judge_outputs": [
+    "{\"score\": 0.3, \"pass\": false, \"reason\": \"Subject 'Fix password-reset links...' lacks the required conventional 'fix:' type prefix, triggering the cap. Subject is specific and the body explains the wrong-unit cause and user impact.\"}",
+    "{\"score\": 0.3, \"pass\": false, \"reason\": \"Subject is specific and the body explains the wrong-unit cause and user impact, but the subject starts with 'Fix' rather than the conventional 'fix:' type prefix, so the 0.3 cap applies.\"}",
+    "{\"score\": 0.3, \"pass\": false, \"reason\": \"Subject lacks the required conventional type prefix (no 'fix:'), capping the score; the subject is specific and the body explains the wrong-unit cause and user impact.\"}",
+    "{\"score\": 0.3, \"pass\": false, \"reason\": \"Subject 'Fix password-reset links...' lacks the required conventional 'fix:' type prefix, triggering the cap; the subject is specific and the body explains the wrong-unit cause and user impact.\"}",
+    "{\"score\": 0.3, \"pass\": false, \"reason\": \"Subject lacks the required conventional `fix:` prefix (it reads 'Fix ...' with no colon), capping the score. Subject is specific and the body explains the wrong-unit cause and user impact.\"}"
+  ]
+}

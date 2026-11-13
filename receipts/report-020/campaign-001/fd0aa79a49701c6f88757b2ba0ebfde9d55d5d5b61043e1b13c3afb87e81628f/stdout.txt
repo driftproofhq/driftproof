@@ -1,0 +1,26 @@
+
+driftproof run — skill "documentation-and-adrs" v0.0.0
+  content_hash: b67a9f07ed105796…  suite: 1 cases (6cce54e7d9d0…)
+  surface: claude-cli   models: claude-fable-5-2   samples/case: 5   concurrency: 1
+  registry: claude-fable-5-2:registered   transcripts: retained-local
+  judge: claude-haiku-5-5   (--judge-model)
+  isolation: eval-user (driftproof-eval)
+  answer capture: text (Claude Code tools: Read, WebFetch and WebSearch only; the reply is the answer)
+  projected calls: 120/model × 1 model(s) = 120   per-model cap: 120
+  projected cost: ~$1.25 (rough upper bound; budget $8.00, hard-stop $10.00)
+  actual metered spend on claude-cli: $0.00 (subscription; the $ figure is the estimated-equivalent API cost, counted against the cap identically)
+
+── model: claude-fable-5-2 ──
+  test task comment-intent-not-implementation / with_skill: fail (0.50 ± 0.08)
+  test task comment-intent-not-implementation / baseline: fail (0.39 ± 0.05)
+  → transcripts (retained-local): transcripts/dca693a087ecbc14b16fb029e4f4556f280c49ac53cf7354188fc97326a75245/
+  → answers.json: every answer the run was returned, 7 draw(s)
+  → ../receipts/documentation-and-adrs-claude-fable-5-2-2026-11-10-dca693a087ec.json  (42 calls)
+  → answered by: model claude-fable-5-2 (attested by the surface; the isolated eval-user hop); verification_level TESTED
+  → answer capture: text (Claude Code tools: Read, WebFetch and WebSearch only; the reply is the answer)
+  → Fake tool calls: with the subject 0/4; without the subject 0/3.
+  → skill lift +0.107 ± n/a (1 case)  (with 0.500 ± n/a (1 case) vs base 0.393 ± n/a (1 case); band = sample stddev of the per-case means)
+
+  → skill token cost: +3463 input and -16 output tokens per call against no skill (measured, grading excluded)
+
+Done. 1 receipt(s) emitted to ../receipts/

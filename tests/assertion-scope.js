@@ -460,6 +460,8 @@ const BAND_SITE_KIND = {
   'lib/judge.js': 'emission — assembles a judge result from its own samples',
   // Issue 490, A-016-15: distinct primary and secondary result emission.
   'lib/execution-grading.js': 'emission: assembles execution results and secondary sample summaries; compares no bands',
+  // Issue 786, A-016-23: the end-state contract emits its primary and secondary results as above.
+  'lib/end-state-grading.js': 'emission: assembles end-state check results and secondary sample summaries; compares no bands',
   'scripts/prepare-report.js': 'emission — stub case results for report staging',
   'scripts/prepare-report-002.js': 'emission — stub case results for report staging',
   'scripts/prepare-report-003.js': 'emission — stub case results for report staging',

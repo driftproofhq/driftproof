@@ -1,0 +1,12 @@
+{
+  "id": "commit-message-conventional-type",
+  "mode": "with_skill",
+  "generation": "```\nfix: correct time unit for password-reset link expiry\n\nPassword-reset links were expiring after about 1 hour instead of the\nintended 24 hours. The expiry duration was computed in the wrong time\nunit, so the stored expiry was much shorter than the configured window.\n\nConvert the configured 24-hour window to the correct unit in\nsrc/auth/reset.ts before storing it. Links issued before this change\nkeep their shortened expiry.\n```",
+  "judge_outputs": [
+    "{\"score\": 0.84, \"pass\": true, \"reason\": \"Subject uses the fix: prefix with a specific description; body explains the user-facing impact (1 hour instead of 24) and the cause (wrong time unit), plus a note on pre-existing links. It does not name the specific unit mismatch, so it is not exemplary.\"}",
+    "{\"score\": 0.8, \"pass\": true, \"reason\": \"Subject uses the conventional `fix:` prefix with a specific description. Body explains the user-facing impact (links expiring after about 1 hour instead of 24) and the cause, but does not name the actual wrong unit.\"}",
+    "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the `fix:` type and is specific. The body explains the user-facing impact (links expiring at 1 hour instead of 24) and the cause (wrong time unit), and notes that existing links keep the shortened expiry. It stays somewhat generic about the exact unit mismatch.\"}",
+    "{\"score\": 0.8, \"pass\": true, \"reason\": \"Subject uses the `fix:` type and is specific; the body explains the user-facing symptom (1-hour expiry instead of 24) and the cause (wrong time unit), though it never names the actual unit.\"}",
+    "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the `fix:` prefix and is specific. The body explains the user-facing impact (links expiring after about 1 hour) and the cause (wrong time unit), and notes that existing links keep the shortened expiry. It does not name the specific unit, which keeps it short of exemplary.\"}"
+  ]
+}

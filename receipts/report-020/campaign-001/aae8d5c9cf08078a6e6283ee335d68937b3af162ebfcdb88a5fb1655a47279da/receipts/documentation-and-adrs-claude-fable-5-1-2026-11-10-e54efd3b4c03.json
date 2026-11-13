@@ -1,0 +1,679 @@
+{
+  "schema_version": "0.16",
+  "generation_sampled": true,
+  "skill": {
+    "name": "documentation-and-adrs",
+    "version": "0.0.0",
+    "content_hash": "b67a9f07ed1057963d3d8ab04bb070ee74d93174eee48b563aa235057005c158",
+    "unit": "skill",
+    "tokens": 2454
+  },
+  "suite": {
+    "format": "agentskills.io/evals",
+    "suite_hash": "6cce54e7d9d0fc923eda5499c75fcc68974b3d8714b2a726e2ad1d77e4b5acc0",
+    "case_count": 1,
+    "canary": "86e8fbf6-9c40-ec04-dacc-03e730017455"
+  },
+  "run": {
+    "model_id": "claude-fable-5-1",
+    "model_release_date": "2026-09-01",
+    "provider": "anthropic",
+    "surface": "claude-cli",
+    "delivery": "injected",
+    "runner_version": "0.28.0",
+    "date_utc": "2026-11-10T20:53:38.333Z",
+    "generated_at": "2026-11-10T20:46:04.588Z",
+    "registry": "registered",
+    "transcripts": "retained-local",
+    "judge": {
+      "samples": 5,
+      "temperature": null,
+      "sampling": "surface-controlled",
+      "surface": "claude-cli",
+      "model_id": "claude-haiku-5-5",
+      "prompt_template_hash": "82586d1e44f84df2b8ce5f18ac777866465cb5ad9686503c93d9776c93c344ed",
+      "harness": {
+        "name": "claude-code",
+        "version": "2.1.311"
+      },
+      "isolation": "eval-user",
+      "endpoint": {
+        "custom": false,
+        "sha256": null,
+        "resolved_by": "cli",
+        "routing": {
+          "ANTHROPIC_BEDROCK_BASE_URL": {
+            "set": false,
+            "sha256": null
+          },
+          "ANTHROPIC_VERTEX_BASE_URL": {
+            "set": false,
+            "sha256": null
+          },
+          "CLAUDE_CODE_USE_BEDROCK": {
+            "set": false,
+            "sha256": null
+          },
+          "CLAUDE_CODE_USE_VERTEX": {
+            "set": false,
+            "sha256": null
+          },
+          "HTTPS_PROXY": {
+            "set": false,
+            "sha256": null
+          }
+        }
+      },
+      "code_revision": "judge-code-50f88577ec54cea4",
+      "reported_models": [
+        "claude-haiku-5-5"
+      ],
+      "parse_retries": 0,
+      "parse_recoveries": 0
+    },
+    "answered_by": {
+      "kind": "model",
+      "attested": true,
+      "reported_model": "claude-fable-5-1",
+      "reported_models": [
+        "claude-fable-5-1",
+        "claude-haiku-5-5"
+      ],
+      "isolation": "eval-user"
+    },
+    "capture": {
+      "mode": "text",
+      "setting_sources": []
+    },
+    "harness": {
+      "name": "claude-code",
+      "version": "2.1.311"
+    },
+    "pricing_snapshot": {
+      "frozen_at": "2026-11-10T20:53:38.333Z",
+      "source": "config/models.json",
+      "currency": "USD",
+      "models": {
+        "claude-fable-5-1": {
+          "input_per_mtok": 10,
+          "output_per_mtok": 50,
+          "registered": true
+        },
+        "claude-haiku-5-5": {
+          "input_per_mtok": 0.1,
+          "output_per_mtok": 0.5,
+          "registered": true
+        }
+      },
+      "note": "Prices frozen at run time. Every derived cost in this receipt is computed from THIS snapshot, never from the live registry, so the receipt keeps its meaning when registry prices later change."
+    },
+    "arms": {
+      "with_skill": {
+        "counts": {
+          "generations_per_arm": 3
+        }
+      },
+      "baseline": {
+        "counts": {
+          "generations_per_arm": 7
+        }
+      }
+    },
+    "counts": {
+      "judge_samples_per_generation": 5
+    }
+  },
+  "results": {
+    "cases": [
+      {
+        "id": "comment-intent-not-implementation",
+        "mode": "with_skill",
+        "outcome": "pass",
+        "score": 0.752,
+        "mean": 0.752,
+        "stddev": 0.031048,
+        "samples": [
+          0.78,
+          0.78,
+          0.74,
+          0.72,
+          0.75
+        ],
+        "generation_hash": "8c73938c00942b7970072f6d7af8a815b604e74d39b5f802c29a51ce85f155ee",
+        "judge_sample_hashes": [
+          "39555a20ae071dc2bf6a0fa3bdb28040f8bba6d5b1351ee670a3b3e1106c681c",
+          "6405a4a54798f8c9332d16226c70b66a2b0e9d395bad059105a3a38d7c790dba",
+          "bdf30ddba037af0bc0e8e989e107d6d8f5a6cc6521d057375a866973ee76d52f",
+          "b02c2fabad0852f640758006e973a28235a5c01ebc6264609a090ff126765515",
+          "75e696dfe5e1b7a3fb0df23dd25d2fcc1bd83c3ef70c70c8136acf45e64fd24e"
+        ],
+        "threshold": 0.7,
+        "reason": "Removes all restating comments, the commented-out legacyRate line, and the bare TODO, and keeps only intent-level comments on the gold-tier rule. Deducted because the JSDoc invents facts (subtotal is 'display only', 'records the visit') and is heavier than the code needs.",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "b38f01e6671fc0b28a94de550fe70f879134a3168b35e5b1fb53a9a6773478b0"
+        },
+        "judge_usage": {
+          "input_tokens": 37375,
+          "output_tokens": 3133,
+          "cached_tokens": 33646,
+          "wall_ms": 24332
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 3,
+          "n_measured": 3,
+          "n_unmeasured": 0,
+          "stopping_reason": "min_reached",
+          "mean": 0.752,
+          "sd": 0.031048,
+          "judge_sd_mean": 0.040019,
+          "variance_ratio": 0.775831,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "c48aae63bdc079d8ab6805a9937dbbc74b47a2c44e48fcb9ca5d38a92163d244",
+              "status": "measured",
+              "samples": [
+                0.72,
+                0.6,
+                0.78,
+                0.78,
+                0.72
+              ],
+              "judge_sample_hashes": [
+                "d03c0bb4e87215a3b21b6973e05927356b25b7f58a7e36f44b83292fd7d28172",
+                "ab6d3f03f8f41304fd2abbee79bd681d7b5acff33bf9147bd640c7f3d5179ec1",
+                "84ab846920558d031d395e54710e1a88a2f321b325f97d3a68ea289f4edebac5",
+                "0553cc6551050151a5e090a70302d0d9de801501fa0918e3cb95f9b882c12078",
+                "cb53154403d7e95c2579fcb12036b1f94144a8d2a1ac6268e94c89c19675710e"
+              ],
+              "mean": 0.72,
+              "stddev": 0.073485,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-fable-5-1",
+              "usage": {
+                "input_tokens": 10454,
+                "output_tokens": 950,
+                "cached_tokens": 2528,
+                "wall_ms": 21760
+              },
+              "judge_usage": {
+                "input_tokens": 36740,
+                "output_tokens": 3805,
+                "cached_tokens": 33138,
+                "wall_ms": 28123
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "943f50e78de91a1f46348b54baf0624536d9dd14b8a5b3cb027f44c9c1ddf7b8",
+              "status": "measured",
+              "samples": [
+                0.78,
+                0.8,
+                0.78,
+                0.75,
+                0.8
+              ],
+              "judge_sample_hashes": [
+                "98003c2b316895d180aefcf3c9fdbc120d1e64db9383b56fafcfc815261aec43",
+                "47c5ec6321937f0173d92ee32e37b1208ce388612951bca0419fe170b35624a5",
+                "d1e65abe845191365a03a85cb3e1f77d299049401125fcc214e1286c90515b08",
+                "d94010a7f0fe1513512c8acd211f01f1285b86dcc51245325a5f7f7f6f0bb106",
+                "9acd240f1247f4223757f184206ef4ed33b5cbbce27bbb27eae726b684745378"
+              ],
+              "mean": 0.782,
+              "stddev": 0.020494,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-fable-5-1",
+              "usage": {
+                "input_tokens": 10454,
+                "output_tokens": 750,
+                "cached_tokens": 10109,
+                "wall_ms": 17847
+              },
+              "judge_usage": {
+                "input_tokens": 36385,
+                "output_tokens": 2982,
+                "cached_tokens": 32854,
+                "wall_ms": 24104
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "8c73938c00942b7970072f6d7af8a815b604e74d39b5f802c29a51ce85f155ee",
+              "status": "measured",
+              "samples": [
+                0.78,
+                0.78,
+                0.74,
+                0.72,
+                0.75
+              ],
+              "judge_sample_hashes": [
+                "39555a20ae071dc2bf6a0fa3bdb28040f8bba6d5b1351ee670a3b3e1106c681c",
+                "6405a4a54798f8c9332d16226c70b66a2b0e9d395bad059105a3a38d7c790dba",
+                "bdf30ddba037af0bc0e8e989e107d6d8f5a6cc6521d057375a866973ee76d52f",
+                "b02c2fabad0852f640758006e973a28235a5c01ebc6264609a090ff126765515",
+                "75e696dfe5e1b7a3fb0df23dd25d2fcc1bd83c3ef70c70c8136acf45e64fd24e"
+              ],
+              "mean": 0.754,
+              "stddev": 0.026077,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-fable-5-1",
+              "usage": {
+                "input_tokens": 10455,
+                "output_tokens": 1128,
+                "cached_tokens": 10109,
+                "wall_ms": 23430
+              },
+              "judge_usage": {
+                "input_tokens": 37375,
+                "output_tokens": 3133,
+                "cached_tokens": 33646,
+                "wall_ms": 24332
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "c95bd29f626c614c2de103ef38e2a47247aa286b082e19374f04c85139e0ce26",
+            "grading_hash": "dc21e1b7a5db24ff0313d2f433b6e873ca559621b30e56464ba2d1d19f59b015",
+            "index": 0,
+            "grading_kind": "rubric"
+          }
+        }
+      },
+      {
+        "id": "comment-intent-not-implementation",
+        "mode": "baseline",
+        "outcome": "borderline",
+        "score": 0.581143,
+        "mean": 0.581143,
+        "stddev": 0.137224,
+        "samples": [
+          0.6,
+          0.3,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "generation_hash": "6055815521f7e4dfde531b8d5fab3d2401cecfac9f4517ea9d732e6398f98df8",
+        "judge_sample_hashes": [
+          "eba183d5b3e33de0777802d26ba1d3034f9341e4fbe9fcbe2891368a648f370c",
+          "cca717ac2e1e8183af0daf219eca0f3f94c6672ae7d6f9e1a023c6e054f159c5",
+          "9f9e0d2a95a2160c761fb8c416ecad5c3c8181775735c02492c7d6431679a6e7",
+          "494c1510dbc6cf9ae3a05d650ca30f633f28fef289bafb1987267ddcd5584e25",
+          "40e95367ba1d58568184f0ce165b89b6bfd4057eb8c6a5cafa7b198496fbb2f1"
+        ],
+        "threshold": 0.7,
+        "reason": "Removes the three restating comments (a), the commented-out legacy line (b), and keeps an intent-focused comment on subtotals. The TODO is reworded rather than handled (c), and the 'Gold members get 10% off' comment narrates the 0.9 multiplication (d).",
+        "judge": {
+          "model_id": "claude-haiku-5-5",
+          "rubric_hash": "b38f01e6671fc0b28a94de550fe70f879134a3168b35e5b1fb53a9a6773478b0"
+        },
+        "judge_usage": {
+          "input_tokens": 36905,
+          "output_tokens": 4834,
+          "cached_tokens": 33274,
+          "wall_ms": 30966
+        },
+        "generation": {
+          "n_planned": 3,
+          "n_drawn": 7,
+          "n_measured": 7,
+          "n_unmeasured": 0,
+          "stopping_reason": "stabilised",
+          "mean": 0.581143,
+          "sd": 0.137224,
+          "judge_sd_mean": 0.07729,
+          "variance_ratio": 1.775443,
+          "variance_ratio_unavailable": null,
+          "n_truncated": 0,
+          "draws": [
+            {
+              "draw_index": 0,
+              "generation_hash": "52fdb30dd6e25a49e5303544438b488e8edc7b4a70e89d508733a07fd040d8ef",
+              "status": "measured",
+              "samples": [
+                0.72,
+                0.78,
+                0.6,
+                0.7,
+                0.62
+              ],
+              "judge_sample_hashes": [
+                "9053827318fb7b59de4a7156a3754b1cffd3b3b6a900637ceba17b2ddde5cb31",
+                "0b1d3c19e9112abc4cc0d261806c944397dfdd57177fd56dd1c90fc61ff7d513",
+                "91c06a6cbd16ef9ede7fa891c4e5a796db284ca7404ebac697ab4477aa225552",
+                "2c11e73177b5f4e3138863ad439bf87ebaa46e5bf52a9436655105c5b0ad577a",
+                "92bf2a883b0562cad044de1db474165fd080f89db3647e5e70075cefe176594e"
+              ],
+              "mean": 0.684,
+              "stddev": 0.074027,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-fable-5-1",
+              "usage": {
+                "input_tokens": 6993,
+                "output_tokens": 808,
+                "cached_tokens": 6111,
+                "wall_ms": 17659
+              },
+              "judge_usage": {
+                "input_tokens": 37608,
+                "output_tokens": 4292,
+                "cached_tokens": 33830,
+                "wall_ms": 29290
+              }
+            },
+            {
+              "draw_index": 1,
+              "generation_hash": "b64cb14a9b975e29c73f776ffa0faf050e45d7c59e7df3514a541503ec21a939",
+              "status": "measured",
+              "samples": [
+                0.8,
+                0.75,
+                0.82,
+                0.78,
+                0.8
+              ],
+              "judge_sample_hashes": [
+                "0d60ed3f3e5386801b92e9a22ececf3e59c067276ef1c641ebaaad199aa2f21b",
+                "de26d80eba2ef60af62753e1303d93603a726ee665bf5c27fbe605ccdec080db",
+                "daad6a1b9873d25d28fdfbebd1e06b61334d66bae03cad0551634cafaa56d098",
+                "6600595eece36058f63605d602d42950c5087eaeda4963a26cc123300839b0ca",
+                "2820c80cf609dc748c97ae904937357b05a96804616230e8f98503eadaa6e6fc"
+              ],
+              "mean": 0.79,
+              "stddev": 0.026458,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-fable-5-1",
+              "usage": {
+                "input_tokens": 6992,
+                "output_tokens": 773,
+                "cached_tokens": 6646,
+                "wall_ms": 21327
+              },
+              "judge_usage": {
+                "input_tokens": 37430,
+                "output_tokens": 3702,
+                "cached_tokens": 33690,
+                "wall_ms": 27253
+              }
+            },
+            {
+              "draw_index": 2,
+              "generation_hash": "cd41577e9f6def6fdf46b23ac66b933358a25bd9a85532dd345c55546f8edc81",
+              "status": "measured",
+              "samples": [
+                0.55,
+                0.6,
+                0.6,
+                0.6,
+                0.6
+              ],
+              "judge_sample_hashes": [
+                "de3a2549870e608d18a22e3c2b9f193e41793c716e8a7a56084823f56e1ef59e",
+                "f073a5f689cb72a01f6fe4326a73b948c7c474e7a36b360a1ca853ef5a1ed1b4",
+                "095430224431e3dcec36423117e370dc8c76b768b760762d61011811e096f1fd",
+                "16495dc8def7ce551b65ec843077b83f70e6603712e34ff6a18dbca059d31462",
+                "d2cc2714e0b063bd3b142e371c2bb94133eda3f97031d5a656307752219f0069"
+              ],
+              "mean": 0.59,
+              "stddev": 0.022361,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-fable-5-1",
+              "usage": {
+                "input_tokens": 6991,
+                "output_tokens": 789,
+                "cached_tokens": 6646,
+                "wall_ms": 16260
+              },
+              "judge_usage": {
+                "input_tokens": 37508,
+                "output_tokens": 4866,
+                "cached_tokens": 33754,
+                "wall_ms": 30616
+              }
+            },
+            {
+              "draw_index": 3,
+              "generation_hash": "458756ef068c4885b8aea25cccb558900f46d96a2d6ae1c4d6bb2e68a9b5b5b7",
+              "status": "measured",
+              "samples": [
+                0.6,
+                0.72,
+                0.75,
+                0.6,
+                0.6
+              ],
+              "judge_sample_hashes": [
+                "c720c7af9b8f0ca4ff54f3ef0ca1846d7f00b308b0ed93688a1c3567ef5dbedc",
+                "4f084bf1b221b3be388463e44d9bf35e7974f45fa41eca703efd94df7ef35961",
+                "f83bd1e290cd4a6d97592339bf285f9e6118850146c4a2b3c0976d0284624cab",
+                "53f9be464167805f7c3626bfcb3ac2b7eb1770c3b6e8b5b7ba17e2f0e2367eda",
+                "dc1d7eca43ea912e5b76dd012f06de7347d4bc3547b0463029fa9ee739577892"
+              ],
+              "mean": 0.654,
+              "stddev": 0.074699,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-fable-5-1",
+              "usage": {
+                "input_tokens": 6991,
+                "output_tokens": 655,
+                "cached_tokens": 6646,
+                "wall_ms": 14427
+              },
+              "judge_usage": {
+                "input_tokens": 36838,
+                "output_tokens": 3409,
+                "cached_tokens": 33218,
+                "wall_ms": 24810
+              }
+            },
+            {
+              "draw_index": 4,
+              "generation_hash": "bd7330f19f069ff847a1005bf09d8f46205883f826002cceee84dc3d9aec3bcc",
+              "status": "measured",
+              "samples": [
+                0.4,
+                0.6,
+                0.2,
+                0.55,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "70688083ca280f836cc38cd778a0c55541fa1fabcf13129428f0cdac4cfd3d4b",
+                "65049abf5773da8895b41c29c5771f57bdd1dd7cc91cbdc10ab2982b228fff62",
+                "f6fa146d10345a9cd85788189dc587a11f5d844d0ead3ce9e81dde6b04b2b0da",
+                "e93a10c94bb364d08455bdba3a3386b45089d4e55a15b272135afbb1f594ee69",
+                "c6642573910ad07db042e8df47e7b2b3e01071bfa43f951b05356d9ce11a75ae"
+              ],
+              "mean": 0.45,
+              "stddev": 0.158114,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-fable-5-1",
+              "usage": {
+                "input_tokens": 6992,
+                "output_tokens": 570,
+                "cached_tokens": 6646,
+                "wall_ms": 13176
+              },
+              "judge_usage": {
+                "input_tokens": 36417,
+                "output_tokens": 4084,
+                "cached_tokens": 32878,
+                "wall_ms": 27623
+              }
+            },
+            {
+              "draw_index": 5,
+              "generation_hash": "93b01306ed9289b7a2f353cb48cc1bcd6e810685316d45eb455cf065b6a04c93",
+              "status": "measured",
+              "samples": [
+                0.45,
+                0.5,
+                0.45,
+                0.4,
+                0.3
+              ],
+              "judge_sample_hashes": [
+                "b9f6464daa57c5a560c8757c5c3700015cf2ce5a869153b73346ae6151c57708",
+                "d7c66b76601083c24893a72e43b65040ecdf48e2cb61b27c6f16d8d7270fbdcd",
+                "f3b7fc697f131430d08dd052b95845ac66c9a2dde4f1c98b3462a0385fd5438e",
+                "538cfb8512d72d4f1ebed75090500cac46348fa200c6c762d52dafb55f723e35",
+                "0e389ddfcd331c0f3ea14a1bca2a3383f8bfff6ae006080fbfcd20d92d7d6f32"
+              ],
+              "mean": 0.42,
+              "stddev": 0.075829,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-fable-5-1",
+              "usage": {
+                "input_tokens": 6992,
+                "output_tokens": 667,
+                "cached_tokens": 6646,
+                "wall_ms": 15588
+              },
+              "judge_usage": {
+                "input_tokens": 36897,
+                "output_tokens": 4532,
+                "cached_tokens": 33266,
+                "wall_ms": 29352
+              }
+            },
+            {
+              "draw_index": 6,
+              "generation_hash": "6055815521f7e4dfde531b8d5fab3d2401cecfac9f4517ea9d732e6398f98df8",
+              "status": "measured",
+              "samples": [
+                0.6,
+                0.3,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "judge_sample_hashes": [
+                "eba183d5b3e33de0777802d26ba1d3034f9341e4fbe9fcbe2891368a648f370c",
+                "cca717ac2e1e8183af0daf219eca0f3f94c6672ae7d6f9e1a023c6e054f159c5",
+                "9f9e0d2a95a2160c761fb8c416ecad5c3c8181775735c02492c7d6431679a6e7",
+                "494c1510dbc6cf9ae3a05d650ca30f633f28fef289bafb1987267ddcd5584e25",
+                "40e95367ba1d58568184f0ce165b89b6bfd4057eb8c6a5cafa7b198496fbb2f1"
+              ],
+              "mean": 0.48,
+              "stddev": 0.109545,
+              "stop_reason": "end_turn",
+              "truncated": false,
+              "reported_model": "claude-fable-5-1",
+              "usage": {
+                "input_tokens": 6991,
+                "output_tokens": 669,
+                "cached_tokens": 6646,
+                "wall_ms": 15724
+              },
+              "judge_usage": {
+                "input_tokens": 36905,
+                "output_tokens": 4834,
+                "cached_tokens": 33274,
+                "wall_ms": 30966
+              }
+            }
+          ],
+          "suite_case": {
+            "prompt_hash": "c95bd29f626c614c2de103ef38e2a47247aa286b082e19374f04c85139e0ce26",
+            "grading_hash": "dc21e1b7a5db24ff0313d2f433b6e873ca559621b30e56464ba2d1d19f59b015",
+            "index": 0,
+            "grading_kind": "rubric"
+          }
+        }
+      }
+    ],
+    "aggregates": {
+      "with_skill": {
+        "case_count": 1,
+        "pass_count": 1,
+        "borderline_count": 0,
+        "mean_score": 0.752,
+        "stddev": null
+      },
+      "baseline": {
+        "case_count": 1,
+        "pass_count": 0,
+        "borderline_count": 1,
+        "mean_score": 0.581143,
+        "stddev": null
+      },
+      "band_rule": "per arm: the sample standard deviation (n-1) of the per-case means across the included cases; the comparison band is the quadrature sum of the two arms; null where an arm has fewer than two included cases"
+    },
+    "fake_tool_calls": {
+      "with_skill": {
+        "count": 0,
+        "draws": 3
+      },
+      "baseline": {
+        "count": 0,
+        "draws": 7
+      }
+    }
+  },
+  "comparison": {
+    "with_skill_score": 0.752,
+    "baseline_score": 0.581143,
+    "delta": 0.170857,
+    "delta_uncertainty": null,
+    "delta_uncertainty_unavailable": "single_case"
+  },
+  "verification_level": "TESTED",
+  "receipt_hash": "e54efd3b4c03c1868bbb00096884cd3e82c4d199181ec519af30df1dd3cb49ca",
+  "economics": {
+    "basis": "metered-equivalent",
+    "surface": "claude-cli",
+    "with_skill": {
+      "call_count": 3,
+      "mean_input_tokens": 10454.33,
+      "mean_output_tokens": 942.67,
+      "mean_cost_usd_per_call": 0.151677,
+      "median_wall_ms": 21760,
+      "wall_ms_p25": null,
+      "wall_ms_p75": null,
+      "wall_ms_iqr": null
+    },
+    "baseline": {
+      "call_count": 7,
+      "mean_input_tokens": 6991.71,
+      "mean_output_tokens": 704.43,
+      "mean_cost_usd_per_call": 0.105139,
+      "median_wall_ms": 15724,
+      "wall_ms_p25": 14427,
+      "wall_ms_p75": 17659,
+      "wall_ms_iqr": 3232
+    },
+    "skill_incremental_cost_usd_per_call": 0.046538,
+    "skill_incremental_cost_usd_per_1k_calls": 46.538,
+    "output_tokens_delta": 238.24,
+    "median_wall_ms_delta": 6036,
+    "judge_excluded": true,
+    "judge_overhead": {
+      "note": "Measurement overhead imposed by Driftproof, NOT a cost of running the skill. Excluded from every field above. Counted over every draw sent to the judge, each once: the usage its answered judge samples reported, including parse retries, at the frozen judge price. Transport retries and samples that reported no usage are not in it.",
+      "total_cost_usd": 0.056832,
+      "case_rows_measured": 2,
+      "judged_draws_counted": 10,
+      "judged_draws_missing_usage": 0
+    },
+    "notes": {
+      "absolute_cost": "Absolute per-call cost on a CLI surface includes a fixed harness preamble (observed ~25k input tokens on claude-cli, ~11k on codex) that we do not control. It is identical in the with-skill and baseline arms, so it cancels in the Δ figures — read the incremental columns, not the absolute ones.",
+      "cache_pricing": "Cached input tokens are costed at the list input rate (an over-estimate where caching is heavy); cached_tokens is recorded per call so a reader can recompute.",
+      "latency": "observed on subscription CLI surface, indicative"
+    }
+  }
+}

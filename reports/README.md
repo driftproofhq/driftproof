@@ -18,6 +18,7 @@ report is re-derived from the receipts under [`../receipts/`](../receipts/).
 | 008 | Release drift | claude-fable-5-1 | [Run record](report-008-run-record.json) | [reports/008](https://driftproofhq.com/reports/008/) |
 | 017 | Placebo comparison | claude-sonnet-5-5: skill vs no skill vs a same-length placebo, claude-haiku-5-5 judge | [Markdown copy](../docs/reports/017/index.md) | [reports/017](https://driftproofhq.com/reports/017/) |
 | 018 | Placebo comparison | claude-haiku-5-5: skill vs no skill vs a same-length placebo, claude-haiku-5-5 judge (the same model) | [Markdown copy](../docs/reports/018/index.md) | [reports/018](https://driftproofhq.com/reports/018/) |
+| 019 | Placebo comparison | claude-fable-5-2: skill vs no skill vs a same-length placebo, fourteen graded on the reply and six with tools on, claude-haiku-5-5 judge; Report 020 (Fable 5.2 against Fable 5.1 on three skills) as its own section | [Markdown copy](../docs/reports/019/index.md) | [reports/019](https://driftproofhq.com/reports/019/) |
 
 The report types share one band-based, floor-gated verdict rule and differ only
 in what moves underneath the skill — see

@@ -25,7 +25,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { receiptFiles, keyOf, cellOf } from './band-plot.mjs';
+import { receiptFiles, keyOf, cellOf, isSidecar } from './band-plot.mjs';
 
 const require = createRequire(import.meta.url);
 const { DEFAULT_JUDGE_SAMPLES, EFFECT_FLOOR } = require('../config.js');
@@ -198,13 +198,16 @@ const { verdictFromReceipt } = require('../lib/verdict.js');
 // taken from the SAME derivation the repo gate checks it against rather than
 // from a second one that could be right about a different number.
 const prep007 = require('./prepare-report-007.js');
-const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen'];
+const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen'];
 const exampleVerdict = verdictFromReceipt(EXAMPLE);
 
 const reportDirs = () => fs.readdirSync(path.join(DOCS, 'reports'), { withFileTypes: true })
   .filter((e) => e.isDirectory() && /^\d+$/.test(e.name))
   .map((e) => e.name).sort();
 
+// Issue 790 (spec 025 A-025-78): a report's card plot is its first file that is neither a retained-answers
+// sidecar nor a router-limited receipt, whose plot is Report 015 Amendment 1's notice and carries no state.
+const plotted = (files) => files.find((f) => { const j = JSON.parse(fs.readFileSync(f, 'utf8')); return !isSidecar(j) && !require('../lib/report-015-publication').routerLimit(j); });
 function receiptsFor(number) {
   return receiptFiles(ROOT).filter((f) => rel(f).startsWith(`receipts/report-${number}/`));
 }
@@ -283,7 +286,9 @@ export function latestFindingFields(bigHtml, from) {
 // because that builder requires this module and cannot be required back. The reader's counts must
 // equal the tally the report prints, or the build refuses. A report with no reader listed, or no
 // tally counted against the fake, writes no field and its card keeps the report's own words.
-const CAMPAIGN_READERS = { '018': ['../specs/655-report-018-plan/run-campaign.cjs', 'receipts/report-018'] };
+// Issue 790: Report 019's counts are read by scripts/report-019-reader.js over its three roots, which
+// requires no page builder.
+const CAMPAIGN_READERS = { '018': ['../specs/655-report-018-plan/run-campaign.cjs', 'receipts/report-018'], '019': ['./report-019-reader.js', 'receipts/report-019'] };
 export function latestFoundFields(number, html, { publication } = {}) {
   const tally = latestTally(html);
   const beat = tally && tally.items.find((it) => it.label === 'beat the fake');
@@ -517,7 +522,8 @@ export function reportRow(n, opts = {}) {
       receipt_paths: receiptPaths,
       // No receipts, no band plot: the field is absent rather than naming a plot
       // file that does not exist (spec 041).
-      ...(rfiles.length ? { plot: F(`plots/${keyOf(rfiles[0], ROOT)}.card.svg`, 'docs/plots') } : {}),
+      // Issue 790: the first file that is not a retained-answers sidecar, which has no plot of its own.
+      ...(plotted(rfiles) ? { plot: F(`plots/${keyOf(plotted(rfiles), ROOT)}.card.svg`, 'docs/plots') } : {}),
       essay_links: [{ title: F(essayTitle, essay), href: F('/writing/three-releases/', 'docs/writing') }],
     };
   }

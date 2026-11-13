@@ -112,7 +112,11 @@ export function receiptFiles(root = ROOT) {
 }
 
 // A retained-answers sidecar, read by content: it carries its receipt's hash and no results.
-export const isSidecar = (json) => !!json && typeof json === 'object' && !json.results && typeof json.receipt_hash === 'string';
+// Issue 790: spec 786's tools-on campaign keeps its retained answers as one array, an entry per draw,
+// each naming its draw's generation hash and holding the answer; that is a sidecar too.
+export const isSidecar = (json) => !!json && typeof json === 'object' && (Array.isArray(json)
+  ? json.length > 0 && json.every((e) => !!e && typeof e.generation_hash === 'string' && typeof e.answer === 'string')
+  : !json.results && typeof json.receipt_hash === 'string');
 
 export const keyOf = (file, root = ROOT) =>
   path.relative(path.join(root, 'receipts'), file).split(path.sep).join('--').replace(/\.json$/, '');

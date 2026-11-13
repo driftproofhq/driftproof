@@ -3,7 +3,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),P=require('../specs/408-skill-measurements/publication.cjs');
 const root=path.resolve(__dirname,'..'),pub=P.readPublished(root),esc=require('./site-chrome').esc;
-const words=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen'];
+const words=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen'];
 const n=fs.readdirSync(path.join(root,'docs/reports')).filter(x=>/^\d+$/.test(x)&&fs.existsSync(path.join(root,'docs/reports',x,'index.html'))).length;
 if(!words[n])throw Error('report count needs an explicit word');
 const tally=new Map();for(const item of require('../lib/report-015-publication').eligibleResults(pub.items)){const label=item.verified.reading.label.toLowerCase();tally.set(label,(tally.get(label)||0)+1);}
@@ -11,7 +11,7 @@ const paragraph='<p><a href="/reports/015/">Report #015</a> reads the Skills.sh 
 const begin='<!--driftproof:campaign-essay-->',end='<!--/driftproof:campaign-essay-->';
 const changes=new Map();
 const f='docs/writing/three-releases/index.html';let s=fs.readFileSync(path.join(root,f),'utf8');
-s=s.replace(/Thirteen reports in/,words[n][0].toUpperCase()+words[n].slice(1)+' reports in').replace(/What I take from (?:thirteen|fourteen|fifteen|sixteen|seventeen) reports/,'What I take from '+words[n]+' reports').replace('The newest report is a release too, again run three times.','Report #014 is a release too, again run three times.');
+s=s.replace(/Thirteen reports in/,words[n][0].toUpperCase()+words[n].slice(1)+' reports in').replace(/What I take from (?:thirteen|fourteen|fifteen|sixteen|seventeen|eighteen) reports/,'What I take from '+words[n]+' reports').replace('The newest report is a release too, again run three times.','Report #014 is a release too, again run three times.');
 const a016=require('./analyze-report-016').analyzeReport();
 const tally016=[['haiku','up','haiku increases'],['haiku','unclear','haiku unclear'],['sonnet','up','sonnet increases'],['sonnet','down','sonnet decreases'],['sonnet','unclear','sonnet unclear']].map(([model,d,label])=>a016.jobs.filter(j=>j.model.includes(model)&&j.metrics.out.file_minus_placebo.direction===d).length+' '+label).join(' · ');
 const paragraph016='<p><a href="/reports/016/">Report #016</a> compares popular rules files with no file and a same-length fake on small coding tasks. File-to-fake output comparisons read '+tally016+'. These are behaviour changes, not correctness verdicts. The code was usually already right. The report keeps task-level exceptions, measured-run limits and lost draws beside the results. It tests injected instructions, not native project loading.</p>';
@@ -37,11 +37,16 @@ const tally018=[['A','ABOVE_PLACEBO'],['B','BELOW_PLACEBO'],['D','NO_DIFFERENCE'
 // The README entry takes the same plain words as Report 017's (issues 652 and 661).
 const plain018=[['A','ABOVE_PLACEBO'],['B','BELOW_PLACEBO'],['D','NO_DIFFERENCE'],['I','INCONCLUSIVE'],['U','UNDERPOWERED'],['M','NOT_MEASURED']].map(([k,token])=>t018[k]+' '+PLAIN017[token]).join(' · ');
 const paragraph018='<p><a href="/reports/018/">Report #018</a> reads Report 015&#39;s twenty skills on Haiku 5.5 against no skill and against a same-length placebo text, judged by Haiku 5.5, the same model. Of the '+t018.N+' skills it counts, the placebo readings are '+tally018+'. Only ABOVE_PLACEBO beats the fake, by the case rule. Where the fake scored below no skill, beating it does not mean beating no skill. The four routers are left out of the count. A skill that did not beat the fake is not shown to do no better than it.</p>';
+// Issue 790: Report 019's counts over the twenty, read by scripts/report-019-reader.js (fourteen graded on
+// the reply, six with tools on), each count before its reading token, as the page's counts line prints them.
+const t019=require('./report-019-reader.js').publication().tally;
+const tally019=[['A','ABOVE_PLACEBO'],['B','BELOW_PLACEBO'],['D','NO_DIFFERENCE'],['I','INCONCLUSIVE'],['U','UNDERPOWERED'],['M','NOT_MEASURED']].map(([k,token])=>t019[k]+' '+token).join(' · ');
+const paragraph019='<p><a href="/reports/019/">Report #019</a> reads the same twenty skills on Fable 5.2 against no skill and against a same-length placebo text, judged by Haiku 5.5. Fourteen are graded on the reply; the six that hand work to other skills or tools ran with tools on and were graded on what Claude Code ended up doing. Of the '+t019.N+' skills it counts, the placebo readings are '+tally019+'. Only ABOVE_PLACEBO beats the fake, by the case rule. A skill that did not beat the fake is not shown to do no better than it.</p>';
 const kinds=new Set(JSON.parse(fs.readFileSync(path.join(root,'docs/data/reports.json'))).reports.map(r=>r.type.value)).size;
-s=s.replace(/\b(?:thirteen|fourteen|fifteen|sixteen|seventeen) reports in/gi, words[n][0].toUpperCase()+words[n].slice(1)+' reports in').replace(/\b(?:seven|eight|nine) report types\b/g,words[kinds]+' report types');
-const block=begin+paragraph+paragraph016+paragraph017+paragraph018+end;
+s=s.replace(/\b(?:thirteen|fourteen|fifteen|sixteen|seventeen|eighteen) reports in/gi, words[n][0].toUpperCase()+words[n].slice(1)+' reports in').replace(/\b(?:seven|eight|nine) report types\b/g,words[kinds]+' report types');
+const block=begin+paragraph+paragraph016+paragraph017+paragraph018+paragraph019+end;
 if(s.includes(begin))s=s.replace(new RegExp(begin+'[\\s\\S]*?'+end),block);else s=s.replace('  <p>The part I did not expect',block+'\n\n  <p>The part I did not expect');s=require('./build-head-tags').applyHeadTags(s,f.slice(5));changes.set(f,s);
-const readme='README.md',m=fs.readFileSync(path.join(root,readme),'utf8');let updated=m.replace(/\b(thirteen|fourteen|fifteen|sixteen|seventeen)( published)? reports/gi,(all,w,qual)=>((w[0]===w[0].toUpperCase())?words[n][0].toUpperCase()+words[n].slice(1):words[n])+(qual||'')+' reports');
+const readme='README.md',m=fs.readFileSync(path.join(root,readme),'utf8');let updated=m.replace(/\b(thirteen|fourteen|fifteen|sixteen|seventeen|eighteen)( published)? reports/gi,(all,w,qual)=>((w[0]===w[0].toUpperCase())?words[n][0].toUpperCase()+words[n].slice(1):words[n])+(qual||'')+' reports');
 updated=updated.replace(/\b(?:seven|eight|nine)( published)? report types\b/g,(_,qual)=>words[kinds]+(qual||'')+' report types');
 updated=updated.replace(/the newest being (?:instrument\s+comparison[\s\S]*?which instrument measures:|rules-file behaviour[\s\S]*?paired task intervals:|placebo comparison[\s\S]*?fixed corpus:)\n/, 'the newest being placebo comparison. Reports that measure with Driftproof retain its correctness reader. The rules-file behaviour report also compares output tokens and code with paired task intervals, and the placebo comparison report reads each skill against a same-length text from a fixed corpus:\n');
 const rb='<!--driftproof:campaign-readme-->',re='<!--/driftproof:campaign-readme-->';

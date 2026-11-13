@@ -220,7 +220,8 @@ ${links.map(([h, t, after]) => `<li><a href="${h}">${t}</a>${after ? ` <span cla
 // caveats keep every summary sentence except the repeated headline sentence.
 // The tile classes are the site's plain words for a reading, mapped by label; a reading these do not
 // name draws flat (is-flat), so a new plain word never draws as a stronger one.
-const TILE_CLASS = { 'beat the fake': 'is-up', 'below the fake': 'is-down', 'too few answers to tell': 'is-few', 'not measured': 'is-none' };
+// Issue 790: Report 019's plain line takes the verdict library's word for UNDERPOWERED, "not enough draws".
+const TILE_CLASS = { 'beat the fake': 'is-up', 'below the fake': 'is-down', 'too few answers to tell': 'is-few', 'not enough draws': 'is-few', 'not measured': 'is-none' };
 const tileClassOf = (label) => TILE_CLASS[label] || 'is-flat';
 function findingTiles(items, total) {
   const tiles = items.flatMap((it) => Array(it.count).fill(tileClassOf(it.label)));

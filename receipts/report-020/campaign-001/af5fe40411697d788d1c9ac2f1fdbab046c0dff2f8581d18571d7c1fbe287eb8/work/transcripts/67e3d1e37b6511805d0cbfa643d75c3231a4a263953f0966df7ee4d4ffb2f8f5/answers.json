@@ -1,0 +1,115 @@
+{
+  "format": "driftproof-answers/2",
+  "receipt_hash": "67e3d1e37b6511805d0cbfa643d75c3231a4a263953f0966df7ee4d4ffb2f8f5",
+  "model_id": "claude-fable-5-1",
+  "answers": {
+    "40b7ab0893da876addbce192cee24573ce6c8473744073ba2cd08a4292ac723b": "Here is the commit message, following the `<type>: <subject>` convention with a body that explains the why.\n\n```\nfix: convert password-reset expiry to the correct unit so links last 24h\n\nReset links were expiring after roughly 1 hour instead of the configured\n24 hours. The expiry window was configured in hours but stored as if it\nwere already in the unit the token store expects, so the stored value was\noff by the conversion factor and the token aged out far too early.\n\nConvert the configured 24-hour window to the correct unit before storing\nit. No change to the configured value or to how the token store reads it,\nso existing stored tokens are unaffected.\n```\n\nThe subject names the user-visible symptom and the fix in one line. The body states what users saw, why it happened, and why the fix is safe to deploy without touching other code.",
+    "923a0bb4c4c10156c4ae0cb67a128e9b3843c31570cd5a18195539a21751c5f1": "Here is the commit message I would use.\n\n```\nfix: make password-reset links expire after 24 hours, not 1 hour\n\nThe reset-token expiry was configured as a 24-hour window but stored\nin the wrong time unit, so tokens were treated as expired after roughly\none hour. Users who opened the email more than an hour after requesting\na reset got an \"expired link\" error and had to start over.\n\nConvert the configured duration to the unit the store expects before\npersisting it, so the stored expiry matches the intended 24 hours.\n```\n\nThe subject names the user-visible symptom rather than the code change, since that is what someone scanning history or a changelog needs. The body explains why the bug happened and what the fix does without restating the diff, which is a one-liner in src/auth/reset.ts and speaks for itself.",
+    "5d27af7c0b63a08874bff5cd226f7b4853dde6e9827a50ca35fac6ab448b672f": "```\nfix: make password-reset links expire after 24 hours, not 1 hour\n\nThe reset window is configured as 24 hours, but the expiry was being\nstored in a different unit than the one the expiry check reads. The\nresult was a token that was treated as expired after roughly 1 hour,\nso users who did not act on the email promptly got a dead link.\n\nConvert the configured 24-hour window to the unit the storage layer\nexpects before saving it. Tokens already issued before this change\nwill still expire on the old schedule; only new tokens are affected.\n```",
+    "c3cd624697c1e2f3b4838bb757ef43a8e01ca68a20758a2a1b514c67aadeaf33": "Here's the commit message I'd use.\n\n```\nfix(auth): make password-reset links expire after 24h, not 1h\n\nThe reset-token expiry was computed from the configured 24-hour window\nwithout converting to the unit the token store expects. The stored value\nended up roughly 24x too small, so links expired after about an hour.\n\nConvert the configured window to the correct unit before storing it in\nsrc/auth/reset.ts. No config change is needed; the 24-hour setting was\nalready correct and is now honored.\n\nUsers who received a reset link more than an hour before this deploy\nwill still need to request a new one.\n```",
+    "cf7da69e6be45c6faa5feb842b998c79d251c526db7e91d642433b6dd3668154": "Here is the commit message I would use.\n\n```\nfix(auth): make password-reset links expire after 24h, not ~1h\n\nPassword-reset tokens were expiring after roughly one hour instead of\nthe configured 24 hours. The expiry window is configured in hours, but\nsrc/auth/reset.ts stored it as if it were already in the unit the token\nstore expects, so the stored expiry was off by a constant factor and\ntokens were treated as expired far too early.\n\nConvert the configured 24-hour window to the expected unit before\nstoring it on the token. No change to the configured value or to the\ntoken format; existing unexpired tokens are unaffected.\n\nUsers who requested a reset and opened the link more than about an hour\nlater would have seen an \"expired link\" error and had to request a new\none.\n```\n\nThe subject names the user-visible symptom and the fix in under 72 characters. The body explains the cause, what changed, and the impact, so someone reading `git log` or `git blame` later can understand the change without opening the diff. If your repo tracks issues, I would add a `Fixes #<issue>` trailer on its own line at the end.",
+    "e30289dceea06023c13be5298a8f4b08353efd8a298f2ed893295177f16d5aa2": "Here is the commit message I'd use.\n\n```\nfix(auth): make password-reset links expire after 24h, not 1h\n\nThe reset-token expiry was computed in the wrong time unit. The config\nspecifies a 24-hour window, but the value was stored as if it were\nalready in the unit the token store expects, so the effective lifetime\ncame out roughly 24x too short and links died after about an hour.\n\nConvert the configured 24-hour window to the correct unit in\nsrc/auth/reset.ts before storing it on the token. No change to the\nconfigured value itself.\n\nUsers who requested a reset and opened the link more than an hour later\nwere told it had expired and had to request a new one.\n```\n\nThe subject names the user-visible behavior rather than the mechanism, since that is what someone scanning history is looking for. The body explains the cause, the exact scope of the change, and who was affected, so a reader can judge whether a related report is the same bug without opening the diff."
+  },
+  "draws": [
+    {
+      "id": "commit-message-conventional-type",
+      "mode": "with_skill",
+      "draw_index": 0,
+      "generation_hash": "40b7ab0893da876addbce192cee24573ce6c8473744073ba2cd08a4292ac723b",
+      "answer_sha256": "40b7ab0893da876addbce192cee24573ce6c8473744073ba2cd08a4292ac723b",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.84, \"pass\": true, \"reason\": \"Subject uses the `fix:` type and is specific about the symptom and change. The body explains the user-facing impact (links expiring after about 1 hour) and the cause (hours stored as the wrong unit), not just the diff. Slightly wordy and a little vague on the conversion factor, so not exemplary.\"}",
+        "{\"score\": 0.84, \"pass\": true, \"reason\": \"Subject uses the conventional `fix:` prefix and is specific. The body explains the user-facing symptom (links expiring after ~1h instead of 24h) and the cause (wrong unit conversion), not just the diff. Minor deduction for the vague 'conversion factor' wording.\"}",
+        "{\"score\": 0.8, \"pass\": true, \"reason\": \"Uses the `fix:` type, gives a specific subject, and the body explains the user-facing symptom and the wrong-unit cause, not just the diff. It stays vague on the actual units, so it is not clearly exemplary.\"}",
+        "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the `fix:` type and is specific; the body states the user-facing symptom (~1h expiry) and the unit-mismatch cause. Minor deduction for the unverified claim that existing tokens are unaffected.\"}",
+        "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the conventional `fix:` prefix and is specific. The body explains the user-facing symptom (links expiring after about 1 hour) and the cause (wrong unit conversion), not just the diff. Minor deduction for extra prose outside the commit message.\"}"
+      ]
+    },
+    {
+      "id": "commit-message-conventional-type",
+      "mode": "with_skill",
+      "draw_index": 1,
+      "generation_hash": "923a0bb4c4c10156c4ae0cb67a128e9b3843c31570cd5a18195539a21751c5f1",
+      "answer_sha256": "923a0bb4c4c10156c4ae0cb67a128e9b3843c31570cd5a18195539a21751c5f1",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the `fix:` type and names the specific user-facing change. The body explains the cause (wrong time unit) and the consequence (early expiry, 'expired link' errors) rather than restating the diff, though it doesn't name the unit.\"}",
+        "{\"score\": 0.88, \"pass\": true, \"reason\": \"Subject uses the conventional `fix:` prefix with a specific, user-facing description. The body explains the cause (wrong time unit), the consequence (expired-link errors after about an hour), and the intent, not just the diff. Slightly less than exemplary because the fix description stays vague about the unit.\"}",
+        "{\"score\": 0.84, \"pass\": true, \"reason\": \"Uses the `fix:` type, has a specific subject naming the user-visible symptom, and the body explains the cause (wrong time unit) and user impact. It does not name the specific unit mismatch, so it falls short of exemplary.\"}",
+        "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the `fix:` type and is specific. The body explains the cause (wrong time unit) and the user-facing impact (early expiry errors), not just the diff, and is concise.\"}",
+        "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the `fix:` type and is specific; the body explains the cause (wrong time unit) and the user-facing impact (early expiry, 'expired link' errors) rather than restating the diff. Exemplary, though the body could name the unit mismatch more precisely.\"}"
+      ]
+    },
+    {
+      "id": "commit-message-conventional-type",
+      "mode": "with_skill",
+      "draw_index": 2,
+      "generation_hash": "5d27af7c0b63a08874bff5cd226f7b4853dde6e9827a50ca35fac6ab448b672f",
+      "answer_sha256": "5d27af7c0b63a08874bff5cd226f7b4853dde6e9827a50ca35fac6ab448b672f",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.82, \"pass\": true, \"reason\": \"Subject uses the `fix:` type and is specific; the body explains the cause (wrong unit) and the user-facing impact (early dead links), and notes that existing tokens are unaffected. The cause is stated vaguely as 'a different unit' without naming the units.\"}",
+        "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the `fix:` type and is specific; body explains the cause (unit mismatch) and user impact (dead links after about 1 hour). Minor deduction: it never names the actual unit.\"}",
+        "{\"score\": 0.86, \"pass\": true, \"reason\": \"Subject uses the conventional `fix:` prefix and is specific. The body explains the cause (wrong time unit), the user-facing impact (early-expiring links), and the rollout effect on existing tokens. It does not name the exact unit, which slightly limits actionability.\"}",
+        "{\"score\": 0.84, \"pass\": true, \"reason\": \"Subject starts with `fix:` and is specific; body explains the cause (wrong unit), the user-facing impact (dead links after about an hour), and notes that old tokens are unaffected. It stays vague on the exact unit and function involved.\"}",
+        "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the `fix:` prefix and is specific; the body explains the cause (unit mismatch) and user impact (early dead links), though it doesn't name the actual units.\"}"
+      ]
+    },
+    {
+      "id": "commit-message-conventional-type",
+      "mode": "baseline",
+      "draw_index": 0,
+      "generation_hash": "c3cd624697c1e2f3b4838bb757ef43a8e01ca68a20758a2a1b514c67aadeaf33",
+      "answer_sha256": "c3cd624697c1e2f3b4838bb757ef43a8e01ca68a20758a2a1b514c67aadeaf33",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.82, \"pass\": true, \"reason\": \"Subject uses the conventional fix(auth): type and is specific; the body explains the cause (wrong unit, ~24x too small) and user impact (links expiring after an hour), though it doesn't name the actual unit.\"}",
+        "{\"score\": 0.82, \"pass\": true, \"reason\": \"Uses the conventional fix type with a specific subject, and the body explains the cause (wrong unit) and user-facing impact (links expiring after about an hour), not just the diff. The scope in 'fix(auth):' is a minor deviation from a bare 'fix:'.\"}",
+        "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the conventional `fix(auth):` prefix with a specific description, and the body explains the cause (wrong unit) and user-facing impact (links expiring too early), not just the diff. It falls short of exemplary because it does not name the actual unit mismatch.\"}",
+        "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the conventional `fix(auth):` prefix with a specific description. The body explains the cause (wrong unit conversion) and the user-facing impact (links expiring after about an hour), going beyond restating the diff.\"}",
+        "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the conventional 'fix(auth):' prefix with a specific description. The body explains the cause (wrong time unit, ~24x too small) and the user-facing impact (links expiring after about an hour), though it doesn't name the specific unit.\"}"
+      ]
+    },
+    {
+      "id": "commit-message-conventional-type",
+      "mode": "baseline",
+      "draw_index": 1,
+      "generation_hash": "cf7da69e6be45c6faa5feb842b998c79d251c526db7e91d642433b6dd3668154",
+      "answer_sha256": "cf7da69e6be45c6faa5feb842b998c79d251c526db7e91d642433b6dd3668154",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.84, \"pass\": true, \"reason\": \"Subject uses the conventional 'fix(auth):' prefix with a specific description; the body explains the wrong-unit cause, early expiry, and user impact. It misses an exact unit name ('constant factor') and adds some unverified assumptions, so it is not fully exemplary.\"}",
+        "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the conventional `fix(auth):` prefix with a specific description. The body explains the wrong-unit cause and the user-facing impact (links expiring after about an hour), not just the diff. It loses a little for not naming the specific unit mismatch.\"}",
+        "{\"score\": 0.84, \"pass\": true, \"reason\": \"Subject uses the conventional fix(auth): prefix and is specific; body explains the wrong-unit cause and the user-facing expired-link impact. It stays vague on which unit was wrong, so it is not fully exemplary.\"}",
+        "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the conventional `fix(auth):` prefix with a specific, under-72-character description. The body explains the wrong-unit cause, the early expiry, and user impact, so it goes beyond restating the diff. Minor deduction for vague 'constant factor' phrasing.\"}",
+        "{\"score\": 0.82, \"pass\": true, \"reason\": \"Subject uses a conventional `fix(auth):` prefix, is specific, and the body explains the wrong-unit cause and the user-facing impact. Minor deductions: scoped form rather than literal `fix:`, and unverified claims about token format.\"}"
+      ]
+    },
+    {
+      "id": "commit-message-conventional-type",
+      "mode": "baseline",
+      "draw_index": 2,
+      "generation_hash": "e30289dceea06023c13be5298a8f4b08353efd8a298f2ed893295177f16d5aa2",
+      "answer_sha256": "e30289dceea06023c13be5298a8f4b08353efd8a298f2ed893295177f16d5aa2",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.86, \"pass\": true, \"reason\": \"Subject uses the conventional `fix(auth):` prefix with a specific, user-visible description. The body explains the wrong-unit cause, the roughly 24x shortfall, and the user impact, so it goes beyond restating the diff. It is not fully exemplary because it does not name the specific units involved.\"}",
+        "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the conventional `fix(auth):` prefix and is specific. The body explains the wrong-unit cause, the user-facing consequence (early expiry), and the scope of the change, going beyond restating the diff.\"}",
+        "{\"score\": 0.86, \"pass\": true, \"reason\": \"Subject uses the conventional `fix:` prefix with a specific user-facing description. The body explains the wrong-unit cause, the 24x shortfall, and the user impact, so it is more than a diff restatement. Slightly exemplary.\"}",
+        "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the conventional `fix(auth):` prefix with a specific description. The body explains the wrong-unit cause, the roughly 24x shortfall, and the user-facing impact, going beyond the diff. Minor deduction for a slightly long subject.\"}",
+        "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the conventional `fix(auth):` prefix with a specific description; the body explains the wrong-unit cause and user impact (links dying after about an hour), not just the diff. Slightly exemplary, though the 24x claim and the affected-users sentence are inferred.\"}"
+      ]
+    }
+  ],
+  "suite": {
+    "cases": [
+      {
+        "id": "commit-message-conventional-type",
+        "prompt": "You just fixed a bug in a web app. Password-reset links were expiring after about 1 hour instead of the intended 24 hours, because the expiry duration was computed in the wrong time unit. The fix is a one-line change in src/auth/reset.ts that converts the configured 24-hour window to the correct unit before storing it. Write the single git commit message you would use for this change: give the subject line and the body exactly as you would commit them.",
+        "rubric": "Grade ONLY against the claim that a good commit message uses a conventional type prefix and explains the WHY, not just the what. Checkable criteria: (1) The subject line begins with the conventional type `fix:` (a bug fix). (2) The subject is a short, specific description of the change (not vague like 'update reset.ts'). (3) There is a body that explains intent/impact — e.g. that reset links were expiring too early because the duration used the wrong unit — rather than merely restating the one-line diff. SCORING ANCHOR (apply strictly): a fully correct, idiomatic response scores 0.80. Award 0.81-0.90 only if it is ALSO exemplary — the body concisely conveys the user-facing consequence and the cause in a way a future maintainer could act on. Award 0.91-1.00 only if flawless AND exceptional in every respect (rare). CAP: if the subject line does not use a conventional type prefix, cap at 0.3. CAP: if there is no body, or the body only restates what the diff literally does without explaining why, cap at 0.4. Subtract ~0.2 for each distinct error: wrong type chosen (e.g. `feat:` for a bug fix), a vague/uninformative subject, or a body that adds no intent beyond the subject.",
+        "pass_threshold": 0.7
+      }
+    ]
+  }
+}

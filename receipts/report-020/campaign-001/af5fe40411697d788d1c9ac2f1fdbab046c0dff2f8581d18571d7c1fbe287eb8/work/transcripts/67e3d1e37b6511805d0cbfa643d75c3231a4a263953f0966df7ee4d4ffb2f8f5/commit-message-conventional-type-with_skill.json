@@ -1,0 +1,12 @@
+{
+  "id": "commit-message-conventional-type",
+  "mode": "with_skill",
+  "generation": "```\nfix: make password-reset links expire after 24 hours, not 1 hour\n\nThe reset window is configured as 24 hours, but the expiry was being\nstored in a different unit than the one the expiry check reads. The\nresult was a token that was treated as expired after roughly 1 hour,\nso users who did not act on the email promptly got a dead link.\n\nConvert the configured 24-hour window to the unit the storage layer\nexpects before saving it. Tokens already issued before this change\nwill still expire on the old schedule; only new tokens are affected.\n```",
+  "judge_outputs": [
+    "{\"score\": 0.82, \"pass\": true, \"reason\": \"Subject uses the `fix:` type and is specific; the body explains the cause (wrong unit) and the user-facing impact (early dead links), and notes that existing tokens are unaffected. The cause is stated vaguely as 'a different unit' without naming the units.\"}",
+    "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the `fix:` type and is specific; body explains the cause (unit mismatch) and user impact (dead links after about 1 hour). Minor deduction: it never names the actual unit.\"}",
+    "{\"score\": 0.86, \"pass\": true, \"reason\": \"Subject uses the conventional `fix:` prefix and is specific. The body explains the cause (wrong time unit), the user-facing impact (early-expiring links), and the rollout effect on existing tokens. It does not name the exact unit, which slightly limits actionability.\"}",
+    "{\"score\": 0.84, \"pass\": true, \"reason\": \"Subject starts with `fix:` and is specific; body explains the cause (wrong unit), the user-facing impact (dead links after about an hour), and notes that old tokens are unaffected. It stays vague on the exact unit and function involved.\"}",
+    "{\"score\": 0.85, \"pass\": true, \"reason\": \"Subject uses the `fix:` prefix and is specific; the body explains the cause (unit mismatch) and user impact (early dead links), though it doesn't name the actual units.\"}"
+  ]
+}

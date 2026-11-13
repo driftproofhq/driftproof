@@ -1,0 +1,927 @@
+{
+  "plan_version": 1,
+  "report": "020",
+  "title": "The release boundary on Fable 5.2: code-review-and-quality, git-workflow-and-versioning and documentation-and-adrs",
+  "runner_version": "0.28.0",
+  "protocol_state": "frozen",
+  "spend_authorized": false,
+  "inputs": {
+    "bundle": "specs/000-governance/external-runs/three-skill-comparison",
+    "sha256sums": "56339468a1ad8d9a067ee932699ca29d175e478b840bd5522253ca7c87511bb2",
+    "report_011_receipts": [
+      "receipts/report-011/code-review-and-quality-claude-opus-5-5-2026-09-23.json",
+      "receipts/report-011/code-review-and-quality-claude-opus-5-2026-09-23.json",
+      "receipts/report-011/git-workflow-and-versioning-claude-opus-5-5-2026-09-23.json",
+      "receipts/report-011/git-workflow-and-versioning-claude-opus-5-2026-09-23.json",
+      "receipts/report-011/documentation-and-adrs-claude-opus-5-5-2026-09-23.json",
+      "receipts/report-011/documentation-and-adrs-claude-opus-5-2026-09-23.json"
+    ],
+    "skills": {
+      "code-review-and-quality": {
+        "skill_md_sha256": "8f3cabca581bbf7cb5f0add3f7454e7a4523f9d4353a6a4a217e6fa515309612",
+        "evals_sha256": "183008254d22765e44e05673b8e43db713481190a6a0cc82483fb9ed3a21a52f",
+        "content_hash": "13d360d7f786de371886e404b1eaa0cd37ecabab90e5c7126d62d42b73a872ea",
+        "suite_hash": "5d729f8852949735a553218a63ade5e0b5634b17579117290866bf074b9c6b40",
+        "case_ids": [
+          "severity-labeled-findings"
+        ]
+      },
+      "git-workflow-and-versioning": {
+        "skill_md_sha256": "b7465d187935c52546d39fdc7bd6ac36d94eda25a9500ef8c18b767d2eb116ea",
+        "evals_sha256": "6d778d145c2eb2b967a7e61809595275a4c60a29be9250260512acc2bf9cdb13",
+        "content_hash": "91c8c72654ee6ef163e49df26d1810cb7a6a91a4d8dee5b9f1bc03fd1fb8ec3a",
+        "suite_hash": "4e74150753d06b166d642365405edf382dc1072dc529cfdc1ef552d9b00c7880",
+        "case_ids": [
+          "commit-message-conventional-type"
+        ]
+      },
+      "documentation-and-adrs": {
+        "skill_md_sha256": "87ae44a0c7bb3eefc2131a9d11caabcc14e4d8dcb27d66a3a675551ee2ce1671",
+        "evals_sha256": "3b7ea9b54a7845eeb0da5791c4691b4f95539ca4482676d1445e223f3ad6687b",
+        "content_hash": "b67a9f07ed1057963d3d8ab04bb070ee74d93174eee48b563aa235057005c158",
+        "suite_hash": "6cce54e7d9d0fc923eda5499c75fcc68974b3d8714b2a726e2ad1d77e4b5acc0",
+        "case_ids": [
+          "comment-intent-not-implementation"
+        ]
+      }
+    }
+  },
+  "pricing_sha256": "cb973e47a621c98dd851230c537fa92b38ea93d821ba85d7997caf1b39a12029",
+  "registry_sha256": "59a82e878448a76d2008a5b286507d6d4f3552617b397411c89bba93e221ca78",
+  "price_estimate": {
+    "model": "claude-fable-5-2",
+    "input": 10,
+    "output": 50,
+    "price_estimate": true,
+    "basis": "lib/models.js DEFAULT_PRICE, the most expensive known tier; no published price was read"
+  },
+  "models": [
+    "claude-fable-5-2",
+    "claude-fable-5-1"
+  ],
+  "judge": "claude-haiku-5-5",
+  "samples": 5,
+  "cases": 1,
+  "draws": {
+    "min": 3,
+    "max": 10
+  },
+  "capture": "text",
+  "arms": 2,
+  "arm_names": [
+    "with_skill",
+    "baseline"
+  ],
+  "judge_relationship": {
+    "claude-fable-5-2": null,
+    "claude-fable-5-1": null
+  },
+  "catalog": {
+    "claude-fable-5-2": {
+      "path": "specs/783-fable-5-2-scope/evidence/model-catalog-fable-5-2.json",
+      "sha256": "27f70e5997547bb103a18224f1e5ff5df23dcc8c068a0a6ce44f60530e89843b",
+      "model": "claude-fable-5-2",
+      "name": "Fable 5.2",
+      "min_claude_code_version": "2.1.290",
+      "default_effort": "medium"
+    },
+    "claude-fable-5-1": {
+      "path": "specs/783-fable-5-2-scope/evidence/model-catalog-fable-5-2.json",
+      "sha256": "27f70e5997547bb103a18224f1e5ff5df23dcc8c068a0a6ce44f60530e89843b",
+      "model": "claude-fable-5-1",
+      "name": "Fable 5.1",
+      "min_claude_code_version": "2.1.251",
+      "default_effort": "high"
+    }
+  },
+  "claude_code_version": "2.1.311",
+  "surface": "claude-cli",
+  "isolation": "eval-user",
+  "effort": {
+    "set": false,
+    "catalog_default": {
+      "claude-fable-5-2": "medium",
+      "claude-fable-5-1": "high"
+    },
+    "source": "specs/783-fable-5-2-scope/evidence/model-catalog-fable-5-2.json"
+  },
+  "report_011": {
+    "receipts": "receipts/report-011",
+    "judge": "claude-opus-5",
+    "judge_samples": 3,
+    "runner_version": "0.10.1",
+    "statement": "Report 020's judge differs from Report 011's, so Report 020's figures are not set beside Report 011's as if comparable."
+  },
+  "comparison_side": {
+    "model": "claude-fable-5-1",
+    "existing": [
+      {
+        "receipt": "receipts/report-008/code-review-and-quality-claude-fable-5-1-2026-09-01.json",
+        "receipt_hash": "1e6a697783d54e14b98d06a1b682f6801919ebbb62c09120290db9098259183c",
+        "differs": [
+          "suite.suite_hash",
+          "run.runner_version",
+          "run.judge.model_id",
+          "run.harness.version",
+          "run.capture.mode"
+        ]
+      }
+    ],
+    "decision": "re-run"
+  },
+  "model_table": [
+    {
+      "skill": "code-review-and-quality",
+      "first": "b6bbc3a6a2336de8b58654b92bb9fbfc210b4f5701f082f7ec6287d352f06cc4",
+      "second": "330ae95e80d0b092b116e062686848a53dc968d1a4a1aa33f253290e28766115"
+    },
+    {
+      "skill": "git-workflow-and-versioning",
+      "first": "af5fe40411697d788d1c9ac2f1fdbab046c0dff2f8581d18571d7c1fbe287eb8",
+      "second": "7d3326436dde46f8089c22962dae75f0bb48b3ac522771626ca0a43faa1ac538"
+    },
+    {
+      "skill": "documentation-and-adrs",
+      "first": "aae8d5c9cf08078a6e6283ee335d68937b3af162ebfcdb88a5fb1655a47279da",
+      "second": "fd0aa79a49701c6f88757b2ba0ebfde9d55d5d5b61043e1b13c3afb87e81628f"
+    }
+  ],
+  "harness_table": {
+    "planned": false,
+    "reason": "Controller, 10 Nov 2026: not planned. It would need Report 011's judge, and the issue asks for the Fable boundary."
+  },
+  "cap_usd": 45,
+  "budget_description": "USD 45 admission budget; actual usage may overrun",
+  "max_usd_basis": "the larger of Report 011's two receipts for the skill repriced at the sampling maximum, times 1.5",
+  "issue_cap": {
+    "budget_usd": 800,
+    "spent_usd": 0,
+    "remaining_usd": 800,
+    "caps": {
+      "019": 375,
+      "020": 45
+    }
+  },
+  "outcomes": {
+    "path": "specs/783-fable-5-2-scope/boundary/outcomes.md",
+    "sha256": "85da25a3ed2de90b1c4e22b097868ccddb591c615181c2bc24939b514dfaf302"
+  },
+  "execution": {
+    "attempts": [
+      {
+        "attempt_id": "330ae95e80d0b092b116e062686848a53dc968d1a4a1aa33f253290e28766115",
+        "protocol": {
+          "report": "020",
+          "skill": "code-review-and-quality",
+          "skill_dir": "specs/000-governance/external-runs/three-skill-comparison/inputs/driftproof/code-review-and-quality",
+          "skill_md_sha256": "8f3cabca581bbf7cb5f0add3f7454e7a4523f9d4353a6a4a217e6fa515309612",
+          "evals_sha256": "183008254d22765e44e05673b8e43db713481190a6a0cc82483fb9ed3a21a52f",
+          "content_hash": "13d360d7f786de371886e404b1eaa0cd37ecabab90e5c7126d62d42b73a872ea",
+          "suite_hash": "5d729f8852949735a553218a63ade5e0b5634b17579117290866bf074b9c6b40",
+          "case_ids": [
+            "severity-labeled-findings"
+          ],
+          "model": "claude-fable-5-2",
+          "judge": "claude-haiku-5-5",
+          "samples": 5,
+          "cases": 1,
+          "arms": 2,
+          "capture": "text",
+          "surface": "claude-cli",
+          "isolation": "eval-user",
+          "runner_version": "0.28.0",
+          "claude_code_version": "2.1.311",
+          "effort": "none set",
+          "registry_sha256": "59a82e878448a76d2008a5b286507d6d4f3552617b397411c89bba93e221ca78",
+          "pricing_sha256": "cb973e47a621c98dd851230c537fa92b38ea93d821ba85d7997caf1b39a12029",
+          "flags": [
+            "--judge-model",
+            "claude-haiku-5-5",
+            "--samples",
+            "5",
+            "--capture",
+            "text",
+            "--concurrency",
+            "1",
+            "--keep-transcripts",
+            "--max-calls",
+            "120",
+            "--max-usd",
+            "8"
+          ],
+          "ordinal": 1
+        },
+        "table": "model",
+        "planned_calls": 120,
+        "max_usd": 9.4238,
+        "projection": {
+          "method": "the larger of Report 011's two receipts for the skill repriced: generation at claude-fable-5-2 (estimate), judge usage scaled to 5 samples at claude-haiku-5-5, twice all input at the list rate",
+          "generation_model": "claude-fable-5-2",
+          "judge_model": "claude-haiku-5-5",
+          "sources": [
+            {
+              "receipt": "receipts/report-011/code-review-and-quality-claude-opus-5-5-2026-09-23.json",
+              "receipt_hash": "5c3ad19b40dd4b39bd73899709528f3547a77e84abf43e0707d3b6a4d76ea3b3",
+              "answered_by": "claude-opus-5-5",
+              "judge_samples": 3,
+              "recorded_usd": 1.5731,
+              "judge_usd": 0.0636,
+              "maximum_usd": 4.7267,
+              "draws_recorded": {
+                "with_skill": 3,
+                "baseline": 4
+              }
+            },
+            {
+              "receipt": "receipts/report-011/code-review-and-quality-claude-opus-5-2026-09-23.json",
+              "receipt_hash": "d7bd2fcd3dbea881a53581022cea4a311ed9e75b457aa6d91a7c4d1c3aaaecd0",
+              "answered_by": "claude-opus-5",
+              "judge_samples": 3,
+              "recorded_usd": 1.8847,
+              "judge_usd": 0.0542,
+              "maximum_usd": 6.2825,
+              "draws_recorded": {
+                "with_skill": 3,
+                "baseline": 3
+              }
+            }
+          ],
+          "recorded_usd": 1.8847,
+          "maximum_usd": 6.2825,
+          "maximum_basis": "per-draw means over 10 draws per arm and 20 judged draws",
+          "fixed_token_reference": {
+            "estimated_usd": 1.248,
+            "generation_usd": 1.225,
+            "judge_usd": 0.023,
+            "assumptions": {
+              "tokens": {
+                "gen_with_skill": {
+                  "input": 3000,
+                  "output": 900
+                },
+                "gen_baseline": {
+                  "input": 250,
+                  "output": 900
+                },
+                "judge": {
+                  "input": 1300,
+                  "output": 200
+                }
+              },
+              "judgeModel": "claude-haiku-5-5",
+              "draws": 10,
+              "note": "rough upper-bound estimate; registry per-MTok pricing; not measured with count_tokens"
+            }
+          }
+        }
+      },
+      {
+        "attempt_id": "7d3326436dde46f8089c22962dae75f0bb48b3ac522771626ca0a43faa1ac538",
+        "protocol": {
+          "report": "020",
+          "skill": "git-workflow-and-versioning",
+          "skill_dir": "specs/000-governance/external-runs/three-skill-comparison/inputs/driftproof/git-workflow-and-versioning",
+          "skill_md_sha256": "b7465d187935c52546d39fdc7bd6ac36d94eda25a9500ef8c18b767d2eb116ea",
+          "evals_sha256": "6d778d145c2eb2b967a7e61809595275a4c60a29be9250260512acc2bf9cdb13",
+          "content_hash": "91c8c72654ee6ef163e49df26d1810cb7a6a91a4d8dee5b9f1bc03fd1fb8ec3a",
+          "suite_hash": "4e74150753d06b166d642365405edf382dc1072dc529cfdc1ef552d9b00c7880",
+          "case_ids": [
+            "commit-message-conventional-type"
+          ],
+          "model": "claude-fable-5-2",
+          "judge": "claude-haiku-5-5",
+          "samples": 5,
+          "cases": 1,
+          "arms": 2,
+          "capture": "text",
+          "surface": "claude-cli",
+          "isolation": "eval-user",
+          "runner_version": "0.28.0",
+          "claude_code_version": "2.1.311",
+          "effort": "none set",
+          "registry_sha256": "59a82e878448a76d2008a5b286507d6d4f3552617b397411c89bba93e221ca78",
+          "pricing_sha256": "cb973e47a621c98dd851230c537fa92b38ea93d821ba85d7997caf1b39a12029",
+          "flags": [
+            "--judge-model",
+            "claude-haiku-5-5",
+            "--samples",
+            "5",
+            "--capture",
+            "text",
+            "--concurrency",
+            "1",
+            "--keep-transcripts",
+            "--max-calls",
+            "120",
+            "--max-usd",
+            "8"
+          ],
+          "ordinal": 2
+        },
+        "table": "model",
+        "planned_calls": 120,
+        "max_usd": 6.5706,
+        "projection": {
+          "method": "the larger of Report 011's two receipts for the skill repriced: generation at claude-fable-5-2 (estimate), judge usage scaled to 5 samples at claude-haiku-5-5, twice all input at the list rate",
+          "generation_model": "claude-fable-5-2",
+          "judge_model": "claude-haiku-5-5",
+          "sources": [
+            {
+              "receipt": "receipts/report-011/git-workflow-and-versioning-claude-opus-5-5-2026-09-23.json",
+              "receipt_hash": "ca69c3436d0dbfa5db3258fd227f7d84eca8f3737a41ac09e17c35448dd0bf4b",
+              "answered_by": "claude-opus-5-5",
+              "judge_samples": 3,
+              "recorded_usd": 0.8725,
+              "judge_usd": 0.0377,
+              "maximum_usd": 2.9083,
+              "draws_recorded": {
+                "with_skill": 3,
+                "baseline": 3
+              }
+            },
+            {
+              "receipt": "receipts/report-011/git-workflow-and-versioning-claude-opus-5-2026-09-23.json",
+              "receipt_hash": "2ba4ef175d7f1caf6e54b5cce6f6f24362d4ae0c4976a4b0b821ea26f6cb9488",
+              "answered_by": "claude-opus-5",
+              "judge_samples": 3,
+              "recorded_usd": 2.5785,
+              "judge_usd": 0.0868,
+              "maximum_usd": 4.3804,
+              "draws_recorded": {
+                "with_skill": 3,
+                "baseline": 10
+              }
+            }
+          ],
+          "recorded_usd": 2.5785,
+          "maximum_usd": 4.3804,
+          "maximum_basis": "per-draw means over 10 draws per arm and 20 judged draws",
+          "fixed_token_reference": {
+            "estimated_usd": 1.248,
+            "generation_usd": 1.225,
+            "judge_usd": 0.023,
+            "assumptions": {
+              "tokens": {
+                "gen_with_skill": {
+                  "input": 3000,
+                  "output": 900
+                },
+                "gen_baseline": {
+                  "input": 250,
+                  "output": 900
+                },
+                "judge": {
+                  "input": 1300,
+                  "output": 200
+                }
+              },
+              "judgeModel": "claude-haiku-5-5",
+              "draws": 10,
+              "note": "rough upper-bound estimate; registry per-MTok pricing; not measured with count_tokens"
+            }
+          }
+        }
+      },
+      {
+        "attempt_id": "fd0aa79a49701c6f88757b2ba0ebfde9d55d5d5b61043e1b13c3afb87e81628f",
+        "protocol": {
+          "report": "020",
+          "skill": "documentation-and-adrs",
+          "skill_dir": "specs/000-governance/external-runs/three-skill-comparison/inputs/driftproof/documentation-and-adrs",
+          "skill_md_sha256": "87ae44a0c7bb3eefc2131a9d11caabcc14e4d8dcb27d66a3a675551ee2ce1671",
+          "evals_sha256": "3b7ea9b54a7845eeb0da5791c4691b4f95539ca4482676d1445e223f3ad6687b",
+          "content_hash": "b67a9f07ed1057963d3d8ab04bb070ee74d93174eee48b563aa235057005c158",
+          "suite_hash": "6cce54e7d9d0fc923eda5499c75fcc68974b3d8714b2a726e2ad1d77e4b5acc0",
+          "case_ids": [
+            "comment-intent-not-implementation"
+          ],
+          "model": "claude-fable-5-2",
+          "judge": "claude-haiku-5-5",
+          "samples": 5,
+          "cases": 1,
+          "arms": 2,
+          "capture": "text",
+          "surface": "claude-cli",
+          "isolation": "eval-user",
+          "runner_version": "0.28.0",
+          "claude_code_version": "2.1.311",
+          "effort": "none set",
+          "registry_sha256": "59a82e878448a76d2008a5b286507d6d4f3552617b397411c89bba93e221ca78",
+          "pricing_sha256": "cb973e47a621c98dd851230c537fa92b38ea93d821ba85d7997caf1b39a12029",
+          "flags": [
+            "--judge-model",
+            "claude-haiku-5-5",
+            "--samples",
+            "5",
+            "--capture",
+            "text",
+            "--concurrency",
+            "1",
+            "--keep-transcripts",
+            "--max-calls",
+            "120",
+            "--max-usd",
+            "8"
+          ],
+          "ordinal": 3
+        },
+        "table": "model",
+        "planned_calls": 120,
+        "max_usd": 6.2721,
+        "projection": {
+          "method": "the larger of Report 011's two receipts for the skill repriced: generation at claude-fable-5-2 (estimate), judge usage scaled to 5 samples at claude-haiku-5-5, twice all input at the list rate",
+          "generation_model": "claude-fable-5-2",
+          "judge_model": "claude-haiku-5-5",
+          "sources": [
+            {
+              "receipt": "receipts/report-011/documentation-and-adrs-claude-opus-5-5-2026-09-23.json",
+              "receipt_hash": "b924a435c70e0092453bc745941954ad08e12c8932e0d0120517151b44d29a15",
+              "answered_by": "claude-opus-5-5",
+              "judge_samples": 3,
+              "recorded_usd": 1.5054,
+              "judge_usd": 0.0706,
+              "maximum_usd": 3.0736,
+              "draws_recorded": {
+                "with_skill": 6,
+                "baseline": 3
+              }
+            },
+            {
+              "receipt": "receipts/report-011/documentation-and-adrs-claude-opus-5-2026-09-23.json",
+              "receipt_hash": "34107e18c90f3b2087eb88dd465c15982622ca5e21d69c01fa65727b72092a89",
+              "answered_by": "claude-opus-5",
+              "judge_samples": 3,
+              "recorded_usd": 2.288,
+              "judge_usd": 0.0792,
+              "maximum_usd": 4.1814,
+              "draws_recorded": {
+                "with_skill": 7,
+                "baseline": 3
+              }
+            }
+          ],
+          "recorded_usd": 2.288,
+          "maximum_usd": 4.1814,
+          "maximum_basis": "per-draw means over 10 draws per arm and 20 judged draws",
+          "fixed_token_reference": {
+            "estimated_usd": 1.248,
+            "generation_usd": 1.225,
+            "judge_usd": 0.023,
+            "assumptions": {
+              "tokens": {
+                "gen_with_skill": {
+                  "input": 3000,
+                  "output": 900
+                },
+                "gen_baseline": {
+                  "input": 250,
+                  "output": 900
+                },
+                "judge": {
+                  "input": 1300,
+                  "output": 200
+                }
+              },
+              "judgeModel": "claude-haiku-5-5",
+              "draws": 10,
+              "note": "rough upper-bound estimate; registry per-MTok pricing; not measured with count_tokens"
+            }
+          }
+        }
+      },
+      {
+        "attempt_id": "b6bbc3a6a2336de8b58654b92bb9fbfc210b4f5701f082f7ec6287d352f06cc4",
+        "protocol": {
+          "report": "020",
+          "skill": "code-review-and-quality",
+          "skill_dir": "specs/000-governance/external-runs/three-skill-comparison/inputs/driftproof/code-review-and-quality",
+          "skill_md_sha256": "8f3cabca581bbf7cb5f0add3f7454e7a4523f9d4353a6a4a217e6fa515309612",
+          "evals_sha256": "183008254d22765e44e05673b8e43db713481190a6a0cc82483fb9ed3a21a52f",
+          "content_hash": "13d360d7f786de371886e404b1eaa0cd37ecabab90e5c7126d62d42b73a872ea",
+          "suite_hash": "5d729f8852949735a553218a63ade5e0b5634b17579117290866bf074b9c6b40",
+          "case_ids": [
+            "severity-labeled-findings"
+          ],
+          "model": "claude-fable-5-1",
+          "judge": "claude-haiku-5-5",
+          "samples": 5,
+          "cases": 1,
+          "arms": 2,
+          "capture": "text",
+          "surface": "claude-cli",
+          "isolation": "eval-user",
+          "runner_version": "0.28.0",
+          "claude_code_version": "2.1.311",
+          "effort": "none set",
+          "registry_sha256": "59a82e878448a76d2008a5b286507d6d4f3552617b397411c89bba93e221ca78",
+          "pricing_sha256": "cb973e47a621c98dd851230c537fa92b38ea93d821ba85d7997caf1b39a12029",
+          "flags": [
+            "--judge-model",
+            "claude-haiku-5-5",
+            "--samples",
+            "5",
+            "--capture",
+            "text",
+            "--concurrency",
+            "1",
+            "--keep-transcripts",
+            "--max-calls",
+            "120",
+            "--max-usd",
+            "8"
+          ],
+          "ordinal": 4
+        },
+        "table": "model",
+        "planned_calls": 120,
+        "max_usd": 9.4238,
+        "projection": {
+          "method": "the larger of Report 011's two receipts for the skill repriced: generation at claude-fable-5-1, judge usage scaled to 5 samples at claude-haiku-5-5, twice all input at the list rate",
+          "generation_model": "claude-fable-5-1",
+          "judge_model": "claude-haiku-5-5",
+          "sources": [
+            {
+              "receipt": "receipts/report-011/code-review-and-quality-claude-opus-5-5-2026-09-23.json",
+              "receipt_hash": "5c3ad19b40dd4b39bd73899709528f3547a77e84abf43e0707d3b6a4d76ea3b3",
+              "answered_by": "claude-opus-5-5",
+              "judge_samples": 3,
+              "recorded_usd": 1.5731,
+              "judge_usd": 0.0636,
+              "maximum_usd": 4.7267,
+              "draws_recorded": {
+                "with_skill": 3,
+                "baseline": 4
+              }
+            },
+            {
+              "receipt": "receipts/report-011/code-review-and-quality-claude-opus-5-2026-09-23.json",
+              "receipt_hash": "d7bd2fcd3dbea881a53581022cea4a311ed9e75b457aa6d91a7c4d1c3aaaecd0",
+              "answered_by": "claude-opus-5",
+              "judge_samples": 3,
+              "recorded_usd": 1.8847,
+              "judge_usd": 0.0542,
+              "maximum_usd": 6.2825,
+              "draws_recorded": {
+                "with_skill": 3,
+                "baseline": 3
+              }
+            }
+          ],
+          "recorded_usd": 1.8847,
+          "maximum_usd": 6.2825,
+          "maximum_basis": "per-draw means over 10 draws per arm and 20 judged draws",
+          "fixed_token_reference": {
+            "estimated_usd": 1.248,
+            "generation_usd": 1.225,
+            "judge_usd": 0.023,
+            "assumptions": {
+              "tokens": {
+                "gen_with_skill": {
+                  "input": 3000,
+                  "output": 900
+                },
+                "gen_baseline": {
+                  "input": 250,
+                  "output": 900
+                },
+                "judge": {
+                  "input": 1300,
+                  "output": 200
+                }
+              },
+              "judgeModel": "claude-haiku-5-5",
+              "draws": 10,
+              "note": "rough upper-bound estimate; registry per-MTok pricing; not measured with count_tokens"
+            }
+          }
+        }
+      },
+      {
+        "attempt_id": "af5fe40411697d788d1c9ac2f1fdbab046c0dff2f8581d18571d7c1fbe287eb8",
+        "protocol": {
+          "report": "020",
+          "skill": "git-workflow-and-versioning",
+          "skill_dir": "specs/000-governance/external-runs/three-skill-comparison/inputs/driftproof/git-workflow-and-versioning",
+          "skill_md_sha256": "b7465d187935c52546d39fdc7bd6ac36d94eda25a9500ef8c18b767d2eb116ea",
+          "evals_sha256": "6d778d145c2eb2b967a7e61809595275a4c60a29be9250260512acc2bf9cdb13",
+          "content_hash": "91c8c72654ee6ef163e49df26d1810cb7a6a91a4d8dee5b9f1bc03fd1fb8ec3a",
+          "suite_hash": "4e74150753d06b166d642365405edf382dc1072dc529cfdc1ef552d9b00c7880",
+          "case_ids": [
+            "commit-message-conventional-type"
+          ],
+          "model": "claude-fable-5-1",
+          "judge": "claude-haiku-5-5",
+          "samples": 5,
+          "cases": 1,
+          "arms": 2,
+          "capture": "text",
+          "surface": "claude-cli",
+          "isolation": "eval-user",
+          "runner_version": "0.28.0",
+          "claude_code_version": "2.1.311",
+          "effort": "none set",
+          "registry_sha256": "59a82e878448a76d2008a5b286507d6d4f3552617b397411c89bba93e221ca78",
+          "pricing_sha256": "cb973e47a621c98dd851230c537fa92b38ea93d821ba85d7997caf1b39a12029",
+          "flags": [
+            "--judge-model",
+            "claude-haiku-5-5",
+            "--samples",
+            "5",
+            "--capture",
+            "text",
+            "--concurrency",
+            "1",
+            "--keep-transcripts",
+            "--max-calls",
+            "120",
+            "--max-usd",
+            "8"
+          ],
+          "ordinal": 5
+        },
+        "table": "model",
+        "planned_calls": 120,
+        "max_usd": 6.5706,
+        "projection": {
+          "method": "the larger of Report 011's two receipts for the skill repriced: generation at claude-fable-5-1, judge usage scaled to 5 samples at claude-haiku-5-5, twice all input at the list rate",
+          "generation_model": "claude-fable-5-1",
+          "judge_model": "claude-haiku-5-5",
+          "sources": [
+            {
+              "receipt": "receipts/report-011/git-workflow-and-versioning-claude-opus-5-5-2026-09-23.json",
+              "receipt_hash": "ca69c3436d0dbfa5db3258fd227f7d84eca8f3737a41ac09e17c35448dd0bf4b",
+              "answered_by": "claude-opus-5-5",
+              "judge_samples": 3,
+              "recorded_usd": 0.8725,
+              "judge_usd": 0.0377,
+              "maximum_usd": 2.9083,
+              "draws_recorded": {
+                "with_skill": 3,
+                "baseline": 3
+              }
+            },
+            {
+              "receipt": "receipts/report-011/git-workflow-and-versioning-claude-opus-5-2026-09-23.json",
+              "receipt_hash": "2ba4ef175d7f1caf6e54b5cce6f6f24362d4ae0c4976a4b0b821ea26f6cb9488",
+              "answered_by": "claude-opus-5",
+              "judge_samples": 3,
+              "recorded_usd": 2.5785,
+              "judge_usd": 0.0868,
+              "maximum_usd": 4.3804,
+              "draws_recorded": {
+                "with_skill": 3,
+                "baseline": 10
+              }
+            }
+          ],
+          "recorded_usd": 2.5785,
+          "maximum_usd": 4.3804,
+          "maximum_basis": "per-draw means over 10 draws per arm and 20 judged draws",
+          "fixed_token_reference": {
+            "estimated_usd": 1.248,
+            "generation_usd": 1.225,
+            "judge_usd": 0.023,
+            "assumptions": {
+              "tokens": {
+                "gen_with_skill": {
+                  "input": 3000,
+                  "output": 900
+                },
+                "gen_baseline": {
+                  "input": 250,
+                  "output": 900
+                },
+                "judge": {
+                  "input": 1300,
+                  "output": 200
+                }
+              },
+              "judgeModel": "claude-haiku-5-5",
+              "draws": 10,
+              "note": "rough upper-bound estimate; registry per-MTok pricing; not measured with count_tokens"
+            }
+          }
+        }
+      },
+      {
+        "attempt_id": "aae8d5c9cf08078a6e6283ee335d68937b3af162ebfcdb88a5fb1655a47279da",
+        "protocol": {
+          "report": "020",
+          "skill": "documentation-and-adrs",
+          "skill_dir": "specs/000-governance/external-runs/three-skill-comparison/inputs/driftproof/documentation-and-adrs",
+          "skill_md_sha256": "87ae44a0c7bb3eefc2131a9d11caabcc14e4d8dcb27d66a3a675551ee2ce1671",
+          "evals_sha256": "3b7ea9b54a7845eeb0da5791c4691b4f95539ca4482676d1445e223f3ad6687b",
+          "content_hash": "b67a9f07ed1057963d3d8ab04bb070ee74d93174eee48b563aa235057005c158",
+          "suite_hash": "6cce54e7d9d0fc923eda5499c75fcc68974b3d8714b2a726e2ad1d77e4b5acc0",
+          "case_ids": [
+            "comment-intent-not-implementation"
+          ],
+          "model": "claude-fable-5-1",
+          "judge": "claude-haiku-5-5",
+          "samples": 5,
+          "cases": 1,
+          "arms": 2,
+          "capture": "text",
+          "surface": "claude-cli",
+          "isolation": "eval-user",
+          "runner_version": "0.28.0",
+          "claude_code_version": "2.1.311",
+          "effort": "none set",
+          "registry_sha256": "59a82e878448a76d2008a5b286507d6d4f3552617b397411c89bba93e221ca78",
+          "pricing_sha256": "cb973e47a621c98dd851230c537fa92b38ea93d821ba85d7997caf1b39a12029",
+          "flags": [
+            "--judge-model",
+            "claude-haiku-5-5",
+            "--samples",
+            "5",
+            "--capture",
+            "text",
+            "--concurrency",
+            "1",
+            "--keep-transcripts",
+            "--max-calls",
+            "120",
+            "--max-usd",
+            "8"
+          ],
+          "ordinal": 6
+        },
+        "table": "model",
+        "planned_calls": 120,
+        "max_usd": 6.2721,
+        "projection": {
+          "method": "the larger of Report 011's two receipts for the skill repriced: generation at claude-fable-5-1, judge usage scaled to 5 samples at claude-haiku-5-5, twice all input at the list rate",
+          "generation_model": "claude-fable-5-1",
+          "judge_model": "claude-haiku-5-5",
+          "sources": [
+            {
+              "receipt": "receipts/report-011/documentation-and-adrs-claude-opus-5-5-2026-09-23.json",
+              "receipt_hash": "b924a435c70e0092453bc745941954ad08e12c8932e0d0120517151b44d29a15",
+              "answered_by": "claude-opus-5-5",
+              "judge_samples": 3,
+              "recorded_usd": 1.5054,
+              "judge_usd": 0.0706,
+              "maximum_usd": 3.0736,
+              "draws_recorded": {
+                "with_skill": 6,
+                "baseline": 3
+              }
+            },
+            {
+              "receipt": "receipts/report-011/documentation-and-adrs-claude-opus-5-2026-09-23.json",
+              "receipt_hash": "34107e18c90f3b2087eb88dd465c15982622ca5e21d69c01fa65727b72092a89",
+              "answered_by": "claude-opus-5",
+              "judge_samples": 3,
+              "recorded_usd": 2.288,
+              "judge_usd": 0.0792,
+              "maximum_usd": 4.1814,
+              "draws_recorded": {
+                "with_skill": 7,
+                "baseline": 3
+              }
+            }
+          ],
+          "recorded_usd": 2.288,
+          "maximum_usd": 4.1814,
+          "maximum_basis": "per-draw means over 10 draws per arm and 20 judged draws",
+          "fixed_token_reference": {
+            "estimated_usd": 1.248,
+            "generation_usd": 1.225,
+            "judge_usd": 0.023,
+            "assumptions": {
+              "tokens": {
+                "gen_with_skill": {
+                  "input": 3000,
+                  "output": 900
+                },
+                "gen_baseline": {
+                  "input": 250,
+                  "output": 900
+                },
+                "judge": {
+                  "input": 1300,
+                  "output": 200
+                }
+              },
+              "judgeModel": "claude-haiku-5-5",
+              "draws": 10,
+              "note": "rough upper-bound estimate; registry per-MTok pricing; not measured with count_tokens"
+            }
+          }
+        }
+      }
+    ],
+    "order": "one run at a time, in ordinal order; a run starts only after the one before it was verified",
+    "flags": [
+      "--judge-model",
+      "claude-haiku-5-5",
+      "--samples",
+      "5",
+      "--capture",
+      "text",
+      "--concurrency",
+      "1",
+      "--keep-transcripts",
+      "--max-calls",
+      "120",
+      "--max-usd",
+      "8"
+    ],
+    "max_dispatches": 3,
+    "stops": [
+      "a run that exits non-zero or leaves other than one receipt",
+      "a receipt that fails verification: its hash, schema, skill and suite pins, model, judge, samples, capture, isolation, Claude Code version or runner version",
+      "a receipt whose observed cost passes its attempt max_usd",
+      "spend reaching the cap, or an attempt whose max_usd does not fit the remaining cap"
+    ],
+    "in_run_bounds": "the runner's own caps: --max-calls 120 refuses a run projected above it and stops at it; --max-usd 8 is checked against its fixed-token estimate and hard-stops at 1.25 times"
+  },
+  "totals": {
+    "attempts": 6,
+    "planned_calls": 720,
+    "max_usd": 44.533,
+    "recorded_usd": 13.5024,
+    "maximum_usd": 29.6886,
+    "fixed_token_reference_usd": 7.488
+  },
+  "runner_hashes": {
+    "config.js": "d006d22e416f49e0556022c9131e7fb442b55bc68a166809c14cb15cf39e3118",
+    "config/models.json": "6631fd57391ff4fb9cec8b9e9646aca4f8da882ad3af6180be2a2628a1c77a9f",
+    "bin/driftproof": "4ce088b4a3b3d07889fe59fa58f137629989280bc709b070499a7ffff254bf3d",
+    "lib/account-home.js": "8d1461753dca2ad35a778b8b5449100958605236b86151cd5887aa0247d5b98b",
+    "lib/action-words.js": "e1516b3a1aa17b26f16c8dc763d6175a091715b6448d2c671596baef286e43f7",
+    "lib/activation-drift.js": "0af62bad686b0b8c9410618585defe75c394fb8f6782fb7d3a431140a3a600a8",
+    "lib/badge-svg.js": "c639f0feedcaf0210f63c785a358ee0c61687d2bd6e5458904671aada3466568",
+    "lib/band-plot.js": "0532e378216bfb3e2f8594e5dc71cebdf5bacc7a10d4e6f6820d4b8cb8f0116c",
+    "lib/blind.js": "fa67ffea0c95b750b05ba103b475d93d069fb483ffe2d530517341d01ae61dfd",
+    "lib/canary.js": "27cf8be8fafe216ef4ae330392af178bac5a9887d10b88484bca0d497187d57c",
+    "lib/canonical.js": "ee77cd144e5f30c92da7173d88aad5e43715aa22073dec9c7ee720406875a89b",
+    "lib/capture.js": "230db7d9369591d73255756ee391ccbb96928c32489400a5773b949d63f65548",
+    "lib/card.js": "43b83b9cf78d34eff87b9d2893c18722527da1d7320f7439a27351c7eb17ae54",
+    "lib/checkpoint.js": "ff6869441a27869ed5748ab694d5f5b382db08dd3035e3e6c189b140286827f3",
+    "lib/checks.js": "40480053d5055d034bf718ab137e910cb5685dc4dcdce7ec097739f63a594ccc",
+    "lib/compare.js": "d168f5cab88668be638acbbe621fa7addf42b4829dfe2a6b1851a2354af8bf76",
+    "lib/cost.js": "c36288fb8e20a6c8199fd02dbd5d403cf9f1cf8795e87742fe422efd8698c7aa",
+    "lib/counts.js": "6bedcdb845e63078400510bd00c19866aa2b37eff9789ff40cf7847317ae17bb",
+    "lib/decision.js": "6037747bcf74f85900a7472894cdca25129550f2586c23c2fc0a714901b4b985",
+    "lib/diff.js": "1b805c0c4d168a445eb3029d8b51597846e5566ec2794920ad27bc182338c8b0",
+    "lib/doctor.js": "8aa1311fb69a8221654cf380dd41f9a9de574c74d939ab9324a7a220c8197ed9",
+    "lib/execution-grading.js": "727709b43c12fbe902fd6d6382fbaa4a89e73d976afb25073a94cdeab459e8c8",
+    "lib/export.js": "a131cceb3a71695b6cb701b00bc602fb845b71f0599880942d1b191bad28c564",
+    "lib/firstrun.js": "305d92c1d9794ce91f39a5ca42918e00d928e574a38ae30ca0e91bb2114e5c21",
+    "lib/hidden-execution.js": "f85016d6ca58b714abeacb79bd23e3df87243741a5d5cbafce04060cf0e3eeda",
+    "lib/hidden-supervisor.js": "4bc93d7acc2aa33ea0721f04775294252eebc85e9efad00b168f270653a7a5ae",
+    "lib/hygiene.js": "86654adb18c2ad40b3fe26a11089fdd401d29f195d0fe9c81fbecd6a24b01d83",
+    "lib/importers-anthropic.js": "8d96a03a98b8dd4ed5aab56fbe50461a77f533ba9f79f40df3b64862c9b22cf2",
+    "lib/importers-harbor.js": "28aed485b3aab3c8f8103dee2dfd5ce3d48dfcd9b9b05ec0fb14806b55b48bb7",
+    "lib/importers-nvidia.js": "c08e52822e66859f7196ff56e4828e65694e59e1d9992dd0193a23582e5d79ad",
+    "lib/importers.js": "a479aaed396d17ce4edfc59046ca9a37ccafd2305af682af5d4be06257097260",
+    "lib/init.js": "2075cbf00ee65dfa714b2d304a7f4eb3b3a54051b7e638983b58359fd8bad21c",
+    "lib/inspect.js": "fcc04925b74a67c8377a5b33e6842d6ad9d1d21167bb805a41b8df2fa9b394ac",
+    "lib/json.js": "b2da91dad722bcfad0950e0d958693f78c1c7d33c1773384fb725ff084c55197",
+    "lib/judge.js": "7af6825617fbbdae9d96b26e466b12d4d913b5791775afbfa6ca6a76814b5baa",
+    "lib/lint-suite.js": "b8719f1ce04bf07c956f29a1af848ca065cfb466493218cc60274aa830aed879",
+    "lib/models.js": "ca1f4f9704c4980c4cbc6b87b9dab95ab42217c146528d7ddee417d568bb75dd",
+    "lib/names.js": "7487c6679111c42a06de173c5551147e09d0fe69a5cdf38ef176968217de7d88",
+    "lib/overlap.js": "b66ca3cceaa1c5191c919b718dd70e0f44b658a17d309c2413c12f1b1ea0def0",
+    "lib/placebo.js": "f9511bdbb9928f615017addebfa305b1f7b27c544cc5dbd377e668d661be26a0",
+    "lib/plain.js": "46f471b1487460b6101680f0b4c1191e358611020f326898e37f0e420011dbb9",
+    "lib/plan.js": "224d0804e1f465935a5eb68e3546270cf558941446fe0c5d9a814e91e939618f",
+    "lib/preview.js": "659a02cb8a589845cb9db3a22ce0e057020f420a4b70f6a08606c6a4ca3041be",
+    "lib/progress.js": "d958e62a22958c52512c8cbacec0205a2d8ad9bf7057d10d63c7bc28a46b673a",
+    "lib/provider.js": "338280cdcf36fac9ede81e3c0b1668ecc30f0305fde9d97ca81fc06f1d0a35a3",
+    "lib/receipt.js": "65ade3218647c74a1bceef84be9d772ecf11738c507f3c3b73698b82068fcbcb",
+    "lib/recheck.js": "c8f04b3b7aac59620b33d24c7a5d1d2873deb1524b1d36a985083c069219234f",
+    "lib/regrade.js": "8c44e7c8d153d1ca072ec314b974a14bc4ea32060b9c43027eae45c2df9c6e3c",
+    "lib/report-015-publication.js": "143442bdbcbe4727c73f1e29b8674dd19cacf43c2abf9fce88e8cded444b36dd",
+    "lib/repository-auth.js": "513652d0684c7b853402b788eb40c4a5410095569058bddb96849c5a4e59ff4e",
+    "lib/repository-execution.js": "ac184e5b9ea0736b27df8df09121ec0c58ed3cc760845b826fab35c6b158d322",
+    "lib/repository-supervisor.js": "baa01ec4bbc487b010ffb91253a76b8689f1a59c7ad286ef81d1c68dec258017",
+    "lib/repository-tool-hook.js": "4517e92b73557bfd3739cf9336f87456ec931d6d1c5f294cb044ee4930d1d7dc",
+    "lib/repository.js": "a39dabf767cf02918fc4ca13d2b55664afecc249b5101e3c9bf31bb032d54966",
+    "lib/reuse.js": "f81f9972466c39e2876a290e26a89fd1551ac255ed50a2c833418a333e3f84f9",
+    "lib/revision.js": "4260a451379062a9e3771174037d7bc45448617488fec4bf0babddaa41a79235",
+    "lib/run.js": "d12b7087cf4c77d789b70305050f960c1a015dc78d23b3e14927d082229d8f35",
+    "lib/runner.js": "bf8636f6a1cc6e7b3a79ff5483b294ae51c3e10b8ef29658c97a5c825dd0e431",
+    "lib/sampling.js": "e9398c4f12c65217c1134bde7bc850af355a1c79ebbead12239effda61f70264",
+    "lib/sheet.js": "17da338f9e7d6a6775c02259acfa6ece1ededf631f02030ef8a30eb594305310",
+    "lib/skill.js": "1975ea90c897e5d9acfb2aa6240aced60451f91598070c0de80d6d2e18f70a2a",
+    "lib/skillCost.js": "d2998030d65f0ba7bf6ff4dd985c0627c26c3dba9c3bac26ba80b092cbf491df",
+    "lib/smoke.js": "fa2b8598e843561c1f2530cdf01e08943a8cdb4063b18935e344068f9bfea780",
+    "lib/stale.js": "0af0968791dbd419926ec637852fd1d6d31ba61e96cdb236995b7435a638cf88",
+    "lib/stats.js": "21f6deb0aa8600792aaafaa882c025a574e28bb7946e55dcf82ee7de1095c34a",
+    "lib/stub.js": "bb9e7419f59023ba50e012b5c7df9d7f6e256331e4f654894c9820aaabecf40b",
+    "lib/text-capture.js": "d7b6517c7036fbe95f9f59ffad35ca856bd476a563424f9846e2d438309dba57",
+    "lib/usage.js": "0f9ad3adedc0cb34def81b5496b4dce84bce955fd280edcb9463e3568872fd73",
+    "lib/value.js": "a40ddad3bf25324ac1f1ae73a39ef9f5e30734b0ed69cfa746538410934a8da9",
+    "lib/verdict.js": "c09edd5e1a8c62c43fa0e0d1f1a268d5d6076e474846e2cf9247a1f0e35b5b6e",
+    "lib/view-tokens.js": "5aace3c4f4787e7d04a0ecd2612c676854c9e72ce19156dd501ba6f4c8b0aef0",
+    "lib/view.js": "05651756c527c8bcffb4d7960bc6bd37e8ac0313cb8ceca7abb9b7e6080049b7",
+    "lib/workspace-snapshot.js": "9ed458a2ad4da92c1816ae7ff7317043c632eb6fd100463714273dff9f58a3f8",
+    "specs/783-fable-5-2-scope/boundary/protocol.cjs": "cd6a526b310fda309726a84dd69cb1ba45c6cadd83072dc37876570f5ae0984c",
+    "specs/783-fable-5-2-scope/boundary/run-campaign.cjs": "3fd2907d7d0ec9e75061f6dbfbc104c7646ab656532653f57bbaca5689cc8d07",
+    "specs/783-fable-5-2-scope/price.cjs": "e79e62ec7a527a816965c3f99d197c53d464b246f8a9703511dcfab14fd4e390",
+    "specs/783-fable-5-2-scope/registry.json": "59a82e878448a76d2008a5b286507d6d4f3552617b397411c89bba93e221ca78",
+    "specs/783-fable-5-2-scope/pricing.json": "cb973e47a621c98dd851230c537fa92b38ea93d821ba85d7997caf1b39a12029"
+  }
+}

@@ -1,0 +1,521 @@
+{
+  "format": "driftproof-answers/2",
+  "receipt_hash": "3400122dda9e97243aa7457a193e9514fe2a9bd8ada484ad00898d9e34f14b1a",
+  "model_id": "claude-fable-5-2",
+  "answers": {
+    "8b0632ec2458dc5a9e9d8fc6a7cb75a76f3372603b7b621fd5fad5854b4913b7": "**Round 1**: the frontier is the two undecided decisions with no prerequisites.\n\n❓ **Q1** - **Audience**: Who receives the digest: an internal team, external customers or subscribers, or both? This determines consent and unsubscribe obligations, how costly a wrong or duplicate send is, and later the retention rules. Shall we start with a single, internal audience and treat external recipients as a later expansion?\n\n➡️ Yes, internal only for the first version. A bad send costs little, the recipient list is known, and the retention question stays simple. This is a default I'm proposing, not something your facts establish.\n\n---\n\n❓ **Q2** - **Delivery channel**: How does the digest reach people: email, a chat post (Slack or Teams), an in-app or web page, or several of these? This determines the failure modes we need to plan for (bounces and spam filtering, versus rate limits and channel noise) and later the provider. Shall we commit to email as the one channel for the first version?\n\n➡️ Yes, email only. It suits an asynchronous, scheduled summary, works whichever audience you pick in Q1, and one channel means one delivery path to make reliable. This is also a default, so say so if your recipients already live in chat.\n\n---\n\nHeld for later rounds because their prerequisites are open:\n\n- **Provider choice** waits on Q2.\n- **Retention** waits on Q1.",
+    "81399e21a49ab18f23afc55046270ab3e2fa9a0bfa245b24b16432eeab761385": "**Round 1**\n\n❓ **Q1** - **Audience**: Who receives the digest? The options are:\n- (a) an internal team only\n- (b) external customers or subscribers\n- (c) both, in a single digest\n- (d) both, with separate digests for each\n\nShould we start with (a), a single internal audience, and treat external recipients as a later expansion?\n\n➡️ Yes, start internal-only. A known, bounded recipient list is the lowest-risk first rollout: mistakes in content or delivery stay in-house, and there are no consent or unsubscribe obligations yet.\n\n---\n\n❓ **Q2** - **Delivery channel**: How does the digest reach people? The options are:\n- (a) email\n- (b) a chat channel such as Slack or Teams\n- (c) in-app or a web page\n- (d) several channels at once\n\nShould we commit to exactly one channel for the first version, and make it email?\n\n➡️ Yes, email only. It is the natural fit for digest-shaped content, since it is asynchronous, archivable and needs no client beyond an inbox. A single channel also means one delivery path to debug and one failure mode to monitor.\n\n---\n\n**Held for later rounds:**\n- **Provider choice** waits on Q2, because it depends on the channel.\n- **Retention** waits on Q1, because it depends on the audience.",
+    "cd8a357e9da342fdb1d37fd103975d8990027876cd7ca42fe1cfae65ec1d138a": "**Round 1**: the frontier is the two undecided root decisions, audience and delivery channel.\n\n❓ **Q1** - **Audience**: Who receives the digest? The options are:\n- **(a)** an internal group you control, such as your own team or org\n- **(b)** external recipients, such as customers or subscribers\n- **(c)** both from day one\n\nThis decides consent and unsubscribe obligations, how much a bad send costs you, and (later) retention. Should the first version go only to a single internal audience, with external recipients as a later expansion?\n\n➡️ Yes, internal-only first. A broken or wrong digest then costs little, you avoid opt-in and unsubscribe compliance at launch, and you can tune content on a forgiving audience before anything leaves the building.\n\n---\n\n❓ **Q2** - **Delivery channel**: How does the digest reach people? The options are:\n- **(a)** email\n- **(b)** a chat channel such as Slack or Teams\n- **(c)** in-app or a web page with a notification\n- **(d)** several of these at once\n\nShould it ship on exactly one channel, email, with others added only if readers ask for them?\n\n➡️ Yes, email only. A digest is asynchronous and read later, which suits an inbox. Email also works for whichever audience you pick in Q1, and a single channel means one format and one failure path to stress-test.\n\n---\n\n**Held for later rounds:**\n- **Provider choice** waits on Q2, because it depends on the channel.\n- **Retention** waits on Q1, because it depends on the audience.\n\nAnswer these two and I'll open the next round.",
+    "f5c052dc2f9d3c538bdecc4c52e87690da1ead2bb0a988c1ad986ccafcbcb86f": "# Round 1: the two root decisions\n\nProvider depends on channel and retention depends on audience, so this round covers only audience and channel. Questions about provider or retention now would rest on guesses.\n\n## Audience\n\n1. **Who receives the digest?** Internal staff, external customers, or both?\n2. **How do recipients get on the list?** Are they auto-enrolled, do they opt in, or does an admin assign them?\n3. **Roughly how many recipients are there?** I need the number at launch and in a year, to the nearest order of magnitude.\n4. **Does everyone get the same digest?** Or is content personalized per recipient, and if so, does it include anything sensitive or access-controlled?\n5. **What does a recipient do with it?** They might skim for awareness, click through to act, or keep it as a record.\n\n## Channel\n\n6. **Where does this audience already pay attention?** For example email, Slack or Teams, in-app, or SMS or push.\n7. **Is it one channel or several?** If several, does the recipient choose, or do you?\n8. **What must the channel support?** Examples are rich formatting, links back into a product, attachments, and reply or interaction.\n9. **What is the cadence, and how bad is a failure?** If a digest arrives late, twice, or not at all, is that an annoyance or an incident?\n\n## Stress-test probes\n\n10. **What is forcing either decision?** Is there a deadline, a stakeholder preference, or an existing contract or tool that already limits the choice?\n11. **If you had to choose today, what would you pick for audience and channel, and what would make you wrong?**\n\n## Deferred to round 2\n\n- **Provider:** selection, cost, deliverability and rate limits, once the channel is fixed.\n- **Retention:** how long digests and recipient data are kept, plus compliance and unsubscribe obligations, once the audience is fixed.\n- **Mechanics:** scheduling, retries, idempotency and monitoring, which depend on both.\n\nShort answers are fine. \"Don't know yet\" is useful too, because it shows where the plan is still soft.",
+    "5d017b72e7cede519663f0705770ae38abddf7a245e81278149d577c6b2666b1": "# Round 1: the two decisions everything else hangs on\n\nProvider and retention are deliberately left out of this round. Provider follows from channel and retention follows from audience, so asking about them now would only produce guesses.\n\n## Audience\n1. **Who receives the digest?** Internal staff, paying customers, the public, or a mix? If it is a mix, do they all get the same content?\n2. **How do recipients get on the list?** Do they opt in, get enrolled automatically, or get added by an admin? Can they leave?\n3. **Does the digest contain anything personal, confidential, or regulated?** Per-recipient data raises the stakes of a misdelivery far above a generic broadcast.\n4. **Roughly how many recipients are there now, and in a year?** An order of magnitude is enough.\n\n## Channel\n5. **Where do these recipients already pay attention?** Email, Slack or Teams, in-app, SMS, or something else? Is there evidence for that, or is it an assumption?\n6. **Is it one channel or several?** If several, does the recipient choose, or do you?\n7. **Does the reader need to act on the digest, or only read it?** Replies, click-throughs, and approvals constrain the channel more than the content does.\n\n## Independent of both\n8. **What is the digest for?** If it silently stopped for two weeks, who would notice, and what would go wrong?\n9. **What is the cadence, and how stale may the content be?** Is a late digest worse than a skipped one?\n10. **Which is the worse failure: a duplicate, a missed send, or a send to the wrong person?** Rank them, because the ranking decides the delivery guarantees you need.\n\n## Next round\nOnce questions 1–7 are answered, round 2 covers the dependent decisions:\n- **Provider:** selected against the chosen channel, including deliverability, rate limits, and fallback.\n- **Retention:** set against the chosen audience, including what is stored, for how long, and under what obligations.\n\nIf you answer only two questions now, make them 1 and 5.",
+    "118827a2d968e096548c5578a4794dad3430118a9eb00aae35dcb7921c684d5c": "# Round 1: the two root decisions\n\nProvider depends on channel and retention depends on audience, so I'm deferring both until round 2. Asking about them now would only produce answers we'd have to redo.\n\n## Audience (unlocks retention)\n\n1. **Who receives the digest?** Internal team, paying customers, the public or opted-in subscribers, or a mix?\n2. **Roughly how many recipients are there at launch, and in a year?** Ten, a thousand and a hundred thousand are different systems.\n3. **Does the digest contain anything personal, confidential or regulated?** Does every recipient see the same content, or is it personalised?\n4. **How do recipients get on and off the list?** Is consent or unsubscribe a legal requirement for this audience, or is membership assigned, as with employees?\n\n## Channel (unlocks provider)\n\n5. **Where does this audience already pay attention?** Email, Slack or Teams, in-app, SMS or push, or something else? Is there evidence for that, or is it an assumption?\n6. **Is it one channel or several?** If several, does each recipient choose, or do you?\n7. **Does the digest need to be read, or acted on?** Links, replies and approvals constrain which channels work.\n\n## Independent of both (safe to ask now)\n\n8. **What is the digest made from, and how often does it go out?** What happens when there is nothing to report: skip it, or send an empty one?\n9. **What is the worst failure: a missed digest, a late one, a duplicate, or one sent to the wrong person?** Rank them, because the ranking drives the retry and idempotency design.\n10. **Who owns it when it breaks, and how would they find out?**\n\n## Where I expect the plan to be weakest\n\n- **Mixed audience:** if question 1 is \"a mix\", you may have two retention regimes and possibly two channels, which is effectively two products.\n- **Wrong-recipient failures:** if question 3 is \"yes, sensitive\", wrong-recipient becomes the top failure in question 9 and narrows the channel options before any provider is considered.\n- **Assumed channel:** if question 5 rests on an assumption, the cheapest test is a manual digest sent to a handful of recipients before anything is automated.\n\nAnswer what you can. Questions 1, 3 and 5 matter most; with those I can run round 2 on provider selection and retention policy.",
+    "617c4c9d26d7129bd7dc668c97a19a2e5d10c0aab1e083a93cd91020d157de58": "# Round 1: the two root decisions\n\nProvider and retention can't be stress-tested yet, because each depends on something undecided. This round covers only audience and channel; everything else waits.\n\n## Audience (unlocks retention)\n\n1. **Who receives the digest?** Internal staff, external customers, or a mix? Roughly how many recipients at launch, and in a year?\n2. **How do they get on the list?** Do they opt in, get auto-enrolled, or get assigned by role? Can they unsubscribe or change frequency?\n3. **Does everyone get the same digest?** If it's personalized, what recipient data does that require, and is any of it sensitive or regulated?\n4. **What does the recipient do with it?** Is it skimmed for awareness or does it drive action? If a digest is missed or late, does anyone notice, and what breaks?\n\n## Channel (unlocks provider)\n\n5. **Where does this audience already pay attention?** Email, Slack/Teams, in-app, SMS, or something else? Is that known from evidence or assumed?\n6. **One channel or several?** If several, does the recipient choose, or do you?\n7. **What must the channel support?** For example rich formatting, links back to a source, attachments, replies, or read/click tracking.\n8. **What are the hard constraints?** Is there an existing tool you must use, a budget ceiling, a security or compliance limit on where content may go, or a deadline?\n\n## One framing question\n\n9. **What does failure look like?** Which is worst for you: a digest that is wrong, late, duplicated, or sent to the wrong person? The answer sets where round 2 pushes hardest.\n\n## Deferred to round 2\n\n- **Provider choice** follows from the answers to 5–8.\n- **Retention** (what is stored, for how long, and who can see it) follows from the answers to 1–3.\n- **Scheduling, retries, and monitoring** follow from both.\n\nIf you can only answer two now, make them 1 and 5; they resolve the most downstream.",
+    "84dffa5ea54588e9ba0fa06d8ab1bc5ca8362f3a236224cdbf93065a8c8d9c54": "# Round 1: the two root decisions\n\nProvider depends on channel and retention depends on audience, so I'm not asking about either yet. This round only settles the two upstream decisions, plus one question that is independent of both.\n\n## Audience (unlocks retention)\n\n1. **Who receives the digest?** Internal staff, external customers, or both? If both, is it the same digest or two variants?\n2. **How does someone get on the list?** Are they auto-enrolled, do they opt in, or does an admin assign them? Can they unsubscribe?\n3. **What is the most sensitive thing a digest could contain?** For example personal data, customer data, financials, or nothing beyond public information.\n4. **How large is the audience?** Give a rough number now and at 12 months: tens, thousands, or more.\n\n## Channel (unlocks provider)\n\n5. **Where do recipients already pay attention?** Email, Slack/Teams, in-app, SMS/push, or something else? Is that an assumption, or do you have evidence?\n6. **Is it one channel or several?** If several, does the recipient choose, or do you?\n7. **Does the digest need to be acted on in place?** Recipients might reply, click through, or approve from it, or it might be read-only.\n8. **Are there hard constraints on the channel?** Examples are a mandated corporate tool, an existing contract, or a compliance rule that excludes an option.\n\n## Independent of both\n\n9. **What happens if a digest is late, duplicated, or never arrives?** Is that an annoyance, a missed decision, or a contractual or regulatory problem? The answer sets how hard I push on reliability in later rounds.\n\n## What comes next\n\n- **Round 2:** your channel answers drive the provider questions (deliverability, rate limits, cost, lock-in), and your audience answers drive the retention questions (how long, where stored, deletion, legal basis).\n- **Round 3:** failure modes, covering retries, idempotency, empty digests, time zones, and monitoring.\n\nIf either root decision can't be made yet, tell me which options are still in play and I'll branch round 2 across them.",
+    "97bdbc56ecc14d7cbcc67bbdf9e29c55e470b4a94ec32d1ed00d865f63be37ee": "# Round 1: the two root decisions\n\nProvider and retention are downstream, so I'm not asking about them yet. This round only pins down audience and channel, plus the facts needed to stress-test them.\n\n## Audience (unlocks retention)\n\n1. **Who receives the digest?** Internal staff, external customers, or both?\n2. **How do recipients get on the list?** Opt-in, auto-enrolled by role, or contractual?\n3. **What does the digest contain?** Does any of it include personal data, customer data, or anything regulated or confidential?\n4. **Does everyone see the same digest, or is it personalized per recipient?** Personalization means a mis-send is a data leak, not just an annoyance.\n5. **Roughly how many recipients, now and in a year?** An order of magnitude is enough.\n\n## Channel (unlocks provider)\n\n6. **Where do these people already read things like this?** Email, Slack or Teams, in-app, or somewhere else?\n7. **Is one channel enough, or do different audience segments need different ones?** If the answer to question 1 is \"both\", a single channel may not work.\n8. **What should the reader do after reading?** Read only, click through, or reply and act in place?\n9. **Are there hard constraints on channel?** Examples are IT-approved tools only, no external email, or mobile-first readers.\n\n## Failure tolerance (stress-test of both)\n\n10. **What cadence is expected, and what happens if a digest arrives late, twice, or not at all?** Does anyone notice, and does anyone get hurt?\n11. **What is the worst outcome if a digest reaches the wrong person?**\n12. **Who owns this when it breaks?** Is there a named person or team, or is that undecided?\n\n## Next round\n\n- **Once the channel is fixed:** provider selection, covering deliverability, rate limits, cost and lock-in.\n- **Once the audience is fixed:** retention, covering how long digests and delivery logs are kept, deletion and unsubscribe obligations.\n\nIf you can only answer three now, answer 1, 3 and 6; they resolve the most.",
+    "32946c7ee328e988f840a1bd04a937f92b2968a33565c504c5b82cf856c58506": "**Round 2**: these are the questions unblocked by the two settled choices (internal staff, chat). I only have those two facts and the open provider-access item to go on, so the questions are scoped to them.\n\n❓ **Q1** - **Staff scope**: Does \"internal staff\" mean everyone from day one, or a named pilot group first?\n\n➡️ Start with a pilot group of one or two teams, then widen. Is that right?\n\n---\n\n❓ **Q2** - **Chat surface**: Should this live in the chat tool staff already use, rather than a new standalone chat interface?\n\n➡️ Use the existing staff chat tool, with no new surface to adopt. Agreed?\n\n---\n\n❓ **Q3** - **Interaction shape**: Is it pull (staff ask and it answers), push (it posts proactively), or both?\n\n➡️ Pull only for the first version, with push added once people trust it. Yes?\n\n---\n\n❓ **Q4** - **Visibility**: Do conversations happen in private DMs, shared channels, or both?\n\n➡️ DMs by default, plus one shared channel where it can be invoked so people see how others use it. Yes?\n\n---\n\n❓ **Q5** - **Content boundary**: Since the audience is internal, may it handle internal-only material, with a defined list of excluded categories (for example HR, credentials, customer personal data)?\n\n➡️ Yes to internal material, with an explicit exclusion list written before launch. Agreed?\n\n---\n\n❓ **Q6** - **Failure path**: When it can't answer or gets something wrong, does it hand off to a named human owner instead of failing silently?\n\n➡️ Yes: one named owner or channel, shown in every \"I can't help with that\" reply. Agreed?\n\n---\n\n❓ **Q7** - **Success measure**: Is success judged by pilot usage and a quick in-chat rating, rather than a formal evaluation?\n\n➡️ Yes: weekly active users in the pilot plus thumbs up/down, reviewed after two to four weeks. Agreed?\n\n---\n\n**Held for a later round:** provider access is still uninvestigated, and I can't look into it under the no-tools constraint. Everything downstream of it waits:\n- provider and model choice\n- cost and rate limits\n- data retention and residency terms\n- what Q5's exclusion list must add once the provider's terms are known",
+    "bd78ca3f71e1a3833267f133e60612e301dde32f5a332401efb7ca009f11c2cc": "Audience (internal staff) and delivery (chat) are settled. Provider access is still an open investigation, and I can't run it in this session because tools are off, so everything downstream of it waits. This round covers only what hangs off the two settled decisions.\n\n❓ **Q1** - **Chat surface**: Should this live inside the chat tool staff already use daily, rather than a new standalone chat interface?\n\n➡️ Yes. Use the existing workspace chat, because internal adoption fails when staff have to open another tool.\n\n---\n\n❓ **Q2** - **Conversation shape**: Should the default interaction be a private 1:1 direct message, with shared channel use as an opt-in later?\n\n➡️ Yes. Go DM-first, since staff ask more candid questions in private and it avoids channel noise and accidental oversharing.\n\n---\n\n❓ **Q3** - **Rollout scope**: Should it launch to a named pilot group first, rather than to all staff on day one?\n\n➡️ Yes. Start with one team of roughly 10–30 people who have a clear use for it, and expand only once the exit criteria in Q6 are met.\n\n---\n\n❓ **Q4** - **Identity and permissions**: Should it rely on the chat workspace's existing identity (whoever is logged in is the user), with no separate login, and should everyone in the pilot get the same capabilities?\n\n➡️ Yes. Inherit workspace identity and keep a single permission tier for the pilot; add role-based differences only if a concrete need appears.\n\n---\n\n❓ **Q5** - **Failure and escalation**: When it can't answer or is unsure, should it say so plainly and point to a named human owner or channel, rather than giving a best-effort guess?\n\n➡️ Yes. Staff will act on what it says, so a wrong confident answer costs more than \"I don't know, ask X\". This needs a named owner, which you would have to nominate.\n\n---\n\n❓ **Q6** - **Success criteria**: Should we fix the pilot's pass/fail measures now, before build, as repeat usage plus a short satisfaction check?\n\n➡️ Yes. For example: at least half the pilot group uses it weekly by week four, and a majority say it saved them time. If you accept, the thresholds are yours to set.\n\n---\n\n**Held for a later round (blocked on provider access):**\n- Which model or provider, and through which account or contract.\n- What internal data may be sent to it, and any redaction rules.\n- Conversation logging and retention.\n- Cost ceiling and rate limits.\n- The latency expectations we can promise.",
+    "066f1873bc20eec140f778b8788dc8e6f799f7c696551dd1cd935b1f97d88d9d": "**Round 2.** Internal staff and chat delivery are settled. Provider access is still open, and I can't investigate it this turn because tools are off, so everything downstream of it is parked at the bottom.\n\n❓ **Q1** - **Chat surface**: Should this live inside the chat tool staff already use (e.g. your existing Slack or Teams workspace) rather than a new standalone chat interface?\n\n➡️ Yes. Use the existing workspace tool: staff need no new login or habit, and you inherit its identity and access controls.\n\n---\n\n❓ **Q2** - **Rollout scope**: Should it start with a small pilot group before opening to all internal staff?\n\n➡️ Yes. Pilot with one team of roughly 10–20 people for two weeks, then widen once the failure modes are known.\n\n---\n\n❓ **Q3** - **Conversation shape**: Should it support both direct messages and shared channels, with replies kept in threads?\n\n➡️ Yes. Use DMs for individual questions and threaded replies in channels, so answers stay visible to others without flooding the channel.\n\n---\n\n❓ **Q4** - **Content boundaries**: Since the audience is internal only, should general internal material be in scope by default, with restricted categories (HR, legal, payroll, credentials, customer personal data) explicitly excluded?\n\n➡️ Yes. Allow by default for ordinary internal content, with a short named exclusion list. \"Internal\" does not mean every staff member may see everything.\n\n---\n\n❓ **Q5** - **Failure and escalation**: When it can't answer or isn't confident, should it say so plainly and point to a named human owner or channel rather than give a best guess?\n\n➡️ Yes. An explicit \"I don't know, ask X\" with one named owner per topic area. Confident wrong answers cost more trust with staff than a hand-off.\n\n---\n\n❓ **Q6** - **Success measure**: Should the pilot be judged on one primary metric agreed up front, rather than general feedback?\n\n➡️ Yes. Use the share of conversations resolved without human hand-off, with a simple thumbs up/down per answer as the supporting signal.\n\n---\n\n**Parked until provider access is investigated** (not asked this round):\n- Model or provider choice and fallback\n- Data handling and retention terms on the provider side\n- Cost ceiling and rate limits\n- Latency targets\n- Integration method (bot API or gateway)\n- Logging of conversations, where it touches provider retention\n\nSend your answers to Q1–Q6. If you already have facts on provider access, include them and I'll move those branches onto the frontier next round.",
+    "e2782ed7c958bc682698fc9a4a6e88f059b3747d37df3618ba6acd23bffa486f": "Internal staff and chat delivery are locked. Provider access is still uninvestigated: I couldn't look into it this turn with tools off, so everything that depends on it is held for a later round. Here is everything that can be asked now.\n\n❓ **Q1** - **Rollout scope**: Should this start with a small pilot group of staff rather than everyone at once?\n\n➡️ Yes. Pilot with one team, then widen once the rough edges are found.\n\n---\n\n❓ **Q2** - **Where it lives in chat**: Should staff interact with it mainly through direct messages, with shared channels as an opt-in extra, rather than the other way round?\n\n➡️ Yes. DMs by default keep individual requests private and channels quiet; a team can add it to a channel deliberately.\n\n---\n\n❓ **Q3** - **Identity**: Should it rely on each person's existing workplace chat identity, with no separate login or account?\n\n➡️ Yes. An internal audience is already authenticated in chat, and a second login kills adoption.\n\n---\n\n❓ **Q4** - **Information boundary**: Should the first version be limited to information any staff member is already allowed to see, with restricted material (HR, finance, legal, customer data) excluded until per-person permissions are designed?\n\n➡️ Yes. Start at the \"all staff\" level; role-based access becomes its own branch later.\n\n---\n\n❓ **Q5** - **Voice and format**: Should replies be short, plain chat messages that use internal terminology freely, with no customer-facing polish and no long documents?\n\n➡️ Yes. Staff want the answer in a few lines, with a link out for anything longer.\n\n---\n\n❓ **Q6** - **Ownership and feedback**: Should one named internal owner be responsible for it, with a single dedicated chat channel where staff report problems and request changes?\n\n➡️ Yes. One owner and one channel, so feedback isn't scattered across DMs.\n\n---\n\n❓ **Q7** - **Success measure**: Should success be judged by repeat use within the pilot group (people coming back unprompted) rather than by total message volume or a satisfaction survey?\n\n➡️ Yes. Repeat use is the most direct signal for an internal tool; a survey can follow later.\n\n---\n\n**Held until provider access is investigated:**\n- Which platform or integration route it runs on\n- Cost and rate limits\n- The provider's data handling and retention terms\n- Which capabilities are actually available\n- Fallback behaviour if the provider is unavailable",
+    "19534b1644699e4ab750806196b36528019be0768cb82920ee0fc403668ff579": "**Round 2**: settled and not reopened: audience is internal staff, delivery is chat. Provider access remains open, and I can't investigate it this turn because tools are off, so everything that depends on it is held for a later round.\n\n❓ **Q1** - **Chat surface**: Should this live inside the chat tool staff already use daily, rather than a new standalone chat interface?\n\n➡️ Yes. Use the existing workplace chat: there's no adoption cost, and identity and access control come with it.\n\n---\n\n❓ **Q2** - **Interaction model**: Should it be pull-only at launch (staff ask, it answers), with no proactive or scheduled messages?\n\n➡️ Yes. Pull-only first; unsolicited messages to staff get muted quickly, and push can be added once we know what people actually ask for.\n\n---\n\n❓ **Q3** - **Where conversations happen**: Should it answer in direct messages by default, with shared-channel use by explicit mention only?\n\n➡️ Yes. DMs keep individual queries private and channels quiet, while mentions still allow shared answers when a team wants one.\n\n---\n\n❓ **Q4** - **Rollout scope**: Should it start with one pilot team rather than all staff at once?\n\n➡️ Yes. A pilot of one team for a fixed period gives real usage data and limits the blast radius of wrong answers.\n\n---\n\n❓ **Q5** - **Access level**: Should every staff member see the same content, with no role-based differences in the first version?\n\n➡️ Yes. A single access tier, restricted to content any employee may already see; this avoids building permission mapping before the tool has proven useful.\n\n---\n\n❓ **Q6** - **Failure behaviour**: When it can't answer or is unsure, should it say so and point to a named human owner or channel, rather than give a best guess?\n\n➡️ Yes. Explicit \"I don't know\" plus a handoff; internal staff will act on its answers, so a confident wrong answer costs more than a miss.\n\n---\n\n❓ **Q7** - **Success measure**: Should success be judged on one primary metric, the share of questions resolved without human follow-up, measured in the pilot?\n\n➡️ Yes. One resolution-rate metric, with weekly usage as a secondary signal.\n\n---\n\n**Held until provider access is investigated:** vendor and model choice, authentication and credentials, what data may be sent to the provider, logging and retention, cost and rate limits.",
+    "f3daaffa705acaab27c1f1273ed4fe176a84aed8c7c6b8f745ca9c1ab0a673bb": "I don't have the earlier rounds or the list of agreed choices in this conversation, so I can't build on them. The only facts I have are the three in your message.\n\nUsing only those, the next round is a chat message to internal staff:\n\n> **Update:** Provider access is still an open item and needs investigation. Nothing else has changed, and previously agreed choices stand. I'll follow up here once the provider access question is resolved.\n\nIf you paste the previous round and the agreed choices, I'll produce the full next round and keep those choices as they are.",
+    "f1e06df0b7ab9095d0e2a4f04b3c80b5e513c453c9ac0845ea3ca380cecd6629": "I don't have the earlier rounds or the agreed choices in this conversation, so I can't write the next round in full without inventing what was agreed. This message contains only three facts, and this is the next round built on those alone:\n\n**Settled (not reopened)**\n- Audience: internal staff.\n- Delivery: chat.\n- All choices agreed earlier stand as they are.\n\n**Open**\n- Provider access still needs investigation. Nothing that depends on it should be treated as confirmed.\n\n**Next steps**\n1. Investigate provider access. It needs an owner and a target date, neither of which I have.\n2. Proceed with the work that doesn't depend on provider access, written for internal staff and delivered in chat.\n3. Once the investigation reports back, revisit only the items that depend on it.\n\nIf you paste the agreed choices and the subject matter, I'll turn this into the actual next round as a ready-to-send chat message.",
+    "839dd05373e8c5f80ff2cd52c7fd5d790e8bfea08d66e8d24dfe74a00fb64964": "**Next round (working only from what you've given me)**\n\n**Settled, not reopened**\n- Audience: internal staff\n- Delivery: chat\n\n**Open item: provider access**\n\nThis is the only thing still to investigate, so the next round is about closing it:\n1. **Confirm what access exists today:** which provider, under whose account, and whether credentials or approvals are already in place.\n2. **Identify the gap:** what is missing (contract, approval, credentials, permissions, network path) and who owns each piece.\n3. **Name an owner and a date** for the answer, so the round ends in a decision and not another investigation.\n4. **Decide the fallback:** what proceeds if access is delayed, and what is blocked until it lands.\n\n**What can move in parallel**\n\nAnything that depends only on the audience and channel can go ahead, such as drafting for internal staff and shaping it for chat. Anything that depends on the provider waits.\n\n**One limit on this answer**\n\nNo earlier rounds or list of agreed choices came through in this conversation; I have only the three facts in your message. I've treated audience and delivery as fixed and left everything else untouched. If there are other agreed choices or specifics about the provider, paste them in and I'll tighten this into concrete actions.",
+    "4a9fbe312988b938d36619ac06cfae23db6121a14e3fb9e7cfc6212becbc2f46": "I can't write the full next round yet: no facts or agreed choices came through in this conversation, only your instructions in this message. Without them I would be guessing at what was decided, which risks reopening the very choices you want left closed.\n\nHere is what I can state from what you've given me:\n\n- **Audience:** internal staff.\n- **Delivery:** chat.\n- **Open item:** provider access still needs investigation; nothing about it is settled.\n- **Everything previously agreed:** stands, and is not up for discussion in this round.\n\nUsing only that, a chat-ready placeholder for the next round would be:\n\n> Next round, for internal staff: agreed choices stand and are not being revisited. The one open item is provider access, which still needs investigation. Until that's done, nothing that depends on it should be treated as confirmed.\n\nTo turn this into a real next round, paste the supplied facts and the list of agreed choices, including what is already known about provider access.",
+    "e2771e195484bcea68cc275c376134e417dcbcbd735723643be9de65972576b2": "**Next round**\n\n**Settled (not reopening)**\n- Audience: internal staff\n- Delivery: chat\n\n**Open: provider access**\n\nThis is the only unresolved item, and it has to be investigated before anything depends on it. I can't check it from here under the no-tools constraint, so someone needs to answer these:\n\n1. **Which provider and which account:** who owns the relationship and the credentials?\n2. **Current state:** does access exist today, is it pending, or has it not been requested?\n3. **Scope:** what does the access need to cover for chat delivery to internal staff, and are there limits on who can use it?\n4. **Path to approval:** who signs off, and how long does that take?\n5. **Fallback:** if access is delayed or denied, what happens to the work?\n\n**What I'm missing**\n\nNo earlier rounds or other agreed choices are visible in this conversation; the three facts in your message are all I have. If more was decided, paste it in and I'll fold it into the settled list without revisiting it.\n\n**Suggested next step**\n\nAssign one owner to the provider access questions; the first two answers determine whether the rest matter.",
+    "d6c7ce7fae97bf1267d0b84d11953ab973cfb716b0da4fc546081395bf583ffc": "I can't give a full next round yet: this conversation contains none of the earlier agreed choices or the supplied facts, only your message. I'm not going to guess at them, since that would risk reopening or contradicting what was settled.\n\n**Fixed for this round**\n- **Audience:** internal staff.\n- **Delivery:** chat.\n- **Earlier agreed choices:** unchanged and not up for discussion.\n\n**Open item: provider access**\n\nThis is the only open item, and the investigation needs to answer:\n1. Which provider(s) are in scope, and what kind of access is needed (accounts, API keys, permissions)?\n2. Who owns the provider relationship internally, and who can grant or approve access?\n3. What access exists today, and how does that differ from what's needed?\n4. Are there constraints, such as contract terms, security review, cost or lead time?\n5. If access is delayed or denied, what is the fallback?\n\n**Next steps**\n1. Assign an owner and a due date for the provider-access investigation.\n2. Draft the chat message for internal staff from the agreed choices, with provider access marked as pending rather than assumed.\n3. Once the investigation reports back, finalise the draft and send it.\n\nIf you paste the agreed choices and the facts, I'll turn this into the concrete next round, including the draft chat message.",
+    "b1ca36fe8303453133639c7c7972a69693d63a2e55283f9c3e430b99e755f894": "I can't give the next round yet: no facts, earlier rounds, or agreed choices have come through in this conversation. Your message is the first thing I have, and nothing was attached or pasted with it.\n\nTo write it without reopening anything, I need you to paste:\n\n- **The agreed choices**, so I treat them as fixed.\n- **The previous round**, or a summary of where it ended.\n- **What is known about provider access**: which provider, what's blocked or unclear, and who is looking into it.\n\nOnce I have those, I'll write the next round as a chat message for internal staff, with provider access marked as an open investigation item.",
+    "dbd2346b1b7475e67c9dcf6b3b9cdd0c09c3073582f9be463a866a6ddaaba97f": "I can't give the next round yet: this conversation doesn't contain the earlier rounds or the agreed choices, so I'd be guessing at what's settled.\n\nWhat I have from your message:\n\n- **Audience:** internal staff\n- **Delivery:** chat\n- **Open item:** provider access still needs investigation\n- **Constraint:** agreed choices stay closed\n\nPlease paste the agreed choices or the last round's summary, and I'll write the next round around them, limited to the provider-access investigation and whatever else is still open.",
+    "3bf334a557fcefcc67cced042397c18b8fd06687f424a2f5da4cf3e9e0881f92": "I don't have the earlier rounds or the list of agreed choices in this conversation, so the next round below is built only from the three facts in your message.\n\n**Settled, not reopened**\n- Audience: internal staff.\n- Delivery: chat.\n- Any choices agreed earlier stand as they are.\n\n**Open item**\n- Provider access is still uninvestigated; this is the only item blocking progress.\n\n**Next round**\n1. **Investigate provider access.** Assign one owner to find out what access exists today, what is missing, and who can grant it.\n2. **Report the findings in chat.** Post a short update to internal staff covering what was confirmed, what remains unknown, and what decision, if any, is needed.\n3. **Hold dependent work.** Anything that depends on provider access waits for that update; anything that does not can go ahead under the agreed choices.\n\nIf you paste the agreed choices and any details on the provider question, I can make this round specific, with named steps, owners and wording for the chat message.",
+    "3e47b9ae4871bf0cefc21c35131d8e606a0abe1970f93d4d44e8c8050ae3f6b7": "The frontier is empty: every decision on the design tree has an answer, and no further questions are open. The one step left is your confirmation of the summary, and I won't act on anything until I have it.\n\nI can't restate the summary here, though. No record of the decisions or your answers was supplied in this conversation, and I won't reconstruct them from guesswork. Please paste the summary or the settled answers, and I'll restate them as a single list for you to check.\n\n❓ **Q1** - **Confirm shared understanding**: Once the summary is in front of you, does it match what you decided, with nothing missing, misstated, or silently assumed?\n\n➡️ Yes if every line matches your intent. Otherwise, tell me which decision is wrong or missing, and I'll reopen that branch and anything that depends on it.",
+    "540b90bd88192329e9181dbc9c824906cac8f2a899e7f7aca07a34050d265bd0": "**The frontier is empty.** Every decision in the design tree has an answer, and no open questions remain for another round.\n\nI can't restate the summary here, though: no decisions or answers were supplied in this conversation, and I won't reconstruct them from guesswork. A confirmation is only worth something if you're confirming your actual decisions.\n\nTo close out:\n\n1. **Paste or point me to the settled decisions** (or the summary you were shown), and I'll put them back to you as a numbered list, one line per decision.\n2. **Check each line** and correct anything that's wrong, missing, or was assumed rather than decided.\n3. **Confirm explicitly** that the list is our shared understanding.\n\nAny correction reopens that branch, and I'll ask whatever follow-up questions hang off it before closing again.\n\nUntil you confirm, I'm not acting on any of it.",
+    "3ecf97e590a2ba3f49940ecff902af1c08a6f591212289b9658f4882c68fa504": "The frontier is empty: every planned decision has an answer and no open questions remain. However, I can't write out the summary itself, because no decisions or answers were included in this conversation and I won't invent them.\n\nPaste the settled decisions (or the earlier rounds) and I'll turn them into a numbered summary for you to check.\n\nOnce you have that summary, I need one of two replies before the interview is closed:\n\n- **Confirm:** reply \"confirmed\" if it matches your understanding, including anything I inferred rather than heard directly from you.\n- **Correct:** point to any item that is wrong, missing or assumed. That reopens that branch, and I'll ask about whatever hangs off it.\n\nUntil you confirm, we have not reached a shared understanding, and I will not act on any of it.",
+    "3f138cf6c1397d980195b314bf9574e732e85e60c1092cc2ad28b62439999849": "I can't write the summary itself yet, because no facts or decisions came through with your message. Only the instruction arrived, and I won't invent the answers.\n\nHere is the closing response with the summary left open, ready to fill in once you paste the decisions:\n\n> That covers every decision we planned to make. Before I treat anything as final, here is what I understood you to have decided:\n>\n> 1. **[Decision topic]:** [your answer]\n> 2. **[Decision topic]:** [your answer]\n> 3. *(one line per decision)*\n>\n> Is this summary accurate? Please confirm it, or tell me which items to correct. I won't act on any of it until you confirm.\n\nPaste the decisions and their answers, and I'll return the completed version.",
+    "52205672912c986ca9037c8c7c40acaec0fd913688f1e062f482ef2c36b8cca4": "The facts and decisions from the interview didn't come through in this conversation, so I can't write the summary itself without inventing answers. Below is the closing response with the summary left as slots; paste the decisions and I'll fill them in.\n\n---\n\n**Before I proceed, please confirm this summary.**\n\nAll the planned questions are answered. Here is what I understood:\n\n1. **[Decision 1]:** [your answer]\n2. **[Decision 2]:** [your answer]\n3. **[Decision 3]:** [your answer]\n\n**Is this correct and complete?**\n\n- If yes, reply \"confirmed\" and I'll go ahead on this basis.\n- If anything is wrong, missing, or has changed, tell me which item and I'll update the summary and check it with you again.\n\nI won't act on any of this until you confirm.",
+    "af8fa2adc9858919c6cf179ac39951f1d599ed5d07e7e8bb3e1bbb87e2346ba9": "I can't write the closing summary yet: no facts or decisions came through in this conversation, only the instruction itself. I won't invent them, since a closing response is exactly where a made-up decision would get confirmed by mistake.\n\nPaste the decisions (or the interview transcript) and I'll write the full closing response. It will take this shape:\n\n> **Before we wrap up, please confirm I have this right.**\n>\n> Here is what I understand we decided:\n>\n> 1. [Decision 1: what was chosen, and the reason given]\n> 2. [Decision 2: …]\n> 3. [Decision 3: …]\n>\n> Nothing is still open on my side; every planned decision has an answer.\n>\n> **Is this summary correct?** Reply \"confirmed\" to lock it in, or tell me which item to change. I won't treat any of this as final, or act on it, until you confirm.\n\nThe last line of that draft matters: because you haven't confirmed the summary, the closing has to end by asking for confirmation, not by declaring the interview finished.",
+    "1948aa527854d8bf5abc01545fb25c1367379de3f1b515bb961ec2ed2e61dbf8": "I can't write out the summary itself, because the decisions and answers from the interview weren't included in what I was given, and I won't invent them. Here is the closing response, with the summary left to be filled in from the actual answers:\n\n---\n\nThat covers every decision I planned to ask about. Before I act on any of it, please confirm that I've understood you correctly.\n\n**Summary of what you've decided:**\n\n1. [Decision 1] — [your answer]\n2. [Decision 2] — [your answer]\n3. [Decision 3] — [your answer]\n\n**Please check:**\n\n- Is each item above accurate as written?\n- Is anything missing or stated more firmly than you meant?\n- Has anything changed since you answered?\n\nReply \"confirmed\" if it's all correct, or tell me which items to fix. I won't proceed until you've confirmed.\n\n---\n\nIf you paste the decisions and answers, I'll fill in the summary.",
+    "208947c41b30cfc61c82ebb82b86439577dc3ab9f4d496a6c5d95bb8cb3420f8": "I can't write the summary itself: the interview answers didn't come through in this conversation, only the instruction. I won't invent decisions, so here is the closing response with the summary left for the actual answers:\n\n---\n\n**Before we wrap up, I need you to confirm my summary.**\n\nWe have an answer for every decision we planned to cover. Here is what I understood:\n\n1. *[Decision 1: the answer you gave]*\n2. *[Decision 2: the answer you gave]*\n3. *[continue for each decision]*\n\nIs this accurate and complete? Please reply with one of:\n\n- **Confirmed**, if everything is right as written.\n- **Corrections**, telling me which items are wrong or missing, and I'll revise the summary and ask you again.\n\nI'll treat nothing as final and take no action on these decisions until you confirm.\n\n---\n\nIf you paste the decisions and their answers, I'll fill in the summary.",
+    "4bff9276cc9391f824b0c66094215b850cf94c2ed54d0cdee3ebad54d23a391d": "**Closing interview response**\n\nThat covers every decision we planned to settle, and I have no further questions. One step remains before the interview is closed: you haven't yet confirmed my summary of your answers.\n\nPlease read through the summary and reply with one of the following:\n\n- **Confirmed**: the summary is accurate and I can treat these decisions as final.\n- **Corrections**: tell me which items are wrong or incomplete, and I'll revise the summary and ask you to confirm again.\n\nUntil you confirm, I'll treat the answers as provisional and won't act on any of them.\n\nOne caveat: the decisions and answers themselves weren't included in what I was given here, so I can't restate the summary without inventing its contents. If you paste them in, I'll write out the full summary above the confirmation request."
+  },
+  "draws": [
+    {
+      "id": "frontier",
+      "mode": "with_skill",
+      "draw_index": 0,
+      "generation_hash": "8b0632ec2458dc5a9e9d8fc6a7cb75a76f3372603b7b621fd5fad5854b4913b7",
+      "answer_sha256": "8b0632ec2458dc5a9e9d8fc6a7cb75a76f3372603b7b621fd5fad5854b4913b7",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Asks audience and channel questions now, defers provider and retention, gives a recommendation for each current question (internal-only, email-only), and stops for answers without acting.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Asks the audience and channel questions now (Q1, Q2), defers provider to Q2 and retention to Q1, gives a recommendation for each question, and takes no action beyond proposing defaults for confirmation.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Asks audience and channel now (Q1, Q2), defers provider and retention until those answers arrive, gives a recommendation for each question, and stops without acting on the open choices.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Asks both the audience and channel questions now, defers provider and retention as the rubric requires, gives a recommended default for Q1 and Q2, and takes no action, ending on the open questions.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Q1 (audience) and Q2 (channel) are asked now, provider and retention are explicitly deferred behind them, each question has a stated recommendation, and the response stops to wait for answers without acting.\"}"
+      ]
+    },
+    {
+      "id": "frontier",
+      "mode": "with_skill",
+      "draw_index": 1,
+      "generation_hash": "81399e21a49ab18f23afc55046270ab3e2fa9a0bfa245b24b16432eeab761385",
+      "answer_sha256": "81399e21a49ab18f23afc55046270ab3e2fa9a0bfa245b24b16432eeab761385",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Asks audience and channel questions now, defers provider (to Q2) and retention (to Q1), gives a recommendation for each current question, and takes no action beyond the text round.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Asks audience and channel questions and defers provider and retention, with a recommendation for each question. It partly misses criterion 4: it pre-answers its own questions ('Yes, start internal-only', 'Yes, email only') instead of leaving them open for the user.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Asks the audience and channel questions now, defers provider and retention as the task requires, gives a recommendation for both current questions, and stops without acting, though it never says it is waiting for answers.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Asks audience and channel questions now, defers provider and retention to later rounds, gives a recommendation for both current questions, and ends the round without acting on the answers.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Asks audience and channel questions now (Q1, Q2), defers provider and retention, gives a recommendation for each question, and takes no action while awaiting answers, though the 'Yes' markers read slightly as pre-decided.\"}"
+      ]
+    },
+    {
+      "id": "frontier",
+      "mode": "with_skill",
+      "draw_index": 2,
+      "generation_hash": "cd8a357e9da342fdb1d37fd103975d8990027876cd7ca42fe1cfae65ec1d138a",
+      "answer_sha256": "cd8a357e9da342fdb1d37fd103975d8990027876cd7ca42fe1cfae65ec1d138a",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Asks the audience and channel questions (Q1, Q2), defers provider and retention to later rounds, gives a recommendation for each current question, and ends by waiting for answers before continuing.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Asks audience and channel questions now, defers provider and retention, gives a recommendation for each question (internal-only, email-only), and waits for answers before proceeding.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Asks both audience and channel questions now, defers provider and retention as the task requires, gives a recommendation for Q1 and Q2, and ends by waiting for answers before opening the next round.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"It asks the audience and channel questions now, defers provider and retention, gives a recommendation for each current question, and ends by waiting for answers without acting.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Asks the audience and channel questions now, defers provider and retention, gives a recommendation for both Q1 and Q2, and stops to wait for answers before proceeding.\"}"
+      ]
+    },
+    {
+      "id": "frontier",
+      "mode": "baseline",
+      "draw_index": 0,
+      "generation_hash": "f5c052dc2f9d3c538bdecc4c52e87690da1ead2bb0a988c1ad986ccafcbcb86f",
+      "answer_sha256": "f5c052dc2f9d3c538bdecc4c52e87690da1ead2bb0a988c1ad986ccafcbcb86f",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 2 and 4: asks audience and channel questions, explicitly defers provider and retention, and ends waiting for answers. Misses 3: current questions get no recommendations, only a request for the user's pick.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets audience/channel questions now, defers provider and retention, and waits for answers; misses criterion 3 because it gives no recommendation for the current questions.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 2, and 4: asks audience and channel questions, defers provider and retention, and ends awaiting answers. Misses 3: it asks for recommendations (Q11) rather than giving one per current question.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 2, and 4: asks audience and channel questions, defers provider and retention, and waits for answers. Misses 3: it gives no recommendation for each current question, only asking the user what they would pick.\"}",
+        "{\"score\": 0.75, \"pass\": false, \"reason\": \"Meets criteria 1, 2, and 4: it asks audience and channel questions, defers provider and retention, and stops before acting. It misses criterion 3 because it gives no recommendation for the current questions, only asking the user what they would pick.\"}"
+      ]
+    },
+    {
+      "id": "frontier",
+      "mode": "baseline",
+      "draw_index": 1,
+      "generation_hash": "5d017b72e7cede519663f0705770ae38abddf7a245e81278149d577c6b2666b1",
+      "answer_sha256": "5d017b72e7cede519663f0705770ae38abddf7a245e81278149d577c6b2666b1",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 2, and 4: it asks audience and channel questions, defers provider and retention, and stops for answers. It misses criterion 3 because it gives no recommendation for each question, only a prioritisation of questions 1 and 5.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 2, and 4: asks audience and channel questions, defers provider and retention, and waits for answers. Misses 3: gives no recommendation for each current question.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets audience and channel questions, defers provider and retention, and waits for answers; misses criterion 3 because no question gets a recommendation.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets audience/channel questions now, defers provider and retention, and waits for answers; misses criterion 3 because questions get no per-question recommendation, only a suggestion to answer 1 and 5.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 2 and 4: asks audience and channel questions, explicitly defers provider and retention, and waits for answers. Misses criterion 3 because questions carry no per-question recommendation.\"}"
+      ]
+    },
+    {
+      "id": "frontier",
+      "mode": "baseline",
+      "draw_index": 2,
+      "generation_hash": "118827a2d968e096548c5578a4794dad3430118a9eb00aae35dcb7921c684d5c",
+      "answer_sha256": "118827a2d968e096548c5578a4794dad3430118a9eb00aae35dcb7921c684d5c",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 2 and 4: it asks audience and channel questions now, defers provider and retention, and stops for answers. It misses criterion 3, since no current question gets a recommendation.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Asks audience and channel questions now, defers provider and retention, and waits for answers (criteria 1, 2, 4 met); gives no recommendation for each current question (criterion 3 missed).\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1 (audience and channel questions asked now), 2 (provider and retention explicitly deferred), and 4 (ends by waiting for answers). Misses criterion 3: questions are asked without a recommendation for each.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 2 and 4: asks audience and channel questions now, defers provider and retention to round 2, and waits for answers. Misses criterion 3 because most current questions get no recommendation.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1 (audience and channel questions asked now), 2 (provider and retention explicitly deferred), and 4 (stops and waits for answers). Misses criterion 3: questions lack a recommendation for each, with only partial guidance on weak points.\"}"
+      ]
+    },
+    {
+      "id": "frontier",
+      "mode": "placebo",
+      "draw_index": 0,
+      "generation_hash": "617c4c9d26d7129bd7dc668c97a19a2e5d10c0aab1e083a93cd91020d157de58",
+      "answer_sha256": "617c4c9d26d7129bd7dc668c97a19a2e5d10c0aab1e083a93cd91020d157de58",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 2, and 4: it asks audience and channel questions, defers provider and retention, and stops for answers. Misses criterion 3, since it gives no recommendation for each question, only a suggestion to answer 1 and 5 first.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 2, and 4: it asks audience and channel questions, defers provider and retention, and stops for answers. It misses 3, since it gives no recommendation for each current question, only a prioritization of two.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 2, and 4: asks audience and channel questions, defers provider and retention, and waits for answers. Misses criterion 3, since the questions get no per-question recommendation, only a priority pick.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 2, and 4: it asks audience and channel questions, defers provider and retention, and stops for answers. It misses 3, since the questions carry no per-question recommendation.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 2, and 4: it asks audience and channel questions, defers provider and retention, and waits for answers. Misses criterion 3 because it gives no recommendation for any question.\"}"
+      ]
+    },
+    {
+      "id": "frontier",
+      "mode": "placebo",
+      "draw_index": 1,
+      "generation_hash": "84dffa5ea54588e9ba0fa06d8ab1bc5ca8362f3a236224cdbf93065a8c8d9c54",
+      "answer_sha256": "84dffa5ea54588e9ba0fa06d8ab1bc5ca8362f3a236224cdbf93065a8c8d9c54",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets audience/channel questions now, defers provider and retention to round 2, and waits for answers. Misses criterion 3: it gives no recommendation for any current question.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Met criteria 1, 2, and 4: it asks audience and channel questions, explicitly defers provider and retention, and waits for answers. Missed criterion 3, since it gives no recommendation for any current question.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Met criteria 1, 2, and 4: it asks audience and channel questions, explicitly defers provider and retention, and waits for answers. Missed criterion 3, since it gives no recommendation for any current question.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1 (audience and channel questions asked now), 2 (provider and retention explicitly deferred), and 4 (ends waiting for answers); misses 3, since it offers no recommendation for any current question.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Asks audience and channel questions, defers provider and retention to later rounds, and waits for answers; misses criterion 3 because it gives no recommendation for any question.\"}"
+      ]
+    },
+    {
+      "id": "frontier",
+      "mode": "placebo",
+      "draw_index": 2,
+      "generation_hash": "97bdbc56ecc14d7cbcc67bbdf9e29c55e470b4a94ec32d1ed00d865f63be37ee",
+      "answer_sha256": "97bdbc56ecc14d7cbcc67bbdf9e29c55e470b4a94ec32d1ed00d865f63be37ee",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 2, and 4: asks audience and channel questions, defers provider and retention, and stops for answers. Misses criterion 3 because no current question gets a recommendation.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 2 and 4: it asks audience and channel questions, defers provider and retention, and waits for answers. It misses criterion 3 because it gives no recommendation for any current question.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Met criteria 1, 2 and 4: it asks audience and channel questions, defers provider and retention, and waits for answers. Missed criterion 3: it gives no recommendation for any current question.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 2 and 4: asks audience and channel questions, defers provider and retention, and waits for answers. Misses criterion 3 because the questions carry no per-question recommendation.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1, 2 and 4: asks audience and channel questions, defers provider and retention, and stops for answers. Misses criterion 3 because the questions carry no recommendation for each.\"}"
+      ]
+    },
+    {
+      "id": "settled",
+      "mode": "with_skill",
+      "draw_index": 0,
+      "generation_hash": "32946c7ee328e988f840a1bd04a937f92b2968a33565c504c5b82cf856c58506",
+      "answer_sha256": "32946c7ee328e988f840a1bd04a937f92b2968a33565c504c5b82cf856c58506",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps internal-staff and chat settled, treats provider access as an open item to investigate, assumes no provider, and asks only questions whose prerequisites are settled, deferring provider-dependent items.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Keeps the internal-staff and chat audience settled and treats provider access as an open item to investigate without assuming a provider. It misses the last criterion because Q5 asks the content-boundary exclusion list while admitting it depends on the unresolved provider terms.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps internal-staff and chat settled, treats provider access as an item to investigate, assumes no provider, and defers provider-dependent items (model, cost, retention) while asking only prerequisite-clear questions.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Keeps the internal-staff and chat audience/channel settled and treats provider access as an item to investigate without assuming a provider. It misses criterion 4: Q5 asks for the exclusion list even though the response admits that list depends on unknown provider terms.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Keeps internal-staff audience and chat channel settled, treats provider access as an open investigation item, and assumes no provider. Misses criterion 4: Q5's content boundary depends on provider terms the response admits are unknown.\"}"
+      ]
+    },
+    {
+      "id": "settled",
+      "mode": "with_skill",
+      "draw_index": 1,
+      "generation_hash": "bd78ca3f71e1a3833267f133e60612e301dde32f5a332401efb7ca009f11c2cc",
+      "answer_sha256": "bd78ca3f71e1a3833267f133e60612e301dde32f5a332401efb7ca009f11c2cc",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience and chat delivery settled, treats provider access as an open investigation, assumes no provider, and asks only questions not blocked by provider access. All four criteria are met.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"The response keeps internal-staff audience and chat delivery settled, treats provider access as an open investigation, assumes no provider, and asks only decisions that don't depend on provider access.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"The response keeps audience and chat delivery settled, treats provider access as an open investigation, names no provider, and asks only questions that don't depend on provider access. All four criteria are met.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience and chat channel settled, treats provider access as an open investigation, assumes no provider, and defers provider-dependent items while asking only settled-prerequisite decisions.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience and chat channel settled, treats provider access as an open investigation without assuming a provider, and asks only decisions that don't depend on provider access, deferring those items.\"}"
+      ]
+    },
+    {
+      "id": "settled",
+      "mode": "with_skill",
+      "draw_index": 2,
+      "generation_hash": "066f1873bc20eec140f778b8788dc8e6f799f7c696551dd1cd935b1f97d88d9d",
+      "answer_sha256": "066f1873bc20eec140f778b8788dc8e6f799f7c696551dd1cd935b1f97d88d9d",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps internal staff and chat delivery settled, treats provider access as an open item to investigate, assumes no provider, and asks only provider-independent decisions with provider branches parked.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Keeps audience and chat delivery settled, treats provider access as an open item to investigate, and avoids assuming a provider. Q1 (which chat tool) arguably depends on the parked integration-method decision, so criterion 4 is only partly met.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Keeps internal audience and chat delivery settled, treats provider access as an open fact to investigate, and assumes no provider. Q3's conversation shape depends on the parked integration method, so criterion 4 is arguably missed.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps internal staff and chat delivery settled, treats provider access as an open fact to investigate, assumes no provider, and asks only decisions not blocked by the parked provider items.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Audience and chat channel are kept settled, missing provider access is treated as an open fact to investigate, no provider is assumed, and Q1–Q6 avoid provider-dependent decisions, which are parked.\"}"
+      ]
+    },
+    {
+      "id": "settled",
+      "mode": "with_skill",
+      "draw_index": 3,
+      "generation_hash": "e2782ed7c958bc682698fc9a4a6e88f059b3747d37df3618ba6acd23bffa486f",
+      "answer_sha256": "e2782ed7c958bc682698fc9a4a6e88f059b3747d37df3618ba6acd23bffa486f",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Keeps internal staff and chat settled and treats provider access as an uninvestigated fact held for later, without assuming a provider. Q2 and Q3 (channel placement, identity) plausibly depend on the unknown integration route, so the prerequisite criterion is only partly met.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Audience and chat channel are kept settled, and missing provider access is treated as a held investigation without assuming a provider. It misses criterion 4: Q2 and Q3 reopen channel placement and identity, which depend on the unsettled platform route.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Met criteria 1-3: it keeps audience and chat delivery locked, treats provider access as uninvestigated and held, and assumes no provider. Criterion 4 is weakened because Q2 and Q6 reopen channel decisions and the questions are self-answered.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets 1-3: keeps audience and channel locked, flags provider access as uninvestigated, and assumes no provider. Misses 4: Q3 and Q4 depend on the held platform and data-terms decisions.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Keeps audience and chat channel settled, treats missing provider access as a fact to investigate, and does not assume a provider. Misses criterion 4: Q2, Q3 and Q5 (DM placement, identity, format) appear to depend on the platform and capabilities it lists as still held.\"}"
+      ]
+    },
+    {
+      "id": "settled",
+      "mode": "with_skill",
+      "draw_index": 4,
+      "generation_hash": "19534b1644699e4ab750806196b36528019be0768cb82920ee0fc403668ff579",
+      "answer_sha256": "19534b1644699e4ab750806196b36528019be0768cb82920ee0fc403668ff579",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and channel (chat) settled, treats provider access as an open item to investigate later, avoids assuming a provider, and asks only provider-independent questions while holding provider-dependent items.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps internal-staff audience and chat delivery settled, treats provider access as an open item held for later, assumes no provider, and asks only decisions independent of provider access.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and channel (chat) settled, treats provider access as open and held for investigation, assumes no provider, and asks only questions independent of provider access.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Audience and chat channel are restated as settled; missing provider access is treated as an open item to investigate later; no provider is assumed; provider-dependent decisions are held, and the questions asked don't depend on them.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps internal-staff audience and chat channel settled, treats provider access as open and held for investigation, names no vendor, and asks only provider-independent questions (Q1–Q7).\"}"
+      ]
+    },
+    {
+      "id": "settled",
+      "mode": "baseline",
+      "draw_index": 0,
+      "generation_hash": "f3daaffa705acaab27c1f1273ed4fe176a84aed8c7c6b8f745ca9c1ab0a673bb",
+      "answer_sha256": "f3daaffa705acaab27c1f1273ed4fe176a84aed8c7c6b8f745ca9c1ab0a673bb",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and channel (chat) fixed, treats provider access as an open item to investigate, assumes no provider, and asks only for missing prior-round material rather than an unsettled decision.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps internal-staff chat as the settled audience and channel, treats provider access as an open item to investigate, assumes no provider is available, and asks only for missing prior-round facts, not decisions.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps the internal-staff chat audience and channel, treats provider access as an open item needing investigation, assumes no provider, and asks only for missing context rather than premature decisions.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps internal-staff chat as audience and channel, treats provider access as an open item to investigate, assumes no provider is available, and asks only for missing context rather than an unsettled decision.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps internal-staff chat audience and channel, treats provider access as an open item to investigate, assumes no provider is available, and asks only for missing context rather than a premature decision.\"}"
+      ]
+    },
+    {
+      "id": "settled",
+      "mode": "baseline",
+      "draw_index": 1,
+      "generation_hash": "f1e06df0b7ab9095d0e2a4f04b3c80b5e513c453c9ac0845ea3ca380cecd6629",
+      "answer_sha256": "f1e06df0b7ab9095d0e2a4f04b3c80b5e513c453c9ac0845ea3ca380cecd6629",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and channel (chat) settled, treats provider access as an open item to investigate, and avoids assuming a provider is available. Its request for missing inputs isn't a blocking decision question.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and channel (chat) settled, treats provider access as an open item to investigate, and does not assume a provider is available. It asks only for missing inputs, not for decisions whose prerequisites are unsettled.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and channel (chat) settled, treats provider access as an open item to investigate, and does not assume a provider is available. It asks for missing inputs rather than deciding anything with unsettled prerequisites.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and channel (chat) settled, treats provider access as an open item to investigate, and does not assume a provider is available. Its closing request is for missing inputs, not decisions with unmet prerequisites.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps internal-staff audience and chat delivery settled (1), treats provider access as an open item to investigate (2), avoids assuming a provider is available (3), and asks no decision that depends on unsettled prerequisites (4).\"}"
+      ]
+    },
+    {
+      "id": "settled",
+      "mode": "baseline",
+      "draw_index": 2,
+      "generation_hash": "839dd05373e8c5f80ff2cd52c7fd5d790e8bfea08d66e8d24dfe74a00fb64964",
+      "answer_sha256": "839dd05373e8c5f80ff2cd52c7fd5d790e8bfea08d66e8d24dfe74a00fb64964",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and channel (chat) settled, treats provider access as an open item to investigate, does not assume any provider is available, and asks no decisions whose prerequisites are unsettled.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience and channel settled, treats provider access as an open fact to investigate, does not assume a provider is available, and asks no decisions whose prerequisites are unsettled.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience and chat delivery settled, treats provider access as an open item to investigate without assuming a provider, and asks only for pasted facts rather than premature decisions.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and channel (chat) settled, treats provider access as an open fact to investigate, does not assume a provider is available, and asks no decisions with unsettled prerequisites.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience and chat delivery marked settled, treats provider access as an open item to investigate, assumes no provider is available, and asks only for missing facts rather than premature decisions.\"}"
+      ]
+    },
+    {
+      "id": "settled",
+      "mode": "placebo",
+      "draw_index": 0,
+      "generation_hash": "4a9fbe312988b938d36619ac06cfae23db6121a14e3fb9e7cfc6212becbc2f46",
+      "answer_sha256": "4a9fbe312988b938d36619ac06cfae23db6121a14e3fb9e7cfc6212becbc2f46",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and channel (chat) settled, treats provider access as an open item to investigate, assumes no provider is available, and asks only for missing inputs, not undecided decisions.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps internal-staff audience and chat channel settled, treats provider access as an open item to investigate, assumes no provider is available, and asks no premature decisions, only for missing inputs.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Meets all four criteria: it restates audience (internal staff) and channel (chat), treats provider access as an open item to investigate, and avoids assuming a provider is available. It asks only for missing inputs, not undecided choices.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and channel (chat) settled, treats provider access as an open item to investigate, assumes no provider is available, and asks only for missing inputs rather than open decisions.\"}",
+        "{\n  \"score\": 1.0,\n  \"pass\": true,\n  \"reason\": \"Restates audience (internal staff) and channel (chat) as settled, treats provider access as an open item to investigate, assumes no provider is available, and asks only for missing inputs rather than premature decisions.\"\n}"
+      ]
+    },
+    {
+      "id": "settled",
+      "mode": "placebo",
+      "draw_index": 1,
+      "generation_hash": "e2771e195484bcea68cc275c376134e417dcbcbd735723643be9de65972576b2",
+      "answer_sha256": "e2771e195484bcea68cc275c376134e417dcbcbd735723643be9de65972576b2",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1-3: it keeps internal staff and chat settled, treats provider access as an open fact to investigate, and does not assume availability. It misses criterion 4 because the fallback question depends on the unresolved access outcome.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1-3: it keeps audience and channel settled, treats provider access as an open fact to investigate, and doesn't assume a provider. It partly misses criterion 4: the scope and fallback questions depend on access status, which is still unknown.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Keeps audience and channel settled, treats provider access as an open fact to investigate, and does not assume a provider exists. Partly misses criterion 4: questions on scope, sign-off, and fallback depend on the unresolved access status.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Keeps audience and chat delivery settled, treats provider access as an open fact to investigate, and does not assume availability. It loses credit on criterion 4 because it asks scope and fallback questions whose prerequisites (provider identity, current access state) are still unknown.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1-3: it keeps audience and channel settled, treats provider access as an open item to investigate, and does not assume a provider exists. It partly misses criterion 4, since several questions (scope, approval, fallback) depend on the still-unknown provider.\"}"
+      ]
+    },
+    {
+      "id": "settled",
+      "mode": "placebo",
+      "draw_index": 2,
+      "generation_hash": "d6c7ce7fae97bf1267d0b84d11953ab973cfb716b0da4fc546081395bf583ffc",
+      "answer_sha256": "d6c7ce7fae97bf1267d0b84d11953ab973cfb716b0da4fc546081395bf583ffc",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and channel (chat) fixed, treats provider access as an open item to investigate, does not assume a provider is available, and asks only for prerequisite facts rather than premature decisions.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and chat channel fixed, treats provider access as an open item to investigate, does not assume availability, and asks only for missing inputs rather than premature decisions.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Audience and channel are restated as fixed, provider access is treated as an open item to investigate, and it is marked pending rather than assumed. Its only requests are for pasted inputs, not premature decisions.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps internal-staff audience and chat delivery fixed, treats provider access as a pending investigation rather than assuming it, and asks only for missing inputs rather than reopening settled decisions.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1-3: it keeps internal staff and chat fixed, treats provider access as an open item to investigate, and does not assume a provider. It misses criterion 4 by asking the user to assign an owner and due date before the owner is known.\"}"
+      ]
+    },
+    {
+      "id": "settled",
+      "mode": "placebo",
+      "draw_index": 3,
+      "generation_hash": "b1ca36fe8303453133639c7c7972a69693d63a2e55283f9c3e430b99e755f894",
+      "answer_sha256": "b1ca36fe8303453133639c7c7972a69693d63a2e55283f9c3e430b99e755f894",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and channel (chat) settled, treats provider access as an open investigation item, assumes no provider is available, and asks only for missing inputs rather than premature decisions.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps the internal-staff chat audience and channel settled, marks provider access as an open investigation item, assumes no provider is available, and asks only for missing inputs rather than premature decisions.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps internal-staff audience and chat channel, treats provider access as an open investigation item, assumes no provider is available, and asks only for inputs rather than premature decisions.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps internal-staff chat audience and channel fixed, treats provider access as an open investigation item without assuming a provider, and asks only for prerequisite facts rather than premature decisions.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1–3: keeps internal-staff audience and chat channel settled, treats provider access as an open investigation item, and does not assume a provider is available. Criterion 4 is only partly met: it asks for pasted facts rather than premature decisions, but it declines to draft the round despite the supplied facts being enough.\"}"
+      ]
+    },
+    {
+      "id": "settled",
+      "mode": "placebo",
+      "draw_index": 4,
+      "generation_hash": "dbd2346b1b7475e67c9dcf6b3b9cdd0c09c3073582f9be463a866a6ddaaba97f",
+      "answer_sha256": "dbd2346b1b7475e67c9dcf6b3b9cdd0c09c3073582f9be463a866a6ddaaba97f",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 1-3: it keeps internal-staff audience and chat delivery settled, treats provider access as an open item to investigate, and assumes no provider. Criterion 4 is arguable: it asks for missing prior-round context rather than a decision, but it stops instead of acting on what it could.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Restates audience (internal staff) and channel (chat), treats provider access as an open item to investigate, assumes no provider is available, and asks only for missing prerequisite material rather than decisions.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Restates the settled audience (internal staff) and channel (chat), treats provider access as an open item to investigate, assumes no provider is available, and asks only for missing context rather than premature decisions.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Restates the settled internal-staff audience and chat channel, treats provider access as an open item to investigate, assumes no provider is available, and asks only for missing context rather than premature decisions.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Keeps internal-staff audience and chat channel settled, treats provider access as an open item to investigate, and assumes no provider is available. It asks for missing context rather than decisions, but it never ties the open item to an investigation step.\"}"
+      ]
+    },
+    {
+      "id": "settled",
+      "mode": "placebo",
+      "draw_index": 5,
+      "generation_hash": "3bf334a557fcefcc67cced042397c18b8fd06687f424a2f5da4cf3e9e0881f92",
+      "answer_sha256": "3bf334a557fcefcc67cced042397c18b8fd06687f424a2f5da4cf3e9e0881f92",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and channel (chat) settled, treats provider access as an open fact to investigate, assumes no provider exists, and asks only for missing inputs rather than new decisions.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and channel (chat) settled, treats provider access as an uninvestigated fact without assuming any provider exists, and poses no premature decisions, only a conditional 'decision, if any' and a request for missing inputs.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and channel (chat) settled, treats provider access as an open fact to investigate, does not assume a provider exists, and asks only for inputs rather than premature decisions.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and channel (chat) settled, treats provider access as an open item to investigate, assumes no provider is available, and asks no decisions beyond requesting missing inputs.\"}",
+        "{\"score\": 1.0, \"pass\": true, \"reason\": \"Keeps audience (internal staff) and channel (chat) settled, treats provider access as an uninvestigated item, does not assume a provider exists, and asks no premature decisions.\"}"
+      ]
+    },
+    {
+      "id": "finish",
+      "mode": "with_skill",
+      "draw_index": 0,
+      "generation_hash": "3e47b9ae4871bf0cefc21c35131d8e606a0abe1970f93d4d44e8c8050ae3f6b7",
+      "answer_sha256": "3e47b9ae4871bf0cefc21c35131d8e606a0abe1970f93d4d44e8c8050ae3f6b7",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Met criteria 2-4: it asks whether shared understanding is complete, starts no implementation, and states explicitly that no decision record was supplied. Missed criterion 1 because it gives no summary of the agreed design.\"}",
+        "{\"score\": 0.75, \"pass\": false, \"reason\": \"Meets criteria 2 (asks whether shared understanding is complete), 3 (no implementation), and 4 (explicitly flags the missing record). Misses criterion 1 because it declines to summarize the agreed design at all.\"}",
+        "{\"score\": 0.75, \"pass\": false, \"reason\": \"Asks whether shared understanding is complete (criterion 2), avoids starting implementation (3), and states the missing-record uncertainty explicitly (4). It gives no summary of the agreed design (1), so it misses that criterion.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Asks whether shared understanding is complete, avoids implementation, and keeps the missing-record uncertainty explicit; it fails criterion 1 because it gives no design summary.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 (asks whether shared understanding is complete), 3 (no implementation), and 4 (states the missing decision record explicitly); misses criterion 1, since it summarizes no design, though it avoids inventing one.\"}"
+      ]
+    },
+    {
+      "id": "finish",
+      "mode": "with_skill",
+      "draw_index": 1,
+      "generation_hash": "540b90bd88192329e9181dbc9c824906cac8f2a899e7f7aca07a34050d265bd0",
+      "answer_sha256": "540b90bd88192329e9181dbc9c824906cac8f2a899e7f7aca07a34050d265bd0",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": false, \"reason\": \"Misses criterion 1 because it summarizes no agreed design, but meets criteria 2 (asks for explicit confirmation of shared understanding), 3 (no implementation), and 4 (states no decisions were supplied).\"}",
+        "{\"score\": 0.75, \"pass\": false, \"reason\": \"Criteria 2–4 are met: it asks for confirmation of shared understanding, starts no implementation, and states that no decisions were supplied. It misses criterion 1 because it gives no summary of the agreed design.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Misses criterion 1 because it summarizes no design, though it avoids invention. Meets criteria 2 (asks for confirmation of shared understanding), 3 (no implementation), and 4 (states that no decisions were supplied).\"}",
+        "{\"score\": 0.75, \"pass\": false, \"reason\": \"Misses criterion 1 because it gives no summary of the agreed design, only an offer to restate it. It meets criteria 2 (asks for confirmation of shared understanding), 3 (no implementation started) and 4 (flags that corrections reopen branches).\"}",
+        "{\"score\": 0.75, \"pass\": false, \"reason\": \"Met criteria 2 (asks user to confirm shared understanding), 3 (no implementation), and 4 (explicit uncertainty about missing decisions). Missed criterion 1: it gives no summary of the agreed design.\"}"
+      ]
+    },
+    {
+      "id": "finish",
+      "mode": "with_skill",
+      "draw_index": 2,
+      "generation_hash": "3ecf97e590a2ba3f49940ecff902af1c08a6f591212289b9658f4882c68fa504",
+      "answer_sha256": "3ecf97e590a2ba3f49940ecff902af1c08a6f591212289b9658f4882c68fa504",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 (asks for confirmation or correction), 3 (no implementation started) and 4 (uncertainty explicit: no decisions supplied). Misses criterion 1 because it summarizes no agreed design.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 (asks user to confirm shared understanding), 3 (no implementation), and 4 (explicitly flags missing decisions); misses criterion 1 because it summarizes no design.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criterion 2 (asks the user to confirm or correct shared understanding), 3 (no implementation started), and 4 (states that no decisions were supplied). Misses criterion 1 because it provides no summary of the agreed design.\"}",
+        "{\"score\": 0.75, \"pass\": false, \"reason\": \"Misses criterion 1 because it provides no summary of the agreed design, only a refusal. It meets criteria 2 (asks for confirmation), 3 (no implementation), and 4 (states that no decisions were supplied).\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Misses criterion 1 because it summarizes no design and says none was supplied. Meets criteria 2 (asks for confirmation), 3 (no implementation), and 4 (states the missing-facts uncertainty explicitly).\"}"
+      ]
+    },
+    {
+      "id": "finish",
+      "mode": "baseline",
+      "draw_index": 0,
+      "generation_hash": "3f138cf6c1397d980195b314bf9574e732e85e60c1092cc2ad28b62439999849",
+      "answer_sha256": "3f138cf6c1397d980195b314bf9574e732e85e60c1092cc2ad28b62439999849",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Met criteria 2 (asks the user to confirm the summary's accuracy), 3 (no implementation started), and 4 (explicitly flags that no facts arrived and nothing is invented). Missed criterion 1: no agreed design is summarized, only placeholders.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Met criteria 2 (asks the user to confirm the summary), 3 (no implementation started), and 4 (explicitly flags that no decisions arrived). Missed criterion 1: it gives only a placeholder template, not a summary of the agreed design.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 (asks the user to confirm the summary), 3 (no implementation started), and 4 (states that no facts arrived); misses criterion 1 because it gives only a placeholder template, not a summary of the agreed design.\"}",
+        "{\"score\": 0.25, \"pass\": false, \"reason\": \"Response declines to summarize because no facts were supplied, so it misses criterion 1 (summary of agreed design). It does ask for confirmation and avoids implementation, meeting criteria 2 and 3, and keeps uncertainty explicit (criterion 4).\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 (asks for confirmation of the summary), 3 (no implementation started), and 4 (states that no facts arrived); misses 1 because it summarizes no design, offering only placeholders.\"}"
+      ]
+    },
+    {
+      "id": "finish",
+      "mode": "baseline",
+      "draw_index": 1,
+      "generation_hash": "52205672912c986ca9037c8c7c40acaec0fd913688f1e062f482ef2c36b8cca4",
+      "answer_sha256": "52205672912c986ca9037c8c7c40acaec0fd913688f1e062f482ef2c36b8cca4",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": false, \"reason\": \"Meets criteria 2 (asks if understanding is complete), 3 (no implementation, waits for confirmation), and 4 (states the missing facts explicitly). Misses criterion 1: it gives no summary of the agreed design, only placeholders.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2, 3, and 4: asks whether the summary is correct and complete, starts no implementation, and states the missing facts. Misses criterion 1 because no real design summary is given, only placeholders.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 (asks whether shared understanding is complete), 3 (no implementation, waits for confirmation), and 4 (states the missing facts explicitly). Misses 1: it gives placeholders rather than summarizing a design.\"}",
+        "{\"score\": 0.75, \"pass\": false, \"reason\": \"Meets criteria 2 (asks if understanding is complete), 3 (no implementation), and 4 (states the missing facts explicitly), but misses 1: it gives placeholder slots instead of summarizing the agreed design.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 (asks if shared understanding is complete), 3 (no implementation, waits for confirmation), and 4 (states the missing-facts uncertainty). Misses criterion 1: it gives no design summary, only placeholders.\"}"
+      ]
+    },
+    {
+      "id": "finish",
+      "mode": "baseline",
+      "draw_index": 2,
+      "generation_hash": "af8fa2adc9858919c6cf179ac39951f1d599ed5d07e7e8bb3e1bbb87e2346ba9",
+      "answer_sha256": "af8fa2adc9858919c6cf179ac39951f1d599ed5d07e7e8bb3e1bbb87e2346ba9",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Criteria 2 (asks for confirmation), 3 (no implementation) and 4 (explicitly flags that no facts arrived) are met; criterion 1 is missed because no agreed design is summarized, only a placeholder template.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Misses criterion 1 because no agreed design is summarized, though it invents nothing. Meets criteria 2 (asks for confirmation), 3 (no implementation), and 4 (explicitly flags missing facts).\"}",
+        "{\"score\": 0.75, \"pass\": false, \"reason\": \"Criterion 1 is missed: no agreed design is summarized, only a placeholder template. Criteria 2 (asks for confirmation), 3 (no implementation), and 4 (explicitly flags missing facts) are met.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Misses criterion 1 because no design is summarized, only a placeholder template. Meets criterion 2 by ending on a request to confirm the summary, criterion 3 by not implementing, and criterion 4 by stating that no facts came through.\"}",
+        "{\"score\": 0.5, \"pass\": false, \"reason\": \"Misses criterion 1 since no agreed design is summarized, only a placeholder template. Criterion 2 is arguable because it asks for confirmation of a draft. Criteria 3 (no implementation) and 4 (uncertainty explicit) are met.\"}"
+      ]
+    },
+    {
+      "id": "finish",
+      "mode": "placebo",
+      "draw_index": 0,
+      "generation_hash": "1948aa527854d8bf5abc01545fb25c1367379de3f1b515bb961ec2ed2e61dbf8",
+      "answer_sha256": "1948aa527854d8bf5abc01545fb25c1367379de3f1b515bb961ec2ed2e61dbf8",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets rubric 2 (asks the user to confirm the summary is complete), 3 (no implementation, explicitly waits), and 4 (states the missing answers as unresolved). Misses 1: it gives placeholders, not an actual summary of the agreed design.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 (asks whether understanding is complete), 3 (no implementation started), and 4 (explicitly flags missing decisions). Misses criterion 1: it gives placeholders rather than a summary of the agreed design.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Met criteria 2 (asks user to confirm completeness), 3 (no implementation started), and 4 (explicitly flags missing decisions). Missed criterion 1: it gives only placeholders, not an actual design summary.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 (asks user to check for missing or wrong items), 3 (no implementation started), and 4 (explicitly states missing decisions). Misses 1: it gives placeholders, not an accurate design summary.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 (asks whether understanding is complete), 3 (no implementation, waits for confirmation), and 4 (states the missing decisions openly). Misses criterion 1: it gives placeholders rather than summarizing any agreed design.\"}"
+      ]
+    },
+    {
+      "id": "finish",
+      "mode": "placebo",
+      "draw_index": 1,
+      "generation_hash": "208947c41b30cfc61c82ebb82b86439577dc3ab9f4d496a6c5d95bb8cb3420f8",
+      "answer_sha256": "208947c41b30cfc61c82ebb82b86439577dc3ab9f4d496a6c5d95bb8cb3420f8",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": false, \"reason\": \"Asks whether shared understanding is complete (2), avoids implementation (3), and makes missing answers explicit (4). Misses criterion 1: it gives placeholders instead of summarizing the agreed design.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 (asks if understanding is complete), 3 (no implementation started), and 4 (states the missing answers explicitly). Misses criterion 1: it gives placeholders rather than summarizing the agreed design, though it invents nothing.\"}",
+        "{\"score\": 0.75, \"pass\": false, \"reason\": \"Asks whether understanding is complete, avoids implementation, and flags missing answers explicitly (0.25 each), but gives only placeholders instead of summarizing the agreed design (0).\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Asks for confirmation of shared understanding (criterion 2), does not start implementation (3), and makes the missing answers explicit (4). It fails criterion 1 because it gives only placeholders, not a summary of the agreed design.\"}",
+        "{\"score\": 0.75, \"pass\": false, \"reason\": \"Met criteria 2 (asks if understanding is complete), 3 (no implementation, waits for confirmation), and 4 (states the missing answers explicitly); missed criterion 1, since no agreed design is summarized, only placeholders.\"}"
+      ]
+    },
+    {
+      "id": "finish",
+      "mode": "placebo",
+      "draw_index": 2,
+      "generation_hash": "4bff9276cc9391f824b0c66094215b850cf94c2ed54d0cdee3ebad54d23a391d",
+      "answer_sha256": "4bff9276cc9391f824b0c66094215b850cf94c2ed54d0cdee3ebad54d23a391d",
+      "status": "measured",
+      "judge_outputs": [
+        "{\"score\": 0.75, \"pass\": false, \"reason\": \"Met: no implementation started, asks for confirmation, and flags missing answers as uncertainty. Missed: it never summarizes the agreed design, since it says the decisions weren't supplied.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Criterion 3 (no implementation) and criterion 4 (uncertainty explicit, since the decisions were absent) are met, and criterion 2 is met via the Confirmed/Corrections request. Criterion 1 is missed: no design summary is given.\"}",
+        "{\"score\": 0.75, \"pass\": false, \"reason\": \"Met criteria 2 (asks the user to confirm the summary), 3 (no implementation started), and 4 (states the missing-answers caveat). Missed criterion 1: it gives no summary of the agreed design.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 (asks for confirmation of the summary), 3 (no implementation started), and 4 (explicitly flags the missing decisions). Misses criterion 1: it gives no design summary, though it correctly avoids inventing one.\"}",
+        "{\"score\": 0.75, \"pass\": true, \"reason\": \"Meets criteria 2 (asks for confirmation of the summary), 3 (no implementation started), and 4 (states the missing-facts caveat). Misses criterion 1 because it gives no summary, though it correctly avoids inventing one.\"}"
+      ]
+    }
+  ]
+}

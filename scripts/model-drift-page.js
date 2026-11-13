@@ -99,6 +99,9 @@ const TEXT = {
   version: (places) => `Driftproof measured more than one version of this text. This row is the version in ${places}.`,
   alone: 'These receipts were not all measured the same way, so read each one on its own.',
   handoff: 'This text only tells the model to call another skill with the Skill tool, so its receipts read that instruction, not the skill it names.',
+  // Issue 790 (spec 639 A-639-9): a row that holds a tools-on receipt (spec 786), which ran with the
+  // called skill installed and was scored on the end state.
+  handoffToolsOn: 'This text only tells the model to call another skill with the Skill tool. Its text-only receipts read that instruction, not the skill it names; a receipt marked tools on ran with that skill installed and was scored on what Claude Code ended up doing.',
   noun: { tasks: 'test tasks', grading: 'judge and grading', setup: 'run setup' },
   differs: { tasks: 'different test tasks', setup: 'a different run setup' },
   // What a grading difference is, by the field that moved (A-639-2): [one receipt, several].
@@ -157,6 +160,7 @@ function runOf(rel) {
 
 // ── AC-8: what the receipts record about how they were measured ─────────────────────────────────
 const get = (o, p) => p.split('.').reduce((v, k) => (v === undefined || v === null ? undefined : v[k]), o);
+const toolsOn = (r) => get(r, 'run.capture.mode') === 'repository-tools-on';
 const absent = (v) => v === undefined || v === null;
 const orNull = (v) => (v === undefined ? null : v);
 const armRows = (r) => ((r.results || {}).cases || []).filter((c) => c.mode === 'with_skill' || c.mode === 'baseline');
@@ -310,7 +314,7 @@ function driftRows(entries, { reportsOf = reportsOfArchive, texts = committedTex
       const ns = [...new Set(reportsOf(x.receipt))].sort();
       if (!ns.length && !canaryPlace(x.rel)) refuse(`${x.rel}: no report lists this receipt, so its place cannot be read`);
       const run = runOf(x.rel);
-      return [x, { hash: x.receipt.receipt_hash, ...readingOf(x.receipt), reports: ns, place: ns.length ? reportsText(ns) + (run ? `, ${run}` : '') : canaryPlace(x.rel), date: String(x.receipt.run.date_utc).slice(0, 10) }];
+      return [x, { hash: x.receipt.receipt_hash, ...readingOf(x.receipt), reports: ns, place: ns.length ? reportsText(ns) + (run ? `, ${run}` : '') + (toolsOn(x.receipt) ? ', tools on' : '') : canaryPlace(x.rel), date: String(x.receipt.run.date_utc).slice(0, 10) }];
     }));
     const models = ids.map((id) => ({ id, name: humanModelName(id), entries: xs.filter((x) => x.receipt.run.model_id === id) }))
       .sort((a, b) => cmp(a.entries[0].receipt.run.date_utc, b.entries[0].receipt.run.date_utc) || cmp(a.id, b.id))
@@ -322,7 +326,7 @@ function driftRows(entries, { reportsOf = reportsOfArchive, texts = committedTex
     rows.push({
       subject, name: subjectName(xs[0].rel, xs[0].receipt), list: verdictModels >= 2 ? 'main' : 'other', xs, models, readings, reports,
       first: xs[0].receipt.run.date_utc, router: xs.some((x) => policy.routerLimit(x.receipt)),
-      handoff: texts.has(subject) && isHandoff(texts.get(subject)),
+      handoff: texts.has(subject) && isHandoff(texts.get(subject)), toolsOn: xs.some((x) => toolsOn(x.receipt)),
       notes: [...noteOf].map(([text, ns]) => ({ text, reports: ns })),
       groups: Object.fromEntries(GROUPS.map((g) => [g, groupAcross(xs, g)])),
     });
@@ -543,7 +547,7 @@ function rowHTML(row) {
   if (row.list === 'main') L.push(conditionsHTML(row));
   if (row.router) L.push(`<p class="drift-router">${esc(policy.REASON)} <a href="${policy.AMENDMENT}">${place('Report 015 Amendment 1')}</a>.</p>`);
   if (row.versioned) L.push(`<p class="drift-version">${esc(TEXT.version('@'))}</p>`.replace('@', place(reportsText(row.reports))));
-  if (row.handoff) L.push(`<p class="drift-handoff">${esc(TEXT.handoff)}</p>`);
+  if (row.handoff) L.push(`<p class="drift-handoff">${esc(row.toolsOn ? TEXT.handoffToolsOn : TEXT.handoff)}</p>`);
   for (const m of row.models) L.push(`<p class="drift-model" data-model="${esc(m.id)}">On ${modelName(m.name)}: ${m.readings.map(readingHTML).join('; ')}.</p>`);
   // Each note is led in by its report, so its "this page" reads as that report's page (A-639-2).
   for (const n of row.notes) {
