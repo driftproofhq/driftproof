@@ -348,6 +348,8 @@ function fixesMergedUpstream() {
   const skills = byIdentity('addyosmani/agent-skills', 576, 'Agent Skills');
   for (const n of [578, 587, 598, 600, 614, 615]) byIdentity(skills.repo, n, skills.project);
   const p = (n) => pullLink(skills.repo, n);
+  // Issue 797 (spec 127 A-127-12): the defects behind the open pull requests that the paper writes up
+  // are version 2's count from docs/data/paper.json (nine on 11 November 2026), not version 1's six.
   return `<section id="fixes-merged-upstream">
 <h3>Fixes merged into other evaluation tools</h3>
 <p>Driftproof's maintainer, Maverick (<a href="${MAINTAINER_PROFILE}">mavericksea-ai</a> on GitHub), reads the scoring and gating code of other evaluation tools and sends fixes upstream. ${countWord(UPSTREAM_DATA.pulls.length)} are merged. Current GitHub release observations are listed on the maintainer page. Among the merged fixes:</p>
@@ -356,7 +358,7 @@ function fixesMergedUpstream() {
 <li>${creditLabel(nvidia)} a script earns execution credit only with evidence that it was run, not just read or searched (${pullLink(nvidia.repo, 154)}).</li>
 <li>${creditLabel(skills)} grader results are bound to the expectations they answer (${p(576)}); stale grading is cleared and each run records its identity (${p(587)}); the ADR eval grades what the skill asks for (${p(598)}); the floor-guard reference catches untracked files, deleted tests and raised limits (${p(600)}, ${p(614)}). Two more fixes there are not about evaluation (${p(578)}, ${p(615)}).</li>
 </ul>
-<p>Open pull requests: <a href="${esc(UPSTREAM_OPEN_URL)}">search GitHub</a>. Six of the defects behind them are written up in the <a href="/paper/">paper</a>. More on who maintains Driftproof: <a href="/maintainer/">Maintainer</a>.</p>
+<p>Open pull requests: <a href="${esc(UPSTREAM_OPEN_URL)}">search GitHub</a>. ${countWord(readJson('docs/data/paper.json').found.open_author_pr)} of the defects behind them are written up in the <a href="/paper/">paper</a>. More on who maintains Driftproof: <a href="/maintainer/">Maintainer</a>.</p>
 </section>`;
 }
 
@@ -401,7 +403,7 @@ ${sec('published-evidence', A.headings.evidence, `<p>${esc(A.labels.evidence)}</
 <ul>
 ${reportLines}
 </ul>`)}
-${sec('the-paper', A.headings.paper, `<p><a href="/paper/">${esc(paper.title)}</a>. ${esc(paper.preprint_line)}. DOI <a href="${esc(paper.doi_url)}">${esc(paper.doi)}</a>.</p>`)}
+${sec('the-paper', A.headings.paper, `<p><a href="/paper/">${esc(paper.title)}</a>. ${esc(paper.version_line)}. ${esc(paper.preprint_line)}. DOI <a href="${esc(paper.doi_url)}">${esc(paper.doi)}</a>.</p>`)}
 ${sec('the-software', A.headings.software, `<ul>
 <li><a href="${esc(R.profiles.repository)}">${bare(R.profiles.repository)}</a></li>
 <li><a href="${esc(R.profiles.npm)}">${bare(R.profiles.npm)}</a></li>
@@ -452,16 +454,6 @@ ${relatedLinks('compare')}
   return { title: A.title, main };
 }
 
-// ── the question that leads the paper page ─────────────────────────────────────────────
-// Its answer is sentences of the abstract, each found in docs/paper/index.html.
-function paperQuestion() {
-  const q = answers().pages.paper;
-  return `<section class="paper-question" id="${esc(q.id)}">
-<h2>${esc(q.question)}</h2>
-${q.answer.map((p, i) => paragraph(p, `paper question ${i + 1}`, i === 0 ? 'answer' : '', 'docs/paper/index.html')).join('\n')}
-</section>`;
-}
-
 // ── the links the homepage and the reports index carry ────────────────────────────────
 function answerList() {
   return `<ul class="related">
@@ -481,4 +473,4 @@ ${answerList()}
 </div>`;
 }
 
-module.exports = { whatIsPage, questionPage, comparePage, paperQuestion, answerLinks, answerSplit, pageVisibleText: visibleText, UPSTREAM_CREDITS, UPSTREAM_DATA, UPSTREAM_OPEN_URL, UPSTREAM_ALL_URL, MAINTAINER_PROFILE, pullUrl };
+module.exports = { whatIsPage, questionPage, comparePage, answerLinks, answerSplit, pageVisibleText: visibleText, UPSTREAM_CREDITS, UPSTREAM_DATA, UPSTREAM_OPEN_URL, UPSTREAM_ALL_URL, MAINTAINER_PROFILE, pullUrl };

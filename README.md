@@ -36,9 +36,12 @@ Claude Code subscription. You need Node.js 22 or later.
 [First run](#first-run) · [Other ways to install](#install) · [Measure your own skill](#quickstart-receipt-for-your-own-skill)
 
 **Latest finding** · [Report 019](https://driftproofhq.com/reports/019/), 11 Nov
-2026: 10 of 20 skills beat the fake on Fable 5.2: read one task at a time, each
-scored above the same-length placebo on at least one of three tasks and below it
-on none.
+2026: of the 20 skills, 10 beat the fake, 4 did not beat it, and for 6 we can't
+tell yet.
+
+**Free measurement** · [Send us your skills](https://driftproofhq.com/measure/).
+We'll tell you which ones you can delete on Claude 5. It's free. Anyone can ask,
+not only the author.
 
 [![driftproof](https://img.shields.io/endpoint?url=https://driftproofhq.com/badges/commit-message-conventions.json)](https://driftproofhq.com)
 live badge for the bundled example, generated from its own receipt.
@@ -1215,6 +1218,7 @@ output), spanning nine published report types, the newest being placebo comparis
 - **[Report #016](https://driftproofhq.com/reports/016/)**: *rules-file behaviour*. Seven popular rules files against no file and same-length fakes. File-to-fake output comparisons: 6 haiku increases · 1 haiku unclear · 3 sonnet increases · 2 sonnet decreases · 2 sonnet unclear. These are behaviour changes, not correctness verdicts, on small tasks with injected instructions.
 - **[Report #017](https://driftproofhq.com/reports/017/)**: *placebo comparison*. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length placebo text, judged by Haiku 5.5. Of the 16 skills it counts, the placebo readings are 11 above the placebo · 3 below the placebo · 0 no difference · 0 inconclusive · 2 not enough draws · 0 not measured. A skill is above the placebo when, read one task at a time, it scored above the placebo on at least one task and below it on none; only that beats the fake. Where the fake scored below no skill, beating it does not mean beating no skill. The four routers have no verdict, as in Report 015.
 - **[Report #018](https://driftproofhq.com/reports/018/)**: *placebo comparison*. Report 015's twenty skills on Haiku 5.5, each against no skill and against a same-length placebo text, judged by Haiku 5.5, the same model. Of the 16 skills it counts, the placebo readings are 12 above the placebo · 2 below the placebo · 0 no difference · 0 inconclusive · 2 not enough draws · 0 not measured. A skill is above the placebo when, read one task at a time, it scored above the placebo on at least one task and below it on none; only that beats the fake. Where the fake scored below no skill, beating it does not mean beating no skill. The four routers have no verdict, as in Report 015.
+- **[Report #019](https://driftproofhq.com/reports/019/)**: *placebo comparison*. The same twenty skills on Fable 5.2, each against no skill and against a same-length placebo text, judged by Haiku 5.5. Fourteen are graded on the reply; the six that hand work to other skills or tools ran with tools on and were graded on what Claude Code ended up doing. Of the 20 skills it counts, the placebo readings are 10 above the placebo · 1 below the placebo · 3 no difference · 0 inconclusive · 6 not enough draws · 0 not measured. A skill is above the placebo when, read one task at a time, it scored above the placebo on at least one task and below it on none; only that beats the fake.
 <!--/driftproof:campaign-readme-->
 
 ✍️ The launch essay, **[Three model releases later: what actually happens to agent
@@ -1222,6 +1226,14 @@ skills](https://driftproofhq.com/writing/three-releases/)**, reads all eighteen 
 together: what moves underneath a skill, what the skill costs to run, and what a
 corrected instrument did to three published results. Revised 2026-10-07; every
 figure in it is gate-checked against the report page it cites.
+
+<!--driftproof:readme-paper-->
+📄 **Paper** · [Reported, Not Measured: An Empirical Study of Measurement
+Defects in LLM and Agent Evaluation Tools](https://driftproofhq.com/paper/).
+Version 2, 11 November 2026. Preprint, not peer reviewed. DOI
+[10.5281/zenodo.24136677](https://doi.org/10.5281/zenodo.24136677); all versions
+[10.5281/zenodo.23050795](https://doi.org/10.5281/zenodo.23050795).
+<!--/driftproof:readme-paper-->
 
 Driftproof does **not** commit third-party skill content. Each `SKILL.md` is
 fetched at run time from a pinned commit and verified by sha256 against

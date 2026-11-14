@@ -56,7 +56,7 @@ Every published report, newest first.
 
 ## The paper
 
-[Reported, Not Measured: An Empirical Study of Measurement Defects in LLM and Agent Evaluation Tools](https://driftproofhq.com/paper/). Preprint, not peer reviewed. DOI [10.5281/zenodo.23050796](https://doi.org/10.5281/zenodo.23050796).
+[Reported, Not Measured: An Empirical Study of Measurement Defects in LLM and Agent Evaluation Tools](https://driftproofhq.com/paper/). Version 2, 11 November 2026. Preprint, not peer reviewed. DOI [10.5281/zenodo.24136677](https://doi.org/10.5281/zenodo.24136677).
 
 ## The software
 
@@ -73,7 +73,7 @@ Driftproof's maintainer, Maverick ([mavericksea-ai](https://github.com/mavericks
 - **NVIDIA SkillEvaluator:** a script earns execution credit only with evidence that it was run, not just read or searched ([#154](https://github.com/NVIDIA/SkillEvaluator/pull/154)).
 - **Agent Skills:** grader results are bound to the expectations they answer ([#576](https://github.com/addyosmani/agent-skills/pull/576)); stale grading is cleared and each run records its identity ([#587](https://github.com/addyosmani/agent-skills/pull/587)); the ADR eval grades what the skill asks for ([#598](https://github.com/addyosmani/agent-skills/pull/598)); the floor-guard reference catches untracked files, deleted tests and raised limits ([#600](https://github.com/addyosmani/agent-skills/pull/600), [#614](https://github.com/addyosmani/agent-skills/pull/614)). Two more fixes there are not about evaluation ([#578](https://github.com/addyosmani/agent-skills/pull/578), [#615](https://github.com/addyosmani/agent-skills/pull/615)).
 
-Open pull requests: [search GitHub](https://github.com/pulls?q=author%3Amavericksea-ai%20is%3Apr%20is%3Aopen%20is%3Apublic%20-org%3Adriftproofhq%20-user%3Amavericksea-ai). Six of the defects behind them are written up in the [paper](https://driftproofhq.com/paper/). More on who maintains Driftproof: [Maintainer](https://driftproofhq.com/maintainer/).
+Open pull requests: [search GitHub](https://github.com/pulls?q=author%3Amavericksea-ai%20is%3Apr%20is%3Aopen%20is%3Apublic%20-org%3Adriftproofhq%20-user%3Amavericksea-ai). Nine of the defects behind them are written up in the [paper](https://driftproofhq.com/paper/). More on who maintains Driftproof: [Maintainer](https://driftproofhq.com/maintainer/).
 
 Mentions by people outside the project:
 

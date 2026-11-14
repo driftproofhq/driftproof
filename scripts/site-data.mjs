@@ -198,7 +198,9 @@ const { verdictFromReceipt } = require('../lib/verdict.js');
 // taken from the SAME derivation the repo gate checks it against rather than
 // from a second one that could be right about a different number.
 const prep007 = require('./prepare-report-007.js');
-const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen'];
+// Issue 797: the report count is docs/data/reports.json's list, held to the report pages, and its word
+// is spelled for any count, by the one module the README's counts read too.
+const RC = require('./report-count.js');
 const exampleVerdict = verdictFromReceipt(EXAMPLE);
 
 const reportDirs = () => fs.readdirSync(path.join(DOCS, 'reports'), { withFileTypes: true })
@@ -346,7 +348,7 @@ function buildStats() {
 
   return {
     _what: 'Derived at build by scripts/site-data.mjs. Every field carries the path it came from. Do not hand-edit: the spec gate regenerates this file and compares.',
-    reports_published: F(reportDirs().length, 'docs/reports'),
+    reports_published: F(RC.reportCount(ROOT), 'docs/reports'),
     receipts_published: F(receipts.length, 'receipts'),
     substrates_measured: F(models.size, 'receipts'),
     cases_measured: F(cases, 'receipts'),
@@ -356,7 +358,7 @@ function buildStats() {
     samples_per_draw: F(DEFAULT_JUDGE_SAMPLES, 'config.js'),
     effect_floor: F(EFFECT_FLOOR, 'config.js'),
     verdict_rule: F(prefix(rule, 200), rel(meth)),
-    reports_published_word: F(WORDS[reportDirs().length], 'docs/reports'),
+    reports_published_word: F(RC.numberWord(RC.reportCount(ROOT)), 'docs/reports'),
     version: F(JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version, 'package.json'),
     draw_spread_sd: F(best007.sd.toFixed(3), 'receipts/report-007'),
     draw_spread_case: F(best007.id, 'receipts/report-007'),

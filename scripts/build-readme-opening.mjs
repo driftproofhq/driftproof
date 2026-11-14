@@ -18,6 +18,10 @@
 //     The opening is a first-read surface (issue 652): a term the summary uses undefined, such as
 //     "by the case rule", is said in the data file's plain words (`finding_plain`), which carry no
 //     count, so no figure moves; the report page keeps the summary's own words.
+//   - the free measurement line (issue 797) is the data file's choice of the /measure/ page's own
+//     sentences, each found on that page, linked to it;
+//   - the paper line below the first screen (issue 797) is docs/data/paper.json's facts, in its
+//     own fence, written and checked with the opening;
 //   - the badge's image line is kept as the README carries it; spec 020 AC-30 holds it to its Base;
 //   - the view screenshot is a committed file under docs/, shown by its site URL (the site serves
 //     docs/ at its root), so it renders on GitHub and on npm, where a repository path would not;
@@ -118,6 +122,43 @@ export function repoTreeUrl(root, rel) {
   if (!/^https:\/\/github\.com\//.test(url)) throw new Error(`package.json repository.url is not a GitHub URL: ${JSON.stringify(url)}`);
   return `${url}/tree/main/${rel.replace(/\/$/, '')}`;
 }
+// Issue 797: the free measurement offer, one line. Its link text and sentences are the data file's
+// choice of the /measure/ page's own sentences, read from the words that page is built from
+// (scripts/build-measure.js `const WORDS = {...}`, read as text so the README builder needs nothing
+// the page builder requires); each must be found in a string there, so the line says nothing the page
+// does not.
+const MEASURE_BUILDER = 'scripts/build-measure.js';
+export function measureLine(root, m) {
+  if (!m) return '';
+  const src = read(root, MEASURE_BUILDER);
+  const a = src.indexOf('const WORDS = {'); const b = src.indexOf('\n};', a);
+  if (a < 0 || b < 0) throw new Error(`${MEASURE_BUILDER} carries no "const WORDS = {...};" block`);
+  const strings = [...src.slice(a, b).matchAll(/"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'/g)].map((x) => (x[1] ?? x[2]).replace(/\\(.)/g, '$1'));
+  for (const s of m.sentences) if (!strings.some((x) => x.includes(s))) throw new Error(`the /measure/ page's words (${MEASURE_BUILDER}) do not say ${JSON.stringify(s)}`);
+  const rel = (/^const REL = '([^']+)';$/m.exec(src) || [])[1];
+  if (!rel) throw new Error(`${MEASURE_BUILDER} names no REL for its page`);
+  const [first, ...rest] = m.sentences;
+  return `${wrap(`**${m.label}** · [${first.replace(/\.$/, '')}](${ORIGIN}/${rel.replace(/index\.html$/, '')}). ${rest.join(' ')}`)}\n\n`;
+}
+
+// Issue 797: the paper, below the first screen in its own fence, from docs/data/paper.json (spec 127
+// A-127-9), the facts the paper page shows: title, version, status, the version's DOI and the DOI for
+// all versions.
+export const PAPER_FENCE = ['<!--driftproof:readme-paper-->', '<!--/driftproof:readme-paper-->'];
+export function paperBlock(root) {
+  const P = json(root, 'docs/data/paper.json');
+  return `${PAPER_FENCE[0]}\n${wrap(`📄 **Paper** · [${P.title}](${ORIGIN}${P.scholar.abstract_html_url.replace(ORIGIN, '')}). ${P.version_line}. ${P.preprint_line}. DOI [${P.doi}](${P.doi_url}); all versions [${P.concept_doi}](${P.concept_doi_url}).`)}\n${PAPER_FENCE[1]}`;
+}
+function withPaper(root, readme) {
+  const block = paperBlock(root);
+  const a = readme.indexOf(PAPER_FENCE[0]); const b = readme.indexOf(PAPER_FENCE[1]);
+  if (a >= 0 && b > a) return readme.slice(0, a) + block + readme.slice(b + PAPER_FENCE[1].length);
+  const at = readme.indexOf(PAPER_AFTER);
+  if (at < 0) throw new Error(`README.md has no "${PAPER_AFTER}" paragraph to place the paper before`);
+  return `${readme.slice(0, at)}${block}\n\n${readme.slice(at)}`;
+}
+const PAPER_AFTER = 'Driftproof does **not** commit third-party skill content.';
+
 function viewBlock(root, v) {
   if (!v || !v.image) return '';
   const caption = String(v.caption || '').replace('{receipts_url}', repoTreeUrl(root, (v.receipts || [])[0] || ''));
@@ -166,7 +207,7 @@ ${firstRun}[${d.install_link.label}](${install}) · [${d.quickstart_link.label}]
 
 ${wrap(`**${d.finding_label}** · [Report ${f.n}](${ORIGIN}/reports/${f.n}/), ${f.date}: ${f.sentence}`)}
 
-${badge}
+${measureLine(root, d.measure)}${badge}
 ${wrap(d.badge_caption)}
 
 [${d.reports_link.label.replace('{reports_word}', stats.reports_published_word.value)}](${reports}) · [${host}](${d.site_link})
@@ -181,9 +222,9 @@ function main() {
   const file = path.join(DEFAULT_ROOT, 'README.md');
   const readme = fs.readFileSync(file, 'utf8');
   const at = readme.indexOf(ANCHOR);
-  const out = composeOpening({ root: DEFAULT_ROOT }) + readme.slice(at);
+  const out = withPaper(DEFAULT_ROOT, composeOpening({ root: DEFAULT_ROOT }) + readme.slice(at));
   if (out === readme) { console.log('README opening current'); return; }
-  if (check) { console.error('STALE: README.md\'s opening is not what docs/data/readme-opening.json composes - run: node scripts/build-readme-opening.mjs'); process.exit(1); }
+  if (check) { console.error('STALE: README.md\'s opening or paper line is not what docs/data/readme-opening.json and docs/data/paper.json compose - run: node scripts/build-readme-opening.mjs'); process.exit(1); }
   fs.writeFileSync(file, out);
   console.log('README opening written');
 }

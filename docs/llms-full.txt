@@ -70,7 +70,7 @@ Every published report, newest first.
 
 ## The paper
 
-[Reported, Not Measured: An Empirical Study of Measurement Defects in LLM and Agent Evaluation Tools](https://driftproofhq.com/paper/). Preprint, not peer reviewed. DOI [10.5281/zenodo.23050796](https://doi.org/10.5281/zenodo.23050796).
+[Reported, Not Measured: An Empirical Study of Measurement Defects in LLM and Agent Evaluation Tools](https://driftproofhq.com/paper/). Version 2, 11 November 2026. Preprint, not peer reviewed. DOI [10.5281/zenodo.24136677](https://doi.org/10.5281/zenodo.24136677).
 
 ## The software
 
@@ -87,7 +87,7 @@ Driftproof's maintainer, Maverick ([mavericksea-ai](https://github.com/mavericks
 - **NVIDIA SkillEvaluator:** a script earns execution credit only with evidence that it was run, not just read or searched ([#154](https://github.com/NVIDIA/SkillEvaluator/pull/154)).
 - **Agent Skills:** grader results are bound to the expectations they answer ([#576](https://github.com/addyosmani/agent-skills/pull/576)); stale grading is cleared and each run records its identity ([#587](https://github.com/addyosmani/agent-skills/pull/587)); the ADR eval grades what the skill asks for ([#598](https://github.com/addyosmani/agent-skills/pull/598)); the floor-guard reference catches untracked files, deleted tests and raised limits ([#600](https://github.com/addyosmani/agent-skills/pull/600), [#614](https://github.com/addyosmani/agent-skills/pull/614)). Two more fixes there are not about evaluation ([#578](https://github.com/addyosmani/agent-skills/pull/578), [#615](https://github.com/addyosmani/agent-skills/pull/615)).
 
-Open pull requests: [search GitHub](https://github.com/pulls?q=author%3Amavericksea-ai%20is%3Apr%20is%3Aopen%20is%3Apublic%20-org%3Adriftproofhq%20-user%3Amavericksea-ai). Six of the defects behind them are written up in the [paper](https://driftproofhq.com/paper/). More on who maintains Driftproof: [Maintainer](https://driftproofhq.com/maintainer/).
+Open pull requests: [search GitHub](https://github.com/pulls?q=author%3Amavericksea-ai%20is%3Apr%20is%3Aopen%20is%3Apublic%20-org%3Adriftproofhq%20-user%3Amavericksea-ai). Nine of the defects behind them are written up in the [paper](https://driftproofhq.com/paper/). More on who maintains Driftproof: [Maintainer](https://driftproofhq.com/maintainer/).
 
 Mentions by people outside the project:
 
@@ -212,32 +212,37 @@ Canonical: <https://driftproofhq.com/paper/>
 Reported, Not Measured: An Empirical Study of Measurement Defects in LLM and Agent Evaluation Tools
 
 driftproofhq
-Version 1, 30 September 2026
+Version 2, 11 November 2026
 Preprint, not peer reviewed
 
-## Can an LLM evaluator report a score for something it did not measure?
+## What version 2 found
 
-Between [14](https://driftproofhq.com/paper/#abstract) and [26 September 2026](https://driftproofhq.com/paper/#abstract) the author read the scoring and gating code of seven open-source evaluation tools, chosen by the author's judgement rather than sampled (the agent-skills repository's eval harness and a reference gate script, NVIDIA SkillEvaluator, DSPy, LangSmith, DeepEval, Harbor and MLflow), reproduced thirteen defects, twelve of them offline, and filed each upstream with a public reproduction; twelve carried a proposed fix from the author, five are merged, one more is approved, and the rest were open on [30 September 2026](https://driftproofhq.com/paper/#abstract). In each case the tool returned a well-formed result that its evidence did not support.
+- 26 defects in 15 tools, each reported upstream with a public reproduction.
+- 22 carried a proposed fix from the author.
+- On 11 November 2026, 13 were fixed upstream: 11 through the author's pull requests, 1 through the maintainers' own and 1 through a third party's.
+- 1 was closed unfixed, because its feature is to be deprecated.
+- 12 were open, 1 of them with an opt-in mitigation merged.
+- The defects fall into 7 kinds.
 
-The distinction the paper draws is between a noisy measurement, which statistics can qualify, and a well-formed number that was never a valid measurement, which statistics cannot repair. The evidence is a catalogue of mechanisms found where the author looked; it is a lower bound on what exists, not a prevalence estimate.
+In each case the tool returned a well-formed result that its evidence did not support.
 
 ## Abstract
 
-Evaluation tools for language-model applications and agent skills are used as gates: a score decides whether a skill ships, which demonstrations a prompt compiler keeps, or whether a model is promoted. This paper is an exploratory study of the software between evidence that has already been produced and the result an evaluation tool reports. Between 14 and 26 September 2026 the author read the scoring and gating code of seven open-source evaluation tools, chosen by the author's judgement rather than sampled (the agent-skills repository's eval harness and a reference gate script, NVIDIA SkillEvaluator, DSPy, LangSmith, DeepEval, Harbor and MLflow), reproduced thirteen defects, twelve of them offline, and filed each upstream with a public reproduction; twelve carried a proposed fix from the author, five are merged, one more is approved, and the rest were open on 30 September 2026. In each case the tool returned a well-formed result that its evidence did not support. The defects fall into six kinds, derived from the cases: absent evidence scored as a measurement, a result bound to the wrong unit, a proxy credited as the act, stale state read as current, a sign error in a threshold, and a check aimed at a target the artefact never claimed. The same taxonomy is applied to the author's own instrument, Driftproof, using only its public findings: a parser that turned a non-numeric judge reply into a score, a badge that verified generation text but not judge text, and six false passes closed in release 0.12.0. Four published measurements serve as illustrations, not as tests: a pass/fail check and a text-injection evaluation that read the same task differently under different treatments; one eval that returned pass eight times and fail twice at one commit; and two release-day comparisons in which most cells did not separate. From the cases the paper proposes nine record fields, each paired with the check that would read it, and maps each defect to the field and check that could have exposed it; the mapping is a design argument the paper has not yet tested. The distinction the paper draws is between a noisy measurement, which statistics can qualify, and a well-formed number that was never a valid measurement, which statistics cannot repair. The evidence is a catalogue of mechanisms found where the author looked; it is a lower bound on what exists, not a prevalence estimate.
+Evaluation tools for language-model applications and agent skills are used as gates: a score decides whether a skill ships, which demonstrations a prompt compiler keeps, or whether a model is promoted. This paper is an exploratory study of the software between evidence that has already been produced and the result an evaluation tool reports. Between 14 September and 27 October 2026 the author read or exercised the scoring and gating paths of fifteen tools, chosen by the author's judgement rather than sampled, reproduced twenty-six defects and reported each upstream with a public reproduction; twenty-two carried a proposed fix from the author. On 11 November 2026 thirteen were fixed upstream (eleven through the author's pull requests, one through the maintainers' own and one through a third party's), one was closed unfixed because its feature is to be deprecated, and twelve were open, one of them with an opt-in mitigation merged. In each case the tool returned a well-formed result that its evidence did not support. The defects fall into seven kinds, derived from the cases: absent evidence scored as a measurement, a result bound to the wrong unit, a proxy credited as the act, stale state read as current, a sign error in a threshold, a check aimed at a target the artefact never claimed, and a judgement made on input the judge could not tell apart. The same taxonomy is applied to the author's own instrument, Driftproof, using only its public findings, which now include verdicts that rested on lost draws, imported comparisons scored on one arm only, and two published rows that measured a one-line pointer instead of the skill it calls. Nine published measurements serve as illustrations, not as tests; three of them add a same-length placebo arm. From the cases the paper proposes nine record fields, each paired with the check that would read it, and maps each defect of the first window to the field and check that could have exposed it; the mapping is a design argument the paper has not yet tested, and none of the nine fields exposes the seventh kind. The distinction the paper draws is between a noisy measurement, which statistics can qualify, and a well-formed number that was never a valid measurement, which statistics cannot repair. The evidence is a catalogue of mechanisms found where the author looked; it is a lower bound on what exists, not a prevalence estimate.
 
 ## Read the paper
 
 **The Zenodo record**
 
-[https://zenodo.org/records/23050796](https://zenodo.org/records/23050796)
+[https://zenodo.org/records/24136677](https://zenodo.org/records/24136677)
 
 **The PDF on Zenodo**
 
-[reported-not-measured-v1.pdf](https://zenodo.org/records/23050796/files/reported-not-measured-v1.pdf)
+[reported-not-measured-v2.pdf](https://zenodo.org/records/24136677/files/reported-not-measured-v2.pdf)
 
 **DOI for this version**
 
-[10.5281/zenodo.23050796](https://doi.org/10.5281/zenodo.23050796)
+[10.5281/zenodo.24136677](https://doi.org/10.5281/zenodo.24136677)
 
 **DOI for all versions**
 
@@ -247,45 +252,47 @@ Evaluation tools for language-model applications and agent skills are used as ga
 
 CC BY 4.0
 
-## Since publication (updated 8 October 2026)
-
-The paper reports upstream status as of 30 September 2026: of the thirteen counted defects, five fixes were merged and one more was approved. Since then:
-
-- **MLflow, relative change with a negative baseline** (Appendix A.1, row 14): merged on 6 October as [#26252](https://github.com/mlflow/mlflow/pull/26252) and shipped in [MLflow 3.17.0](https://github.com/mlflow/mlflow/releases/tag/v3.17.0). Six of the thirteen are now merged.
-- **Agent Skills floor-guard follow-up** (row 5, listed but not counted): merged as [#614](https://github.com/addyosmani/agent-skills/pull/614) and shipped in Agent Skills 0.6.12.
-- **alibaba/skill-up** (not in the paper): a failed expect pre-check shrinks the benchmark denominator, so a placeholder answer can outscore a judged one. Reported on [#246](https://github.com/alibaba/skill-up/issues/246#issuecomment-6050718340); the maintainers opened [#300](https://github.com/alibaba/skill-up/issues/300) to fix it.
-
-The other open fixes are unchanged. This note will be updated as they move; the paper's own numbers will change only in a new version.
-
 ## Data
 
-**The paper's Appendix A.1 as data**
+**The paper's Appendices A.1 and A.3, with the A.4 statuses, as data**
 
-[defects.csv](https://zenodo.org/records/23050796/files/defects.csv)
+[defects.csv](https://zenodo.org/records/24136677/files/defects.csv)
 
-[defects.json](https://zenodo.org/records/23050796/files/defects.json)
+[defects.json](https://zenodo.org/records/24136677/files/defects.json)
 
 ## Cite
 
 ### Plain text
 
-driftproofhq (2026). Reported, Not Measured: An Empirical Study of Measurement Defects in LLM and Agent Evaluation Tools. Version 1. Zenodo. https://doi.org/10.5281/zenodo.23050796
+driftproofhq (2026). Reported, Not Measured: An Empirical Study of Measurement Defects in LLM and Agent Evaluation Tools. Version 2. Zenodo. https://doi.org/10.5281/zenodo.24136677
 
 ### BibTeX
 
 ```
-@misc{driftproofhq2026reported,
+@misc{driftproofhq2026reportedv2,
   author    = {{driftproofhq}},
   title     = {Reported, Not Measured: An Empirical Study of Measurement Defects in {LLM} and Agent Evaluation Tools},
   year      = {2026},
-  month     = sep,
-  version   = {1},
+  month     = nov,
+  version   = {2},
   publisher = {Zenodo},
-  doi       = {10.5281/zenodo.23050796},
-  url       = {https://doi.org/10.5281/zenodo.23050796},
+  doi       = {10.5281/zenodo.24136677},
+  url       = {https://doi.org/10.5281/zenodo.24136677},
   note      = {Preprint}
 }
 ```
+
+## Version 1
+
+Version 1, 30 September 2026. Version 1 is not altered and stays at its own DOI. Version 2 adds Section 12 (what became of the first thirteen defects, a second audit window of thirteen further defects, a seventh kind, and the author's instrument and its measurements since version 1) and Appendices A.3, A.4 and F.
+
+**DOI for version 1**
+
+[10.5281/zenodo.23050796](https://doi.org/10.5281/zenodo.23050796)
+
+**The PDF of version 1 on Zenodo**
+
+[reported-not-measured-v1.pdf](https://zenodo.org/records/23050796/files/reported-not-measured-v1.pdf)
 
 ---
 

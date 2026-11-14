@@ -1246,25 +1246,38 @@ ${rows}
 // against the paper. The abstract is the record's HTML as sent. The first paragraph
 // is the title, so the head builder's description is a fact and never a shortened
 // abstract (spec 127 AC-11, spec 020 AC-14).
-// THE PAPER'S STATUS NOTE (spec 169, issue 60): what moved upstream since the paper's counts of 30
-// September, dated, in the issue's words as the operator approved them on 8 Oct 2026. It is the one
-// part of the page that is not a fact or a label of the paper, and spec 169's gate holds its words;
-// the paper's text, its counts and its data files do not move, and the rest of <main> is spec 127's. The MLflow and Agent Skills links are
-// pinned historical identities from W-3, independent of the current observation.
-function paperStatus() {
-  // Historical note: identity and release URLs are pinned by spec 169 W-3.
-  const mlflow = { repo: 'mlflow/mlflow', project: 'MLflow', release: '3.17.0', release_url: 'https://github.com/mlflow/mlflow/releases/tag/v3.17.0' };
-  const skills = { repo: 'addyosmani/agent-skills' };
-  const a = (href, text) => `<a href="${esc(href)}">${esc(text)}</a>`;
-  return `<section class="paper-status" id="since-publication">
-<h2 id="paper-status">Since publication (updated 8 October 2026)</h2>
-<p>The paper reports upstream status as of 30 September 2026: of the thirteen counted defects, five fixes were merged and one more was approved. Since then:</p>
+// VERSION 2 (spec 127 A-127-8, issue 797): the page leads with what version 2 found. Each count is the
+// recorder's count of the published defects.json, and spec 127 AC-14 counts the table again and
+// holds these lines to it. Version 1 follows as the earlier version, in the README's and the
+// record's words. The 8 Oct note on version 1's statuses is gone: version 2 reads every status on
+// 11 November 2026 (spec 169 A-169-11).
+// The data's label, in the deposit README's words (spec 127 § Page labels); the head builder's
+// Dataset name is the same label.
+const PAPER_DATA_LABEL = "The paper's Appendices A.1 and A.3, with the A.4 statuses, as data";
+function paperFound(F) {
+  return `<section class="paper-found" id="paper-found">
+<h2 id="what-version-2-found">What version 2 found</h2>
 <ul>
-<li><strong>MLflow, relative change with a negative baseline</strong> (Appendix A.1, row 14): merged on 6 October as ${a(answers.pullUrl(mlflow.repo, 26252), '#26252')} and shipped in ${a(mlflow.release_url, `${mlflow.project} ${mlflow.release}`)}. Six of the thirteen are now merged.</li>
-<li><strong>Agent Skills floor-guard follow-up</strong> (row 5, listed but not counted): merged as ${a(answers.pullUrl(skills.repo, 614), '#614')} and shipped in Agent Skills 0.6.12.</li>
-<li><strong>alibaba/skill-up</strong> (not in the paper): a failed expect pre-check shrinks the benchmark denominator, so a placeholder answer can outscore a judged one. Reported on ${a('https://github.com/alibaba/skill-up/issues/246#issuecomment-6050718340', '#246')}; the maintainers opened ${a('https://github.com/alibaba/skill-up/issues/300', '#300')} to fix it.</li>
+<li>${F.counted} defects in ${F.tools} tools, each reported upstream with a public reproduction.</li>
+<li>${F.author_fix} carried a proposed fix from the author.</li>
+<li>On ${esc(F.statuses_read)}, ${F.fixed} were fixed upstream: ${F.fixed_author} through the author's pull requests, ${F.fixed_maintainers} through the maintainers' own and ${F.fixed_third_party} through a third party's.</li>
+<li>${F.closed_unfixed} was closed unfixed, because its feature is to be deprecated.</li>
+<li>${F.open} were open, ${F.open_with_mitigation} of them with an opt-in mitigation merged.</li>
+<li>The defects fall into ${F.kinds} kinds.</li>
 </ul>
-<p>The other open fixes are unchanged. This note will be updated as they move; the paper's own numbers will change only in a new version.</p>
+<p>In each case the tool returned a well-formed result that its evidence did not support.</p>
+</section>`;
+}
+
+function paperEarlier(P, a) {
+  const E = P.earlier;
+  return `<section class="paper-v1" id="paper-v1">
+<h2 id="paper-version-1">Version 1</h2>
+<p>${esc(E.version_line)}. ${esc(E.note)} ${esc(P.version_note)}</p>
+<dl>
+<dt>DOI for version 1</dt><dd>${a(E.doi_url, E.doi)}</dd>
+<dt>The PDF of version 1 on Zenodo</dt><dd>${a(E.pdf_url, E.pdf_name)}</dd>
+</dl>
 </section>`;
 }
 
@@ -1284,7 +1297,7 @@ function paperPage() {
 <p class="lede">${esc(P.title)}</p>
 <p>${esc(P.author)}<br>${esc(P.version_line)}<br>${esc(P.preprint_line)}</p>
 
-${answers.paperQuestion()}
+${paperFound(P.found)}
 
 <h2 id="paper-abstract">Abstract</h2>
 <div id="abstract">
@@ -1300,11 +1313,9 @@ ${P.abstract_html}
 <dt>Licence</dt><dd>CC BY 4.0</dd>
 </dl>
 
-${paperStatus()}
-
 <h2 id="paper-data">Data</h2>
 <dl>
-<dt>The paper's Appendix A.1 as data</dt>
+<dt>${esc(PAPER_DATA_LABEL)}</dt>
 ${P.data.map((d) => `<dd>${a(d.url, d.name)}</dd>`).join('\n')}
 </dl>
 
@@ -1313,6 +1324,8 @@ ${P.data.map((d) => `<dd>${a(d.url, d.name)}</dd>`).join('\n')}
 <p id="cite-plain">${esc(P.citation)}</p>
 <h3>BibTeX</h3>
 <pre id="cite-bibtex">${esc(P.bibtex)}</pre>
+
+${paperEarlier(P, a)}
 </main>`;
   return shell({ title: `${P.title} | Driftproof`, description: P.title, main, head: scholar });
 }

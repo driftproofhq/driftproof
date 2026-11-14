@@ -749,7 +749,8 @@ function paperLd(rel) {
   if (!publisher) throw new Error('docs/data/paper.json: the BibTeX names no publisher');
   const author = { '@type': 'Organization', name: P.author };
   const date = P.scholar.date.replace(/\//g, '-');
-  const label = "The paper's Appendix A.1 as data";
+  // spec 127 A-127-8: version 2's table, in the deposit README's words, as the page labels it
+  const label = "The paper's Appendices A.1 and A.3, with the A.4 statuses, as data";
   return [
     ld({
       '@context': 'https://schema.org',
