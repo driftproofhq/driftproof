@@ -128,6 +128,8 @@ const NAV = `${NAV_OPEN}<header class="site">
 <nav class="site-nav" aria-label="Site">
 <a href="/reports/">Reports</a>
 <a href="/skills/">Skills</a>
+<a href="/r/">Receipts</a>
+<a href="/badges/">Badges</a>
 <a href="/how-it-works/">How it works</a>
 <details class="docs-menu"><summary>For builders</summary><div class="docs-menu-list">
 ${[...BUILDER_LINKS, ...DOCS_LINKS].map(([h, t]) => `<a href="${h}">${t}</a>`).join('\n')}
@@ -156,7 +158,7 @@ const SCRIPTS = `${SCRIPTS_OPEN}<script src="/copy-button.js" defer></script>
 // THE MAINTAINER LINK (spec 169) sits after What is Driftproof, the other link about the project.
 const FOOTER = `${FOOT_OPEN}<footer class="site">
 <p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
-<p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/maintainer/">Maintainer</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+<p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/skills/">Skills</a> · <a href="/badges/">Badges</a> · <a href="/findings/">Findings</a> · <a href="/reports/">Reports</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/maintainer/">Maintainer</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
 <p class="foot-links">${require('./reader-pages').links()}</p>
 </footer>${FOOT_CLOSE}`;
 

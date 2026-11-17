@@ -13,6 +13,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const O = require('./offer.js');
+const { isRulesFile, RULES_FILE_NAMES, RULES_LIMITATION } = require('../lib/rules-files');
 const { humanModelName } = require('./model-names');
 const ROOT = path.join(__dirname, '..');
 const DOCS = path.join(ROOT, 'docs');
@@ -66,7 +67,7 @@ function page({ title, description, rel, main }) {
 // ── /measure/ (AC-12, AC-16) ──
 function queueSection(q) {
   const rows = q.requests.map((r) => {
-    const what = r.kind === 'challenge' ? `a result on ${r.result_page || 'a skill page'}` : `${r.repository || 'a repository'}${r.skills ? `, ${r.skills.length} ${r.skills.length === 1 ? 'skill' : 'skills'}` : ''}`;
+    const what = r.kind === 'challenge' ? `a result on ${r.result_page || 'a skill page'}` : `${r.repository || 'a repository'}${r.skills ? `, ${r.skills.length} ${r.skills.length === 1 ? 'item' : 'items'}` : ''}`;
     const state = r.state === 'queued' ? `Queued, position ${r.position}` : r.state === 'refused' ? `Refused: ${t(r.reason)}` : r.state === 'published' ? `<a href="${a(r.page)}">Published</a>` : STATE[r.state];
     return `<tr data-request="${r.request}" data-state="${a(r.state)}"${r.state === 'queued' ? ` data-position="${r.position}"` : ''}><td><a href="${a(r.url || `${GITHUB}/issues/${r.issue}`)}">${r.request}</a></td><td>${t((O.KINDS[r.kind] || {}).name || 'Request')}</td><td>${t(what)}</td><td>${state}</td></tr>`;
   }).join('');
@@ -79,6 +80,7 @@ function measurePage({ queue }) {
   const form = (k) => `<a href="${a(O.templateUrl(k))}"><em>${t(O.KINDS[k].name)}</em></a>`;
   const main = '<main class="offer-page">'
     + `<h1>${t(WORDS.h1)}</h1><p class="lede">${t(WORDS.lede)}</p>`
+    + `<p>Rules files are welcome too: <code>${t(RULES_FILE_NAMES)}</code>. Send one file with the single-item form below, or mix rules files and skills in a pack. A pack can hold up to 20 items in total. Both use the same first 50 requests and USD 50 run budget per request.</p><p>For a rules file, we pin its repository, path and commit, then use its instructions in place of the skill below. The same three tasks, two models, fake text and labels apply. ${t(RULES_LIMITATION)}</p>`
     + `<h2 id="what-we-do">${t(WORDS.doHeading)}</h2><p>${t(WORDS.doText)}</p>`
     + `<ul>${WORDS.arms.map((x) => `<li>${t(x)}</li>`).join('')}<li>${t(WORDS.placebo[0])}<strong>${t(WORDS.placebo[1])}</strong>${t(WORDS.placebo[2])}</li></ul>`
     + `<p>${t(WORDS.grader)}</p>`
@@ -87,7 +89,7 @@ function measurePage({ queue }) {
     + `<p>${t(WORDS.both)}</p><p>${t(WORDS.textOnly)}</p>`
     + `<h2 id="three-ways-to-ask">${t(WORDS.askHeading)}</h2><ol class="offer-ways">`
     + `<li><strong>A pack</strong> (up to 20 skills): open a ${form('pack')} request with the repository link.</li>`
-    + `<li><strong>One skill:</strong> open a ${form('skill')} request.</li>`
+    + `<li><strong>One skill:</strong> open a ${form('skill')} request. Use this form for one rules file too.</li>`
     + `<li><strong>Challenge a result:</strong> if you think we tested your skill unfairly, open a ${form('challenge')} request with your own three tasks. We re-run with your tasks and publish both results side by side.</li></ol>`
     + `<p>${t(WORDS.private[0])}<a href="mailto:${WORDS.private[1]}">${t(WORDS.private[1])}</a>${t(WORDS.private[2])}</p>`
     + `<h2 id="the-terms">${t(WORDS.termsHeading)}</h2><ul class="offer-terms">${WORDS.terms.map((x) => `<li>${t(x)}</li>`).join('')}</ul>`
@@ -106,7 +108,7 @@ function box({ skill, model, receipt, root, notMeasurable = false, reason = null
   const lines = notMeasurable
     ? [`<p class="offer-why">${t(reason)}</p>`]
     : receipt
-      ? [`<p class="offer-why">Against the placebo: ${t(r.placebo_line)}.</p>`, `<p class="offer-against">Against no skill: ${t(r.against_no_skill)}</p>`, `<p class="offer-receipt"><a href="${a(`${GITHUB}/blob/main/${receipt}`)}">The receipt</a></p>`]
+      ? [`<p class="offer-why">${t(r.placebo_line)}.</p>`, `<p class="offer-against">Against no skill: ${t(r.against_no_skill)}</p>`, `<p class="offer-receipt"><a href="${a(`${GITHUB}/blob/main/${receipt}`)}">The receipt</a></p>`]
       : [`<p class="offer-why">${t(r.reason)}</p>`];
   return `<div class="offer-box" data-field="reading"${column ? ` data-column="${column}"` : ''} data-skill="${a(skill)}" data-model="${a(model)}" data-reading="${r.reading}" data-receipt="${a(receipt || '')}"${notMeasurable ? ' data-not-measurable="true"' : ''}>`
     + `<p class="offer-model">${t(humanModelName(model))}</p><p class="offer-label">${t(r.label)}</p>${lines.join('')}</div>`;
@@ -114,7 +116,7 @@ function box({ skill, model, receipt, root, notMeasurable = false, reason = null
 const boxesOf = (s, root, column = null) => s.boxes.map((b) => ({ model: b.model, key: s.measurable ? O.readingOf(b.receipt ? JSON.parse(fs.readFileSync(path.join(root, b.receipt), 'utf8')) : null).key : 'notMeasurable', html: box({ skill: s.skill, model: b.model, receipt: b.receipt, root, notMeasurable: !s.measurable, reason: s.reason, column }) }));
 function tasks(s) {
   if (!s.suite) return '';
-  const who = s.suite.author === 'requester' ? 'The requester wrote these tasks. Driftproof did not edit them.' : "Driftproof wrote these tasks from the skill's own text and its README.";
+  const who = s.suite.author === 'requester' ? 'The requester wrote these tasks. Driftproof did not edit them.' : "Driftproof wrote these tasks from the instructions and the repository README.";
   return `<details class="offer-tasks"><summary>The three tasks</summary><p>${t(who)}</p><ol>${s.suite.cases.map((c) => `<li data-task="${a(c.id)}"><p>${t(c.prompt)}</p><p>How it is scored: ${t(c.rubric)}</p></li>`).join('')}</ol></details>`;
 }
 function headlineHtml(skills, models, root) {
@@ -128,18 +130,19 @@ function requestPage(view, { root = view.root || ROOT } = {}) {
   const models = view.models.map((m) => humanModelName(m)).join(' and ');
   const lede = challenge
     ? `Request ${n} of the free offer: a result re-run on the requester's own three tasks, on ${models}, beside the result it challenges.`
-    : `Request ${n} of the free offer: ${r.repository}, every skill measured on ${models} against no skill and a same-length placebo.`;
+    : `Request ${n} of the free offer: ${r.repository}, every skill or rules file measured on ${models} against no instructions and a same-length placebo.`;
   const body = [`<h1>Request ${n}: ${t(r.repository)}</h1>`, `<p class="lede">${t(lede)}</p>`];
   if (r.author === false) body.push(`<p class="offer-not-author">${t(O.NOT_AUTHOR)}</p>`);
-  body.push(`<p>Asked in <a href="${a(r.url || `${GITHUB}/issues/${r.issue}`)}">issue ${r.issue}</a>. The skills were read at commit <code>${t(r.commit)}</code>. Each label is read per model from the receipt's placebo reading; what the labels mean is on <a href="/measure/#what-you-get">the offer page</a>.</p>`);
+  body.push(`<p>Asked in <a href="${a(r.url || `${GITHUB}/issues/${r.issue}`)}">issue ${r.issue}</a>. The files were read at commit <code>${t(r.commit)}</code>. Each label is read per model from the receipt's placebo reading; what the labels mean is on <a href="/measure/#what-you-get">the offer page</a>.</p>`);
   for (const [m, limit] of Object.entries(view.judge_relationships || {})) if (limit) body.push(`<p>For ${t(humanModelName(m))}: ${t(limit)}</p>`);
   if (!challenge) body.push(headlineHtml(view.skills, view.models, root));
   for (const s of view.skills) {
-    body.push(`<section class="offer-skill" id="skill-${a(s.skill)}"><h2>${t(s.skill)}</h2>`);
+    body.push(`<section class="offer-skill" id="skill-${a(s.skill)}"><h2>${t(isRulesFile(s.skill_path || '') ? s.skill_path : s.skill)}</h2>`);
+    if (isRulesFile(s.skill_path || '')) body.push(`<p>${t(RULES_LIMITATION)}</p>`);
     if (challenge) {
       const orig = view.original && view.original.skills && view.original.skills.find((x) => x.skill === s.skill);
       const mine = boxesOf(s, root, 'challenge'), theirs = orig ? boxesOf(orig, root, 'original') : [];
-      body.push(`<p>Our result is on <a href="${a(view.original.href)}">${t(view.original.href)}</a>. Beside it, the same skill on the requester's tasks.</p>`);
+      body.push(`<p>Our result is on <a href="${a(view.original.href)}">${t(view.original.href)}</a>. Beside it, the same instructions on the requester's tasks.</p>`);
       for (const m of view.models) {
         const o = theirs.find((x) => x.model === m), c = mine.find((x) => x.model === m);
         body.push(`<div class="offer-pair" data-model="${a(m)}">${o ? o.html : `<p class="offer-original-link">Our tasks: <a href="${a(view.original.href)}">the published result</a></p>`}${c.html}</div>`);
@@ -157,8 +160,8 @@ function requestPage(view, { root = view.root || ROOT } = {}) {
 function skillRows(view, { root = view.root || ROOT } = {}) {
   const [owner, repo] = view.request.repository.split('/');
   return view.skills.filter((s) => s.measurable && view.request.kind !== 'challenge').flatMap((s) => boxesOf(s, root).map((b) => ({
-    id: { owner, repo, name: s.skill, path: s.skill_path.replace(/\/?SKILL\.md$/, ''), unit: 'skill', page: `${owner}/${repo}/${s.skill}` },
-    row: { ...(() => { const f = s.boxes.find((x) => x.model === b.model).receipt; const r = f ? JSON.parse(fs.readFileSync(path.join(root, f), 'utf8')) : null; return { file: f || '', hash: r ? r.receipt_hash : 'none', date: r ? r.run.date_utc : undefined }; })(), source: 'driftproof', srcName: 'Driftproof', evidence: 'measured', freshness: 'unknown', model: b.model, label: O.LABELS[b.key], summary: O.LABELS[b.key], markup: `${b.html}<p><a href="/${relOf(view.request.request).replace(/index\.html$/, '')}">Request ${O.pad(view.request.request)} of the free offer</a></p>` },
+    id: { owner, repo, name: isRulesFile(s.skill_path || '') ? path.posix.basename(s.skill_path) : s.skill, path: s.skill_path.replace(/\/?SKILL\.md$/, ''), unit: isRulesFile(s.skill_path || '') ? 'context_file' : 'skill', page: `${owner}/${repo}/${s.skill}` },
+    row: { ...(() => { const f = s.boxes.find((x) => x.model === b.model).receipt; const r = f ? JSON.parse(fs.readFileSync(path.join(root, f), 'utf8')) : null; return { file: f || '', hash: r ? r.receipt_hash : 'none', date: r ? r.run.date_utc : undefined }; })(), source: 'driftproof', srcName: 'Driftproof', evidence: 'measured', freshness: 'unknown', model: b.model, label: O.LABELS[b.key], summary: O.LABELS[b.key], markup: `${b.html}${isRulesFile(s.skill_path || '') ? `<p>${t(RULES_LIMITATION)}</p>` : ''}<p><a href="/${relOf(view.request.request).replace(/index\.html$/, '')}">Request ${O.pad(view.request.request)} of the free offer</a></p>` },
   })));
 }
 

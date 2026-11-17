@@ -411,7 +411,12 @@ gate.section('fixed scratch names in PR-run tests (issue 629)');
       ['specs/490-repository-capture/smoke-3.sh', '@T/bbuild/490/smoke-3-exec-oauth-v1'],
       ['specs/490-repository-capture/smoke.cjs', "'@T/bbuild/490/live-evidence.json'"],
       ['specs/490-repository-capture/smoke.cjs', "'@T/rules-files/picks-v2.json'"],
-      ['specs/490-repository-capture/smoke.cjs', "'@T/rules-files/'"]].map(([f, t]) => [f, t, OPERATOR]),
+      ['specs/490-repository-capture/smoke.cjs', "'@T/rules-files/'"],
+      ['specs/824-hidden-test-environment/extend-runtime.cjs', "'@T/bbuild/824'"],
+      ['specs/824-hidden-test-environment/extend-runtime.cjs', "'@T/bbuild/490/runtime-tool-env-v1/profile.json'"],
+      ['specs/824-hidden-test-environment/extend-runtime.cjs', "'@T/bbuild/qrun/staging/npm'"],
+      ['specs/824-hidden-test-environment/extend-runtime.cjs', "'@T/bbuild/qrun/staging/pip/wheels'"],
+      ['specs/824-hidden-test-environment/pinned-runtime.cjs', "'@T/bbuild/824'"]].map(([f, t]) => [f, t, OPERATOR]),
   ].map(([f, t, why]) => [f, fill(t), why]);
   // Gates and tests that PR checks run live under tests/ and specs/. Evidence holds records, not checks.
   const scanned = listFiles(ROOT).filter(f => /^(tests|specs)\//.test(f) && /\.(js|cjs|mjs|sh)$/.test(f) && !f.split('/').includes('evidence'))
@@ -2440,9 +2445,20 @@ gate.section('interop export (summary-json stable interchange)');
   const sgData = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'interop-skillgrade.json'), 'utf8'));
   const snapshot = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'export-summary.snapshot.json'), 'utf8'));
 
-  const s = toSummaryJson(importAgentSkillsEval(aseData), { reportUrl: null });
+  // A-107-6 (issue 814): the historical snapshot identifies a v0.16 receipt.
+  const { atVersion } = require('./receipt-versions');
+  const { sealReceipt, validateReceipt, verifyReceiptHash } = require('../lib/receipt');
+  const imported = importAgentSkillsEval(aseData);
+  const historical = sealReceipt(atVersion(imported, '0.16'));
+  const s = toSummaryJson(imported, { reportUrl: null });
+  const prior = toSummaryJson(historical, { reportUrl: null });
   gate.check('summary-json is deterministic and matches the checked-in snapshot (additive v2 contract, spec 107 A-107-5)',
-    JSON.stringify(s) === JSON.stringify(snapshot), { got: s });
+    validateReceipt(historical).valid && verifyReceiptHash(historical)
+      && JSON.stringify(prior) === JSON.stringify(snapshot), { got: prior });
+  gate.check('current summary preserves every snapshot leaf and links its own valid sealed receipt (spec 107 A-107-6)',
+    validateReceipt(imported).valid && verifyReceiptHash(imported)
+      && s.receipt_hash === imported.receipt_hash
+      && JSON.stringify(s) === JSON.stringify({ ...snapshot, receipt_hash: imported.receipt_hash }), { got: s });
   gate.check('summary format/version stamped', s.format === SUMMARY_FORMAT && s.format_version === SUMMARY_FORMAT_VERSION && SUMMARY_FORMAT === 'driftproof/summary' && SUMMARY_FORMAT_VERSION === '2');
 
   const sSg = toSummaryJson(importSkillgrade(sgData));

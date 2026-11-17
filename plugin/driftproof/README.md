@@ -4,7 +4,9 @@ Type `/driftproof:start` in the folder that holds your skills or your CLAUDE.md.
 
 Driftproof measures whether a skill or a rules file helps. It runs its test cases on a model with it and without it, grades the answers, and writes a dated receipt of the result.
 
-This plugin adds eight commands:
+Supported rules files: `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/*.mdc`, `.cursorrules`, `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, `.windsurfrules`, `.windsurf/rules/*.md`. Measured as always-on text. The editor's system prompt and rule selection are not reproduced.
+
+This plugin adds nine commands:
 
 - `/driftproof:start` walks you through a first result: pick a skill, draft its test cases with Claude, run a quick smoke run, and open the results page.
 - `/driftproof:init <dir>` on a skill you already have leads into the same guided first run: Claude drafts its test cases with you, aimed at outcomes you would check, adds them after you say yes, labelled as drafted from the skill and approved by you, and runs a quick first look. On a folder that does not exist yet it sets up a new skill with starter test cases to edit.
@@ -14,6 +16,7 @@ This plugin adds eight commands:
 - `/driftproof:inspect <file-or-skill-dir>` shows the runner's local text report without running the content; a clean reading is not a guarantee.
 - `/driftproof:recheck <skill-dir-or-rules-file>` saves a skill's or rules file's tests and settings the first time, and nothing runs. On each later use it runs those saved tests after you say yes, and shows the runner's dated reading unchanged. `/driftproof:recheck history` shows every dated reading so far. A recheck compares with its first run, so "since last month" works only if you ran a recheck last month.
 - `/driftproof:badge <receipt.json>` checks a receipt, prints a badge for your README, and says which parts of the receipt it did not check.
+- `/driftproof:measure <path>` opens Driftproof's free Measure a skill request form on GitHub, filled in with that skill or supported rules file. We measure it on the newest Claude models and publish the result, if you submit the form.
 
 Both `/driftproof:start` and `/driftproof:init` can also start from a mistake the AI made: you give a short, sanitised excerpt of the task it got wrong and say what a good answer must and must not contain, Claude drafts one test from that and two of the same kind on other subjects, and after you say yes they are saved labelled as drafted from a failure you described and approved. Before anything runs, the door refuses a draft that carries an email, a home folder path on Linux or macOS or a credential-shaped string, anywhere in the draft, and names what to remove.
 
@@ -37,6 +40,7 @@ The installed form is the safer alternative. Install this version of the runner 
 - `/driftproof:compare` sends each version of the rules and the same tasks through the runner's configured model and grader, as the CLI does. Both versions run as you, on your own command line login for the model (Claude Code, or Codex for an OpenAI command line model), on the terms `/driftproof:run` uses: both files inside this repository, or after you confirm they are yours. `--placebo` adds a third arm for each version. It writes receipts and `compare.md` under `receipts/compare-<date>/`. Its private temporary copy of the committed file is removed after the run.
 - A later use of `/driftproof:recheck` asks you first, naming the model and the call limit, then sends the saved tests, with and without the saved copy of the subject, through the runner's saved model and grader, on your own plan or model account. For a folder this command saved, those tests run as you, on your own command line login for the model (Claude Code, or Codex for an OpenAI command line model). That is allowed only on `/driftproof:run`'s terms: the subject is inside this repository, or you confirm again, each time, that it is yours. A saved folder never allows it by itself, and one the CLI saved without `--trusted-skill` still runs through the isolation account. The first use saves a copy of the subject, its tests and its settings under `recheck/<name>/` at the root of your repository, and each run adds a dated receipt there.
 - The same model grades each answer, and is sent the test case, the answer and its rubric to do it.
+- `/driftproof:measure` sends nothing. It reads the skill or rules file's name, its path and the repository's github.com address on this computer, and opens GitHub's form with them in the link, in your browser. A request exists only if you submit the form.
 - `/driftproof:start` sends what `/driftproof:run` sends, for the few test cases of a quick smoke run, or for at most five test cases in the small full run it offers.
 - Some settings of the runner change where these calls go. They live in the runner's own documentation and on the site, not in this plugin.
 - `driftproof import --from nvidia-cards` runs `git rev-parse` and `git ls-tree` in the checkout you name, to read its commit. If that checkout is a partial clone that lacks the commit's trees, `git ls-tree` fetches them from the clone's remote.

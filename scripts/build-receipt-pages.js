@@ -109,18 +109,19 @@ const isOneCase = (receipt) => (receipt.suite || {}).case_count === 1;
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const n3 = (x) => Number(x).toFixed(3);
 
-function receipts() {
+function receipts(root = ROOT) {
   const out = [];
   (function walk(d) {
+    if (!fs.existsSync(d)) return;
     for (const e of fs.readdirSync(d, { withFileTypes: true }).sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0)) {
       const p = path.join(d, e.name);
       if (e.isDirectory()) { if (/-draft$/.test(e.name)) continue; walk(p); continue; }
       if (!e.name.endsWith('.json') || e.name.startsWith('_')) continue;
       let j; try { j = JSON.parse(fs.readFileSync(p, 'utf8')); } catch (_e) { continue; }
       if (!j || !j.results || !j.receipt_hash) continue;
-      out.push({ rel: path.relative(ROOT, p).split(path.sep).join('/'), receipt: j });
+      out.push({ rel: path.relative(root, p).split(path.sep).join('/'), receipt: j });
     }
-  })(path.join(ROOT, 'receipts'));
+  })(path.join(root, 'receipts'));
   return uniqueReceipts(out);
 }
 function uniqueReceipts(all) {
@@ -248,7 +249,52 @@ const placeboLink = (rel, r) => {
     ? `  <p class="receipt-placebo" data-field="placebo">This receipt also reads the skill against a same-length placebo. <a href="/reports/${hit[1]}/">Report ${hit[1]}</a> shows that reading.</p>\n`
     : '';
 };
+let publicBadgeSubjects;
+function receiptBadgeLink(x) {
+  publicBadgeSubjects ||= require('./published-badges').publicSubjects();
+  const subject = publicBadgeSubjects.find(s => s.hashes.includes(x.receipt.receipt_hash));
+  if (!subject) return '<a href="/badges/">Browse skill badges</a>';
+  const row = require('./published-badges').rowOf(x);
+  return '<a href="'+require('./published-badges').basePath(row)+'">Latest and per-model badges for this skill</a>';
+}
+// Issue 833: invalid evidence has no result surface. Do not derive a title, card,
+// cost, badge or verdict from the rejected fields, and never repair its seal.
+function unreadablePage(r) {
+  const label = LABELS.NOT_MEASURED[0];
+  const reason = r?.run?.preset ? 'it is marked as a smoke run and its seal or schema does not verify' : 'its seal or schema does not verify';
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unreadable receipt | Driftproof</title>
+<meta name="description" content="This receipt could not be verified. No figures or verdict are stated.">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+${chrome.NAV}
+<main class="receipt-page">
+  <h1>Unreadable receipt</h1>
+  <section class="receipt-verdict state-not-measured">
+    <p class="receipt-label" data-field="label">${label}</p>
+    <p class="receipt-honest" data-field="honest">This receipt carries no verdict: ${reason}.</p>
+  </section>
+  <p>Check the file with <code>driftproof validate</code> before using its results.</p>
+</main>
+${chrome.FOOTER}
+</body>
+</html>
+`;
+  // A blank, unmeasured badge has no fields from the untrusted receipt.
+  return { html, badge: badgeSvg({}), label };
+}
 function page({ rel, receipt: r }) {
+  let reading;
+  try { reading = require('../lib/reading-words').readingOf(r); }
+  catch (error) {
+    if (!/^READING_/.test(error.message)) throw error;
+    return unreadablePage(r);
+  }
   const limit = report015Policy.routerLimit(r);
   const v = receiptVerdict(r);
   const cost = skillTokenCost(r);
@@ -287,7 +333,7 @@ function page({ rel, receipt: r }) {
   <h1><code>${esc((r.skill || {}).name)}</code> on <span data-field="model">${esc(run.model_id)}</span></h1>
   <p class="receipt-meta">Run on <span data-field="date">${esc(date)}</span>, runner ${esc(run.runner_version || 'not recorded')}, surface ${esc(run.surface || 'not recorded')}, verification level <code>${esc(r.verification_level || 'not recorded')}</code>.</p>
 
-  <section class="receipt-verdict state-${limit ? 'scope-limit' : v.verdict.toLowerCase().replace(/_/g, '-')}">
+${r.skill?.rules_file ? '  <p class="receipt-rules">' + esc(r.skill.rules_file.limitation) + '</p>\n' : ''}  <section class="receipt-verdict state-${limit ? 'scope-limit' : v.verdict.toLowerCase().replace(/_/g, '-')}">
     <p class="receipt-label" data-field="label">${esc(label)}</p>
     <p class="receipt-honest" data-field="honest">${esc(honest)}${limit ? ` <a href="${limit.amendment}">Report 015 Amendment 1</a>.` : ''}</p>
 ${!limit && v.verdict === 'NO_EFFECT' && isOneCase(r) ? `    <p class="receipt-cases" data-field="cases">${esc(ONE_CASE_LINE)}</p>\n` : ''}${!limit && v.verdict === 'UNDERPOWERED' ? `    <p class="receipt-draws">${esc(drawsLine(v.drawsNeeded))}</p>\n` : ''}${!limit && v.verdict === 'INCONCLUSIVE' && v.lostDraws ? `    <p class="receipt-draws">${esc(lostDrawsLine(v.lostDraws))}</p>\n` : ''}${cost.shown ? `    <p data-field="cost">${esc(costSentence(cost.text))}</p>\n` : ''}    <p><img class="receipt-badge" src="badge.svg" alt="${esc(`driftproof badge: ${label.toLowerCase()} on ${run.model_id}, ${date}${limit ? '. '+limit.reason : ''}`)}"></p>
@@ -317,7 +363,7 @@ ${placeboLink(rel, r)}${limit && limit.evals_sha256 ? '  <p class="result-links"
     </details>
   </section>
 
-  <section class="receipt-embed">
+${reading?.text ? `  <section class="receipt-reading"><h2>Reading on these tasks</h2><p>${esc(reading.text)}.</p><p>${receiptBadgeLink({rel,receipt:r})}</p></section>\n` : ''}  <section class="receipt-embed">
     <h2>Embed the badge</h2>
     <p><span class="copy-cta"><code>${esc(snippet)}</code><button type="button" data-copy="${esc(snippet)}">Copy</button></span></p>
   </section>
@@ -379,6 +425,7 @@ ${items.map((i) => i.li).join('\n')}
 <section class="screen is-text">
 <h1>Receipts</h1>
 <p>Each receipt page shows the two arms, what was verified, and how to check the file yourself. They are listed here by report, newest report first.</p>
+<p><a href="/badges/">Skill badges and README snippets</a> · <a href="/data/published-receipts.json">Published receipt list</a></p>
 </section>
 ${sections}
 </main>`;
@@ -407,6 +454,7 @@ const cardLabels = (all) => new Map(all.map((x) => [x.receipt.receipt_hash, repo
 function main() {
   const check = process.argv.includes('--check');
   const all = receipts();
+  require('./published-badges').build({check,rows:require('./published-badges').catalogue({entries:all})});
   const seen = new Set();
   const stale = [];
   // Cards first, so each page's head finds its card by name.

@@ -7,8 +7,9 @@
 // THE READING IS lib/verdict.js's (spec 781 AC-1, AC-2). Every label is the mapping of placeboReading on
 // the sealed receipt, per model; this file holds the table and no copy of the case rule. The verdict
 // against no skill is lib/plain.js plainOf, the receipt reader's own words, as on Reports 017 and 018.
-const { placeboReading, placeboLine } = require('../lib/verdict');
+const { placeboReading } = require('../lib/verdict');
 const { plainOf } = require('../lib/plain');
+const { isRulesFile } = require('../lib/rules-files');
 const { handsOffOnly } = require('./skill-handoff.js');
 
 const OFFER = {
@@ -45,11 +46,8 @@ const asksOn = (rel) => /^skills\/(?:.+\/)?index\.html$/.test(rel) || rel === 'r
 
 // THE LABELS (spec 781 AC-1). Maverick's reading rules of 10 Nov 2026, word for word.
 const LABELS = { keep: 'Keep', delete: 'Delete candidate', cannot: 'Cannot tell', notMeasurable: 'Not measurable this way' };
-const MAPPING = {
-  ABOVE_PLACEBO: 'keep',
-  BELOW_PLACEBO: 'delete', NO_DIFFERENCE: 'delete',
-  INCONCLUSIVE: 'cannot', UNDERPOWERED: 'cannot', NOT_MEASURED: 'cannot',
-};
+const { WORDS, readingOf: sharedReading } = require('../lib/reading-words');
+const MAPPING = Object.fromEntries(Object.entries(WORDS).filter(([, row]) => row.offer).map(([key, row]) => [key, row.offer]));
 const DEFINITIONS = {
   keep: 'On at least one task the skill scored above the placebo, and on none did it score below. Its words do something that the same amount of text does not.',
   delete: 'The skill did not beat the placebo on these tasks: it scored below it on at least one task (even if it scored above it on another), or no task differed by as much as the test can detect. That is a reason to try working without it. It is not proof the skill does nothing, because your own tasks may differ from ours.',
@@ -67,8 +65,9 @@ function labelOf(reading, notMeasurable = false) {
 function readingOf(receipt, { notMeasurable = false, reason = null } = {}) {
   if (notMeasurable) return { reading: 'NOT_MEASURED', key: 'notMeasurable', label: LABELS.notMeasurable, reason, placebo_line: null, against_no_skill: null };
   if (!receipt) return { reading: 'NOT_MEASURED', key: 'cannot', label: LABELS.cannot, reason: 'No sealed result for this model.', placebo_line: null, against_no_skill: null };
+  const shared = sharedReading(receipt);
   const r = placeboReading(receipt), key = labelOf(r.reading);
-  return { reading: r.reading, key, label: LABELS[key], reason: null, placebo_line: placeboLine(r), against_no_skill: plainOf(receipt).sentence };
+  return { reading: r.reading, key, label: LABELS[key], reason: null, placebo_line: shared.reading === r.reading && shared.text || WORDS.INCONCLUSIVE.text, against_no_skill: plainOf(receipt).sentence };
 }
 // The pack's headline, per model and never merged (AC-3). skills: [{ skill, boxes: [{ model, key }] }]
 function headline(skills, models) {
@@ -155,6 +154,7 @@ function skillPath(line) {
   const p = line.trim().replace(/^`|`$/g, '').replace(/^\.?\/+/, '').replace(/\/+$/, '');
   // The repository's root, written `.`, `./` or `/`, holds the skill at SKILL.md (F-1).
   const full = p === '' || p === '.' ? 'SKILL.md' : /(?:^|\/)SKILL\.md$/.test(p) ? p : `${p}/SKILL.md`;
+  if (isRulesFile(p)) return p.split('/').every((s) => /^(?:\.[A-Za-z0-9]|[A-Za-z0-9])[A-Za-z0-9._-]*$/.test(s) && s !== '..') ? p : null;
   return full.split('/').every((s) => SEGMENT.test(s) && s !== '..') ? full : null;
 }
 // -> { kind, repository, skills, skill, result_page, tasks, author, problem }

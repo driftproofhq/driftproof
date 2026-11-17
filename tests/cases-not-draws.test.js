@@ -22,7 +22,7 @@ const { EFFECT_FLOOR, POWER_Z } = require('../config');
 const verdict = require('../lib/verdict');
 const { receiptVerdict, verdictFromReceipt, badgeEndpoint, githubOutputLines, drawsLine, UNDERPOWERED_LINE, VERDICTS } = verdict;
 const { acrossDraws } = require('../lib/sampling');
-const { sealReceipt, validateReceipt, listReceipts } = require('../lib/receipt');
+const { sealReceipt, verifyReceiptHash, validateReceipt, listReceipts } = require('../lib/receipt');
 const { stddev, combineUncertainty, round } = require('../lib/stats');
 const decision = require('../lib/decision');
 const plain = require('../lib/plain');
@@ -373,7 +373,7 @@ test('AC-2 the plain words, the job summary lead and the pull request comment ca
   assert.ok(body.includes(casesLine) && !body.includes(UNDERPOWERED_LINE), body);
 });
 
-// `driftproof view` reads only receipts that validate, so its fixtures are a tracked PASSED receipt
+// The view, CLI and receipt page read valid receipts, so their fixtures use a tracked PASSED receipt
 // of report 013 with its cases replaced, draw by draw, and sealed again (spec 128's planting method).
 // The repository is read where the gate says it is (DRIFTPROOF_ARTIFACT_ROOT), else beside this file.
 function validReceipt(cases, model) {
@@ -390,7 +390,9 @@ function validReceipt(cases, model) {
   r.results.cases = cases.flatMap(([w, b], i) => first.map((row) => {
     const c = structuredClone(row);
     const t0 = c.generation.draws[0];
-    const draws = (c.mode === 'with_skill' ? w : b).map((x, j) => ({ ...t0, draw_index: j, status: 'measured', samples: [x], judge_sample_hashes: (t0.judge_sample_hashes || []).slice(0, 1), mean: x, stddev: 0, truncated: false }));
+    const draws = (c.mode === 'with_skill' ? w : b).map((x, j) => (x === LOST
+      ? { ...t0, draw_index: j, status: 'unmeasured', reason: 'timeout', generation_hash: null, samples: [], judge_sample_hashes: [], mean: null, stddev: null, stop_reason: null, truncated: false }
+      : { ...t0, draw_index: j, status: 'measured', samples: [x], judge_sample_hashes: (t0.judge_sample_hashes || []).slice(0, 1), mean: x, stddev: 0, truncated: false }));
     const a = acrossDraws(draws);
     c.id = `c${i + 1}`;
     c.generation = { ...c.generation, draws, n_drawn: a.n_drawn, n_measured: a.n_measured, n_unmeasured: a.n_unmeasured, mean: a.mean, sd: a.sd, judge_sd_mean: a.judge_sd_mean, variance_ratio: a.variance_ratio, variance_ratio_unavailable: a.variance_ratio_unavailable, n_truncated: 0 };
@@ -405,8 +407,9 @@ function validReceipt(cases, model) {
   r.skill = { ...r.skill, name: 'fx-skill' };
   r.comparison = { ...r.comparison, with_skill_score: avg(sums.with_skill), baseline_score: avg(sums.baseline), delta: avg(sums.with_skill) - avg(sums.baseline) };
   const sealed = sealReceipt(r);
+  assert.ok(verifyReceiptHash(sealed), 'the surface fixture seal verifies');
   const ok = validateReceipt(sealed);
-  if (!ok.valid) throw new Error(`the view fixture does not validate: ${JSON.stringify(ok.errors).slice(0, 300)}`);
+  if (!ok.valid) throw new Error(`the surface fixture does not validate: ${JSON.stringify(ok.errors).slice(0, 300)}`);
   return sealed;
 }
 
@@ -494,13 +497,13 @@ test('AC-2 the receipt page the builder renders, and its card, carry the cases l
   // names; each fixture's receipt_hash is its own.
   const model = 'claude-sonnet-5-5';
   const render = (r) => pages.page({ rel: `receipts/fx/${r.skill.name}-${r.run.model_id}-2026-10-02.json`, receipt: r }).html;
-  const cases = receipt(CASES, { model });
+  const cases = validReceipt(CASES, model);
   const html = render(cases);
   assert.equal(field(html, 'label'), pages.CASES_PAGE[0]);
   assert.equal(field(html, 'honest'), `${casesLine}.`);
   assert.ok(html.includes(`driftproof badge: ${pages.CASES_PAGE[0].toLowerCase()} on ${model}`), 'the badge alt text does not carry the cases label');
   assert.ok(!html.includes(UNDERPOWERED_LINE) && !html.includes(pages.LABELS.UNDERPOWERED[0]), 'the cases page carries the plain words');
-  const others = Object.entries({ DRAWS, CASE_DRAWS, CASE_SPREAD, LOSTCASE }).map(([name, shape]) => [name, receipt(shape, { model })]);
+  const others = Object.entries({ DRAWS, CASE_DRAWS, CASE_SPREAD, LOSTCASE }).map(([name, shape]) => [name, validReceipt(shape, model)]);
   for (const [name, r] of others) {
     const h = render(r);
     assert.equal(field(h, 'label'), pages.LABELS.UNDERPOWERED[0], name);

@@ -588,11 +588,16 @@ test('730 AC-5/6: removal readings and negative wording plants', () => {
   assert.throws(() => render(...ordered, { a: loaded[0], b: { ...loaded[1], skillMd: loaded[1].skillMd + 'x' }, withoutSection: 'Tone' }));
   // Consistent hashes alone cannot turn a different B into the named removal.
   const unrelated = { ...loaded[1], skillMd: loaded[1].skillMd + 'Other words.' };
+  // A-730-3: make every subject field consistent, so the named removal check is reached.
+  unrelated.sourceText = unrelated.skillMd;
+  unrelated.rulesFile = { ...unrelated.rulesFile, text: unrelated.skillMd };
   unrelated.contentHash = sha(Buffer.from(unrelated.skillMd));
   const resealed = clone(ordered[1]);
   resealed.skill.content_hash = unrelated.contentHash;
   resealed.skill.tokens = estimateTokens(unrelated.skillMd);
+  resealed.skill.rules_file = clone(unrelated.rulesFile);
   sealReceipt(resealed);
+  assert.equal(verifyReceiptHash(resealed), true);
   assert.equal(validateReceipt(resealed).valid, true);
   assert.throws(() => render(ordered[0], resealed, { a: loaded[0], b: unrelated, withoutSection: 'Tone' }), /exact named section removal/);
 

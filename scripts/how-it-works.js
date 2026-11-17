@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use strict';
+const { RULES_FILE_NAMES, RULES_LIMITATION } = require('../lib/rules-files');
+
 // Issue 640 (spec 640): /how-it-works/, how Driftproof tests a skill, in five screens, with one real
 // Report 017 skill. Every figure, prompt, answer, reason and reading on the page is read here from
 // that skill's sealed receipt, its kept answers and its published suite, and checked first; the
@@ -290,7 +292,7 @@ ${beacon ? '<p class="muted">Like every page on this site, this one counts a vis
 </section>
 <section aria-labelledby="what-you-need">
 <h2 id="what-you-need">What you need</h2>
-<p>You need Claude Code, <code>Node.js ${nodeMajor}</code> or newer, and your project in a git repository. You do not need an API key: runs use your Claude Code plan's usage. In Claude Code, compare and recheck need a git repository, and compare takes a <code>CLAUDE.md</code> or <code>AGENTS.md</code>. <a href="/#quickstart">Install in Claude Code</a>.</p>
+<p>You need Claude Code, <code>Node.js ${nodeMajor}</code> or newer, and your project in a git repository. You do not need an API key: runs use your Claude Code plan's usage. In Claude Code, compare and recheck need a git repository, and compare takes a rules file: ${RULES_FILE_NAMES}. ${RULES_LIMITATION} <a href="/#quickstart">Install in Claude Code</a>.</p>
 </section>
 </main>`;
   assertPageText(main);

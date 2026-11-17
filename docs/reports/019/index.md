@@ -935,8 +935,8 @@ Read and built by:
 - `specs/786-tools-on-routers/world.cjs`, SHA-256 `e94047b18e0919ab60fde49503bca828af893bf33d0e36522ba7191775e9d9aa`
 - `lib/verdict.js`, SHA-256 `c09edd5e1a8c62c43fa0e0d1f1a268d5d6076e474846e2cf9247a1f0e35b5b6e`
 - `lib/plain.js`, SHA-256 `46f471b1487460b6101680f0b4c1191e358611020f326898e37f0e420011dbb9`
-- `lib/receipt.js`, SHA-256 `15af7a7c568cce78ed97c3625adaee79da513d2ca71fc6743492446b97bbaba5`
-- `scripts/offer.js`, SHA-256 `a920697a907038dc809a99ddd590b664bb7edd88f5d622cc78c3162689f7e995`
+- `lib/receipt.js`, SHA-256 `979be61ec82acca2e20c9764844188f2d1f025a34d7fbfd0365d7fed8fdef7a8`
+- `scripts/offer.js`, SHA-256 `dcc5adde7ce49b2f853708c35a7bfe671a38f38a908a01b2ecc12234c76adddb`
 
 ## Receipts
 

@@ -181,7 +181,7 @@ function readFinding(h, S, reportHtml, n) {
   });
   return hits;
 }
-const TOP = [['Reports', '/reports/'], ['Skills', '/skills/'], ['How it works', '/how-it-works/'], ['For builders', ''], ['GitHub', 'https://github.com/driftproofhq/driftproof']];
+const TOP = [['Reports', '/reports/'], ['Skills', '/skills/'], ['Receipts', '/r/'], ['Badges', '/badges/'], ['How it works', '/how-it-works/'], ['For builders', ''], ['GitHub', 'https://github.com/driftproofhq/driftproof']];
 const BASE_HREFS = ['/reports/', '/benchmark-gap/', '/leaderboard-noise/', '/skills/', '/findings/', '/paper/', '/#how-it-works', '/methodology/', '/neutrality/', '/interop/', '/authoring/', '/judge-policy/', '/how-this-is-built/', '/glossary/', '/report-types/', 'https://github.com/driftproofhq/driftproof'];
 const NAV_FENCE = /<!--driftproof:nav-->[\s\S]*?<!--\/driftproof:nav-->/;
 function htmlPages(dir = DOCS) {

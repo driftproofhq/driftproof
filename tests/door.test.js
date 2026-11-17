@@ -1858,3 +1858,71 @@ test('752 A-752-4: recheck saves, shows and runs in a repository under a folder 
   const rows = runner752(sb);
   for (const verb of ['init', 'history', 'run']) assert.ok(rows.some(v => v[0] === 'recheck' && v[1] === verb), verb + ': ' + JSON.stringify(rows));
 });
+
+// Issue 812: measure fills the Measure a skill form from this computer, prints it, opens it, and sends nothing.
+function measureSandbox({ origin, repo = true } = {}) {
+  const sb = blindSandbox();
+  fs.rmSync(sb.log, { force: true });
+  if (!repo) fs.rmSync(path.join(sb.work, '.git'), { recursive: true, force: true });
+  const nested = path.join(sb.work, 'skills', 'my-skill');
+  fs.mkdirSync(path.dirname(nested), { recursive: true });
+  fs.renameSync(sb.skill, nested);
+  sb.skill = nested;
+  if (origin) spawnSync('git', ['remote', 'add', 'origin', origin], { cwd: sb.work });
+  return sb;
+}
+const formOf = (sb) => {
+  const opened = spawns(sb).filter((s) => s.bin === 'opener');
+  assert.equal(opened.length, 1, JSON.stringify(spawns(sb)));
+  const u = new URL(opened[0].argv[0]);
+  assert.equal(u.origin + u.pathname, 'https://github.com/driftproofhq/driftproof/issues/new');
+  return Object.fromEntries(u.searchParams);
+};
+
+test('812: measure opens the form filled from this computer, and takes only owner and name from origin', () => {
+  // Each origin is put together here so no address-shaped string sits in the file (the hygiene scan).
+  const at = '@github.com';
+  for (const origin of ['https://someone:secretvalue' + at + '/acme/skills.git', 'git' + at + ':acme/skills.git', 'ssh://git' + at + '/acme/skills']) {
+    const sb = measureSandbox({ origin });
+    const r = door(sb, ['measure', 'skills/my-skill'], { extra: sb.extra });
+    assert.equal(r.status, 0, r.stderr);
+    assert.deepEqual(formOf(sb), { template: 'measure-skill.yml', title: 'Measure a skill: my-skill', repository: 'https://github.com/acme/skills', skill: 'skills/my-skill/SKILL.md' }, origin);
+    assert.doesNotMatch(r.stdout + JSON.stringify(spawns(sb)), /secretvalue|someone/, origin);
+    assert.match(r.stdout, /nothing has been sent/);
+    assert.deepEqual(npx(sb), [['--version']], 'only the version probe reaches the runner');
+  }
+});
+
+test('812: measure leaves the repository blank off github.com or outside git, and refuses a folder with no SKILL.md', () => {
+  const other = measureSandbox({ origin: 'https://gitlab.com/acme/skills.git' });
+  assert.equal(door(other, ['measure', 'skills/my-skill'], { extra: other.extra }).status, 0);
+  assert.deepEqual(formOf(other), { template: 'measure-skill.yml', title: 'Measure a skill: my-skill', repository: '', skill: 'skills/my-skill/SKILL.md' });
+  const none = measureSandbox({ repo: false });
+  const r = door(none, ['measure', 'skills/my-skill'], { extra: none.extra });
+  assert.equal(r.status, 0, r.stderr);
+  assert.deepEqual(formOf(none), { template: 'measure-skill.yml', title: 'Measure a skill: my-skill', repository: '', skill: '' });
+  assert.match(r.stdout, /no git repository here/);
+  const empty = measureSandbox({ origin: 'git' + '@github.com:acme/skills.git' });
+  fs.rmSync(path.join(empty.skill, 'SKILL.md'));
+  const refused = door(empty, ['measure', 'skills/my-skill'], { extra: empty.extra });
+  assert.equal(refused.status, 2);
+  assert.match(refused.stderr, /holds no SKILL\.md/);
+  assert.equal(spawns(empty).filter((s) => s.bin === 'opener').length, 0, 'nothing was opened');
+  assert.match(door(empty, ['measure', 'skills/my-skill', '--quick'], { extra: empty.extra }).stderr, /measure does not take --quick/);
+});
+
+test('821: measure opens the same form for every supported rules file and refuses links', () => {
+  const kinds = require('../lib/rules-files').RULES_FILE_KINDS.filter(x => x.kind !== 'markdown');
+  for (const kind of kinds) {
+    const sb = measureSandbox({ origin: 'https://github.com/acme/skills.git' });
+    const rel = kind.example.replace('*', 'style'), file = path.join(sb.work, rel);
+    fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, '# Rules\nBe brief.\n');
+    const r = door(sb, ['measure', rel], { extra: sb.extra });
+    assert.equal(r.status, 0, r.stderr);
+    assert.deepEqual(formOf(sb), { template: 'measure-skill.yml', title: 'Measure a rules file: ' + path.basename(rel), repository: 'https://github.com/acme/skills', skill: rel });
+    assert.match(r.stdout, /nothing has been sent/);
+    fs.rmSync(sb.log, { force: true }); fs.unlinkSync(file); fs.symlinkSync(sb.skill, file);
+    assert.notEqual(door(sb, ['measure', rel], { extra: sb.extra }).status, 0);
+    assert.equal(spawns(sb).filter(s => s.bin === 'opener').length, 0);
+  }
+});

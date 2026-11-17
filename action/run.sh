@@ -20,18 +20,41 @@ require_env GITHUB_ACTION_PATH RUNNER_TEMP GITHUB_OUTPUT \
 : "${INPUT_SUITE=}"
 : "${INPUT_PLACEBO=false}"
 : "${INPUT_COMPARE_WITH_BASE=false}"
+: "${INPUT_FAIL_ON_FAKE=false}"
 
 # Validated before anything is created or started (AC-3): a bad value fails
 # here, with a message naming the input, before any model call is projected.
-validate_skill_dir "$INPUT_SKILL_DIR"
+if [ -n "$INPUT_SKILL_DIR" ] || [ "${GITHUB_EVENT_NAME:-}" != pull_request ]; then
+  validate_skill_dir "$INPUT_SKILL_DIR"
+fi
 validate_models "$INPUT_MODELS"
 validate_max_usd "$INPUT_MAX_USD"
 validate_max_calls "$INPUT_MAX_CALLS"
 validate_bool fail-on-regression "$INPUT_FAIL_ON_REGRESSION"
 validate_bool fail-on-underpowered "$INPUT_FAIL_ON_UNDERPOWERED"
+validate_bool fail-on-fake "$INPUT_FAIL_ON_FAKE"
 validate_bool placebo "$INPUT_PLACEBO"
 validate_bool compare-with-base "$INPUT_COMPARE_WITH_BASE"
 if [ -n "$INPUT_SUITE" ]; then validate_suite "$INPUT_SUITE"; fi
+# Issue 820: an omitted subject selects the whole pull request, after validation.
+if [ -z "$INPUT_SKILL_DIR" ]; then
+  fence_begin
+  if node "$GITHUB_ACTION_PATH/action/pr-check.js" run; then
+    :
+  else
+    CHECK_STATUS=$?
+    fence_end
+    # Only pr-check's fixed missing-key statuses select specific annotations.
+    # Never interpret or replay the fenced child stream as workflow commands.
+    case "$CHECK_STATUS" in
+      78) die "ANTHROPIC_API_KEY is missing: set the api-key input for Anthropic models. Automatic mode never falls back to a subscription login." ;;
+      79) die "OPENAI_API_KEY is missing: set the openai-api-key input for OpenAI models. Automatic mode never falls back to a subscription login." ;;
+      *) die "The check could not verify its inputs or receipts." ;;
+    esac
+  fi
+  fence_end
+  exit 0
+fi
 COMPARE_ELIGIBLE=false
 if [ "$INPUT_COMPARE_WITH_BASE" = true ] && [ "${GITHUB_EVENT_NAME:-}" = pull_request ] && [ -f "$INPUT_SKILL_DIR" ] && [ -n "$INPUT_SUITE" ]; then
   validate_base_ref "${GITHUB_BASE_REF:-}"
@@ -42,8 +65,12 @@ fi
 # cannot pass. A pull request from a fork never receives secrets, so it reached that on every run.
 # Checked after every input, so a bad input is still named, and before anything is created.
 if [ -z "${ANTHROPIC_API_KEY:-}" ] && [ -z "${OPENAI_API_KEY:-}" ] && [ "${DRIFTPROOF_STUB:-}" != 1 ]; then
-  die "this Action needs an API key secret: set the api-key input from a repository secret. Pull requests from forks do not receive secrets, so they cannot be measured here."
+  die "this Action needs an API key secret: ANTHROPIC_API_KEY (api-key) and OPENAI_API_KEY (openai-api-key) are missing. Explicit mode never falls back to a subscription login. Pull requests from forks do not receive secrets, so they cannot be measured here."
 fi
+
+# Every requested provider needs its own API key; never fall back to a login.
+if [ "${DRIFTPROOF_STUB:-}" != 1 ]; then node "$GITHUB_ACTION_PATH/action/pr-check.js" keys; fi
+export CLAUDE_PROVIDER=api OPENAI_SURFACE=api
 
 # SPEC 050 (AC-5). A directory made for THIS invocation, after every input has been
 # validated, so a refused input still creates nothing. Until this it was the fixed
@@ -99,6 +126,8 @@ if [ "$INPUT_COMPARE_WITH_BASE" = true ]; then
     else
       BASE_PREFIX="$(git -C "$(dirname "$SKILL_DIR")" rev-parse --show-prefix)"
       BASE_PATH="$BASE_PREFIX$(basename "$SKILL_DIR")"
+      BASE_FILE="$BASE_TMP/subject/$BASE_PATH"
+      mkdir -p -- "$(dirname "$BASE_FILE")"
       # --depth would make a full-history checkout shallow, so it is passed only to a checkout that
       # already is. There it can still cut history at the base tip, so the shallow file is put back.
       # --refmap= keeps git from also moving origin/<base>.
@@ -112,9 +141,9 @@ if [ "$INPUT_COMPARE_WITH_BASE" = true ]; then
         printf '%s\n' '::notice title=Driftproof::The base branch could not be fetched. Running the new file only.'
       elif ! git --literal-pathspecs ls-tree "$BASE_REF" -- "$BASE_PATH" | grep -qE '^100(644|755) blob '; then
         printf '%s\n' '::notice title=Driftproof::The base branch has no regular rules file at this path. Running the new file only.'
-      elif ! git show "$BASE_REF:$BASE_PATH" > "$BASE_TMP/base.md" 2>/dev/null; then
+      elif ! git show "$BASE_REF:$BASE_PATH" > "$BASE_FILE" 2>/dev/null; then
         printf '%s\n' '::notice title=Driftproof::The base branch has no version of this rules file. Running the new file only.'
-      elif cmp -s -- "$BASE_TMP/base.md" "$SKILL_DIR"; then
+      elif cmp -s -- "$BASE_FILE" "$SKILL_DIR"; then
         printf '%s\n' '::notice title=Driftproof::The old and new rules have the same bytes. Running the new file only.'
       else
         COMPARE=true
@@ -126,12 +155,12 @@ if [ "$INPUT_COMPARE_WITH_BASE" = true ]; then
   fi
 fi
 
-# A key selects the metered Messages API; without one the run uses the
-# default cli surface (or the offline stub when DRIFTPROOF_STUB=1).
+# Explicit mode requires the selected provider key above. The only offline
+# exception is DRIFTPROOF_STUB=1.
 if [ -n "${ANTHROPIC_API_KEY:-}" ]; then export CLAUDE_PROVIDER=api; fi
 fence_begin
 if [ "$COMPARE" = true ]; then
-  if ! ( cd "$RUN_CWD" && node "$GITHUB_ACTION_PATH/bin/driftproof" compare "$BASE_TMP/base.md" "$SKILL_DIR" \
+  if ! ( cd "$RUN_CWD" && node "$GITHUB_ACTION_PATH/bin/driftproof" compare "$BASE_FILE" "$SKILL_DIR" \
     --models "$INPUT_MODELS" --max-usd "$INPUT_MAX_USD" \
     --max-calls "$INPUT_MAX_CALLS" --out "$OUT" "${EXTRA_ARGS[@]}" ); then
     fence_end
@@ -202,7 +231,9 @@ node "$GITHUB_ACTION_PATH/bin/driftproof" decide "$OUT" --models "$INPUT_MODELS"
 # SPEC 128 (AC-11). The summary opens with the plain sentence, and its last clause
 # says whether the job fails, so the call passes the two fail-on inputs the
 # enforcement step passes: the sentence and the exit are read by one rule.
-if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+if [ -n "${GITHUB_STEP_SUMMARY:-}" ] && [ "$INPUT_FAIL_ON_FAKE" = true ]; then
+  DRIFTPROOF_RECEIPTS="$OUT" node "$GITHUB_ACTION_PATH/action/pr-check.js" summary
+elif [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
   node "$GITHUB_ACTION_PATH/bin/driftproof" decide "$OUT" --models "$INPUT_MODELS" \
     --summary "$GITHUB_STEP_SUMMARY" \
     --fail-on-regression "$INPUT_FAIL_ON_REGRESSION" --fail-on-underpowered "$INPUT_FAIL_ON_UNDERPOWERED"

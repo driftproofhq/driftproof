@@ -375,6 +375,7 @@ test('action/comment.js posts the escaped body to the API it is given', async (t
     req.on('data', (c) => { raw += c; });
     req.on('end', () => {
       const send = (status, obj) => { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(obj)); };
+      if (req.url.endsWith('/graphql')) return send(200, { data: { viewer: { login: 'github-actions[bot]' } } });
       if (req.method === 'GET') return send(200, []);
       seen.push({ method: req.method, path: req.url, body: JSON.parse(raw) });
       return send(201, { id: 1 });
@@ -484,6 +485,7 @@ async function postedBody(t, dir, models) {
     let raw = '';
     req.on('data', (c) => { raw += c; });
     req.on('end', () => {
+      if (req.url.endsWith('/graphql')) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ data: { viewer: { login: 'github-actions[bot]' } } })); }
       res.writeHead(req.method === 'GET' ? 200 : 201, { 'content-type': 'application/json' });
       if (req.method !== 'GET') seen.push(JSON.parse(raw).body);
       res.end(req.method === 'GET' ? '[]' : '{"id":1}');

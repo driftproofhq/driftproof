@@ -8,6 +8,43 @@ makes this one a record.
 
 ---
 
+## v0.30.0 - 2026-11-17
+
+### What's new
+
+- **Rules files for Cursor, GitHub Copilot and Windsurf are measured like CLAUDE.md.** `.cursor/rules/*.mdc`, `.cursorrules`, `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, `.windsurfrules` and `.windsurf/rules/*.md` run through the same with, without and same-length fake comparison. The model gets the text the editor would send. A rules file is read the way Claude reads it here; this does not reproduce each editor's own model or behaviour.
+- **A pull request check you can copy in one file.** `examples/workflows/driftproof-pr.yml` runs on any pull request. It finds changed skills and rules files that have test cases beside them, measures each one, and posts one table as a single comment, which it updates on later pushes. Explicit mode needs each requested provider's API key and never falls back to a subscription login. The Action's default model is now `claude-haiku-5-5`.
+- **Badges for every skill we measured.** Each published skill has a latest badge and one per model, with paste-ready README snippets, at /badges/. A badge states the reading, the model and the date. A skill that did not beat the fake says "did not beat the fake".
+- **The free offer takes rules files too.** At /measure/ you can send a public Cursor, Copilot or Windsurf rules file, alone or in a pack with skills, for the same three-task, two-model comparison.
+- **`/driftproof:measure` in the Claude Code plugin** opens the free offer's form on GitHub, filled in from your skill folder. Nothing is sent until you submit it.
+- **The paper is now version 2,** with its own DOI (10.5281/zenodo.24136677), at /paper/.
+- **A receipt that fails its seal or schema shows no figure and no verdict** on its page, instead of stopping the site build.
+
+- PR 839: test(838): spec 312 badge-gate check after issue 835
+
+### Known open
+
+- The pull request check recognises its own comment by asking GitHub which account its token belongs to. That is tested against recorded GitHub responses, not yet on a live repository. If GitHub answers differently, the check posts a notice instead of a comment; the job itself does not fail.
+- Two calls of the check in one workflow through a reusable workflow share one comment unless each sets `comment-id`.
+- The copyable workflow pins this release; the release train moves that pin with each release.
+
+### Engineering log
+
+- Merged since 0.29.0: PR 836 (835: final-dev reds), PR 831 (830: badge pages findable), PR 834 (833: dev reds), PR 832 (829: PR check follow-ups), PR 828 (826: spec 490 fixtures), PR 827 (824: pinned hidden-test environment with Jest and FastAPI), PR 822 (820: pull request check), PR 823 (821: free offer takes rules files), PR 817 (816: release-day report command), PR 819 (815: badges), PR 818 (814: rules files), PR 813 (812: /driftproof:measure), PR 811 (810: release-log entries, C-344), PR 809 (797: paper version 2), PR 801 (800: spec 067 NFR-1 re-pointed, C-343).
+- The badge reading for a skill that did not beat the fake follows A-794-3's wording ("did not beat the fake"), now also on the home page and checked on every badge (A-794-4).
+- Spec 794 AC-14's stylesheet Base comparison retired under C-315 (A-794-5): a preservation hold that proved itself at 794's merge.
+- Spec 167's gate-map inputs, dropped by a regenerated map, are restored by tracing builder dependencies in the generator (issue 829).
+- The pull request check edits only its own bot's comment (spec 128 AC-12 unchanged); a user token or an ambiguous 403 posts a new comment.
+- Badge hubs exist only for subjects with a published badge (A-815-2); the site stays under the head-tag builder's 1,024-page batch limit (984 pages). Dev was at exactly 1,024 before; a follow-up will address the limit.
+- Release-day report command (issue 816): `node scripts/release-day-report.js` plans Report 019's frozen twenty-skill placebo run on a new Claude model and stops for a plan hash before any spend.
+- Nightly sweeps on 17 Nov found 21 reds, all checks that had not followed this round's changes; fixed in issues 833 and 835 before the draft.
+
+**Merged from dev by a refresh, after the draft.** `release-prepare --stage refresh` lists every merge on dev between `879c10bb0855` and `c49871c68138`, the commit the refresh merged, so this release ships each of them, and `release-record.json`'s `source_commit` moves to `c49871c68138`, where the next release's list starts.
+
+- PR 839, merge `c49871c6`: test(838): spec 312 badge-gate check after issue 835
+
+---
+
 ## v0.29.0 - 2026-11-13
 
 ### What's new

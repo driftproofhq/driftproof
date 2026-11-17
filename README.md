@@ -204,9 +204,9 @@ the file does on other tasks. The reading also appears beside the verdict in `vi
 pull request comment, the job summary, `export --to summary-json` and each side of `diff`.
 [See your file's fake in your browser](https://driftproofhq.com/placebo/) before measuring it.
 
-In a workflow, use a release containing these inputs in place of vX:
+In a workflow, use the pinned release:
 ```yaml
-- uses: driftproofhq/driftproof@vX
+- uses: driftproofhq/driftproof@v0.30.0
   with: {skill-dir: CLAUDE.md, suite: driftproof/tasks.json, placebo: 'true'}
 ```
 See the [complete offline workflow](examples/workflows/driftproof-rules-file.yml).
@@ -261,10 +261,11 @@ claude plugin install driftproof@driftproofhq
 ```
 
 That installs `/driftproof:start`, `/driftproof:init`, `/driftproof:run`,
-`/driftproof:blind`, `/driftproof:badge`, `/driftproof:compare`, `/driftproof:inspect` and `/driftproof:recheck`.
+`/driftproof:blind`, `/driftproof:badge`, `/driftproof:compare`, `/driftproof:inspect`, `/driftproof:recheck` and `/driftproof:measure`.
 `/driftproof:compare <rules-file> --suite <tasks>` compares your edit with the committed file, or a file named with `--against`, and shows the runner's per-task reading and caveat.
 `/driftproof:inspect <file-or-skill-dir>` shows what is in a local file without running it, including the reminder that a clean reading is not a guarantee.
 `/driftproof:recheck <skill-dir-or-rules-file>` saves its tests and settings the first time, runs them again after you say yes on later uses, and shows the runner's dated reading unchanged.
+`/driftproof:measure <skill-dir>` opens the free Measure a skill request form, filled in with that skill; nothing is sent unless you submit it.
 The CLI is the product and it runs on every surface Driftproof measures, while
 the plugin is one install path for Claude Code users: each command is Markdown
 that has Claude run the pinned runner, which writes the receipt it would have
@@ -804,7 +805,7 @@ A receipt is the unit of evidence — one JSON document conforming to
     "model_release_date": "2025-10-01",
     "provider": "anthropic",
     "surface": "claude-cli",
-    "runner_version": "0.29.0",
+    "runner_version": "0.30.0",
     "date_utc": "2026-07-27T…Z",
     "registry": "registered",
     "transcripts": "hashes-only",
@@ -875,30 +876,43 @@ A registry row without a release date records null.
 
 ## Verification in CI (GitHub Action + badge)
 
-Wire drift detection into a repo so the skill is re-checked on every push and when
-the model underneath it changes.
+Copy [this workflow](examples/workflows/driftproof-pr.yml) into `.github/workflows/` and add an `ANTHROPIC_API_KEY` repository secret. It finds changed skills and rules files, runs their test cases on Haiku 5.5, and updates one receipt table on each push. API calls are billed to your provider. No subscription login is used.
 
 ```yaml
-# .github/workflows/driftproof.yml
-name: driftproof
-on: [push, workflow_dispatch]
+# SPDX-License-Identifier: Apache-2.0
+name: Check skills and rules
+on: [pull_request]
+permissions:
+  contents: read
+  pull-requests: write
+concurrency:
+  group: driftproof-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 jobs:
-  verify:
+  check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: driftproofhq/driftproof@v0.29.0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          skill-dir: skills/my-skill
-          models: claude-haiku-4-5
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: driftproofhq/driftproof@v0.30.0
+        with:
           api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-          # max-usd:   <n>    # override the dollar budget (default: DEV_MAX_USD in config.js)
-          # max-calls: <n>    # override the per-model call cap (default: DEV_MAX_CALLS)
-          # fail-on-regression: 'true'   # (default) fail the job on a measured regression
-          # fail-on-underpowered: 'false'   # (default) set 'true' to fail the job on an underpowered decision
-          # pr-comment: 'true'   # (default) on a pull request, one comment with the result in plain words
-          # (a requested model with no readable receipt fails the job either way)
+          placebo: 'true'
+          max-usd: '20'
+          fail-on-regression: 'true'
+          fail-on-fake: 'false'
 ```
+
+The workflow pins a release. Update the pin when you choose to adopt a newer release. Skills need `evals/evals.json` in their folder. Rules files need `evals/evals.json` beside the file; files in the same folder share those cases. Files without cases are listed as not measured. `npx driftproof init <skill-folder>` adds starter cases for a skill. Review the cases before trusting a reading.
+
+The budget and per-model call cap are shared across changed files. A fork runs no measurement because GitHub withholds secrets. Its job summary says so; GitHub may also block its comment. A failed or unverifiable run fails the check. The table links to the job's receipt artifact, which follows GitHub's retention period.
+
+`fail-on-regression` is on by default. `fail-on-fake` is off by default: turn it on to fail on **worse than the fake**, never on **no better than the fake**. The example enables the fake arm with `placebo`. Set `models` to select other registered models. For OpenAI models, also pass `openai-api-key: ${{ secrets.OPENAI_API_KEY }}`. Neither a green check nor a stub result proves the file helps. The table uses the same [reading words](lib/reading-words.js) as the badges. See the [check contract](specs/820-pull-request-check/spec.md).
+
+To check one file or skill explicitly, set `skill-dir` and, for a rules file, `suite`. The following details also cover that mode.
 
 The action runs the suite on **every** id in `models`, writes one receipt per
 model, uploads the whole receipt directory as a build artifact, and renders the
@@ -971,7 +985,7 @@ Step outputs: `verdict`, `delta` (of the model the worst decision came from; `n/
 
 **The pull request comment.** On a pull request, the Action posts one comment
 with the result in plain words and edits it on each run, so the thread holds
-one comment per skill, not one per push. It is on by default; set
+one comment for the automatic check, or one per explicit skill, across pushes. It is on by default; set
 `pr-comment: false` to turn it off. It needs `permissions: pull-requests: write`
 in the job. A pull request from a fork gets a read-only token; then, as on any
 error from the GitHub API, the Action writes one notice, posts nothing, and the
@@ -1026,7 +1040,7 @@ permissions:
   contents: read
   issues: write
 # ...
-      - uses: driftproofhq/driftproof/stale@v0.29.0
+      - uses: driftproofhq/driftproof/stale@v0.30.0
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill

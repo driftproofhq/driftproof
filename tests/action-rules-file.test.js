@@ -199,6 +199,7 @@ function git(f, ...args) {
 function comparisonFixture({ name = 'CLAUDE.md', same = false, missing = false, kind = 'file' } = {}) {
   const f = fixture();
   git(f, 'init', '--initial-branch=base');
+  fs.mkdirSync(path.dirname(path.join(f.dir, name)), { recursive: true });
   if (name !== 'CLAUDE.md') fs.renameSync(path.join(f.dir, 'CLAUDE.md'), path.join(f.dir, name));
   fs.writeFileSync(path.join(f.dir, name), same ? RULES : '# Old rules\nAnswer in detail.\n');
   if (kind !== 'file') {
@@ -238,8 +239,8 @@ function postComparison(f, out, existing = false) {
   fs.rmSync(posted, { force: true });
   const key = crypto.createHash('sha256').update(f.env.INPUT_SKILL_DIR).digest('hex').slice(0, 16);
   const marker = require('../lib/plain').markerLine(key);
-  const code = 'global.fetch = async (url, opts) => { if (opts.method === "GET") return {ok:true,status:200,json:async()=> ' +
-    JSON.stringify(existing ? [{ id: 12, body: marker + '\nold', user: { type: 'User' } }, { id: 13, body: marker + '\nold', user: { type: 'Bot' } }] : []) +
+  const code = 'global.fetch = async (url, opts) => { if (url.endsWith("/graphql")) return {ok:true,status:200,json:async()=>({data:{viewer:{login:"github-actions[bot]"}}})}; if (opts.method === "GET") return {ok:true,status:200,json:async()=> ' +
+    JSON.stringify(existing ? [{ id: 12, body: marker + '\nold', user: { type: 'User' } }, { id: 13, body: marker + '\nold', user: { type: 'Bot', login: 'github-actions[bot]' } }] : []) +
     '}; require("fs").writeFileSync(process.env.POSTED, JSON.stringify({url,method:opts.method,...JSON.parse(opts.body)})); return {ok:true,status:201,json:async()=>({id:13})}; }; require(process.env.COMMENT);';
   const r = spawnSync(process.execPath, ['-e', code], { cwd: f.dir, encoding: 'utf8', timeout: 1800000,
     env: { ...f.env, GITHUB_TOKEN: 'fixture', GITHUB_REPOSITORY: 'example/rules', GITHUB_EVENT_PATH: event,
@@ -431,4 +432,28 @@ test('762 AC-11 plant: a base branch the remote does not have leaves no ref and 
   assert.equal(argv(f).includes('compare'), false);
   assert.equal((r.stdout.match(/^::notice/gm) || []).length, 1);
   assert.deepEqual(checkoutState(f), before);
+});
+
+for (const name of ['.cursor/rules/style.mdc', '.cursorrules', '.github/copilot-instructions.md', '.github/instructions/style.instructions.md', '.windsurfrules', '.windsurf/rules/style.md']) {
+  test('814: Action accepts ' + name + ' through the same runner', () => {
+    const f = fixture(); fs.mkdirSync(path.dirname(path.join(f.dir, name)), { recursive: true });
+    fs.writeFileSync(path.join(f.dir, name), RULES);
+    const r = run(f, { INPUT_SKILL_DIR: name }); assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.equal(receipt(f).value.skill.rules_file.text, RULES);
+  });
+}
+test('814: Action still refuses an unrelated mdc before Node starts', () => {
+  const f = fixture(); fs.writeFileSync(path.join(f.dir, 'notes.mdc'), RULES);
+  refusedBeforeNode(f, { INPUT_SKILL_DIR: 'notes.mdc' }, 'skill-dir');
+});
+
+for (const [name, kind] of [['.cursor/rules/style.mdc', 'cursor'], ['.github/instructions/style.instructions.md', 'copilot_scoped'], ['.windsurf/rules/style.md', 'windsurf']]) test('814: Action base copy preserves ' + kind, () => {
+  const f = comparisonFixture({ name });
+  const prefix = '---\ndescription: Style\napplyTo: "*.js"\ntrigger: always_on\n---\n';
+  fs.writeFileSync(path.join(f.dir, name), prefix + RULES);
+  const r = run(f); assert.equal(r.status, 0, r.stdout + r.stderr);
+  const { a, b } = compareReceipts(f);
+  assert.equal(a[0].value.skill.rules_file.kind, kind);
+  assert.equal(b[0].value.skill.rules_file.kind, kind);
+  assert.equal(b[0].value.skill.rules_file.text, RULES);
 });

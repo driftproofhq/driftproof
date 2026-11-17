@@ -3,6 +3,8 @@ disable-model-invocation: true
 description: Save a skill's or rules file's tests once, run them again later on your own plan, and read the dated result from the pinned Driftproof runner.
 ---
 
+Supported rules files: `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/*.mdc`, `.cursorrules`, `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, `.windsurfrules`, `.windsurf/rules/*.md`. Measured as always-on text. The editor's system prompt and rule selection are not reproduced.
+
 # /driftproof:recheck
 
 Do the same tests read differently now than when you saved them? This command
@@ -13,18 +15,17 @@ Form in use: npx.
 
 Run the line exactly as it reads, with your own arguments. Do not drop its `cd` or its `--prefix`, and do not add anything before it. Starting npm in the plugin's own folder is what keeps a package or a program planted in the project from running, and these words are all that holds it. Two gaps remain in this form: a program in a parent folder's `node_modules/.bin` can run before the runner, and the line you run can be altered. The installed form is the safer alternative, because npm starts nothing and the first of those gaps closes. If a person has installed this version of the runner, each line can be written instead in the installed form:
 
-    driftproof door --pin 0.29.0 recheck <skill-dir-or-rules-file>
+    driftproof door --pin 0.30.0 recheck <skill-dir-or-rules-file>
 
 If the runner prints `unknown command: door`, it is older than this plugin. Tell the person to install the version the line names.
 Claude Code substitutes the plugin location. Run from the person's repository:
 
-    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" recheck <skill-dir-or-rules-file>)
-    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" recheck <rules-file> --suite <tasks> --models <models> --samples <n> --placebo)
-    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" recheck <skill-dir-or-rules-file> --confirm-spend)
-    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.29.0 door --pin 0.29.0 --from "$OLDPWD" recheck history <folder>)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.30.0 door --pin 0.30.0 --from "$OLDPWD" recheck <skill-dir-or-rules-file>)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.30.0 door --pin 0.30.0 --from "$OLDPWD" recheck <rules-file> --suite <tasks> --models <models> --samples <n> --placebo)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.30.0 door --pin 0.30.0 --from "$OLDPWD" recheck <skill-dir-or-rules-file> --confirm-spend)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.30.0 door --pin 0.30.0 --from "$OLDPWD" recheck history <folder>)
 
-The person never types init or run. A subject means a skill folder, or a CLAUDE.md
-or AGENTS.md. The door checks input-contract.json and the real path of everything
+The person never types init or run. A subject means a skill folder or a supported rules file. The door checks input-contract.json and the real path of everything
 it is given. The subject must be inside this repository. Where there is no
 repository, ask whether the person wrote the subject and owns the folder they run
 from. Use --trust-outside-repo only after their clear yes. The subject must still

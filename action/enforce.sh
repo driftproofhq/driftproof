@@ -13,11 +13,17 @@ require_env DRIFTPROOF_VERDICT DRIFTPROOF_DELTA DRIFTPROOF_RECEIPTS GITHUB_ACTIO
 # Spec 072: an unset INPUT_FAIL_ON_UNDERPOWERED reads as the input's declared default. GitHub
 # always sets it from action.yml's env: block; only a caller outside GitHub leaves it unset.
 : "${INPUT_FAIL_ON_UNDERPOWERED=false}"
+: "${INPUT_FAIL_ON_FAKE=false}"
+validate_bool fail-on-fake "$INPUT_FAIL_ON_FAKE"
 validate_verdict "$DRIFTPROOF_VERDICT"
 validate_delta "$DRIFTPROOF_DELTA" "$DRIFTPROOF_VERDICT"
 validate_bool fail-on-regression "$INPUT_FAIL_ON_REGRESSION"
 validate_bool fail-on-underpowered "$INPUT_FAIL_ON_UNDERPOWERED"
 validate_models "$INPUT_MODELS"
+if { [ "${INPUT_SKILL_DIR+x}" = x ] && [ -z "$INPUT_SKILL_DIR" ]; } || [ "$INPUT_FAIL_ON_FAKE" = true ]; then
+  node "$GITHUB_ACTION_PATH/action/pr-check.js" enforce
+  exit $?
+fi
 
 # SPEC 030 (AC-1, AC-2). The decision is taken over EVERY receipt the run
 # produced, against every model that was requested, by the same reader the badge

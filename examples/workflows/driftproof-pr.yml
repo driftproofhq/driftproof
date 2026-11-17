@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+name: Check skills and rules
+on: [pull_request]
+permissions:
+  contents: read
+  pull-requests: write
+concurrency:
+  group: driftproof-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: driftproofhq/driftproof@v0.30.0
+        with:
+          api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          placebo: 'true'
+          max-usd: '20'
+          fail-on-regression: 'true'
+          fail-on-fake: 'false'

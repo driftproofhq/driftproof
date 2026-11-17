@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 name: 'Driftproof'
-description: 'Verify an agent skill still helps: run its eval suite with and without the skill, and fail the job if it regressed.'
+description: 'Check AI skills and rules on pull requests. Post receipts and optionally fail on a regression or a loss to a fake.'
 author: 'driftproofhq'
 branding:
   icon: 'shield'
@@ -8,14 +8,15 @@ branding:
 
 inputs:
   skill-dir:
-    description: 'Path to a skill directory (contains SKILL.md and evals/evals.json) or a regular .md/.markdown rules file, relative to the repo root. Rules files require suite.'
-    required: true
+    description: 'Omit to discover changed skills and supported rules on a pull request. Otherwise, path to a skill directory (contains SKILL.md and evals/evals.json) or a rules file (CLAUDE.md, AGENTS.md, .cursor/rules/*.mdc, .cursorrules, .github/copilot-instructions.md, .github/instructions/*.instructions.md, .windsurfrules, .windsurf/rules/*.md), or another .md/.markdown file, relative to the repo root. Rules files require suite.'
+    required: false
+    default: ''
   suite:
-    description: 'Tasks file for a Markdown rules file, relative to the repo root. Omit for skill directories.'
+    description: 'Tasks file for a rules file, relative to the repo root. Omit for skill directories.'
     required: false
     default: ''
   compare-with-base:
-    description: 'On a pull request, compare the base and new Markdown rules file on the same suite. Caps cover both versions together. Default false. Missing or unchanged base files run the new file only. Enforcement still reads only the new file against no rules.'
+    description: 'On a pull request, compare the base and new rules file on the same suite. Caps cover both versions together. Default false. Missing or unchanged base files run the new file only. Enforcement still reads only the new file against no rules.'
     required: false
     default: 'false'
   placebo:
@@ -25,19 +26,27 @@ inputs:
   models:
     description: 'Comma-separated model ids/aliases to run the suite on.'
     required: false
-    default: 'claude-haiku-4-5'
+    default: 'claude-haiku-5-5'
   max-usd:
-    description: 'Hard USD budget for the run. The projection is refused before any model call if it would exceed this.'
+    description: 'Hard USD budget for the run, shared across files in automatic mode. The projection is refused before any model call if it would exceed this.'
     required: false
     default: '20'
   max-calls:
-    description: 'Hard per-model call cap. The projection is refused before any model call if it would exceed this. A v0.5 run draws the generation up to SAMPLING.max times per arm, so a case costs up to 120 calls.'
+    description: 'Hard per-model call cap, shared across files in automatic mode. The projection is refused before any model call if it would exceed this. A v0.5 run draws the generation up to SAMPLING.max times per arm, so a case costs up to 120 calls.'
     required: false
     default: '2000'
   api-key:
     description: 'Anthropic API key (pass from a repository secret). When set, the run uses the Messages API (CLAUDE_PROVIDER=api).'
     required: false
     default: ''
+  openai-api-key:
+    description: 'OpenAI API key from a repository secret, for OpenAI models. API access only.'
+    required: false
+    default: ''
+  fail-on-fake:
+    description: 'Fail on worse than the fake when placebo is on. No better than the fake never fails this setting.'
+    required: false
+    default: 'false'
   fail-on-regression:
     description: 'Fail the job when the verdict is REGRESSED (the skill measurably hurt on this model).'
     required: false
@@ -50,8 +59,12 @@ inputs:
     description: 'On a pull request, post one comment with the result in plain words, edited in place on each run. Needs the pull-requests: write permission; without it (a fork, or a read-only token) the Action writes one notice and the run is unchanged. Set to false to turn it off.'
     required: false
     default: 'true'
+  comment-id:
+    description: 'Stable identity for an automatic comment within this job. Defaults to the caller Action identity. Use a distinct value for each invocation if overriding it; keep it unchanged across pushes.'
+    required: false
+    default: ${{ github.action }}
   github-token:
-    description: 'The token the pull request comment is posted with. Default: the job''s own token. The comment is found again only when a bot wrote it (the job''s token or an app''s); a person''s token posts a new comment on each run.'
+    description: 'The token the pull request comment is posted with. Default: the job''s own token. The comment is found again only when the token''s own bot login wrote it; a person''s token posts a new comment on each run.'
     required: false
     default: ${{ github.token }}
 
@@ -114,6 +127,7 @@ runs:
       shell: bash
       env:
         ANTHROPIC_API_KEY: ${{ inputs.api-key }}
+        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
         INPUT_SKILL_DIR: ${{ inputs.skill-dir }}
         INPUT_SUITE: ${{ inputs.suite }}
         INPUT_PLACEBO: ${{ inputs.placebo }}
@@ -122,6 +136,7 @@ runs:
         INPUT_MAX_USD: ${{ inputs.max-usd }}
         INPUT_MAX_CALLS: ${{ inputs.max-calls }}
         INPUT_FAIL_ON_REGRESSION: ${{ inputs.fail-on-regression }}
+        INPUT_FAIL_ON_FAKE: ${{ inputs.fail-on-fake }}
         INPUT_FAIL_ON_UNDERPOWERED: ${{ inputs.fail-on-underpowered }}
       run: bash "$GITHUB_ACTION_PATH/action/run.sh"
 
@@ -153,9 +168,12 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         DRIFTPROOF_RECEIPTS: ${{ steps.run.outputs.receipts_dir }}
         INPUT_PR_COMMENT: ${{ inputs.pr-comment }}
+        INPUT_COMMENT_ID: ${{ inputs.comment-id }}
+        DRIFTPROOF_COMMENT_MATRIX: ${{ toJSON(matrix) }}
         INPUT_SKILL_DIR: ${{ inputs.skill-dir }}
         INPUT_MODELS: ${{ inputs.models }}
         INPUT_FAIL_ON_REGRESSION: ${{ inputs.fail-on-regression }}
+        INPUT_FAIL_ON_FAKE: ${{ inputs.fail-on-fake }}
         INPUT_FAIL_ON_UNDERPOWERED: ${{ inputs.fail-on-underpowered }}
       run: bash "$GITHUB_ACTION_PATH/action/comment.sh"
 
@@ -164,12 +182,14 @@ runs:
     - name: Enforce verdict
       shell: bash
       env:
+        INPUT_SKILL_DIR: ${{ inputs.skill-dir }}
         DRIFTPROOF_VERDICT: ${{ steps.run.outputs.verdict }}
         DRIFTPROOF_DELTA: ${{ steps.run.outputs.delta }}
         # SPEC 030 AC-1: the receipt DIRECTORY, so the decision is taken over
         # every receipt the run produced rather than over one file a glob chose.
         DRIFTPROOF_RECEIPTS: ${{ steps.run.outputs.receipts_dir }}
         INPUT_FAIL_ON_REGRESSION: ${{ inputs.fail-on-regression }}
+        INPUT_FAIL_ON_FAKE: ${{ inputs.fail-on-fake }}
         INPUT_FAIL_ON_UNDERPOWERED: ${{ inputs.fail-on-underpowered }}
         INPUT_MODELS: ${{ inputs.models }}
       run: bash "$GITHUB_ACTION_PATH/action/enforce.sh"

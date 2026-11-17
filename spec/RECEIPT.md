@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Driftproof receipt, spec v0.16
+# Driftproof receipt, spec v0.17
 
 A **receipt** is a **hash-verified**, dated record of running one agent skill's eval suite
 **with** and **without** the skill on one model version, with the judge **sampled**
@@ -12,8 +12,9 @@ The machine-readable contract is [`receipt.schema.json`](./receipt.schema.json)
 (JSON Schema, draft 2020-12). This document is the human companion. Where they
 disagree, the schema wins.
 
-**Versioning.** The current schema is v0.16
+**Versioning.** The current schema is v0.17
 ([`receipt.schema.json`](./receipt.schema.json)). Prior schemas are kept frozen as
+[`receipt.v0.16.schema.json`](./receipt.v0.16.schema.json),
 [`receipt.v0.15.schema.json`](./receipt.v0.15.schema.json),
 [`receipt.placebo.schema.json`](./receipt.placebo.schema.json) (v0.14),
 [`receipt.v0.13.schema.json`](./receipt.v0.13.schema.json),
@@ -47,7 +48,7 @@ v0.8 was additive over v0.7 in the same way (see *What v0.8 adds*).
 
 ## Explicit per-call timeout
 
-Issue 489 adds optional `run.timeout_ms` to the current v0.15 schema.
+Issue 489 adds optional `run.timeout_ms` to the current v0.17 schema.
 `driftproof run --timeout <seconds>` applies a positive integer number of
 seconds to each generation and judge attempt, on every surface. The maximum
 is 2147478 seconds, within Node's timer bound including CLI cleanup grace. A call
@@ -75,7 +76,7 @@ setting into its new operation. Frozen versioned schemas remain unchanged.
 
 ## CLI setting sources
 
-Issue 760 adds optional `run.capture.setting_sources` to the current v0.16 schema.
+Issue 760 adds optional `run.capture.setting_sources` to the current v0.17 schema.
 It is the list of CLI setting sources the run's CLI calls loaded, generation and
 judge together. `[]` means none: `claude` runs with `--setting-sources ''` and
 hooks off, so no CLAUDE.md, auto-memory, settings or hooks of yours reach it.
@@ -247,6 +248,25 @@ digits, dot, underscore or hyphen. Blank, malformed and non-string ids refuse. T
 the same rule. Input bounds refuse before calling the judge; reply bounds refuse before copying or
 interpolating identity. Bound diagnostics omit hostile input. These limits cover answers and identity
 entering regrade, not provider transport buffering or receipt and suite size.
+
+## What v0.17 adds: rules files for more editors
+
+Issue 814. The runner, compare, recheck, plugin door and Action accept CLAUDE.md, AGENTS.md, .cursor/rules/*.mdc, .cursorrules, .github/copilot-instructions.md, .github/instructions/*.instructions.md, .windsurfrules, .windsurf/rules/*.md. The CLI and Action also keep accepting other Markdown files. Every context file still requires a tasks file.
+
+Measured as always-on text. The editor's system prompt and rule selection are not reproduced. A leading closed front-matter block is editor metadata for Cursor mdc, scoped Copilot instructions and scoped Windsurf rules. The body after it is sent unchanged. An unclosed block or an empty body refuses. Legacy rules files and global Copilot instructions keep all their text.
+
+A context-file receipt requires `skill.rules_file`, inside its receipt hash:
+
+| Field | Meaning |
+| --- | --- |
+| `kind` | The kind from lib/rules-files.js, including `markdown` for other Markdown files. |
+| `text` | The exact text configured for each with-file request, with editor metadata removed where applicable. A stub sends no request. |
+| `mode` | `always_on`. Rule triggers and globs are not evaluated. |
+| `limitation` | The always-on sentence above, carried with the receipt. |
+
+`skill.content_hash` stays the sha256 of the original file bytes, metadata included. `skill.tokens` and placebo length describe the sent text. The baseline carries none of that text. The three arms keep the same tasks and grading guide. The validator checks the sent-text token count and placebo length. Other subject kinds do not carry `rules_file`.
+
+The previous schema is frozen byte for byte in [receipt.v0.16.schema.json](./receipt.v0.16.schema.json). Older receipts retain their schema, meaning and hash. No old receipt gains a claim about stripped metadata. Every new writer uses 0.17.
 
 ## What v0.16 adds: fake tool calls in text capture
 
@@ -827,7 +847,7 @@ carry a numeric `mean`.
 ## Which schema validates which receipt (the coexistence rule)
 
 - **A producer emits the current version.** `config.js` `RECEIPT_SCHEMA_VERSION`
-  decides it, and at this revision that is **v0.15**.
+  decides it, and at this revision that is **v0.17**.
 - **A reader validates against the receipt's own `schema_version`**, never
   against the newest schema it happens to have. `validateReceipt()` selects the
   schema by that field, which is why a v0.1 receipt from the first report still
@@ -1034,7 +1054,7 @@ The v0.3.1 schema gained an **additive interop revision** so receipts can be
 
 ## Fields
 
-### `schema_version` (string, required): `"0.15"`.
+### `schema_version` (string, required): `"0.17"`.
 
 ### `skill` (object, required)
 | field | type | notes |
@@ -1462,7 +1482,7 @@ the target models against each other. Generic judge selection remains explicit.
 ### Execution-primary R-2 contract (issue 490)
 
 The production library accepts an explicit, validated executionSuite option on
-a repository run. The current 0.15 schema accepts its optional run.scoring
+a repository run. The current 0.17 schema accepts its optional run.scoring
 contract. Existing receipts without that marker retain their original meanings.
 The active suite carries an execution_freeze marker. Its loader retains that
 binding, and a run without the matching complete execution bundle refuses. The

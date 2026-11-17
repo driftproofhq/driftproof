@@ -596,8 +596,14 @@ export function buildSkillIndex({ root = REPO, buildDate } = {}) {
   const ordered = [...pages.values()].sort((a, b) => byCodeUnit(`${a.id.page}/index.html`, `${b.id.page}/index.html`));
   const title = titles(ordered, sources);
   const out = [...campaign.files];
+  const badges = require('./published-badges');
+  const badgeRows = badges.catalogue({root,subjects:false});
+  // Source identities and title collisions above are checked before badge discovery.
+  // Subjects without a current published badge have no hub and cannot collide here.
+  const badgeSubjects = badges.subjectsFor(ordered.map(p => ({page:p.id.page,name:p.id.name,hashes:p.rows.map(row => row.hash)})), badgeRows);
   for (const p of ordered) {
     const id = p.id;
+    const badgeSubject = badgeSubjects.find(s => s.page === id.page);
     const ids = SOURCES.filter((s) => p.rows.some((x) => x.source === s));
     const verb = verbOf(hasOwnMeasurement(p.rows));
     const ownCampaign=p.rows.some(x=>x.summary?.startsWith('<section'));
@@ -623,6 +629,8 @@ export function buildSkillIndex({ root = REPO, buildDate } = {}) {
       '<div class="skill-results">',
       ...p.rows.map((x) => x.markup),
       '</div>',
+      ...(badgeSubject ? ['<p class="skill-badge-link"><a href="/badges/'+esc(badgeSubject.badge_slug)+'/">Browse badges for this skill</a></p>'] : []),
+      ...[...new Set(badgeRows.filter(row => p.rows.some(x => x.hash === row.receipt_hash)).map(row => row.skill_key))].map(key => badges.snippets(badgeRows.filter(row => row.skill_key === key))).filter(Boolean),
       ...(ownCampaign?[campaign.journey]:[]),
       ...ids.map((s) => attribution(sources.get(s))),
       dispute(`Skill index: ${id.page}`, url, p.rows),

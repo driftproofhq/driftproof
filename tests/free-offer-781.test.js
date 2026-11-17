@@ -551,3 +551,6 @@ test('781 AC-13, AC-17: a stub run publishes a box for every attempt, the router
   assert.deepEqual(commentHits(refused, refusedQ), []);
   assert.notDeepEqual(commentHits({ ...refused, body: refused.body.replace(refusedQ.requests[0].reason, '') }, refusedQ), [], 'plant: the reason dropped');
 });
+
+// Issue 821: rules-file offer regressions run in the existing gate.
+require('./free-offer-821.test');

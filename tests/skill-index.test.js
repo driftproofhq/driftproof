@@ -483,8 +483,61 @@ function pageTexts(ws, p, buildDate = BUILD_DATE) {
   const verb = pageVerb(ws, entries);
   return [verb === 'Measured' ? 'Worth installing?' : sourceNames(ws, ids)+"'s reported results", pageName(id), TX.P1(verb, pageName(id), id, sourceNames(ws, ids)), TX.G2(verb, id), TX.G3, verb+' results', ...attributionTexts(ws, ids), TX.D1, TX.B1(buildDate)];
 }
+// A-267-50, issue 815: read the new section before excluding it from the old page-text oracle.
+// This oracle uses the sealed fixture receipts and the case rule, never the badge builder or word table.
+const badgeSections = html => html.match(/<section class="skill-badges">[\s\S]*?<\/section>/g) || [];
+const badgeHubLinks = html => html.match(/<p class="skill-badge-link">[\s\S]*?<\/p>/g) || [];
+const withoutBadges = html => [...badgeSections(html),...badgeHubLinks(html)].reduce((s, block) => s.replace(block, ''), html);
+function badgeProblems(html, ws, p) {
+  const hubLinks = badgeHubLinks(html);
+  const entry = ws.manifest.receipts.find(e => pagePath(e.identity) === p);
+  const hubSlug = entry && pageName(entry.identity).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  const rs = ws.manifest.receipts.filter(e => e.source === 'driftproof' && pagePath(e.identity) === p)
+    .map(e => readJson(ws.file(e.file))).sort((a,b) => Date.parse(b.run.date_utc)-Date.parse(a.run.date_utc) || cmp16(a.receipt_hash,b.receipt_hash));
+  const { receiptVerdict, placeboReading } = require('../lib/verdict');
+  const words = r => {
+    assert.ok(verifyReceiptHash(r) && validateReceipt(r).valid, 'badge oracle input is sealed and valid');
+    const v = r.placebo ? placeboReading(r) : receiptVerdict(r), key = v.reading || v.verdict;
+    const m = v.cases.length, up = v.cases.filter(c=>c.state==='separated-up').length, down = v.cases.filter(c=>c.state==='separated-down').length;
+    return {PASSED:`better than without it on ${up} of ${m} tasks, worse on none`,REGRESSED:`worse than without it on ${down} of ${m} tasks`,NO_EFFECT:`no different from without it on ${m} tasks`,ABOVE_PLACEBO:`beat the fake on ${up} of ${m} tasks, worse on none`,BELOW_PLACEBO:`worse than the fake on ${down} of ${m} tasks`,NO_DIFFERENCE:`did not beat the fake on ${m} tasks`,UNDERPOWERED:'cannot tell',INCONCLUSIVE:'cannot tell',NOT_MEASURED:null}[key];
+  };
+  const seen = new Set();
+  const models = rs.filter(r=>{if(seen.has(r.run.model_id))return false;seen.add(r.run.model_id);return true;}).sort((a,b)=>cmp16(a.run.model_id,b.run.model_id));
+  const choices = rs.length ? [{r:rs[0],label:'Latest',file:'latest'},...models.map(r=>({r,label:shortModelName(r.run.model_id),file:r.run.model_id.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')}))] : [];
+  const blocks = badgeSections(html), errors = [];
+  const present = choices.some(({r})=>words(r));
+  if (!present ? hubLinks.length !== 0 : hubLinks.length !== 1 || hubLinks[0] !== '<p class="skill-badge-link"><a href="/badges/'+hubSlug+'/">Browse badges for this skill</a></p>') return ['badge hub link'];
+  if (blocks.length !== (present ? 1 : 0)) return ['badge section count'];
+  if (!present) return [];
+  const expected = ['Share a badge Copy a line into your README. Each link opens the receipt behind that reading. Latest follows the newest run; each model badge follows that model. These readings describe these tasks, not every use of the skill.'];
+  const images = [], links = [], codes = [];
+  for (const {r,label,file} of choices) {
+    const text = words(r);
+    if (!text) { expected.push(label+': no badge is available for this receipt.'); continue; }
+    const model = shortModelName(r.run.model_id);
+    const d = new Date(r.run.date_utc);
+    const date = d.getUTCDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sept','Oct','Nov','Dec'][d.getUTCMonth()]+' '+d.getUTCFullYear();
+    const alt = 'driftproof | '+text+' | '+model+' · '+date;
+    const name = r.skill.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+    const base = '/badges/'+name+'/';
+    const src = file==='latest' ? '/badges/'+name+'.svg' : base+file+'.svg';
+    const snippet = '[!['+alt+'](https://driftproofhq.com'+src+')](https://driftproofhq.com'+base+file+'/)';
+    expected.push(label+' '+text+'. '+model+' · '+date+' '+snippet);
+    images.push({src,alt}); links.push('https://driftproofhq.com/r/'+r.receipt_hash+'/'); codes.push(snippet);
+  }
+  const block = blocks[0];
+  if (textOf(block) !== expected.join(' ')) errors.push('badge words or figures');
+  const gotImages = (block.match(/<img\b[^>]*>/g)||[]).map(tag=>{const a=Object.fromEntries(attrsOf(tag).map(x=>[x.name,x.value]));return {src:a.src,alt:a.alt};});
+  if (JSON.stringify(gotImages)!==JSON.stringify(images)) errors.push('badge image or alt');
+  const gotLinks = [...block.matchAll(/<a href="(https:\/\/driftproofhq\.com\/r\/[a-f0-9]{64}\/)"/g)].map(m=>m[1]);
+  if (JSON.stringify(gotLinks)!==JSON.stringify(links)) errors.push('badge receipt link');
+  const gotCodes = [...block.matchAll(/<code>([\s\S]*?)<\/code>/g)].map(m=>decode(m[1]));
+  if (JSON.stringify(gotCodes)!==JSON.stringify(codes)) errors.push('badge README snippet');
+  return errors;
+}
+
 function mainRest(html) {
-  let rest = mainOf(html) || '';
+  let rest = mainOf(withoutBadges(html)) || '';
   for (const row of rowsOf(html)) rest = rest.replace(row.html, ' ');
   for (const en of entriesOf(html)) rest = rest.replace(en.html, ' ');
   return textOf(rest);
@@ -749,7 +802,7 @@ test('AC-5, AC-5a: every number traces field by field and page by page; a row is
   const walk = (v) => { if (typeof v === 'string') org.push(v); else if (v && typeof v === 'object') Object.values(v).forEach(walk); };
   walk(organization());
   const check = (html, p) => {
-    const stray = [];
+    const stray = badgeProblems(html, ws, p);
     const entries = ws.manifest.receipts.filter((e) => pagePath(e.identity) === p);
     const idLits = (p === 'index.html' ? ws.manifest.receipts : entries).flatMap((e) => [`${e.identity.owner}/${e.identity.repo}/${pageName(e.identity)}`, e.identity.owner, e.identity.repo, e.identity.path, e.name]);
     for (const row of rowsOf(html)) {
@@ -786,6 +839,7 @@ test('AC-5, AC-5a: every number traces field by field and page by page; a row is
     for (const row of rowsOf(html)) { assert.equal(rowLoose(row), '', `${p} ${row.receipt}: text outside the fields`); assert.match(row.inner, /^\s*<dl>[\s\S]*<\/dl>\s*<details class="receipt-metadata"><summary>Receipt metadata<\/summary><dl>[\s\S]*<\/dl><\/details>\s*$/, `${p} ${row.receipt}: result fields then metadata`); }
     const es = ws.manifest.receipts.filter(e=>pagePath(e.identity)===p);
     const heads=p==='index.html'?[]:[pageVerb(ws,es)+' results',...rowOrder(ws,es).map(f=>{const e=entryOf(ws,f),r=readJson(ws.file(f));return expectedRow(e,r,{aliases:ws.manifest.model_aliases,verdicts}).Result && expectedRow(e,r,{aliases:ws.manifest.model_aliases,verdicts})[byField(verbOf(r))];})];
+    if (badgeSections(html).length) heads.push('Share a badge');
     const ch = chromeOf(p,heads);
     const rest = ch.inside ? mainRest(html).split(ch.inside).join(' ') : mainRest(html);
     assert.equal(rest.replace(/\s+/g, ' ').trim(), pageTexts(ws, p).join(' '), `${p}: the page texts`);
@@ -794,6 +848,16 @@ test('AC-5, AC-5a: every number traces field by field and page by page; a row is
   // Plants, read by the same checks.
   const p = pagePath(entryOf(ws, DP[0].file).identity);
   const html = out.pages.get(p);
+  const badge = badgeSections(html)[0];
+  assert.ok(badge, 'the badge plant has a subject');
+  assert.notDeepEqual(check(html.replace(badge,badge.replace('driftproof |','driftproof 999 |')),p),[], 'wrong badge number');
+  assert.notDeepEqual(check(html.replace(badge,''),p),[], 'missing badge section');
+  assert.notDeepEqual(check(html.replace(badge,badge+badge),p),[], 'extra badge section');
+  const hubLink = badgeHubLinks(html)[0];
+  assert.ok(hubLink, 'the hub-link plant has a subject');
+  assert.notDeepEqual(check(html.replace(hubLink,''),p),[], 'missing hub link');
+  assert.notDeepEqual(check(html.replace(hubLink,hubLink+hubLink),p),[], 'extra hub link');
+  assert.notDeepEqual(check(html.replace(hubLink,hubLink.replace('/badges/','/badges/other-')),p),[], 'wrong hub link');
   const r0 = readJson(ws.file(DP[0].file));
   const row0 = rowsOf(html).find((x) => x.receipt === DP[0].file);
   const s = n3(r0.comparison.with_skill_score); const s1 = (Number(s) + 0.001).toFixed(3);
@@ -818,7 +882,7 @@ test('AC-5, AC-5a: every number traces field by field and page by page; a row is
 // ══ AC-8 ═════════════════════════════════════════════════════════════════════════════════════
 test('AC-8: freshness follows the registry the stale check reads; a missing date, an unknown model, a newer model and a bad alias read as the spec says', async () => {
   const { out } = await base();
-  for (const [p, html] of out.pages) assert.doesNotMatch(textOf(html), FRESH_WORDS, p);
+  for (const [p, html] of out.pages) { assert.deepEqual(badgeProblems(html,(await base()).ws,p),[],p); assert.doesNotMatch(textOf(withoutBadges(html)), FRESH_WORDS, p); }
   const reg = readJson(path.join(ROOT, 'config', 'models.json'));
   // A registry with claude-opus-4-8's release date removed: the aliased NVIDIA row reads F-3.
   const noDate = JSON.parse(JSON.stringify(reg));

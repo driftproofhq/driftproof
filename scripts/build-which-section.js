@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
 'use strict';
+const { RULES_FILE_NAMES, RULES_LIMITATION } = require('../lib/rules-files');
+
 // Site builder: {"href":"/which-section/","label":"Which section did the work?"}
 // Issue 743 (spec 743): /which-section/, "Which section did the work?". Three Report 018 skills, each
 // with the heading that holds the most text of its own removed by a fixed rule, run through
@@ -87,7 +89,7 @@ const WORDS = Object.freeze({
   removalLine: 'The removal rule in one line: find the heading below the title with the most bytes of its own text, from its heading line to the next heading line of any level, and remove those lines, leaving every other byte as it was.',
   cards: 'Each card gives the plain reading first, then the exact lines compare prints for the two folders, worked out again from the sealed receipts in today\'s wording. A reading is about these tasks on this day; it is not advice about the skill.',
   limits: 'Read these before the readings below. They apply to every card.',
-  yours: 'The same two commands work on any Markdown rules file, such as a CLAUDE.md or AGENTS.md, with a tasks file beside it. The first lists the sections and their sizes without spending anything. The second removes one named section, runs both versions on your tasks, and writes the two receipts and the reading. Both count a heading\'s subsections as part of its section, unlike the rule the cards used.',
+  yours: 'Supported rules files: ' + RULES_FILE_NAMES + '. ' + RULES_LIMITATION + ' The same two commands work on these and other Markdown files, with a tasks file beside them. For scoped editor rules, headings and sizes describe the body after metadata is removed. The first lists the sections and their sizes without spending anything. The second removes one named section, runs both versions on your tasks, and writes the two receipts and the reading. Both count a heading\'s subsections as part of its section, unlike the rule the cards used.',
   yoursSkill: 'For a skill folder, make a copy, remove the section from the copy\'s SKILL.md, keep the same evals/evals.json in both, and compare the two folders. To redo one of the three above, fetch the pinned file from the repository at the commit shown, check its hash, apply the removal rule, and check the reduced file\'s hash against the card.',
   evidence: 'The six receipts, the three readings and the manifest are in the public repository. Each receipt has its own page with the two arms, what was verified and how to check the file yourself.',
 });

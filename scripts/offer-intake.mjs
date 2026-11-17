@@ -28,6 +28,7 @@ const require = createRequire(import.meta.url);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const O = require('./offer.js');
 const { sha256 } = require('../lib/canonical');
+const { isRulesFile, rulesFileText } = require('../lib/rules-files');
 const { parseSkillMeta } = require('../lib/skill');
 const P = require('../specs/781-free-offer/protocol.cjs');
 const B = require('../specs/781-free-offer/build-plan.cjs');
@@ -77,38 +78,53 @@ export function queue({ issues, previous = fs.existsSync(QUEUE) ? readJson(QUEUE
 }
 
 // ── one request's pins: the commit, each skill's bytes and folder, the README, the text-only rule ──
-export function pin({ requests = REQUESTS, entry, issue, remote = defaultRemote }) {
+export function pin({ requests = REQUESTS, entry, issue, remote = defaultRemote, fetchRepository = fetchAt }) {
   need(entry && entry.state === 'queued' && Number.isInteger(entry.request), 'NOT_QUEUED');
   const parsed = O.parseIssue(issue);
-  need(!parsed.problem && parsed.repository === entry.repository, 'ISSUE_BINDING');
+  need(!parsed.problem && parsed.repository === entry.repository && JSON.stringify(parsed.skills) === JSON.stringify(entry.skills), 'ISSUE_BINDING');
   const dir = dirOf(requests, entry.request);
   need(!fs.existsSync(path.join(dir, 'request.json')), 'REQUEST_PINNED');
-  const repo = fetchAt(remote(entry.repository));
+  const repo = fetchRepository(remote(entry.repository));
   const rootFiles = repo.tree('.').filter((f) => !f.path.includes('/'));
   const readme = rootFiles.find((f) => /^readme(?:\.md|\.markdown|\.txt)?$/i.test(f.path));
   const readmeBytes = readme ? repo.blob(readme.path) : null;
   const [owner, name] = entry.repository.split('/');
   const skills = [], sources = [];
   for (const skillPath of parsed.skills) {
+    const rules = isRulesFile(skillPath);
+    const rulesName = rules ? 'rules-' + sha256(skillPath).slice(0, 24) : null;
     let bytes;
-    try { bytes = repo.blob(skillPath); } catch { skills.push({ skill: path.basename(path.dirname(skillPath)), skill_path: skillPath, measurable: false, reason: 'The repository has no file at this path.' }); continue; }
+    try { bytes = repo.blob(skillPath); } catch { skills.push({ skill: rulesName || path.basename(path.dirname(skillPath)), skill_path: skillPath, measurable: false, reason: 'The repository has no file at this path.' }); continue; }
     const text = bytes.toString('utf8');
     let meta = null; try { meta = parseSkillMeta(text); } catch { meta = null; }
-    const skill = meta && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(meta.name || '') ? meta.name : null;
+    const skill = rules ? rulesName : meta && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(meta.name || '') ? meta.name : null;
     if (!skill) { skills.push({ skill: path.basename(path.dirname(skillPath)), skill_path: skillPath, measurable: false, reason: 'Its front matter names no skill.' }); continue; }
     if (skills.some((s) => s.skill === skill)) { skills.push({ skill, skill_path: skillPath, measurable: false, reason: 'The request names this skill twice.' }); continue; }
     // The skill's folder, named relative to itself (F-1): a skill at the root reads the root, `.`, whose
     // paths carry no prefix to cut. `.git/` is never listed; each file's bytes go to the rule.
     const folder = path.posix.dirname(skillPath);
-    const files = repo.tree(folder).filter((f) => f.type === 'blob')
+    const files = repo.tree(rules ? skillPath : folder).filter((f) => f.type === 'blob' && (!rules || f.path === skillPath))
       .map((f) => ({ mode: f.mode, path: folder === '.' ? f.path : f.path.slice(folder.length + 1), full: f.path }))
       .filter((f) => !/^\.git(?:\/|$)/.test(f.path))
       .map((f) => ({ mode: f.mode, path: f.path, bytes: repo.blob(f.full) }));
-    const rule = O.textOnly({ name: skill, text, files });
+    let rule = O.textOnly({ name: skill, text, files });
+    if (rules) {
+      try { new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes); }
+      catch { rule = { measurable: false, reason: 'The rules file is not plain UTF-8 text.' }; }
+      if (bytes.includes(0)) rule = { measurable: false, reason: 'The rules file holds a NUL character.' };
+      if (bytes.length > require('../config').SKILL_MAX_BYTES) rule = { measurable: false, reason: 'The rules file is too large to measure.' };
+      const item = repo.tree(skillPath).find(f => f.path === skillPath);
+      if (!item || !['100644', '100755'].includes(item.mode)) rule = { measurable: false, reason: 'The rules file is not a regular file.' };
+      if (rule.measurable) try {
+        const body = rulesFileText(skillPath, text).text;
+        if (!/(?!\p{Default_Ignorable_Code_Point})[\p{L}\p{N}]/u.test(body)) rule = { measurable: false, reason: 'The rules file has no instructions to measure.' };
+        else rule = O.textOnly({ name: skill, text: body, files });
+      } catch { rule = { measurable: false, reason: 'The rules file has an unclosed metadata block.' }; }
+    }
     skills.push({ skill, skill_path: skillPath, measurable: rule.measurable, reason: rule.reason });
     if (!rule.measurable) continue;
     const suite = `suites/${owner}--${name}--${skill}.json`;
-    const source = { repository: entry.repository, skill, commit: repo.commit, skill_path: skillPath, skill_url: `https://raw.githubusercontent.com/${entry.repository}/${repo.commit}/${skillPath}`, skill_sha256: sha256(bytes), readme_url: readme ? `https://raw.githubusercontent.com/${entry.repository}/${repo.commit}/${readme.path}` : null, readme_sha256: readmeBytes ? sha256(readmeBytes) : null, suite };
+    const source = { repository: entry.repository, skill, commit: repo.commit, skill_path: skillPath, skill_url: `https://raw.githubusercontent.com/${entry.repository}/${repo.commit}/${skillPath}`, skill_sha256: sha256(bytes), ...(rules ? { rules_file_sha256: sha256(JSON.stringify(rulesFileText(skillPath, text))) } : {}), readme_url: readme ? `https://raw.githubusercontent.com/${entry.repository}/${repo.commit}/${readme.path}` : null, readme_sha256: readmeBytes ? sha256(readmeBytes) : null, suite };
     sources.push(source);
     const challenge = parsed.kind === 'challenge';
     writeJson(path.join(B.bindingDir(dir), suite), {
@@ -117,7 +133,7 @@ export function pin({ requests = REQUESTS, entry, issue, remote = defaultRemote 
       scope: 'Written responses only. No tool execution, installed dependencies or network access are tested.',
       drafted_from: challenge ? `The requester's three tasks, issue ${entry.issue}, word for word` : '',
       ...(challenge ? {} : { drafted: false }),
-      cases: O.OFFER.taskIds.map((id, k) => ({ id, prompt: challenge ? parsed.tasks[k].prompt : '', rubric: challenge ? parsed.tasks[k].rubric : '', pass_threshold: 0.75, origin: challenge ? `Written by the requester in issue ${entry.issue}; not edited by Driftproof.` : 'Driftproof-authored from the pinned SKILL.md and README; no separate drafting model call.' })),
+      cases: O.OFFER.taskIds.map((id, k) => ({ id, prompt: challenge ? parsed.tasks[k].prompt : '', rubric: challenge ? parsed.tasks[k].rubric : '', pass_threshold: 0.75, origin: challenge ? `Written by the requester in issue ${entry.issue}; not edited by Driftproof.` : 'Driftproof-authored from the pinned instructions and README; no separate drafting model call.' })),
     });
   }
   writeJson(path.join(B.bindingDir(dir), 'sources.json'), sources);

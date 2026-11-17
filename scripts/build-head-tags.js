@@ -413,6 +413,12 @@ function pageTitle(html, rel, rows, own) {
     if (!own.endsWith(BRAND_SUFFIX) || (!noindex && own.length > TITLE_MAX)) throw new Error(`${rel}: the skill index title ${JSON.stringify(own.slice(0, 80))} does not end ${BRAND_SUFFIX.trim()} within ${TITLE_MAX} characters`);
     return own;
   }
+  // A-133-129, issue 830: a badge hub preserves the skill's exact display name.
+  if (/^badges\/[^/]+\/index\.html$/.test(rel) && current !== null) {
+    const own = strip(current);
+    if (!own.endsWith(BRAND_SUFFIX)) throw new Error('BADGE_TITLE_SUFFIX');
+    return own;
+  }
   let name = current === null ? null : strip(current);
   if (name === null) name = strip(first(html, /<h1[^>]*>([\s\S]*?)<\/h1>/) || rel);
   name = name.replace(/\s*[|\u00b7]\s*Driftproof\s*$/i, '').replace(/^Driftproof\s*[\u2014:|\u00b7-]\s*/i, '').trim();

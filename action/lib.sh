@@ -97,12 +97,16 @@ validate_skill_dir() {
   # Keep the CLI's existing directory handling, including directory symlinks.
   if [ -d "$1" ]; then return 0; fi
   [ ! -L "$1" ] || die "skill-dir: symbolic links are refused: $(shown "$1")"
-  # Match lib/skill.js SUBJECT_EXT, including upper-case extensions.
-  case "$1" in
-    *.[mM][dD]|*.[mM][aA][rR][kK][dD][oO][wW][nN])
-      [ -f "$1" ] || die "skill-dir: not a regular Markdown file: $(shown "$1")" ;;
-    *) die "skill-dir: not a directory or a regular .md/.markdown file: $(shown "$1")" ;;
-  esac
+  [ -f "$1" ] || die "skill-dir: not a regular rules or Markdown file: $(shown "$1")"
+  # Read the shared module rows without starting Node on invalid input.
+  local row pattern pattern_row="pattern: '([^']+)'" matched=false
+  while IFS= read -r row; do
+    if [[ "$row" =~ $pattern_row ]]; then
+      pattern="${BASH_REMATCH[1]}"
+      if [[ "$1" =~ $pattern ]]; then matched=true; break; fi
+    fi
+  done < "$(dirname "${BASH_SOURCE[0]}")/../lib/rules-files.js"
+  [ "$matched" = true ] || die "skill-dir: not a directory or supported rules or .md/.markdown file: $(shown "$1")"
   return 0
 }
 validate_suite() {

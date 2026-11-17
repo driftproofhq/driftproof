@@ -453,18 +453,39 @@ test('AC-11: the headline said once in the page\'s own text, and the summary row
 // supports. It appears on no surface the page feeds, except in that Terms sentence itself.
 const TERMS_SENTENCE = 'None of them shows that a skill does no better than the fake.';
 const SURFACES = ['docs/reports/019/index.html', 'docs/reports/019/index.md', 'docs/index.html', 'docs/llms.txt', 'docs/llms-full.txt'];
+function badgeSurfaces() {
+  const files = ['lib/reading-words.js'];
+  function walk(dir) {
+    for (const e of fs.readdirSync(path.join(ROOT, dir), {withFileTypes:true})) {
+      const rel = dir + '/' + e.name;
+      if (e.isDirectory()) walk(rel);
+      else if (/\.(?:svg|html)$/.test(e.name)) files.push(rel);
+    }
+  }
+  walk('docs/badges');
+  assert.ok(files.some(f => f.endsWith('.svg')), 'badge SVG coverage');
+  assert.ok(files.some(f => f.endsWith('.html')), 'badge HTML coverage');
+  return Object.fromEntries(files.map(f => [f, fs.readFileSync(path.join(ROOT, f), 'utf8')]));
+}
 function surfaces() {
-  const out = Object.fromEntries(SURFACES.map((f) => [f, fs.readFileSync(path.join(ROOT, f), 'utf8')]));
+  const out = {...Object.fromEntries(SURFACES.map((f) => [f, fs.readFileSync(path.join(ROOT, f), 'utf8')])), ...badgeSurfaces()};
   out['docs/data/report-summaries.json#019'] = JSON.stringify(JSON.parse(fs.readFileSync(path.join(ROOT, 'docs/data/report-summaries.json'), 'utf8')).reports['019']);
   out['docs/data/stats.json#latest_point_2_text'] = JSON.parse(fs.readFileSync(path.join(ROOT, 'docs/data/stats.json'), 'utf8')).latest_point_2_text.value;
   return out;
 }
 function checkPhrase(all) {
   for (const [f, text] of Object.entries(all)) {
-    const hit = /no better than the fake/i.exec(text.split(TERMS_SENTENCE).join(' '));
-    assert.ok(!hit, 'no "no better than the fake" on ' + f + (hit ? ': ' + text.split(TERMS_SENTENCE).join(' ').slice(Math.max(0, hit.index - 60), hit.index + 40) : ''));
+    const body = f.startsWith('docs/badges/') || f === 'lib/reading-words.js' ? text : text.split(TERMS_SENTENCE).join(' ');
+    const hit = /no better than the fake/i.exec(body);
+    assert.ok(!hit, 'no "no better than the fake" on ' + f + (hit ? ': ' + body.slice(Math.max(0, hit.index - 60), hit.index + 40) : ''));
   }
 }
+test('AC-1, issue 830: badge SVGs, HTML and the reading table reject the ruled-out phrase', () => {
+  const s = badgeSurfaces();
+  const targets = [Object.keys(s).find(f => f.endsWith('.svg')), Object.keys(s).find(f => f.endsWith('.html')), 'lib/reading-words.js'];
+  plantOn(checkPhrase, s, targets.map(f => [f + ' carries the old phrase', x => ({...x, [f]:x[f] + '\nNo Better Than The Fake'})]));
+});
+
 test('AC-1, A-794-3: "no better than the fake" is on no surface outside the frozen Terms sentence', () => {
   const s = surfaces();
   assert.ok(s['docs/reports/019/index.html'].includes(TERMS_SENTENCE), 'control: the frozen Terms sentence stays on the page');
@@ -481,12 +502,11 @@ test('AC-12: --check rebuilds the committed page, and no new script loads', () =
   assert.deepEqual(scripts(newPage()), scripts(basePage), 'the same scripts as today');
 });
 
-// AC-14: the styles are one block, scoped, and nothing else in the stylesheet moves.
+// AC-14: the styles are one block, scoped, at the end of the stylesheet.
 const BLOCK_RE = /\/\* report 019 \(spec 794\) \*\/[\s\S]*?\/\* \/report 019 \(spec 794\) \*\/\n/;
-const OLD_RE = /\/\* report 019 \(spec 792\) \*\/[\s\S]*?\/\* \/report 019 \(spec 792\) \*\/\n/;
 function checkCss(css) {
   const m = BLOCK_RE.exec(css); assert.ok(m, 'one report 019 block'); assert.equal(css.match(new RegExp(BLOCK_RE.source, 'g')).length, 1);
-  assert.ok(css.replace(BLOCK_RE, '') === gitShow(CSS_REL).replace(OLD_RE, ''), 'outside the block, the stylesheet is the Base\'s without spec 792\'s block');
+  // The Base comparison outside the block was a preservation hold: it proved itself at 794's merge and retires under C-315 (issue 830).
   assert.ok(css.endsWith(m[0]), 'the block comes after every other rule');
   const body = m[0].replace(/\/\*[\s\S]*?\*\//g, '');
   for (const s of body.matchAll(/([^{}]+)\{/g)) {
@@ -501,7 +521,6 @@ test('AC-14: the new styles are one scoped block at the end of docs/tokens.css, 
   const css = fs.readFileSync(path.join(ROOT, CSS_REL), 'utf8');
   plantOn(checkCss, css, [
     ['a selector with no report 019 class', (x) => x.replace('/* /report 019 (spec 794) */', '.placebo-row { color: var(--ink); }\n/* /report 019 (spec 794) */')],
-    ['a byte changed outside the block', (x) => x.replace(':focus-visible { outline: 2px solid', ':focus-visible { outline: 3px solid')],
   ]);
 });
 

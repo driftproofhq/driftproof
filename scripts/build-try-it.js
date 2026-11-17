@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
 'use strict';
+const { RULES_FILE_NAMES, RULES_LIMITATION } = require('../lib/rules-files');
+
 // Site builder: {"href":"/try-it/","label":"Try it yourself"}
 // Issue 726. The worksheet for a person who only has a chat window: freeze the task and the guide,
 // collect answers with the instructions, with a same-length fake and with nothing, score them blind,
@@ -29,7 +31,7 @@ const CAVEATS = [
 // The one copy of this step: the island reads it from the static steps, as it reads the caveats.
 const TURN_OFF = 'Before you collect answers, turn off what your app adds by itself: saved custom instructions, personalization, project instructions and memory. Keep them off until you have all nine answers. If they stay on, every answer gets them and the test cannot see a difference. Then paste the text by hand, where this page says to.';
 // The page's first paragraph, so also its description: 155 characters at most (spec 133 AC-4).
-const LEDE = 'Test your custom instructions, a saved prompt or a CLAUDE.md the way Driftproof does: freeze the task first, score blind, read the result by the rule.';
+const LEDE = 'Test custom instructions, saved prompts or CLAUDE.md for Claude Code, Cursor, Copilot or Windsurf. Freeze a task, score blind, read the result.';
 
 // Every measured skill's tasks, from the suite each report's receipt binds (SUITE_BINDING otherwise).
 function skillsData(skills = S.skillsOf()) {
@@ -56,6 +58,7 @@ function main(data) {
   return '<main class="try-page story">'
     + '<header class="try-intro"><h1>Try it yourself</h1>'
     + '<p class="lede">' + LEDE + '</p>'
+    + '<p>Supported rules files: ' + RULES_FILE_NAMES + '. ' + RULES_LIMITATION + ' For scoped editor rules, paste only the body after its front matter.</p>'
     + '<p>You need a chat window and about 30 minutes: nine new chats, then nine scores. Nothing you type here is sent anywhere.</p></header>'
     + '<section class="try-sheet" data-island="try-it" data-tasks-source="' + source + '" aria-label="The worksheet">'
     + steps()

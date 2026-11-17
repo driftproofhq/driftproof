@@ -184,7 +184,7 @@ function renderLlmsFull(root = ROOT) {
     if (!fs.existsSync(path.join(root, 'docs', rel))) throw new Error(`docs/${rel} is missing - run: node scripts/build-markdown.js`);
     return `${r.line} Its full text: <${ORIGIN}/${rel}>`;
   });
-  return `${OPENING}\n${parts.map((p) => `---\n\n${p}\n`).join('\n')}\n---\n\n# Reports\n\n${reports.join('\n')}\n\n# Articles\n\n${articleLines(root).join('\n')}\n\n# Explore the results\n\n${readerLines(root).join('\n')}\n`;
+  return `${OPENING}\n${parts.map((p) => `---\n\n${p}\n`).join('\n')}\n---\n\n# Reports\n\n${reports.join('\n')}\n\n# Articles\n\n${articleLines(root).join('\n')}\n\n# Explore the results\n\n${pageLines(root, 'r/index.html').join('\n')}\n${readerLines(root).join('\n')}\n`;
 }
 
 if (require.main === module) {

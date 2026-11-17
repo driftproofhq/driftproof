@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
 'use strict';
+const { RULES_FILE_NAMES, RULES_LIMITATION } = require('../lib/rules-files');
+
 // scripts/glossary-terms.js - the glossary's entries, and the plain-word cards built from them (spec 689).
 //
 // ONE SOURCE. Every entry below is rendered twice: as the glossary page (scripts/build-site-pages.js
@@ -152,8 +154,8 @@ const ENTRIES = [
     href: BANDS, label: 'where a band comes from', match: ['[Bb]and sources?'] },
   // Spec 438 (spec 025 A-025-14): the two fields spec/RECEIPT.md v0.15 adds, in spec 438's own words.
   { name: 'context file',
-    plain: 'A file of standing instructions, such as a CLAUDE.md or an AGENTS.md, tested in place of a skill.',
-    body: 'Any Markdown file, such as a CLAUDE.md, an AGENTS.md or a shared rules file, measured as a subject in place of a skill. Its exact bytes are the with-skill system text and their sha256 is its content hash; the receipt records its kind as context_file.',
+    plain: 'A file of standing instructions, for Claude Code, Cursor, Copilot or Windsurf, tested in place of a skill.',
+    body: 'Supported rules files: ' + RULES_FILE_NAMES + '. Other Markdown files work too. The original file hash, kind and sent body are sealed in the receipt. Editor metadata is removed for scoped rules. ' + RULES_LIMITATION,
     href: RECEIPT_SPEC, label: 'the receipt specification', match: ['[Cc]ontext files?'] },
   { name: 'delivery',
     plain: 'How the skill\'s text reached the model in a run: put into each request by Driftproof, loaded by a tool that had it installed, or not recorded.',

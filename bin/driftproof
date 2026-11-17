@@ -7,13 +7,14 @@ const path = require('path');
 const { PROJECT_NAME, RUNNER_VERSION, DEFAULT_JUDGE_SAMPLES, DEV_MAX_USD, DEV_MAX_CALLS, SKILL_MAX_BYTES } = require('../config');
 const { loadSkill, normalizeCases, loadSubject, SUBJECT_CODES, readRequired, SUITE_MAX_BYTES } = require('../lib/skill');
 // Spec 438: a name or path escaped for the terminal.
+const { isContextFile, RULES_FILE_NAMES, RULES_LIMITATION } = require('../lib/rules-files');
 const { invisibleShown, termText, shellArg } = require('../lib/names');
 // Spec 438: whether `run`'s argument is a context file, by lib/skill.js loadSubject's own rule: anything
 // but a directory, or a path that is not there and does not end in .md or .markdown.
 function subjectIsFile(p) {
   let st = null;
   try { st = fs.statSync(p); } catch (_e) { st = null; }
-  return st ? !st.isDirectory() : /\.(md|markdown)$/i.test(String(p));
+  return st ? !st.isDirectory() : isContextFile(p);
 }
 // Issue 760: the real path a folder has, or will have once made: the real path of its deepest part
 // that exists, then the rest as spelled, so a link or a folder not yet there reads as where it leads.
@@ -518,7 +519,8 @@ ENV
   DRIFTPROOF_EVAL_USER the unix user the isolated hop runs the CLI as (default: driftproof-eval)
 
 NOTES
-  - run on a rules file (a CLAUDE.md, an AGENTS.md or any Markdown file) needs --suite FILE, its tasks in the
+  - ${RULES_LIMITATION}
+  - run on a rules file (${RULES_FILE_NAMES}, or any Markdown file) needs --suite FILE, its tasks in the
     evals.json shape; the file's text is given as a skill's is, against the same tasks answered without it.
   - diff --lift-breakdown adds recorded draw scores, sample spread and equal weight per case; removing a case recomputes lift.
     Tables appear where evidence and eligibility permit; unavailable breakdowns give a reason. Without the flag, diff output stays unchanged.
@@ -591,7 +593,7 @@ NOTES
     holds its last measured draw, as before. No file there is written over.
   - run refuses an output folder inside the skill, for receipts or transcripts: there
     they would become part of the skill and move its content hash. It names the
-    folder to use instead. A CLAUDE.md or AGENTS.md has no such folder.
+    folder to use instead. A rules file has no such folder.
   - Prices and registry status come from config/models.json (or the registry
     DRIFTPROOF_REGISTRY names). An unregistered model id is REFUSED before any call,
     naming the id and the registry path (so is one not shaped like a model id);

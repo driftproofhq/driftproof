@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
 'use strict';
+const { RULES_FILE_NAMES, RULES_LIMITATION } = require('../lib/rules-files');
+
 // scripts/build-site-pages.js — the pages that are not reports.
 //
 // The homepage, /reports/, /glossary/, /report-types/, 404 and the documentation
@@ -37,6 +39,17 @@ const reports = () => JSON.parse(fs.readFileSync(path.join(DOCS, 'data', 'report
 // Every figure on a non-report page goes through V(). It throws on a key that
 // does not exist, so a template that outgrows its data fails at build rather
 // than shipping an empty span.
+
+// The workflow's Driftproof step, dedented and without its list dash: the page shows the settings,
+// the link above gives the whole file (spec 020 AC-42 reads rendered text, code included).
+function actionStep(yml) {
+  const lines = yml.split('\n'), at = lines.findIndex((l) => /-\s+uses:\s+driftproofhq\/driftproof@/.test(l));
+  if (at < 0) throw new Error('examples/workflows/driftproof-pr.yml has no driftproofhq/driftproof step');
+  const pad = lines[at].indexOf('-') + 2, out = [lines[at].slice(pad)];
+  for (const l of lines.slice(at + 1)) { if (l.trim() && l.search(/\S/) < pad) break; out.push(l.slice(pad)); }
+  return out.join('\n').trimEnd();
+}
+
 function reader(S) {
   return (key) => {
     if (!S[key] || S[key].value === undefined) throw new Error(`stats.json has no field "${key}"`);
@@ -332,7 +345,7 @@ function homepage() {
 <section id="hero" class="screen is-wide">
 <div class="hero-words">
 <h1>Someone says this AI skill makes the assistant better. Does it?</h1>
-<p class="hero-sub">An AI skill is a file of instructions that people add to an AI assistant, such as Claude, to make it better at a job. Driftproof tests whether a skill really helps, the way a medicine is tested against a sugar pill. The same test works on custom instructions, saved prompts and CLAUDE.md files. The latest reports give the AI the same tasks three ways: with the skill, with a fake of the same length, and with nothing added. Then it scores every answer, again and again. Every result is a dated receipt with its own page; anyone with a terminal can verify the file.</p>
+<p class="hero-sub">An AI skill is a file of instructions that people add to an AI assistant, such as Claude, to make it better at a job. Driftproof tests whether a skill really helps, the way a medicine is tested against a sugar pill. The same test works on custom instructions, saved prompts and rules files for Claude Code, Cursor, Copilot and Windsurf. The latest reports give the AI the same tasks three ways: with the skill, with a fake of the same length, and with nothing added. Then it scores every answer, again and again. Every result is a dated receipt with its own page; anyone with a terminal can verify the file.</p>
 </div>
 <div class="doors">
 ${doors()}
@@ -385,7 +398,7 @@ ${reportCard(latest, HOME_CARD_STAT, { counts: false })}
 <section id="users" class="screen is-text">
 <p class="section-eyebrow">For people who use AI skills</p>
 <h2>Using a skill someone else wrote?</h2>
-<p>Paste its link and see whether it has been measured, or browse the skills already on record. <a href="/skill-lookup/">Look up a skill</a>. <a href="/skills/">Do popular AI skills help?</a></p>
+<p>Paste its link and see whether it has been measured, or browse the skills already on record. <a href="/skill-lookup/">Look up a skill</a>. <a href="/skills/">Do popular AI skills help?</a> <a href="/badges/">Browse skill badges</a>.</p>
 <p>Before you measure a file of your own, open <a href="/placebo/">See your file's fake</a>: the same-length text that stands in for the sugar pill.</p>
 </section>
 
@@ -435,10 +448,10 @@ ${statCards}
 <p>You need Claude Code, <code>Node.js ${nodeMajor}</code> or newer, and your project in a git repository. You do not need an API key: runs use your Claude Code plan's usage.</p>
 ${plugin.map((c) => `<p>${copy(c)}</p>`).join('\n')}
 <p>Each command starts the pinned runner with <code>npx</code>, so a first run has no extra install step. Two gaps remain, and the plugin's words cannot close them: a program in a parent folder's <code>node_modules/.bin</code> can run before the runner, and the line Claude runs can be altered. The safer alternative is to install the runner with <code>npm install -g</code>, at the version the command names, and use the installed line each command file gives. npm then starts nothing, so the first gap closes. The line Claude runs can still be altered in either form.</p>
-<p>That installs <code>/driftproof:start</code>, <code>/driftproof:init</code>, <code>/driftproof:run</code>, <code>/driftproof:blind</code>, <code>/driftproof:badge</code>, <code>/driftproof:compare</code>, <code>/driftproof:inspect</code> and <code>/driftproof:recheck</code>. The plugin hands your arguments to the pinned runner and writes the receipt that runner would have written; <code>/driftproof:run</code> spends your Claude Code subscription rather than an API key. It measures and never changes a skill's instructions. The one file it adds is a new <code>evals/evals.json</code>, from <code>/driftproof:start</code> or <code>/driftproof:init</code>, to a skill that has none, after you say yes in the run.</p>
-<p>Compare and recheck need a git repository, and compare takes a <code>CLAUDE.md</code> or <code>AGENTS.md</code>.</p>
+<p>That installs <code>/driftproof:start</code>, <code>/driftproof:init</code>, <code>/driftproof:run</code>, <code>/driftproof:blind</code>, <code>/driftproof:badge</code>, <code>/driftproof:compare</code>, <code>/driftproof:inspect</code>, <code>/driftproof:recheck</code> and <code>/driftproof:measure</code>. The plugin hands your arguments to the pinned runner and writes the receipt that runner would have written; <code>/driftproof:run</code> spends your Claude Code subscription rather than an API key. It measures and never changes a skill's instructions. The one file it adds is a new <code>evals/evals.json</code>, from <code>/driftproof:start</code> or <code>/driftproof:init</code>, to a skill that has none, after you say yes in the run.</p>
+<p>Compare and recheck need a git repository, and compare takes a rules file: ${RULES_FILE_NAMES}.</p>
 <p>A full run can take up to <span data-stat="max_calls_per_task">${esc(V('max_calls_per_task'))}</span> model calls for each test task from your plan's usage. A quick check takes far fewer.</p>
-<p>Start with a skill you already have. In Claude Code, from the folder above it, in a git repository, run <code>/driftproof:start</code>. Claude lists your skills and asks which to check. If the skill has no test cases, Claude reads your <code>SKILL.md</code> and drafts test cases with you, aimed at outcomes you would check. It writes only after you say yes, then runs a quick check and opens a results page: your first receipt. Drafted cases are labelled as drafted from the skill and approved by you. A quick check is a first look and cannot produce a verdict. For a direct measurement, use <code>/driftproof:run path/to/your-skill</code>. On a skill with no test cases, it offers the same draft. For a new skill, scaffold one with <code>npx driftproof init my-skill</code>, as the next section shows. <code>/driftproof:start</code> works on a <code>CLAUDE.md</code> or <code>AGENTS.md</code> too.</p>
+<p>Start with a skill you already have. In Claude Code, from the folder above it, in a git repository, run <code>/driftproof:start</code>. Claude lists your skills and asks which to check. If the skill has no test cases, Claude reads your <code>SKILL.md</code> and drafts test cases with you, aimed at outcomes you would check. It writes only after you say yes, then runs a quick check and opens a results page: your first receipt. Drafted cases are labelled as drafted from the skill and approved by you. A quick check is a first look and cannot produce a verdict. For a direct measurement, use <code>/driftproof:run path/to/your-skill</code>. On a skill with no test cases, it offers the same draft. For a new skill, scaffold one with <code>npx driftproof init my-skill</code>, as the next section shows. <code>/driftproof:start</code> works on these rules files too: ${RULES_FILE_NAMES}. ${RULES_LIMITATION}</p>
 <p>Tested on Linux and macOS. On Windows the plugin also needs Node, npm's npx and Git for Windows on PATH, and Windows has only been checked without calling a model. <a href="/findings/">The findings page</a> has the test details.</p>
 </section>
 
@@ -452,7 +465,12 @@ read -rsp "Anthropic API key: " ANTHROPIC_API_KEY &amp;&amp; export ANTHROPIC_AP
 npx driftproof run my-skill --models claude-haiku-4-5
 cat receipts/*.summary.md              # read the receipt + human summary</code></pre>
 <p>Wire it into a repository with the <a href="https://github.com/driftproofhq/driftproof#verification-in-ci-github-action--badge">GitHub Action</a> (<code>uses: driftproofhq/driftproof@v${esc(V('version'))}</code>): it re-runs the suite on every push, uploads the receipts, and fails the job when a case separated downward. <code>driftproof badge</code> turns a receipt into a badge that carries the model and the date it was measured.</p>
-<p>To compare a pull request's <code>CLAUDE.md</code> or <code>AGENTS.md</code> with the version on its base branch, on the same tasks, set the Action's <code>compare-with-base</code> input.</p>
+<p>Copy the <a href="https://github.com/driftproofhq/driftproof/blob/main/examples/workflows/driftproof-pr.yml">pull request workflow</a> into <code>.github/workflows/</code> and add an <code>ANTHROPIC_API_KEY</code> repository secret. It checks changed skills and rules files with test cases, then updates a receipt table on each push. The budget is shared across files. Files without cases are named as not measured.</p>
+<p>The step that matters, with its settings:</p>
+<pre><code class="language-yaml">${esc(actionStep(fs.readFileSync(path.join(ROOT, 'examples/workflows/driftproof-pr.yml'), 'utf8')))}</code></pre>
+<p>Skills need <code>evals/evals.json</code> in their folder. Rules files need it beside the file. The workflow pins a release. Update the pin when you choose to adopt a newer release. Forks make no model calls and get a notice in the job summary; GitHub may block their comment. The receipt links open the job's artifacts, which follow GitHub's retention period.</p>
+<p><code>fail-on-regression</code> is on by default. Turn on <code>fail-on-fake</code> to fail on worse than the fake, never just because it did not beat the fake. That setting needs the <code>placebo</code> arm enabled, as in the example. For OpenAI models, set <code>models</code> and <code>openai-api-key</code>. Only API keys are supported. A green check does not prove a file helps.</p>
+<p>To compare a pull request's supported rules file with the version on its base branch, on the same tasks, set the Action's <code>compare-with-base</code> input.</p>
 <p><img alt="driftproof badge: ${esc(require('../lib/verdict.js').verdictFromReceipt(example).message)}" src="https://img.shields.io/endpoint?url=https://driftproofhq.com/badges/commit-message-conventions.json"></p>
 </section>
 

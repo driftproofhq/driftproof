@@ -9,7 +9,7 @@ const PROJECT_NAME = 'driftproof';
 // Bumped whenever the runner's behaviour or receipt-generation semantics change
 // in a way that could affect results. Recorded into every receipt as
 // run.runner_version so a receipt is reproducible against a known engine.
-const RUNNER_VERSION = '0.29.0';
+const RUNNER_VERSION = '0.30.0';
 
 // The eval format we CONSUME (we deliberately do not invent our own).
 const SUITE_FORMAT = 'agentskills.io/evals';
@@ -52,7 +52,8 @@ const SUITE_FORMAT = 'agentskills.io/evals';
 //        installed or unknown), on every receipt; a placebo run writes it too. v0.14
 //        (receipt.placebo.schema.json) and v0.13 (receipt.v0.13.schema.json) are frozen.
 // v0.16 (issue 538): sampled text receipts seal fake tool call counts by arm.
-const RECEIPT_SCHEMA_VERSION = '0.16';
+// v0.17 (issue 814): rules-file kind and sent body, with the always-on limit.
+const RECEIPT_SCHEMA_VERSION = '0.17';
 
 // Input bounds on the skill loader and the post-checks (spec 026 AC-13, audit
 // A3/A7). lib/skill.js loaded every bundled file with no count, depth, byte,

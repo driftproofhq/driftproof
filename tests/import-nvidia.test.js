@@ -807,10 +807,15 @@ test('AC-57: action/comment.js posts no verdict word for a marked receipt', asyn
     fs.writeFileSync(ev, JSON.stringify({ pull_request: { number: 1 } }));
     let body = '';
     const server = http.createServer((req, res) => {
-      let b = ''; req.on('data', (c) => { b += c; }); req.on('end', () => { if (req.method !== 'GET') body += b; res.setHeader('content-type', 'application/json'); res.end(req.method === 'GET' ? '[]' : '{}'); });
+      let b = ''; req.on('data', (c) => { b += c; }); req.on('end', () => {
+        res.setHeader('content-type', 'application/json');
+        if (req.url.endsWith('/graphql')) return res.end(JSON.stringify({ data: { viewer: { login: 'github-actions[bot]' } } }));
+        if (req.method !== 'GET') body += b;
+        res.end(req.method === 'GET' ? '[]' : '{}');
+      });
     });
     await new Promise((ok) => server.listen(0, '127.0.0.1', ok));
-    const env = { ...process.env, DRIFTPROOF_RECEIPTS: dir, GITHUB_TOKEN: 'x', GITHUB_EVENT_PATH: ev, GITHUB_REPOSITORY: 'o/r', GITHUB_API_URL: `http://127.0.0.1:${server.address().port}`, INPUT_MODELS: receipt.run.model_id };
+    const env = { ...process.env, DRIFTPROOF_RECEIPTS: dir, GITHUB_TOKEN: 'x', GITHUB_EVENT_PATH: ev, GITHUB_REPOSITORY: 'o/r', GITHUB_API_URL: `http://127.0.0.1:${server.address().port}`, GITHUB_GRAPHQL_URL: `http://127.0.0.1:${server.address().port}/graphql`, INPUT_MODELS: receipt.run.model_id };
     const child = require('node:child_process').spawn(process.execPath, [path.join(ROOT, 'action', 'comment.js')], { env });
     await new Promise((ok) => child.on('exit', ok));
     server.close();

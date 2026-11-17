@@ -264,3 +264,142 @@ test('the README section is short and its commands are ones the CLI and the plug
   assert.match(section, /placebo/);
   for (const re of [/\bimproves?\b/i, /\bproves?\b/i, /\bworks\b/i]) assert.doesNotMatch(section, re);
 });
+
+// Issue 814: independent examples of each supported editor spelling and body.
+const EDITOR_RULES = [
+  ['.cursor/rules/style.mdc', 'cursor', '---\ndescription: Style\nglobs: "*.js"\nalwaysApply: false\n---\n'],
+  ['.cursorrules', 'cursor_legacy', ''],
+  ['.github/copilot-instructions.md', 'copilot', ''],
+  ['.github/instructions/style.instructions.md', 'copilot_scoped', '---\napplyTo: "*.js"\n---\n'],
+  ['.windsurfrules', 'windsurf_legacy', ''],
+  ['.windsurf/rules/style.md', 'windsurf', '---\ntrigger: glob\nglobs: "*.js"\n---\n'],
+];
+for (const [name, kind, prefix] of EDITOR_RULES) test('814: door and receipt preserve ' + name, () => {
+  const sb = sandbox();
+  fs.mkdirSync(path.dirname(path.join(sb.work, name)), { recursive: true });
+  fs.writeFileSync(path.join(sb.work, name), prefix + RULES);
+  const r = door(sb, ['run', name, '--suite', 'tasks.json', '--placebo']);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  const dir = path.join(sb.work, 'receipts');
+  const rec = JSON.parse(fs.readFileSync(path.join(dir, fs.readdirSync(dir).find(f => f.endsWith('.json') && !f.includes('.summary.'))), 'utf8'));
+  const { validateReceipt, verifyReceiptHash, sealReceipt } = require('../lib/receipt');
+  assert.equal(rec.schema_version, '0.17');
+  assert.equal(rec.skill.rules_file.kind, kind);
+  assert.equal(rec.skill.rules_file.text, RULES);
+  assert.equal(rec.skill.rules_file.mode, 'always_on');
+  assert.match(rec.skill.rules_file.limitation, /editor.*system prompt.*rule selection/);
+  assert.equal(rec.skill.content_hash, require('node:crypto').createHash('sha256').update(prefix + RULES).digest('hex'));
+  assert.equal(rec.placebo.skill_bytes, Buffer.byteLength(RULES));
+  assert.equal(rec.placebo.bytes, Buffer.byteLength(RULES));
+  assert.equal(rec.verification_level, 'UNVERIFIED');
+  assert.equal(validateReceipt(rec).valid, true, JSON.stringify(validateReceipt(rec).errors));
+  assert.equal(verifyReceiptHash(rec), true);
+  for (const change of [r => { r.skill.content_hash = '0'.repeat(64); }, r => { r.skill.rules_file.text += 'x'; }, r => { r.skill.rules_file.kind = 'markdown'; }]) {
+    const moved = structuredClone(rec); change(moved); assert.equal(verifyReceiptHash(moved), false);
+  }
+  for (const change of [r => { delete r.skill.rules_file.limitation; }, r => { r.skill.tokens++; }, r => { r.placebo.skill_bytes++; }]) {
+    const moved = structuredClone(rec); change(moved); sealReceipt(moved); assert.equal(validateReceipt(moved).valid, false);
+  }
+});
+test('814: metadata refusal plants and exact body handling', () => {
+  const { loadSubject } = require('../lib/skill');
+  const sb = sandbox(); const file = path.join(sb.work, '.cursor/rules/style.mdc');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const suite = path.join(sb.work, 'tasks.json');
+  for (const [text, code] of [['---\ndescription: Style\n---\n', 'SUBJECT_EMPTY'], ['---\ndescription: Style\n', 'SUBJECT_METADATA'], ['---\nx: y\n---\na' + String.fromCharCode(0), 'SUBJECT_NUL']]) {
+    fs.writeFileSync(file, text); assert.throws(() => loadSubject(file, { suite }), e => e.code === code);
+  }
+  const body = '\r\n# Café\r\nKeep this.\r\n---\r\nMore text.\r\n';
+  fs.writeFileSync(file, '\ufeff---\r\ndescription: Style\r\n---\r\n' + body);
+  assert.equal(loadSubject(file, { suite }).skillMd, body);
+  assert.throws(() => loadSubject(file), e => e.code === 'SUITE_REQUIRED');
+  const unknown = path.join(sb.work, 'notes.mdc'); fs.writeFileSync(unknown, RULES);
+  assert.throws(() => loadSubject(unknown, { suite }), e => e.code === 'SUBJECT_TYPE');
+});
+
+test('814: direct runner sends and seals the body across every arm', async () => {
+  const { loadSubject } = require('../lib/skill');
+  const provider = require('../lib/provider');
+  const original = provider.complete, savedStub = process.env.DRIFTPROOF_STUB;
+  const calls = []; process.env.DRIFTPROOF_STUB = '1';
+  provider.complete = async req => { calls.push(req); return original(req); };
+  delete require.cache[require.resolve('../lib/run')];
+  const { runSkillOnModel, summarizeReceipt } = require('../lib/run');
+  const { validateReceipt, verifyReceiptHash, sealReceipt } = require('../lib/receipt');
+  const dir = tmp(); fs.writeFileSync(path.join(dir, 'tasks.json'), JSON.stringify(TASKS));
+  try {
+    for (const [name, kind, prefix] of EDITOR_RULES) {
+      const file = path.join(dir, name); fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, prefix + RULES);
+      const skill = loadSubject(file, { suite: path.join(dir, 'tasks.json') });
+      await assert.rejects(() => runSkillOnModel({ skill: { ...skill, skillMd: skill.skillMd + 'changed' }, model: 'claude-haiku-4-5' }), e => e.code === 'SUBJECT_SNAPSHOT');
+      calls.length = 0;
+      const { receipt: r } = await runSkillOnModel({ skill, model: 'claude-haiku-4-5', opts: { samples: 1, maxCalls: 1000, placebo: true } });
+      assert.equal(r.schema_version, '0.17'); assert.equal(r.skill.rules_file.kind, kind); assert.equal(r.skill.rules_file.text, RULES);
+      assert.equal(r.skill.content_hash, require('node:crypto').createHash('sha256').update(prefix + RULES).digest('hex'));
+      const generations = calls.filter(c => c.prompt === TASKS.cases[0].prompt);
+      assert.ok(generations.some(c => c.system === RULES));
+      assert.ok(generations.some(c => c.system === undefined));
+      const placebo = generations.filter(c => c.system !== undefined && c.system !== RULES);
+      assert.ok(placebo.length); assert.ok(placebo.every(c => Buffer.byteLength(c.system) === Buffer.byteLength(RULES)));
+      assert.ok(!generations.some(c => prefix && c.system === prefix + RULES));
+      assert.equal(r.placebo.skill_bytes, Buffer.byteLength(RULES));
+      assert.equal(verifyReceiptHash(r), true); assert.equal(validateReceipt(r).valid, true, JSON.stringify(validateReceipt(r).errors));
+      assert.match(summarizeReceipt(r), /always-on text.*editor.*system prompt.*rule selection/);
+      for (const change of [r => { r.skill.tokens++; }, r => { r.placebo.skill_bytes++; }, r => { delete r.skill.rules_file.limitation; }, r => { delete r.skill.rules_file; }]) {
+        const planted = structuredClone(r); change(planted); sealReceipt(planted); assert.equal(validateReceipt(planted).valid, false);
+      }
+      const old = structuredClone(r); old.schema_version = '0.16'; delete old.skill.rules_file; sealReceipt(old);
+      assert.equal(validateReceipt(old).valid, true); assert.equal(verifyReceiptHash(old), true);
+      old.skill.content_hash = '0'.repeat(64); assert.equal(verifyReceiptHash(old), false);
+    }
+  } finally {
+    provider.complete = original; delete require.cache[require.resolve('../lib/run')];
+    if (savedStub === undefined) delete process.env.DRIFTPROOF_STUB; else process.env.DRIFTPROOF_STUB = savedStub;
+  }
+});
+
+test('814: direct compare and saved recheck retain editor identity', async () => {
+  const saved = process.env.DRIFTPROOF_STUB; process.env.DRIFTPROOF_STUB = '1';
+  const { initRecheck, runRecheck } = require('../lib/recheck');
+  const { compareSubjects } = require('../lib/compare');
+  const { rulesFileCopyPath, discoverRulesFiles } = require('../lib/rules-files');
+  const dir = tmp(), suite = path.join(dir, 'tasks.json'); fs.writeFileSync(suite, JSON.stringify(TASKS));
+  try {
+    for (const [name, kind, prefix] of EDITOR_RULES) {
+      const file = path.join(dir, name); fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, prefix + RULES);
+      const out = path.join(dir, 'saved-' + kind);
+      const manifest = initRecheck(file, { suite, out, cwd: dir, models: 'claude-haiku-4-5', samples: 1, placebo: true });
+      assert.equal(manifest.subject.path, 'subject/' + name);
+      assert.equal(rulesFileCopyPath(file).split(path.sep).join('/'), name);
+      fs.writeFileSync(file, prefix + '# Changed\nUse another rule.\n');
+      const [replayed] = await runRecheck(out);
+      assert.equal(replayed.receipt.skill.rules_file.kind, kind);
+      assert.equal(replayed.receipt.skill.rules_file.text, RULES);
+      const before = path.join(out, manifest.subject.path);
+      const result = await compareSubjects({ a: before, b: file, suite, models: ['claude-haiku-4-5'], samples: 1, placebo: true, out: path.join(dir, 'compare-' + kind) });
+      assert.ok(result);
+      const report = fs.readFileSync(path.join(dir, 'compare-' + kind, 'compare.md'), 'utf8');
+      assert.match(report, /always-on text/);
+      if (kind === 'cursor') {
+        fs.writeFileSync(file, prefix + '# Keep\nKeep this rule.\n# Remove\nRemove this rule.\n');
+        const reducedOut = path.join(dir, 'removed');
+        await compareSubjects({ a: file, withoutSection: 'Remove', suite, models: ['claude-haiku-4-5'], samples: 1, out: reducedOut });
+        const b = JSON.parse(fs.readFileSync(path.join(reducedOut, fs.readdirSync(reducedOut).find(f => /^compare-B-.*[.]json$/.test(f))), 'utf8'));
+        assert.equal(b.skill.rules_file.kind, 'markdown');
+        assert.equal(b.skill.rules_file.text, '# Keep\nKeep this rule.\n');
+      }
+    }
+    assert.deepEqual(discoverRulesFiles(dir).sort(), EDITOR_RULES.map(x => x[0]).sort());
+  } finally { if (saved === undefined) delete process.env.DRIFTPROOF_STUB; else process.env.DRIFTPROOF_STUB = saved; }
+});
+
+test('814: copy names every kind and keeps the always-on limit', () => {
+  const { RULES_FILE_KINDS, RULES_LIMITATION } = require('../lib/rules-files');
+  for (const rel of ['plugin/driftproof/README.md', ...['run', 'start', 'compare', 'recheck'].map(n => 'plugin/driftproof/commands/' + n + '.md')]) {
+    const text = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+    const check = text => { for (const kind of RULES_FILE_KINDS.filter(k => k.kind !== 'markdown')) assert.ok(text.includes(kind.example), rel + ': ' + kind.example); assert.ok(text.includes(RULES_LIMITATION), rel + ': limit'); };
+    check(text); assert.throws(() => check(text.replace(RULES_LIMITATION, '')));
+    assert.throws(() => check(text.replaceAll('.cursorrules', 'removed')));
+  }
+  assert.match(fs.readFileSync(path.join(ROOT, 'plugin/driftproof/README.md'), 'utf8'), /nine commands/);
+});
