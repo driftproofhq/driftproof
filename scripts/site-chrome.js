@@ -383,7 +383,10 @@ function tldrCard(r, html = null) {
   const rpaths = r.receipt_paths.map((p) => (typeof p === 'string' ? p : p.value));
   const dirs = [...new Set(rpaths.map((p) => p.replace(/\/[^/]+$/, '')))];
   const dedicated = dedicatedReceiptDirectory(rpaths);
-  const receipts = rpaths.length
+  const external = r.external_receipts;
+  const receipts = external
+    ? '<a href="' + esc(external.url.value) + '">' + esc(external.count.value) + ' receipts on ' + esc(external.host.value) + '</a>'
+    : rpaths.length
     ? (!dedicated
       ? `<a href="#${RECEIPTS_ANCHOR}">${rpaths.length} linked receipts</a>`
       : `<a href="https://github.com/driftproofhq/driftproof/tree/main/${esc(dirs[0])}/">${rpaths.length} receipts</a>`)

@@ -1,6 +1,16 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
 'use strict';
+// Issue 842: update only the approved new entry and counts without reopening older campaigns.
+if (process.argv.includes('--report-021-only')) {
+  const fs=require('node:fs'),path=require('node:path'),root=path.resolve(__dirname,'..');
+  const file=path.join(root,'README.md'),before=fs.readFileSync(file,'utf8');
+  const after=require('./build-report-021-essay').renderReadme(before,root);
+  if(process.argv.includes('--check')) {
+    if(before!==after){console.error('Report 021 README: stale');process.exitCode=1;}
+    else console.log('Report 021 README: campaign entry and counts current');
+  } else {fs.writeFileSync(file,after);console.log('Report 021 README: campaign entry and counts written');}
+} else {
 const fs=require('node:fs'),path=require('node:path'),P=require('../specs/408-skill-measurements/publication.cjs');
 const root=path.resolve(__dirname,'..'),pub=P.readPublished(root),esc=require('./site-chrome').esc;
 // Issue 797: the count is docs/data/reports.json's report list, held to the report pages, and every
@@ -50,7 +60,7 @@ const paragraph019='<p><a href="/reports/019/">Report #019</a> reads the same tw
 const kinds=new Set(JSON.parse(fs.readFileSync(path.join(root,'docs/data/reports.json'))).reports.map(r=>r.type.value)).size;
 s=s.replace(new RegExp('\\b(?:'+NW+') reports in','gi'), words[n][0].toUpperCase()+words[n].slice(1)+' reports in').replace(new RegExp('\\b(?:'+NW+') report types\\b','g'),words[kinds]+' report types');
 const block=begin+paragraph+paragraph016+paragraph017+paragraph018+paragraph019+end;
-if(s.includes(begin))s=s.replace(new RegExp(begin+'[\\s\\S]*?'+end),block);else s=s.replace('  <p>The part I did not expect',block+'\n\n  <p>The part I did not expect');s=require('./build-head-tags').applyHeadTags(s,f.slice(5));changes.set(f,s);
+if(s.includes(begin))s=s.replace(new RegExp(begin+'[\\s\\S]*?'+end),block);else s=s.replace('  <p>The part I did not expect',block+'\n\n  <p>The part I did not expect');s=require('./build-report-021-essay').renderEssay(s,root);s=require('./build-head-tags').applyHeadTags(s,f.slice(5));changes.set(f,s);
 // Issue 797: the README's count sentences, each by its own words (scripts/report-count.js), so no other
 // "<word> reports" in the file is touched. The launch essay's sentence says the essay's own count.
 const readme='README.md',m=fs.readFileSync(path.join(root,readme),'utf8');let updated=RC.writeReadmeCounts(m,{reports:words[n],kinds:words[kinds],essay:RC.essayCount(s)});
@@ -58,6 +68,9 @@ updated=updated.replace(/the newest being (?:instrument\s+comparison[\s\S]*?whic
 const rb='<!--driftproof:campaign-readme-->',re='<!--/driftproof:campaign-readme-->';
 const entry=rb+'\n- **[Report #015: '+P.TITLE+'](https://driftproofhq.com/reports/015/)**: three text tasks per skill, written by Driftproof from the pinned skill descriptions. Both model sets use Haiku 5.5 as judge. Eligible receipts carry their per-task verdicts and the report names the tasks behind them. The four router subjects have no verdict in this revision; the report amendment explains why. The eval account was checked before and after each run, not during it.\n- **[Report #016](https://driftproofhq.com/reports/016/)**: *rules-file behaviour*. '+words[a016.picks.length][0].toUpperCase()+words[a016.picks.length].slice(1)+' popular rules files against no file and same-length fakes. File-to-fake output comparisons: '+tally016+'. These are behaviour changes, not correctness verdicts, on small tasks with injected instructions.\n- **[Report #017](https://driftproofhq.com/reports/017/)**: *placebo comparison*. Report 015\'s twenty skills on Sonnet 5.5, each against no skill and against a same-length placebo text, judged by Haiku 5.5. Of the '+t017.N+' skills it counts, the placebo readings are '+plain017+'. A skill is above the placebo when, read one task at a time, it scored above the placebo on at least one task and below it on none; only that beats the fake. Where the fake scored below no skill, beating it does not mean beating no skill. The four routers have no verdict, as in Report 015.\n- **[Report #018](https://driftproofhq.com/reports/018/)**: *placebo comparison*. Report 015\'s twenty skills on Haiku 5.5, each against no skill and against a same-length placebo text, judged by Haiku 5.5, the same model. Of the '+t018.N+' skills it counts, the placebo readings are '+plain018+'. A skill is above the placebo when, read one task at a time, it scored above the placebo on at least one task and below it on none; only that beats the fake. Where the fake scored below no skill, beating it does not mean beating no skill. The four routers have no verdict, as in Report 015.\n- **[Report #019](https://driftproofhq.com/reports/019/)**: *placebo comparison*. The same twenty skills on Fable 5.2, each against no skill and against a same-length placebo text, judged by Haiku 5.5. Fourteen are graded on the reply; the six that hand work to other skills or tools ran with tools on and were graded on what Claude Code ended up doing. Of the '+t019.N+' skills it counts, the placebo readings are '+plain019+'. A skill is above the placebo when, read one task at a time, it scored above the placebo on at least one task and below it on none; only that beats the fake.\n'+re+'\n\n';
 if(updated.includes(rb))updated=updated.replace(new RegExp(rb+'[\\s\\S]*?'+re+'\\n\\n'),entry);else updated=updated.replace('✍️ The launch essay',entry+'✍️ The launch essay');
+updated=require('./build-report-021-essay').renderReadme(updated,root);
 changes.set(readme,updated);
 let stale=0;for(const [rel,bytes]of changes){if(process.argv.includes('--check')){if(fs.readFileSync(path.join(root,rel),'utf8')!==bytes){console.error('stale: '+rel);stale++;}}else fs.writeFileSync(path.join(root,rel),bytes);}
 if(stale)process.exitCode=1;else console.log('essay and README pointer: '+n+' reports, campaign tally current');
+
+}

@@ -108,20 +108,39 @@ test('652-4: the README Report 017 entry says its readings in plain words, with 
   assert.throws(() => R435.assertions(relabelled, items), (e) => e.code === 'CONTRADICTORY_COUNT', 'plant: the per-receipt label on a Report 017 count reads as a Report 015 count');
 });
 
-test("652-5: the README opening's latest finding says the case rule in plain words and keeps the summary's figures", () => {
-  const opening = read('README.md').split('Driftproof **consumes**')[0];
-  const finding = /\*\*Latest finding\*\*[\s\S]*?\n\n/.exec(opening);
+function latestFindingCheck(readme) {
+  const finding = /\*\*Latest finding\*\*[^]*?\n\n/.exec(readme.split('Driftproof **consumes**')[0]);
   assert.ok(finding, 'the opening carries the latest finding');
-  const line = finding[0].replace(/\s+/g, ' ');
-  assert.doesNotMatch(line, /by the case rule/);
-  assert.match(line, /read one task at a time/);
-  const newest = newestReport();
-  assert.ok(line.includes(`[Report ${newest}]`), line);
-  const summary = JSON.parse(read('docs/data/report-summaries.json')).reports[newest].points.find((p) => p.lead === 'What we found.').text;
-  const after = /\d{1,2} \w{3} \d{4}: ([\s\S]*)$/.exec(line);
-  assert.ok(after, line);
-  assert.deepEqual(numbers(after[1]), numbers(summary.split(/(?<=[.!?])\s+(?=[A-Z])/)[0]));
-  assert.match(summary, /by the case rule/, "the report page's own words are the summary's, unchanged");
+  const line = finding[0].replace(/\s+/g, ' ').trim();
+  const rows = JSON.parse(read('docs/data/reports.json')).reports;
+  const latest = rows.slice().sort((a, b) => Number(b.number.value) - Number(a.number.value))[0];
+  const n = latest.number.value;
+  assert.equal(n, newestReport());
+  const date = require('../scripts/site-chrome').FORMATS['d Mon yyyy'](latest.date.value);
+  const summary = JSON.parse(read('docs/data/report-summaries.json')).reports[n].points.find(p => p.lead === 'What we found.').text;
+  assert.equal(line, '**Latest finding** · [Report ' + n + '](https://driftproofhq.com/reports/' + n + '/), ' + date + ': ' + summary);
+}
+test("652-5: the README latest finding quotes the newest report's complete summary verbatim", () => {
+  const readme = read('README.md');
+  latestFindingCheck(readme);
+  const n = newestReport();
+  assert.throws(() => latestFindingCheck(readme.replace('[Report ' + n + ']', '[Report 000]')), assert.AssertionError);
+  const summary = JSON.parse(read('docs/data/report-summaries.json')).reports[n].points.find(p => p.lead === 'What we found.').text;
+  const firstNumber = summary.match(/\d+(?:\.\d+)?/)[0];
+  const paragraph = /\*\*Latest finding\*\*[^]*?\n\n/.exec(readme)[0], at = paragraph.indexOf(': ') + 2;
+  const planted = paragraph.slice(0,at) + paragraph.slice(at).replace(firstNumber,'999');
+  assert.notEqual(planted,paragraph);
+  assert.throws(() => latestFindingCheck(readme.replace(paragraph,planted)), assert.AssertionError, 'plant: changed summary figure');
+  const changedWord = paragraph.slice(0,at) + 'Altered ' + paragraph.slice(at);
+  assert.throws(() => latestFindingCheck(readme.replace(paragraph,changedWord)), assert.AssertionError, 'plant: changed summary words');
+});
+test('652-5 historical: the Report 019 roll entry retains the plain case rule and its essay counts', () => {
+  const entry = /^- \*\*\[Report #019\][^\n]*/m.exec(read('README.md'))[0];
+  assert.doesNotMatch(entry, /by the case rule/);
+  assert.match(entry, /read one task at a time/);
+  const essay = /<p><a href="\/reports\/019\/">Report #019<\/a>[^]*?<\/p>/.exec(read('docs/writing/three-releases/index.html'))[0];
+  const tally = text => /Of the (\d+) skills it counts, the placebo readings are ([^.]*)\./.exec(text);
+  assert.deepEqual(numbers(tally(entry).slice(1).join(' ')), numbers(tally(textOf(essay)).slice(1).join(' ')));
 });
 
 test('652-6: RELEASES.md v0.26.0 carries a dated correction line and its user section still reads', () => {
@@ -196,8 +215,7 @@ test('757-2: the install section opens with what you need, and CI says what a pl
   assert.ok(JSON.parse(read('docs/data/stats.json')).max_calls_per_task, 'stats.json carries the usage figure');
 });
 
-function foundOracle() {
-  const n = JSON.parse(read('docs/data/stats.json')).latest_report_number.value;
+function foundOracle(n) {
   const P = require(`../scripts/prepare-report-${n}.js`);
   const c = P.readCampaign({ campaignRoot: path.join(ROOT, P.CAMPAIGN) });
   const counted = c.rows.filter((r) => !r.router);
@@ -215,13 +233,18 @@ function foundHits(h, oracle) {
   if (/is not shown to do no better/.test(t)) hits.push('the double negative');
   return hits;
 }
-test('757-3: What we found leads with counts from the receipts, then the caveat in plain words', async () => {
-  const h = homeHtml(), oracle = foundOracle(), S = JSON.parse(read('docs/data/stats.json'));
+test('757-3 historical: placebo finding keeps receipt counts and plain caveats after a new report', async () => {
+  const n = '018', oracle = foundOracle(n), D = await import('../scripts/site-data.mjs');
+  const page = read('docs/reports/' + n + '/index.html');
+  const big = /<div class="headline">[^]*?<p class="big"[^>]*>([^]*?)<\/p>/.exec(page)[1];
+  const S = {latest_report_number:{value:n}, latest_report_title:{value:pageTitle(n)},
+    ...D.latestFindingFields(big, 'fixture'), ...D.latestFoundFields(n, page)};
+  D.latestCaveats(n, page).forEach((p,i)=>{S['latest_point_'+(i+1)+'_lead']={value:p.lead};S['latest_point_'+(i+1)+'_text']={value:p.text};});
+  const B = require('../scripts/build-site-pages');
+  const h = '<section id="hero">' + B.latestFinding(S, B.reader(S)) + '</section>';
   assert.deepEqual(foundHits(h, oracle), []);
   assert.equal(S.latest_found_above.value, oracle.above);
   assert.equal(S.latest_found_counted.value, oracle.counted);
-  const D = await import('../scripts/site-data.mjs');
-  const page = read(`docs/reports/${S.latest_report_number.value}/index.html`);
   assert.throws(() => D.latestFoundFields(S.latest_report_number.value, page, { publication: { tally: { A: oracle.above - 1, N: oracle.counted } } }), /receipts give/, 'plant: receipts that disagree with the printed tally refuse the build');
   assert.notDeepEqual(foundHits(once(h, `<span data-stat="latest_found_above">${oracle.above}</span>`, String(oracle.above)), oracle), [], 'plant: a typed figure');
   assert.notDeepEqual(foundHits(h, { ...oracle, above: oracle.above + 1 }), [], 'plant: a count the receipts do not give');
@@ -229,6 +252,22 @@ test('757-3: What we found leads with counts from the receipts, then the caveat 
   const hero = sectionOf(h, 'hero');
   assert.ok(!hero.includes('The judge uses the same model as the target.'), 'the repeated judge sentence is gone from the card');
   assert.ok(hero.includes('Self-grading may favor its own model'), "the judge point's remaining sentence stays");
+});
+
+test('757-3 current: a report without placebo counts keeps the complete source finding', async () => {
+  const S = JSON.parse(read('docs/data/stats.json')),n=S.latest_report_number.value;
+  if (S.latest_found_counted) { assert.deepEqual(foundHits(homeHtml(), foundOracle(n)), []); return; }
+  const expected = JSON.parse(read('docs/data/report-summaries.json')).reports[n].points.find(p=>p.lead==='What we found.').text;
+  const check = html => {
+    const item=/<li><b data-stat="latest_point_(\d+)_lead">What we found\.<\/b>([^]*?)<\/li>/.exec(sectionOf(html,'hero'));
+    assert.ok(item);assert.equal(textOf(item[2]),expected);
+    assert.equal(statIn(item[2],'latest_point_'+item[1]+'_text'),require('../scripts/site-chrome').esc(expected));
+  };
+  check(homeHtml());
+  const number=expected.match(/\d+(?:\.\d+)?/)[0];
+  assert.throws(()=>check(homeHtml().replace(require('../scripts/site-chrome').esc(expected),require('../scripts/site-chrome').esc(expected.replace(number,'999')))),assert.AssertionError);
+  const D=await import('../scripts/site-data.mjs');
+  assert.deepEqual(D.latestFoundFields(n,read('docs/reports/'+n+'/index.html')),{});
 });
 
 function statesHits(h) {

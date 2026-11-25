@@ -299,9 +299,16 @@ def build_report(out_dir, number, rtype, models, counts):
         d.text((x, ly), line, font=small, fill=MUTED)
         ly += 38
     ly += 6
+    # A green line too long for the card is set smaller until it fits, never cut
+    # (issue 842); a line that already fits keeps its size and its card's bytes.
+    size, step = 28, 38
+    while size > 18 and ly + step * len(wrap(d, counts, small, max_width)) > H - 24:
+        size -= 2
+        step = round(size * 38 / 28)
+        small = load_fonts(76, size)[1]
     for line in wrap(d, counts, small, max_width):
         d.text((x, ly), line, font=small, fill=ACCENT_INK)
-        ly += 38
+        ly += step
 
     return _write_hashed(img, out_dir, "report-%s" % number)
 

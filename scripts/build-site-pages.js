@@ -280,8 +280,7 @@ function latestFinding(S, V) {
   return `<aside class="card finding" aria-labelledby="finding-heading">
 <p class="finding-eyebrow">The newest finding</p>
 <h2 id="finding-heading" class="finding-heading">Report ${stat('latest_report_number')}: <a href="/reports/${esc(n)}/">${stat('latest_report_title')}</a></h2>
-<p class="finding-claim">${stat('latest_report_claim')}</p>
-<p class="finding-sentence">${stat('latest_report_sentence')}</p>
+${String(V('latest_report_sentence')).replace(/[.?!]$/, '') === String(V('latest_report_claim')) ? '' : `<p class="finding-claim">${stat('latest_report_claim')}</p>\n`}<p class="finding-sentence">${stat('latest_report_sentence')}</p>
 ${tally}
 <ul class="finding-caveats">
 ${points.map(pointItem).join('\n')}
@@ -389,7 +388,8 @@ ${panels}
 <p class="section-eyebrow">The reports</p>
 <h2>Latest report</h2>
 ${reportCard(latest, HOME_CARD_STAT, { counts: false })}
-<p>The latest report reads each skill against a same-length placebo as well as against no skill: a text of the skill's length in bytes, in its place, drawn from a fixed corpus chosen without reference to any task. <a href="/placebo/">See your file's fake</a> shows the text Driftproof would use for your file, in your browser, before you measure it. On a run that kept its answers, the results page and <code>driftproof blind</code> show each task's two answers without saying which used your file, ask you to pick, and after your picks say how often you were right beside the judge's scores. In Claude Code, <code>/driftproof:blind</code> opens it.</p>
+${latest.type.value === 'Rules-file quality report' ? `<p>${esc(latest.verdict_line.value)}</p>
+<p>` : `<p>The latest report reads each skill against a same-length placebo as well as against no skill: a text of the skill's length in bytes, in its place, drawn from a fixed corpus chosen without reference to any task. `}<a href="/placebo/">See your file's fake</a> shows the text Driftproof would use for your file, in your browser, before you measure it. On a run that kept its answers, the results page and <code>driftproof blind</code> show each task's two answers without saying which used your file, ask you to pick, and after your picks say how often you were right beside the judge's scores. In Claude Code, <code>/driftproof:blind</code> opens it.</p>
 <p><a href="/reports/">All <span data-stat="reports_published">${esc(V('reports_published'))}</span> reports</a></p>
 <p><a href="${drift.HREF}">${esc(drift.TEXT.h1)}</a>: what each receipt read, model by model.</p>
 <p class="writing">Writing: <a href="/writing/three-releases/">${esc(latest.essay_links[0].title.value)}</a>, the launch essay reading all ${esc(V('reports_published_word'))} reports on what a moving model does to encoded expertise.</p>
@@ -557,6 +557,7 @@ function buildCards() {
 // throws at build rather than rendering an empty block, which is the same
 // contract reader() already gives every figure on a non-report page.
 const TYPE_NOTES = {
+  'Rules-file quality report': ['overlapping', "Does a rules file make a model's code pass more hidden tests, or catch more planted bugs, than no file?"],
   'Release drift report': ['separated',
     "Asks whether a skill still helps when a newer version of the model underneath it comes out."],
   'Substrate durability report': ['overlapping',
@@ -705,7 +706,7 @@ ${cards}
 <div class="types-grid">
 <div>
 <h2>The ${word(TYPES.length)} report types</h2>
-<p>All ${word(TYPES.length)} use the same rule: a verdict is claimed only when the two ranges do not overlap and the move clears the floor. They differ in what moves underneath the skill, or, in the value report, in which axes are measured.</p>
+<p>Most use the band rule: a verdict is claimed only when the two ranges do not overlap and the move clears the floor. Rules-file quality reports use 95% ranges from resampling the tasks: a change is clear only when its range excludes zero. Each type states its measures and limits.</p>
 </div>
 ${types}
 </div>
@@ -886,13 +887,13 @@ function reportTypesPage() {
   const main = `<main class="screens">
 <section id="types" class="screen is-text">
 <h1>The ${word(TYPES.length)} report types</h1>
-<p>Driftproof publishes ${word(TYPES.length)} kinds of report. Where one compares a model with the skill and without it, it calls a change the same way. They differ in what changes underneath the skill; the value report also counts what a skill costs, and the instrument comparison compares the test tools themselves, so its example has no run without the skill. Each type's name, and each example's title, is the report's own.</p>
+<p>Driftproof publishes ${word(TYPES.length)} kinds of report. Most use the band rule. Rules-file quality reports use 95% ranges from resampling the tasks: a change is clear only when its range excludes zero. They differ in what changes underneath the skill; the value report also counts what a skill costs, and the instrument comparison compares the test tools themselves, so its example has no run without the skill. Each type's name, and each example's title, is the report's own.</p>
 ${cards}
 </section>
 </main>`;
   return shell({
     title: 'Report types | Driftproof',
-    description: `Driftproof publishes ${word(TYPES.length)} kinds of report. They share one verdict rule and differ in what moves underneath the skill in each.`,
+    description: `Driftproof publishes ${word(TYPES.length)} kinds of report. Each type states its measures, comparison rule and limits.`,
     main,
   });
 }

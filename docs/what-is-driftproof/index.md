@@ -35,6 +35,7 @@ What each other tool measures, and whether it compares a task with the skill and
 
 Every published report, newest first.
 
+- [Report 021](https://driftproofhq.com/reports/021/): One line in a Jest rules file made Claude's tests miss bugs
 - [Report 019](https://driftproofhq.com/reports/019/): a same-length placebo text
 - [Report 018](https://driftproofhq.com/reports/018/): a same-length placebo text
 - [Report 017](https://driftproofhq.com/reports/017/): a same-length placebo text

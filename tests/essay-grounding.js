@@ -20,7 +20,7 @@ const fs = require('fs');
 const path = require('path');
 const scope = require('./assertion-scope.js');
 
-const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen'];
+const WORDS = Array.from({ length: 100 }, (_, n) => require('../scripts/report-count.js').numberWord(n));
 const ESSAY_REL = path.join('docs', 'writing', 'three-releases', 'index.html');
 const PUBLISHED_ON = '2026-08-11'; // the essay's publication date, as printed on it
 
@@ -329,12 +329,36 @@ function publishedReportIds(root) {
     .sort();
 }
 
+// Issue 842: execution measures are percentages, not counts of verdicts. Read
+// the labelled Sonnet columns of the original Jest table. The essay repeats
+// its approved measure sentence, with each percentage on its own phrase.
+function qualityMeasurePairs(html) {
+  if (!/<p class="report-type">Rules-file quality report<\/p>/.test(html)) return null;
+  for (const [, table] of html.matchAll(/<table\b[^>]*>([^]*?)<\/table>/g)) {
+    const headers = [...table.matchAll(/<th(?:\s[^>]*)?>([^]*?)<\/th>/g)].map(m => stripTags(m[1]).trim());
+    const base = headers.indexOf('Sonnet, no file'), rule = headers.indexOf('Sonnet, with file');
+    if (base < 0 || rule < 0) continue;
+    const rows = [...table.matchAll(/<tr\b[^>]*>([^]*?)<\/tr>/g)].map(m => [...m[1].matchAll(/<td(?:\s[^>]*)?>([^]*?)<\/td>/g)].map(c => stripTags(c[1]).trim()));
+    function value(label, col) {
+      const found = rows.filter(r => r[0] === label);
+      if (found.length !== 1 || found[0].length !== headers.length) return null;
+      const m = /^(\d+(?:\.\d+)?)%(?:\s|$)/.exec(found[0][col]);
+      return m && Number(m[1]) <= 100 ? m[1] + '%' : null;
+    }
+    const values = [value('Share of attempts that caught every bug', rule), value('Share of attempts that caught every bug', base),
+      value('Share of planted bugs caught', rule), value('Share of planted bugs caught', base)];
+    if (values.some(v => v === null)) return null;
+    return values.map((v, i) => pair(v, ['of attempts', 'with no file', 'against', '(share of planted bugs caught'][i]));
+  }
+  return null;
+}
+
 function derive(root) {
   const out = {};
   for (const id of publishedReportIds(root)) {
     const html = fs.readFileSync(path.join(root, 'docs', 'reports', id, 'index.html'), 'utf8');
     const text = stripTags(html);
-    const pairs = valuePairs(text) || tallyLinePairs(text) || verdictCellPairs(html) || refusalTablePairs(html) || instrumentComparisonPairs(html) || runTablePairs(html) || comparisonTablePairs(html) || liftTablePairs(html) || campaignTablePairs(html) || placeboTallyPairs(html) || underTheRulePairs(html);
+    const pairs = valuePairs(text) || tallyLinePairs(text) || verdictCellPairs(html) || refusalTablePairs(html) || instrumentComparisonPairs(html) || runTablePairs(html) || comparisonTablePairs(html) || liftTablePairs(html) || campaignTablePairs(html) || placeboTallyPairs(html) || underTheRulePairs(html) || qualityMeasurePairs(html);
     if (!pairs) throw new Error(`no tally derivable from report ${id}`);
     // A count derived from the page (#002's verdict cells) is a figure the page
     // supports though it never spells it out, so it joins the page's numbers.
@@ -400,10 +424,10 @@ function tallyViolations(by, oracle) {
     const low = paras.join(' ').toLowerCase();
     for (const p of o.pairs) {
       const alt = p.variants.map(esc).join('|');
-      if (!new RegExp(`(?<![\\d.,])${p.count}\\s+(?:${alt})\\b`).test(low)) {
+      if (!new RegExp(`(?<![\\d.,])${esc(p.count)}\\s+(?:${alt})\\b`).test(low)) {
         bad.push(`#${id}: the essay does not state "${p.count} ${p.label}" with the count on its own label`);
       }
-      const stated = [...low.matchAll(new RegExp(`(?<![\\d.,])(\\d[\\d,]*)\\s+(?:${alt})\\b`, 'g'))].map((m) => m[1]);
+      const stated = [...low.matchAll(new RegExp(`(?<![\\d.,])(\\d[\\d,]*(?:\\.\\d+)?%?)\\s+(?:${alt})\\b`, 'g'))].map((m) => m[1]);
       for (const said of new Set(stated)) {
         if (said !== p.count) bad.push(`#${id}: the essay also states "${said} ${p.label}" where the page says ${p.count}`);
       }
@@ -424,7 +448,7 @@ function rotateCounts(paras, pairs) {
   let text = paras.join(' ');
   pairs.forEach((p, i) => {
     const alt = p.variants.map(esc).join('|');
-    text = text.replace(new RegExp(`(?<![\\d.,])${p.count}(\\s+(?:${alt})\\b)`, 'i'), `${SENTINEL}${i}${SENTINEL}$1`);
+    text = text.replace(new RegExp(`(?<![\\d.,])${esc(p.count)}(\\s+(?:${alt})\\b)`, 'i'), `${SENTINEL}${i}${SENTINEL}$1`);
   });
   pairs.forEach((p, i) => { text = text.split(`${SENTINEL}${i}${SENTINEL}`).join(pairs[(i + 1) % pairs.length].count); });
   return [text];
@@ -578,4 +602,4 @@ function run(root) {
   });
 }
 
-module.exports = { CHECKS, DESCRIPTIONS, run, derive, refusalTablePairs, runTablePairs, stripTags, numbersIn, tallyViolations, rotateCounts, citingParagraphs, publishedReportIds, publishedTypeLabels, declaredTypeLabels, paragraphs, WORDS, ESSAY_REL };
+module.exports = { qualityMeasurePairs, CHECKS, DESCRIPTIONS, run, derive, refusalTablePairs, runTablePairs, stripTags, numbersIn, tallyViolations, rotateCounts, citingParagraphs, publishedReportIds, publishedTypeLabels, declaredTypeLabels, paragraphs, WORDS, ESSAY_REL };

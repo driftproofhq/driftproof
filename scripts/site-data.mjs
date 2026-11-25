@@ -210,7 +210,26 @@ const reportDirs = () => fs.readdirSync(path.join(DOCS, 'reports'), { withFileTy
 // Issue 790 (spec 025 A-025-78): a report's card plot is its first file that is neither a retained-answers
 // sidecar nor a router-limited receipt, whose plot is Report 015 Amendment 1's notice and carries no state.
 const plotted = (files) => files.find((f) => { const j = JSON.parse(fs.readFileSync(f, 'utf8')); return !isSidecar(j) && !require('../lib/report-015-publication').routerLimit(j); });
+// A report opts in through its evidence link. Counts come from its manifest.
+export function externalReceipts(html, root = ROOT, pageRel = null) {
+  const links = [...String(html).matchAll(/<a\b[^>]*\bdata-external-receipts="[^"]*"[^>]*>/g)];
+  if (!links.length) return null;
+  if (links.length !== 1) throw new Error('one external receipts declaration required');
+  const attr = name => decode((links[0][0].match(new RegExp('\\b' + name + '="([^"]*)"')) || [])[1] || '');
+  const manifest = attr('data-external-receipts'), url = attr('href'), host = attr('data-receipts-host');
+  if (!/^receipts\/[^\\]+\.json$/.test(manifest) || manifest.split('/').includes('..')) throw new Error('external receipts manifest path refused');
+  const file = path.resolve(root, manifest);
+  if (!fs.realpathSync(file).startsWith(fs.realpathSync(path.join(root, 'receipts')) + path.sep)) throw new Error('external receipts manifest path escaped');
+  if (new URL(url).protocol !== 'https:' || !host.trim()) throw new Error('external receipts need an HTTPS URL and host label');
+  const files = JSON.parse(fs.readFileSync(file, 'utf8')).files;
+  if (!Array.isArray(files) || !files.length || files.some(f => typeof f.file !== 'string' || !f.file)) throw new Error('external receipts manifest needs files');
+  if (new Set(files.map(f => f.file)).size !== files.length) throw new Error('external receipts manifest contains duplicate files');
+  return { count: F(files.length, manifest), url: F(url, pageRel), host: F(host, pageRel) };
+}
+
 function receiptsFor(number) {
+  const page = path.join(DOCS, 'reports', number, 'index.html');
+  if (fs.existsSync(page) && externalReceipts(fs.readFileSync(page, 'utf8'))) return [];
   return receiptFiles(ROOT).filter((f) => rel(f).startsWith(`receipts/report-${number}/`));
 }
 
@@ -442,7 +461,8 @@ export function reportRow(n, opts = {}) {
     const typeRaw = textOf((html.match(/<p class="report-type"[^>]*>([\s\S]*?)<\/p>/) || [])[1] || '');
     const bigHtml = amendedHeadline(html) || (html.match(/<div class="headline">[\s\S]*?<p class="big"[^>]*>([\s\S]*?)<\/p>/) || [])[1] || '';
     const bigRaw = textOf(bigHtml);
-    const verdict = verdictLine(bigHtml, html);
+    // Report 021's measure sentence stays whole on every summary surface.
+    const verdict = n === '021' ? sentencesOf(bigRaw)[1] : verdictLine(bigHtml, html);
     const type = prefix(firstSentence(typeRaw), 60).replace(/\.$/, '');
     // Issue 627: a title that is not what moved (Report 017's "Skill or sugar pill?") states it on
     // its h1 as data-what-moved; every other page's h1 is what moved, as before.
@@ -450,7 +470,8 @@ export function reportRow(n, opts = {}) {
     const cardDescriptionAttr = (html.match(/<div class="headline">[\s\S]*?<p class="big"[^>]*\sdata-card-description="([^"]*)"/) || [])[1];
     const moved = prefix(movedAttr != null ? textOf(movedAttr) : h1.replace(/^Report\s*#?\d+\s*(?:—|:)\s*/, ''), 90);
 
-    const rfiles = receiptsFor(n);
+    const external = externalReceipts(html, ROOT, pageRel);
+    const rfiles = external ? [] : receiptsFor(n);
     const models = [];
     let date = { d: '', f: 'receipts' };
     for (const f of rfiles) {
@@ -522,6 +543,7 @@ export function reportRow(n, opts = {}) {
       // carry, which is the one thing this data layer exists to refuse.
       ...(verdict ? { verdict_line: F(verdict, pageRel) } : {}),
       receipt_paths: receiptPaths,
+      ...(external ? { external_receipts: external } : {}),
       // No receipts, no band plot: the field is absent rather than naming a plot
       // file that does not exist (spec 041).
       // Issue 790: the first file that is not a retained-answers sidecar, which has no plot of its own.
@@ -565,10 +587,12 @@ function main() {
   const i = process.argv.indexOf('--out');
   const outDir = i > -1 ? path.resolve(process.argv[i + 1]) : path.join(DOCS, 'data');
   fs.mkdirSync(outDir, { recursive: true });
+  // Build the report inventory before stats validates the newly added page count.
+  fs.writeFileSync(path.join(outDir, 'reports.json'), `${JSON.stringify(buildReports(), null, 2)}\n`);
   const stats = buildStats();
   delete stats._latest_text_len;
   fs.writeFileSync(path.join(outDir, 'stats.json'), `${JSON.stringify(stats, null, 2)}\n`);
-  fs.writeFileSync(path.join(outDir, 'reports.json'), `${JSON.stringify(buildReports(), null, 2)}\n`);
+
   console.log(`site data written to ${path.relative(ROOT, outDir)}`);
 }
 

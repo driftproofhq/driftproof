@@ -22,12 +22,15 @@ directly under the `<h1>` title:
 | Instrument re-measurement | `Instrument re-measurement report` | Does an earlier report's result survive a *corrected or strengthened instrument*, measuring the same cells again? | nothing moves under the skill and nothing moves in the substrate — the **instrument** moves: sampling design, a defect fix, or a rule the runner now applies. The cells, suites, substrates and judge are the ones the earlier report used, so the comparison is against the archive rather than against a fresh control |
 | Instrument comparison | `Instrument comparison report` | What can each of two instruments establish about the *same skills* on pinned inputs? | nothing moves under the skill and nothing in its inputs: the same SKILL.md bytes, prompts and rubrics are measured by two **instruments**, and the report states what each can and cannot establish rather than ranking them |
 
+| Rules-file quality | `Rules-file quality report` | Does a rules file make a model's code pass more hidden tests, or catch more planted bugs, than no file? | rules text, with task, model and execution conditions held within each comparison |
 | Rules-file behaviour | `Rules-file behaviour report` | What changes when popular rules files replace no file or equal-byte irrelevant prose? | injected instructions, held fixed within each file and model comparison |
 | Placebo comparison | `Placebo comparison report` | Does a skill's reading hold against a same-length text from a fixed corpus? | the arm: the skill text, or a text of its length in bytes from spec 440's fixed corpus, with model, suite, judge and sampling held fixed |
 
 All use the same band-based, floor-gated verdict rule (below); they differ only
 in what moves underneath the skill. Future types add a row here and a label —
 they do not invent a new verdict rule without saying so.
+
+A **rules-file quality report** reports execution-based all-pass and test-fraction measures with paired task-bootstrap ranges. These ranges do not use the judge-score band verdict rule. A range with an endpoint at zero includes zero. Report 021 keeps its approved wording and states its limits beside its findings.
 
 A **rules-file behaviour report** keeps correctness readings from the existing receipt reader and reports behavioural task means separately. Its paired bootstrap intervals are not correctness verdicts. Report 016 uses a full-width story with methods and evidence below it, instead of the paper body and side rails.
 

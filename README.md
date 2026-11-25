@@ -35,9 +35,11 @@ measures a skill in your repository and writes its receipt. It runs on your
 Claude Code subscription. You need Node.js 22 or later.
 [First run](#first-run) · [Other ways to install](#install) · [Measure your own skill](#quickstart-receipt-for-your-own-skill)
 
-**Latest finding** · [Report 019](https://driftproofhq.com/reports/019/), 11 Nov
-2026: of the 20 skills, 10 beat the fake, 4 did not beat it, and for 6 we can't
-tell yet.
+**Latest finding** · [Report 021](https://driftproofhq.com/reports/021/), 24 Nov
+2026: With the file, Sonnet's tests caught every planted bug in 2.5% of attempts
+against 65.8% with no file (share of attempts that caught every bug), and caught
+9.5 points fewer of the planted bugs, 85.3% against 94.8% (share of planted bugs
+caught).
 
 **Free measurement** · [Send us your skills](https://driftproofhq.com/measure/).
 We'll tell you which ones you can delete on Claude 5. It's free. Anyone can ask,
@@ -46,9 +48,9 @@ not only the author.
 [![driftproof](https://img.shields.io/endpoint?url=https://driftproofhq.com/badges/commit-message-conventions.json)](https://driftproofhq.com)
 live badge for the bundled example, generated from its own receipt.
 
-[All eighteen reports](#reports) · [driftproofhq.com](https://driftproofhq.com)
+[All nineteen reports](#reports) · [driftproofhq.com](https://driftproofhq.com)
 
-[Can you tell? Every skill](https://driftproofhq.com/can-you-tell/) · [Did the AI change?](https://driftproofhq.com/did-it-change/) · [Inspect these instructions](https://driftproofhq.com/inspect/) · [The AI noticed the sugar pill](https://driftproofhq.com/noticed/) · [Which bar is the fake?](https://driftproofhq.com/spot-the-fake/) · [Every task we gave a skill](https://driftproofhq.com/tasks/) · [Try it yourself](https://driftproofhq.com/try-it/) · [Which section did the work?](https://driftproofhq.com/which-section/) · [Skill or sugar pill?](https://driftproofhq.com/sugar-pill/)
+[Skill badges](https://driftproofhq.com/badges/) · [Can you tell? Every skill](https://driftproofhq.com/can-you-tell/) · [Did the AI change?](https://driftproofhq.com/did-it-change/) · [Inspect these instructions](https://driftproofhq.com/inspect/) · [The AI noticed the sugar pill](https://driftproofhq.com/noticed/) · [Which bar is the fake?](https://driftproofhq.com/spot-the-fake/) · [Every task we gave a skill](https://driftproofhq.com/tasks/) · [Try it yourself](https://driftproofhq.com/try-it/) · [Which section did the work?](https://driftproofhq.com/which-section/) · [Skill or sugar pill?](https://driftproofhq.com/sugar-pill/)
 
 ![The page driftproof view makes from Report 013's receipts: three skills by three models, each result in plain words: clearly helped, no clear difference, or too few answers to tell.](https://driftproofhq.com/assets/view-report-013.png)
 The page `npx driftproof view` makes from [Report 013's
@@ -1114,7 +1116,7 @@ with exit 4, and `--out` never writes over a file the command did not write.
 
 ## Reports
 
-Eighteen reports are published, spanning nine report types. A report page lives at a
+Nineteen reports are published, spanning ten report types. A report page lives at a
 draft path — `docs/reports/NNN-draft/` — until the publish sequence renames it, and
 `scripts/build-public.sh` excludes every `*-draft/` path from the published tree
 (see the roll below, and
@@ -1124,10 +1126,12 @@ under [`receipts/`](receipts/)
 (`receipts/report-001/` … `receipts/report-006/`) — nothing is hand-entered.
 Report #010 takes no Driftproof measurement and has no receipts: it is re-derived
 from the upstream harness's output files, published beside its page.
+Report #021's receipts are on Zenodo; their hashes and links are in
+[`receipts/report-021/`](receipts/report-021/).
 
-📊 **Eighteen published reports** (each re-derived from committed files, nothing
+📊 **Nineteen published reports** (each re-derived from committed files, nothing
 hand-entered: Driftproof's receipts, or for Report #010 the upstream harness's own
-output), spanning nine published report types, the newest being placebo comparison. Reports that measure with Driftproof retain its correctness reader. The rules-file behaviour report also compares output tokens and code with paired task intervals, and the placebo comparison report reads each skill against a same-length text from a fixed corpus:
+output), spanning ten published report types, the newest being rules-file quality. Reports that measure with Driftproof retain its correctness reader. The rules-file behaviour report also compares output tokens and code with paired task intervals, and the placebo comparison report reads each skill against a same-length text from a fixed corpus:
 
 
 - **[Report #001](https://driftproofhq.com/reports/001/)** — *release drift*: ten
@@ -1233,10 +1237,11 @@ output), spanning nine published report types, the newest being placebo comparis
 - **[Report #017](https://driftproofhq.com/reports/017/)**: *placebo comparison*. Report 015's twenty skills on Sonnet 5.5, each against no skill and against a same-length placebo text, judged by Haiku 5.5. Of the 16 skills it counts, the placebo readings are 11 above the placebo · 3 below the placebo · 0 no difference · 0 inconclusive · 2 not enough draws · 0 not measured. A skill is above the placebo when, read one task at a time, it scored above the placebo on at least one task and below it on none; only that beats the fake. Where the fake scored below no skill, beating it does not mean beating no skill. The four routers have no verdict, as in Report 015.
 - **[Report #018](https://driftproofhq.com/reports/018/)**: *placebo comparison*. Report 015's twenty skills on Haiku 5.5, each against no skill and against a same-length placebo text, judged by Haiku 5.5, the same model. Of the 16 skills it counts, the placebo readings are 12 above the placebo · 2 below the placebo · 0 no difference · 0 inconclusive · 2 not enough draws · 0 not measured. A skill is above the placebo when, read one task at a time, it scored above the placebo on at least one task and below it on none; only that beats the fake. Where the fake scored below no skill, beating it does not mean beating no skill. The four routers have no verdict, as in Report 015.
 - **[Report #019](https://driftproofhq.com/reports/019/)**: *placebo comparison*. The same twenty skills on Fable 5.2, each against no skill and against a same-length placebo text, judged by Haiku 5.5. Fourteen are graded on the reply; the six that hand work to other skills or tools ran with tools on and were graded on what Claude Code ended up doing. Of the 20 skills it counts, the placebo readings are 10 above the placebo · 1 below the placebo · 3 no difference · 0 inconclusive · 6 not enough draws · 0 not measured. A skill is above the placebo when, read one task at a time, it scored above the placebo on at least one task and below it on none; only that beats the fake.
+- **[Report #021](https://driftproofhq.com/reports/021/)**: *rules-file quality*. With the file, Sonnet's tests caught every planted bug in 2.5% of attempts against 65.8% with no file (share of attempts that caught every bug), and caught 9.5 points fewer of the planted bugs, 85.3% against 94.8% (share of planted bugs caught).
 <!--/driftproof:campaign-readme-->
 
 ✍️ The launch essay, **[Three model releases later: what actually happens to agent
-skills](https://driftproofhq.com/writing/three-releases/)**, reads all eighteen reports
+skills](https://driftproofhq.com/writing/three-releases/)**, reads all nineteen reports
 together: what moves underneath a skill, what the skill costs to run, and what a
 corrected instrument did to three published results. Revised 2026-10-07; every
 figure in it is gate-checked against the report page it cites.

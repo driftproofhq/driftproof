@@ -11,13 +11,10 @@
 //   - the Node.js major is package.json `engines.node`;
 //   - every in-page link is the GitHub anchor of a heading the README carries;
 //   - the report count word is docs/data/stats.json `reports_published_word`;
-//   - the latest finding is the first sentence of the newest report's "What we found." point in
+//   - the latest finding is the complete newest report's "What we found." point in
 //     docs/data/report-summaries.json (spec 125), resolved by scripts/site-chrome.js
 //     `summaryPoints`, the same resolver the report page's own summary uses, and dated by
-//     stats.json `latest_report_date`. A new report's summary row moves the line on the next run.
-//     The opening is a first-read surface (issue 652): a term the summary uses undefined, such as
-//     "by the case rule", is said in the data file's plain words (`finding_plain`), which carry no
-//     count, so no figure moves; the report page keeps the summary's own words.
+//     reports.json's date, quoted verbatim with its case and figures (issue 842).
 //   - the free measurement line (issue 797) is the data file's choice of the /measure/ page's own
 //     sentences, each found on that page, linked to it;
 //   - the paper line below the first screen (issue 797) is docs/data/paper.json's facts, in its
@@ -90,26 +87,19 @@ export function wrap(text) {
   return lines.join('\n');
 }
 
-// The newest report's finding: the first sentence of its "What we found." point. Its first letter
-// is lowered after the colon unless the word is a name, which is a word the same summary
-// capitalises after a lower-case letter or a comma.
+// Issue 842: quote the complete newest finding verbatim, including its case and figures.
 export function latestFinding({ root = DEFAULT_ROOT } = {}) {
   const require = createRequire(path.join(root, 'scripts', 'build-readme-opening.mjs'));
   const chrome = require(path.join(root, 'scripts', 'site-chrome.js'));
-  const stats = json(root, 'docs/data/stats.json');
-  const plain = json(root, 'docs/data/readme-opening.json').finding_plain || {};
-  for (const [term, words] of Object.entries(plain)) if (/\d/.test(words)) throw new Error(`docs/data/readme-opening.json finding_plain gives "${term}" words that carry a figure: ${JSON.stringify(words)}`);
-  const n = String(stats.latest_report_number.value);
-  const date = chrome.FORMATS['d Mon yyyy'](stats.latest_report_date.value);
+  const rows = json(root, 'docs/data/reports.json').reports;
+  const latest = rows.slice().sort((a,b) => Number(b.number.value) - Number(a.number.value))[0];
+  const n = String(latest.number.value);
+  const date = chrome.FORMATS['d Mon yyyy'](latest.date.value);
   const points = chrome.summaryPoints(n);
-  if (!points) throw new Error(`docs/data/report-summaries.json has no row for report ${n}, the newest`);
-  const found = points.find((p) => p.lead === 'What we found.');
-  if (!found) throw new Error(`report ${n}'s summary has no "What we found." point`);
-  let first = found.text.split(/(?<=[.!?])\s+(?=[A-Z])/)[0];
-  for (const [term, words] of Object.entries(plain)) first = first.split(term).join(words);
-  const w = first.split(/\s+/)[0];
-  const proper = new RegExp(`[a-z,;:)] ${escRe(w)}\\b`).test(points.map((p) => p.text).join(' '));
-  return { n, date, sentence: proper ? first : first.charAt(0).toLowerCase() + first.slice(1) };
+  if (!points) throw new Error('docs/data/report-summaries.json has no row for newest report ' + n);
+  const found = points.find(p => p.lead === 'What we found.');
+  if (!found) throw new Error('report ' + n + ' has no What we found. point');
+  return { n, date, sentence: found.text };
 }
 
 // A file under docs/ as the site serves it; the view image and its receipts link.

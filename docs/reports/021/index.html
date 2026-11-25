@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report 021: Claude Haiku 5.5, Claude Sonnet 5.5 | Driftproof</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/report-016.css">
+<style>main.report021{max-width:960px;margin:auto;padding:32px 24px 80px}main.report021 p,main.report021 li{max-width:76ch}.report021 h2{margin-top:2.5rem}.report021 table{border-collapse:collapse;width:100%;font-size:.9rem}.report021 th,.report021 td{padding:.5rem;border-bottom:1px solid var(--line);text-align:right}.report021 th:first-child,.report021 td:first-child{text-align:left}.report021 caption{caption-side:bottom;text-align:left;margin-top:1rem}.report021 .wrap{overflow-x:auto}.report021 .box{border:1px solid var(--line);padding:1.5rem;margin:2rem 0}.report021 pre{overflow-x:auto}.report021 blockquote{border-left:3px solid currentColor;padding-left:1rem}</style>
+<!-- driftproof:card-tags -->
+<link rel="stylesheet" href="/tokens.css">
+<link rel="canonical" href="https://driftproofhq.com/reports/021/">
+<link rel="alternate" type="application/atom+xml" title="Driftproof reports" href="/feed.xml">
+<link rel="alternate" type="text/markdown" href="/reports/021/index.md">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-italic.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-medium.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/alegreya-sans-regular.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/courier-prime-regular.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/newsreader-variable.woff2" crossorigin="anonymous">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png" sizes="180x180">
+<link rel="icon" href="/icon-512.png" sizes="512x512" type="image/png">
+<meta name="description" content="We gave Claude a Jest rules file from the awesome-cursorrules list and asked it to write tests for 12 small projects with bugs planted in them.">
+<meta property="og:site_name" content="Driftproof">
+<meta property="og:title" content="Report 021: Claude Haiku 5.5, Claude Sonnet 5.5 | Driftproof">
+<meta property="og:description" content="We gave Claude a Jest rules file from the awesome-cursorrules list and asked it to write tests for 12 small projects with bugs planted in them.">
+<meta property="og:image" content="https://driftproofhq.com/cards/report-021.bb857a5b.png">
+<meta property="og:url" content="https://driftproofhq.com/reports/021/">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Report 021: One line in a Jest rules file made Claude's tests miss bugs",
+  "name": "Report 021: One line in a Jest rules file made Claude's tests miss bugs",
+  "description": "We gave Claude a Jest rules file from the awesome-cursorrules list and asked it to write tests for 12 small projects with bugs planted in them.",
+  "url": "https://driftproofhq.com/reports/021/",
+  "image": "https://driftproofhq.com/cards/report-021.bb857a5b.png",
+  "datePublished": "2026-11-24",
+  "dateModified": "2026-11-25",
+  "author": {
+    "@id": "https://driftproofhq.com/#organization"
+  },
+  "publisher": {
+    "@id": "https://driftproofhq.com/#organization"
+  },
+  "license": "https://www.apache.org/licenses/LICENSE-2.0",
+  "hasPart": []
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Driftproof",
+      "item": "https://driftproofhq.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Reports",
+      "item": "https://driftproofhq.com/reports/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Report 021",
+      "item": "https://driftproofhq.com/reports/021/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://driftproofhq.com/#organization",
+  "name": "Driftproof",
+  "alternateName": "driftproofhq",
+  "url": "https://driftproofhq.com/",
+  "logo": "https://driftproofhq.com/icon-512.png",
+  "description": "Driftproof (driftproofhq): open-source agent skill evaluation and regression testing across model releases",
+  "sameAs": [
+    "https://github.com/driftproofhq",
+    "https://dev.to/driftproofhq",
+    "https://www.npmjs.com/package/driftproof",
+    "https://skillsllm.com/skill/driftproof"
+  ],
+  "founder": {
+    "@id": "https://driftproofhq.com/maintainer/#maverick"
+  }
+}
+</script>
+<!-- /driftproof:card-tags -->
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "d78764dd442f49cb9bb203bd6302e9b4"}'></script><!-- End Cloudflare Web Analytics -->
+</head>
+<body>
+<!--driftproof:nav--><header class="site">
+<a class="brand" href="/"><img class="brand-mark" src="/favicon.svg" alt="" width="28" height="28"><span>Driftproof</span></a>
+<details class="nav-menu"><summary>Menu</summary></details>
+<nav class="site-nav" aria-label="Site">
+<a href="/reports/">Reports</a>
+<a href="/skills/">Skills</a>
+<a href="/r/">Receipts</a>
+<a href="/badges/">Badges</a>
+<a href="/how-it-works/">How it works</a>
+<details class="docs-menu"><summary>For builders</summary><div class="docs-menu-list">
+<a href="/#quickstart">Install</a>
+<a href="/#how-it-works">How a skill is tested</a>
+<a href="/benchmark-gap/">Gap calculator</a>
+<a href="/leaderboard-noise/">Leaderboard noise</a>
+<a href="/paper/">Paper</a>
+<a href="/methodology/">Methodology</a>
+<a href="/neutrality/">Neutrality</a>
+<a href="/interop/">Interop</a>
+<a href="/authoring/">Authoring</a>
+<a href="/judge-policy/">Judge policy</a>
+<a href="/findings/">Findings</a>
+<a href="/how-this-is-built/">How this is built</a>
+<a href="/glossary/">Glossary</a>
+<a href="/report-types/">Report types</a>
+</div></details>
+<a href="https://github.com/driftproofhq/driftproof">GitHub</a>
+</nav>
+</header><!--/driftproof:nav-->
+<!--driftproof:layout--><div class="page-grid is-story is-reading"><!--/driftproof:layout-->
+<main class="report story report021">
+<h1>One line in a Jest rules file made Claude's tests miss bugs</h1><!--driftproof:tldr--><section class="plain-summary" aria-labelledby="what-report-021-found"><h2 class="eyebrow" id="what-report-021-found">What did Report 021 find?</h2><ul>
+<li><b>What we tested.</b> We gave Claude a Jest rules file from the awesome-cursorrules list and asked it to write tests for 12 small projects with bugs planted in them.</li>
+<li><b>What we found.</b> With the file, Sonnet's tests caught every planted bug in 2.5% of attempts against 65.8% with no file (share of attempts that caught every bug), and caught 9.5 points fewer of the planted bugs, 85.3% against 94.8% (share of planted bugs caught).</li>
+<li><b>What the comparison means.</b> Each rules file was given to the model as always-on text. The editors decide for themselves when to attach a rule, and they add their own instructions; we reproduce neither.</li>
+<li><b>Re-running models.</b> Re-running the models needs the runner, which arrives with a later release.</li>
+</ul></section>
+<aside class="card receipt is-tldr" aria-label="Report summary">
+<p class="receipt-heading">Report 021: Rules-file quality, claude-haiku-5-5, claude-sonnet-5-5</p>
+<p class="receipt-row"><span class="receipt-key">Type</span> <span class="tldr-type">Rules-file quality report</span></p>
+<p class="receipt-row"><span class="receipt-key">What moved</span> <span class="tldr-moved">One line in a Jest rules file made Claude's tests miss bugs</span></p>
+<p class="receipt-row"><span class="receipt-key">Models</span> <span class="tldr-models"><code>claude-haiku-5-5</code> <code>claude-sonnet-5-5</code></span></p>
+<p class="receipt-row"><span class="receipt-key">Headline</span> <span class="tldr-counts">We gave Claude a Jest rules file from the awesome-cursorrules list and asked it to write tests for 12 small projects with bugs planted in them.</span></p>
+<p class="receipt-row"><span class="receipt-key">Verdict</span> <span class="tldr-verdict">With the file, Sonnet's tests caught every planted bug in 2.5% of attempts against 65.8% with no file (share of attempts that caught every bug), and caught 9.5 points fewer of the planted bugs, 85.3% against 94.8% (share of planted bugs caught).</span></p>
+<p class="receipt-row"><span class="receipt-key">Receipts</span> <span class="tldr-receipts"><a href="https://doi.org/10.5281/zenodo.24519141">12 receipts on Zenodo</a></span></p>
+<details class="tldr-cite"><summary>Cite this</summary><pre><code>@techreport{driftproof-021,
+  title  = {One line in a Jest rules file made Claude's tests miss bugs},
+  author = {Driftproof},
+  year   = {2026},
+  type   = {Rules-file quality report},
+  note   = {claude-haiku-5-5, claude-sonnet-5-5},
+  url    = {https://driftproofhq.com/reports/021/}
+}</code></pre></details>
+</aside><!--/driftproof:tldr-->
+
+<p class="report-type">Rules-file quality report</p>
+
+<div class="headline"><p class="big">We gave Claude a Jest rules file from the awesome-cursorrules list and asked it to write tests for 12 small projects with bugs planted in them. With the file, Sonnet's tests caught every planted bug in <strong>2.5%</strong> of attempts against <strong>65.8%</strong> with no file (share of attempts that caught every bug), and caught 9.5 points fewer of the planted bugs, <strong>85.3%</strong> against <strong>94.8%</strong> (share of planted bugs caught). One line in the file asks for 3 to 5 tests per file. When we removed just that line and ran again, the drop went away for Sonnet on both measures, and for Haiku on the share of attempts that caught every bug.</p></div>
+
+<div class="wrap"><!--driftproof:tw--><div class="table-wrap"><table><caption>Each task plants 20 bugs, so 120 attempts face 2,400 planted bugs. A bug counts as caught when the model's tests pass on the correct code and fail on the bugged copy. Haiku figures include 5 attempts re-run after the test setup lost them (see Limits). <a href="https://github.com/driftproofhq/driftproof/blob/main/scripts/analyze-report-021.js#L71">Tests written</a>: <code>test()</code> and <code>it()</code> calls (with their <code>.each</code>, <code>.only</code> and <code>.skip</code> forms) in the test files the model added, counted in its finished project; a call inside a loop or a <code>test.each</code> table counts once. Every starter project already had 19 tests, which no attempt changed and which are not counted.</caption>
+<thead><tr><th scope="col">Jest tasks, 120 attempts per cell</th><th scope="col">Sonnet, no file</th><th scope="col">Sonnet, with file</th><th scope="col">Haiku, no file</th><th scope="col">Haiku, with file</th></tr></thead>
+<tbody>
+<tr><td>Share of attempts that caught every bug</td><td>65.8% (79)</td><td>2.5% (3)</td><td>33.3% (40)</td><td>5.0% (6)</td></tr>
+<tr><td>Share of planted bugs caught</td><td>94.8%</td><td>85.3%</td><td>92.7%</td><td>83.9%</td></tr>
+<tr><td>Tests written per attempt (median)</td><td>31</td><td>10</td><td>35</td><td>7</td></tr>
+</tbody>
+</table></div><!--/driftproof:tw--></div>
+
+<p>The two measures tell one story at different scales. Most single bugs are still caught with the file (the share of planted bugs caught falls by 9.5 points for Sonnet and 8.8 for Haiku). But a test file with fewer tests almost always misses at least one, so the share of attempts that caught every bug collapses.</p>
+
+<div class="box">
+<!--driftproof:anchor--><span id="limits" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Limits</h2>
+<ul>
+<li><strong>Single-turn tasks.</strong> One prompt per attempt, in a small starter project. There was no back-and-forth with a person.</li>
+<li><strong>Not run inside Cursor, Copilot or Windsurf.</strong> Each rules file was given to the model as always-on text. The editors decide for themselves when to attach a rule, and they add their own instructions; we reproduce neither.</li>
+<li><strong>Two Claude models only:</strong> Claude Haiku 5.5 and Claude Sonnet 5.5, through Claude Code. Other models may react differently.</li>
+<li><strong>One judge:</strong> Claude Opus 5.5, one score per attempt, for qualities tests cannot check. No number on this page rests on the judge.</li>
+<li><strong>12 tasks per topic</strong>, 10 attempts per task and arm.</li>
+<li><strong>Who wrote and checked the tasks.</strong> An OpenAI Codex agent (gpt-6-astra) wrote the tasks, hidden tests, reference solutions and planted bugs from the four topics alone, without seeing any rules file. Separate Claude review agents checked them blind. A fairness review then went through every failing check against real attempts, and fixed or removed unfair ones. Machine checks confirmed that every reference solution passes its hidden tests and that every planted bug can be caught.</li>
+<li><strong>Lost and re-run attempts.</strong> The test setup lost 31 of 4,560 attempts (crashes, out-of-memory kills, one timeout). In the Jest comparison, all 11 lost attempts were re-run once, after their original runs, and all completed. In the other three topics, the 20 lost attempts were not re-run, and those shares are over the attempts that completed (at most 3 lost per arm). Counting every lost attempt as a failure changes no conclusion.</li>
+<li><strong>Two pauses.</strong> The full run paused twice on a usage limit (20 Nov for about 25 minutes, and 21 to 23 Nov). Each run resumed from its saved progress.</li>
+<li><strong>The re-run comparison mixes date and run order.</strong> The original runs did each task's 10 attempts per <!--driftproof:term--><a class="term" href="/glossary/#term-arm" data-entry="term-arm" data-name="Arm" data-plain="One side of the comparison: the run with the skill, or the run without it. Some reports add a third arm, the fake.">arm</a><!--/driftproof:term--> as one block. The removal run interleaved the arms on a later day. So a gap between them could come from either.</li>
+</ul>
+</div>
+
+<!--driftproof:anchor--><span id="what-removing-the-line-showed" class="toc-anchor"></span><!--/driftproof:anchor--><h2>What removing the line showed</h2>
+<p>We ran the Jest tasks again on one day with three versions side by side: the file without that one line, the full file, and no file. Everything else stayed the same: the tasks, the planted bugs, the test setup, the models and the judge.</p>
+
+<div class="wrap"><!--driftproof:tw--><div class="table-wrap"><table><caption>Tests written are counted as in the first table: tests the model added, not the starter's 19.</caption>
+<thead><tr><th scope="col">Removal run, 120 attempts per cell</th><th scope="col">Without the line</th><th scope="col">Full file</th><th scope="col">No file</th></tr></thead>
+<tbody>
+<tr><td colspan="4"><strong>Sonnet</strong></td></tr>
+<tr><td>Share of attempts that caught every bug</td><td>69.2% (83)</td><td>8.3% (10)</td><td>64.2% (77)</td></tr>
+<tr><td>Share of planted bugs caught</td><td>95.1%</td><td>86.3%</td><td>97.1%</td></tr>
+<tr><td>Tests written per attempt (median)</td><td>41</td><td>10</td><td>30</td></tr>
+<tr><td colspan="4"><strong>Haiku</strong></td></tr>
+<tr><td>Share of attempts that caught every bug</td><td>43.3% (52)</td><td>8.3% (10)</td><td>34.2% (41)</td></tr>
+<tr><td>Share of planted bugs caught</td><td>92.1%</td><td>86.7%</td><td>93.6%</td></tr>
+<tr><td>Tests written per attempt (median)</td><td>46</td><td>10</td><td>36</td></tr>
+</tbody>
+</table></div><!--/driftproof:tw--></div>
+
+<p>How far it goes, measure by measure. Each change below is in percentage points, with its 95% range (resampling the 12 tasks):</p>
+<ul>
+<li><strong>Sonnet, both measures: clear.</strong> Removing the line raised the share of attempts that caught every bug by 60.8 points (46.7 to 75.0), and the share of planted bugs caught by 8.8 points (5.0 to 12.8).</li>
+<li><strong>Haiku, share of attempts that caught every bug: clear.</strong> It rose by 35.0 points (19.2 to 51.7).</li>
+<li><strong>Haiku, share of planted bugs caught: not shown.</strong> It rose by 5.4 points, but the range runs from −1.3 to +10.0 and includes zero.</li>
+</ul>
+<p>Without the line, we could not tell the file apart from no file. Against no file on the same day, the differences were +5.0 points (Sonnet) and +9.2 points (Haiku) on the share of attempts that caught every bug, and −2.0 and −1.5 points on the share of planted bugs caught. Every one of those ranges includes zero. So the rest of the file neither helped nor hurt in a way we could detect.</p>
+<p>On the second day, no file gave nearly the same results: on the share of attempts that caught every bug, 64.2% against 65.8% for Sonnet and 34.2% against 33.3% for Haiku. The full file stayed far below no file but scored a little higher than in the original run: Sonnet's share of attempts that caught every bug was 8.3% against 2.5% (+5.8 points, 1.7 to 10.0), and Haiku's share of planted bugs caught was 86.7% against 83.9% (+2.8 points, 0.9 to 5.0).</p>
+
+<!--driftproof:anchor--><span id="the-file-and-what-the-line-does" class="toc-anchor"></span><!--/driftproof:anchor--><h2>The file, and what the line does</h2>
+<p>The file is <code>rules/jest-unit-testing-cursorrules-prompt-file.mdc</code> in the <a href="https://github.com/PatrickJS/awesome-cursorrules">awesome-cursorrules</a> list on GitHub. It last changed on 13 May 2026 (commit <code>4467ad4</code>). We used its text without the 5-line header (the <code>description</code>, <code>globs</code> and <code>alwaysApply</code> lines and their fences), which Cursor reads as settings rather than instructions. The line we removed is item 8:</p>
+<blockquote><code>**8** **Test Quantity**: Limit to 3-5 focused tests per file for maintainability</code></blockquote>
+<p>The line does what it says. It limits the number of tests to keep a test file maintainable, which is a fair goal. Each task asked for one test file, so the line applied directly. With the full file, the models wrote a median of 7 (Haiku) and 10 (Sonnet) tests in the main run, and 10 each in the removal run. With no file, they wrote 30 to 36. What nobody could see without measuring is the cost. Fewer tests left more planted bugs uncaught, and far fewer attempts caught every one.</p>
+<p class="muted">In Cursor this file is set to attach automatically when a matching file is in context. We gave it as always-on text in every attempt, so we measured the text, not Cursor's choice of when to use it.</p>
+
+<!--driftproof:anchor--><span id="the-other-three-files-we-could-not-show-any-help" class="toc-anchor"></span><!--/driftproof:anchor--><h2>The other three files: we could not show any help</h2>
+<p>We measured three more files the same way, each on its own topic. The main measure here is the share of attempts where every hidden test passed. None of the files showed a gain over no file on that measure.</p>
+
+<div class="wrap"><!--driftproof:tw--><div class="table-wrap"><table><caption>Share of attempts where every hidden test passed; 120 attempts per cell, less up to 3 lost. "Tasks scoring the same in every arm" counts tasks with an identical share under no file, the file, a same-length irrelevant text and same-length generic advice. Every one of those sat at 0% or at 100%.</caption>
+<thead><tr><th scope="col">File, topic</th><th scope="col">Model</th><th scope="col">No file</th><th scope="col">With file</th><th scope="col">Change, points (95% range)</th><th scope="col">Tasks scoring the same in every arm</th></tr></thead>
+<tbody>
+<tr><td>GitHub Copilot security instructions, security</td><td>Haiku</td><td>55.8%</td><td>63.0%</td><td>+7.1 (−4.5 to +23.0)</td><td>6 of 12</td></tr>
+<tr><td>GitHub Copilot security instructions, security</td><td>Sonnet</td><td>60.0%</td><td>60.8%</td><td>+0.8 (0.0 to +2.5)</td><td>11 of 12</td></tr>
+<tr><td>Windsurf "Honey" rules, general code</td><td>Haiku</td><td>64.4%</td><td>67.2%</td><td>+2.9 (−2.5 to +8.7)</td><td>4 of 12</td></tr>
+<tr><td>Windsurf "Honey" rules, general code</td><td>Sonnet</td><td>72.0%</td><td>71.4%</td><td>−0.8 (−5.0 to +3.3)</td><td>7 of 12</td></tr>
+<tr><td>Cursor Python FastAPI rules, FastAPI</td><td>Haiku</td><td>88.1%</td><td>85.0%</td><td>−3.3 (−8.3 to 0.0)</td><td>5 of 12</td></tr>
+<tr><td>Cursor Python FastAPI rules, FastAPI</td><td>Sonnet</td><td>93.3%</td><td>95.8%</td><td>+2.1 (−5.4 to +10.8)</td><td>6 of 12</td></tr>
+</tbody>
+</table></div><!--/driftproof:tw--></div>
+
+<p><strong>Ceiling caveat:</strong> many tasks gave the same result whatever the model was given, either always passing or never passing, so on those tasks no file could have shown a gain. For Sonnet on security, that was 11 of 12 tasks. "We could not show any help" is what these numbers support. They do not show that the files cannot help.</p>
+<p>On the second measure, the share of hidden tests passed, one comparison cleared our bar. For Haiku, the Windsurf file scored +1.3 points over no file (+0.03 to +2.8). Generic advice of the same length, written from the topic alone, scored +1.1 (+0.04 to +2.4) on the same measure. So we cannot tie that gain to this file. </p>
+
+<!--driftproof:anchor--><span id="how-we-measured" class="toc-anchor"></span><!--/driftproof:anchor--><h2>How we measured</h2>
+<ul>
+<li><strong>Tasks.</strong> 12 per topic, chosen from a pool of 68 by a rule fixed before any run: keep the tasks where no file scored closest to half. Each task is a small starter project of 4 to 10 files with a short, realistic prompt. Jest tasks ask for one test file covering a module; the other topics ask for code that hidden tests check for practices a careful engineer would follow unprompted.</li>
+<li><strong>Arms.</strong> No file; the rules file; a same-length irrelevant text (a placebo); and same-length generic advice on the topic, written without seeing the file.</li>
+<li><strong>Attempts.</strong> 10 per task and arm, per model, fresh each time.</li>
+<li><strong>Measures.</strong> Main: the share of attempts where every hidden test passed (for Jest: where every planted bug was caught). Second: the share of hidden tests passed (for Jest: the share of planted bugs caught). Both were fixed before the run.</li>
+<li><strong>Ranges.</strong> 95% ranges from 4,000 resamples of the 12 tasks, pairing each task's arms (seed 501). They are pointwise: with this many comparisons, an occasional range will clear zero by chance.</li>
+<li><strong>Cost.</strong> At list prices the calls would cost about USD 1,721 (USD 1,485 for the study and USD 236 for the removal run).</li>
+</ul>
+
+<!--driftproof:anchor--><span id="what-you-cannot-reproduce-yet" class="toc-anchor"></span><!--/driftproof:anchor--><h2>What you cannot reproduce yet</h2>
+<ul>
+<li>Re-running the models needs the runner, which arrives with a later release.</li>
+<li>Model output varies between runs. A re-run should land within the ranges, not repeat each attempt.</li>
+<li>The models are fixed versions: <data data-row="model" value="claude-haiku-5-5" data-src="receipts/report-021/manifest.json"><code>claude-haiku-5-5</code></data> and <data data-row="model" value="claude-sonnet-5-5" data-src="receipts/report-021/manifest.json"><code>claude-sonnet-5-5</code></data>, with <code>claude-opus-5-5</code> as judge. They can be retired, and service behaviour can change.</li>
+<li>The test environment is a 444 MB pinned image (digest <code>5509c354…</code>, Claude Code 2.1.287). A rebuild may not match byte for byte.</li>
+<li>It needs Linux with sandboxing and a dedicated user.</li>
+<li>The <!--driftproof:term--><a class="term" href="/glossary/#term-judge" data-entry="term-judge" data-name="Judge" data-plain="The judge, also called the grader, is an AI model, sometimes the same one that answered, that scores each answer against a guide written for the task. It is an AI, not a person, and it can be wrong.">judge</a><!--/driftproof:term--> also varies, though no number on this page rests on it.</li>
+<li>Re-running the calibration that chose the 12 tasks is a separate, paid exercise. The selection itself can be checked from the data.</li>
+</ul>
+
+<!--driftproof:anchor--><span id="check-it-yourself" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Check it yourself</h2>
+<p>The twelve <!--driftproof:term--><a class="term" href="/glossary/#term-receipt" data-entry="term-receipt" data-name="Receipt" data-plain="The dated file that records one test: the skill, the model, every score and the result. Anyone can check that it has not changed since it was sealed.">receipts</a><!--/driftproof:term--> are on Zenodo: <a data-external-receipts="receipts/report-021/manifest.json" data-receipts-host="Zenodo" href="https://doi.org/10.5281/zenodo.24519141">10.5281/zenodo.24519141</a>.</p>
+<p>The <a href="https://github.com/driftproofhq/driftproof/tree/main/receipts/report-021">report folder</a> contains the manifest with hashes, the three analysis outputs, the frozen task suite and the five rules texts. The Jest text is <code>c8c5f92e…</code>; without the line it is <code>c3bffb31…</code>.</p>
+<p>From a checkout of the public repository, download the twelve files and run the offline script. It refuses any file whose hash does not match. It also checks the JSON hash after decompression and the receipt hash, and refuses missing or extra files.</p>
+<pre><code>mkdir -p report-021-receipts
+curl --fail --location 'https://zenodo.org/records/24519141/files/main-fastapi-haiku.json.gz?download=1' --output report-021-receipts/main-fastapi-haiku.json.gz
+curl --fail --location 'https://zenodo.org/records/24519141/files/main-fastapi-sonnet.json.gz?download=1' --output report-021-receipts/main-fastapi-sonnet.json.gz
+curl --fail --location 'https://zenodo.org/records/24519141/files/main-jest-haiku.json.gz?download=1' --output report-021-receipts/main-jest-haiku.json.gz
+curl --fail --location 'https://zenodo.org/records/24519141/files/main-jest-sonnet.json.gz?download=1' --output report-021-receipts/main-jest-sonnet.json.gz
+curl --fail --location 'https://zenodo.org/records/24519141/files/main-security-haiku.json.gz?download=1' --output report-021-receipts/main-security-haiku.json.gz
+curl --fail --location 'https://zenodo.org/records/24519141/files/main-security-sonnet.json.gz?download=1' --output report-021-receipts/main-security-sonnet.json.gz
+curl --fail --location 'https://zenodo.org/records/24519141/files/main-utilities-haiku.json.gz?download=1' --output report-021-receipts/main-utilities-haiku.json.gz
+curl --fail --location 'https://zenodo.org/records/24519141/files/main-utilities-sonnet.json.gz?download=1' --output report-021-receipts/main-utilities-sonnet.json.gz
+curl --fail --location 'https://zenodo.org/records/24519141/files/removal-jest-haiku.json.gz?download=1' --output report-021-receipts/removal-jest-haiku.json.gz
+curl --fail --location 'https://zenodo.org/records/24519141/files/removal-jest-sonnet.json.gz?download=1' --output report-021-receipts/removal-jest-sonnet.json.gz
+curl --fail --location 'https://zenodo.org/records/24519141/files/rerun-jest-haiku.json.gz?download=1' --output report-021-receipts/rerun-jest-haiku.json.gz
+curl --fail --location 'https://zenodo.org/records/24519141/files/rerun-jest-sonnet.json.gz?download=1' --output report-021-receipts/rerun-jest-sonnet.json.gz
+npm i --no-save @babel/parser@7.29.14
+node scripts/analyze-report-021.js --receipts report-021-receipts --check</code></pre>
+
+<!--driftproof:anchor--><span id="run-record" class="toc-anchor"></span><!--/driftproof:anchor--><h2>Run record</h2>
+<ul>
+<li>Main run: 20 to 23 Nov 2026 (UTC). 8 runs (4 files × 2 models), all complete.</li>
+<li>Removal run: <data data-row="date" value="2026-11-24" data-src="docs/reports/021/index.html">24 Nov 2026</data> (UTC), 2 runs, all complete. Re-runs of lost attempts: 24 Nov, 22:07 to 22:29 UTC.</li>
+<li>Rules texts as fetched for the study. Jest and FastAPI: awesome-cursorrules, last changed 13 May 2026. Security: <code>instructions/security-and-owasp.instructions.md</code> in github/awesome-copilot, commit <code>c835373</code> (2 Sep 2026). Honey: <code>.windsurf/rules/honey.md</code> in Green-PT/honey-for-devs, commit <code>6eb60f9</code> (18 Oct 2026). Front-matter headers were removed in each case.</li>
+</ul>
+
+<p class="muted">Report #021. Driftproof measures whether a rules file or <!--driftproof:term--><a class="term" href="/glossary/#term-skill" data-entry="term-skill" data-name="Skill" data-plain="A file of instructions that people add to an AI assistant, such as Claude, to make it better at a job. Driftproof tests whether a skill really helps.">skill</a><!--/driftproof:term--> changes what a model does.</p>
+</main>
+<!--driftproof:layout-end--></div><!--/driftproof:layout-end-->
+<!--driftproof:measured--><section class="report-results" aria-label="Skills measured and results files">
+<p class="report-data">Every Driftproof result in one file: <a href="/data/driftproof-results.jsonl">JSONL</a> or <a href="/data/driftproof-results.csv">CSV</a>, and <a href="/data/">what a row is and is not</a>.</p>
+</section><!--/driftproof:measured-->
+<!--driftproof:ask--><p class="offer-ask">Want a skill measured, or think a result is wrong? It's free: <a href="/measure/">how to ask</a>.</p><!--/driftproof:ask-->
+<!--driftproof:cards--><div class="jargon-cards" data-island="jargon-cards"><p class="jargon-note">Words with a dotted line link to the glossary, where each is explained in plain words.</p></div><!--/driftproof:cards-->
+<!--driftproof:foot--><footer class="site">
+<p>Driftproof · <code>Apache-2.0</code> · <a href="https://github.com/driftproofhq/driftproof">github.com/driftproofhq/driftproof</a></p>
+<p class="foot-links"><a href="mailto:hello@driftproofhq.com">hello@driftproofhq.com</a> · <a href="/methodology/">Methodology</a> · <a href="/neutrality/">Neutrality</a> · <a href="/glossary/">Glossary</a> · <a href="/report-types/">Report types</a> · <a href="/r/">Receipts</a> · <a href="/skills/">Skills</a> · <a href="/badges/">Badges</a> · <a href="/findings/">Findings</a> · <a href="/reports/">Reports</a> · <a href="/what-is-driftproof/">What is Driftproof</a> · <a href="/maintainer/">Maintainer</a> · <a href="/agent-skill-evaluation/">Skill evaluation</a> · <a href="/agent-skill-regression-testing/">Regression testing</a> · <a href="/compare/">Compare the tools</a> · <a href="/feed.xml">RSS</a> · <a href="/llms.txt">llms.txt</a></p>
+<p class="foot-links"><a href="/badges/">Skill badges</a> · <a href="/can-you-tell/">Can you tell? Every skill</a> · <a href="/did-it-change/">Did the AI change?</a> · <a href="/inspect/">Inspect these instructions</a> · <a href="/noticed/">The AI noticed the sugar pill</a> · <a href="/spot-the-fake/">Which bar is the fake?</a> · <a href="/tasks/">Every task we gave a skill</a> · <a href="/try-it/">Try it yourself</a> · <a href="/which-section/">Which section did the work?</a> · <a href="/sugar-pill/">Skill or sugar pill?</a></p>
+</footer><!--/driftproof:foot-->
+<!--driftproof:scripts--><script src="/copy-button.js" defer></script>
+<script type="module" src="/islands/loader.js"></script><!--/driftproof:scripts-->
+</body>
+</html>
