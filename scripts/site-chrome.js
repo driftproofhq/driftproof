@@ -582,7 +582,7 @@ function factsRail(row) {
     ['Models', row.model_ids.map((m) => `<code>${esc(m.value)}</code>`).join('<br>')],
     ...(grader ? [['Grader', `<code>${esc(grader)}</code>`]] : []),
     ...(surfaces.length ? [['Ran with', surfaces.map((s) => `<code>${esc(s)}</code>`).join('<br>')]] : []),
-    ['Receipts', rpaths.length ? esc(String(rpaths.length)) : 'none linked'],
+    ['Receipts', row.external_receipts ? `<a href="${esc(row.external_receipts.url.value)}">${esc(row.external_receipts.count.value)} on ${esc(row.external_receipts.host.value)}</a>` : rpaths.length ? esc(String(rpaths.length)) : 'none linked'],
     ['Date', `<code>${esc(row.date.value)}</code>`],
   ];
   // THE CITATION IN THE RAIL (spec 170), on deep dark: the TL;DR card's own BibTeX, from the same
