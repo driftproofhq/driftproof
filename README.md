@@ -208,7 +208,7 @@ pull request comment, the job summary, `export --to summary-json` and each side 
 
 In a workflow, use the pinned release:
 ```yaml
-- uses: driftproofhq/driftproof@v0.30.0
+- uses: driftproofhq/driftproof@v0.31.0
   with: {skill-dir: CLAUDE.md, suite: driftproof/tasks.json, placebo: 'true'}
 ```
 See the [complete offline workflow](examples/workflows/driftproof-rules-file.yml).
@@ -807,7 +807,7 @@ A receipt is the unit of evidence — one JSON document conforming to
     "model_release_date": "2025-10-01",
     "provider": "anthropic",
     "surface": "claude-cli",
-    "runner_version": "0.30.0",
+    "runner_version": "0.31.0",
     "date_utc": "2026-07-27T…Z",
     "registry": "registered",
     "transcripts": "hashes-only",
@@ -899,7 +899,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: driftproofhq/driftproof@v0.30.0
+      - uses: driftproofhq/driftproof@v0.31.0
         with:
           api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           placebo: 'true'
@@ -1042,7 +1042,7 @@ permissions:
   contents: read
   issues: write
 # ...
-      - uses: driftproofhq/driftproof/stale@v0.30.0
+      - uses: driftproofhq/driftproof/stale@v0.31.0
         with:
           receipts: receipts/**/*.json
           skill: skills/my-skill

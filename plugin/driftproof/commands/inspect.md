@@ -12,14 +12,14 @@ Form in use: npx.
 
 Run the line exactly as it reads, with your own arguments. Do not drop its `cd` or its `--prefix`, and do not add anything before it. Starting npm in the plugin's own folder is what keeps a package or a program planted in the project from running, and these words are all that holds it. Two gaps remain in this form: a program in a parent folder's `node_modules/.bin` can run before the runner, and the line you run can be altered. The installed form is the safer alternative, because npm starts nothing and the first of those gaps closes. If a person has installed this version of the runner, each line can be written instead in the installed form:
 
-    driftproof door --pin 0.30.0 inspect <file-or-skill-dir>
+    driftproof door --pin 0.31.0 inspect <file-or-skill-dir>
 
 If the runner prints `unknown command: door`, it is older than this plugin. Tell the person to install the version the line names.
 Claude Code substitutes the plugin location. Run from the person's repository:
 
-    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.30.0 door --pin 0.30.0 --from "$OLDPWD" inspect <file-or-skill-dir>)
-    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.30.0 door --pin 0.30.0 --from "$OLDPWD" inspect <file-or-skill-dir> --json)
-    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.30.0 door --pin 0.30.0 --from "$OLDPWD" inspect <file-or-skill-dir> --trust-outside-repo)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.31.0 door --pin 0.31.0 --from "$OLDPWD" inspect <file-or-skill-dir>)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.31.0 door --pin 0.31.0 --from "$OLDPWD" inspect <file-or-skill-dir> --json)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.31.0 door --pin 0.31.0 --from "$OLDPWD" inspect <file-or-skill-dir> --trust-outside-repo)
 
 The door checks input-contract.json and the target's real path. Inside a
 repository the target must be inside it. Where there is no repository, ask

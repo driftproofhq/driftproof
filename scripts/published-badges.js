@@ -254,6 +254,10 @@ function build({root = ROOT,check = false,rows,subjects} = {}) {
     }
   }
   extras(path.join(docs,'badges'));
+  // Issue 840 (spec 840 A-840-2): the plugin's copy of the published readings is written and checked from
+  // the same published rows, in this same call, so every builder that moves the list moves the copy.
+  const readings = require('./build-plugin-readings').sync({root,check,rows:JSON.parse(want.get('data/published-receipts.json')).receipts,subjects});
+  if (check && readings.stale) stale.push(path.relative(root,readings.file).split(path.sep).join('/'));
   if (stale.length) throw new Error('PUBLISHED_BADGES_STALE: '+stale.join(', '));
   return want.size;
 }

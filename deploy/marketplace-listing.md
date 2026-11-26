@@ -36,7 +36,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: driftproofhq/driftproof@v0.30.0
+      - uses: driftproofhq/driftproof@v0.31.0
         with:
           api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           placebo: 'true'

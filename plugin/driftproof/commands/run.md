@@ -24,21 +24,21 @@ Form in use: npx.
 
 Run the line exactly as it reads, with your own arguments. Do not drop its `cd` or its `--prefix`, and do not add anything before it. Starting npm in the plugin's own folder is what keeps a package or a program planted in the project from running, and these words are all that holds it. Two gaps remain in this form: a program in a parent folder's `node_modules/.bin` can run before the runner, and the line you run can be altered. The installed form is the safer alternative, because npm starts nothing and the first of those gaps closes. If a person has installed this version of the runner, each line can be written instead in the installed form:
 
-    driftproof door --pin 0.30.0 run <skill-dir>
+    driftproof door --pin 0.31.0 run <skill-dir>
 
 If the runner prints `unknown command: door`, it is older than this plugin. Tell the person to install the version the line names.
 Claude Code puts the plugin's installation directory into the lines below when
 it loads this command, so the path is already absolute: run a line as it reads,
 with your own `<skill-dir>` and any values you chose.
 
-    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.30.0 door --pin 0.30.0 --from "$OLDPWD" run <skill-dir>)
-    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.30.0 door --pin 0.30.0 --from "$OLDPWD" run <skill-dir> --models a,b --max-calls <n> --max-usd <n>)
-    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.30.0 door --pin 0.30.0 --from "$OLDPWD" run <skill-dir> --samples <n> --concurrency <n> --max-cases <n>)
-    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.30.0 door --pin 0.30.0 --from "$OLDPWD" run <skill-dir> --quick)
-    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.30.0 door --pin 0.30.0 --from "$OLDPWD" run <skill-dir> --trust-outside-repo)
-    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.30.0 door --pin 0.30.0 --from "$OLDPWD" run <skill-dir> --placebo)
-    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.30.0 door --pin 0.30.0 --from "$OLDPWD" run <rules-file> --suite <tasks> [--placebo])
-    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.30.0 door --pin 0.30.0 --from "$OLDPWD" run <rules-file> --suite <tasks> --placebo --keep-transcripts)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.31.0 door --pin 0.31.0 --from "$OLDPWD" run <skill-dir>)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.31.0 door --pin 0.31.0 --from "$OLDPWD" run <skill-dir> --models a,b --max-calls <n> --max-usd <n>)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.31.0 door --pin 0.31.0 --from "$OLDPWD" run <skill-dir> --samples <n> --concurrency <n> --max-cases <n>)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.31.0 door --pin 0.31.0 --from "$OLDPWD" run <skill-dir> --quick)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.31.0 door --pin 0.31.0 --from "$OLDPWD" run <skill-dir> --trust-outside-repo)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.31.0 door --pin 0.31.0 --from "$OLDPWD" run <skill-dir> --placebo)
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.31.0 door --pin 0.31.0 --from "$OLDPWD" run <rules-file> --suite <tasks> [--placebo])
+    (cd "${CLAUDE_PLUGIN_ROOT}" && npx --prefix "${CLAUDE_PLUGIN_ROOT}" driftproof@0.31.0 door --pin 0.31.0 --from "$OLDPWD" run <rules-file> --suite <tasks> --placebo --keep-transcripts)
 
 With no `--models`, the run uses the cheapest registered model in the runner's
 own registry, resolved by reading it. The model id is deliberately not written

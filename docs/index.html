@@ -47,7 +47,7 @@
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Node.js 22+",
   "url": "https://driftproofhq.com/",
-  "softwareVersion": "0.30.0",
+  "softwareVersion": "0.31.0",
   "downloadUrl": "https://www.npmjs.com/package/driftproof",
   "author": {
     "@id": "https://driftproofhq.com/#organization"
@@ -388,10 +388,10 @@ export CLAUDE_PROVIDER=api
 read -rsp "Anthropic API key: " ANTHROPIC_API_KEY &amp;&amp; export ANTHROPIC_API_KEY
 npx driftproof run my-skill --models claude-haiku-4-5
 cat receipts/*.summary.md              # read the receipt + human summary</code></pre>
-<p>Wire it into a repository with the <a href="https://github.com/driftproofhq/driftproof#verification-in-ci-github-action--badge">GitHub Action</a> (<code>uses: driftproofhq/driftproof@v0.30.0</code>): it re-runs the suite on every push, uploads the receipts, and fails the job when a case separated downward. <code>driftproof badge</code> turns a receipt into a badge that carries the model and the date it was measured.</p>
+<p>Wire it into a repository with the <a href="https://github.com/driftproofhq/driftproof#verification-in-ci-github-action--badge">GitHub Action</a> (<code>uses: driftproofhq/driftproof@v0.31.0</code>): it re-runs the suite on every push, uploads the receipts, and fails the job when a case separated downward. <code>driftproof badge</code> turns a receipt into a badge that carries the model and the date it was measured.</p>
 <p>Copy the <a href="https://github.com/driftproofhq/driftproof/blob/main/examples/workflows/driftproof-pr.yml">pull request workflow</a> into <code>.github/workflows/</code> and add an <code>ANTHROPIC_API_KEY</code> repository secret. It checks changed skills and rules files with test cases, then updates a receipt table on each push. The budget is shared across files. Files without cases are named as not measured.</p>
 <p>The step that matters, with its settings:</p>
-<pre><code class="language-yaml">uses: driftproofhq/driftproof@v0.30.0
+<pre><code class="language-yaml">uses: driftproofhq/driftproof@v0.31.0
 with:
   api-key: ${{ secrets.ANTHROPIC_API_KEY }}
   placebo: 'true'

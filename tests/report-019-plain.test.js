@@ -335,7 +335,9 @@ const scripts = (h) => [...h.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/g)].
 const plantOn = (check, html, plants) => {
   check(html);
   for (const [why, edit] of plants) {
-    const planted = edit(html); assert.notEqual(planted, html, 'the plant applies: ' + why);
+    // A plant that changes nothing would read green for the wrong reason; surfaces are compared by
+    // value, so a spread copy with no edit is caught too (issue 853).
+    const planted = edit(html); assert.notEqual(JSON.stringify(planted), JSON.stringify(html), 'the plant applies: ' + why);
     assert.throws(() => check(planted), assert.AssertionError, 'reads red: ' + why);
   }
 };
@@ -492,7 +494,10 @@ test('AC-1, A-794-3: "no better than the fake" is on no surface outside the froz
   plantOn(checkPhrase, s, [
     ['the old group word on the page', (x) => ({ ...x, 'docs/reports/019/index.html': x['docs/reports/019/index.html'].replace('Did not beat the fake', 'No better than the fake') })],
     ['the old answer in the summary row', (x) => ({ ...x, 'docs/data/report-summaries.json#019': x['docs/data/report-summaries.json#019'].replace('did not beat it', 'did no better than the fake') })],
-    ['the old answer on the home page', (x) => ({ ...x, 'docs/index.html': x['docs/index.html'].replace('did not beat it', 'did No Better Than The Fake') })],
+    // Issue 853: the plant anchors on the home finding's own sentence, which every latest report
+    // fills, not on Report 019's words, so it still plants when a later report is the latest.
+    ['the old answer on the home page', (x) => ({ ...x, 'docs/index.html': replaceOnce('data-stat="latest_report_sentence">', 'data-stat="latest_report_sentence">Every skill did No Better Than The Fake. ')(x['docs/index.html']) })],
+    ['the old answer in a home caveat', (x) => ({ ...x, 'docs/index.html': replaceOnce('data-stat="latest_point_1_text">', 'data-stat="latest_point_1_text">Most skills did no better than the fake. ')(x['docs/index.html']) })],
   ]);
 });
 

@@ -290,8 +290,20 @@ function compareOutputs(data,folder) {
   checkAnalysis(data.replacement[model],replacement.models[model],'replacement primary and sensitivity');
  }
 }
-const htmlText = html => html.replace(/<!--[^]*?-->|<script\b[^]*?<\/script>|<style\b[^]*?<\/style>/gi,'').replace(/<[^>]+>/g,'')
- .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim();
+// Visible text of the generated page: one linear scan (comments, script and style bodies and tags
+// dropped), then entities decoded in a single pass, so no decoded character is decoded again.
+const ENTITIES={amp:'&',lt:'<',gt:'>',quot:'"','#39':"'",nbsp:' '};
+function htmlText(html){
+ let out='',i=0;const low=html.toLowerCase();
+ while(i<html.length){
+  if(html[i]!=='<'){out+=html[i++];continue;}
+  if(low.startsWith('<!--',i)){const e=low.indexOf('-->',i+4);i=e<0?html.length:e+3;continue;}
+  const raw=/^<(script|style)\b/.exec(low.slice(i,i+8));
+  if(raw){const e=low.indexOf('</'+raw[1],i);if(e<0){i=html.length;continue;}const g=low.indexOf('>',e);i=g<0?html.length:g+1;continue;}
+  const g=html.indexOf('>',i);if(g<0){out+=html.slice(i);break;}i=g+1;
+ }
+ return out.replace(/&(amp|lt|gt|quot|#39|nbsp);/g,(_,n)=>ENTITIES[n]).replace(/\s+/g,' ').trim();
+}
 function checkPageNumbers(html, expected) {
  let remainder=html;
  for(const e of expected){const re=new RegExp('<([a-z][a-z0-9]*)[^>]*data-report-number="'+e.id+'"[^>]*>([^]*?)<\\/\\1>','g'),matches=[...html.matchAll(re)];
@@ -603,5 +615,5 @@ async function main(args=process.argv.slice(2)) {
  console.log('report 021: PASS; 12 receipt hashes; 3 analysis outputs; all page numbers and ranges; verdict words');
  return data;
 }
-module.exports={verifyReceiptFiles,assertComparable,scoreExecution,summarizeRows,contrastRows,replaceDraws,countTests,checkPageNumbers,checkAnalysis,checkClaimWording,checkVerdicts,checkZenodo,setZenodoRecord,verifySupport,writeSums,archivedData,pageValues,renderBody,buildPage,checkPage,reduceReceipt,compute,compareOutputs,validateSelection,main};
+module.exports={htmlText,verifyReceiptFiles,assertComparable,scoreExecution,summarizeRows,contrastRows,replaceDraws,countTests,checkPageNumbers,checkAnalysis,checkClaimWording,checkVerdicts,checkZenodo,setZenodoRecord,verifySupport,writeSums,archivedData,pageValues,renderBody,buildPage,checkPage,reduceReceipt,compute,compareOutputs,validateSelection,main};
 if(require.main===module)main().catch(e=>{console.error(e.message);process.exitCode=1;});

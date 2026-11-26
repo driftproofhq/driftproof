@@ -19,32 +19,63 @@ test('home doors and qualified opening, with missing link plant',()=>{
 });
 test('the whole trailing finding sentence survives',async()=>{
   const D=await import('../scripts/site-data.mjs');
+  const chrome=require('../scripts/site-chrome.js');
   const n=JSON.parse(read('docs/data/stats.json')).latest_report_number.value;
   const html=read('docs/reports/'+n+'/index.html');
-  const points=D.latestCaveats(n,html).map(p=>p.text).join(' ');
-  // A-702-5 (issue 798): the following sentence is read from the latest report's own finding, not
-  // typed, and a headline that repeats the finding's first sentence still leaves every later one.
-  const found=(require('../scripts/site-chrome.js').summaryPoints(n)||[]).find(p=>p.lead==='What we found.');
-  const said=found?found.text.split(/(?<=[.?!])\s+/):[];
-  assert.ok(said.length>1,'the latest finding has a sentence after its first');
-  const trailing=said[said.length-1];
-  const keeps=t=>t.includes(trailing);
-  assert.ok(keeps(points));
-  assert.equal(keeps(points.split(trailing).join('')),false,'plant: the following caveat dropped');
   const big=/(<div class="headline">[\s\S]*?<p class="big"[^>]*>)[\s\S]*?(<\/p>)/;
   assert.ok(big.test(html),'the report has a headline');
-  const head=said[0].replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const rest=D.latestCaveats(n,html.replace(big,(_,a,b)=>a+head+b)).find(p=>p.lead==='What we found.');
-  assert.equal(rest&&rest.text,said.slice(1).join(' '),'the repeated headline sentence goes and every later one stays');
+  const esc=t=>t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // A-702-5 (issue 798): the following sentence is read from the latest report's own finding, not
+  // typed, and a headline that repeats the finding's first sentence still leaves every later one.
+  // Issue 853: the rule is proved on the latest report's own finding, whatever its length, and on
+  // a planted two-sentence finding, so a one-sentence latest finding (Report 021) still exercises it.
+  const real=(chrome.summaryPoints(n)||[]).find(p=>p.lead==='What we found.');
+  assert.ok(real&&real.text,'the latest report has a "What we found." point');
+  const survives=(found)=>{
+    const points=D.latestCaveats(n,html).map(p=>p.text).join(' ');
+    const said=found.text.split(/(?<=[.?!])\s+/);
+    const trailing=said[said.length-1];
+    const keeps=t=>t.includes(trailing);
+    assert.ok(keeps(points),'the finding\'s last sentence is on the card');
+    assert.equal(keeps(points.split(trailing).join('')),false,'plant: the following caveat dropped');
+    const rest=D.latestCaveats(n,html.replace(big,(_,a,b)=>a+esc(said[0])+b)).find(p=>p.lead==='What we found.');
+    if(said.length>1) assert.equal(rest&&rest.text,said.slice(1).join(' '),'the repeated headline sentence goes and every later one stays');
+    else assert.equal(rest,undefined,'a one-sentence finding the headline repeats is not said twice');
+  };
+  survives(real);
+  const orig=chrome.summaryPoints;
+  const two={lead:'What we found.',text:'Planted first sentence of the finding. Planted second sentence that must stay.'};
+  chrome.summaryPoints=(k)=>(orig(k)||[]).map(p=>p.lead==='What we found.'?two:p);
+  try{
+    survives(two);
+    const rest=D.latestCaveats(n,html.replace(big,(_,a,b)=>a+'Planted first sentence of the finding.'+b)).find(p=>p.lead==='What we found.');
+    assert.notEqual(rest&&rest.text,two.text,'control: the repeated first sentence is cut');
+    chrome.summaryPoints=(k)=>(orig(k)||[]).map(p=>p.lead==='What we found.'?{...two,text:'Planted first sentence of the finding.'}:p);
+    assert.throws(()=>survives(two),assert.AssertionError,'plant: the second sentence lost reads red');
+  }finally{chrome.summaryPoints=orig;}
   const sentence='A skill that did not beat the fake is not shown to do no better than it.';
   // A-702-3 (issue 757): the home card says the report's sentence in plain words, bound to its point.
   // A-702-5: a report that says the plain form itself, as Report 019 does, is printed in its own words.
   const plain='Not beating the fake does not show a skill is useless.';
-  const bound=found.text.includes(sentence)?h=>/data-plain-of="latest_point_\d+_text"/.test(h):h=>h.includes(found.text);
-  const carried=h=>h.includes(plain)&&bound(h)&&!h.includes(sentence);
-  const home=read('docs/index.html');assert.ok(carried(home));
-  assert.equal(carried(home.replace(plain,'')),false,'plant: the plain form removed');
-  assert.equal(carried(home.replace(plain,sentence)),false,'plant: the double negative put back');
+  const carriedFor=(text)=>{const bound=text.includes(sentence)?h=>/data-plain-of="latest_point_\d+_text"/.test(h):h=>h.includes(text);return h=>h.includes(plain)&&bound(h)&&!h.includes(sentence);};
+  const home=read('docs/index.html');
+  // The double negative is on no home page, whichever report is the latest.
+  assert.equal(home.includes(sentence),false,'the double negative is not on the home page');
+  // Issue 853: the plain-form rule is proved on the builder's own card for a finding that says the
+  // double negative, and on the committed home page whenever the latest report says it.
+  const {latestFinding}=require('../scripts/build-site-pages.js');
+  const S={latest_report_number:{value:n},latest_report_title:{value:'Planted'},latest_report_claim:{value:'Planted claim'},latest_report_sentence:{value:'Planted claim: planted.'},
+    latest_point_1_lead:{value:'What we found.'},latest_point_1_text:{value:sentence},latest_found_above:{value:3},latest_found_counted:{value:5}};
+  const card=latestFinding(S,(k)=>S[k].value);
+  const carried=carriedFor(sentence);
+  assert.ok(carried(card),'the builder says the double negative in plain words, bound to its point');
+  assert.equal(carried(card.replace(plain,'')),false,'plant: the plain form removed');
+  assert.equal(carried(card.replace(plain,sentence)),false,'plant: the double negative put back');
+  if(real.text.includes(sentence)||real.text.includes(plain)){
+    const c=carriedFor(real.text);assert.ok(c(home));
+    assert.equal(c(home.replace(plain,'')),false,'plant: the plain form removed');
+    assert.equal(c(home.replace(plain,sentence)),false,'plant: the double negative put back');
+  }
 });
 test('builder discovery includes every reader and the notes data builder',()=>{
   const B=require('../scripts/reader-pages');

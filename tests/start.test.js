@@ -415,6 +415,9 @@ const DESCRIPTOR = 'Driftproof (driftproofhq): open-source agent skill evaluatio
 const WHAT_TO_TYPE = 'in the folder that holds your skills.';
 // A-139-31 (issue 752): the plugin README's first line also names a rules file.
 const README_WHAT_TO_TYPE = 'in the folder that holds your skills or your CLAUDE.md.';
+// A-139-34 (issue 840): the plugin's description is the listing line spec 840 AC-1 holds, and the README leads
+// with it; what to type is the README's next line.
+const LISTING = 'Find out which of your skills and rules files actually help Claude, and which you can delete. The free measurement at driftproofhq.com/measure tests each one against a same-length fake.';
 // Spec 777: the plugin's Markdown and the runner's door, in one copy, so a plant reaches either.
 const DOOR_TREE = () => { const dir = path.join(tmp(), 'plugin'); fs.cpSync(PLUGIN, dir, { recursive: true }); return copyDoor(dir); };
 let shipped = null;
@@ -783,11 +786,12 @@ const baseText = (rel) => spawnSync('git', ['-C', ROOT, 'show', `${BASE_368}:${r
 async function readWhatToType(pluginDir) {
   const out = [];
   const m = JSON.parse(fs.readFileSync(path.join(pluginDir, '.claude-plugin', 'plugin.json'), 'utf8'));
-  if (m.description !== `${DESCRIPTOR}. Type /driftproof:start ${WHAT_TO_TYPE}`) out.push(`the description is ${JSON.stringify(m.description)}`);
+  if (m.description !== LISTING) out.push(`the description is ${JSON.stringify(m.description)}`);
   const md = fs.readFileSync(path.join(pluginDir, 'README.md'), 'utf8');
   const lines = md.split('\n');
-  const first = lines.slice(1).find((l) => l.trim());
-  if (lines[0] !== '# Driftproof for Claude Code' || first !== `Type \`/driftproof:start\` ${README_WHAT_TO_TYPE}`) out.push(`the README's first line after its title is ${JSON.stringify(first)}`);
+  const [first, second] = lines.slice(1).filter((l) => l.trim());
+  if (lines[0] !== '# Driftproof for Claude Code' || String(first).replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') !== LISTING) out.push(`the README's first line after its title is ${JSON.stringify(first)}`);
+  if (second !== `Type \`/driftproof:start\` ${README_WHAT_TO_TYPE}`) out.push(`the README's line after the listing line is ${JSON.stringify(second)}`);
   const head = '## What it sends, and where';
   const at = md.indexOf(head);
   const list = md.indexOf('- `/driftproof:badge');
@@ -814,11 +818,14 @@ async function bumpedPlugin(only) {
 
 test('AC-368-10: the description and the README\'s first line say what to type, and the network section comes after the commands', async () => {
   assert.deepEqual(await readWhatToType(SHIPPED()), []);
-  assert.ok(reds(await readWhatToType(planted(['.claude-plugin/plugin.json', `. Type /driftproof:start ${WHAT_TO_TYPE}`, ''])), /the description is/), 'the descriptor alone was not read RED');
+  assert.ok(reds(await readWhatToType(planted(['.claude-plugin/plugin.json', LISTING, DESCRIPTOR])), /the description is/), 'the descriptor alone was not read RED');
+  // A-139-34 (issue 840): the old description put back, and the README's what-to-type line dropped, each read RED.
+  assert.ok(reds(await readWhatToType(planted(['.claude-plugin/plugin.json', LISTING, `${DESCRIPTOR}. Type /driftproof:start ${WHAT_TO_TYPE}`])), /the description is/), 'the old description was not read RED');
+  assert.ok(reds(await readWhatToType(planted(['README.md', `Type \`/driftproof:start\` ${README_WHAT_TO_TYPE}\n`, ''])), /line after the listing line/), 'the README without what to type was not read RED');
   const md = fs.readFileSync(path.join(PLUGIN, 'README.md'), 'utf8');
   const i = md.indexOf('## What it sends, and where');
   const sec = md.slice(i);
-  const commandList = 'This plugin adds eight commands:'; // A-139-28, issue 623; A-139-31, issue 752.
+  const commandList = 'This plugin adds nine commands:'; // A-139-28, issue 623; A-139-31, issue 752; A-139-34, issue 812's ninth.
   assert.ok(md.slice(0, i).includes(commandList), 'the command-list plant anchor exists');
   const moved = md.slice(0, i).replace(commandList, `${sec}\n${commandList}`);
   assert.ok(reds(await readWhatToType(planted(['README.md', md, moved])), /does not come after the command list/), 'the section above the command list was not read RED');

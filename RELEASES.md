@@ -8,6 +8,31 @@ makes this one a record.
 
 ---
 
+## v0.31.0 - 2026-11-26
+
+### What's new
+
+- **A quiet skill check in the Claude Code plugin.** The plugin's new skill-check skill offers a Driftproof check in one line at three moments: when you have just written or edited a skill or a rules file (CLAUDE.md, AGENTS.md, or Cursor, Copilot or Windsurf rules), when you ask whether one is worth keeping, and when you say Claude is ignoring one. It offers at most once per conversation. The offer runs nothing and sends nothing unless you say yes, and a no ends it for the conversation. It quotes only readings Driftproof has published.
+- **A plainer plugin listing.** The plugin's description now says what it is for: find out which of your skills and rules files actually help Claude, and which you can delete. Its keywords add CLAUDE.md, AGENTS.md and the Cursor, Copilot and Windsurf rules files.
+- **Report 021: one line in a Jest rules file and Claude's tests** (on the site since 25 November). Report 021 measured four public rules files on their own topics, on Claude Haiku 5.5 and Claude Sonnet 5.5. With a Jest rules file, Sonnet's tests caught fewer of the planted bugs than with no file. One line in the file asks for 3 to 5 tests per file. When we removed just that line and ran again, the drop went away for Sonnet on both measures, and for Haiku on the share of attempts that caught every bug. For the other three files we could not show any help. Many tasks gave the same result whatever the model was given, so on those tasks no file could have shown a gain. The receipts are on Zenodo, and `node scripts/analyze-report-021.js` re-checks every number on the page from them, offline. At /reports/021/.
+- **Pages for Cursor, Copilot and Windsurf rules files** (on the site since 26 November). /cursor/, /copilot/ and /windsurf/ list which of each editor's files Driftproof reads and give Report 021's result for each file it measured.
+
+### Known open
+
+- **The plugin directory has not picked this up yet.** Anthropic's plugin directory is holding the Driftproof plugin for review and still serves v0.25.0. Until a reviewer clears the hold, installs from the directory get neither the new listing text nor the skill-check skill. Installs from our own marketplace get both with this release: `claude plugin marketplace add driftproofhq/driftproof`, then `claude plugin install driftproof@driftproofhq`.
+- **When the skill check speaks is up to Claude,** guided by the skill's description. We checked the skill's wording and rules; we have not measured how often Claude offers it in practice.
+- **Re-running Report 021's models needs the runner,** which arrives with a later release. The offline check above needs no model.
+
+### Engineering log
+
+- Merged since 0.30.0: PR 851 (850: spec 842 gate runs in a release sweep), PR 849 (848: CodeQL, Report 021 offline check reads page text without a regex tag filter), PR 845 (844: editor pages), PR 843 (842: Report 021), PR 841 (840: plugin listing line, keywords and quiet skill-check skill).
+- Report 021 (25 Nov) and the editor pages (26 Nov) were published site-only from the live public state with Maverick's yes, PR 841 held out; this release brings the source and the npm package level with them.
+- Pre-draft CodeQL: the four results in the offline check's tag stripper are fixed (PR 849). Four test-code warnings remain, as they did in 0.30.0.
+- Spec 842's PR-scope hold on package.json, lib/ and bin/ retired at merge (C-315, A-842-3). Its gate installs the pinned parser into a temporary prefix outside node_modules, since a sweep verifies node_modules against the lock.
+- Follow-ups: tests/build-sitemap.test.js fails on dev itself (missing glossary-terms.js fixture); non-blocking review findings on PRs 845, 849 and 851.
+
+---
+
 ## v0.30.0 - 2026-11-17
 
 ### What's new

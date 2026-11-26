@@ -136,9 +136,15 @@ function readFinding(h, S, reportHtml, n) {
   const oracle = findingOf(reportHtml);
   const claim = statOf(card, 'latest_report_claim');
   const sentence = statOf(card, 'latest_report_sentence');
-  for (const [k, v] of [['claim', claim], ['sentence', sentence]]) if (v === null || /…|\.\.\./.test(v)) hits.push(`the finding's ${k} is missing or elided: ${v}`);
+  // A-687-7 (issue 853): a sentence with no colon is its own short form; the card then says it once,
+  // with no short-form line (Maverick's answer on Report 021, 25 Nov: the box does not repeat it).
+  // A sentence with a colon still needs its short form, whole.
+  const ownShortForm = oracle.claim === oracle.sentence.replace(/[.?!]$/, '');
+  const wants = ownShortForm ? [['sentence', sentence]] : [['claim', claim], ['sentence', sentence]];
+  for (const [k, v] of wants) if (v === null || /…|\.\.\./.test(v)) hits.push(`the finding's ${k} is missing or elided: ${v}`);
   if (sentence !== oracle.sentence) hits.push(`the finding's sentence is not the report's whole first sentence: ${sentence}`);
-  if (claim !== oracle.claim) hits.push(`the finding's short form is not the sentence's first clause: ${claim}`);
+  if (ownShortForm) { if (claim !== null) hits.push(`the finding repeats its sentence as a short form: ${claim}`); }
+  else if (claim !== oracle.claim) hits.push(`the finding's short form is not the sentence's first clause: ${claim}`);
   if (String(S.latest_report_sentence && S.latest_report_sentence.value) !== oracle.sentence) hits.push('stats.json latest_report_sentence is not the report\'s');
   const tally = tallyOf(reportHtml);
   if (tally) {
@@ -287,6 +293,20 @@ test('AC-3 the latest finding is the report\'s own headline, tally and caveats, 
     const zero = tallyOf(rp).items.findIndex((it) => it.count === 0) + 1;
     const withZero = plant(h, '<p class="finding-legend" id="finding-legend">', `<p class="finding-legend" id="finding-legend"><span data-stat="latest_tally_${zero}_count">0</span> `);
     assert.ok(readFinding(withZero, S, rp, n).some((x) => /lists a zero count/.test(x)), 'a zero count in the legend reads red');
+  }
+  // A-687-7 (issue 853): with no colon, a short-form line repeating the sentence reads red; with a
+  // colon in the report's sentence, a card without its short form reads red.
+  if (whole.includes(': ')) {
+    const noClaim = h.replace(/<p class="finding-claim">[\s\S]*?<\/p>\n?/, '');
+    assert.ok(readFinding(noClaim, S, rp, n).some((x) => /claim is missing/.test(x)), 'a dropped short form reads red');
+  } else {
+    const repeated = plant(h, '<p class="finding-sentence">', `<p class="finding-claim"><span data-stat="latest_report_claim">${findingOf(rp).claim}</span></p>\n<p class="finding-sentence">`);
+    assert.ok(readFinding(repeated, S, rp, n).some((x) => /repeats its sentence/.test(x)), 'a short form repeating the sentence reads red');
+    const at = whole.indexOf(' ', 10);
+    const colonReport = rp.replace(/(<div class="headline">[\s\S]*?<p class="big"[^>]*>)/, (_, a) => `${a}${whole.slice(0, at)}:${whole.slice(at)} `);
+    const colonHome = plant(h, `data-stat="latest_report_sentence">${whole}<`, `data-stat="latest_report_sentence">${whole.slice(0, at)}:${whole.slice(at)}<`);
+    assert.notEqual(findingOf(colonReport).sentence, whole, 'the colon plant reaches the report sentence');
+    assert.ok(readFinding(colonHome, S, colonReport, n).some((x) => /claim is missing/.test(x)), 'a report sentence with a colon and no short form on the card reads red');
   }
   const cav = caveatsOf(n, rp);
   assert.ok(cav.length >= 1, 'the latest report carries at least one caveat');

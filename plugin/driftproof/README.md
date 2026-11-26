@@ -1,5 +1,7 @@
 # Driftproof for Claude Code
 
+Find out which of your skills and rules files actually help Claude, and which you can delete. The free measurement at [driftproofhq.com/measure](https://driftproofhq.com/measure/) tests each one against a same-length fake.
+
 Type `/driftproof:start` in the folder that holds your skills or your CLAUDE.md.
 
 Driftproof measures whether a skill or a rules file helps. It runs its test cases on a model with it and without it, grades the answers, and writes a dated receipt of the result.
@@ -22,6 +24,10 @@ Both `/driftproof:start` and `/driftproof:init` can also start from a mistake th
 
 It measures and never changes a skill's instructions. The one file it adds is a new `evals/evals.json`, from `/driftproof:start` or `/driftproof:init`, to a skill that has none, after you say yes in the run. `SKILL.md` and every other file are as they were. Driftproof itself is a command line tool, published on npm as `driftproof`. The CLI is the product, and it runs on every surface Driftproof measures, while the plugin is one install path for Claude Code users.
 
+## The skill-check skill
+
+The plugin also carries one skill, which Claude may start on its own at three moments only: you have just written or edited a skill or a rules file; you ask whether one is good, worth keeping, or which ones to delete; or you say Claude is ignoring your CLAUDE.md, a rules file or a skill. It then offers a check in one line, once per conversation, and drops the subject if you say no. Nothing runs without your yes. It sends nothing and fetches nothing. Where Driftproof has published a reading for a skill of that name from that repository, it gives the reading, the model and the date from a copy of the site's published readings shipped in the plugin, the newest of them run on 12 Nov 2026. Otherwise it offers the link to the free measurement page, which says whether the free offer is open and on what terms, or a local check with `/driftproof:start` where there is a terminal. It never changes your skill or rules file.
+
 ## What runs
 
 Each command file gives the exact line Claude runs, and says which of the two forms it uses. The line starts the runner this plugin is released with and names that version, and the runner refuses to act if it is not that version. The plugin holds no measuring code of its own.
@@ -41,6 +47,7 @@ The installed form is the safer alternative. Install this version of the runner 
 - A later use of `/driftproof:recheck` asks you first, naming the model and the call limit, then sends the saved tests, with and without the saved copy of the subject, through the runner's saved model and grader, on your own plan or model account. For a folder this command saved, those tests run as you, on your own command line login for the model (Claude Code, or Codex for an OpenAI command line model). That is allowed only on `/driftproof:run`'s terms: the subject is inside this repository, or you confirm again, each time, that it is yours. A saved folder never allows it by itself, and one the CLI saved without `--trusted-skill` still runs through the isolation account. The first use saves a copy of the subject, its tests and its settings under `recheck/<name>/` at the root of your repository, and each run adds a dated receipt there.
 - The same model grades each answer, and is sent the test case, the answer and its rubric to do it.
 - `/driftproof:measure` sends nothing. It reads the skill or rules file's name, its path and the repository's github.com address on this computer, and opens GitHub's form with them in the link, in your browser. A request exists only if you submit the form.
+- The skill-check skill sends nothing and fetches nothing. Its readings are a copy shipped in the plugin, and the links it gives are for you to open.
 - `/driftproof:start` sends what `/driftproof:run` sends, for the few test cases of a quick smoke run, or for at most five test cases in the small full run it offers.
 - Some settings of the runner change where these calls go. They live in the runner's own documentation and on the site, not in this plugin.
 - `driftproof import --from nvidia-cards` runs `git rev-parse` and `git ls-tree` in the checkout you name, to read its commit. If that checkout is a partial clone that lacks the commit's trees, `git ls-tree` fetches them from the clone's remote.
