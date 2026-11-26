@@ -81,6 +81,7 @@ function measurePage({ queue }) {
   const main = '<main class="offer-page">'
     + `<h1>${t(WORDS.h1)}</h1><p class="lede">${t(WORDS.lede)}</p>`
     + `<p>Rules files are welcome too: <code>${t(RULES_FILE_NAMES)}</code>. Send one file with the single-item form below, or mix rules files and skills in a pack. A pack can hold up to 20 items in total. Both use the same first 50 requests and USD 50 run budget per request.</p><p>For a rules file, we pin its repository, path and commit, then use its instructions in place of the skill below. The same three tasks, two models, fake text and labels apply. ${t(RULES_LIMITATION)}</p>`
+    + require('./build-site-pages').EDITOR_LINKS
     + `<h2 id="what-we-do">${t(WORDS.doHeading)}</h2><p>${t(WORDS.doText)}</p>`
     + `<ul>${WORDS.arms.map((x) => `<li>${t(x)}</li>`).join('')}<li>${t(WORDS.placebo[0])}<strong>${t(WORDS.placebo[1])}</strong>${t(WORDS.placebo[2])}</li></ul>`
     + `<p>${t(WORDS.grader)}</p>`

@@ -29,7 +29,7 @@ const ORIGIN = 'https://driftproofhq.com';
 // Reports 001 to 008 keep their frozen bodies on their pages only, in words the site no longer
 // uses (spec 031's band lexicon, em dashes), so they get no copy and no alternate link. spec 135's
 // gate reads these bounds against the ruling in the brief.
-const PAGES = ['what-is-driftproof', 'agent-skill-evaluation', 'agent-skill-regression-testing', 'compare', 'methodology', 'paper'];
+const PAGES = ['what-is-driftproof', 'agent-skill-evaluation', 'agent-skill-regression-testing', 'compare', 'methodology', 'paper', 'cursor', 'copilot', 'windsurf'];
 const COPIED_REPORTS = { from: '009', to: '013' };
 const copied = (n) => String(n) >= COPIED_REPORTS.from && String(n) <= COPIED_REPORTS.to || ['015', '016', '017', '018', '019', '021'].includes(String(n));
 const reportRows = (root) => JSON.parse(fs.readFileSync(path.join(root, 'docs', 'data', 'reports.json'), 'utf8')).reports;

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
 'use strict';
-const { RULES_FILE_NAMES, RULES_LIMITATION } = require('../lib/rules-files');
+const { RULES_FILE_NAMES, RULES_LIMITATION, RULES_FILE_KINDS } = require('../lib/rules-files');
 
 // scripts/build-site-pages.js — the pages that are not reports.
 //
@@ -1708,7 +1708,153 @@ const howItWorksPage = () => require('./how-it-works.js').page(shell);
 // receipts (scripts/sugar-pill-page.js). Required when rendered: that module reads the report builders.
 const sugarPillPage = () => require('./sugar-pill-page.js').page(shell);
 
+// Issue 844: editor drafts. New wording lives here once; measured words and cells
+// are read from the approved report each time a TARGET renders, including --check.
+const EDITOR_SOURCE_SENTENCES = Object.freeze([
+  'GitHub Copilot security instructions (instructions/security-and-owasp.instructions.md in github/awesome-copilot, commit c835373), on security tasks.',
+  'Windsurf "Honey" rules (.windsurf/rules/honey.md in Green-PT/honey-for-devs, commit 6eb60f9), on general code tasks.',
+]);
+const EDITOR_LINKS = '<p>Rules files by editor: <a href="/cursor/">Cursor</a>, <a href="/copilot/">Copilot</a>, <a href="/windsurf/">Windsurf</a>.</p>';
+const EDITOR_COPY = Object.freeze({
+  cursor: {
+    title: 'Two Cursor rules files, measured',
+    intro: 'Driftproof reads Cursor rules files:',
+    result: 'What Report 021 found: a Jest rules file',
+    other: 'A FastAPI rules file: we could not show any help',
+    source: 'Cursor Python FastAPI rules, on FastAPI tasks.',
+    topic: 'Cursor Python FastAPI rules, FastAPI',
+  },
+  copilot: {
+    title: 'One GitHub Copilot instructions file, measured',
+    intro: 'Driftproof reads Copilot instructions files:',
+    result: 'What Report 021 found: a security instructions file. We could not show any help',
+    topic: 'GitHub Copilot security instructions, security',
+  },
+  windsurf: {
+    title: 'One Windsurf rules file, measured',
+    intro: 'Driftproof reads Windsurf rules files:',
+    result: 'What Report 021 found: the Honey rules. We could not show any help',
+    topic: 'Windsurf "Honey" rules, general code',
+  },
+});
+const EDITOR_SHARED = Object.freeze({
+  jest: "Report 021's Jest result",
+  limits: 'Limits',
+  measure: 'Measure your own',
+  send: "Send us your file: it's free. Rules files are welcome too.",
+  run: 'Or run it yourself:',
+  try: 'Try it yourself.',
+  report: 'Full method, receipts and the offline check:',
+  reportLink: 'Report 021',
+});
+const editorNeed = (ok, what) => { if (!ok) throw new Error('Report 021 editor source: ' + what); };
+const editorDecode = s => String(s)
+  .replace(/&#x([a-f\d]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+  .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+  .replace(/&(amp|lt|gt|quot|apos|nbsp|minus);/g, (_, n) => ({ amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', minus: '−' }[n]));
+function editorText(html) {
+  return require('./html-text.js').htmlToText(html, {
+    skip: ['script', 'style'], decode: editorDecode, collapse: true,
+    blockTags: ['p', 'li', 'h1', 'h2', 'h3', 'tr', 'td', 'th', 'caption'],
+  });
+}
+// Read complete elements with the shared tokenizer, including inline markup.
+// No tag-stripping expression and no dependence on layout whitespace.
+function editorElements(html, name) {
+  const { tokenize } = require('./html-text.js'), out = [], stack = [];
+  let offset = 0;
+  for (const token of tokenize(html)) {
+    const raw = token.type === 'text' ? token.text : token.raw;
+    if (token.name === name) {
+      if (token.type === 'start') stack.push(offset);
+      if (token.type === 'end') {
+        const start = stack.pop();
+        if (start !== undefined) out.push(html.slice(start, offset + raw.length));
+      }
+    }
+    offset += raw.length;
+  }
+  return out;
+}
+function editorReport() {
+  const html = fs.readFileSync(path.join(DOCS, 'reports/021/index.html'), 'utf8');
+  const one = (items, what) => {
+    editorNeed(items.length === 1, what + ' must occur once');
+    return items[0];
+  };
+  const reportMain = one(editorElements(html, 'main'), 'main');
+  const paragraph = prefix => one(editorElements(reportMain, 'p').map(editorText).filter(s => s.startsWith(prefix)), 'paragraph ' + prefix);
+  const limit = prefix => one(editorElements(reportMain, 'li').map(editorText).filter(s => s.startsWith(prefix)), 'limit ' + prefix);
+  const limits = [
+    limit('Not run inside Cursor, Copilot or Windsurf.'),
+    limit('Two Claude models only:'),
+    limit('Single-turn tasks.'),
+  ];
+  const sentences = s => s.match(/[^]*?[.!?](?=\s+[A-Z"“]|$)/gu) || [];
+  const always = sentences(limits[0]).slice(1).map(s => s.trim()).join(' ');
+  editorNeed(always.length > 0, 'always-on limitation');
+  const headline = editorText(one(editorElements(reportMain, 'p').filter(p => /^<p class="big">/.test(p)), 'headline'));
+  const tables = editorElements(reportMain, 'table').map(table => ({
+    caption: editorElements(table, 'caption').map(editorText),
+    headers: editorElements(table, 'th').map(editorText),
+    rows: editorElements(table, 'tr').map(tr => editorElements(tr, 'td').map(editorText)).filter(row => row.length),
+  }));
+  const jest = one(tables.filter(t => t.headers[0]?.startsWith('Jest tasks,')), 'original Jest table');
+  const other = one(tables.filter(t => t.headers[0] === 'File, topic'), 'other-file table');
+  editorNeed(jest.headers.length === 5 && jest.rows.length === 3 && jest.rows.every(r => r.length === 5), 'Jest measures and arms');
+  editorNeed(other.caption.length === 1 && other.headers.length === 6, 'other-file caption and columns');
+  // Operator answer A: even an explicitly declared source sentence must prove
+  // each identifier against the report. Declaration alone is never an exemption.
+  const tokens = s => s.split(/\s+/).map(t => t.replace(/^[("'“]+/, '').replace(/[),;:."'”]+$/, '')).filter(t => /[\d/.]/.test(t));
+  const reportTokens = new Set(tokens(editorText(reportMain)));
+  for (const sentence of EDITOR_SOURCE_SENTENCES) {
+    for (const token of tokens(sentence)) editorNeed(reportTokens.has(token), 'missing source token ' + token);
+  }
+  const ceiling = sentences(paragraph('Ceiling caveat:')).map(s => s.trim());
+  editorNeed(ceiling.length === 4 && ceiling[1].startsWith('For Sonnet on security,'), 'ceiling caveat sentences');
+  return {
+    headline, opener: sentences(headline)[0].trim(), always, limits, jest, other, ceiling,
+    attachment: paragraph('In Cursor this file'),
+    second: paragraph('On the second measure,'),
+  };
+}
+function editorTable(table, rows, { dropTopic = false, caption = true } = {}) {
+  const fields = xs => dropTopic ? xs.slice(1) : xs;
+  return '<table>' + (caption ? table.caption.map(s => '<caption>' + esc(s) + '</caption>').join('') : '')
+    + '<thead><tr>' + fields(table.headers).map(s => '<th scope="col">' + esc(s) + '</th>').join('') + '</tr></thead>'
+    + '<tbody>' + rows.map(row => '<tr>' + fields(row).map(s => '<td>' + esc(s) + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
+}
+function editorPage(editor) {
+  const copy = EDITOR_COPY[editor];
+  editorNeed(copy, 'unknown editor');
+  const report = editorReport();
+  const files = RULES_FILE_KINDS.filter(k => k.kind === editor || k.kind.startsWith(editor + '_')).map(k => k.example);
+  editorNeed(files.length > 0, 'supported rules files');
+  const intro = copy.intro + ' ' + files.join(' and ') + '.';
+  const p = s => '<p>' + esc(s) + '</p>';
+  const h = s => '<h2>' + esc(s) + '</h2>';
+  const rows = report.other.rows.filter(row => row[0] === copy.topic);
+  editorNeed(rows.length === 2 && rows.every(row => row.length === report.other.headers.length)
+    && rows[0][1] === 'Haiku' && rows[1][1] === 'Sonnet', 'both model rows for ' + editor);
+  const source = editor === 'cursor' ? copy.source : EDITOR_SOURCE_SENTENCES[editor === 'copilot' ? 0 : 1];
+  const ceiling = report.ceiling.filter((_, i) => editor === 'copilot' || i !== 1).join(' ');
+  const main = '<main><h1>' + esc(copy.title) + '</h1>' + p(intro) + p(report.always)
+    + (editor === 'cursor' ? '<section>' + h(copy.result) + p(report.headline)
+      + editorTable(report.jest, report.jest.rows, { caption: false }) + p(report.attachment) + '</section>'
+      + '<section>' + h(copy.other) : '<section>' + h(copy.result))
+    + p(source) + editorTable(report.other, rows, { dropTopic: true }) + p(ceiling)
+    + (editor === 'windsurf' ? p(report.second) : '') + '</section>'
+    + (editor !== 'cursor' ? '<section>' + h(EDITOR_SHARED.jest) + '<p><a href="/reports/021/">' + esc(report.opener) + '</a></p></section>' : '')
+    + '<section>' + h(EDITOR_SHARED.limits) + '<ul>' + report.limits.map(s => '<li>' + esc(s) + '</li>').join('') + '</ul></section>'
+    + '<section>' + h(EDITOR_SHARED.measure)
+    + '<p><a href="/measure/">' + esc(EDITOR_SHARED.send) + '</a></p>'
+    + '<p>' + esc(EDITOR_SHARED.run) + ' <a href="/try-it/">' + esc(EDITOR_SHARED.try) + '</a></p>'
+    + '<p>' + esc(EDITOR_SHARED.report) + ' <a href="/reports/021/">' + esc(EDITOR_SHARED.reportLink) + '</a></p></section></main>';
+  return shell({ title: copy.title + ' | Driftproof', description: intro, main });
+}
+
 const TARGETS = {
+  ...Object.fromEntries(Object.keys(EDITOR_COPY).map(editor => [editor + "/index.html", () => editorPage(editor)])),
   ...require('./build-tasks.js').targets(shell),
   'placebo/index.html': placeboPage,
   'how-it-works/index.html': howItWorksPage,
@@ -1772,4 +1918,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { reportName, BENCHMARK_GAP_PRESETS, BENCHMARK_GAP_FAMOUS, paperPage, maintainerPage, shell, heroReceipt, receiptWords, casesItem, reportCard, HOME_CARD_STAT, doors, latestFinding, findingTiles, tileClassOf, statePlot, plotState, subscribedPage, reportTypes, typeNote, word, bandFacts, bandsSection, floorFigure, checksSchemaVersion, tokensSchemaVersion, patchMethodology, receiptSchemaVersion, patchInteropMd, PATCHES, homepage, reportsIndex, glossaryPage, reportTypesPage, notFoundPage, redirectStub, STUBS, TERMS, TARGETS, reader, stats, reports, buildCards };
+module.exports = { EDITOR_SOURCE_SENTENCES, EDITOR_LINKS, editorPage, reportName, BENCHMARK_GAP_PRESETS, BENCHMARK_GAP_FAMOUS, paperPage, maintainerPage, shell, heroReceipt, receiptWords, casesItem, reportCard, HOME_CARD_STAT, doors, latestFinding, findingTiles, tileClassOf, statePlot, plotState, subscribedPage, reportTypes, typeNote, word, bandFacts, bandsSection, floorFigure, checksSchemaVersion, tokensSchemaVersion, patchMethodology, receiptSchemaVersion, patchInteropMd, PATCHES, homepage, reportsIndex, glossaryPage, reportTypesPage, notFoundPage, redirectStub, STUBS, TERMS, TARGETS, reader, stats, reports, buildCards };

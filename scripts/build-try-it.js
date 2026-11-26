@@ -59,6 +59,7 @@ function main(data) {
     + '<header class="try-intro"><h1>Try it yourself</h1>'
     + '<p class="lede">' + LEDE + '</p>'
     + '<p>Supported rules files: ' + RULES_FILE_NAMES + '. ' + RULES_LIMITATION + ' For scoped editor rules, paste only the body after its front matter.</p>'
+    + require('./build-site-pages').EDITOR_LINKS
     + '<p>You need a chat window and about 30 minutes: nine new chats, then nine scores. Nothing you type here is sent anywhere.</p></header>'
     + '<section class="try-sheet" data-island="try-it" data-tasks-source="' + source + '" aria-label="The worksheet">'
     + steps()

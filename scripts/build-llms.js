@@ -112,6 +112,7 @@ const readerLines = root => require('./reader-pages').pages().flatMap(p => pageL
 const NOTICED = 'noticed/index.html';
 // Issue 781: the free offer, how to ask for a skill to be measured or a result to be re-run.
 const MEASURE = 'measure/index.html';
+const editorLines = root => ['cursor', 'copilot', 'windsurf'].flatMap(editor => pageLines(root, editor + '/index.html'));
 const noticedLines = (root) => pageLines(root, NOTICED);
 
 function articleLines(root) {
@@ -155,7 +156,7 @@ ${answerLines(root).join('\n')}
 
 ## Optional
 
-${pageLines(root, MEASURE).map((line) => `${line}\n`).join('')}- [Interop](${ORIGIN}/interop/): importing results from other tools as DECLARED, and exporting a summary.
+${[...pageLines(root, MEASURE), ...editorLines(root)].map((line) => `${line}\n`).join('')}- [Interop](${ORIGIN}/interop/): importing results from other tools as DECLARED, and exporting a summary.
 - [Authoring](${ORIGIN}/authoring/): writing a skill and an eval suite worth measuring.
 - [Judge policy](${ORIGIN}/judge-policy/): which model judges, and why it is held fixed.
 - [Findings](${ORIGIN}/findings/): what three external audits of 0.10.0 and 0.10.1 found, what is fixed, and what is still open.
@@ -168,7 +169,7 @@ function fullOrder() {
   const md = require('./build-markdown.js');
   return md.PAGES.map((p) => md.mdOf(`${p}/index.html`)).sort((a, b) => ORDER.indexOf(a.split('/')[0]) - ORDER.indexOf(b.split('/')[0]));
 }
-const ORDER = ['what-is-driftproof', 'agent-skill-evaluation', 'agent-skill-regression-testing', 'compare', 'paper', 'methodology'];
+const ORDER = ['what-is-driftproof', 'agent-skill-evaluation', 'agent-skill-regression-testing', 'compare', 'paper', 'methodology', 'cursor', 'copilot', 'windsurf'];
 function renderLlmsFull(root = ROOT) {
   const parts = fullOrder().map((rel) => {
     const f = path.join(root, 'docs', rel);
